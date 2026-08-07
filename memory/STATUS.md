@@ -18,7 +18,8 @@
 | Phase 10 — Telegram Bot v2 (реальный бот) | ✅ Завершена |
 | Phase 11 — Auto-Analysis Scheduler | ✅ Завершена |
 | v0.7 Audit & Interview (R0) | ✅ Завершён |
-| R1 — Воспроизводимость (частично) | 🔄 В работе |
+| R1 — Воспроизводимость | ✅ Завершён |
+| R2 — Безопасность и транзакции | ⏳ Далее |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -95,11 +96,11 @@
 - [x] python-dotenv добавлен в pyproject.toml
 - [x] Версия 0.7.0 в pyproject.toml и main.py
 - [x] create_all с предупреждением (Alembic для production)
-- [ ] CI jobs (ruff, pytest, миграции)
-- [ ] ORM/миграции: JSONB, FK, boolean defaults
+- [x] CI: ruff lint + pytest на PostgreSQL 15 (.github/workflows/ci.yml)
+- [ ] ORM/миграции: subtasks String→JSON, next_day_suggestion Text→JSONB (известно, не блокирует)
 
 ## В работе
-- R1 — CI, ORM/миграции (продолжение)
+- R2 — безопасность и транзакции (CSRF, object-level auth, идемпотентность)
 
 ## Следующие шаги
 1. R1: единый dependency source + lock, чистая установка, миграции, CI

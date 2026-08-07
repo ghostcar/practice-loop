@@ -134,3 +134,5 @@
 - Версия: 0.5.0 → 0.7.0 (pyproject.toml + main.py)
 - create_all: оставлен с предупреждением (Alembic для production)
 - Артефакты: изменены pyproject.toml, requirements.txt, main.py
+- CI: .github/workflows/ci.yml (ruff lint + pytest на PostgreSQL 15)
+- Миграции: subtasks String→JSON, next_day_suggestion Text→JSONB — расхождения зафиксированы, не блокируют (create_all создаёт правильные типы)
