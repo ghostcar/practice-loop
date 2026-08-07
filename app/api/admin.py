@@ -32,6 +32,7 @@ async def admin_page(
             "user": user,
             "locale": locale,
             "theme": theme,
+            "active_nav": "admin",
         },
     )
 

@@ -63,6 +63,7 @@ async def catalog_page(
             "categories": categories,
             "active_category": category,
             "desire_levels": DESIRE_LEVELS,
+            "active_nav": "catalog",
         },
     )
 
@@ -93,6 +94,7 @@ async def my_entities_page(
             "locale": locale,
             "theme": theme,
             "entities": entities,
+            "active_nav": "catalog",
         },
     )
 

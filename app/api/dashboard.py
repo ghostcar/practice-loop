@@ -163,6 +163,7 @@ async def achievements_board(
             "theme": theme,
             "all_achievements": all_achievements,
             "my_achievements": my_achievements,
+            "active_nav": "dashboard",
         },
     )
 
@@ -215,6 +216,7 @@ async def notifications_page(
             "locale": locale,
             "theme": theme,
             "notifications": notifications,
+            "active_nav": "dashboard",
         },
     )
 
@@ -270,6 +272,7 @@ async def sessions_page(
             "locale": locale,
             "theme": theme,
             "sessions": sessions,
+            "active_nav": "dashboard",
         },
     )
 
@@ -345,6 +348,7 @@ async def privacy_page(
             "user": user,
             "locale": locale,
             "theme": theme,
+            "active_nav": "dashboard",
         },
     )
 

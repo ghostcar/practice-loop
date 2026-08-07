@@ -793,7 +793,7 @@ async def measurements_page(
     return templates.TemplateResponse(
         request=request,
         name="measurements.html",
-        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme},
+        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "points"},
     )
 
 
