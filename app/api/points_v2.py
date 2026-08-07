@@ -32,6 +32,7 @@ from app.schemas.points_v2 import (
     ScheduleRuleCreate,
     ScheduleRuleOut,
 )
+from app.security import require_entity_owner
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/api/v2", tags=["v2"])
@@ -77,11 +78,8 @@ async def update_gamification_config(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Update gamification config for an entity."""
-    result = await db.execute(select(Entity).where(Entity.id == entity_id))
-    entity = result.scalar_one_or_none()
-    if not entity:
-        raise HTTPException(404, "Entity not found")
+    """Update gamification config for an entity (owner only)."""
+    entity = await require_entity_owner(entity_id, user, db)
     entity.gamification_config = config.model_dump()
     db.add(entity)
     await db.commit()
@@ -209,11 +207,8 @@ async def assign_profile_to_entity(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Assign a PointsProfile to an entity (copies profile config to entity.gamification_config)."""
-    entity_result = await db.execute(select(Entity).where(Entity.id == entity_id))
-    entity = entity_result.scalar_one_or_none()
-    if not entity:
-        raise HTTPException(404, "Entity not found")
+    """Assign a PointsProfile to an entity (owner only)."""
+    entity = await require_entity_owner(entity_id, user, db)
 
     profile_result = await db.execute(
         select(PointsProfile).where(PointsProfile.id == profile_id, PointsProfile.user_id == user.id)

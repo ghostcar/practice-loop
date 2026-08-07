@@ -89,6 +89,26 @@ class OwnershipChecker:
         return obj
 
 
+# ── Entity ownership helper (uses owner_id, not user_id) ────────────
+
+
+async def require_entity_owner(
+    entity_id: uuid.UUID,
+    user: User,
+    db: AsyncSession,
+) -> object:
+    """Fetch entity by ID and verify user is the owner. Raises 404 if not found/not owned."""
+    from app.models.entity import Entity  # noqa: PLC0415 — avoid circular import
+
+    result = await db.execute(
+        select(Entity).where(Entity.id == entity_id, Entity.owner_id == user.id)
+    )
+    entity = result.scalar_one_or_none()
+    if entity is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entity not found")
+    return entity
+
+
 # ── Idempotency guards ──────────────────────────────────────────────
 
 

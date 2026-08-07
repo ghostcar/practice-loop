@@ -346,9 +346,11 @@ async def create_override(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    # Verify template exists
+    # Verify template exists and user owns it
     tpl = await db.get(CalendarTemplate, data.template_id)
     if not tpl:
+        raise HTTPException(404, "Template not found")
+    if tpl.user_id != user.id:
         raise HTTPException(404, "Template not found")
 
     override = CalendarOverride(
