@@ -22,6 +22,7 @@
 | R2 — Безопасность и транзакции | ✅ Завершён |
 | R3 — Каталог, модерация, scheduler | ✅ Завершён |
 | R4 — LLM planner | ✅ Завершён |
+| R5 — Frontend shell | ✅ Завершён |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -132,7 +133,17 @@
 ## В работе
 - Ничего. R0–R4 завершены.
 
+## R5 — Frontend shell
+- [x] active_nav: подсветка активной страницы в навигации
+- [x] Навигация упрощена: dashboard, tasks, training, catalog, points, admin
+- [x] CSRF hidden поля в формах locale/theme
+- [x] innerHTML аудит: всё использование — серверные данные (безопасно)
+- [x] scripts блок в base.html
+
+## В работе
+- Ничего. R0–R5 завершены.
+
 ## Следующие шаги
 1. Push на GitHub (`git push --force -u origin main`)
 2. Деплой на VPS, SSL, бэкапы
-3. R5 — Новый frontend shell (DESIGN.md)
+3. R6 — Возврат вторичных модулей (DESIGN.md compliance)
