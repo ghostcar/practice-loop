@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ t.get('measurements_title', 'Body Measurements') }}{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">📏 {{ t.get('measurements_title', 'Body Measurements') }}</h1>
+<div class="max-w-4xl mx-auto px-4 py-4">
+  <h1 class="text-2xl font-bold mb-4">📏 {{ t.get('measurements_title', 'Body Measurements') }}</h1>
 
   <!-- Add measurement form -->
   <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg border border-gray-700">
@@ -64,7 +64,7 @@
       <button onclick="loadChart('hips')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">Hips</button>
       <button onclick="loadChart('thigh')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">Thigh</button>
     </div>
-    <canvas id="meas-chart" class="w-full h-72"></canvas>
+    <canvas id="meas-chart" class="w-full h-40"></canvas>
   </div>
 
   <!-- History table -->

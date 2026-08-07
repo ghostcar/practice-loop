@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Points Economy{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">💰 {{ t.get('points_title', 'Points Economy') }}</h1>
+<div class="max-w-4xl mx-auto px-4 py-4">
+  <h1 class="text-2xl font-bold mb-4">💰 {{ t.get('points_title', 'Points Economy') }}</h1>
 
   <!-- Balance card -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -24,11 +24,11 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
       <h3 class="text-lg font-semibold mb-3">📈 Balance Trend (30 days)</h3>
-      <canvas id="trend-chart" class="w-full h-56"></canvas>
+      <canvas id="trend-chart" class="w-full h-36"></canvas>
     </div>
     <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
       <h3 class="text-lg font-semibold mb-3">🍩 Transaction Breakdown</h3>
-      <canvas id="donut-chart" class="w-full h-56"></canvas>
+      <canvas id="donut-chart" class="w-full h-36"></canvas>
     </div>
   </div>
 
