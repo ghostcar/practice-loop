@@ -229,10 +229,7 @@ async def _send_tg_notifications(db: AsyncSession, user_id: uuid.UUID, notificat
         user = result.scalar_one_or_none()
         if user and user.telegram_chat_id:
             for n in notifications[:3]:  # Limit to 3 messages
-                await send_telegram_notification(
-                    user.telegram_chat_id,
-                    f"*{n.title}*\n{n.body or ''}"
-                )
+                await send_telegram_notification(user.telegram_chat_id, f"*{n.title}*\n{n.body or ''}")
     except Exception:
         logger.debug("TG notification send failed", exc_info=True)
 

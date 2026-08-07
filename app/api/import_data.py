@@ -38,10 +38,7 @@ TEMPLATES: dict[str, dict] = {
     "measurements": {
         "label": "Body Measurements",
         "csv_headers": "date,time_of_day,weight,chest,under_chest,waist,hips,thigh,notes",
-        "example_csv": (
-            "2024-01-15,morning,98.5,112,100,100,106,61,\n"
-            "2024-01-15,evening,99.0,,,,,,"
-        ),
+        "example_csv": ("2024-01-15,morning,98.5,112,100,100,106,61,\n2024-01-15,evening,99.0,,,,,,"),
         "json_schema": {
             "import_type": "measurements",
             "data": [
@@ -61,10 +58,7 @@ TEMPLATES: dict[str, dict] = {
     "inventory": {
         "label": "Inventory / Shopping List",
         "csv_headers": "category,name,description,quantity,quantity_needed,is_shopping_list,status,priority",
-        "example_csv": (
-            "clothing,Black stockings 40 den,,3,5,true,need,2\n"
-            "equipment,Rope 6mm 20m,,4,7,true,need,5"
-        ),
+        "example_csv": ("clothing,Black stockings 40 den,,3,5,true,need,2\nequipment,Rope 6mm 20m,,4,7,true,need,5"),
         "json_schema": {
             "import_type": "inventory",
             "data": [
@@ -83,12 +77,9 @@ TEMPLATES: dict[str, dict] = {
     "entities": {
         "label": "Entities (Tasks)",
         "csv_headers": (
-            "type,real_name,category,level,parent_code,tags,is_public,"
-            "points_base,penalty_enabled,penalty_levels"
+            "type,real_name,category,level,parent_code,tags,is_public,points_base,penalty_enabled,penalty_levels"
         ),
-        "example_csv": (
-            "one_time,Morning plank,exercise,1,,fitness,true,10,true,missed:5:clothespins:10"
-        ),
+        "example_csv": ("one_time,Morning plank,exercise,1,,fitness,true,10,true,missed:5:clothespins:10"),
         "json_schema": {
             "import_type": "entities",
             "data": [
@@ -298,10 +289,7 @@ async def import_page(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "templates": {
-                k: {"label": v["label"], "csv_headers": v["csv_headers"]}
-                for k, v in TEMPLATES.items()
-            },
+            "templates": {k: {"label": v["label"], "csv_headers": v["csv_headers"]} for k, v in TEMPLATES.items()},
             "export_types": list(EXPORT_TYPES),
         },
     )
@@ -485,9 +473,7 @@ async def _import_entities(rows: list[dict], db: AsyncSession, user: User, mode:
             parent_id = None
             parent_code = row.get("parent_code")
             if parent_code:
-                p_result = await db.execute(
-                    select(Entity.id).where(Entity.real_name == str(parent_code)).limit(1)
-                )
+                p_result = await db.execute(select(Entity.id).where(Entity.real_name == str(parent_code)).limit(1))
                 p_row = p_result.first()
                 if p_row:
                     parent_id = p_row[0]
@@ -524,9 +510,7 @@ async def _import_schedule(rows: list[dict], db: AsyncSession, user: User, mode:
             entity_id = None
             entity_name = row.get("entity_name") or row.get("entity_code")
             if entity_name:
-                e_result = await db.execute(
-                    select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1)
-                )
+                e_result = await db.execute(select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1))
                 e_row = e_result.first()
                 if e_row:
                     entity_id = e_row[0]
@@ -562,9 +546,7 @@ async def _import_points_transactions(rows: list[dict], db: AsyncSession, user: 
             entity_id = None
             entity_name = row.get("entity_name") or row.get("entity_code")
             if entity_name:
-                e_result = await db.execute(
-                    select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1)
-                )
+                e_result = await db.execute(select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1))
                 e_row = e_result.first()
                 if e_row:
                     entity_id = e_row[0]
@@ -617,9 +599,7 @@ async def _import_activity_logs(rows: list[dict], db: AsyncSession, user: User, 
             entity_id = None
             entity_name = row.get("entity_name") or row.get("entity_code")
             if entity_name:
-                e_result = await db.execute(
-                    select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1)
-                )
+                e_result = await db.execute(select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1))
                 e_row = e_result.first()
                 if e_row:
                     entity_id = e_row[0]
@@ -702,10 +682,7 @@ async def export_full(
         if user_col is None:
             continue
         result = await db.execute(
-            select(model)
-            .where(user_col == user.id)
-            .order_by(model.created_at.desc())
-            .limit(5000)
+            select(model).where(user_col == user.id).order_by(model.created_at.desc()).limit(5000)
         )
         rows = result.scalars().all()
         full[etype] = {"count": len(rows), "data": [_model_to_dict(r) for r in rows]}
@@ -746,10 +723,7 @@ async def export_type(
     user_col = getattr(model_cls, "user_id", None) or getattr(model_cls, "owner_id", None)
 
     result = await db.execute(
-        select(model_cls)
-        .where(user_col == user.id)
-        .order_by(model_cls.created_at.desc())
-        .limit(limit)
+        select(model_cls).where(user_col == user.id).order_by(model_cls.created_at.desc()).limit(limit)
     )
     rows = result.scalars().all()
 

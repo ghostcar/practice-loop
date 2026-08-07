@@ -175,9 +175,7 @@ async def hide_achievement(
     db: AsyncSession = Depends(get_db),
 ):
     """Toggle achievement visibility on public board."""
-    result = await db.execute(
-        select(UserAchievement).where(UserAchievement.id == ua_id)
-    )
+    result = await db.execute(select(UserAchievement).where(UserAchievement.id == ua_id))
     ua = result.scalar_one_or_none()
     if ua and ua.user_id != user.id:
         ua = None
@@ -229,9 +227,7 @@ async def mark_read(
     db: AsyncSession = Depends(get_db),
 ):
     """Mark a notification as read."""
-    result = await db.execute(
-        select(Notification).where(Notification.id == n_id)
-    )
+    result = await db.execute(select(Notification).where(Notification.id == n_id))
     n = result.scalar_one_or_none()
     if n and n.user_id != user.id:
         n = None
@@ -299,9 +295,7 @@ async def start_session(
     db: AsyncSession = Depends(get_db),
 ):
     """Start a session."""
-    result = await db.execute(
-        select(ActivitySession).where(ActivitySession.id == s_id)
-    )
+    result = await db.execute(select(ActivitySession).where(ActivitySession.id == s_id))
     s = result.scalar_one_or_none()
     if s and s.owner_id == user.id:
         s.status = "active"
@@ -319,9 +313,7 @@ async def end_session(
     db: AsyncSession = Depends(get_db),
 ):
     """End a session."""
-    result = await db.execute(
-        select(ActivitySession).where(ActivitySession.id == s_id)
-    )
+    result = await db.execute(select(ActivitySession).where(ActivitySession.id == s_id))
     s = result.scalar_one_or_none()
     if s and s.owner_id == user.id:
         s.status = "ended"
@@ -457,7 +449,9 @@ async def telegram_status(
     user: User = Depends(get_current_user),
 ):
     """Check if Telegram is linked."""
-    return JSONResponse({
-        "linked": user.telegram_chat_id is not None,
-        "code": user.telegram_link_code if not user.telegram_chat_id else None,
-    })
+    return JSONResponse(
+        {
+            "linked": user.telegram_chat_id is not None,
+            "code": user.telegram_link_code if not user.telegram_chat_id else None,
+        }
+    )

@@ -179,9 +179,7 @@ async def complete_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Mark a task as completed."""
-    result = await db.execute(
-        select(ActivityLog).where(ActivityLog.id == log_id)
-    )
+    result = await db.execute(select(ActivityLog).where(ActivityLog.id == log_id))
     log = result.scalar_one_or_none()
     if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -204,9 +202,7 @@ async def interrupt_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Mark a task as interrupted (penalty)."""
-    result = await db.execute(
-        select(ActivityLog).where(ActivityLog.id == log_id)
-    )
+    result = await db.execute(select(ActivityLog).where(ActivityLog.id == log_id))
     log = result.scalar_one_or_none()
     if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Activity not found")

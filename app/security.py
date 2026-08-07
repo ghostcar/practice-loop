@@ -100,9 +100,7 @@ async def require_entity_owner(
     """Fetch entity by ID and verify user is the owner. Raises 404 if not found/not owned."""
     from app.models.entity import Entity  # noqa: PLC0415 — avoid circular import
 
-    result = await db.execute(
-        select(Entity).where(Entity.id == entity_id, Entity.owner_id == user.id)
-    )
+    result = await db.execute(select(Entity).where(Entity.id == entity_id, Entity.owner_id == user.id))
     entity = result.scalar_one_or_none()
     if entity is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entity not found")

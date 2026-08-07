@@ -83,6 +83,7 @@ class AvailabilityCheckResponse(BaseModel):
 
 class DaySchedule(BaseModel):
     """Resolved schedule for a single day — used in LLM prompts."""
+
     date: date
     template_name: str
     windows: list[dict[str, Any]]  # [{start, end, label, policy}]

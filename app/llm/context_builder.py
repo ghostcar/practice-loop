@@ -128,9 +128,7 @@ async def _get_user_stats(db: AsyncSession, user_id: uuid.UUID) -> dict:
     }
 
 
-async def _get_active_penalties(
-    db: AsyncSession, user_id: uuid.UUID, session_id: uuid.UUID | None
-) -> list[dict]:
+async def _get_active_penalties(db: AsyncSession, user_id: uuid.UUID, session_id: uuid.UUID | None) -> list[dict]:
     """Return active penalties (escalation count, interrupted tasks)."""
     interrupted = await db.execute(
         select(func.count(ActivityLog.id)).where(
@@ -175,9 +173,7 @@ def format_context_abstract(context: dict) -> str:
         typ = e["type"]
         desire = e["desire_level"]
         intensity_label = e.get("intensity", "active")
-        parts.append(
-            f"- ID={e['id']} | cat={cat} | type={typ} | desire={desire} | intensity={intensity_label}"
-        )
+        parts.append(f"- ID={e['id']} | cat={cat} | type={typ} | desire={desire} | intensity={intensity_label}")
     parts.append("")
 
     parts.append("## Recent History")
@@ -206,9 +202,7 @@ def format_context_for_prompt(context: dict) -> str:
         parts.append(f"Template: {cal.template_name}")
         for w in cal.windows:
             icon = {"allowed": "✅", "passive_only": "🟡", "disallowed": "🔴"}.get(w["policy"], "❓")
-            parts.append(
-                f"- {icon} {w['start']}-{w['end']}: {w['label']} ({w['policy']})"
-            )
+            parts.append(f"- {icon} {w['start']}-{w['end']}: {w['label']} ({w['policy']})")
         parts.append("")
         parts.append(
             "When planning tasks, respect these windows:\n"
@@ -223,9 +217,7 @@ def format_context_for_prompt(context: dict) -> str:
     for e in context["allowed_entities"]:
         desire = e["desire_level"]
         intensity_info = f" [intensity={e.get('intensity', 'active')}]"
-        parts.append(
-            f"- [{desire}] {e['name']} (category={e['category']}, type={e['type']}){intensity_info}"
-        )
+        parts.append(f"- [{desire}] {e['name']} (category={e['category']}, type={e['type']}){intensity_info}")
         if e.get("params_schema"):
             parts.append(f"  params_schema: {json.dumps(e['params_schema'], ensure_ascii=False)}")
     parts.append("")

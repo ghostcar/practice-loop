@@ -156,9 +156,7 @@ async def toggle_subtask(
     db: AsyncSession = Depends(get_db),
 ):
     """Toggle a subtask's done status."""
-    result = await db.execute(
-        select(ActivityLog).where(ActivityLog.id == log_id)
-    )
+    result = await db.execute(select(ActivityLog).where(ActivityLog.id == log_id))
     log = result.scalar_one_or_none()
     if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -184,9 +182,7 @@ async def complete_training_task(
     db: AsyncSession = Depends(get_db),
 ):
     """Mark a training task as completed and award XP."""
-    result = await db.execute(
-        select(ActivityLog).where(ActivityLog.id == log_id)
-    )
+    result = await db.execute(select(ActivityLog).where(ActivityLog.id == log_id))
     log = result.scalar_one_or_none()
     if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Task not found")

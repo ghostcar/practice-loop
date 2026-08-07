@@ -56,22 +56,16 @@ async def _run_auto_analysis() -> None:
                     locale="en",
                 )
                 await db.commit()
-                logger.info(
-                    f"Auto-analysis: completed for user {td.user_id}, day {td.target_date}"
-                )
+                logger.info(f"Auto-analysis: completed for user {td.user_id}, day {td.target_date}")
             except Exception:
-                logger.exception(
-                    f"Auto-analysis: failed for user {td.user_id}, day {td.target_date}"
-                )
+                logger.exception(f"Auto-analysis: failed for user {td.user_id}, day {td.target_date}")
                 await db.rollback()
 
 
 async def _scheduler_loop(stop_event: asyncio.Event) -> None:
     """Loop that checks every minute whether it's time to run analysis."""
     analysis_hour, analysis_minute = _parse_time(settings.tg_auto_analysis_time)
-    logger.info(
-        f"Auto-analysis scheduler started (runs daily at {analysis_hour:02d}:{analysis_minute:02d} UTC)"
-    )
+    logger.info(f"Auto-analysis scheduler started (runs daily at {analysis_hour:02d}:{analysis_minute:02d} UTC)")
 
     last_run_date: date | None = None
 
@@ -80,11 +74,10 @@ async def _scheduler_loop(stop_event: asyncio.Event) -> None:
             now = datetime.now(UTC)
 
             # Run once per day at the configured hour:minute
-            if (now.hour == analysis_hour and now.minute == analysis_minute
-                    and last_run_date != now.date()):
-                    logger.info("Auto-analysis: triggering daily run")
-                    await _run_auto_analysis()
-                    last_run_date = now.date()
+            if now.hour == analysis_hour and now.minute == analysis_minute and last_run_date != now.date():
+                logger.info("Auto-analysis: triggering daily run")
+                await _run_auto_analysis()
+                last_run_date = now.date()
 
             # Wait until next check
             await asyncio.wait_for(stop_event.wait(), timeout=_check_interval_seconds)

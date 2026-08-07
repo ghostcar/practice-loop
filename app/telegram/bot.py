@@ -46,15 +46,11 @@ if TG_BOT_TOKEN:
 
     async def _get_user_by_chat(chat_id: int) -> User | None:
         async with async_session_factory() as db:
-            result = await db.execute(
-                select(User).where(User.telegram_chat_id == chat_id)
-            )
+            result = await db.execute(select(User).where(User.telegram_chat_id == chat_id))
             return result.scalar_one_or_none()
 
     async def _get_user_progress(db, user_id: uuid.UUID) -> UserProgress | None:
-        result = await db.execute(
-            select(UserProgress).where(UserProgress.user_id == user_id)
-        )
+        result = await db.execute(select(UserProgress).where(UserProgress.user_id == user_id))
         return result.scalar_one_or_none()
 
     async def _require_user(message: types.Message) -> User | None:
@@ -63,7 +59,7 @@ if TG_BOT_TOKEN:
         if user is None:
             await message.answer(
                 "🔒 Your Telegram is not linked to an account yet.\n\n"
-                "Go to your web profile → \"Link Telegram\" → copy the code → send:\n"
+                'Go to your web profile → "Link Telegram" → copy the code → send:\n'
                 "/link YOUR_CODE"
             )
         return user
@@ -76,7 +72,7 @@ if TG_BOT_TOKEN:
             "👋 Welcome to **Practice Loop** Bot!\n\n"
             "🔗 *First time?* Link your account:\n"
             "1. Open your web profile\n"
-            "2. Click \"Link Telegram\" → copy the 6‑character code\n"
+            '2. Click "Link Telegram" → copy the 6‑character code\n'
             "3. Send `/link YOUR_CODE` here\n\n"
             "📋 *Commands:*\n"
             "/next — generate a task\n"
@@ -99,9 +95,7 @@ if TG_BOT_TOKEN:
             return
 
         async with async_session_factory() as db:
-            result = await db.execute(
-                select(User).where(User.telegram_link_code == code.upper())
-            )
+            result = await db.execute(select(User).where(User.telegram_link_code == code.upper()))
             user = result.scalar_one_or_none()
 
             if user is None:
@@ -120,8 +114,7 @@ if TG_BOT_TOKEN:
             await db.commit()
 
         await message.answer(
-            f"✅ Linked! Welcome, {user.email}!\n\n"
-            "Use /next to get your first task, or /stats to see your progress.",
+            f"✅ Linked! Welcome, {user.email}!\n\nUse /next to get your first task, or /stats to see your progress.",
         )
 
     # ── /next ────────────────────────────────────────────────────────
@@ -474,9 +467,7 @@ if TG_BOT_TOKEN:
             ]
         )
         await message.answer(
-            f"⚙️ **Settings**\n"
-            f"Language: {user.locale.upper()}\n\n"
-            "Change language:",
+            f"⚙️ **Settings**\nLanguage: {user.locale.upper()}\n\nChange language:",
             parse_mode="Markdown",
             reply_markup=kb,
         )
@@ -502,6 +493,7 @@ if TG_BOT_TOKEN:
 
 
 # ── Notification sender (public API for the rest of the app) ──────
+
 
 async def send_telegram_notification(chat_id: int, text: str, parse_mode: str = "Markdown") -> bool:
     """Send a message to a Telegram user. Returns True on success."""
@@ -570,6 +562,7 @@ async def stop_polling() -> None:
 
 
 # ── Set webhook on startup ─────────────────────────────────────────
+
 
 async def setup_webhook(base_url: str) -> str | None:
     """Register the webhook URL with Telegram. Called at app startup."""

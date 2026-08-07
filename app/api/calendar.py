@@ -174,9 +174,7 @@ async def check_availability(
     except ValueError:
         raise HTTPException(400, "Invalid datetime format. Use ISO format.") from None
 
-    available, policy, window_label, reason = await is_available(
-        db, user.id, dt, duration, intensity
-    )
+    available, policy, window_label, reason = await is_available(db, user.id, dt, duration, intensity)
     return {
         "available": available,
         "policy": policy,
@@ -217,12 +215,18 @@ async def create_template(
                 CalendarTemplate.is_default.is_(True),
             )
         )
-        existing_defaults = (await db.execute(
-            select(CalendarTemplate).where(
-                CalendarTemplate.user_id == user.id,
-                CalendarTemplate.is_default.is_(True),
+        existing_defaults = (
+            (
+                await db.execute(
+                    select(CalendarTemplate).where(
+                        CalendarTemplate.user_id == user.id,
+                        CalendarTemplate.is_default.is_(True),
+                    )
+                )
             )
-        )).scalars().all()
+            .scalars()
+            .all()
+        )
         for t in existing_defaults:
             t.is_default = False
 
@@ -327,9 +331,7 @@ async def list_overrides(
     user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(CalendarOverride)
-        .where(CalendarOverride.user_id == user.id)
-        .order_by(CalendarOverride.start_date.desc())
+        select(CalendarOverride).where(CalendarOverride.user_id == user.id).order_by(CalendarOverride.start_date.desc())
     )
     out = []
     for o in result.scalars().all():

@@ -43,15 +43,17 @@ async def get_due_practices(
 
     practices = []
     for opt_in, entity in result:
-        practices.append({
-            "entity_id": str(entity.id),
-            "entity_name": entity.real_name,
-            "category": entity.category,
-            "type": entity.type,
-            "desire_level": opt_in.desire_level,
-            "rating": opt_in.rating,
-            "next_due_at": opt_in.next_due_at.isoformat() if opt_in.next_due_at else None,
-        })
+        practices.append(
+            {
+                "entity_id": str(entity.id),
+                "entity_name": entity.real_name,
+                "category": entity.category,
+                "type": entity.type,
+                "desire_level": opt_in.desire_level,
+                "rating": opt_in.rating,
+                "next_due_at": opt_in.next_due_at.isoformat() if opt_in.next_due_at else None,
+            }
+        )
 
     return practices
 
