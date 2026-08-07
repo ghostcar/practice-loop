@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
+from app.api.calendar import router as calendar_router
 from app.api.dashboard import router as dashboard_router
 from app.api.entities import router as entities_router
 from app.api.import_data import router as import_router
@@ -85,4 +86,5 @@ app.include_router(training_router)
 app.include_router(dashboard_router)
 app.include_router(points_v2_router)
 app.include_router(import_router)
+app.include_router(calendar_router)
 app.include_router(tg_router)

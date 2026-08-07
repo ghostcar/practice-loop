@@ -14,6 +14,7 @@ from app.main import app
 from app.models import Base
 from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401 — ensure table registry
+from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule  # noqa: F401
 from app.models.llm_config import LLMProviderConfig  # noqa: F401

@@ -40,6 +40,8 @@ class Entity(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     params_schema: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    intensity: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    # active / passive / neutral — determines if activity can bypass calendar restrictions
     gamification_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # gamification_config JSON structure:
     # {

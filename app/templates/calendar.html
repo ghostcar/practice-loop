@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">📅 Availability Calendar</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Define your weekly schedule, vacations, and activity windows</p>
+
+    <!-- Today's Schedule -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                📋 Today's Schedule — <span class="text-indigo-500">{{ today_schedule.template_name }}</span>
+            </h2>
+            <span class="text-xs text-slate-400">{{ today_schedule.date }}</span>
+        </div>
+        {% if today_schedule.windows %}
+        <div class="flex items-center h-8 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden relative">
+            {% for w in today_schedule.windows %}
+            {% set sh = w.start.split(':') %}
+            {% set eh = w.end.split(':') %}
+            {% set start_pct = ((sh[0]|int * 60 + sh[1]|int) / 1440 * 100)|round(1) %}
+            {% set width_pct = (((eh[0]|int * 60 + eh[1]|int) - (sh[0]|int * 60 + sh[1]|int)) / 1440 * 100)|round(1) %}
+            <div class="h-full flex items-center justify-center text-[10px] font-medium text-white truncate px-1
+                {% if w.policy == 'allowed' %}bg-emerald-500/80{% elif w.policy == 'passive_only' %}bg-amber-500/80{% else %}bg-red-500/60{% endif %}"
+                 style="width:{{ width_pct }}%; min-width:6%;"
+                 title="{{ w.label }}: {{ w.start }}-{{ w.end }} ({{ w.policy }})">
+                {{ w.label[:6] }}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="flex gap-3 mt-2 text-xs">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Allowed</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Passive only</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Disallowed</span>
+        </div>
+        {% else %}
+        <p class="text-sm text-slate-400 py-2">No schedule defined. <button onclick="showSeed()" class="text-indigo-500 underline">Create default template →</button></p>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <h3 class="text-sm font-semibold mb-2">🔧 Templates</h3>
+            <div id="template-list" class="text-xs space-y-1 mb-2"></div>
+            <button onclick="showTemplateForm()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 hover:bg-indigo-100 transition-colors">+ New Template</button>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <h3 class="text-sm font-semibold mb-2">🏖️ Overrides</h3>
+            <div id="override-list" class="text-xs space-y-1 mb-2"></div>
+            <button onclick="showOverrideForm()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 hover:bg-amber-100 transition-colors">+ Vacation</button>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <h3 class="text-sm font-semibold mb-2">🔍 Check</h3>
+            <form id="check-form" class="space-y-2">
+                <input type="datetime-local" id="check-dt" class="w-full text-xs bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-600">
+                <select id="check-intensity" class="w-full text-xs bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-600">
+                    <option value="active">Active</option><option value="passive">Passive</option><option value="neutral">Neutral</option>
+                </select>
+                <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-500 text-white w-full hover:bg-indigo-600 transition-colors">Check Availability</button>
+            </form>
+            <div id="check-result" class="mt-2 text-xs"></div>
+        </div>
+    </div>
+
+    <!-- Template Form (hidden) -->
+    <div id="template-form" class="hidden bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-4">
+        <h3 class="text-sm font-semibold mb-3">New Calendar Template</h3>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <input id="tpl-name" placeholder="Template name" class="text-sm bg-slate-100 dark:bg-slate-700 rounded px-3 py-2 border border-slate-200 dark:border-slate-600">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="tpl-default"> Set as default</label>
+        </div>
+        <div id="tpl-windows" class="space-y-2 mb-3">
+            <div class="flex gap-2 text-xs items-center window-row">
+                <select class="dow bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border">
+                    <option value="0">Mon</option><option value="1">Tue</option><option value="2">Wed</option><option value="3">Thu</option><option value="4">Fri</option><option value="5">Sat</option><option value="6">Sun</option><option value="7">Every day</option>
+                </select>
+                <input type="time" value="09:00" class="st bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border w-24">
+                <span>–</span>
+                <input type="time" value="18:00" class="et bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border w-24">
+                <input placeholder="label" value="work" class="lb bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border w-16">
+                <select class="pol bg-slate-100 dark:bg-slate-700 rounded px-2 py-1.5 border">
+                    <option value="allowed">Allowed</option><option value="passive_only">Passive</option><option value="disallowed">Blocked</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="addWindowRow()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 transition-colors">+ Add Window</button>
+            <button onclick="saveTemplate()" class="text-xs px-4 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">Save</button>
+        </div>
+    </div>
+
+    <!-- Override Form (hidden) -->
+    <div id="override-form" class="hidden bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 mb-4">
+        <h3 class="text-sm font-semibold mb-3">New Date Override (Vacation/Holiday)</h3>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <select id="ovr-tpl" class="text-sm bg-slate-100 dark:bg-slate-700 rounded px-3 py-2 border"></select>
+            <input id="ovr-label" placeholder="Label (e.g. Summer vacation)" class="text-sm bg-slate-100 dark:bg-slate-700 rounded px-3 py-2 border">
+            <input type="date" id="ovr-start" class="text-sm bg-slate-100 dark:bg-slate-700 rounded px-3 py-2 border">
+            <input type="date" id="ovr-end" class="text-sm bg-slate-100 dark:bg-slate-700 rounded px-3 py-2 border">
+        </div>
+        <button onclick="saveOverride()" class="text-xs px-4 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors">Save Override</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadData() {
+    // Templates
+    const tRes = await fetch('/calendar/templates');
+    const templates = await tRes.json();
+    document.getElementById('template-list').innerHTML = templates.map(t =>
+        `<div class="flex justify-between items-center"><span>${t.name} ${t.is_default ? '⭐' : ''} (${t.windows.length} windows)</span><button onclick="delTpl('${t.id}')" class="text-red-400 hover:text-red-300">🗑</button></div>`
+    ).join('') || '<span class="text-slate-400">No templates</span>';
+
+    // Populate override template selector
+    const sel = document.getElementById('ovr-tpl');
+    sel.innerHTML = templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+    // Overrides
+    const oRes = await fetch('/calendar/overrides');
+    const overrides = await oRes.json();
+    document.getElementById('override-list').innerHTML = overrides.map(o =>
+        `<div class="flex justify-between items-center"><span>${o.label || o.template_name}: ${o.start_date} → ${o.end_date}</span><button onclick="delOvr('${o.id}')" class="text-red-400 hover:text-red-300">🗑</button></div>`
+    ).join('') || '<span class="text-slate-400">No overrides</span>';
+}
+
+async function saveTemplate() {
+    const name = document.getElementById('tpl-name').value;
+    const isDefault = document.getElementById('tpl-default').checked;
+    const rows = document.querySelectorAll('.window-row');
+    const windows = Array.from(rows).map(r => ({
+        day_of_week: parseInt(r.querySelector('.dow').value),
+        start_time: r.querySelector('.st').value,
+        end_time: r.querySelector('.et').value,
+        label: r.querySelector('.lb').value,
+        policy: r.querySelector('.pol').value,
+    }));
+    await fetch('/calendar/templates', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, is_default: isDefault, windows })
+    });
+    document.getElementById('template-form').classList.add('hidden');
+    loadData();
+}
+
+async function saveOverride() {
+    const body = {
+        template_id: document.getElementById('ovr-tpl').value,
+        start_date: document.getElementById('ovr-start').value,
+        end_date: document.getElementById('ovr-end').value,
+        label: document.getElementById('ovr-label').value || null,
+    };
+    await fetch('/calendar/overrides', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+    });
+    document.getElementById('override-form').classList.add('hidden');
+    loadData();
+}
+
+async function delTpl(id) { await fetch(`/calendar/templates/${id}`, {method:'DELETE'}); loadData(); }
+async function delOvr(id) { await fetch(`/calendar/overrides/${id}`, {method:'DELETE'}); loadData(); }
+
+function showTemplateForm() { document.getElementById('template-form').classList.toggle('hidden'); }
+function showOverrideForm() { document.getElementById('override-form').classList.toggle('hidden'); }
+function addWindowRow() {
+    const row = document.querySelector('.window-row').cloneNode(true);
+    document.getElementById('tpl-windows').appendChild(row);
+}
+
+document.getElementById('check-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const dt = document.getElementById('check-dt').value;
+    const intensity = document.getElementById('check-intensity').value;
+    const res = await fetch(`/calendar/check?target_time=${dt}&intensity=${intensity}&duration=60`);
+    const data = await res.json();
+    const el = document.getElementById('check-result');
+    el.innerHTML = data.available
+        ? `<span class="text-emerald-500">✅ Available</span> (${data.policy}, ${data.window_label})`
+        : `<span class="text-red-500">❌ Not available</span> (${data.policy}${data.window_label ? ', ' + data.window_label : ''}${data.reason ? ' — ' + data.reason : ''})`;
+});
+
+document.getElementById('check-dt').value = new Date().toISOString().slice(0,16);
+loadData();
+</script>
+{% endblock %}
