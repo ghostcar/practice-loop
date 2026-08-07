@@ -27,9 +27,14 @@ from app.training.scheduler import start_auto_analysis, stop_auto_analysis
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create tables if not exist, disable Jinja2 cache (dev mode)."""
+    import logging
+
+    logger = logging.getLogger(__name__)
+
     from app.database import engine
     from app.models import Base
 
+    logger.warning("Using create_all() for dev convenience — run 'alembic upgrade head' for production")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -55,7 +60,7 @@ async def lifespan(app: FastAPI):
     await stop_auto_analysis()
 
 
-app = FastAPI(title="Practice Loop", version="0.5.0", lifespan=lifespan)
+app = FastAPI(title="Practice Loop", version="0.7.0", lifespan=lifespan)
 
 
 # --- Mount static files ---
