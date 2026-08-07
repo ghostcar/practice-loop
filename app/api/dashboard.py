@@ -88,6 +88,7 @@ async def dashboard(
             "active_session": active_session,
             "unread_notifs": unread_notifs,
             "tg_bot_username": settings.tg_bot_username,
+            "active_nav": "dashboard",
         },
     )
     set_csrf_cookie(response)

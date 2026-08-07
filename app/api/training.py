@@ -89,6 +89,7 @@ async def training_page(
             "active_config": active_config,
             "today": today,
             "next_day": next_day,
+            "active_nav": "training",
         },
     )
 

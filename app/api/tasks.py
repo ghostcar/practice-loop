@@ -72,6 +72,7 @@ async def tasks_page(
             "now_policy": now_policy,
             "now_label": now_label,
             "due_practices": due_practices,
+            "active_nav": "tasks",
         },
     )
 
