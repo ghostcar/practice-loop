@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 16).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 17).
 
 ## Обзор фаз
 | Область | Статус |
@@ -36,6 +36,7 @@
 - [x] Webhook: авто-регистрация при старте (setup_webhook в lifespan)
 - [x] Дашборд: карточка «Link Telegram» с генерацией кода, статусом, кнопкой
 - [x] config: tg_bot_username, tg_webhook_base_url
+- [x] Polling-режим: tg_polling=true → start_polling() (фоновая asyncio task), stop_polling() при shutdown
 - [x] Тесты: 105/105
 
 ## Что сделано (Phase 7 — Import/Export + Charts + Layout)

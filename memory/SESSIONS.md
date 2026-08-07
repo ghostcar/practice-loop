@@ -95,3 +95,11 @@
 - config: tg_bot_username, tg_webhook_base_url
 - Тесты 105/105, ruff 0 ошибок
 - Артефакты: +1 миграция, переписан bot.py, изменены handler, dashboard, main, config, user model, dashboard шаблон
+
+## 2026-08-07 — Сессия 17: Polling-режим бота
+- Добавлен tg_polling флаг в config (True = локальная разработка, False = production webhook)
+- start_polling(): удаляет webhook, запускает dp.start_polling() как фоновую asyncio задачу
+- stop_polling(): graceful cancel при shutdown приложения
+- lifespan: автоматический выбор webhook/polling по флагу
+- Использование: tg_polling=true + tg_bot_token=xxx в .env
+- Артефакты: изменены bot.py, main.py, config.py
