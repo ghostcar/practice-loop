@@ -187,6 +187,9 @@ async def complete_training_task(
     if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Task not found")
 
+    if log.status == "completed":
+        return RedirectResponse(url="/training", status_code=status.HTTP_303_SEE_OTHER)
+
     log.status = "completed"
     db.add(log)
     await db.flush()

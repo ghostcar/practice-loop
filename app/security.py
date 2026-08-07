@@ -49,15 +49,19 @@ def verify_csrf(request: Request) -> None:
     if request.method in CSRF_SAFE_METHODS:
         return
 
+    # Only enforce CSRF when there's an authenticated session
+    if not request.cookies.get("access_token"):
+        return
+
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
     if not cookie_token:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token missing")
 
-    # Check header (HTMX auto-includes X-CSRF-Token from meta tag)
+    # Check header (HTMX auto-includes X-CSRF-Token from meta tag) or form field
     header_token = request.headers.get(CSRF_HEADER_NAME)
 
-    if header_token and not hmac.compare_digest(header_token, cookie_token):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token mismatch")
+    if not header_token or not hmac.compare_digest(header_token, cookie_token):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token missing or invalid")
 
 
 # ── Object-level ownership ──────────────────────────────────────────

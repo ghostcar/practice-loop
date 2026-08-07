@@ -19,7 +19,7 @@ from app.auth import get_optional_user
 from app.config import settings
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.security import set_csrf_cookie
+from app.security import set_csrf_cookie, verify_csrf
 from app.telegram.bot import setup_webhook, start_polling, stop_polling, tg_router
 from app.templates_setup import templates
 from app.training.scheduler import start_auto_analysis, stop_auto_analysis
@@ -27,18 +27,8 @@ from app.training.scheduler import start_auto_analysis, stop_auto_analysis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: create tables if not exist, disable Jinja2 cache (dev mode)."""
-    import logging
-
-    logger = logging.getLogger(__name__)
-
-    from app.database import engine
-    from app.models import Base
-
-    if not settings.database_url.startswith("postgresql://"):
-        logger.warning("Using create_all() for dev convenience — run 'alembic upgrade head' for production")
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+    """Startup: disable Jinja2 cache, init Telegram, start auto-analysis."""
+    # Tables are created via Alembic. Run: alembic upgrade head
 
     # Disable Jinja2 caching to avoid unhashable dict errors with i18n
     from app.templates_setup import templates
@@ -65,7 +55,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Practice Loop", version="0.7.0", lifespan=lifespan)
 
 # --- CSRF middleware (must be added before startup) ---
-from app.security import verify_csrf
 
 
 @app.middleware("http")

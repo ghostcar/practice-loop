@@ -1,6 +1,7 @@
 """Test fixtures: in-memory SQLite, async client, test user factory."""
 
 import asyncio
+import secrets
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -91,9 +92,13 @@ async def test_user(db_session: AsyncSession) -> User:
 
 @pytest_asyncio.fixture
 async def auth_headers(test_user: User) -> dict:
-    """Cookie headers for an authenticated test user."""
+    """Cookie + CSRF headers for an authenticated test user."""
     token = create_access_token(test_user.id)
-    return {"Cookie": f"access_token={token}"}
+    csrf = secrets.token_hex(32)
+    return {
+        "Cookie": f"access_token={token}; csrf_token={csrf}",
+        "X-CSRF-Token": csrf,
+    }
 
 
 @pytest_asyncio.fixture
