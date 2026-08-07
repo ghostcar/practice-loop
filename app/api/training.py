@@ -156,13 +156,10 @@ async def toggle_subtask(
 ):
     """Toggle a subtask's done status."""
     result = await db.execute(
-        select(ActivityLog).where(
-            ActivityLog.id == log_id,
-            ActivityLog.user_id == user.id,
-        )
+        select(ActivityLog).where(ActivityLog.id == log_id)
     )
     log = result.scalar_one_or_none()
-    if log is None:
+    if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Task not found")
 
     if not log.subtasks or sub_idx >= len(log.subtasks):
@@ -187,13 +184,10 @@ async def complete_training_task(
 ):
     """Mark a training task as completed and award XP."""
     result = await db.execute(
-        select(ActivityLog).where(
-            ActivityLog.id == log_id,
-            ActivityLog.user_id == user.id,
-        )
+        select(ActivityLog).where(ActivityLog.id == log_id)
     )
     log = result.scalar_one_or_none()
-    if log is None:
+    if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Task not found")
 
     log.status = "completed"

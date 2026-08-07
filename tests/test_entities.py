@@ -177,7 +177,7 @@ async def test_opt_in_update(auth_client: AsyncClient, db_session: AsyncSession,
         f"/entities/{entity.id}/opt-in",
         data={
             "is_opted_in": False,
-            "desire_level": "unacceptable",
+            "desire_level": "strong_aversion",
         },
         follow_redirects=False,
     )
@@ -192,4 +192,4 @@ async def test_opt_in_update(auth_client: AsyncClient, db_session: AsyncSession,
     opt_in = result.scalar_one_or_none()
     assert opt_in is not None
     assert not opt_in.is_opted_in
-    assert opt_in.desire_level == "unacceptable"
+    assert opt_in.desire_level == "strong_aversion"

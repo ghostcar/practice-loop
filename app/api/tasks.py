@@ -17,6 +17,7 @@ from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
 from app.models.user import User
 from app.security import complete_once, interrupt_once
+from app.services.scheduler import get_due_practices, set_next_due, set_retry_block
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -50,6 +51,9 @@ async def tasks_page(
     today_schedule = await get_day_schedule(db, user.id, date.today())
     now_available, now_policy, now_label, _ = await is_available(db, user.id, datetime.now(), 60, "active")
 
+    # Get due practices
+    due_practices = await get_due_practices(db, user.id, limit=8)
+
     return templates.TemplateResponse(
         request=request,
         name="tasks.html",
@@ -66,6 +70,7 @@ async def tasks_page(
             "now_available": now_available,
             "now_policy": now_policy,
             "now_label": now_label,
+            "due_practices": due_practices,
         },
     )
 
@@ -131,17 +136,17 @@ async def complete_task(
 ):
     """Mark a task as completed."""
     result = await db.execute(
-        select(ActivityLog).where(
-            ActivityLog.id == log_id,
-            ActivityLog.user_id == user.id,
-        )
+        select(ActivityLog).where(ActivityLog.id == log_id)
     )
     log = result.scalar_one_or_none()
-    if log is None:
+    if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Activity not found")
 
     # Idempotent completion
     await complete_once(db, log, user, on_task_completed)
+    # Set next due for this practice
+    if log.entity_id:
+        await set_next_due(db, user.id, log.entity_id)
     await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
@@ -156,17 +161,17 @@ async def interrupt_task(
 ):
     """Mark a task as interrupted (penalty)."""
     result = await db.execute(
-        select(ActivityLog).where(
-            ActivityLog.id == log_id,
-            ActivityLog.user_id == user.id,
-        )
+        select(ActivityLog).where(ActivityLog.id == log_id)
     )
     log = result.scalar_one_or_none()
-    if log is None:
+    if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Activity not found")
 
     # Idempotent interruption
     await interrupt_once(db, log, user, on_task_interrupted)
+    # Block retry for 24h
+    if log.entity_id:
+        await set_retry_block(db, user.id, log.entity_id)
     await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)

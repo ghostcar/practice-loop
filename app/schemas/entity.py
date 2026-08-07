@@ -47,14 +47,14 @@ DESIRE_LEVELS = (
     "want",
     "neutral",
     "reluctant",
-    "unacceptable",
+    "strong_aversion",
 )
 
 
 class OptInUpdate(BaseModel):
     is_opted_in: bool = True
     rating: int | None = Field(default=None, ge=1, le=5)
-    desire_level: str = Field(default="neutral", pattern=r"^(want_very_much|want|neutral|reluctant|unacceptable)$")
+    desire_level: str = Field(default="neutral", pattern=r"^(want_very_much|want|neutral|reluctant|strong_aversion)$")
 
 
 class OptInResponse(BaseModel):

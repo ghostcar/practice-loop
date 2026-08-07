@@ -21,6 +21,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     subscription_tier: Mapped[str] = mapped_column(String(50), default="free", nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)  # user / moderator / admin
     locale: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     theme: Mapped[str] = mapped_column(String(10), default="dark", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

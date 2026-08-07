@@ -32,7 +32,7 @@ MAX_RETRIES = 3
 _RULES = """\
 1. Choose based on user's recent history, stats, desire levels, and active penalties.
 2. Prefer entities with higher desire levels (want_very_much > want > neutral > reluctant).
-3. Entities with desire_level "unacceptable" have a small chance of being suggested.
+3. Entities with desire_level "strong_aversion" have a small chance of being suggested.
 4. If there are pending penalties, consider suggesting a more challenging variation.
 5. Be diverse — don't repeat the same entity or category consecutively.
 6. Vary parameters within the allowed ranges for variety.

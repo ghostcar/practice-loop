@@ -1,0 +1,101 @@
+"""Soft scheduler: deterministic due-practice selector.
+
+Uses UserEntityOptIn.next_due_at and retry_not_before_at to determine
+which enabled practices are due for the user. Doesn't replace LLM — just
+provides a deterministic fallback and due-awareness.
+"""
+
+import logging
+import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.entity import Entity
+from app.models.opt_in import UserEntityOptIn
+
+logger = logging.getLogger(__name__)
+
+
+async def get_due_practices(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 10,
+) -> list[dict]:
+    """Return enabled practices that are due (next_due_at <= now) and not blocked by retry."""
+    now = datetime.now(UTC)
+
+    result = await db.execute(
+        select(UserEntityOptIn, Entity)
+        .join(Entity, UserEntityOptIn.entity_id == Entity.id)
+        .where(
+            UserEntityOptIn.user_id == user_id,
+            UserEntityOptIn.is_opted_in.is_(True),
+            # Due: next_due_at is set and is in the past, OR null (never scheduled = eligible)
+            (UserEntityOptIn.next_due_at <= now) | (UserEntityOptIn.next_due_at.is_(None)),
+            # Not blocked by retry
+            (UserEntityOptIn.retry_not_before_at.is_(None)) | (UserEntityOptIn.retry_not_before_at <= now),
+        )
+        .order_by(UserEntityOptIn.next_due_at.asc().nulls_first())
+        .limit(limit)
+    )
+
+    practices = []
+    for opt_in, entity in result:
+        practices.append({
+            "entity_id": str(entity.id),
+            "entity_name": entity.real_name,
+            "category": entity.category,
+            "type": entity.type,
+            "desire_level": opt_in.desire_level,
+            "rating": opt_in.rating,
+            "next_due_at": opt_in.next_due_at.isoformat() if opt_in.next_due_at else None,
+        })
+
+    return practices
+
+
+async def set_next_due(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    entity_id: uuid.UUID,
+    interval_hours: int = 48,
+) -> None:
+    """Set next_due_at for a practice after completion. Clears retry block."""
+    now = datetime.now(UTC)
+    from datetime import timedelta
+
+    result = await db.execute(
+        select(UserEntityOptIn).where(
+            UserEntityOptIn.user_id == user_id,
+            UserEntityOptIn.entity_id == entity_id,
+        )
+    )
+    opt_in = result.scalar_one_or_none()
+    if opt_in:
+        opt_in.next_due_at = now + timedelta(hours=interval_hours)
+        opt_in.retry_not_before_at = None
+        db.add(opt_in)
+
+
+async def set_retry_block(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    entity_id: uuid.UUID,
+    block_hours: int = 24,
+) -> None:
+    """Block a practice from being re-scheduled for block_hours (after stop/skip)."""
+    now = datetime.now(UTC)
+    from datetime import timedelta
+
+    result = await db.execute(
+        select(UserEntityOptIn).where(
+            UserEntityOptIn.user_id == user_id,
+            UserEntityOptIn.entity_id == entity_id,
+        )
+    )
+    opt_in = result.scalar_one_or_none()
+    if opt_in:
+        opt_in.retry_not_before_at = now + timedelta(hours=block_hours)
+        db.add(opt_in)

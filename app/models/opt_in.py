@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 class UserEntityOptIn(Base):
     """User's opt-in preference for a catalog entity.
 
-    Desire levels: want_very_much / want / neutral / reluctant / unacceptable
-    - "unacceptable" — non-zero probability of LLM suggesting it
+    Desire levels: want_very_much / want / neutral / reluctant / strong_aversion
+    - "strong_aversion" (formerly "unacceptable") — low probability of LLM suggesting it
     - "no" (is_opted_in=False) — complete exclusion
     """
 
@@ -41,7 +41,12 @@ class UserEntityOptIn(Base):
     is_opted_in: Mapped[bool] = mapped_column(default=True, nullable=False)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1–5
     desire_level: Mapped[str] = mapped_column(String(30), default="neutral", nullable=False)
-    # want_very_much / want / neutral / reluctant / unacceptable
+    # want_very_much / want / neutral / reluctant / strong_aversion
+
+    # Scheduling (soft due/deadline/retry)
+    next_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retry_not_before_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 

@@ -175,12 +175,11 @@ async def hide_achievement(
 ):
     """Toggle achievement visibility on public board."""
     result = await db.execute(
-        select(UserAchievement).where(
-            UserAchievement.id == ua_id,
-            UserAchievement.user_id == user.id,
-        )
+        select(UserAchievement).where(UserAchievement.id == ua_id)
     )
     ua = result.scalar_one_or_none()
+    if ua and ua.user_id != user.id:
+        ua = None
     if ua:
         ua.is_hidden = not ua.is_hidden
         db.add(ua)
@@ -230,12 +229,11 @@ async def mark_read(
 ):
     """Mark a notification as read."""
     result = await db.execute(
-        select(Notification).where(
-            Notification.id == n_id,
-            Notification.user_id == user.id,
-        )
+        select(Notification).where(Notification.id == n_id)
     )
     n = result.scalar_one_or_none()
+    if n and n.user_id != user.id:
+        n = None
     if n:
         n.is_read = True
         db.add(n)
@@ -301,13 +299,10 @@ async def start_session(
 ):
     """Start a session."""
     result = await db.execute(
-        select(ActivitySession).where(
-            ActivitySession.id == s_id,
-            ActivitySession.owner_id == user.id,
-        )
+        select(ActivitySession).where(ActivitySession.id == s_id)
     )
     s = result.scalar_one_or_none()
-    if s:
+    if s and s.owner_id == user.id:
         s.status = "active"
         s.started_at = datetime.now(UTC)
         db.add(s)
@@ -324,13 +319,10 @@ async def end_session(
 ):
     """End a session."""
     result = await db.execute(
-        select(ActivitySession).where(
-            ActivitySession.id == s_id,
-            ActivitySession.owner_id == user.id,
-        )
+        select(ActivitySession).where(ActivitySession.id == s_id)
     )
     s = result.scalar_one_or_none()
-    if s:
+    if s and s.owner_id == user.id:
         s.status = "ended"
         s.ended_at = datetime.now(UTC)
         db.add(s)
