@@ -13,6 +13,7 @@ from app.database import get_db
 from app.i18n import get_supported_locales, get_translations
 from app.i18n.helpers import detect_locale
 from app.models.user import User
+from app.security import set_csrf_cookie
 from app.templates_setup import templates
 
 router = APIRouter()
@@ -146,7 +147,9 @@ async def login(
         secure=False,  # True in production with HTTPS
         samesite="lax",
         max_age=86400,  # 24 hours
+        path="/",
     )
+    set_csrf_cookie(response)
     return response
 
 
@@ -157,7 +160,8 @@ async def login(
 async def logout():
     """Clear auth cookie and redirect to home."""
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-    response.delete_cookie("access_token")
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("csrf_token", path="/")
     return response
 
 

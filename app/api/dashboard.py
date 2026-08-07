@@ -22,6 +22,7 @@ from app.models.activity_log import ActivityLog
 from app.models.notification import Notification
 from app.models.session import ActivitySession
 from app.models.user import User
+from app.security import set_csrf_cookie
 from app.templates_setup import templates
 
 router = APIRouter(tags=["dashboard-v2"])
@@ -68,7 +69,7 @@ async def dashboard(
     )
     unread_notifs = notif_count_result.scalar() or 0
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="dashboard_v2.html",
         context={
@@ -77,6 +78,7 @@ async def dashboard(
             "user": user,
             "locale": locale,
             "theme": theme,
+            "csrf_token": request.cookies.get("csrf_token", ""),
             "progress": progress,
             "level": level,
             "xp_current": xp_current,
@@ -88,6 +90,8 @@ async def dashboard(
             "tg_bot_username": settings.tg_bot_username,
         },
     )
+    set_csrf_cookie(response)
+    return response
 
 
 # --- Achievements ---

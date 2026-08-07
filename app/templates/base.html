@@ -26,8 +26,16 @@
             animation: slide-down 0.3s ease-out;
         }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token or '' }}">
     <script src="https://unpkg.com/htmx.org@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // HTMX: auto-include CSRF token in all state-changing requests
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            var token = document.querySelector('meta[name="csrf-token"]');
+            if (token) evt.detail.headers['X-CSRF-Token'] = token.content;
+        });
+    </script>
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 text-slate-800 dark:text-slate-100 transition-colors duration-300">
@@ -134,5 +142,6 @@
     <footer class="border-t border-slate-200 dark:border-slate-700 mt-auto py-6 text-center text-xs text-slate-400 dark:text-slate-600">
         {{ t.app_title }} &mdash; private & personal use only
     </footer>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

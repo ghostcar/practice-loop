@@ -19,6 +19,7 @@ from app.auth import get_optional_user
 from app.config import settings
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.security import set_csrf_cookie
 from app.telegram.bot import setup_webhook, start_polling, stop_polling, tg_router
 from app.templates_setup import templates
 from app.training.scheduler import start_auto_analysis, stop_auto_analysis
@@ -86,7 +87,7 @@ async def home(request: Request):
     theme = detect_theme(user.theme if user else None)
     t = get_translations(locale)
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request,
         "index.html",
         {
@@ -94,8 +95,12 @@ async def home(request: Request):
             "user": user,
             "locale": locale,
             "theme": theme,
+            "csrf_token": request.cookies.get("csrf_token", ""),
         },
     )
+    if user is None:
+        set_csrf_cookie(response)
+    return response
 
 
 # --- Include routers ---

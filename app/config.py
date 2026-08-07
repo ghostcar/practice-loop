@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440  # 24 hours
 
+    # Encryption (separate from JWT)
+    credentials_encryption_key: str = "change-me-encryption-key-at-least-32-chars"
+
     # App
     app_host: str = "0.0.0.0"
     app_port: int = 8000

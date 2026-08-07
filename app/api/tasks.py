@@ -16,6 +16,7 @@ from app.llm.pipeline import generate_task, get_active_llm_config
 from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
 from app.models.user import User
+from app.security import complete_once, interrupt_once
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -139,12 +140,9 @@ async def complete_task(
     if log is None:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    log.status = "completed"
-    db.add(log)
-    await db.flush()
-
-    # Gamification
-    await on_task_completed(db, user.id, log)
+    # Idempotent completion
+    await complete_once(db, log, user, on_task_completed)
+    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -167,11 +165,8 @@ async def interrupt_task(
     if log is None:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    log.status = "interrupted"
-    db.add(log)
-    await db.flush()
-
-    # Gamification
-    await on_task_interrupted(db, user.id, log)
+    # Idempotent interruption
+    await interrupt_once(db, log, user, on_task_interrupted)
+    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)

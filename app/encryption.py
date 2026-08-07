@@ -9,8 +9,8 @@ from app.config import settings
 
 
 def _derive_key() -> bytes:
-    """Derive a Fernet-compatible 32-byte key from JWT secret."""
-    digest = hashlib.sha256(settings.jwt_secret_key.encode()).digest()
+    """Derive a Fernet-compatible 32-byte key from CREDENTIALS_ENCRYPTION_KEY."""
+    digest = hashlib.sha256(settings.credentials_encryption_key.encode()).digest()
     return base64.urlsafe_b64encode(digest)
 
 
