@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
 
 {% block content %}
 <div class="animate-fade-in">
@@ -12,6 +15,12 @@
                 + New Session
             </button>
         </form>
+    </div>
+
+    <!-- Session Timeline Chart -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">📊 Session Activity Timeline</h3>
+        <canvas id="session-timeline" class="w-full h-36"></canvas>
     </div>
 
     <div class="space-y-3">
@@ -32,6 +41,13 @@
                     {% if s.started_at %}
                     <p class="text-xs text-slate-400">Started: {{ s.started_at.strftime('%H:%M') }}</p>
                     {% endif %}
+                    {% if s.ended_at %}
+                    <p class="text-xs text-slate-400">Ended: {{ s.ended_at.strftime('%H:%M') }}
+                        <span class="text-emerald-500 font-mono ml-1">
+                            ({{ ((s.ended_at - s.started_at).total_seconds() / 60)|int if s.started_at else 0 }} min)
+                        </span>
+                    </p>
+                    {% endif %}
                 </div>
                 <div class="flex gap-2">
                     {% if s.status == 'created' %}
@@ -46,6 +62,17 @@
                     {% endif %}
                 </div>
             </div>
+            <!-- Duration bar for completed sessions -->
+            {% if s.status == 'ended' and s.started_at and s.ended_at %}
+            {% set dur_min = ((s.ended_at - s.started_at).total_seconds() / 60)|int %}
+            <div class="mt-3 flex items-center gap-2">
+                <div class="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full transition-all"
+                         style="width: {{ [dur_min / 3, 100]|min }}%"></div>
+                </div>
+                <span class="text-xs text-slate-400 font-mono">{{ dur_min }}m</span>
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
         {% if not sessions %}
@@ -53,4 +80,55 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => {
+    // Session timeline: show session count per day for last 14 days
+    try {
+        const res = await fetch('/api/v2/charts/activity?days=14');
+        const data = await res.json();
+        const ctx = document.getElementById('session-timeline').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'Completed',
+                        data: data.completed,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                    },
+                    {
+                        label: 'Interrupted',
+                        data: data.interrupted,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#9ca3af', usePointStyle: true, font: { size: 11 } } },
+                    tooltip: { backgroundColor: '#1f2937', titleColor: '#f9fafb', bodyColor: '#d1d5db' }
+                },
+                scales: {
+                    x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#9ca3af', stepSize: 1, font: { size: 10 } }, grid: { color: '#33415520' } }
+                }
+            }
+        });
+    } catch(e) { console.warn('Session timeline failed:', e); }
+})();
+</script>
 {% endblock %}

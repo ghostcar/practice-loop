@@ -19,15 +19,15 @@
     </div>
 
     <!-- Stats cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
             <div class="text-2xl mb-1">💰</div>
-            <div class="text-xl font-bold text-indigo-400">{{ progress.points_balance }}</div>
+            <div class="text-xl font-bold text-indigo-400" id="stat-points">{{ progress.points_balance }}</div>
             <div class="text-xs text-slate-500 dark:text-slate-400">Points</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
             <div class="text-2xl mb-1">⭐</div>
-            <div class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ progress.xp }}</div>
+            <div class="text-xl font-bold text-slate-800 dark:text-slate-100" id="stat-xp">{{ progress.xp }}</div>
             <div class="text-xs text-slate-500 dark:text-slate-400">XP</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
@@ -42,7 +42,58 @@
         </div>
     </div>
 
-    <!-- XP Progress bar + sparkline -->
+    <!-- Main charts grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Weekly Activity (bar) -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">📊 Weekly Activity</h2>
+                <div class="flex gap-1 text-xs">
+                    <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Done
+                    </span>
+                    <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span> Miss
+                    </span>
+                </div>
+            </div>
+            <canvas id="activity-chart" class="w-full h-48"></canvas>
+        </div>
+
+        <!-- Category Donut -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">🍩 Task Categories</h2>
+            <div class="flex items-center gap-4">
+                <div class="w-48 h-48 flex-shrink-0">
+                    <canvas id="category-chart"></canvas>
+                </div>
+                <div id="category-legend" class="flex-1 space-y-2 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Points Mini Trend -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">📈 Points Trend</h2>
+            <p class="text-xs text-slate-400 mb-3">Last 7 days</p>
+            <canvas id="points-mini-chart" class="w-full h-40"></canvas>
+        </div>
+
+        <!-- Completion Rate Gauge -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">🎯 Completion Rate</h2>
+            <div class="flex items-center gap-4">
+                <div class="w-36 h-36 flex-shrink-0">
+                    <canvas id="gauge-chart"></canvas>
+                </div>
+                <div class="flex-1">
+                    <div id="gauge-stats" class="space-y-1 text-sm"></div>
+                    <canvas id="rate-sparkline" class="w-full h-16 mt-2"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Progress bar -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
         <div class="flex items-end justify-between mb-2">
             <div>
@@ -57,26 +108,9 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
             </div>
         </div>
-        <!-- XP Sparkline -->
         <div class="mt-3 h-12">
             <canvas id="xp-sparkline" class="w-full h-12"></canvas>
         </div>
-    </div>
-
-    <!-- 7-day Activity Chart -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">📊 Weekly Activity</h2>
-            <div class="flex gap-1 text-xs">
-                <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Done
-                </span>
-                <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
-                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Miss
-                </span>
-            </div>
-        </div>
-        <canvas id="activity-chart" class="w-full h-48"></canvas>
     </div>
 
     <!-- Active session -->
@@ -118,10 +152,10 @@
         <a href="/tasks/" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">🎲 Tasks</a>
         <a href="/entities/catalog" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📋 Catalog</a>
         <a href="/sessions" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">🎯 Sessions</a>
+        <a href="/import" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📦 Import/Export</a>
         <a href="/api/v2/points/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">💰 Points</a>
         <a href="/api/v2/measurements/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📏 Body</a>
         <a href="/api/v2/inventory/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📦 Inventory</a>
-        <a href="/api/v2/schedule/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📅 Schedule</a>
     </div>
 </div>
 {% endblock %}
@@ -129,7 +163,7 @@
 {% block head %}
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-    // 7-day activity chart
+    // ── 7-day Activity Bar Chart ──
     try {
         const res = await fetch('/api/v2/charts/activity?days=7');
         const data = await res.json();
@@ -153,9 +187,141 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
-    } catch(e) { console.warn('Chart load failed:', e); }
+    } catch(e) { console.warn('Activity chart failed:', e); }
 
-    // XP Sparkline
+    // ── Category Donut ──
+    try {
+        const catRes = await fetch('/api/v2/charts/category-breakdown?days=30');
+        const catData = await catRes.json();
+        const catCtx = document.getElementById('category-chart').getContext('2d');
+        const palette = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+        new Chart(catCtx, {
+            type: 'doughnut',
+            data: {
+                labels: catData.labels,
+                datasets: [{
+                    data: catData.values,
+                    backgroundColor: palette.slice(0, catData.labels.length),
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: '#1f2937', titleColor: '#f9fafb', bodyColor: '#d1d5db' }
+                }
+            }
+        });
+        // Legend
+        const legend = document.getElementById('category-legend');
+        legend.innerHTML = catData.labels.map((l, i) => `
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:${palette[i]}"></span>
+                <span class="text-slate-600 dark:text-slate-400 capitalize">${l}</span>
+                <span class="text-slate-400 dark:text-slate-500 ml-auto text-xs">${catData.values[i]}</span>
+            </div>
+        `).join('');
+    } catch(e) { console.warn('Category chart failed:', e); }
+
+    // ── Points Mini Trend ──
+    try {
+        const ptsRes = await fetch('/api/v2/charts/points-trend?days=7');
+        const ptsData = await ptsRes.json();
+        const ptsCtx = document.getElementById('points-mini-chart').getContext('2d');
+        const gradient = ptsCtx.createLinearGradient(0, 0, 0, 160);
+        gradient.addColorStop(0, 'rgba(99,102,241,0.3)');
+        gradient.addColorStop(1, 'rgba(99,102,241,0.02)');
+        new Chart(ptsCtx, {
+            type: 'line',
+            data: {
+                labels: ptsData.labels,
+                datasets: [{
+                    data: ptsData.balance,
+                    borderColor: '#6366f1',
+                    borderWidth: 2.5,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#33415520' } }
+                },
+                interaction: { intersect: false, mode: 'index' },
+            }
+        });
+        // Update points stat
+        const lastBalance = ptsData.balance[ptsData.balance.length - 1] || 0;
+        document.getElementById('stat-points').textContent = lastBalance;
+    } catch(e) { console.warn('Points trend failed:', e); }
+
+    // ── Completion Rate Gauge ──
+    try {
+        const rateRes = await fetch('/api/v2/charts/completion-rate?days=7');
+        const rateData = await rateRes.json();
+        const gaugeCtx = document.getElementById('gauge-chart').getContext('2d');
+
+        // Doughnut gauge
+        const rate = rateData.overall_rate;
+        const gaugeColor = rate >= 75 ? '#10b981' : rate >= 40 ? '#f59e0b' : '#ef4444';
+        new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [rate, 100 - rate],
+                    backgroundColor: [gaugeColor, '#e2e8f0'],
+                    borderWidth: 0,
+                    borderRadius: 100,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '75%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            }
+        });
+        // Stats
+        document.getElementById('gauge-stats').innerHTML = `
+            <div class="text-2xl font-bold" style="color:${gaugeColor}">${rate}%</div>
+            <div class="text-slate-500 dark:text-slate-400">${rateData.completed_tasks} / ${rateData.total_tasks} tasks done</div>
+        `;
+
+        // Sparkline
+        const sparkCtx = document.getElementById('rate-sparkline').getContext('2d');
+        new Chart(sparkCtx, {
+            type: 'line',
+            data: {
+                labels: rateData.labels,
+                datasets: [{
+                    data: rateData.rates,
+                    borderColor: gaugeColor,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } }
+            }
+        });
+    } catch(e) { console.warn('Completion rate failed:', e); }
+
+    // ── XP Sparkline ──
     try {
         const xpRes = await fetch('/api/v2/charts/xp-history?days=7');
         const xpData = await xpRes.json();
@@ -186,6 +352,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 elements: { point: { hoverRadius: 5 } }
             }
         });
+        // Update XP stat
+        const totalXp = xpData.values.reduce((a, b) => a + b, 0);
+        document.getElementById('stat-xp').textContent = totalXp || {{ progress.xp }};
     } catch(e) { console.warn('XP sparkline failed:', e); }
 });
 </script>

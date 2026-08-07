@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">📦 Import & Export</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Download templates, upload data, export your records</p>
+        </div>
+        <span class="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+            {{ templates|length }} data types
+        </span>
+    </div>
+
+    <!-- Templates section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            📥 Download Templates
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Fill these templates and upload them back, or send via API from external services.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for tkey, tmeta in templates.items() %}
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group">
+                <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm mb-2">{{ tmeta.label }}</h3>
+                <code class="text-xs text-slate-400 dark:text-slate-500 block mb-3 truncate">{{ tmeta.csv_headers }}</code>
+                <div class="flex gap-2">
+                    <a href="/import/template/{{ tkey }}?format=csv"
+                       class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium"
+                       download>
+                        .CSV
+                    </a>
+                    <a href="/import/template/{{ tkey }}?format=json"
+                       class="text-xs px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors font-medium">
+                        .JSON
+                    </a>
+                    <button onclick="navigator.clipboard.writeText(`https://localhost:8443/import/template/{{ tkey }}?format=json`)"
+                            class="text-xs px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            title="Copy API URL">
+                        🔗
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Upload section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            📤 Upload Data
+        </h2>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 border-dashed">
+            <form id="upload-form"
+                  hx-encoding="multipart/form-data"
+                  hx-post="/import/upload"
+                  hx-target="#upload-result"
+                  hx-swap="innerHTML">
+                <div class="text-center">
+                    <div class="text-5xl mb-4">📁</div>
+                    <p class="text-slate-600 dark:text-slate-300 font-medium mb-2">
+                        Drag & drop a <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.csv</code>
+                        or <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.json</code> file here
+                    </p>
+                    <p class="text-sm text-slate-400 dark:text-slate-500 mb-4">
+                        Auto-detects data type from headers. Max 10 MB.
+                    </p>
+                    <input type="file"
+                           name="file"
+                           accept=".csv,.json"
+                           class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900/30 file:text-indigo-600 dark:file:text-indigo-400 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-900/50 file:cursor-pointer file:transition-colors"
+                           required>
+                    <button type="submit"
+                            class="mt-4 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25">
+                        🚀 Import
+                    </button>
+                </div>
+            </form>
+            <div id="upload-result" class="mt-4"></div>
+        </div>
+    </div>
+
+    <!-- Export section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            📤 Export Data
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Per-type exports -->
+            {% for etype in export_types %}
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between transition-all duration-200 hover:shadow-md">
+                <div>
+                    <span class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ etype | replace('_', ' ') | title }}</span>
+                </div>
+                <div class="flex gap-2">
+                    <a href="/import/export/{{ etype }}?format=json&limit=5000"
+                       class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium">
+                        JSON
+                    </a>
+                    <a href="/import/export/{{ etype }}?format=csv&limit=5000"
+                       class="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors font-medium">
+                        CSV
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Full backup -->
+        <div class="mt-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100">🔄 Full Backup</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Export all your data (measurements, inventory, schedule, entities, points, training, activities) as one JSON file</p>
+            </div>
+            <a href="/import/export/full"
+               class="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25 whitespace-nowrap">
+                ⬇️ Download All
+            </a>
+        </div>
+    </div>
+
+    <!-- API docs -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+            🔌 API for External Services
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Push data from scripts, bots, or third-party services via REST API.
+        </p>
+        <div class="bg-slate-900 rounded-xl p-4 overflow-x-auto">
+            <pre class="text-xs text-green-400"><code># Push measurements from external script
+curl -X POST https://localhost:8443/import/api \
+  -H "Cookie: access_token=YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "import_type": "measurements",
+    "data": [
+      {"measured_date": "2024-01-15", "time_of_day": "morning", "weight": 98.5}
+    ],
+    "mode": "upsert"
+  }'
+
+# Also available types: inventory, entities, schedule,
+#   points_transactions, training_days, activity_logs, points_profiles</code></pre>
+        </div>
+    </div>
+</div>
+
+<!-- htmx success animation -->
+<style>
+    #upload-result:has(.success) {
+        animation: fade-in 0.3s ease-out;
+    }
+    .success {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        margin-top: 12px;
+    }
+    .error-badge {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        margin-top: 12px;
+    }
+</style>
+{% endblock %}

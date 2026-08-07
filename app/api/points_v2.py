@@ -432,8 +432,8 @@ async def get_activity_chart(
         select(
             func.date(ActivityLog.created_at).label("day"),
             func.count(ActivityLog.id).label("total"),
-        func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
-        func.sum(case((ActivityLog.status == "interrupted", 1), else_=0)).label("interrupted"),
+            func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
+            func.sum(case((ActivityLog.status == "interrupted", 1), else_=0)).label("interrupted"),
         )
         .where(ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff)
         .group_by(func.date(ActivityLog.created_at))
@@ -549,6 +549,90 @@ async def get_xp_history(
         values.append(rows.get(d.isoformat(), 0))
 
     return {"labels": labels, "values": values}
+
+
+@router.get("/charts/category-breakdown")
+async def get_category_breakdown(
+    days: int = Query(default=30, ge=1, le=365),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Task category distribution for donut/pie chart."""
+    from app.models.activity_log import ActivityLog
+
+    cutoff = datetime.now(UTC) - timedelta(days=days)
+    result = await db.execute(
+        select(
+            Entity.category,
+            func.count(ActivityLog.id).label("cnt"),
+        )
+        .join(Entity, ActivityLog.entity_id == Entity.id)
+        .where(
+            ActivityLog.user_id == user.id,
+            ActivityLog.created_at >= cutoff,
+        )
+        .group_by(Entity.category)
+        .order_by(func.count(ActivityLog.id).desc())
+    )
+    categories = {}
+    total = 0
+    for row in result.all():
+        cat = row.category or "other"
+        cnt = int(row.cnt or 0)
+        categories[cat] = cnt
+        total += cnt
+
+    return {
+        "labels": list(categories.keys()),
+        "values": list(categories.values()),
+        "total": total,
+    }
+
+
+@router.get("/charts/completion-rate")
+async def get_completion_rate(
+    days: int = Query(default=7, ge=1, le=90),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Completion rate over time for gauge/sparkline."""
+    from app.models.activity_log import ActivityLog
+
+    cutoff = datetime.now(UTC) - timedelta(days=days)
+    result = await db.execute(
+        select(
+            func.date(ActivityLog.created_at).label("day"),
+            func.count(ActivityLog.id).label("total"),
+            func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
+        )
+        .where(ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff)
+        .group_by(func.date(ActivityLog.created_at))
+        .order_by(func.date(ActivityLog.created_at))
+    )
+    rows = {str(r.day): (int(r.completed or 0), int(r.total or 0)) for r in result.all()}
+
+    labels = []
+    rates = []
+    overall_completed = 0
+    overall_total = 0
+    for i in range(days):
+        d = date.today() - timedelta(days=days - 1 - i)
+        labels.append(d.strftime("%a"))
+        c, t = rows.get(d.isoformat(), (0, 0))
+        rate = round(c / max(t, 1) * 100)
+        rates.append(rate)
+        overall_completed += c
+        overall_total += t
+
+    overall_rate = round(overall_completed / max(overall_total, 1) * 100)
+
+    return {
+        "labels": labels,
+        "rates": rates,
+        "overall_rate": overall_rate,
+        "total_tasks": overall_total,
+        "completed_tasks": overall_completed,
+    }
 
 
 # ── HTML Pages ──

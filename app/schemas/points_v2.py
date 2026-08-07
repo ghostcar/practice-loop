@@ -237,12 +237,26 @@ class InventoryItemOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ── Import ──
+# ── Import / Export ──
 
 
 class ImportPayload(BaseModel):
     """Payload for data import from external services."""
 
-    import_type: str  # measurements / inventory / entities / activity_logs
+    import_type: str
+    # measurements / inventory / entities / activity_logs /
+    # points_transactions / training_days / points_profiles
     data: list[dict[str, Any]]
     mode: str = "upsert"  # upsert / insert / replace
+
+
+class ExportPayload(BaseModel):
+    """Request for data export."""
+
+    export_type: str = "all"
+    # all / measurements / inventory / schedule / entities /
+    # points_transactions / training_days / activity_logs
+    format: str = "json"  # json / csv
+    date_from: str | None = None  # ISO date
+    date_to: str | None = None
+    limit: int = Field(default=10000, ge=1, le=100000)
