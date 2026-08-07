@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 28).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 29).
 
 ## Обзор фаз
 | Область | Статус |
@@ -187,7 +187,13 @@
 - [x] SQLite-совместимость: время как datetime.time (не строки), admin URL с trailing slash
 - [x] README.md: структура, установка, архитектура, API, конфигурация, разработка
 
+## CDN → Local Assets (Session 29)
+- [x] tailwindcss.js, htmx.min.js, chart.umd.min.js — загружены в app/static/
+- [x] base.html: все 3 CDN-ссылки заменены на /static/...
+- [x] Docker: статические файлы включены через COPY app/
+- [x] Проверка: все 3 файла отдаются с HTTP 200, 0 CDN-ссылок на главной
+
 ## Следующие шаги
-1. Локальная сборка Tailwind/HTMX/Chart.js без CDN
-2. .env.example + docker-compose.override.yml для dev
-3. Интеграционные тесты (Telegram bot + авто-анализ)
+1. .env.example + docker-compose.override.yml для dev
+2. Интеграционные тесты (Telegram bot + авто-анализ)
+3. Обновление зависимостей (pip-compile -U)

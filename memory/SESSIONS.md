@@ -239,3 +239,14 @@
 - README.md: полная документация (описание, структура, установка, архитектура, API, конфигурация, разработка)
 - 127/127 тестов, ruff 0, format clean, Docker ok
 - Артефакты: +1 тестовый файл, +README.md, изменены main.py, STATUS.md
+
+## 2026-08-07 — Сессия 29: CDN → локальные статические файлы
+- 3 CDN-ссылки в base.html заменены на локальные /static/... файлы:
+  - `https://cdn.tailwindcss.com` → `/static/tailwindcss.js` (407 KB)
+  - `https://unpkg.com/htmx.org@2.0.0` → `/static/htmx.min.js` (49 KB)
+  - `https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js` → `/static/chart.umd.min.js` (205 KB)
+- Dockerfile уже копирует app/ → static-файлы автоматически в образе
+- Нет внешней сетевой зависимости во время работы приложения
+- Проверка: curl -sk /static/* → HTTP 200 для всех трёх, главная страница — 0 CDN refs
+- 127 тестов, ruff 0, Docker ok
+- Артефакты: +3 статических файла в app/static/, изменён base.html
