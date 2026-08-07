@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 18).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 19).
 
 ## Обзор фаз
 | Область | Статус |
@@ -17,6 +17,7 @@
 | Phase 9 — Penalty & Points v2 (штрафы и баллы) | ✅ Завершена |
 | Phase 10 — Telegram Bot v2 (реальный бот) | ✅ Завершена |
 | Phase 11 — Auto-Analysis Scheduler | ✅ Завершена |
+| v0.7 Audit & Interview (R0) | ✅ Завершён |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -77,10 +78,20 @@
 - [x] Schedule page: weekly timeline chart (горизонтальные бары по дням недели)
 - [x] Отпуск = CalendarOverride с шаблоном «Vacation» на диапазон дат
 
+## v0.7 Audit & Interview (R0)
+- [x] Внешний аудит: REMEDIATION_SPEC.md прочитан, 18 дефектов зафиксированы
+- [x] Интервью по 6 ключевым архитектурным решениям (ADR-029–034)
+- [x] AGENTS.md обновлён: приоритет документов, LLM-режимы, актуальные фазы
+- [x] AGENTS_.md удалён (заменён на AGENTS.md)
+- [x] DECISIONS.md: +6 ADR
+- [x] CONTEXT.md: убрано «код не написан», отражён статус
+- [x] DESIGN.md — ожидает создания
+
 ## В работе
-- Ничего. Все 11 фаз завершены.
+- R1 — воспроизводимость и база данных (зависимости, миграции, CI)
 
 ## Следующие шаги
-1. Push на GitHub (`git push --force -u origin main`)
-2. Деплой на VPS, SSL, бэкапы
-3. Points spending: магазин наград, redeem баллов на бонусы
+1. R1: единый dependency source + lock, чистая установка, миграции, CI
+2. R2: безопасность и транзакции (CSRF, object-level auth, идемпотентность)
+3. Push на GitHub (`git push --force -u origin main`)
+4. Деплой на VPS, SSL, бэкапы

@@ -111,3 +111,19 @@
 - Без внешних зависимостей (без APScheduler) — чистый asyncio
 - Запуск/остановка в lifespan: `start_auto_analysis()` / `stop_auto_analysis()`
 - Артефакты: +1 файл (scheduler.py), изменены config.py, main.py
+
+## 2026-08-07 — Сессия 19: v0.7 Аудит и интервью (R0)
+- Прочитаны REMEDIATION_SPEC.md (внешний аудит, 18 дефектов) и AGENTS_.md (новая инструкция)
+- Интервью по 6 ключевым архитектурным решениям:
+  1. Штрафы — оставить как есть (ADR-029)
+  2. LLM-режимы — full + abstract, настраивается в провайдере (ADR-030)
+  3. Entity — оставить единой моделью (ADR-031)
+  4. Training — оставить отдельной страницей (ADR-032)
+  5. Вторичные модули — оставить в главном меню (ADR-033)
+  6. raw_llm_response — опциональное хранение + usage-метрики отдельно (ADR-034)
+- AGENTS.md обновлён: приоритет документов, LLM-режимы, актуальные фазы
+- AGENTS_.md удалён
+- DECISIONS.md: +6 ADR (029–034)
+- CONTEXT.md: убран «код не написан»
+- STATUS.md: секция v0.7 Audit & Interview
+- Артефакты: изменены AGENTS.md, DECISIONS.md, CONTEXT.md, STATUS.md, SESSIONS.md; удалён AGENTS_.md
