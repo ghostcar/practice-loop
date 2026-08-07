@@ -1,74 +1,59 @@
 {% extends "base.html" %}
-{% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-{% endblock %}
 {% block title %}{{ t.get('training_title', 'Training') }} – Practice Loop{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
+<div class="max-w-3xl mx-auto space-y-5">
+    <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold
-                🏋️ {{ t.get('training_title', 'Daily Training') }}
-            </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {{ today.strftime('%A, %d %B %Y') }}
-            </p>
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.get('training_title', 'Daily Training') }}</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ today.strftime('%A, %d %B %Y') }}</p>
         </div>
-        <a href="/dashboard" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-            ← Dashboard
-        </a>
+        <a href="/dashboard" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Dashboard</a>
     </div>
 
-    <!-- Training History Chart -->
-    <div class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">📈 Weekly Training Trend</h3>
-        <canvas id="training-trend" class="w-full h-28"></canvas>
+    <!-- Weekly Trend Chart -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Weekly Completion Trend</h3>
+        <div class="h-48"><canvas id="training-trend"></canvas></div>
     </div>
 
     {% if request.query_params.get('error') %}
-    <div class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+    <div class="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
         <p class="text-sm text-red-700 dark:text-red-300">{{ request.query_params.get('error') }}</p>
     </div>
     {% endif %}
 
     {% if not training_day %}
-    <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div class="text-5xl mb-4">📋</div>
-        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No plan for today yet</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            Let the AI create a balanced training plan with tasks and checklists tailored to your preferences and history.
+    <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+        <svg class="w-10 h-10 mx-auto mb-4 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">No plan for today</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
+            Let the AI create a balanced training plan with tasks and checklists tailored to your preferences.
         </p>
         {% if active_config %}
         <form method="POST" action="/training/plan">
-            <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow transition">
-                ✨ Generate Today's Plan
+            <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
+                Generate Today's Plan
             </button>
         </form>
         {% else %}
-        <p class="text-sm text-amber-600 dark:text-amber-400">⚠️ Configure an LLM provider first</p>
-        <a href="/llm-configs/" class="text-sm text-indigo-600 hover:underline mt-2 inline-block">Set up LLM provider →</a>
+        <p class="text-sm text-amber-600 dark:text-amber-400">Configure an LLM provider first</p>
+        <a href="/llm-configs/" class="text-sm text-indigo-600 hover:underline mt-2 inline-block">Set up LLM provider</a>
         {% endif %}
     </div>
 
     {% elif training_day.status == 'analyzed' %}
-    <div class="space-y-6">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="text-xl">📊</span>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Day Analysis</h2>
-            </div>
-            <p class="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+    <div class="space-y-4">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Day Analysis</h2>
+            <p class="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {{ training_day.analysis_summary or 'No analysis available.' }}
             </p>
         </div>
         {% if training_day.next_day_suggestion %}
-        <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow-sm border border-indigo-200 dark:border-indigo-800 p-6">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="text-xl">🔮</span>
-                <h2 class="text-lg font-semibold text-indigo-900 dark:text-indigo-100">Tomorrow's Suggestion</h2>
-            </div>
-            <div class="text-sm text-indigo-800 dark:text-indigo-200 whitespace-pre-wrap font-sans">
+        <div class="bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-800 p-5">
+            <h2 class="text-lg font-semibold text-indigo-800 dark:text-indigo-200 mb-3">Tomorrow's Suggestion</h2>
+            <div class="text-sm text-indigo-700 dark:text-indigo-300 whitespace-pre-wrap">
                 <p class="mb-2">{{ next_day.get('suggestion_summary', '') if next_day else '' }}</p>
                 {% if next_day and next_day.get('tasks') %}
                 <ul class="list-disc pl-5 space-y-1">
@@ -82,52 +67,47 @@
 
     {% else %}
     {% if training_day.plan_summary %}
-    <div class="mb-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+    <div class="p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
         <p class="text-sm text-indigo-800 dark:text-indigo-200">{{ training_day.plan_summary }}</p>
     </div>
     {% endif %}
 
     {% if logs %}
     {% set total_tasks = logs|length %}
-    {% set completed_tasks = namespace(value=0) %}
-    {% for log in logs %}{% if log.status == 'completed' %}{% set completed_tasks.value = completed_tasks.value + 1 %}{% endif %}{% endfor %}
-    <div class="mb-6 flex items-center gap-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-        <div class="relative w-20 h-20">
-            <svg class="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
-                <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" class="text-gray-200 dark:text-gray-700" stroke-width="8"/>
-                <circle cx="40" cy="40" r="34" fill="none" stroke="url(#ringGrad)" stroke-width="8" stroke-linecap="round"
-                        stroke-dasharray="{{ (213.6 * completed_tasks.value / total_tasks)|round(1) }} 213.6" class="transition-all duration-700"/>
-                <defs>
-                    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/>
-                    </linearGradient>
-                </defs>
+    {% set completed_count = namespace(value=0) %}
+    {% for log in logs %}{% if log.status == 'completed' %}{% set completed_count.value = completed_count.value + 1 %}{% endif %}{% endfor %}
+    <div class="flex items-center gap-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="relative w-16 h-16 flex-shrink-0">
+            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" class="text-slate-200 dark:text-slate-700" stroke-width="6"/>
+                <circle cx="32" cy="32" r="28" fill="none" stroke="#6B57A5" stroke-width="6" stroke-linecap="round"
+                        stroke-dasharray="{{ (175.9 * completed_count.value / total_tasks)|round(1) }} 175.9" class="transition-all duration-700"/>
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-lg font-bold text-gray-900 dark:text-white">{{ completed_tasks.value }}/{{ total_tasks }}</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ completed_count.value }}/{{ total_tasks }}</span>
             </div>
         </div>
         <div>
-            <h3 class="font-semibold text-gray-900 dark:text-white">Daily Progress</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ (completed_tasks.value / total_tasks * 100)|int }}% complete — {{ total_tasks - completed_tasks.value }} remaining
+            <h3 class="font-semibold text-slate-800 dark:text-slate-100">Daily Progress</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">
+                {{ (completed_count.value / total_tasks * 100)|int }}% complete &mdash; {{ total_tasks - completed_count.value }} remaining
             </p>
         </div>
     </div>
     {% endif %}
 
-    <div class="space-y-4">
+    <div class="space-y-3">
         {% for log in logs %}
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border
-                    {% if log.status == 'completed' %}border-green-300 dark:border-green-700{% else %}border-gray-200 dark:border-gray-700{% endif %}
-                    p-5 transition-all">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border
+                    {% if log.status == 'completed' %}border-emerald-300 dark:border-emerald-700{% else %}border-slate-200 dark:border-slate-800{% endif %}
+                    p-4">
             <div class="flex items-start justify-between mb-3">
                 <div>
-                    <h3 class="font-medium text-gray-900 dark:text-white">{{ log.selected_entity_name or 'Untitled Task' }}</h3>
+                    <h3 class="font-medium text-slate-800 dark:text-slate-100">{{ log.selected_entity_name or 'Untitled Task' }}</h3>
                     {% if log.status != 'pending' %}
-                    <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full
-                                 {% if log.status == 'completed' %}bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300
-                                 {% else %}bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300{% endif %}">
+                    <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium
+                                 {% if log.status == 'completed' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
+                                 {% else %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300{% endif %}">
                         {{ log.status }}
                     </span>
                     {% endif %}
@@ -137,22 +117,22 @@
                 {% for st in log.subtasks %}{% if not st.get('is_done') %}{% set all_done.value = false %}{% endif %}{% endfor %}
                 {% if all_done.value %}
                 <form method="POST" action="/training/tasks/{{ log.id }}/complete">
-                    <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">✅ Complete</button>
+                    <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors">Complete</button>
                 </form>
                 {% endif %}
                 {% endif %}
             </div>
 
             {% if log.subtasks %}
-            <div class="space-y-2">
+            <div class="space-y-1.5">
                 {% for st in log.subtasks %}
                 <form method="POST" action="/training/tasks/{{ log.id }}/subtasks/{{ loop.index0 }}/toggle"
-                      class="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition">
-                    <button type="submit" class="mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition
-                                   {% if st.get('is_done') %}bg-indigo-600 border-indigo-600 text-white{% else %}border-gray-300 dark:border-gray-600 hover:border-indigo-400{% endif %}">
-                        {% if st.get('is_done') %}✓{% endif %}
+                      class="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <button type="submit" class="mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
+                                   {% if st.get('is_done') %}bg-indigo-600 border-indigo-600 text-white{% else %}border-slate-300 dark:border-slate-600 hover:border-indigo-400{% endif %}">
+                        {% if st.get('is_done') %}<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>{% endif %}
                     </button>
-                    <span class="text-sm {% if st.get('is_done') %}line-through text-gray-400 dark:text-gray-500{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                    <span class="text-sm {% if st.get('is_done') %}line-through text-slate-400 dark:text-slate-500{% else %}text-slate-700 dark:text-slate-300{% endif %}">
                         {{ st.get('desc', 'Step ' + (loop.index|string)) }}
                     </span>
                 </form>
@@ -164,10 +144,10 @@
             {% set done = namespace(value=0) %}
             {% for st in log.subtasks %}{% if st.get('is_done') %}{% set done.value = done.value + 1 %}{% endif %}{% endfor %}
             <div class="mt-3 flex items-center gap-2">
-                <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div class="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div class="h-full bg-indigo-500 rounded-full transition-all" style="width: {{ (done.value / (log.subtasks|length) * 100)|int }}%"></div>
                 </div>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ done.value }}/{{ log.subtasks|length }}</span>
+                <span class="text-xs text-slate-400 tabular-nums">{{ done.value }}/{{ log.subtasks|length }}</span>
             </div>
             {% endif %}
         </div>
@@ -175,16 +155,16 @@
     </div>
 
     {% if not logs %}
-    <div class="text-center py-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <p class="text-gray-500 dark:text-gray-400">No tasks in this training day. Generate a plan.</p>
+    <div class="text-center py-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+        <p class="text-slate-500 dark:text-slate-400">No tasks in this training day. Generate a plan.</p>
     </div>
     {% endif %}
 
-    <div class="flex gap-3 mt-6">
+    <div class="flex gap-3">
         {% if training_day.status == 'active' or training_day.status == 'completed' %}
         <form method="POST" action="/training/analyze">
-            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg shadow transition">
-                📊 Analyze Day & Plan Tomorrow
+            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors">
+                Analyze Day &amp; Plan Tomorrow
             </button>
         </form>
         {% endif %}
@@ -199,17 +179,16 @@
     try {
         const res = await fetch('/api/v2/charts/completion-rate?days=7');
         const data = await res.json();
-        const ctx = document.getElementById('training-trend').getContext('2d');
-        const color = data.overall_rate >= 75 ? '#10b981' : data.overall_rate >= 40 ? '#f59e0b' : '#ef4444';
-        new Chart(ctx, {
+        new Chart(document.getElementById('training-trend'), {
             type: 'bar',
             data: {
                 labels: data.labels,
                 datasets: [{
                     label: 'Completion %',
                     data: data.rates,
-                    backgroundColor: data.rates.map(r => r >= 75 ? '#10b981' : r >= 40 ? '#f59e0b' : '#ef4444'),
-                    borderRadius: 6,
+                    backgroundColor: data.rates.map(r => r >= 75 ? '#2F7657' : r >= 40 ? '#9A6415' : '#A83B4A'),
+                    borderRadius: 4,
+                    borderSkipped: false,
                 }]
             },
             options: {
@@ -217,16 +196,16 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { backgroundColor: '#1f2937', titleColor: '#f9fafb', bodyColor: '#d1d5db',
+                    tooltip: { backgroundColor: '#1E293B', titleColor: '#F8FAFC', bodyColor: '#CBD5E1', padding: 8, cornerRadius: 6,
                         callbacks: { label: ctx => ctx.raw + '%' } }
                 },
                 scales: {
-                    x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
-                    y: { ticks: { color: '#9ca3af', font: { size: 10 }, callback: v => v + '%' }, grid: { color: '#37415130' }, max: 100 }
+                    x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => v + '%' }, grid: { color: 'rgba(148,163,184,0.12)' }, max: 100 }
                 }
             }
         });
-    } catch(e) { console.warn('Training trend failed:', e); }
+    } catch(e) { console.warn('Training trend:', e); }
 })();
 </script>
 {% endblock %}

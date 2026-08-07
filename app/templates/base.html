@@ -38,13 +38,13 @@
     </script>
     {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+<body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
     <!-- Navbar -->
     <nav class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
             <!-- Logo -->
             <a href="/" class="flex items-center gap-2 group">
-                <span class="text-2xl font-extrabold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent group-hover:from-indigo-400 group-hover:to-purple-500 transition-all duration-300">
+                <span class="text-xl font-bold text-indigo-600 dark:text-indigo-400">
                     {{ t.app_title }}
                 </span>
                 <span class="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">{{ t.app_tagline }}</span>
@@ -58,9 +58,9 @@
                     {% set nav_inactive = "text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
                     <a href="/dashboard" class="{{ nav_class }}{{ nav_active if active_nav == 'dashboard' else nav_inactive }}">{{ t.nav_dashboard }}</a>
                     <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }}">Tasks</a>
-                    <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }}">🏋️ Train</a>
+                    <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }}">Training</a>
                     <a href="/entities/catalog" class="{{ nav_class }}{{ nav_active if active_nav == 'catalog' else nav_inactive }}">Catalog</a>
-                    <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }}">💰</a>
+                    <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }}">Points</a>
                     <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }}">Admin</a>
                     <a href="/auth/logout" class="text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">{{ t.nav_logout }}</a>
                 {% else %}
@@ -118,13 +118,12 @@
     {% endif %}
 
     <!-- Main content -->
-    <main class="max-w-5xl mx-auto px-4 py-4 animate-fade-in">
+    <main class="max-w-5xl mx-auto px-4 py-6">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-200 dark:border-slate-700 mt-auto py-6 text-center text-xs text-slate-400 dark:text-slate-600">
-        {{ t.app_title }} &mdash; private & personal use only
+    <footer class="border-t border-slate-200 dark:border-slate-800 mt-auto py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        {{ t.app_title }} &middot; private &amp; personal use only
     </footer>
     {% block scripts %}{% endblock %}
 </body>

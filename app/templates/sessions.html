@@ -1,39 +1,36 @@
 {% extends "base.html" %}
-{% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-{% endblock %}
 
 {% block content %}
-<div class="animate-fade-in">
-    <div class="flex items-center justify-between mb-6">
+<div class="space-y-5">
+    <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">🎯 Sessions</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Create and manage activity sessions</p>
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Sessions</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Create and manage activity sessions</p>
         </div>
         <form action="/sessions" method="post">
-            <button class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition-all">
+            <button class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors">
                 + New Session
             </button>
         </form>
     </div>
 
     <!-- Session Timeline Chart -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
-        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">📊 Session Activity Timeline</h3>
-        <canvas id="session-timeline" class="w-full h-28"></canvas>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Activity Timeline (14 days)</h3>
+        <div class="h-44"><canvas id="session-timeline"></canvas></div>
     </div>
 
     <div class="space-y-3">
         {% for s in sessions %}
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4
                     {% if s.status == 'active' %}ring-1 ring-emerald-400{% endif %}">
             <div class="flex items-center justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                            {% if s.status == 'created' %}bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300
+                            {% if s.status == 'created' %}bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300
                             {% elif s.status == 'active' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
-                            {% else %}bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400{% endif %}">
+                            {% else %}bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400{% endif %}">
                             {{ s.status }}
                         </span>
                         <span class="text-xs text-slate-400">{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</span>
@@ -43,7 +40,7 @@
                     {% endif %}
                     {% if s.ended_at %}
                     <p class="text-xs text-slate-400">Ended: {{ s.ended_at.strftime('%H:%M') }}
-                        <span class="text-emerald-500 font-mono ml-1">
+                        <span class="text-emerald-500 font-mono ml-1 tabular-nums">
                             ({{ ((s.ended_at - s.started_at).total_seconds() / 60)|int if s.started_at else 0 }} min)
                         </span>
                     </p>
@@ -62,21 +59,19 @@
                     {% endif %}
                 </div>
             </div>
-            <!-- Duration bar for completed sessions -->
             {% if s.status == 'ended' and s.started_at and s.ended_at %}
             {% set dur_min = ((s.ended_at - s.started_at).total_seconds() / 60)|int %}
             <div class="mt-3 flex items-center gap-2">
-                <div class="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full transition-all"
-                         style="width: {{ [dur_min / 3, 100]|min }}%"></div>
+                <div class="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-indigo-500 rounded-full transition-all" style="width: {{ [dur_min / 3, 100]|min }}%"></div>
                 </div>
-                <span class="text-xs text-slate-400 font-mono">{{ dur_min }}m</span>
+                <span class="text-xs text-slate-400 font-mono tabular-nums">{{ dur_min }}m</span>
             </div>
             {% endif %}
         </div>
         {% endfor %}
         {% if not sessions %}
-        <div class="text-center py-12 text-slate-400">No sessions yet. Create one to start tracking!</div>
+        <div class="text-center py-12 text-slate-400 dark:text-slate-500">No sessions yet. Create one to start tracking.</div>
         {% endif %}
     </div>
 </div>
@@ -85,12 +80,10 @@
 {% block scripts %}
 <script>
 (async () => {
-    // Session timeline: show session count per day for last 14 days
     try {
         const res = await fetch('/api/v2/charts/activity?days=14');
         const data = await res.json();
-        const ctx = document.getElementById('session-timeline').getContext('2d');
-        new Chart(ctx, {
+        new Chart(document.getElementById('session-timeline'), {
             type: 'line',
             data: {
                 labels: data.labels,
@@ -98,20 +91,22 @@
                     {
                         label: 'Completed',
                         data: data.completed,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        borderColor: '#2F7657',
+                        backgroundColor: 'rgba(47,118,87,0.1)',
                         fill: true,
-                        tension: 0.4,
+                        tension: 0.3,
                         pointRadius: 3,
+                        pointBackgroundColor: '#2F7657',
                     },
                     {
-                        label: 'Interrupted',
+                        label: 'Stopped',
                         data: data.interrupted,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239,68,68,0.05)',
+                        borderColor: '#A83B4A',
+                        backgroundColor: 'rgba(168,59,74,0.06)',
                         fill: true,
-                        tension: 0.4,
+                        tension: 0.3,
                         pointRadius: 3,
+                        pointBackgroundColor: '#A83B4A',
                     },
                 ]
             },
@@ -119,16 +114,17 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { labels: { color: '#9ca3af', usePointStyle: true, font: { size: 11 } } },
-                    tooltip: { backgroundColor: '#1f2937', titleColor: '#f9fafb', bodyColor: '#d1d5db' }
+                    legend: { labels: { color: '#94a3b8', usePointStyle: true, font: { size: 11 }, padding: 16 } },
+                    tooltip: { backgroundColor: '#1E293B', titleColor: '#F8FAFC', bodyColor: '#CBD5E1', padding: 8, cornerRadius: 6 }
                 },
                 scales: {
-                    x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
-                    y: { ticks: { color: '#9ca3af', stepSize: 1, font: { size: 10 } }, grid: { color: '#33415520' } }
-                }
+                    x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8', stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.12)' } }
+                },
+                interaction: { intersect: false, mode: 'index' }
             }
         });
-    } catch(e) { console.warn('Session timeline failed:', e); }
+    } catch(e) { console.warn('Session timeline:', e); }
 })();
 </script>
 {% endblock %}
