@@ -1,6 +1,6 @@
 """JSON repair pipeline: json_repair → regex → 3 retries → error.
 
-Per AGENT.md §3.2:
+Per AGENTS.md §3.2:
 1. json.loads
 2. json_repair
 3. Regex extraction from markdown block

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import date, datetime, time
 from typing import Any
 
@@ -87,12 +88,12 @@ class PointsTransactionCreate(BaseModel):
 
 
 class PointsTransactionOut(BaseModel):
-    id: str
-    user_id: str
+    id: uuid.UUID
+    user_id: uuid.UUID
     amount: int
     transaction_type: str
     reason: str | None
-    entity_id: str | None
+    entity_id: uuid.UUID | None
     meta: dict | None
     created_at: datetime
 
@@ -106,7 +107,7 @@ class PointsProfileCreate(BaseModel):
 
 
 class PointsProfileOut(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
     config: dict
     is_default: bool
@@ -137,13 +138,13 @@ class ScheduleRuleCreate(BaseModel):
 
 
 class ScheduleRuleOut(BaseModel):
-    id: str
-    user_id: str
-    entity_id: str | None
+    id: uuid.UUID
+    user_id: uuid.UUID
+    entity_id: uuid.UUID | None
     entity_name: str | None = None
     day_of_week: int
-    start_time: str
-    end_time: str | None
+    start_time: time
+    end_time: time | None
     task_type: str
     recurring: bool
     notes: str | None
@@ -169,8 +170,8 @@ class BodyMeasurementCreate(BaseModel):
 
 
 class BodyMeasurementOut(BaseModel):
-    id: str
-    user_id: str
+    id: uuid.UUID
+    user_id: uuid.UUID
     measured_date: date
     time_of_day: str
     weight: float | None
@@ -220,8 +221,8 @@ class InventoryItemUpdate(BaseModel):
 
 
 class InventoryItemOut(BaseModel):
-    id: str
-    user_id: str
+    id: uuid.UUID
+    user_id: uuid.UUID
     category: str
     name: str
     description: str | None

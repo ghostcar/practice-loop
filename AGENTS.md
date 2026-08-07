@@ -1,4 +1,4 @@
-# AGENT.md — Рабочая инструкция: Consensual Adult Activity & LLM Tracker
+# AGENTS.md — Рабочая инструкция: Consensual Adult Activity & LLM Tracker
 
 > Актуальная спецификация: `tracker-spec.md`. При расхождении — приоритет у этого файла.
 

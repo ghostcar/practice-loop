@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
@@ -432,8 +432,8 @@ async def get_activity_chart(
         select(
             func.date(ActivityLog.created_at).label("day"),
             func.count(ActivityLog.id).label("total"),
-            func.sum(func.case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
-            func.sum(func.case((ActivityLog.status == "interrupted", 1), else_=0)).label("interrupted"),
+        func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
+        func.sum(case((ActivityLog.status == "interrupted", 1), else_=0)).label("interrupted"),
         )
         .where(ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff)
         .group_by(func.date(ActivityLog.created_at))

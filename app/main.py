@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Tracker", version="0.5.0", lifespan=lifespan)
+app = FastAPI(title="Practice Loop", version="0.5.0", lifespan=lifespan)
 
 
 # --- Mount static files ---

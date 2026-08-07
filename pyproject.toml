@@ -1,7 +1,7 @@
 [project]
-name = "tracker"
-version = "0.1.0"
-description = "Consensual Adult Activity & LLM Tracker"
+name = "practice-loop"
+version = "0.5.0"
+description = "Practice Loop — Consensual Adult Activity & LLM Tracker"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = []
