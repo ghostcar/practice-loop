@@ -42,5 +42,11 @@ Thumbs.db
 # Docker
 .docker/
 
+# Database files
+*.db
+
+# User data (examples/)
+examples/
+
 # Misc
 *.log
