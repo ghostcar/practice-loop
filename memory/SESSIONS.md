@@ -155,3 +155,13 @@
 - UserEntityOptIn: next_due_at, retry_not_before_at (миграция 011)
 - Tasks: показаны due practices, авто next_due/retry после complete/interrupt
 - Артефакты: +4 файла (2 миграции, scheduler, services/__init__), изменены 9 файлов
+
+## 2026-08-07 — Сессия 23: R4 — LLM planner + фиксы типов
+- LLMProviderConfig.llm_mode (full/abstract) — переключается в настройках провайдера
+- context_builder: format_context_abstract() для opaque-режима (только ID и категории)
+- app/llm/validator.py: валидация entity_id в allowed set, схемы параметров
+- Pipeline: авто-выбор формата по llm_mode, валидация после парсинга
+- Deterministic fallback: /tasks/generate-deterministic — выбор из due practices без LLM
+- tasks.html: список due practices с цветовой кодировкой, кнопка fallback
+- Миграция 012: subtasks String→JSON, next_day_suggestion Text→JSONB — типы исправлены
+- Артефакты: +2 файла (validator.py, миграция 012), изменены 4 файла

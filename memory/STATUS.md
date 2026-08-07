@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 22).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 23).
 
 ## Обзор фаз
 | Область | Статус |
@@ -21,6 +21,7 @@
 | R1 — Воспроизводимость | ✅ Завершён |
 | R2 — Безопасность и транзакции | ✅ Завершён |
 | R3 — Каталог, модерация, scheduler | ✅ Завершён |
+| R4 — LLM planner | ✅ Завершён |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -98,7 +99,7 @@
 - [x] Версия 0.7.0 в pyproject.toml и main.py
 - [x] create_all с предупреждением (Alembic для production)
 - [x] CI: ruff lint + pytest на PostgreSQL 15 (.github/workflows/ci.yml)
-- [ ] ORM/миграции: subtasks String→JSON, next_day_suggestion Text→JSONB (известно, не блокирует)
+- [x] Миграция 012: subtasks String→JSON, next_day_suggestion Text→JSONB исправлены
 
 ## R2 — Безопасность
 - [x] app/security.py: CSRF (double-submit cookie), OwnershipChecker, complete_once/interrupt_once
@@ -119,10 +120,19 @@
 - [x] UserEntityOptIn.next_due_at + retry_not_before_at (миграция 011)
 - [x] Tasks page: due practices + авто-установка сроков после complete/interrupt
 
+## R4 — LLM planner
+- [x] LLMProviderConfig.llm_mode (full/abstract) + миграция 012
+- [x] context_builder: format_context_abstract() — opaque IDs
+- [x] app/llm/validator.py — проверка entity_id в allowed set
+- [x] Pipeline: валидатор ответа, выбор формата по llm_mode
+- [x] Deterministic fallback: /tasks/generate-deterministic
+- [x] tasks.html: due practices + кнопка «Pick from due (no LLM)»
+- [x] Миграция 012: subtasks + next_day_suggestion типы исправлены
+
 ## В работе
-- R4 — LLM planner (далее по REMEDIATION_SPEC)
+- Ничего. R0–R4 завершены.
 
 ## Следующие шаги
-1. R4: LLM planner (abstract/full режимы, валидация ответа)
-2. Push на GitHub (`git push --force -u origin main`)
-3. Деплой на VPS, SSL, бэкапы
+1. Push на GitHub (`git push --force -u origin main`)
+2. Деплой на VPS, SSL, бэкапы
+3. R5 — Новый frontend shell (DESIGN.md)
