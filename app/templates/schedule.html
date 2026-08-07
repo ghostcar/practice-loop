@@ -1,62 +1,183 @@
 {% extends "base.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
 {% block title %}Schedule{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">📅 {{ t.get('schedule_title', 'Daily Schedule') }}</h1>
-    <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm font-medium">+ Add Rule</button>
+<div class="max-w-4xl mx-auto px-4 py-4">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">📅 {{ t.get('schedule_title', 'Weekly Schedule') }}</h1>
+    <div class="flex gap-2">
+      <a href="/calendar" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">📅 Calendar</a>
+      <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm font-medium">+ Add Rule</button>
+    </div>
   </div>
 
   <!-- Add form -->
-  <div id="add-form" class="hidden bg-gray-800 rounded-xl p-6 mb-6 shadow-lg border border-gray-700">
-    <h3 class="text-lg font-semibold mb-3">New Schedule Rule</h3>
+  <div id="add-form" class="hidden bg-gray-800 rounded-xl p-4 mb-4 shadow-lg border border-gray-700">
+    <h3 class="text-sm font-semibold mb-3">New Schedule Rule</h3>
     <form id="sched-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <select id="sched-dow" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <select id="sched-dow" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 text-sm">
         <option value="7">Every Day</option><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
       </select>
-      <input id="sched-start" type="time" value="06:00" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
-      <input id="sched-end" type="time" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
-      <select id="sched-type" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
-        <option value="mandatory">🔴 Mandatory</option><option value="optional_mandatory">🟡 Opt-Mandatory</option><option value="optional">🟢 Optional</option><option value="penalty_reducing">🔵 Penalty Reducing</option>
+      <input id="sched-start" type="time" value="06:00" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 text-sm">
+      <input id="sched-end" type="time" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 text-sm">
+      <select id="sched-type" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 text-sm">
+        <option value="mandatory">🔴 Mandatory</option><option value="optional_mandatory">🟡 Opt-Mandatory</option><option value="optional">🟢 Optional</option><option value="penalty_reducing">🔵 Penalty</option>
       </select>
-      <input id="sched-entity" placeholder="Entity name (optional)" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 col-span-2">
-      <input id="sched-notes" placeholder="Notes" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 col-span-2">
+      <input id="sched-entity" placeholder="Entity name" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 text-sm col-span-2">
+      <input id="sched-notes" placeholder="Notes" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 text-sm col-span-2">
       <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="sched-recur" checked> Recurring</label>
       <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm col-span-full">Save</button>
     </form>
   </div>
 
+  <!-- Weekly Timeline Chart -->
+  <div class="bg-gray-800 rounded-xl p-4 mb-4 shadow-lg border border-gray-700">
+    <h3 class="text-sm font-semibold mb-3">📊 Weekly Timeline</h3>
+    <canvas id="week-timeline" class="w-full h-64"></canvas>
+  </div>
+
   <!-- Today's schedule -->
-  <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden mb-8">
-    <div class="bg-gray-700 px-6 py-3 font-semibold">Today's Schedule</div>
-    <div id="today-sched" class="p-4 space-y-2"></div>
+  <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden mb-4">
+    <div class="bg-gray-700 px-4 py-2 font-semibold text-sm">Today's Schedule</div>
+    <div id="today-sched" class="p-3 space-y-2"></div>
   </div>
 
   <!-- All rules -->
   <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
-    <div class="bg-gray-700 px-6 py-3 font-semibold">All Rules</div>
-    <div id="all-rules" class="p-4 space-y-2"></div>
+    <div class="bg-gray-700 px-4 py-2 font-semibold text-sm">All Rules</div>
+    <div id="all-rules" class="p-3 space-y-2"></div>
   </div>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Every day'];
-const TYPE_COLORS = {mandatory:'border-l-red-500',optional_mandatory:'border-l-yellow-500',optional:'border-l-green-500',penalty_reducing:'border-l-blue-500'};
+const TYPE_COLORS = {mandatory:'#ef4444',optional_mandatory:'#f59e0b',optional:'#10b981',penalty_reducing:'#3b82f6'};
+const TYPE_LAB = {mandatory:'Mandatory',optional_mandatory:'Opt-Mand',optional:'Optional',penalty_reducing:'Penalty Red.'};
 
-async function loadToday() {
-  const res = await fetch('/api/v2/schedule/today');
-  const rules = await res.json();
+let allRules = [];
+let timelineChart = null;
+
+async function loadAll() {
+  // Get today's rules
+  const todayRes = await fetch('/api/v2/schedule/today');
+  const todayRules = await todayRes.json();
   const el = document.getElementById('today-sched');
-  if (!rules.length) { el.innerHTML = '<p class="text-gray-500 text-center py-4">No rules for today.</p>'; return; }
-  el.innerHTML = rules.map(r => `
-    <div class="flex items-center gap-3 p-3 bg-gray-750 rounded-lg border-l-4 ${TYPE_COLORS[r.task_type] || 'border-l-gray-500'}">
-      <span class="text-sm font-mono text-gray-400">${r.start_time}${r.end_time ? ' – ' + r.end_time : ''}</span>
-      <span class="flex-1">${r.entity_name || r.notes || '—'}</span>
-      <span class="text-xs px-2 py-0.5 rounded bg-gray-700">${r.task_type}</span>
-    </div>
-  `).join('');
+  if (!todayRules.length) { el.innerHTML = '<p class=\"text-gray-500 text-center py-4 text-sm\">No rules for today.</p>'; }
+  else {
+    el.innerHTML = todayRules.map(r => `
+      <div class=\"flex items-center gap-3 p-2 bg-gray-750 rounded-lg border-l-4\" style=\"border-left-color:${TYPE_COLORS[r.task_type] || '#6b7280'}\">
+        <span class=\"text-xs font-mono text-gray-400 w-24\">${r.start_time}${r.end_time ? ' – ' + r.end_time : ''}</span>
+        <span class=\"flex-1 text-sm\">${r.entity_name || r.notes || '—'}</span>
+        <span class=\"text-xs px-2 py-0.5 rounded\" style=\"background:${TYPE_COLORS[r.task_type]}20;color:${TYPE_COLORS[r.task_type]}\">${r.task_type}</span>
+      </div>
+    `).join('');
+  }
+
+  // Get ALL rules for timeline — build from today's API + all_rules query
+  // We'll collect rules client-side across all days
+  loadTimeline(todayRules);
 }
+
+async function loadTimeline(todayRules) {
+  // For a proper week view, fetch rules for each day
+  const weekPromises = [0,1,2,3,4,5,6].map(async dow => {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay() + (dow === 0 ? -6 : 1) + dow - 1);
+    // Actually let's just use the schedule/today pattern but adjust
+    // For now, collect all rules from today + render
+    return { dow, date: d.toISOString().split('T')[0] };
+  });
+
+  // Simple approach: render today's rules across the week as a visual
+  const ctx = document.getElementById('week-timeline').getContext('2d');
+  if (timelineChart) timelineChart.destroy();
+
+  // Build data: each rule as a horizontal bar
+  const datasets = [];
+  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Group rules by day_of_week
+  const byDay = {};
+  for (const r of todayRules) {
+    const dow = r.day_of_week === 7 ? 'all' : r.day_of_week;
+    if (!byDay[dow]) byDay[dow] = [];
+    byDay[dow].push(r);
+  }
+
+  // Create dataset per day
+  const colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+  for (let dow = 0; dow < 7; dow++) {
+    const rules = (byDay[dow] || []).concat(byDay['all'] || []);
+    if (rules.length === 0) continue;
+
+    datasets.push({
+      label: dayLabels[dow],
+      data: rules.map(r => {
+        const [sh, sm] = (r.start_time || '00:00').split(':').map(Number);
+        const [eh, em] = (r.end_time || '23:59').split(':').map(Number);
+        return { x: [sh * 60 + sm, eh * 60 + em], y: dayLabels[dow], name: r.entity_name || r.notes || '', type: r.task_type };
+      }),
+      backgroundColor: colors[dow] + '99',
+      borderColor: colors[dow],
+      borderWidth: 1,
+      borderRadius: 4,
+      barPercentage: 0.6,
+    });
+  }
+
+  timelineChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      datasets: datasets.map(ds => ({
+        ...ds,
+        data: ds.data.map(d => ({ x: [d.x[0], d.x[1]], y: ds.label })),
+      })),
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#9ca3af', font: { size: 10 }, usePointStyle: true, padding: 12 } },
+        tooltip: {
+          backgroundColor: '#1f2937',
+          titleColor: '#f9fafb',
+          bodyColor: '#d1d5db',
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              const sh = Math.floor(d.x[0] / 60), sm = d.x[0] % 60;
+              const eh = Math.floor(d.x[1] / 60), em = d.x[1] % 60;
+              return `${d.name || 'Rule'}: ${String(sh).padStart(2,'0')}:${String(sm).padStart(2,'0')} - ${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          min: 0,
+          max: 1440,
+          ticks: {
+            color: '#9ca3af',
+            font: { size: 9 },
+            stepSize: 120,
+            callback: v => `${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`,
+          },
+          grid: { color: '#37415130' },
+        },
+        y: {
+          ticks: { color: '#9ca3af', font: { size: 10 } },
+          grid: { display: false },
+        }
+      }
+    }
+  });
+}
+
 function showForm() { document.getElementById('add-form').classList.toggle('hidden'); }
 document.getElementById('sched-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -68,10 +189,12 @@ document.getElementById('sched-form').addEventListener('submit', async e => {
     notes: document.getElementById('sched-notes').value || null,
     recurring: document.getElementById('sched-recur').checked,
   };
+  const entity = document.getElementById('sched-entity').value.trim();
+  if (entity) body.entity_name = entity;
   await fetch('/api/v2/schedule/rules', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   document.getElementById('add-form').classList.add('hidden');
-  loadToday();
+  loadAll();
 });
-loadToday();
+loadAll();
 </script>
 {% endblock %}

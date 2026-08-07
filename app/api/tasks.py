@@ -1,10 +1,12 @@
 import uuid
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.calendar import get_day_schedule, is_available
 from app.auth import get_current_user
 from app.database import get_db
 from app.gamification.handler import on_task_completed, on_task_interrupted
@@ -43,6 +45,10 @@ async def tasks_page(
     # Check if there's an active config
     active_config = await get_active_llm_config(db, user.id)
 
+    # Get today's calendar schedule
+    today_schedule = await get_day_schedule(db, user.id, date.today())
+    now_available, now_policy, now_label, _ = await is_available(db, user.id, datetime.now(), 60, "active")
+
     return templates.TemplateResponse(
         request=request,
         name="tasks.html",
@@ -55,6 +61,10 @@ async def tasks_page(
             "recent_logs": recent_logs,
             "active_config": active_config,
             "error": error,
+            "today_schedule": today_schedule,
+            "now_available": now_available,
+            "now_policy": now_policy,
+            "now_label": now_label,
         },
     )
 
