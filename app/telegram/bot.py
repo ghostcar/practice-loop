@@ -1,5 +1,7 @@
-"""Telegram bot — aiogram 3.x, webhook, real task generation & gamification."""
+"""Telegram bot — aiogram 3.x, webhook/polling, real task generation & gamification."""
 
+import asyncio
+import contextlib
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -535,6 +537,36 @@ async def tg_webhook(request: Request):
         logger.error(f"Telegram webhook error: {e}")
 
     return {"status": "ok"}
+
+
+# ── Polling mode (local dev) ───────────────────────────────────────
+
+_polling_task: "asyncio.Task | None" = None
+
+
+async def start_polling() -> None:
+    """Start long-polling for local development. Runs as a background task."""
+    global _polling_task
+    if bot is None or dp is None:
+        logger.warning("Polling requested but bot not configured (missing tg_bot_token)")
+        return
+
+    # Delete any existing webhook to avoid conflicts
+    await bot.delete_webhook(drop_pending_updates=True)
+
+    _polling_task = asyncio.create_task(dp.start_polling(bot))
+    logger.info("Telegram polling started (local dev mode)")
+
+
+async def stop_polling() -> None:
+    """Stop polling gracefully."""
+    global _polling_task
+    if _polling_task:
+        _polling_task.cancel()
+        with contextlib.suppress(Exception):
+            await _polling_task
+        _polling_task = None
+        logger.info("Telegram polling stopped")
 
 
 # ── Set webhook on startup ─────────────────────────────────────────

@@ -19,7 +19,7 @@ from app.auth import get_optional_user
 from app.config import settings
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.telegram.bot import setup_webhook, tg_router
+from app.telegram.bot import setup_webhook, start_polling, stop_polling, tg_router
 from app.templates_setup import templates
 
 
@@ -37,11 +37,17 @@ async def lifespan(app: FastAPI):
 
     templates.env.cache = None
 
-    # Set Telegram webhook
-    base_url = getattr(settings, "tg_webhook_base_url", "https://localhost:8443")
-    await setup_webhook(base_url)
+    # Telegram: webhook (production) or polling (local dev)
+    if getattr(settings, "tg_polling", False):
+        await start_polling()
+    else:
+        base_url = getattr(settings, "tg_webhook_base_url", "https://localhost:8443")
+        await setup_webhook(base_url)
 
     yield
+
+    # Shutdown: stop polling if active
+    await stop_polling()
 
 
 app = FastAPI(title="Practice Loop", version="0.5.0", lifespan=lifespan)
