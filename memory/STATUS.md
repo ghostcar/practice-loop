@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 29).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 30).
 
 ## Обзор фаз
 | Область | Статус |
@@ -187,13 +187,13 @@
 - [x] SQLite-совместимость: время как datetime.time (не строки), admin URL с trailing slash
 - [x] README.md: структура, установка, архитектура, API, конфигурация, разработка
 
-## CDN → Local Assets (Session 29)
-- [x] tailwindcss.js, htmx.min.js, chart.umd.min.js — загружены в app/static/
-- [x] base.html: все 3 CDN-ссылки заменены на /static/...
-- [x] Docker: статические файлы включены через COPY app/
-- [x] Проверка: все 3 файла отдаются с HTTP 200, 0 CDN-ссылок на главной
+## Интеграционные тесты + Обновление зависимостей (Session 30)
+- [x] test_scheduler.py: 8 тестов (_parse_time, lifecycle, training days, auto-analysis, cross-user)
+- [x] test_telegram_bot.py: 10 тестов (link code, status, get_user_by_chat, webhook, send_notification)
+- [x] requirements.txt + requirements.lock — обновлены (102 пакета)
+- [x] 153/153 тестов, ruff 0, format clean, Docker ok
 
 ## Следующие шаги
 1. .env.example + docker-compose.override.yml для dev
-2. Интеграционные тесты (Telegram bot + авто-анализ)
-3. Обновление зависимостей (pip-compile -U)
+2. CI: GitHub Actions workflow с PostgreSQL (проверить что работает)
+3. Обновление статических файлов (Chart.js 4.4→4.x, HTMX 2.0→2.x)

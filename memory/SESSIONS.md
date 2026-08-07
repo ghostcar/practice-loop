@@ -250,3 +250,24 @@
 - Проверка: curl -sk /static/* → HTTP 200 для всех трёх, главная страница — 0 CDN refs
 - 127 тестов, ruff 0, Docker ok
 - Артефакты: +3 статических файла в app/static/, изменён base.html
+
+## 2026-08-07 — Сессия 30: Интеграционные тесты + Обновление зависимостей
+- test_scheduler.py (8 тестов):
+  - _parse_time: 6 параметризованных кейсов (23:00, 00:00, 12:30, 06:05, leading spaces, overflow 25:99)
+  - Scheduler lifecycle: start/stop без ошибок, double-start идемпотентен
+  - Training day lifecycle: создание через API (не 404), статусы, связь с ActivityLog
+  - Multiple training days: несколько дней на одного пользователя
+  - Auto-analysis: noop когда нечего анализировать, находит active дни
+  - Cross-user isolation: запрос анализа не смешивает пользователей
+- test_telegram_bot.py (10 тестов):
+  - POST /profile/telegram-link-code → 6-символьный код, сохраняется в БД
+  - Expiry: 25-35 минут, SQLite naive datetime
+  - GET /profile/telegram-status: linked false/true
+  - Bot get_user_by_chat: found/not found (прямой SQL без импорта из bot.py)
+  - _require_user логика: linked user найден, unlinked → None
+  - Webhook: без секрета → bot not configured
+  - send_telegram_notification: False когда бот не настроен
+  - Кросс-пользовательская изоляция кода привязки
+- requirements.txt + requirements.lock: перегенерированы (102 пакета)
+- 153/153 тестов, ruff 0, format clean, Docker ok
+- Артефакты: +2 тестовых файла, обновлены requirements.txt + requirements.lock
