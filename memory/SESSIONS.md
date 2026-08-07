@@ -215,3 +215,27 @@
 - Миграция 013: training_days FK, opt-in unique, active session partial index
 - 105/105 тестов с CSRF, ruff 0, format clean, Docker ok
 - Артефакты: +2 миграции, +requirements.lock, изменены 12 файлов
+
+## 2026-08-07 — Сессия 28: Cross-user auth тесты + README
+- test_cross_user_auth.py: 22 теста межпользовательской авторизации
+  - Entity gamification config: чтение/обновление приватных практик → 404
+  - Entity opt-in: нельзя подписаться на приватную практику → 404
+  - Calendar: удаление чужих окон/шаблонов, создание override на чужом шаблоне → 404
+  - Schedule rules: удаление чужих правил → 404
+  - Inventory: обновление/удаление чужих предметов → 404
+  - Points profiles: удаление чужих профилей → 404
+  - Penalty redemptions: завершение чужих отработок → 404
+  - Sessions: старт/стоп чужих сессий → 303 (status unchanged)
+  - Notifications: отметка чужих уведомлений → 303 (is_read unchanged)
+  - LLM configs: удаление чужих конфигов → 404
+  - Training: завершение/переключение чужих задач → 404
+  - Tasks: complete/interrupt чужих логов → 404
+  - Admin: не-админ GET /admin/ → 403, POST /admin/seed-entities → 403
+  - CSRF: POST без X-CSRF-Token → 403
+- CSRF middleware fix: HTTPException → JSONResponse (try/except в main.py)
+  - Раньше HTTPException из verify_csrf пропагировался необработанным
+  - Теперь возвращает JSONResponse с кодом 403
+- SQLite-совместимость в тестах: time(9,0) вместо "09:00", /admin/ с trailing slash
+- README.md: полная документация (описание, структура, установка, архитектура, API, конфигурация, разработка)
+- 127/127 тестов, ruff 0, format clean, Docker ok
+- Артефакты: +1 тестовый файл, +README.md, изменены main.py, STATUS.md
