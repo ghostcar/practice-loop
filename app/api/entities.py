@@ -185,9 +185,14 @@ async def toggle_opt_in(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Set or update opt-in preference for an entity."""
-    # Verify entity exists
-    ent_result = await db.execute(select(Entity).where(Entity.id == entity_id))
+    """Set or update opt-in preference for an entity (public or owned only)."""
+    # Verify entity exists AND is public or owned by user
+    ent_result = await db.execute(
+        select(Entity).where(
+            Entity.id == entity_id,
+            Entity.is_public.is_(True) | (Entity.owner_id == user.id),
+        )
+    )
     if ent_result.scalar_one_or_none() is None:
         raise HTTPException(status_code=404, detail="Entity not found")
 

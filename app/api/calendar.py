@@ -307,9 +307,12 @@ async def delete_window(
     user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(AvailabilityWindow).where(
+        select(AvailabilityWindow)
+        .join(CalendarTemplate)
+        .where(
             AvailabilityWindow.id == window_id,
             AvailabilityWindow.template_id == template_id,
+            CalendarTemplate.user_id == user.id,
         )
     )
     w = result.scalar_one_or_none()

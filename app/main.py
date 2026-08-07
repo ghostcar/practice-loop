@@ -35,9 +35,10 @@ async def lifespan(app: FastAPI):
     from app.database import engine
     from app.models import Base
 
-    logger.warning("Using create_all() for dev convenience — run 'alembic upgrade head' for production")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if not settings.database_url.startswith("postgresql://"):
+        logger.warning("Using create_all() for dev convenience — run 'alembic upgrade head' for production")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     # Disable Jinja2 caching to avoid unhashable dict errors with i18n
     from app.templates_setup import templates
@@ -62,6 +63,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Practice Loop", version="0.7.0", lifespan=lifespan)
+
+# --- CSRF middleware (must be added before startup) ---
+from app.security import verify_csrf
+
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    if request.url.path.startswith("/static") or request.url.path == "/healthz":
+        return await call_next(request)
+    verify_csrf(request)
+    return await call_next(request)
 
 
 # --- Mount static files ---

@@ -31,12 +31,26 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         // HTMX: auto-include CSRF token in all state-changing requests
-        document.body.addEventListener('htmx:configRequest', function(evt) {
-            var token = document.querySelector('meta[name="csrf-token"]');
-            if (token) evt.detail.headers['X-CSRF-Token'] = token.content;
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.addEventListener('htmx:configRequest', function(evt) {
+                var token = document.querySelector('meta[name="csrf-token"]');
+                if (token) evt.detail.headers['X-CSRF-Token'] = token.content;
+            });
         });
+        // XSS-safe HTML escaping helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
     </script>
     {% block head %}{% endblock %}
+    <style>
+        *,*::before,*::after{box-sizing:border-box}
+        html{transition:background-color .3s,color .3s}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    </style>
 </head>
 <body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
     <!-- Navbar -->

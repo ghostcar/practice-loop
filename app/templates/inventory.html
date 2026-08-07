@@ -63,14 +63,14 @@ async function loadInventory(cat, shopOnly) {
     <div class="bg-white dark:bg-slate-900 rounded-lg p-4 flex justify-between items-center border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(i.category)}">${i.category}</span>
-          <span class="font-medium text-slate-800 dark:text-slate-100">${i.name}</span>
-          <span class="text-xs font-medium ${statusBadge(i.status)}">${i.status}</span>
+          <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>
+          <span class="font-medium text-slate-800 dark:text-slate-100">${escapeHtml(i.name)}</span>
+          <span class="text-xs font-medium ${statusBadge(escapeHtml(i.status))}">${escapeHtml(i.status)}</span>
           ${i.is_shopping_list ? '<span class="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">Shopping</span>' : ''}
         </div>
         <div class="text-xs text-slate-400 mt-1">Qty: ${i.quantity}/${i.quantity_needed} &middot; Priority: ${i.priority}</div>
       </div>
-      <button onclick="del('${i.id}')" class="text-red-400 hover:text-red-500 text-sm px-2">Delete</button>
+      <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">Delete</button>
     </div>
   `).join('') || '<p class="text-slate-400 dark:text-slate-500 text-center py-8">No items yet.</p>';
 }

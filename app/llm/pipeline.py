@@ -317,7 +317,7 @@ async def analyze_training_day(
         json_mode=True,
     )
     next_parsed = parse_llm_json(next_result["content"], is_last_attempt=True)
-    training_day.next_day_suggestion = json.dumps(next_parsed, ensure_ascii=False)
+    training_day.next_day_suggestion = next_parsed
     training_day.status = "analyzed"
     training_day.analyzed_at = datetime.now(UTC)
 

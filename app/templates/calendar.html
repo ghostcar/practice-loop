@@ -110,16 +110,16 @@ async function loadData() {
     const tRes = await fetch('/calendar/templates');
     const templates = await tRes.json();
     document.getElementById('template-list').innerHTML = templates.map(t =>
-        `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-slate-400">${t.name} ${t.is_default ? '(default)' : ''} &mdash; ${t.windows.length} windows</span><button onclick="delTpl('${t.id}')" class="text-red-400 hover:text-red-300 text-xs">Delete</button></div>`
+        `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-slate-400">${escapeHtml(t.name)} ${t.is_default ? '(default)' : ''} &mdash; ${t.windows.length} windows</span><button onclick="delTpl('${escapeHtml(String(t.id))}')" class="text-red-400 hover:text-red-300 text-xs">Delete</button></div>`
     ).join('') || '<span class="text-slate-400">No templates</span>';
 
     const sel = document.getElementById('ovr-tpl');
-    sel.innerHTML = templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    sel.innerHTML = templates.map(t => `<option value="${escapeHtml(String(t.id))}">${escapeHtml(t.name)}</option>`).join('');
 
     const oRes = await fetch('/calendar/overrides');
     const overrides = await oRes.json();
     document.getElementById('override-list').innerHTML = overrides.map(o =>
-        `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-slate-400">${o.label || o.template_name}: ${o.start_date} &rarr; ${o.end_date}</span><button onclick="delOvr('${o.id}')" class="text-red-400 hover:text-red-300 text-xs">Delete</button></div>`
+        `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-slate-400">${escapeHtml(String(o.label || o.template_name))}: ${o.start_date} &rarr; ${o.end_date}</span><button onclick="delOvr('${escapeHtml(String(o.id))}')" class="text-red-400 hover:text-red-300 text-xs">Delete</button></div>`
     ).join('') || '<span class="text-slate-400">No overrides</span>';
 }
 

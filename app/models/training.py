@@ -3,7 +3,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -28,9 +28,7 @@ class TrainingDay(Base):
     )  # planned / active / completed / analyzed
     plan_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     analysis_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    next_day_suggestion: Mapped[dict | None] = mapped_column(
-        Text, nullable=True
-    )  # JSON string — LLM's plan for tomorrow
+    next_day_suggestion: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # JSON — LLM's plan for tomorrow
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

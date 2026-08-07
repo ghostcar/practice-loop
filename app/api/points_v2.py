@@ -60,8 +60,13 @@ async def get_gamification_config(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Get gamification config for an entity."""
-    result = await db.execute(select(Entity).where(Entity.id == entity_id))
+    """Get gamification config for an entity (public or owned)."""
+    result = await db.execute(
+        select(Entity).where(
+            Entity.id == entity_id,
+            Entity.is_public.is_(True) | (Entity.owner_id == user.id),
+        )
+    )
     entity = result.scalar_one_or_none()
     if not entity:
         raise HTTPException(404, "Entity not found")

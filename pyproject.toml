@@ -27,6 +27,7 @@ dependencies = [
     "tiktoken>=0.7,<0.8",
     "aiogram>=3.7,<3.8",
     "python-dotenv>=1.0,<1.1",
+    "aiosqlite>=0.20,<0.21",
 ]
 
 [project.optional-dependencies]
