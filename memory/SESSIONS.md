@@ -103,3 +103,11 @@
 - lifespan: автоматический выбор webhook/polling по флагу
 - Использование: tg_polling=true + tg_bot_token=xxx в .env
 - Артефакты: изменены bot.py, main.py, config.py
+
+## 2026-08-07 — Сессия 18: Auto-Analysis Scheduler
+- Фоновый триггер авто-анализа тренировок: asyncio loop, проверяет время каждую минуту
+- В `tg_auto_analysis_time` (по умолчанию 23:00 UTC) сканирует все TrainingDay со статусом active/planned
+- Для каждого вызывает `analyze_training_day` (LLM-анализ + генерация плана на завтра)
+- Без внешних зависимостей (без APScheduler) — чистый asyncio
+- Запуск/остановка в lifespan: `start_auto_analysis()` / `stop_auto_analysis()`
+- Артефакты: +1 файл (scheduler.py), изменены config.py, main.py

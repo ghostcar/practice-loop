@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 17).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 18).
 
 ## Обзор фаз
 | Область | Статус |
@@ -16,6 +16,7 @@
 | Phase 8 — Calendar (календарь доступности) | ✅ Завершена |
 | Phase 9 — Penalty & Points v2 (штрафы и баллы) | ✅ Завершена |
 | Phase 10 — Telegram Bot v2 (реальный бот) | ✅ Завершена |
+| Phase 11 — Auto-Analysis Scheduler | ✅ Завершена |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -37,6 +38,14 @@
 - [x] Дашборд: карточка «Link Telegram» с генерацией кода, статусом, кнопкой
 - [x] config: tg_bot_username, tg_webhook_base_url
 - [x] Polling-режим: tg_polling=true → start_polling() (фоновая asyncio task), stop_polling() при shutdown
+- [x] Тесты: 105/105
+
+## Что сделано (Phase 11 — Auto-Analysis Scheduler)
+- [x] app/training/scheduler.py — фоновая asyncio задача, без внешних зависимостей
+- [x] Ежедневный запуск в tg_auto_analysis_time (по умолчанию 23:00 UTC)
+- [x] Сканирует всех пользователей: ищет TrainingDay со статусом active/planned
+- [x] Вызывает analyze_training_day (анализ дня + генерация плана на завтра)
+- [x] Запуск/остановка в lifespan вместе с Telegram
 - [x] Тесты: 105/105
 
 ## Что сделано (Phase 7 — Import/Export + Charts + Layout)
@@ -69,11 +78,9 @@
 - [x] Отпуск = CalendarOverride с шаблоном «Vacation» на диапазон дат
 
 ## В работе
-- Ничего. Все 10 фаз завершены.
+- Ничего. Все 11 фаз завершены.
 
 ## Следующие шаги
 1. Push на GitHub (`git push --force -u origin main`)
 2. Деплой на VPS, SSL, бэкапы
-3. Фоновый триггер авто-анализа тренировки (APScheduler/cron)
-4. Points spending: магазин наград, redeem баллов на бонусы
-5. Локальный polling-режим бота для разработки
+3. Points spending: магазин наград, redeem баллов на бонусы
