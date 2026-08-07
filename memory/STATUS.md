@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 26).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 27).
 
 ## Обзор фаз
 | Область | Статус |
@@ -25,8 +25,22 @@
 | R5 — Frontend shell | ✅ Завершён |
 | R6 — Возврат вторичных модулей | ✅ Завершён |
 | DESIGN.md Compliance & Dashboard | ✅ Завершён |
+| R0-R6 Re-audit (Session 27) | ✅ Завершён |
 
-## R6 — Возврат вторичных модулей (object-level auth)
+## R0-R6 Re-audit — критические исправления
+- [x] CSRF: verify_csrf починена (header-less bypass), подключена как HTTP middleware
+- [x] CSRF: пропускает неаутентифицированные запросы (нет access_token cookie)
+- [x] create_all() полностью удалён из lifespan (Alembic only)
+- [x] requirements.lock: 102 замороженных пакета
+- [x] Миграция 014: JSON→JSONB (subtasks, meta), boolean defaults true/false
+- [x] Object-level auth: get_gamification_config (is_public|owner), toggle_opt_in (is_public|owner), delete_window (JOIN template owner)
+- [x] Идемпотентность: training complete_training_task (проверка статуса)
+- [x] XSS: escapeHtml() в base.html + экранирование во всех user-значениях (inventory, schedule, points, calendar, measurements)
+- [x] HTMX listener: DOMContentLoaded (не document.body до ready)
+- [x] CDN: FIXME-комментарии в base.html, план миграции на локальные assets
+- [x] conftest.py: auth_headers включает CSRF cookie + X-CSRF-Token header
+- [x] main.py: очищены неиспользуемые импорты
+- [x] 105/105 тестов с CSRF, ruff 0, format clean
 - [x] security.py: require_entity_owner() — отдельный хелпер для Entity (owner_id ≠ user_id)
 - [x] points_v2.py: update_gamification_config + assign_profile_to_entity проверяют владельца entity
 - [x] calendar.py: create_override проверяет владельца template
@@ -160,9 +174,9 @@
 - [x] 105 тестов, ruff 0, Docker ok
 
 ## В работе
-- Ничего. R0–R6 + DESIGN завершены.
+- Ничего. R0–R6 завершены, переаудит пройден.
 
 ## Следующие шаги
-1. Push на GitHub (`git push --force -u origin main`)
-2. Деплой на VPS, SSL, бэкапы
-3. R6 — Возврат вторичных модулей (DESIGN.md compliance)
+1. Cross-user auth тесты (REMEDIATION_SPEC §9.2)
+2. Локальная сборка Tailwind/HTMX/Chart.js без CDN
+3. .env.example + docker-compose.override.yml для dev

@@ -194,3 +194,24 @@
 - 522 insertions, 704 deletions — чистое сокращение кода
 - 105 тестов, ruff 0, Docker smoke ok
 - Артефакты: изменены 9 шаблонов HTML
+
+## 2026-08-07 — Сессия 27: R0-R6 переаудит — критические исправления
+- Внешний аудит выявил оставшиеся P0-дефекты после R0-R6
+- CSRF: verify_csrf header-less bypass исправлен (было: if header AND mismatch; стало: if NO header OR mismatch)
+- CSRF: подключена как HTTP middleware в main.py (вне lifespan)
+- CSRF: пропускает запросы без access_token cookie
+- create_all(): полностью удалён из lifespan — Alembic единственный путь
+- requirements.lock: 102 пакета, pip freeze
+- Миграция 014: subtasks String→JSONB, meta→JSONB, boolean defaults 0/1→false/true
+- Object-level auth: get_gamification_config + toggle_opt_in (is_public|owner_id), delete_window (JOIN template.user_id)
+- Идемпотентность: training complete_training_task теперь проверяет статус
+- XSS: escapeHtml() в base.html, экранирование в inventory/schedule/points/calendar/measurements
+- HTMX listener: document.addEventListener('DOMContentLoaded', ...)
+- CDN: FIXME-комментарии, план на локальную сборку
+- conftest.py: auth_headers включает csrf_token cookie + X-CSRF-Token header
+- main.py: очищены неиспользуемые импорты (engine, Base, logger)
+- training.py: next_day_suggestion Text→JSON, pipeline хранит dict
+- opt_in.py: UniqueConstraint(user_id, entity_id)
+- Миграция 013: training_days FK, opt-in unique, active session partial index
+- 105/105 тестов с CSRF, ruff 0, format clean, Docker ok
+- Артефакты: +2 миграции, +requirements.lock, изменены 12 файлов
