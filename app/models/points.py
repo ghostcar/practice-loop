@@ -47,3 +47,32 @@ class PointsProfile(Base):
     # {\"points\": {...}, \"penalties\": {...}, \"bonuses\": [...], \"thresholds\": {...}}
     is_default: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class PenaltyRedemption(Base):
+    """Tracks penalty redemption actions: pending → completed."""
+
+    __tablename__ = "penalty_redemptions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    entity_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("entities.id", ondelete="SET NULL"), nullable=True
+    )
+    activity_log_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("activity_logs.id", ondelete="SET NULL"), nullable=True
+    )
+    redemption_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    # clothespins / bondage / cold_shower / self_flagellation / drink_sips / extra_training / ...
+    duration_min: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    # pending / completed / skipped
+    escalation_level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    points_value: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # How many points this redemption is worth when completed
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

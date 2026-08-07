@@ -20,7 +20,7 @@ from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule  # noqa
 from app.models.llm_config import LLMProviderConfig  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
-from app.models.points import PointsProfile, PointsTransaction  # noqa: F401
+from app.models.points import PenaltyRedemption, PointsProfile, PointsTransaction  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
 from app.models.training import TrainingDay  # noqa: F401

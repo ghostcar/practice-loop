@@ -21,6 +21,7 @@ from app.gamification.xp import (
 )
 from app.models.activity_log import ActivityLog
 from app.models.notification import Notification
+from app.models.points import PenaltyRedemption
 from app.models.progress import UserProgress
 
 logger = logging.getLogger(__name__)
@@ -157,6 +158,45 @@ async def on_task_completed(
         db.add(n)
         notifications.append(n)
 
+    # Threshold check
+    if gamification_config and isinstance(gamification_config, dict):
+        thresholds = gamification_config.get("thresholds", {})
+        if thresholds:
+            neg = thresholds.get("negative", -100)
+            warn = thresholds.get("warning", 0)
+            good = thresholds.get("good", 100)
+            new_balance = progress.points_balance
+            if new_balance < neg:
+                n = Notification(
+                    user_id=user_id,
+                    type="threshold",
+                    title="🔴 Critical points!",
+                    body=f"Balance ({new_balance}) below negative threshold ({neg}). Restrictions active.",
+                    link="/api/v2/points/page",
+                )
+                db.add(n)
+                notifications.append(n)
+            elif new_balance < warn:
+                n = Notification(
+                    user_id=user_id,
+                    type="threshold",
+                    title="⚠️ Low points",
+                    body=f"Balance ({new_balance}) below warning threshold ({warn}).",
+                    link="/api/v2/points/page",
+                )
+                db.add(n)
+                notifications.append(n)
+            elif new_balance >= good:
+                n = Notification(
+                    user_id=user_id,
+                    type="threshold",
+                    title="🎉 Points milestone!",
+                    body=f"Balance ({new_balance}) reached good threshold ({good})!",
+                    link="/api/v2/points/page",
+                )
+                db.add(n)
+                notifications.append(n)
+
     await db.flush()
 
     return {
@@ -207,6 +247,20 @@ async def on_task_interrupted(
                 activity_log_id=log.id,
             )
         redemption_action = await _get_redemption_action_from_config(config)
+        # Create PenaltyRedemption record
+        if redemption_action:
+            redemption = PenaltyRedemption(
+                user_id=user_id,
+                entity_id=log.entity_id,
+                activity_log_id=log.id,
+                redemption_type=redemption_action.get("type", "clothespins"),
+                duration_min=redemption_action.get("duration_min", 0),
+                count=redemption_action.get("count", 0),
+                description=redemption_action.get("description", ""),
+                escalation_level=escalation,
+                points_value=points_penalty,
+            )
+            db.add(redemption)
 
     progress.xp = max(0, progress.xp - penalty_xp)
     progress.total_interrupted += 1
