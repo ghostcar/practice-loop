@@ -16,9 +16,10 @@ from app.api.points_v2 import router as points_v2_router
 from app.api.tasks import router as tasks_router
 from app.api.training import router as training_router
 from app.auth import get_optional_user
+from app.config import settings
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.telegram.bot import tg_router
+from app.telegram.bot import setup_webhook, tg_router
 from app.templates_setup import templates
 
 
@@ -35,6 +36,11 @@ async def lifespan(app: FastAPI):
     from app.templates_setup import templates
 
     templates.env.cache = None
+
+    # Set Telegram webhook
+    base_url = getattr(settings, "tg_webhook_base_url", "https://localhost:8443")
+    await setup_webhook(base_url)
+
     yield
 
 

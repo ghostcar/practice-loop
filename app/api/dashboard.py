@@ -1,15 +1,17 @@
 """Dashboard, achievements, notifications, sessions, privacy."""
 
 import json
+import secrets
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
+from app.config import settings
 from app.database import get_db
 from app.gamification.handler import get_or_create_progress
 from app.gamification.xp import xp_progress
@@ -83,6 +85,7 @@ async def dashboard(
             "recent_logs": recent_logs,
             "active_session": active_session,
             "unread_notifs": unread_notifs,
+            "tg_bot_username": settings.tg_bot_username,
         },
     )
 
@@ -433,3 +436,31 @@ async def delete_account(
     response = RedirectResponse(url="/", status_code=303)
     response.delete_cookie("access_token")
     return response
+
+
+# --- Telegram linking ---
+
+
+@router.post("/profile/telegram-link-code")
+async def generate_telegram_link_code(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate a 6-character code for linking Telegram. Expires in 30 minutes."""
+    code = secrets.token_hex(3).upper()  # 6 hex chars
+    user.telegram_link_code = code
+    user.telegram_link_code_expires = datetime.now(UTC) + timedelta(minutes=30)
+    db.add(user)
+    await db.flush()
+    return JSONResponse({"code": code, "expires_in_minutes": 30})
+
+
+@router.get("/profile/telegram-status")
+async def telegram_status(
+    user: User = Depends(get_current_user),
+):
+    """Check if Telegram is linked."""
+    return JSONResponse({
+        "linked": user.telegram_chat_id is not None,
+        "code": user.telegram_link_code if not user.telegram_chat_id else None,
+    })

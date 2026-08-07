@@ -199,6 +199,9 @@ async def on_task_completed(
 
     await db.flush()
 
+    # Send Telegram notifications if user has linked account
+    await _send_tg_notifications(db, user_id, notifications)
+
     return {
         "xp_earned": earned_xp,
         "points_earned": points_earned,
@@ -212,6 +215,26 @@ async def on_task_completed(
         "notifications": len(notifications),
         "bonus_descriptions": bonus_descriptions,
     }
+
+
+async def _send_tg_notifications(db: AsyncSession, user_id: uuid.UUID, notifications: list):
+    """Try to send Telegram messages for new notifications."""
+    if not notifications:
+        return
+    try:
+        from app.models.user import User
+        from app.telegram.bot import send_telegram_notification
+
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if user and user.telegram_chat_id:
+            for n in notifications[:3]:  # Limit to 3 messages
+                await send_telegram_notification(
+                    user.telegram_chat_id,
+                    f"*{n.title}*\n{n.body or ''}"
+                )
+    except Exception:
+        logger.debug("TG notification send failed", exc_info=True)
 
 
 async def on_task_interrupted(
@@ -289,6 +312,9 @@ async def on_task_interrupted(
     db.add(n)
 
     await db.flush()
+
+    # Send Telegram notification
+    await _send_tg_notifications(db, user_id, [n])
 
     return {
         "xp_penalty": penalty_xp,

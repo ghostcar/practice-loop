@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = "change-me"
+    tg_webhook_base_url: str = "https://localhost:8443"
+    tg_bot_username: str = "practice_loop_bot"
 
 
 settings = Settings()

@@ -25,6 +25,11 @@ class User(Base):
     theme: Mapped[str] = mapped_column(String(10), default="dark", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    # Telegram linking
+    telegram_chat_id: Mapped[int | None] = mapped_column(nullable=True, unique=True)
+    telegram_link_code: Mapped[str | None] = mapped_column(String(12), nullable=True)
+    telegram_link_code_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Relationships
     opt_ins: Mapped[list[UserEntityOptIn]] = relationship("UserEntityOptIn", back_populates="user", lazy="selectin")
 
