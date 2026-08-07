@@ -21,6 +21,7 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.telegram.bot import setup_webhook, start_polling, stop_polling, tg_router
 from app.templates_setup import templates
+from app.training.scheduler import start_auto_analysis, stop_auto_analysis
 
 
 @asynccontextmanager
@@ -44,10 +45,14 @@ async def lifespan(app: FastAPI):
         base_url = getattr(settings, "tg_webhook_base_url", "https://localhost:8443")
         await setup_webhook(base_url)
 
+    # Start auto-analysis scheduler
+    await start_auto_analysis()
+
     yield
 
-    # Shutdown: stop polling if active
+    # Shutdown: stop polling + auto-analysis
     await stop_polling()
+    await stop_auto_analysis()
 
 
 app = FastAPI(title="Practice Loop", version="0.5.0", lifespan=lifespan)

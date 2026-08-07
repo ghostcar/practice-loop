@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     tg_webhook_base_url: str = "https://localhost:8443"
     tg_bot_username: str = "practice_loop_bot"
     tg_polling: bool = False  # True = polling mode (local dev), False = webhook
+    tg_auto_analysis_time: str = "23:00"  # HH:MM UTC — when to run end-of-day training analysis
 
 
 settings = Settings()
