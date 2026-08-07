@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 20).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 21).
 
 ## Обзор фаз
 | Область | Статус |
@@ -19,7 +19,7 @@
 | Phase 11 — Auto-Analysis Scheduler | ✅ Завершена |
 | v0.7 Audit & Interview (R0) | ✅ Завершён |
 | R1 — Воспроизводимость | ✅ Завершён |
-| R2 — Безопасность и транзакции | ⏳ Далее |
+| R2 — Безопасность и транзакции | ✅ Завершён |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -99,8 +99,18 @@
 - [x] CI: ruff lint + pytest на PostgreSQL 15 (.github/workflows/ci.yml)
 - [ ] ORM/миграции: subtasks String→JSON, next_day_suggestion Text→JSONB (известно, не блокирует)
 
+## R2 — Безопасность
+- [x] app/security.py: CSRF (double-submit cookie), OwnershipChecker, complete_once/interrupt_once
+- [x] login/logout: CSRF cookie + очистка, access_token path=/
+- [x] base.html: CSRF meta tag, HTMX auto-include X-CSRF-Token, scripts block
+- [x] tasks: идемпотентный complete/interrupt (защита от двойной награды)
+- [x] encryption: ключ от CREDENTIALS_ENCRYPTION_KEY (отделён от JWT_SECRET)
+- [x] config: credentials_encryption_key
+- [x] dashboard/home: csrf_token в шаблонах
+- [ ] Object-level auth: OwnershipChecker создан, но нужно применить во всех эндпоинтах
+
 ## В работе
-- R2 — безопасность и транзакции (CSRF, object-level auth, идемпотентность)
+- R3 — Каталог, модерация, scheduler (далее по REMEDIATION_SPEC)
 
 ## Следующие шаги
 1. R1: единый dependency source + lock, чистая установка, миграции, CI

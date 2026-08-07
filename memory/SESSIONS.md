@@ -136,3 +136,12 @@
 - Артефакты: изменены pyproject.toml, requirements.txt, main.py
 - CI: .github/workflows/ci.yml (ruff lint + pytest на PostgreSQL 15)
 - Миграции: subtasks String→JSON, next_day_suggestion Text→JSONB — расхождения зафиксированы, не блокируют (create_all создаёт правильные типы)
+
+## 2026-08-07 — Сессия 21: R2 — Безопасность и авторизация
+- CSRF: двойная кука (csrf_token), HTMX auto-include X-CSRF-Token, meta tag в base.html
+- Идемпотентность: complete_once/interrupt_once в app/security.py, применены в /tasks
+- Отдельный ключ шифрования: CREDENTIALS_ENCRYPTION_KEY ≠ JWT_SECRET_KEY
+- Безопасные cookies: HttpOnly для access_token, path=/, очистка при logout
+- OwnershipChecker: хелпер для проверки владельца объекта (создан, ждёт применения)
+- base.html: добавлен блок scripts (требование DESIGN.md)
+- Артефакты: +1 файл (security.py), изменены auth, tasks, config, encryption, dashboard, main, base.html
