@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 23).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 25).
 
 ## Обзор фаз
 | Область | Статус |
@@ -23,6 +23,13 @@
 | R3 — Каталог, модерация, scheduler | ✅ Завершён |
 | R4 — LLM planner | ✅ Завершён |
 | R5 — Frontend shell | ✅ Завершён |
+| R6 — Возврат вторичных модулей | ✅ Завершён |
+
+## R6 — Возврат вторичных модулей (object-level auth)
+- [x] security.py: require_entity_owner() — отдельный хелпер для Entity (owner_id ≠ user_id)
+- [x] points_v2.py: update_gamification_config + assign_profile_to_entity проверяют владельца entity
+- [x] calendar.py: create_override проверяет владельца template
+- [x] Аудит всех остальных эндпоинтов: уже используют user_id-фильтрацию (безопасны)
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -141,7 +148,7 @@
 - [x] scripts блок в base.html
 
 ## В работе
-- Ничего. R0–R5 завершены.
+- Ничего. R0–R6 завершены.
 
 ## Следующие шаги
 1. Push на GitHub (`git push --force -u origin main`)

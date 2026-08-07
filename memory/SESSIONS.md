@@ -165,3 +165,20 @@
 - tasks.html: список due practices с цветовой кодировкой, кнопка fallback
 - Миграция 012: subtasks String→JSON, next_day_suggestion Text→JSONB — типы исправлены
 - Артефакты: +2 файла (validator.py, миграция 012), изменены 4 файла
+
+## 2026-08-07 — Сессия 24: R5 — Frontend shell
+- active_nav: переменная во всех шаблонах, подсветка текущей страницы в навигации
+- Навигация упрощена: dashboard, tasks, training, catalog, points, admin
+- CSRF hidden поля в формах переключения языка/темы
+- innerHTML аудит: всё использование — рендеринг серверных данных (безопасно)
+- scripts блок в base.html
+- active_nav проброшен в dashboard, tasks, training
+- Артефакты: изменены base.html, dashboard.py, tasks.py, training.py
+
+## 2026-08-07 — Сессия 25: R6 — Object-level auth для вторичных модулей
+- security.py: require_entity_owner() — хелпер проверки владельца Entity (owner_id)
+- points_v2.py: update_gamification_config + assign_profile_to_entity — проверка владельца
+- calendar.py: create_override — проверка владельца template
+- Полный аудит всех эндпоинтов: остальные уже фильтруют по user_id
+- Тесты 105/105, ruff 0, Docker smoke OK
+- Артефакты: изменены security.py, points_v2.py, calendar.py
