@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 21).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 22).
 
 ## Обзор фаз
 | Область | Статус |
@@ -20,6 +20,7 @@
 | v0.7 Audit & Interview (R0) | ✅ Завершён |
 | R1 — Воспроизводимость | ✅ Завершён |
 | R2 — Безопасность и транзакции | ✅ Завершён |
+| R3 — Каталог, модерация, scheduler | ✅ Завершён |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -109,11 +110,19 @@
 - [x] dashboard/home: csrf_token в шаблонах
 - [ ] Object-level auth: OwnershipChecker создан, но нужно применить во всех эндпоинтах
 
+## R3 — Каталог, модерация, scheduler
+- [x] User.role (user/moderator/admin) + миграция 010
+- [x] require_admin() dependency — /admin защищён
+- [x] OwnershipChecker применён в tasks, training, sessions, achievements, notifications
+- [x] unacceptable → strong_aversion (модель, схемы, pipeline, тесты)
+- [x] Soft scheduler: get_due_practices(), set_next_due(), set_retry_block()
+- [x] UserEntityOptIn.next_due_at + retry_not_before_at (миграция 011)
+- [x] Tasks page: due practices + авто-установка сроков после complete/interrupt
+
 ## В работе
-- R3 — Каталог, модерация, scheduler (далее по REMEDIATION_SPEC)
+- R4 — LLM planner (далее по REMEDIATION_SPEC)
 
 ## Следующие шаги
-1. R1: единый dependency source + lock, чистая установка, миграции, CI
-2. R2: безопасность и транзакции (CSRF, object-level auth, идемпотентность)
-3. Push на GitHub (`git push --force -u origin main`)
-4. Деплой на VPS, SSL, бэкапы
+1. R4: LLM planner (abstract/full режимы, валидация ответа)
+2. Push на GitHub (`git push --force -u origin main`)
+3. Деплой на VPS, SSL, бэкапы

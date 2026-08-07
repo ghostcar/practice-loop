@@ -145,3 +145,13 @@
 - OwnershipChecker: хелпер для проверки владельца объекта (создан, ждёт применения)
 - base.html: добавлен блок scripts (требование DESIGN.md)
 - Артефакты: +1 файл (security.py), изменены auth, tasks, config, encryption, dashboard, main, base.html
+
+## 2026-08-07 — Сессия 22: R3 — Роли, object-level auth, scheduler
+- User.role + миграция 010 (user/moderator/admin), require_admin() dependency
+- OwnershipChecker применён: tasks, training, sessions, achievements, notifications
+- /admin защищён — обычный пользователь получает 403
+- unacceptable → strong_aversion: model, schemas, pipeline, tests
+- Soft scheduler: app/services/scheduler.py — get_due_practices, set_next_due, set_retry_block
+- UserEntityOptIn: next_due_at, retry_not_before_at (миграция 011)
+- Tasks: показаны due practices, авто next_due/retry после complete/interrupt
+- Артефакты: +4 файла (2 миграции, scheduler, services/__init__), изменены 9 файлов
