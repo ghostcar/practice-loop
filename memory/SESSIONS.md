@@ -127,3 +127,10 @@
 - CONTEXT.md: убран «код не написан»
 - STATUS.md: секция v0.7 Audit & Interview
 - Артефакты: изменены AGENTS.md, DECISIONS.md, CONTEXT.md, STATUS.md, SESSIONS.md; удалён AGENTS_.md
+
+## 2026-08-07 — Сессия 20: R1 — воспроизводимость (часть 1)
+- pyproject.toml: единый источник зависимостей, bcrypt<4.1, python-dotenv
+- requirements.txt: перегенерирован из pyproject.toml
+- Версия: 0.5.0 → 0.7.0 (pyproject.toml + main.py)
+- create_all: оставлен с предупреждением (Alembic для production)
+- Артефакты: изменены pyproject.toml, requirements.txt, main.py
