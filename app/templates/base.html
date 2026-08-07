@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}" class="{{ theme or 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.app_title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slide-down {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.4s ease-out;
+        }
+        .animate-slide-down {
+            animation: slide-down 0.3s ease-out;
+        }
+    </style>
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <!-- Navbar -->
+    <nav class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-2 group">
+                <span class="text-2xl font-extrabold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent group-hover:from-indigo-400 group-hover:to-purple-500 transition-all duration-300">
+                    {{ t.app_title }}
+                </span>
+                <span class="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">{{ t.app_tagline }}</span>
+            </a>
+
+            <!-- Navigation -->
+            <div class="flex items-center gap-3">
+                {% if user %}
+                    <a href="/dashboard"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        {{ t.nav_dashboard }}
+                    </a>
+                    <a href="/entities/catalog"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        Catalog
+                    </a>
+                    <a href="/tasks/"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        Tasks
+                    </a>
+                    <a href="/training"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        🏋️ Train
+                    </a>
+                    <a href="/api/v2/points/page"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        💰 Points
+                    </a>
+                    <a href="/admin"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        Admin
+                    </a>
+                    <a href="/auth/logout"
+                       class="text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                        {{ t.nav_logout }}
+                    </a>
+                {% else %}
+                    <a href="/login"
+                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
+                        {{ t.nav_login }}
+                    </a>
+                    <a href="/register"
+                       class="text-sm font-medium px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25">
+                        {{ t.nav_register }}
+                    </a>
+                {% endif %}
+
+                <!-- Locale toggle -->
+                <form action="/settings/locale" method="post" class="inline">
+                    <button type="submit"
+                            name="locale"
+                            value="{{ 'ru' if locale == 'en' else 'en' }}"
+                            title="{{ t.locale_label }}"
+                            class="text-sm px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                        {{ t.locale_toggle }}
+                    </button>
+                </form>
+
+                <!-- Theme toggle -->
+                <form action="/settings/theme" method="post" class="inline">
+                    <button type="submit"
+                            name="theme"
+                            value="{{ 'light' if theme == 'dark' else 'dark' }}"
+                            title="{{ t.theme_toggle }}"
+                            class="text-lg px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                        {% if theme == 'dark' %}☀️{% else %}🌙{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% if error %}
+    <div class="max-w-5xl mx-auto px-4 mt-4 animate-slide-down">
+        <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <span>⚠️</span> {{ error }}
+        </div>
+    </div>
+    {% endif %}
+    {% if success %}
+    <div class="max-w-5xl mx-auto px-4 mt-4 animate-slide-down">
+        <div class="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <span>✅</span> {{ success }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main content -->
+    <main class="max-w-5xl mx-auto px-4 py-8 animate-fade-in">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 dark:border-slate-700 mt-auto py-6 text-center text-xs text-slate-400 dark:text-slate-600">
+        {{ t.app_title }} &mdash; private & personal use only
+    </footer>
+</body>
+</html>

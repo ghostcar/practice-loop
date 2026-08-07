@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}{{ t.get('measurements_title', 'Body Measurements') }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">📏 {{ t.get('measurements_title', 'Body Measurements') }}</h1>
+
+  <!-- Add measurement form -->
+  <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg border border-gray-700">
+    <h2 class="text-xl font-semibold mb-4">{{ t.get('new_measurement', 'New Measurement') }}</h2>
+    <form id="meas-form" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('date', 'Date') }}</label>
+        <input type="date" id="meas-date" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('time_of_day', 'Time') }}</label>
+        <select id="meas-tod" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+          <option value="morning">🌅 Morning</option>
+          <option value="evening">🌙 Evening</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('weight', 'Weight') }} (kg)</label>
+        <input type="number" step="0.1" id="meas-weight" placeholder="98.5" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('chest', 'Chest') }} (cm)</label>
+        <input type="number" step="0.1" id="meas-chest" placeholder="112" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('under_chest', 'Under Chest') }}</label>
+        <input type="number" step="0.1" id="meas-ucherst" placeholder="100" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('waist', 'Waist') }}</label>
+        <input type="number" step="0.1" id="meas-waist" placeholder="100" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('hips', 'Hips') }}</label>
+        <input type="number" step="0.1" id="meas-hips" placeholder="106" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">{{ t.get('thigh', 'Thigh') }}</label>
+        <input type="number" step="0.1" id="meas-thigh" placeholder="61" class="w-full bg-gray-700 rounded-lg px-3 py-2 text-white border border-gray-600">
+      </div>
+      <div class="col-span-full">
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-lg font-medium transition">
+          💾 {{ t.get('save', 'Save') }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Chart -->
+  <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg border border-gray-700">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">📈 Trend</h3>
+        <span id="trend-indicator" class="text-xs px-2 py-1 rounded-full"></span>
+    </div>
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <button onclick="loadChart('weight')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">⚖️ Weight</button>
+      <button onclick="loadChart('chest')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">Chest</button>
+      <button onclick="loadChart('waist')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">Waist</button>
+      <button onclick="loadChart('hips')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">Hips</button>
+      <button onclick="loadChart('thigh')" class="chart-btn px-4 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">Thigh</button>
+    </div>
+    <canvas id="meas-chart" class="w-full h-72"></canvas>
+  </div>
+
+  <!-- History table -->
+  <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-700">
+        <tr>
+          <th class="px-4 py-3 text-left">Date</th>
+          <th class="px-4 py-3 text-left">Time</th>
+          <th class="px-4 py-3 text-right">Weight</th>
+          <th class="px-4 py-3 text-right">Chest</th>
+          <th class="px-4 py-3 text-right">Waist</th>
+          <th class="px-4 py-3 text-right">Hips</th>
+          <th class="px-4 py-3 text-right">Thigh</th>
+        </tr>
+      </thead>
+      <tbody id="meas-table"></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let chart;
+async function loadMeasurements() {
+  const res = await fetch('/api/v2/measurements?limit=60');
+  const data = await res.json();
+  const tbody = document.getElementById('meas-table');
+  tbody.innerHTML = data.map(m => `
+    <tr class="border-t border-gray-700 hover:bg-gray-750">
+      <td class="px-4 py-2">${m.measured_date}</td>
+      <td class="px-4 py-2">${m.time_of_day}</td>
+      <td class="px-4 py-2 text-right">${m.weight ?? '-'}</td>
+      <td class="px-4 py-2 text-right">${m.chest ?? '-'}</td>
+      <td class="px-4 py-2 text-right">${m.waist ?? '-'}</td>
+      <td class="px-4 py-2 text-right">${m.hips ?? '-'}</td>
+      <td class="px-4 py-2 text-right">${m.thigh ?? '-'}</td>
+    </tr>
+  `).join('');
+}
+async function loadChart(metric) {
+  document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('bg-indigo-600'));
+  event.target.classList.add('bg-indigo-600');
+  const res = await fetch(`/api/v2/measurements/charts?metric=${metric}&limit=60`);
+  const data = await res.json();
+  const ctx = document.getElementById('meas-chart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        { label: 'Morning', data: data.morning, borderColor: '#f59e0b', tension: 0.3, spanGaps: true },
+        { label: 'Evening', data: data.evening, borderColor: '#6366f1', tension: 0.3, spanGaps: true }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { labels: { color: '#9ca3af', usePointStyle: true, padding: 16 } },
+        tooltip: { backgroundColor: '#1f2937', titleColor: '#f9fafb', bodyColor: '#d1d5db' }
+      },
+      scales: {
+        x: { ticks: { color: '#9ca3af', maxTicksLimit: 15, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } }
+      }
+    }
+  });
+
+  // Trend indicator
+  const morningVals = data.morning.filter(v => v !== null);
+  if (morningVals.length >= 2) {
+    const first = morningVals.slice(0, 3).reduce((a,b) => a + (b||0), 0) / 3;
+    const last = morningVals.slice(-3).reduce((a,b) => a + (b||0), 0) / 3;
+    const delta = last - first;
+    const indicator = document.getElementById('trend-indicator');
+    if (Math.abs(delta) < 0.5) {
+        indicator.textContent = '→ stable';
+        indicator.className = 'text-xs px-2 py-1 rounded-full bg-gray-700 text-gray-300';
+    } else if ((metric === 'weight' && delta < 0) || (metric !== 'weight' && delta > 0)) {
+        indicator.textContent = '↗ improving';
+        indicator.className = 'text-xs px-2 py-1 rounded-full bg-emerald-900/50 text-emerald-300';
+    } else {
+        indicator.textContent = '↘ watch it';
+        indicator.className = 'text-xs px-2 py-1 rounded-full bg-amber-900/50 text-amber-300';
+    }
+  });
+}
+document.getElementById('meas-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    measured_date: document.getElementById('meas-date').value,
+    time_of_day: document.getElementById('meas-tod').value,
+    weight: parseFloatOrNull('meas-weight'),
+    chest: parseFloatOrNull('meas-chest'),
+    under_chest: parseFloatOrNull('meas-ucherst'),
+    waist: parseFloatOrNull('meas-waist'),
+    hips: parseFloatOrNull('meas-hips'),
+    thigh: parseFloatOrNull('meas-thigh'),
+  };
+  await fetch('/api/v2/measurements', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  loadMeasurements();
+});
+function parseFloatOrNull(id) { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; }
+document.getElementById('meas-date').value = new Date().toISOString().split('T')[0];
+loadMeasurements();
+loadChart('weight');
+</script>
+{% endblock %}

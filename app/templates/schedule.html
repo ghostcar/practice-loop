@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Schedule{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">📅 {{ t.get('schedule_title', 'Daily Schedule') }}</h1>
+    <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm font-medium">+ Add Rule</button>
+  </div>
+
+  <!-- Add form -->
+  <div id="add-form" class="hidden bg-gray-800 rounded-xl p-6 mb-6 shadow-lg border border-gray-700">
+    <h3 class="text-lg font-semibold mb-3">New Schedule Rule</h3>
+    <form id="sched-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <select id="sched-dow" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+        <option value="7">Every Day</option><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
+      </select>
+      <input id="sched-start" type="time" value="06:00" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <input id="sched-end" type="time" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <select id="sched-type" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+        <option value="mandatory">🔴 Mandatory</option><option value="optional_mandatory">🟡 Opt-Mandatory</option><option value="optional">🟢 Optional</option><option value="penalty_reducing">🔵 Penalty Reducing</option>
+      </select>
+      <input id="sched-entity" placeholder="Entity name (optional)" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 col-span-2">
+      <input id="sched-notes" placeholder="Notes" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 col-span-2">
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="sched-recur" checked> Recurring</label>
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm col-span-full">Save</button>
+    </form>
+  </div>
+
+  <!-- Today's schedule -->
+  <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden mb-8">
+    <div class="bg-gray-700 px-6 py-3 font-semibold">Today's Schedule</div>
+    <div id="today-sched" class="p-4 space-y-2"></div>
+  </div>
+
+  <!-- All rules -->
+  <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+    <div class="bg-gray-700 px-6 py-3 font-semibold">All Rules</div>
+    <div id="all-rules" class="p-4 space-y-2"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Every day'];
+const TYPE_COLORS = {mandatory:'border-l-red-500',optional_mandatory:'border-l-yellow-500',optional:'border-l-green-500',penalty_reducing:'border-l-blue-500'};
+
+async function loadToday() {
+  const res = await fetch('/api/v2/schedule/today');
+  const rules = await res.json();
+  const el = document.getElementById('today-sched');
+  if (!rules.length) { el.innerHTML = '<p class="text-gray-500 text-center py-4">No rules for today.</p>'; return; }
+  el.innerHTML = rules.map(r => `
+    <div class="flex items-center gap-3 p-3 bg-gray-750 rounded-lg border-l-4 ${TYPE_COLORS[r.task_type] || 'border-l-gray-500'}">
+      <span class="text-sm font-mono text-gray-400">${r.start_time}${r.end_time ? ' – ' + r.end_time : ''}</span>
+      <span class="flex-1">${r.entity_name || r.notes || '—'}</span>
+      <span class="text-xs px-2 py-0.5 rounded bg-gray-700">${r.task_type}</span>
+    </div>
+  `).join('');
+}
+function showForm() { document.getElementById('add-form').classList.toggle('hidden'); }
+document.getElementById('sched-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    day_of_week: parseInt(document.getElementById('sched-dow').value),
+    start_time: document.getElementById('sched-start').value,
+    end_time: document.getElementById('sched-end').value || null,
+    task_type: document.getElementById('sched-type').value,
+    notes: document.getElementById('sched-notes').value || null,
+    recurring: document.getElementById('sched-recur').checked,
+  };
+  await fetch('/api/v2/schedule/rules', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  document.getElementById('add-form').classList.add('hidden');
+  loadToday();
+});
+loadToday();
+</script>
+{% endblock %}

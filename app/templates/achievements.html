@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">🏆 Achievements</h1>
+    <p class="text-slate-500 dark:text-slate-400 mb-8">Public board (anonymized) + your collection</p>
+
+    <!-- Progress stats -->
+    {% if my_achievements|length > 0 %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <div class="flex items-center gap-4">
+            <div class="text-3xl">🏆</div>
+            <div class="flex-1">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-slate-600 dark:text-slate-400">Achievements unlocked</span>
+                    <span class="font-semibold text-indigo-500">{{ my_achievements|length }} / 13</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all"
+                         style="width: {{ (my_achievements|length / 13 * 100)|int }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- My achievements -->
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">My Achievements</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {% for ach in my_achievements %}
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md
+                    {% if ach.is_hidden %}opacity-50{% endif %}">
+            <div class="flex items-start justify-between mb-2">
+                <div class="w-10 h-10 rounded-xl bg-{{ ach.color }}-100 dark:bg-{{ ach.color }}-900/40 flex items-center justify-center text-lg">
+                    🏆
+                </div>
+                <form action="/achievements/{{ ach.id }}/hide" method="post">
+                    <button class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                        {{ 'Show' if ach.is_hidden else 'Hide' }}
+                    </button>
+                </form>
+            </div>
+            <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ ach.name }}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ ach.description }}</p>
+            {% if ach.context %}
+            <p class="text-xs text-slate-400 mt-1">{{ ach.context }}</p>
+            {% endif %}
+            <p class="text-xs text-slate-400 mt-2">{{ ach.obtained_at }}</p>
+        </div>
+        {% endfor %}
+        {% if not my_achievements %}
+        <div class="col-span-full text-center py-8 text-slate-400">No achievements yet. Keep going!</div>
+        {% endif %}
+    </div>
+
+    <!-- Public board -->
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">Community Board</h2>
+    <div class="space-y-2">
+        {% for ach in all_achievements %}
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center gap-3">
+            <span class="text-lg">🏆</span>
+            <div class="flex-1 min-w-0">
+                <span class="font-medium text-slate-700 dark:text-slate-200">{{ ach.name }}</span>
+                <span class="text-xs text-slate-400 ml-2">{{ ach.description }}</span>
+            </div>
+            <span class="text-xs text-slate-400">{{ ach.display_name }}</span>
+            <span class="text-xs text-slate-400">{{ ach.obtained_at }}</span>
+        </div>
+        {% endfor %}
+        {% if not all_achievements %}
+        <div class="text-center py-8 text-slate-400">Board is empty. Be the first to earn an achievement!</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

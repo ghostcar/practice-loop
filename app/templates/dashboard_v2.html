@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ t.dashboard_title }}</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ t.dashboard_welcome }}</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/notifications" class="relative px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition-colors">
+                🔔
+                {% if unread_notifs > 0 %}
+                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">{{ unread_notifs }}</span>
+                {% endif %}
+            </a>
+            <a href="/achievements" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition-colors">🏆</a>
+        </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="text-2xl mb-1">💰</div>
+            <div class="text-xl font-bold text-indigo-400">{{ progress.points_balance }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">Points</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="text-2xl mb-1">⭐</div>
+            <div class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ progress.xp }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">XP</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="text-2xl mb-1">🔥</div>
+            <div class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ progress.current_streak }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">Day streak</div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div class="text-2xl mb-1">✅</div>
+            <div class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ progress.total_completed }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">Completed</div>
+        </div>
+    </div>
+
+    <!-- XP Progress bar + sparkline -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <div class="flex items-end justify-between mb-2">
+            <div>
+                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Level {{ level }} → {{ level + 1 }}</span>
+                <span class="text-xs text-slate-400 ml-2">{{ xp_current }} / {{ xp_next }} XP</span>
+            </div>
+            <span class="text-xs font-mono text-indigo-400">{{ xp_percent }}%</span>
+        </div>
+        <div class="w-full h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
+            <div class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-700 ease-out relative"
+                 style="width: {{ xp_percent }}%">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+            </div>
+        </div>
+        <!-- XP Sparkline -->
+        <div class="mt-3 h-12">
+            <canvas id="xp-sparkline" class="w-full h-12"></canvas>
+        </div>
+    </div>
+
+    <!-- 7-day Activity Chart -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">📊 Weekly Activity</h2>
+            <div class="flex gap-1 text-xs">
+                <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Done
+                </span>
+                <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Miss
+                </span>
+            </div>
+        </div>
+        <canvas id="activity-chart" class="w-full h-48"></canvas>
+    </div>
+
+    <!-- Active session -->
+    {% if active_session %}
+    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-4 mb-6 text-sm">
+        <span class="text-indigo-600 dark:text-indigo-400 font-medium">🎯 Active session</span>
+        <span class="text-slate-500 dark:text-slate-400 ml-2">Status: {{ active_session.status }}</span>
+        <a href="/sessions" class="ml-3 text-indigo-500 underline">Manage →</a>
+    </div>
+    {% endif %}
+
+    <!-- Recent activity -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Recent Activity</h2>
+        <div class="space-y-2">
+            {% for log in recent_logs %}
+            <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs px-1.5 py-0.5 rounded-full font-medium
+                        {% if log.status == 'completed' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
+                        {% elif log.status == 'interrupted' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300
+                        {% else %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300{% endif %}">
+                        {{ log.status[:4] }}
+                    </span>
+                    <span class="text-sm text-slate-700 dark:text-slate-300">{{ log.selected_entity_name or '(custom)' }}</span>
+                </div>
+                <span class="text-xs text-slate-400">{{ log.created_at.strftime('%H:%M') if log.created_at else '' }}</span>
+            </div>
+            {% endfor %}
+            {% if not recent_logs %}
+            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No activity yet. <a href="/tasks/" class="text-indigo-500 underline">Generate a task</a>!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <a href="/training" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">🏋️ Training</a>
+        <a href="/tasks/" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">🎲 Tasks</a>
+        <a href="/entities/catalog" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📋 Catalog</a>
+        <a href="/sessions" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">🎯 Sessions</a>
+        <a href="/api/v2/points/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">💰 Points</a>
+        <a href="/api/v2/measurements/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📏 Body</a>
+        <a href="/api/v2/inventory/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📦 Inventory</a>
+        <a href="/api/v2/schedule/page" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-all">📅 Schedule</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // 7-day activity chart
+    try {
+        const res = await fetch('/api/v2/charts/activity?days=7');
+        const data = await res.json();
+        const ctx = document.getElementById('activity-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    { label: 'Completed', data: data.completed, backgroundColor: '#10b981', borderRadius: 6 },
+                    { label: 'Interrupted', data: data.interrupted, backgroundColor: '#ef4444', borderRadius: 6 },
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { stacked: true, ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+                    y: { stacked: true, ticks: { color: '#94a3b8', stepSize: 1, font: { size: 11 } }, grid: { color: '#33415530' } }
+                }
+            }
+        });
+    } catch(e) { console.warn('Chart load failed:', e); }
+
+    // XP Sparkline
+    try {
+        const xpRes = await fetch('/api/v2/charts/xp-history?days=7');
+        const xpData = await xpRes.json();
+        const sctx = document.getElementById('xp-sparkline').getContext('2d');
+        new Chart(sctx, {
+            type: 'line',
+            data: {
+                labels: xpData.labels,
+                datasets: [{
+                    data: xpData.values,
+                    borderColor: '#818cf8',
+                    borderWidth: 2,
+                    fill: true,
+                    backgroundColor: 'rgba(129,140,248,0.1)',
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#818cf8',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false, beginAtZero: true }
+                },
+                elements: { point: { hoverRadius: 5 } }
+            }
+        });
+    } catch(e) { console.warn('XP sparkline failed:', e); }
+});
+</script>
+{% endblock %}

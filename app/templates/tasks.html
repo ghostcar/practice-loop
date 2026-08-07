@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">🤖 Task Generator</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">LLM-powered task suggestion from your catalog</p>
+        </div>
+    </div>
+
+    <!-- Active provider status -->
+    {% if not active_config %}
+    <div class="mb-6 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-xl text-sm">
+        ⚠️ No active LLM provider. <a href="/llm-configs/" class="underline font-medium">Configure one</a> or seed presets from <a href="/admin" class="underline font-medium">Admin panel</a>.
+    </div>
+    {% else %}
+    <div class="mb-6 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+        <span>✅</span> Active: <strong>{{ active_config.provider_name }}</strong> ({{ active_config.model_name }})
+        <span class="text-xs opacity-75 ml-2">{{ active_config.total_tokens }} tokens · ${{ "%.4f" % active_config.total_cost }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Generate form -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Generate Task</h2>
+        <form action="/tasks/generate" method="post" class="space-y-4">
+            <div>
+                <label for="custom_prompt" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Custom request (optional)
+                </label>
+                <textarea
+                    id="custom_prompt"
+                    name="custom_prompt"
+                    rows="2"
+                    maxlength="500"
+                    placeholder="E.g.: something relaxing, a challenge, something new..."
+                    class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 resize-none"
+                ></textarea>
+            </div>
+            <button
+                type="submit"
+                {% if not active_config %}disabled{% endif %}
+                class="px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white font-medium transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25"
+            >
+                🎲 Generate Task
+            </button>
+        </form>
+    </div>
+
+    <!-- Recent activity log -->
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">Recent Activity</h2>
+    <div class="space-y-3">
+        {% for log in recent_logs %}
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md
+                    {% if log.status == 'pending' %}border-l-4 border-l-amber-400{% endif %}
+                    {% if log.status == 'completed' %}border-l-4 border-l-emerald-400{% endif %}
+                    {% if log.status == 'interrupted' %}border-l-4 border-l-red-400{% endif %}">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                            {% if log.status == 'pending' %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
+                            {% elif log.status == 'completed' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
+                            {% else %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300{% endif %}">
+                            {{ log.status }}
+                        </span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500">
+                            {{ log.created_at.strftime('%H:%M') if log.created_at else '' }}
+                        </span>
+                    </div>
+                    <h3 class="font-semibold text-slate-800 dark:text-slate-100">
+                        {{ log.selected_entity_name or '(custom)' }}
+                    </h3>
+                    {% if log.selected_params %}
+                    <details class="mt-1">
+                        <summary class="text-xs text-slate-400 dark:text-slate-500 cursor-pointer hover:text-indigo-400">Params ▾</summary>
+                        <pre class="mt-1 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg overflow-x-auto">{{ log.selected_params | tojson(indent=2) }}</pre>
+                    </details>
+                    {% endif %}
+                    {% if log.cleaned_response and log.cleaned_response.reasoning %}
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">"{{ log.cleaned_response.reasoning[:200] }}"</p>
+                    {% endif %}
+                    <div class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                        {{ log.total_tokens }} tokens · ${{ "%.5f" % log.cost }}
+                    </div>
+                </div>
+                {% if log.status == 'pending' %}
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <form action="/tasks/{{ log.id }}/complete" method="post">
+                        <button type="submit"
+                                class="px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors">
+                            ✅ Done
+                        </button>
+                    </form>
+                    <form action="/tasks/{{ log.id }}/interrupt" method="post">
+                        <button type="submit"
+                                class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors">
+                            ⏹ Interrupt
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not recent_logs %}
+        <div class="text-center py-12 text-slate-400 dark:text-slate-500">
+            <div class="text-4xl mb-3">🎲</div>
+            <p>No tasks generated yet. Click "Generate Task" to start!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

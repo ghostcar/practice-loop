@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}{{ t.get('training_title', 'Training') }} – Tracker{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                🏋️ {{ t.get('training_title', 'Daily Training') }}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {{ today.strftime('%A, %d %B %Y') }}
+            </p>
+        </div>
+        <a href="/dashboard"
+           class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            ← {{ t.get('back_dashboard', 'Dashboard') }}
+        </a>
+    </div>
+
+    <!-- Error message -->
+    {% if request.query_params.get('error') %}
+    <div class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+        <p class="text-sm text-red-700 dark:text-red-300">
+            {{ request.query_params.get('error') }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- No training day: show Generate button -->
+    {% if not training_day %}
+    <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="text-5xl mb-4">📋</div>
+        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            {{ t.get('training_no_plan', 'No plan for today yet') }}
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
+            {{ t.get('training_no_plan_desc', 'Let the AI create a balanced training plan with tasks and checklists tailored to your preferences and history.') }}
+        </p>
+        {% if active_config %}
+        <form method="POST" action="/training/plan">
+            <button type="submit"
+                    class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow transition">
+                ✨ {{ t.get('training_generate', 'Generate Today\'s Plan') }}
+            </button>
+        </form>
+        {% else %}
+        <p class="text-sm text-amber-600 dark:text-amber-400">
+            ⚠️ {{ t.get('training_no_llm', 'Configure an LLM provider first') }}
+        </p>
+        <a href="/llm-configs/" class="text-sm text-indigo-600 hover:underline mt-2 inline-block">
+            {{ t.get('training_setup_llm', 'Set up LLM provider →') }}
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Analysis state: show results -->
+    {% elif training_day.status == 'analyzed' %}
+    <div class="space-y-6">
+        <!-- Analysis card -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">📊</span>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    {{ t.get('training_analysis', 'Day Analysis') }}
+                </h2>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {{ training_day.analysis_summary or 'No analysis available.' }}
+            </p>
+        </div>
+
+        <!-- Next day suggestion -->
+        {% if training_day.next_day_suggestion %}
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow-sm border border-indigo-200 dark:border-indigo-800 p-6">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="text-xl">🔮</span>
+                <h2 class="text-lg font-semibold text-indigo-900 dark:text-indigo-100">
+                    {{ t.get('training_next_day', 'Tomorrow\'s Suggestion') }}
+                </h2>
+            </div>
+            <div class="text-sm text-indigo-800 dark:text-indigo-200 whitespace-pre-wrap font-sans">
+                <p class="mb-2">{{ next_day.get('suggestion_summary', '') if next_day else '' }}</p>
+                {% if next_day and next_day.get('tasks') %}
+                <ul class="list-disc pl-5 space-y-1">
+                {% for t in next_day.tasks %}
+                    <li>{{ t.get('entity_name', 'Task') }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Active state: show tasks with checklists -->
+    {% else %}
+    {% if training_day.plan_summary %}
+    <div class="mb-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+        <p class="text-sm text-indigo-800 dark:text-indigo-200">
+            {{ training_day.plan_summary }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Daily progress ring -->
+    {% if logs %}
+    {% set total_tasks = logs|length %}
+    {% set completed_tasks = namespace(value=0) %}
+    {% for log in logs %}{% if log.status == 'completed' %}{% set completed_tasks.value = completed_tasks.value + 1 %}{% endif %}{% endfor %}
+    <div class="mb-6 flex items-center gap-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
+        <div class="relative w-20 h-20">
+            <svg class="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor"
+                        class="text-gray-200 dark:text-gray-700" stroke-width="8"/>
+                <circle cx="40" cy="40" r="34" fill="none"
+                        stroke="url(#ringGrad)" stroke-width="8" stroke-linecap="round"
+                        stroke-dasharray="{{ (213.6 * completed_tasks.value / total_tasks)|round(1) }} 213.6"
+                        class="transition-all duration-700"/>
+                <defs>
+                    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#6366f1"/>
+                        <stop offset="100%" stop-color="#a855f7"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-lg font-bold text-gray-900 dark:text-white">{{ completed_tasks.value }}/{{ total_tasks }}</span>
+            </div>
+        </div>
+        <div>
+            <h3 class="font-semibold text-gray-900 dark:text-white">Daily Progress</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ (completed_tasks.value / total_tasks * 100)|int }}% complete — {{ total_tasks - completed_tasks.value }} remaining
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Task cards -->
+    <div class="space-y-4">
+        {% for log in logs %}
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border
+                    {% if log.status == 'completed' %}border-green-300 dark:border-green-700{% else %}border-gray-200 dark:border-gray-700{% endif %}
+                    p-5 transition-all">
+            <!-- Task header -->
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <h3 class="font-medium text-gray-900 dark:text-white">
+                        {{ log.selected_entity_name or 'Untitled Task' }}
+                    </h3>
+                    {% if log.status != 'pending' %}
+                    <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full
+                                 {% if log.status == 'completed' %}bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300
+                                 {% else %}bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300{% endif %}">
+                        {{ log.status }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Complete button (only when all subtasks done) -->
+                {% if log.status == 'pending' and log.subtasks %}
+                {% set all_done = namespace(value=true) %}
+                {% for st in log.subtasks %}
+                {% if not st.get('is_done') %}{% set all_done.value = false %}{% endif %}
+                {% endfor %}
+                {% if all_done.value %}
+                <form method="POST" action="/training/tasks/{{ log.id }}/complete">
+                    <button type="submit"
+                            class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                        ✅ {{ t.get('training_complete', 'Complete') }}
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Subtask checklist -->
+            {% if log.subtasks %}
+            <div class="space-y-2">
+                {% for st in log.subtasks %}
+                <form method="POST" action="/training/tasks/{{ log.id }}/subtasks/{{ loop.index0 }}/toggle"
+                      class="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                    <button type="submit"
+                            class="mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition
+                                   {% if st.get('is_done') %}
+                                   bg-indigo-600 border-indigo-600 text-white
+                                   {% else %}
+                                   border-gray-300 dark:border-gray-600 hover:border-indigo-400
+                                   {% endif %}">
+                        {% if st.get('is_done') %}✓{% endif %}
+                    </button>
+                    <span class="text-sm {% if st.get('is_done') %}line-through text-gray-400 dark:text-gray-500{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+                        {{ st.get('desc', 'Step ' + (loop.index|string)) }}
+                    </span>
+                </form>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-400 dark:text-gray-500 italic">
+                {{ t.get('training_no_subtasks', 'No subtasks defined') }}
+            </p>
+            {% endif %}
+
+            <!-- Progress bar -->
+            {% if log.subtasks %}
+            {% set done = namespace(value=0) %}
+            {% for st in log.subtasks %}
+            {% if st.get('is_done') %}{% set done.value = done.value + 1 %}{% endif %}
+            {% endfor %}
+            <div class="mt-3 flex items-center gap-2">
+                <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-indigo-500 rounded-full transition-all"
+                         style="width: {{ (done.value / (log.subtasks|length) * 100)|int }}%"></div>
+                </div>
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ done.value }}/{{ log.subtasks|length }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not logs %}
+    <div class="text-center py-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <p class="text-gray-500 dark:text-gray-400">
+            {{ t.get('training_empty', 'No tasks in this training day. Generate a plan.') }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Action buttons -->
+    <div class="flex gap-3 mt-6">
+        {% if training_day.status == 'active' or training_day.status == 'completed' %}
+        <form method="POST" action="/training/analyze">
+            <button type="submit"
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg shadow transition">
+                📊 {{ t.get('training_analyze', 'Analyze Day & Plan Tomorrow') }}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

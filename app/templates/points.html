@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Points Economy{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">💰 {{ t.get('points_title', 'Points Economy') }}</h1>
+
+  <!-- Balance card -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 text-center">
+      <div class="text-4xl font-bold text-indigo-400" id="bal-points">0</div>
+      <div class="text-sm text-gray-400 mt-1">Points Balance</div>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 text-center">
+      <div class="text-4xl font-bold text-amber-400" id="bal-xp">0</div>
+      <div class="text-sm text-gray-400 mt-1">XP</div>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 text-center">
+      <div class="text-4xl font-bold text-emerald-400" id="bal-lvl">1</div>
+      <div class="text-sm text-gray-400 mt-1">Level</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold mb-3">📈 Balance Trend (30 days)</h3>
+      <canvas id="trend-chart" class="w-full h-56"></canvas>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold mb-3">🍩 Transaction Breakdown</h3>
+      <canvas id="donut-chart" class="w-full h-56"></canvas>
+    </div>
+  </div>
+
+  <!-- Thresholds -->
+  <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg border border-gray-700">
+    <h3 class="text-lg font-semibold mb-3">Thresholds</h3>
+    <div id="thresholds" class="flex gap-4 flex-wrap"></div>
+  </div>
+
+  <!-- Spend form -->
+  <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-lg border border-gray-700">
+    <h3 class="text-lg font-semibold mb-3">Spend Points</h3>
+    <form id="spend-form" class="flex gap-3">
+      <input type="number" id="spend-amt" placeholder="Amount" min="1" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 w-32">
+      <input id="spend-reason" placeholder="Reason (e.g. reward)" class="flex-1 bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm">Spend</button>
+    </form>
+  </div>
+
+  <!-- Transactions -->
+  <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+    <div class="bg-gray-700 px-6 py-3 font-semibold">Recent Transactions</div>
+    <table class="w-full text-sm"><tbody id="txn-table"></tbody></table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadBalance() {
+  const res = await fetch('/api/v2/points/balance');
+  const d = await res.json();
+  document.getElementById('bal-points').textContent = d.points_balance;
+  document.getElementById('bal-xp').textContent = d.xp;
+  document.getElementById('bal-lvl').textContent = d.level;
+
+  // Thresholds
+  if (d.thresholds) {
+    document.getElementById('thresholds').innerHTML = `
+      <div class="px-4 py-2 rounded-lg ${d.points_balance < d.thresholds.negative ? 'bg-red-900 ring-2 ring-red-500' : 'bg-gray-700'}">
+        <span class="text-xs text-gray-400">Negative</span><br>&lt; ${d.thresholds.negative}
+      </div>
+      <div class="px-4 py-2 rounded-lg ${d.points_balance < d.thresholds.warning ? 'bg-yellow-900 ring-2 ring-yellow-500' : 'bg-gray-700'}">
+        <span class="text-xs text-gray-400">Warning</span><br>&lt; ${d.thresholds.warning}
+      </div>
+      <div class="px-4 py-2 rounded-lg ${d.points_balance >= d.thresholds.good ? 'bg-green-900 ring-2 ring-green-500' : 'bg-gray-700'}">
+        <span class="text-xs text-gray-400">Good</span><br>≥ ${d.thresholds.good}
+      </div>
+    `;
+  }
+
+  // Transactions
+  document.getElementById('txn-table').innerHTML = d.recent_transactions.map(t => `
+    <tr class="border-t border-gray-700">
+      <td class="px-4 py-2 text-gray-400 text-xs">${new Date(t.created_at).toLocaleDateString()}</td>
+      <td class="px-4 py-2 ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}">${t.amount >= 0 ? '+' : ''}${t.amount}</td>
+      <td class="px-4 py-2"><span class="text-xs px-2 py-0.5 rounded bg-gray-700">${t.transaction_type}</span></td>
+      <td class="px-4 py-2 text-gray-300">${t.reason || ''}</td>
+    </tr>
+  `).join('') || '<tr><td class="px-4 py-4 text-gray-500 text-center" colspan="4">No transactions yet</td></tr>';
+}
+document.getElementById('spend-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const amt = document.getElementById('spend-amt').value;
+  const reason = document.getElementById('spend-reason').value;
+  await fetch(`/api/v2/points/spend?amount=${amt}&reason=${encodeURIComponent(reason)}`, {method:'POST'});
+  loadBalance();
+});
+loadBalance();
+
+// Trend chart
+(async () => {
+    try {
+        const res = await fetch('/api/v2/charts/points-trend?days=30');
+        const data = await res.json();
+
+        // Line chart
+        const ctx1 = document.getElementById('trend-chart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Balance',
+                    data: data.balance,
+                    borderColor: '#818cf8',
+                    backgroundColor: 'rgba(129,140,248,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#9ca3af' } } },
+                scales: {
+                    x: { ticks: { color: '#9ca3af', maxTicksLimit: 10, font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } }
+                }
+            }
+        });
+
+        // Donut chart
+        const ctx2 = document.getElementById('donut-chart').getContext('2d');
+        const breakdown = data.breakdown || {};
+        const colors = { earn: '#10b981', penalty: '#ef4444', spend: '#f59e0b', redeem: '#6366f1', bonus: '#8b5cf6' };
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(breakdown).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+                datasets: [{
+                    data: Object.values(breakdown),
+                    backgroundColor: Object.keys(breakdown).map(k => colors[k] || '#6b7280'),
+                    borderColor: '#1f2937',
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#9ca3af', font: { size: 11 } } } }
+            }
+        });
+    } catch(e) { console.warn('Chart load failed:', e); }
+})();
+</script>
+{% endblock %}

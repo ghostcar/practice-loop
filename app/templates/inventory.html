@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">📦 {{ t.get('inventory_title', 'Inventory') }}</h1>
+    <div class="flex gap-2">
+      <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm font-medium">+ Add</button>
+      <a href="/import/template/inventory" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm">📥 Template</a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex gap-2 mb-6 flex-wrap">
+    <button onclick="filter('')" class="filter-btn px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">All</button>
+    <button onclick="filter('clothing')" class="filter-btn px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">👗 Clothing</button>
+    <button onclick="filter('equipment')" class="filter-btn px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">🔧 Equipment</button>
+    <button onclick="filter('cosmetics')" class="filter-btn px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm">💄 Cosmetics</button>
+    <button onclick="filterShoppingList()" class="filter-btn px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-600 text-sm">🛒 Shopping List</button>
+  </div>
+
+  <!-- Add form (hidden) -->
+  <div id="add-form" class="hidden bg-gray-800 rounded-xl p-6 mb-6 shadow-lg border border-gray-700">
+    <h3 class="text-lg font-semibold mb-3">New Item</h3>
+    <form id="inv-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <input id="inv-cat" placeholder="category" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <input id="inv-name" placeholder="name" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600 col-span-2">
+      <input id="inv-qty" type="number" placeholder="qty" value="1" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <input id="inv-qtyn" type="number" placeholder="qty needed" value="1" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <select id="inv-status" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+        <option value="need">Need</option><option value="ordered">Ordered</option><option value="bought">Bought</option><option value="built">Built</option>
+      </select>
+      <input id="inv-prio" type="number" placeholder="priority" value="0" class="bg-gray-700 rounded px-3 py-2 text-white border border-gray-600">
+      <label class="flex items-center gap-2 text-sm col-span-2">
+        <input type="checkbox" id="inv-shop"> Shopping list
+      </label>
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-sm col-span-full">Save</button>
+    </form>
+  </div>
+
+  <!-- Category distribution chart -->
+  <div class="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg border border-gray-700">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold">📊 Category Breakdown</h3>
+        <span id="inv-total" class="text-xs text-gray-400"></span>
+    </div>
+    <canvas id="inv-chart" class="w-full h-32"></canvas>
+  </div>
+
+  <!-- List -->
+  <div id="inv-list" class="space-y-2"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let currentFilter = '';
+async function loadInventory(cat, shopOnly) {
+  let url = '/api/v2/inventory?';
+  if (cat) url += 'category=' + cat + '&';
+  if (shopOnly) url += 'shopping_list=true&';
+  const res = await fetch(url);
+  const items = await res.json();
+  const el = document.getElementById('inv-list');
+  el.innerHTML = items.map(i => `
+    <div class="bg-gray-800 rounded-lg p-4 flex justify-between items-center border border-gray-700 hover:border-gray-600 transition shadow">
+      <div class="flex-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs px-2 py-0.5 rounded ${catBadge(i.category)}">${i.category}</span>
+          <span class="font-medium">${i.name}</span>
+          <span class="text-xs ${statusBadge(i.status)}">${i.status}</span>
+          ${i.is_shopping_list ? '<span class="text-xs bg-amber-700 px-1.5 py-0.5 rounded">🛒</span>' : ''}
+        </div>
+        <div class="text-xs text-gray-400 mt-1">Qty: ${i.quantity}/${i.quantity_needed} | Priority: ${i.priority}</div>
+      </div>
+      <button onclick="del('${i.id}')" class="text-red-400 hover:text-red-300 text-sm px-2">🗑</button>
+    </div>
+  `).join('') || '<p class="text-gray-500 text-center py-8">No items yet.</p>';
+}
+function catBadge(c) {
+  const m = {clothing:'bg-pink-800',equipment:'bg-blue-800',cosmetics:'bg-purple-800',other:'bg-gray-700'};
+  return m[c] || 'bg-gray-700';
+}
+function statusBadge(s) {
+  const m = {need:'text-red-400',ordered:'text-yellow-400',bought:'text-green-400',built:'text-green-400'};
+  return m[s] || 'text-gray-400';
+}
+function filter(c) { currentFilter = c; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('bg-indigo-600')); event.target.classList.add('bg-indigo-600'); loadInventory(c, false); }
+function filterShoppingList() { document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('bg-indigo-600')); event.target.classList.add('bg-indigo-600'); loadInventory('', true); }
+function showForm() { document.getElementById('add-form').classList.toggle('hidden'); }
+async function del(id) { await fetch('/api/v2/inventory/'+id, {method:'DELETE'}); loadInventory(currentFilter, false); }
+document.getElementById('inv-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    category: document.getElementById('inv-cat').value,
+    name: document.getElementById('inv-name').value,
+    quantity: parseInt(document.getElementById('inv-qty').value) || 1,
+    quantity_needed: parseInt(document.getElementById('inv-qtyn').value) || 1,
+    status: document.getElementById('inv-status').value,
+    priority: parseInt(document.getElementById('inv-prio').value) || 0,
+    is_shopping_list: document.getElementById('inv-shop').checked,
+  };
+  await fetch('/api/v2/inventory', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  document.getElementById('add-form').classList.add('hidden');
+  loadInventory(currentFilter, false);
+});
+loadInventory('', false);
+
+// Category chart
+(async () => {
+    try {
+        const res = await fetch('/api/v2/inventory');
+        const items = await res.json();
+        document.getElementById('inv-total').textContent = items.length + ' items';
+        const cats = {};
+        items.forEach(i => { cats[i.category] = (cats[i.category] || 0) + 1; });
+        const colors = { clothing: '#ec4899', equipment: '#3b82f6', cosmetics: '#a855f7', other: '#6b7280' };
+        const ctx = document.getElementById('inv-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(cats).map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+                datasets: [{
+                    data: Object.values(cats),
+                    backgroundColor: Object.keys(cats).map(c => colors[c] || '#6b7280'),
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } },
+                    y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } }
+                }
+            }
+        });
+    } catch(e) { console.warn('Inv chart failed:', e); }
+})();
+</script>
+{% endblock %}
