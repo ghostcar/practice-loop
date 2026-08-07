@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ t.app_title }}</title>
-    <!-- FIXME: CDN usage is temporary — migrate to local assets per DESIGN.md §15.1 -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Local assets — no external CDN dependencies -->
+    <script src="/static/tailwindcss.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -28,9 +28,8 @@
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token or '' }}">
-    <!-- FIXME: CDN usage is temporary — migrate to local assets per DESIGN.md §15.1 -->
-    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/htmx.min.js"></script>
+    <script src="/static/chart.umd.min.js"></script>
     <script>
         // HTMX: auto-include CSRF token in all state-changing requests
         document.addEventListener('DOMContentLoaded', function() {
