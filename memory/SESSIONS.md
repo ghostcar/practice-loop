@@ -182,3 +182,15 @@
 - Полный аудит всех эндпоинтов: остальные уже фильтруют по user_id
 - Тесты 105/105, ruff 0, Docker smoke OK
 - Артефакты: изменены security.py, points_v2.py, calendar.py
+
+## 2026-08-07 — Сессия 26: DESIGN.md compliance — дашборд, графики, вёрстка
+- DESIGN.md — 600+ строк дизайн-системы (уже существовал, переименован из DESING.md)
+- base.html: убраны градиенты, emoji из навигации, animate-fade-in из main
+- dashboard_v2.html: полный редизайн — 4 графика, solid индикаторы, SVG иконки, DESIGN.md палитра
+- training.html: SVG checkmark, solid progress ring, компактный график
+- sessions.html/schedule.html: timeline без градиентов, light mode
+- measurements/calendar/points/inventory: light+dark тема, semantic токены
+- Убраны дубликаты Chart.js CDN из 4 шаблонов
+- 522 insertions, 704 deletions — чистое сокращение кода
+- 105 тестов, ruff 0, Docker smoke ok
+- Артефакты: изменены 9 шаблонов HTML

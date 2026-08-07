@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 25).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 26).
 
 ## Обзор фаз
 | Область | Статус |
@@ -24,6 +24,7 @@
 | R4 — LLM planner | ✅ Завершён |
 | R5 — Frontend shell | ✅ Завершён |
 | R6 — Возврат вторичных модулей | ✅ Завершён |
+| DESIGN.md Compliance & Dashboard | ✅ Завершён |
 
 ## R6 — Возврат вторичных модулей (object-level auth)
 - [x] security.py: require_entity_owner() — отдельный хелпер для Entity (owner_id ≠ user_id)
@@ -147,8 +148,19 @@
 - [x] innerHTML аудит: всё использование — серверные данные (безопасно)
 - [x] scripts блок в base.html
 
+## DESIGN.md Compliance & Dashboard
+- [x] base.html: убраны градиенты (body, logo), emoji из nav, animate-fade-in из main
+- [x] dashboard_v2.html: полный редизайн — 4 графика (activity bars, category donut, points trend, completion gauge), solid XP bar, SVG-иконки, consistent spacing
+- [x] training.html: SVG checkmark, solid progress ring, compact chart
+- [x] sessions.html: improved timeline, no gradient duration bars
+- [x] schedule.html: light mode support, clean forms
+- [x] measurements.html/inventory.html/calendar.html/points.html: light/dark theme, semantic tokens
+- [x] Убраны дубликаты Chart.js CDN (уже в base.html)
+- [x] DESIGN.md токены: accent #6B57A5, success #2F7657, warning #9A6415, danger #A83B4A, info #356A9A
+- [x] 105 тестов, ruff 0, Docker ok
+
 ## В работе
-- Ничего. R0–R6 завершены.
+- Ничего. R0–R6 + DESIGN завершены.
 
 ## Следующие шаги
 1. Push на GitHub (`git push --force -u origin main`)
