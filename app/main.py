@@ -61,7 +61,15 @@ app = FastAPI(title="Practice Loop", version="0.7.0", lifespan=lifespan)
 async def csrf_middleware(request: Request, call_next):
     if request.url.path.startswith("/static") or request.url.path == "/healthz":
         return await call_next(request)
-    verify_csrf(request)
+    try:
+        verify_csrf(request)
+    except Exception as e:
+        from fastapi import HTTPException
+        from fastapi.responses import JSONResponse
+
+        if isinstance(e, HTTPException):
+            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+        raise
     return await call_next(request)
 
 
