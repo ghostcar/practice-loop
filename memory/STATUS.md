@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 15).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 16).
 
 ## Обзор фаз
 | Область | Статус |
@@ -15,6 +15,7 @@
 | Phase 7 — Import/Export + Charts + Layout | ✅ Завершена |
 | Phase 8 — Calendar (календарь доступности) | ✅ Завершена |
 | Phase 9 — Penalty & Points v2 (штрафы и баллы) | ✅ Завершена |
+| Phase 10 — Telegram Bot v2 (реальный бот) | ✅ Завершена |
 
 ## Что сделано (Phase 9 — Penalty & Points v2)
 - [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
@@ -24,6 +25,17 @@
 - [x] Threshold effects: авто-уведомления при пересечении negative/warning/good порогов
 - [x] Gamification editor: `PUT /entities/{id}/gamification` — обновление конфига баллов/штрафов
 - [x] Points page: список pending отработок (✅ Complete / ⏭ Skip), профили баллов, назначение на сущность
+- [x] Тесты: 105/105
+
+## Что сделано (Phase 10 — Telegram Bot v2)
+- [x] 8 команд с реальной логикой: /start, /link, /next→LLM, /tasks, /done→gamification, /interrupt→penalty, /stats→DB, /session→DB, /settings→locale
+- [x] Inline-клавиатуры: ✅ Done / ⏹ Interrupt на каждой задаче, подтверждение прерывания
+- [x] User.telegram_chat_id, telegram_link_code, telegram_link_code_expires (миграция 009)
+- [x] Привязка: 6-значный код (30 мин), /link CODE, /profile/telegram-link-code, /profile/telegram-status
+- [x] Уведомления: send_telegram_notification(), хук _send_tg_notifications в gamification handler
+- [x] Webhook: авто-регистрация при старте (setup_webhook в lifespan)
+- [x] Дашборд: карточка «Link Telegram» с генерацией кода, статусом, кнопкой
+- [x] config: tg_bot_username, tg_webhook_base_url
 - [x] Тесты: 105/105
 
 ## Что сделано (Phase 7 — Import/Export + Charts + Layout)
@@ -56,11 +68,11 @@
 - [x] Отпуск = CalendarOverride с шаблоном «Vacation» на диапазон дат
 
 ## В работе
-- Ничего. Все 9 фаз завершены.
+- Ничего. Все 10 фаз завершены.
 
 ## Следующие шаги
 1. Push на GitHub (`git push --force -u origin main`)
-2. Telegram-бот: доработка и тестирование
-3. Деплой на VPS, SSL, бэкапы
-4. Фоновый триггер авто-анализа тренировки (APScheduler/cron)
-5. Points spending: магазин наград, redeem баллов на бонусы
+2. Деплой на VPS, SSL, бэкапы
+3. Фоновый триггер авто-анализа тренировки (APScheduler/cron)
+4. Points spending: магазин наград, redeem баллов на бонусы
+5. Локальный polling-режим бота для разработки

@@ -19,3 +19,4 @@
 | 2026-08-07 | Phase 7 (+3 файла) | Import/Export (8 типов), CLI, chart APIs, дашборд с 4 графиками, компактный layout |
 | 2026-08-07 | Phase 8 (+5 файлов) | Calendar (3 модели), Entity.intensity, `/calendar/check`, LLM-интеграция, schedule timeline chart |
 | 2026-08-07 | Phase 9 (+1 файл) | PenaltyRedemption, PointsProfile CRUD, Threshold effects, Redemption tracking, Gamification editor |
+| 2026-08-07 | Phase 10 (+1 файл) | Telegram bot v2: 8 команд с реальной логикой (LLM, gamification, stats), inline-кнопки, привязка аккаунта, уведомления, webhook |

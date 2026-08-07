@@ -79,3 +79,19 @@
 - Points page: redemption list с Complete/Skip, профили, назначение
 - Тесты 105/105, ruff 0 ошибок
 - Артефакты: +1 модель, +1 миграция, изменены handler, API, шаблон
+
+## 2026-08-07 — Сессия 16: Telegram Bot v2 — реальный бот
+- Полный реврайт app/telegram/bot.py: 8 команд с реальной логикой
+- /next вызывает LLM-пайплайн (generate_task), показывает карточку с inline-кнопками
+- /done и /interrupt интегрированы с gamification handler (XP, streak, points, PenaltyRedemption)
+- /stats показывает реальную статистику из БД (XP, level, streak, points)
+- /session показывает статус активной сессии
+- /settings переключает язык (inline EN/RU кнопки)
+- Привязка аккаунта: 6-значный код через /profile/telegram-link-code, /link CODE
+- User.telegram_chat_id, telegram_link_code, telegram_link_code_expires (миграция 009)
+- Уведомления: send_telegram_notification() + хук _send_tg_notifications в gamification handler
+- Webhook: авто-регистрация при старте (setup_webhook в lifespan)
+- Дашборд: карточка «Link Telegram» с JS (generateLinkCode, checkTelegramStatus)
+- config: tg_bot_username, tg_webhook_base_url
+- Тесты 105/105, ruff 0 ошибок
+- Артефакты: +1 миграция, переписан bot.py, изменены handler, dashboard, main, config, user model, dashboard шаблон
