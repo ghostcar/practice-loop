@@ -15,6 +15,7 @@ from app.i18n.helpers import detect_locale, detect_theme
 from app.llm.pipeline import generate_task, get_active_llm_config
 from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
+from app.models.entity import Entity
 from app.models.user import User
 from app.security import complete_once, interrupt_once
 from app.services.scheduler import get_due_practices, set_next_due, set_retry_block
@@ -120,6 +121,48 @@ async def generate_task_endpoint(
             url="/tasks/?error=LLM+request+failed.+Check+your+provider+configuration.",
             status_code=status.HTTP_303_SEE_OTHER,
         )
+
+    return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- API: Deterministic fallback (no LLM) ---
+
+
+@router.post("/generate-deterministic")
+async def generate_deterministic(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Pick a task from due practices without LLM."""
+    practices = await get_due_practices(db, user.id, limit=1)
+    if not practices:
+        return RedirectResponse(
+            url="/tasks/?error=No+due+practices+found.+Enable+some+in+the+catalog.",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    p = practices[0]
+    entity_id = uuid.UUID(p["entity_id"])
+
+    # Verify entity exists
+    ent_result = await db.execute(select(Entity).where(Entity.id == entity_id))
+    if ent_result.scalar_one_or_none() is None:
+        return RedirectResponse(
+            url="/tasks/?error=Entity+not+found",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    log = ActivityLog(
+        user_id=user.id,
+        entity_id=entity_id,
+        status="pending",
+        selected_entity_name=p["entity_name"],
+        selected_params={"intensity": 1, "source": "deterministic"},
+        user_prompt="Deterministic fallback — no LLM",
+    )
+    db.add(log)
+    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
 

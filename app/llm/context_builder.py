@@ -160,6 +160,34 @@ async def _get_active_penalties(
     ]
 
 
+def format_context_abstract(context: dict) -> str:
+    """Render context with opaque IDs — no real names. For strict providers."""
+    parts = []
+    parts.append("## User Stats")
+    stats = context["stats"]
+    parts.append(f"- Completed: {stats['completed']}")
+    parts.append(f"- Interrupted: {stats['interrupted']}")
+    parts.append("")
+
+    parts.append("## Available Candidates (opaque IDs)")
+    for e in context["allowed_entities"]:
+        cat = e["category"]
+        typ = e["type"]
+        desire = e["desire_level"]
+        intensity_label = e.get("intensity", "active")
+        parts.append(
+            f"- ID={e['id']} | cat={cat} | type={typ} | desire={desire} | intensity={intensity_label}"
+        )
+    parts.append("")
+
+    parts.append("## Recent History")
+    for h in context["recent_history"]:
+        parts.append(f"- [{h['status']}] entity={h.get('entity_name', '?')[:20]} at {h.get('created_at')}")
+    parts.append("")
+
+    return "\n".join(parts)
+
+
 def format_context_for_prompt(context: dict) -> str:
     """Render the context dict into a prompt string for the LLM."""
     parts = []

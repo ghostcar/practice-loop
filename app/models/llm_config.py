@@ -31,6 +31,7 @@ class LLMProviderConfig(Base):
     api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    llm_mode: Mapped[str] = mapped_column(String(20), default="full", nullable=False)  # full / abstract
     total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_cost: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.client import call_llm
-from app.llm.context_builder import build_context, format_context_for_prompt
+from app.llm.context_builder import build_context, format_context_abstract, format_context_for_prompt
 from app.llm.repair import JsonRepairError, parse_llm_json
 from app.llm.tools import TOOLS
 from app.llm.training_prompts import (
@@ -21,6 +21,7 @@ from app.llm.training_prompts import (
     PLAN_DAY_SYSTEM,
     SUGGEST_NEXT_DAY_SYSTEM,
 )
+from app.llm.validator import get_allowed_ids, validate_llm_response
 from app.models.activity_log import ActivityLog
 from app.models.llm_config import LLMProviderConfig
 from app.models.training import TrainingDay
@@ -64,7 +65,11 @@ async def generate_task(
 ) -> ActivityLog:
     """Generate a task via LLM and save to ActivityLog."""
     context = await build_context(db, user_id, session_id=session_id, locale=locale)
-    context_text = format_context_for_prompt(context)
+    allowed_ids = get_allowed_ids(context)
+
+    # Choose format based on LLM mode
+    is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
+    context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(locale=locale)
 
     user_message = f"Context:\n{context_text}\n\n"
@@ -114,6 +119,11 @@ async def generate_task(
 
     if not entity_id or not entity_name:
         raise ValueError("LLM response missing entity_id or entity_name")
+
+    # Validate response against allowed set
+    validation_errors = validate_llm_response(parsed, allowed_ids)
+    if validation_errors:
+        raise ValueError(f"LLM response validation failed: {'; '.join(validation_errors)}")
 
     log = ActivityLog(
         user_id=user_id,
