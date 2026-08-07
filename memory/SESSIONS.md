@@ -68,3 +68,14 @@
 - Миграция 007
 - Тесты 105/105
 - Артефакты: +5 файлов (calendar модель, схема, API, шаблон, миграция), изменены 6 файлов
+
+## 2026-08-07 — Сессия 15: Penalty & Points v2 — штрафы и баллы
+- PenaltyRedemption: модель + миграция 008 — отслеживание отработок штрафов
+- Redemption API: список pending, complete (возврат баллов), skip
+- Handler: авто-создание PenaltyRedemption при прерывании задачи
+- PointsProfile: CRUD + назначение на сущность + удаление
+- Threshold effects: уведомления при пересечении порогов (negative/warning/good)
+- Gamification editor: PUT /entities/{id}/gamification
+- Points page: redemption list с Complete/Skip, профили, назначение
+- Тесты 105/105, ruff 0 ошибок
+- Артефакты: +1 модель, +1 миграция, изменены handler, API, шаблон

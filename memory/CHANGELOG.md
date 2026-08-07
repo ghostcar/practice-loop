@@ -18,3 +18,4 @@
 | 2026-08-07 | Phase 6 (+15 файлов) | Points v2, gamification_config, ScheduleRule, BodyMeasurement, InventoryItem, Import, Seed v2 |
 | 2026-08-07 | Phase 7 (+3 файла) | Import/Export (8 типов), CLI, chart APIs, дашборд с 4 графиками, компактный layout |
 | 2026-08-07 | Phase 8 (+5 файлов) | Calendar (3 модели), Entity.intensity, `/calendar/check`, LLM-интеграция, schedule timeline chart |
+| 2026-08-07 | Phase 9 (+1 файл) | PenaltyRedemption, PointsProfile CRUD, Threshold effects, Redemption tracking, Gamification editor |

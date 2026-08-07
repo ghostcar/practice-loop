@@ -31,3 +31,4 @@
 | ADR-024 | 2026-08-07 | Расписание дня | ScheduleRule: day_of_week+time+task_type+recurring | принято |
 | ADR-025 | 2026-08-07 | Календарь доступности | CalendarTemplate + AvailabilityWindow (allowed/disallowed/passive_only) + CalendarOverride (отпуск). Entity.intensity. `is_available()` utility. Отпуск = шаблон «Vacation» через override | принято |
 | ADR-026 | 2026-08-07 | Интеграция календаря в LLM | Расписание дня инжектится в context_builder → промпт. LLM получает окна с политиками и intensity сущностей | принято |
+| ADR-027 | 2026-08-07 | Отработка штрафов и профили баллов | PenaltyRedemption для отслеживания отработок (pending→completed→возврат баллов). PointsProfile как переиспользуемый шаблон баллов/штрафов/бонусов через назначение на сущность. Threshold effects: уведомления при negative/warning/good. Gamification editor через PUT /entities/{id}/gamification | принято |

@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 14).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 15).
 
 ## Обзор фаз
 | Область | Статус |
@@ -14,6 +14,17 @@
 | Phase 6 — Points v2, Measurements, Inventory, Schedule | ✅ Завершена |
 | Phase 7 — Import/Export + Charts + Layout | ✅ Завершена |
 | Phase 8 — Calendar (календарь доступности) | ✅ Завершена |
+| Phase 9 — Penalty & Points v2 (штрафы и баллы) | ✅ Завершена |
+
+## Что сделано (Phase 9 — Penalty & Points v2)
+- [x] PenaltyRedemption модель + миграция 008: отслеживание отработок штрафов (pending/completed/skipped)
+- [x] Redemption API: `GET /api/v2/points/redemptions`, `POST .../complete` (возврат баллов), `POST .../skip`
+- [x] Handler: авто-создание PenaltyRedemption при прерывании задачи
+- [x] PointsProfile: полный CRUD (`POST`/`GET`/`DELETE`), назначение профиля на сущность
+- [x] Threshold effects: авто-уведомления при пересечении negative/warning/good порогов
+- [x] Gamification editor: `PUT /entities/{id}/gamification` — обновление конфига баллов/штрафов
+- [x] Points page: список pending отработок (✅ Complete / ⏭ Skip), профили баллов, назначение на сущность
+- [x] Тесты: 105/105
 
 ## Что сделано (Phase 7 — Import/Export + Charts + Layout)
 - [x] Import/export модуль: 8 типов шаблонов (measurements, inventory, entities, schedule, points_transactions, training_days, activity_logs, points_profiles)
@@ -45,11 +56,11 @@
 - [x] Отпуск = CalendarOverride с шаблоном «Vacation» на диапазон дат
 
 ## В работе
-- Ничего. Все 8 фаз завершены.
+- Ничего. Все 9 фаз завершены.
 
 ## Следующие шаги
 1. Push на GitHub (`git push --force -u origin main`)
-2. Система штрафов и баллов v2 с гибкими профилями
-3. Telegram-бот: доработка и тестирование
-4. Деплой на VPS, SSL, бэкапы
-5. Фоновый триггер авто-анализа тренировки (APScheduler/cron)
+2. Telegram-бот: доработка и тестирование
+3. Деплой на VPS, SSL, бэкапы
+4. Фоновый триггер авто-анализа тренировки (APScheduler/cron)
+5. Points spending: магазин наград, redeem баллов на бонусы
