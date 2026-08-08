@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-07 (сессия 30).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-08 (сессия 32).
 
 ## Обзор фаз
 | Область | Статус |
@@ -193,14 +193,15 @@
 - [x] requirements.txt + requirements.lock — обновлены (102 пакета)
 - [x] 153/153 тестов, ruff 0, format clean, Docker ok
 
-## CI GitHub Actions (Session 31)
+## CI GitHub Actions (Session 31-32)
 - [x] pyproject.toml: +[build-system] для pip install .[dev]
 - [x] CI: 3 job'a — lint (ruff), test (pytest+SQLite), migrations (Alembic roundtrip на PostgreSQL)
 - [x] Убран неиспользуемый PostgreSQL-сервис из test job (тесты на SQLite)
 - [x] seed_prod.py: ruff fix (_pts)
+- [x] Session 32: фикс CI — repair type guard + migration boolean defaults
+- [x] Все 3 job'а зелёные (lint, test, migrations) в GitHub Actions
 - [x] 153/153 тестов, ruff 0, format clean
 
 ## Следующие шаги
 1. .env.example + docker-compose.override.yml для dev
-2. Обновление статических файлов (Chart.js 4.4→4.x, HTMX 2.0→2.x)
-3. Проверить CI в GitHub Actions (push в main → зелёные job'ы)
+2. Обновление статических файлов (Chart.js 4.4->4.x, HTMX 2.0->2.x)

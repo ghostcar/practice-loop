@@ -281,3 +281,13 @@
 - seed_prod.py: ruff fix (unused `pts` → `_pts`)
 - 153/153 тестов, ruff 0, format clean
 - Артефакты: изменены .github/workflows/ci.yml, pyproject.toml, seed_prod.py
+
+## 2026-08-08 — Сессия 32: CI fix — зелёные job'ы
+- CI запущен, lint ✅, но test ❌ и migrations ❌
+- **test**: 3 теста repair падали — `json_repair` на Python 3.11 успешно «чинил» plain text в JSON-строку, тесты ожидали исключение
+- **migrations**: downgrade 014 — `SET DEFAULT 0` на boolean колонке, PostgreSQL требовал `false`
+- Исправления:
+  - `app/llm/repair.py`: добавлена проверка типа результата (dict/list) после каждой стратегии repair
+  - `alembic/versions/014`: boolean defaults `0`→`false`, `1`→`true` в downgrade
+- Все 3 job'а зелёные: lint ✅ test ✅ migrations ✅
+- Артефакты: изменены app/llm/repair.py, alembic/versions/014_fix_migration_types.py
