@@ -49,7 +49,10 @@ def parse_llm_json(raw_content: str, is_last_attempt: bool = False) -> dict | li
     # Strategy 2: json_repair
     try:
         repaired = repair_json(content)
-        return json.loads(repaired)
+        result = json.loads(repaired)
+        if isinstance(result, (dict, list)):
+            return result
+        errors.append(f"json_repair: returned {type(result).__name__}, expected dict or list")
     except Exception as e:
         errors.append(f"json_repair: {e}")
 
@@ -58,13 +61,19 @@ def parse_llm_json(raw_content: str, is_last_attempt: bool = False) -> dict | li
         match = re.search(r"```(?:json)?\s*([\s\S]*?)```", content)
         if match:
             extracted = match.group(1).strip()
-            return json.loads(extracted)
+            result = json.loads(extracted)
+            if isinstance(result, (dict, list)):
+                return result
+            errors.append(f"regex(md): returned {type(result).__name__}, expected dict or list")
         # Try to find any JSON object in the text
         match = re.search(r"\{[\s\S]*\}", content)
         if match:
             extracted = match.group(0).strip()
             repaired = repair_json(extracted)
-            return json.loads(repaired)
+            result = json.loads(repaired)
+            if isinstance(result, dict):
+                return result
+            errors.append(f"regex(obj): returned {type(result).__name__}, expected dict")
     except Exception as e:
         errors.append(f"regex: {e}")
 

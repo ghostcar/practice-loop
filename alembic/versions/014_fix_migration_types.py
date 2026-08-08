@@ -73,7 +73,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.alter_column("activity_logs", "subtasks", type_=sa.String)
     op.alter_column("points_transactions", "meta", type_=sa.String)
-    op.alter_column("points_profiles", "is_default", server_default=sa.text("0"))
-    op.alter_column("schedule_rules", "recurring", server_default=sa.text("1"))
-    op.alter_column("schedule_rules", "is_active", server_default=sa.text("1"))
-    op.alter_column("inventory_items", "is_shopping_list", server_default=sa.text("0"))
+    op.alter_column("points_profiles", "is_default", server_default=sa.text("false"))
+    op.alter_column("schedule_rules", "recurring", server_default=sa.text("true"))
+    op.alter_column("schedule_rules", "is_active", server_default=sa.text("true"))
+    op.alter_column("inventory_items", "is_shopping_list", server_default=sa.text("false"))
