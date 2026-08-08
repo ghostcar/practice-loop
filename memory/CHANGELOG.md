@@ -20,3 +20,11 @@
 | 2026-08-07 | Phase 8 (+5 файлов) | Calendar (3 модели), Entity.intensity, `/calendar/check`, LLM-интеграция, schedule timeline chart |
 | 2026-08-07 | Phase 9 (+1 файл) | PenaltyRedemption, PointsProfile CRUD, Threshold effects, Redemption tracking, Gamification editor |
 | 2026-08-07 | Phase 10 (+1 файл) | Telegram bot v2: 8 команд с реальной логикой (LLM, gamification, stats), inline-кнопки, привязка аккаунта, уведомления, webhook |
+| 2026-08-07 | Phase 11 (+1 файл) | Auto-Analysis Scheduler: asyncio фоновый триггер авто-анализа тренировок |
+| 2026-08-07 | R0-R4 (+8 файлов) | v0.7 Audit, AGENTS.md, роли, CSRF, scheduler, LLM planner, frontend shell |
+| 2026-08-07 | R5-R6 | Object-level auth, DESIGN.md compliance, dashboard редизайн |
+| 2026-08-07 | Переаудит | CSRF fix, create_all удалён, 2 миграции (013-014), XSS-экранирование |
+| 2026-08-07 | Session 28 | Cross-user auth тесты (22), README.md |
+| 2026-08-07 | Session 29 | CDN → локальные static-файлы (TailwindCSS, HTMX, Chart.js) |
+| 2026-08-07 | Session 30 | Интеграционные тесты (scheduler + Telegram), обновление зависимостей |
+| 2026-08-08 | Session 31 | CI: 3 job'a (lint/test/migrations), [build-system] в pyproject.toml, ruff fix |

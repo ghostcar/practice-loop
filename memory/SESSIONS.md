@@ -271,3 +271,13 @@
 - requirements.txt + requirements.lock: перегенерированы (102 пакета)
 - 153/153 тестов, ruff 0, format clean, Docker ok
 - Артефакты: +2 тестовых файла, обновлены requirements.txt + requirements.lock
+
+## 2026-08-08 — Сессия 31: CI GitHub Actions — переработка
+- pyproject.toml: добавлен [build-system] (setuptools + wheel) для `pip install .[dev]`
+- CI переработан: 3 job'а вместо 2:
+  - **lint** — ruff check + format check для app/, cli.py, tests/, seed_prod.py
+  - **test** — pytest с SQLite (был PostgreSQL-сервис, но тесты его не использовали)
+  - **migrations** — Alembic upgrade → downgrade → upgrade на PostgreSQL 15
+- seed_prod.py: ruff fix (unused `pts` → `_pts`)
+- 153/153 тестов, ruff 0, format clean
+- Артефакты: изменены .github/workflows/ci.yml, pyproject.toml, seed_prod.py

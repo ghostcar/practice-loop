@@ -193,7 +193,14 @@
 - [x] requirements.txt + requirements.lock — обновлены (102 пакета)
 - [x] 153/153 тестов, ruff 0, format clean, Docker ok
 
+## CI GitHub Actions (Session 31)
+- [x] pyproject.toml: +[build-system] для pip install .[dev]
+- [x] CI: 3 job'a — lint (ruff), test (pytest+SQLite), migrations (Alembic roundtrip на PostgreSQL)
+- [x] Убран неиспользуемый PostgreSQL-сервис из test job (тесты на SQLite)
+- [x] seed_prod.py: ruff fix (_pts)
+- [x] 153/153 тестов, ruff 0, format clean
+
 ## Следующие шаги
 1. .env.example + docker-compose.override.yml для dev
-2. CI: GitHub Actions workflow с PostgreSQL (проверить что работает)
-3. Обновление статических файлов (Chart.js 4.4→4.x, HTMX 2.0→2.x)
+2. Обновление статических файлов (Chart.js 4.4→4.x, HTMX 2.0→2.x)
+3. Проверить CI в GitHub Actions (push в main → зелёные job'ы)

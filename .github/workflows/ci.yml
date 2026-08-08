@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 jobs:
+  # ── Lint & syntax check ──────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -15,15 +16,31 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install ruff
-      - run: ruff check app/ cli.py
-      - run: ruff format --check app/ cli.py
+      - run: ruff check app/ cli.py tests/ seed_prod.py
+      - run: ruff format --check app/ cli.py tests/ seed_prod.py
 
+  # ── Unit tests (SQLite, no external services) ────────────────────
   test:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ".[dev]"
+      - run: pytest tests/ -v
+        env:
+          JWT_SECRET_KEY: ci-test-secret-at-least-32-chars-long
+          CREDENTIALS_ENCRYPTION_KEY: ci-encryption-key-at-least-32-ch
+
+  # ── Migration roundtrip (PostgreSQL) ─────────────────────────────
+  migrations:
     runs-on: ubuntu-latest
     needs: [lint]
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: tracker
           POSTGRES_PASSWORD: tracker
@@ -40,7 +57,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -e ".[dev]"
-      - run: pytest tests/ -v
+      - run: pip install ".[dev]"
+      - name: Alembic upgrade → downgrade → upgrade
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
         env:
           DATABASE_URL: postgresql+asyncpg://tracker:tracker@localhost:5432/tracker_test
