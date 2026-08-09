@@ -19,9 +19,6 @@ services:
   app:
     build: .
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-tracker}:${POSTGRES_PASSWORD:?err}@db:5432/${POSTGRES_DB:-tracker}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?err}
@@ -35,7 +32,7 @@ services:
       TG_POLLING: ${TG_POLLING:-false}
       TG_AUTO_ANALYSIS_TIME: ${TG_AUTO_ANALYSIS_TIME:-23:00}
     command: >
-      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "until pg_isready -h db -U tracker -d tracker 2>/dev/null; do echo 'Waiting for DB...'; sleep 2; done && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "127.0.0.1:8000:8000"
 
