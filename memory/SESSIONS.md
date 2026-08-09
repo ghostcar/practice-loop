@@ -329,3 +329,15 @@
   - BodyMeasurement — только физические замеры (вес, обхваты)
 - 153/153 тестов, CI зелёный
 - Артефакты: +1 скрипт seed_training.py, конфиг nginx
+
+## 2026-08-09 — Сессия 36: TrainingLogEntry — журнал тренировки
+- **Модель** `app/models/training_log.py`: TrainingLogEntry (time_label, entry_type, planned/actual_value, unit, notes, sort_order, is_extra)
+- **Миграция** 015: таблица `training_log_entries`
+- **API** (3 эндпоинта):
+  - `POST /training/log-entry/{id}` — обновление actual_value + notes (inline HTMX)
+  - `POST /training/log-entry` — добавление внеплановой записи (is_extra=True)
+  - `DELETE /training/log-entry/{id}` — удаление внеплановой записи
+- **UI**: training.html — inline-формы для каждой строки журнала (факт + заметки), кнопка «+ Добавить запись» с выбором типа (приём/микро-слив/давление/заметка)
+- **Seed**: 27 записей по расписанию гидратации (fluid_intake, micro_leak, general_note)
+- 153/153 тестов, ruff 0
+- Артефакты: +3 файла (модель, миграция, seed_training.py), изменены training.py + training.html

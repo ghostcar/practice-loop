@@ -31,3 +31,5 @@
 | 2026-08-08 | Session 32 | CI fix: repair type guard + migration boolean defaults (lint✅ test✅ migrations✅) |
 | 2026-08-08 | Session 33 | Статические файлы: HTMX 2.0.10, Chart.js 4.5.1, TailwindCSS v4.3.3 |
 | 2026-08-08 | Session 34 | Релиз 0.8.0: env vars, seed config, docker profiles, smoke-test, README deployment |
+| 2026-08-09 | Session 35 | Деплой на VPS: db+app, nginx конфиг, seed тренировочного дня |
+| 2026-08-09 | Session 36 | TrainingLogEntry: журнал тренировки с inline-редактированием и внеплановыми записями |
