@@ -2,7 +2,7 @@
 
 Consensual adult activity tracker with LLM-assisted planning, gamification, and privacy-first design.
 
-> Version 0.7.0 — stabilization release.
+> Version 0.8.0 — stabilization release.
 
 ## Overview
 
@@ -88,6 +88,117 @@ All settings via environment variables or `.env` file:
 | `TG_WEBHOOK_BASE_URL` | `https://localhost:8443` | Public URL for Telegram webhook |
 | `TG_AUTO_ANALYSIS_TIME` | `23:00` | UTC time for daily training analysis |
 
+## Deployment
+
+### Production setup with host nginx + certbot
+
+This guide assumes you have a VPS with Docker, a domain name, and host-level nginx with certbot SSL.
+
+**1. Clone and configure:**
+
+```bash
+git clone https://github.com/ghostcar/practice-loop.git
+cd practice-loop
+cp .env.example .env
+# Edit .env with real secrets (see Configuration section above)
+```
+
+**2. Start services (db + app only, no built-in nginx):**
+
+```bash
+docker compose up -d db app
+```
+
+The app is now running on `127.0.0.1:8000`.
+
+**3. Host nginx config** (`/etc/nginx/sites-available/practice-loop`):
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # Static files — cached aggressively
+    location /static/ {
+        proxy_pass http://127.0.0.1:8000/static/;
+        proxy_set_header Host $host;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Auth rate limiting
+    location /auth/ {
+        limit_req zone=auth burst=5 nodelay;
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Everything else
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+# HTTP → HTTPS redirect
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$host$request_uri;
+}
+```
+
+Add rate-limiting zone to nginx.conf (`/etc/nginx/nginx.conf`):
+```nginx
+http {
+    limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
+    # ... rest of config
+}
+```
+
+**4. Obtain SSL certificate:**
+
+```bash
+sudo certbot --nginx -d your-domain.com
+```
+
+Reload nginx: `sudo systemctl reload nginx`.
+
+**5. Seed production data (optional):**
+
+```bash
+# Register first at https://your-domain.com/auth/register
+# Then seed:
+python seed_prod.py --email your@email.com --database-url postgresql+asyncpg://tracker:PASSWORD@localhost:5432/tracker
+```
+
+**6. Backups — pg_dump cron:**
+
+```bash
+# Add to crontab (crontab -e): daily backup, keep last 7
+0 3 * * * pg_dump -U tracker -h localhost -d tracker | gzip > /backups/tracker_$(date +\%Y\%m\%d).sql.gz && find /backups -name 'tracker_*.sql.gz' -mtime +7 -delete
+```
+
+### Full stack (with built-in nginx)
+
+If you don't have host-level nginx, use the built-in nginx container:
+
+```bash
+# Place SSL certs in ./nginx/ssl/fullchain.pem and ./nginx/ssl/privkey.pem
+docker compose --profile full up -d
+```
+
+This starts PostgreSQL + app + nginx on ports 80/443 (configurable via `HTTP_PORT`/`HTTPS_PORT`).
+
 ## Architecture
 
 ```
@@ -166,7 +277,8 @@ Test categories:
 GitHub Actions on push to `main`:
 
 1. **lint**: ruff check + ruff format --check
-2. **test**: pytest on PostgreSQL 15
+2. **test**: pytest (153 tests on SQLite)
+3. **migrations**: Alembic upgrade → downgrade → upgrade (PostgreSQL 15)
 
 ## Decisions
 
