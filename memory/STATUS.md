@@ -212,10 +212,11 @@
 ## Подготовка релиза 0.8.0 (Session 34)
 - [x] Версия 0.7.0 → 0.8.0
 - [x] .env.example: все переменные (CREDENTIALS_ENCRYPTION_KEY, TG_*, docker compose)
-- [x] docker-compose.yml: все env vars, nginx опциональный (профиль), порт 8000 на хост
+- [x] docker-compose.yml: все env vars, nginx опциональный (профиль), порт 8000 на хост, pg_isready wait-loop
 - [x] seed_prod.py: argparse --email --database-url
 - [x] docker-compose.override.yml: dev-окружение (SQLite, hot-reload)
+- [x] Docker smoke-test: все эндпоинты OK (/healthz, /static/*, /)
+- [x] README: секция Deployment (хост-nginx + certbot + docker compose + бэкапы)
 
 ## Следующие шаги
-1. Docker build + smoke test на VPS
-2. Документация по деплою с хост-nginx + certbot
+1. Деплой на VPS: docker compose up -d db app, хост-nginx reverse proxy, certbot, seed

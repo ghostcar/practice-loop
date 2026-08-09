@@ -302,11 +302,18 @@
 - 153/153 тестов, ruff 0
 - Артефакты: обновлены 3 статических файла в app/static/, изменён base.html
 
-## 2026-08-09 — Сессия 34: Подготовка релиза 0.8.0
+## 2026-08-09 — Сессия 34: Подготовка релиза 0.8.0 + Docker smoke-test + README
 - Версия: 0.7.0 → 0.8.0 (pyproject.toml + main.py)
 - `.env.example`: добавлены CREDENTIALS_ENCRYPTION_KEY, TG_BOT_TOKEN, TG_WEBHOOK_SECRET, TG_WEBHOOK_BASE_URL, TG_BOT_USERNAME, TG_POLLING, TG_AUTO_ANALYSIS_TIME
-- `docker-compose.yml`: добавлены все недостающие env vars, nginx — опциональный профиль `full`, app порт 8000 проброшен на хост
+- `docker-compose.yml`: добавлены все недостающие env vars, nginx — опциональный профиль `full`, app порт 8000 проброшен на хост, depends_on заменён на pg_isready wait-loop, postgresql-client добавлен в Dockerfile
 - `seed_prod.py`: argparse (--email, --database-url), читает DATABASE_URL из env
 - `docker-compose.override.yml`: dev-окружение (SQLite, hot-reload, polling Telegram, без postgres/nginx)
+- **Docker smoke-test**: db + app подняты, все эндпоинты проверены:
+  - `/healthz` → 200 "ok"
+  - `/static/htmx.min.js` → 200, 51KB
+  - `/static/chart.umd.min.js` → 200, 209KB
+  - `/static/tailwindcss.js` → 200, 282KB
+  - `/` → 200, 7.6KB HTML
+- **README**: секция Deployment — хост-nginx + certbot + docker compose, бэкапы pg_dump, seed
 - 153/153 тестов, ruff 0, format clean
-- Артефакты: +1 docker-compose.override.yml, изменены 5 файлов
+- Артефакты: +1 docker-compose.override.yml, изменены 8 файлов

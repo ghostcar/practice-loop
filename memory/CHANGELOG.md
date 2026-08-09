@@ -30,4 +30,4 @@
 | 2026-08-08 | Session 31 | CI: 3 job'a (lint/test/migrations), [build-system] в pyproject.toml, ruff fix |
 | 2026-08-08 | Session 32 | CI fix: repair type guard + migration boolean defaults (lint✅ test✅ migrations✅) |
 | 2026-08-08 | Session 33 | Статические файлы: HTMX 2.0.10, Chart.js 4.5.1, TailwindCSS v4.3.3 |
-| 2026-08-08 | Session 34 | Подготовка релиза 0.8.0: env vars, seed config, docker profiles, dev override |
+| 2026-08-08 | Session 34 | Релиз 0.8.0: env vars, seed config, docker profiles, smoke-test, README deployment |
