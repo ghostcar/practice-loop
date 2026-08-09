@@ -291,3 +291,13 @@
   - `alembic/versions/014`: boolean defaults `0`→`false`, `1`→`true` в downgrade
 - Все 3 job'а зелёные: lint ✅ test ✅ migrations ✅
 - Артефакты: изменены app/llm/repair.py, alembic/versions/014_fix_migration_types.py
+
+## 2026-08-09 — Сессия 33: Обновление статических файлов
+- HTMX: 2.0.0 → 2.0.10 (51KB, +2KB) — bugfix release
+- Chart.js: 4.4.0 → 4.5.1 (209KB, -27KB) — минорное обновление
+- TailwindCSS: v3 → v4.3.3 (282KB, -125KB) — мажорная версия (@tailwindcss/browser@4)
+  - Убран `tailwind.config = { darkMode: 'class' }` — v4 использует `class`-стратегию по умолчанию
+  - Шаблоны совместимы: нет deprecated opacity-утилит, @apply, @layer
+  - CSS-first конфигурация (@theme) не требуется для текущего использования
+- 153/153 тестов, ruff 0
+- Артефакты: обновлены 3 статических файла в app/static/, изменён base.html

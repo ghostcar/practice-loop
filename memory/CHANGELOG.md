@@ -28,3 +28,5 @@
 | 2026-08-07 | Session 29 | CDN → локальные static-файлы (TailwindCSS, HTMX, Chart.js) |
 | 2026-08-07 | Session 30 | Интеграционные тесты (scheduler + Telegram), обновление зависимостей |
 | 2026-08-08 | Session 31 | CI: 3 job'a (lint/test/migrations), [build-system] в pyproject.toml, ruff fix |
+| 2026-08-08 | Session 32 | CI fix: repair type guard + migration boolean defaults (lint✅ test✅ migrations✅) |
+| 2026-08-08 | Session 33 | Статические файлы: HTMX 2.0.10, Chart.js 4.5.1, TailwindCSS v4.3.3 |
