@@ -72,6 +72,73 @@
     </div>
     {% endif %}
 
+    {% if log_entries %}
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Журнал тренировки</h3>
+            <span class="text-xs text-slate-400">{{ log_entries|length }} записей</span>
+        </div>
+        <div class="space-y-2" id="log-entries-list">
+            {% for entry in log_entries %}
+            {% set labels = {"fluid_intake": "Приём", "micro_leak": "Микро-слив", "pressure_check": "Давление", "general_note": "Заметка"} %}
+            {% set type_label = labels.get(entry.entry_type, entry.entry_type) %}
+            {% set extra_cls = "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20" if entry.is_extra else "" %}
+            <div class="log-entry-row flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 {{ extra_cls }}">
+                <div class="flex-shrink-0 w-20">
+                    <span class="text-sm font-mono font-medium text-slate-700 dark:text-slate-300">{{ entry.time_label }}</span>
+                    <span class="block text-xs text-slate-400">{{ type_label }}{% if entry.is_extra %} ∗{% endif %}</span>
+                </div>
+                <div class="flex-shrink-0 w-24">
+                    <span class="text-xs text-slate-400">{{ entry.planned_value or '—' }} {{ entry.unit or '' }}</span>
+                </div>
+                <form hx-post="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML" class="flex-1 flex items-start gap-2">
+                    <input type="text" name="actual_value" value="{{ entry.actual_value or '' }}"
+                           placeholder="Факт ({{ entry.unit or '' }})"
+                           class="w-24 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                    <input type="text" name="notes" value="{{ entry.notes or '' }}"
+                           placeholder="Ощущения, заметки..."
+                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                    <button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors">
+                        Сохранить
+                    </button>
+                </form>
+                {% if entry.is_extra %}
+                <button hx-delete="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML"
+                        class="text-red-400 hover:text-red-600 text-xs leading-none px-1">✕</button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Add extra entry -->
+        <details class="mt-4">
+            <summary class="text-sm text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline">+ Добавить запись</summary>
+            <form hx-post="/training/log-entry" hx-target="#log-entries-list" hx-swap="beforeend" class="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-2">
+                <input type="hidden" name="training_day_id" value="{{ training_day.id }}">
+                <div class="flex gap-2">
+                    <input type="text" name="time_label" placeholder="Время (напр. 14:30)" required
+                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                    <select name="entry_type" class="px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                        <option value="fluid_intake">Приём жидкости</option>
+                        <option value="micro_leak">Микро-слив</option>
+                        <option value="pressure_check">Проверка давления</option>
+                        <option value="general_note">Заметка</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" name="actual_value" placeholder="Значение (мл, сек, уровень)"
+                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                    <input type="text" name="notes" placeholder="Ощущения, обоснование..."
+                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                </div>
+                <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded transition-colors">
+                    Добавить
+                </button>
+            </form>
+        </details>
+    </div>
+    {% endif %}
+
     {% if logs %}
     {% set total_tasks = logs|length %}
     {% set completed_count = namespace(value=0) %}
