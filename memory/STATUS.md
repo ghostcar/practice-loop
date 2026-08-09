@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-09 (сессия 33).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-09 (сессия 34).
 
 ## Обзор фаз
 | Область | Статус |
@@ -209,5 +209,13 @@
 - [x] base.html: убран tailwind.config (v4 использует class-стратегию по умолчанию)
 - [x] 153/153 тестов, ruff 0
 
+## Подготовка релиза 0.8.0 (Session 34)
+- [x] Версия 0.7.0 → 0.8.0
+- [x] .env.example: все переменные (CREDENTIALS_ENCRYPTION_KEY, TG_*, docker compose)
+- [x] docker-compose.yml: все env vars, nginx опциональный (профиль), порт 8000 на хост
+- [x] seed_prod.py: argparse --email --database-url
+- [x] docker-compose.override.yml: dev-окружение (SQLite, hot-reload)
+
 ## Следующие шаги
-1. .env.example + docker-compose.override.yml для dev
+1. Docker build + smoke test на VPS
+2. Документация по деплою с хост-nginx + certbot

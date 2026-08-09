@@ -301,3 +301,12 @@
   - CSS-first конфигурация (@theme) не требуется для текущего использования
 - 153/153 тестов, ruff 0
 - Артефакты: обновлены 3 статических файла в app/static/, изменён base.html
+
+## 2026-08-09 — Сессия 34: Подготовка релиза 0.8.0
+- Версия: 0.7.0 → 0.8.0 (pyproject.toml + main.py)
+- `.env.example`: добавлены CREDENTIALS_ENCRYPTION_KEY, TG_BOT_TOKEN, TG_WEBHOOK_SECRET, TG_WEBHOOK_BASE_URL, TG_BOT_USERNAME, TG_POLLING, TG_AUTO_ANALYSIS_TIME
+- `docker-compose.yml`: добавлены все недостающие env vars, nginx — опциональный профиль `full`, app порт 8000 проброшен на хост
+- `seed_prod.py`: argparse (--email, --database-url), читает DATABASE_URL из env
+- `docker-compose.override.yml`: dev-окружение (SQLite, hot-reload, polling Telegram, без postgres/nginx)
+- 153/153 тестов, ruff 0, format clean
+- Артефакты: +1 docker-compose.override.yml, изменены 5 файлов
