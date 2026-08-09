@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "practice-loop"
-version = "0.7.0"
+version = "0.8.0"
 description = "Practice Loop — Consensual Adult Activity & LLM Tracker"
 requires-python = ">=3.11"
 license = "MIT"

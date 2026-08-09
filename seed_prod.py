@@ -1,11 +1,18 @@
-"""One-shot seed: connect to Docker PostgreSQL and populate v2 data."""
+"""One-shot seed: populate production database with initial v2 data.
 
+Usage:
+    python seed_prod.py --email user@example.com
+    python seed_prod.py --email user@example.com --database-url postgresql+asyncpg://...
+
+Environment:
+    DATABASE_URL  — PostgreSQL connection string (fallback if --database-url not given)
+"""
+
+import argparse
 import asyncio
 import os
+import sys
 from datetime import date, time
-
-# Override DB URL before importing app
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://tracker:REDACTED_DB_PASSWORD@localhost:5432/tracker"
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -28,16 +35,25 @@ from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule
 from app.models.user import User
 
 
-async def seed():
-    engine = create_async_engine(os.environ["DATABASE_URL"])
+async def seed(database_url: str, email: str | None):
+    engine = create_async_engine(database_url)
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with factory() as db:
-        result = await db.execute(select(User).limit(1))
-        user = result.scalar_one_or_none()
-        if not user:
-            print("No users! Register first at https://localhost:8443/auth/register")
-            return
+        if email:
+            result = await db.execute(select(User).where(User.email == email).limit(1))
+            user = result.scalar_one_or_none()
+            if not user:
+                print(f"User not found: {email}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            result = await db.execute(select(User).limit(1))
+            user = result.scalar_one_or_none()
+            if not user:
+                print("No users! Register first.", file=sys.stderr)
+                print("  curl -X POST https://your-host/auth/register -d 'email=...&password=...'", file=sys.stderr)
+                sys.exit(1)
+
         uid = user.id
         print(f"Seeding for: {user.email}")
 
@@ -300,5 +316,21 @@ async def seed():
         print("\n✅ Seed complete!")
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Seed production database with initial data")
+    parser.add_argument("--email", help="User email to seed data for (default: first user in DB)")
+    parser.add_argument(
+        "--database-url",
+        default=os.environ.get("DATABASE_URL", "postgresql+asyncpg://tracker:REDACTED_DB_PASSWORD@localhost:5432/tracker"),
+        help="PostgreSQL connection string (default: DATABASE_URL env or localhost)",
+    )
+    args = parser.parse_args()
+
+    if not args.email:
+        print("Warning: no --email given, will seed for the first user found.", file=sys.stderr)
+
+    asyncio.run(seed(args.database_url, args.email))
+
+
 if __name__ == "__main__":
-    asyncio.run(seed())
+    main()

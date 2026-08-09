@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
     await stop_auto_analysis()
 
 
-app = FastAPI(title="Practice Loop", version="0.7.0", lifespan=lifespan)
+app = FastAPI(title="Practice Loop", version="0.8.0", lifespan=lifespan)
 
 # --- CSRF middleware (must be added before startup) ---
 
