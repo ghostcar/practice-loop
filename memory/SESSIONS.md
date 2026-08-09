@@ -317,3 +317,15 @@
 - **README**: секция Deployment — хост-nginx + certbot + docker compose, бэкапы pg_dump, seed
 - 153/153 тестов, ruff 0, format clean
 - Артефакты: +1 docker-compose.override.yml, изменены 8 файлов
+
+## 2026-08-09 — Сессия 35: Деплой на VPS + Seed тренировки
+- Остановлен старый nginx-контейнер, запущены db + app (port 8000 → host)
+- Host nginx: конфиг для tracker.gorbunovr.ru создан в `/tmp/practice-loop-nginx.conf` (ждёт sudo reload)
+- Training day: создан в БД с полным расписанием гидратации (воскресенье, 24ч график, микро-сливы, ночной блок)
+- Обнаружен пробел: нет inline-полей для ввода реальных данных (объёмы, временные интервалы, секунды микро-сливов)
+  - ActivityLog.subtasks — только чекбоксы (is_done), нет value-полей
+  - ActivityLog.selected_params — только LLM-параметры, не для ручного ввода
+  - ActivityLog.planned_value/actual_value — строковые поля, не используются в training UI
+  - BodyMeasurement — только физические замеры (вес, обхваты)
+- 153/153 тестов, CI зелёный
+- Артефакты: +1 скрипт seed_training.py, конфиг nginx
