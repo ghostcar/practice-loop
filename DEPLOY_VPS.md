@@ -11,7 +11,7 @@
 ```bash
 # Ubuntu 22.04/24.04, замени YYY.YYY.YYY.YYY на IP, your-domain.com — на домен
 sudo apt update && sudo apt -y upgrade
-sudo apt install -y docker.io docker-compose-v2 postgresql-client nginx certbot python3-certbot-nginx git ufw
+sudo apt install -y docker.io docker-compose-v2 postgresql-client nginx git ufw
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
 newgrp docker          # или перелогинься
@@ -19,6 +19,16 @@ sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
 sudo ufw --force enable
+```
+
+Опционально (ставь **только ту версию, что подходит под §8**):
+
+```bash
+# Если домен напрямую на VPS без Cloudflare (grey cloud / DNS-only):
+sudo apt install -y certbot python3-certbot-dns-cloudflare
+
+# Если через Cloudflare (orange cloud) — НЕ СТАВЬ certbot.
+# Сертификат возьмёшь в Cloudflare Dashboard → SSL/TLS → Origin Server.
 ```
 
 Проверь:
@@ -162,81 +172,272 @@ docker compose exec db psql -U tracker -d tracker -c \
 
 ---
 
-## 8. Хост-nginx + certbot
+## 8. SSL — выбери свою ветку
 
-### 8.1. Конфиг сайта
+Есть **три варианта**. Выбор зависит от того, как настроен домен в Cloudflare:
+
+| Режим в CF | Где видно | Сертификат | Авто-продление |
+|---|---|---|---|
+| 🅰️ **🟠 Proxied** (рекомендую) | DNS → запись с оранжевым облачком | **CF Origin Certificate** (15 лет) | Нет срока — никогда |
+| 🅱️ **⚪ DNS-only** | DNS → запись с серым облачком, без CF proxy | **Let's Encrypt** через DNS-01 | Да, certbot cron |
+| 🅲️ **Без CF вообще** | NS-серверы НЕ на CF | **Let's Encrypt** через standalone | Да, certbot cron |
+
+Определись:
 
 ```bash
-sudo tee /etc/nginx/sites-available/practice-loop > /dev/null <<'NGINX'
+# Проверь CF-проксирование (если NS на CF)
+dig +short your-domain.com
+# Если в ответе IP — это адрес CF (orange cloud, Proxied), значит ветка 🅰️
+# Если IP совпадает с твоим VPS-IP напрямую — ветка 🅱️ или 🅲️
+
+# Альтернативно — зайди в Cloudflare Dashboard → DNS → записи:
+# 🟠 оранжевое облачко → ветка 🅰️
+# ⚪ серое облачко   → ветка 🅱️
+```
+
+> **По умолчанию рекомендую ветку 🅰️ (CF Origin Certificate).** Сертификат живёт 15 лет, certbot не нужен, никаких DNS-01 токенов. Переходи на 🅱️ только если сознательно хочешь grey-cloud (CF не проксирует трафик).
+
+---
+
+### 8.🅰️ Cloudflare Proxied → CF Origin Certificate (рекомендую)
+
+**Подготовка в CF Dashboard:**
+1. `SSL/TLS → Overview → Encryption mode = **Full**` (НЕ Strict — Origin Cert не trusted для публичных CA).
+2. `SSL/TLS → Origin Server → Create Certificate`:
+   - Hostnames: `tracker.your-domain.com, *.tracker.your-domain.com`
+   - Validity: 15 years
+3. Скопируй **Certificate** и **Private Key** (PEM).
+
+**Сохрани сертификаты на VPS:**
+
+```bash
+sudo mkdir -p /etc/ssl/cloudflare
+sudo tee /etc/ssl/cloudflare/tracker.your-domain.com.pem > /dev/null <<'EOF'
+# (вставь сюда содержимое Certificate из CF)
+EOF
+
+sudo tee /etc/ssl/cloudflare/tracker.your-domain.com.key > /dev/null <<'EOF'
+# (вставь сюда содержимое Private Key из CF)
+EOF
+
+sudo chmod 600 /etc/ssl/cloudflare/tracker.your-domain.com.key
+sudo chmod 644 /etc/ssl/cloudflare/tracker.your-domain.com.pem
+
+# Проверка — пара валидна + 15 лет notAfter
+sudo openssl x509 -in /etc/ssl/cloudflare/tracker.your-domain.com.pem -noout -subject -dates
+# Subject: CN = tracker.your-domain.com
+# notAfter: через 15 лет
+```
+
+**Конфиг хоста-nginx:**
+
+```bash
+sudo tee /etc/nginx/sites-available/tracker.your-domain.com.conf > /dev/null <<'NGINX'
+upstream tracker_app {
+    server 127.0.0.1:8000;
+    keepalive 32;
+}
+
+# HTTP → HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name tracker.your-domain.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;     # на случай смены схемы в будущем — безвредно
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS — CF Origin Certificate
 server {
     listen 443 ssl http2;
-    server_name your-domain.com;
+    listen [::]:443 ssl http2;
+    server_name tracker.your-domain.com;
 
-    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    # === Cloudflare Origin Certificate ===
+    ssl_certificate     /etc/ssl/cloudflare/tracker.your-domain.com.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/tracker.your-domain.com.key;
 
-    client_max_body_size 25m;
+    # === SSL hardening (Mozilla Intermediate) ===
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
 
-    # Static — кэш 30 дней immutable
-    location /static/ {
-        proxy_pass http://127.0.0.1:8000/static/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto https;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-    # Auth — строгий rate limit
-    location /auth/ {
-        limit_req zone=auth burst=5 nodelay;
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-    }
+    client_max_body_size 50m;
 
-    # Everything else
     location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_pass http://tracker_app;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $http_cf_connecting_ip;  # CF подставляет реальный IP клиента
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
         proxy_http_version 1.1;
         proxy_set_header Connection "";
+        proxy_read_timeout 90s;
     }
+
+    location /static/ {
+        proxy_pass http://tracker_app;
+        proxy_set_header Host $host;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+NGINX
+
+sudo ln -sf /etc/nginx/sites-available/tracker.your-domain.com.conf /etc/nginx/sites-enabled/
+sudo grep -q 'limit_req_zone.*zone=auth' /etc/nginx/nginx.conf || \
+sudo sed -i '/^http {/a\    limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;' /etc/nginx/nginx.conf
+# (опционально: rate-limit на /auth/)
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**В CF Dashboard:**
+- DNS → A-запись `tracker` → переключи на 🟠 **Proxied** (если был ⚪).
+
+**Проверка:**
+
+```bash
+curl -sI https://tracker.your-domain.com/ | head -10
+# Ожидаешь: HTTP/2 200, server: cloudflare, cf-ray: <hash>
+
+curl -sS https://tracker.your-domain.com/healthz   # {"status":"ok"}
+
+echo | openssl s_client -servername tracker.your-domain.com -connect tracker.your-domain.com:443 2>/dev/null | \
+    openssl x509 -noout -issuer
+# Issuer: O = "Cloudflare, Inc."   ← значит ветка 🅰️ активна
+```
+
+---
+
+### 8.🅱️ Cloudflare DNS-only (⚪ серое облачко) — Let's Encrypt через DNS-01
+
+**Понадобится:** CF API Token с правом `Zone / DNS / Edit` для твоего домена.
+
+Создай токен: **CF Dashboard → My Profile → API Tokens → Create Token → Edit zone DNS**.
+
+```bash
+# Установка certbot + плагин DNS-01 (НЕ нужен открытый порт 80)
+sudo apt install -y certbot python3-certbot-dns-cloudflare
+
+# Креды для certbot
+sudo mkdir -p /etc/letsencrypt
+sudo tee /etc/letsencrypt/cloudflare.ini > /dev/null <<'EOF'
+dns_cloudflare_api_token = ВСТАВЬ_СЮДА_CF_API_TOKEN
+EOF
+sudo chmod 600 /etc/letsencrypt/cloudflare.ini
+
+# Получи сертификат (DNS-01 — без HTTP challenge)
+sudo certbot certonly \
+    --dns-cloudflare \
+    --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+    --dns-cloudflare-propagation-seconds 30 \
+    --agree-tos -m your-email@example.com \
+    -d tracker.your-domain.com \
+    -d "*.tracker.your-domain.com"
+# Будет ждать ~30 сек пока CF опубликует TXT-record
+# Сертификаты: /etc/letsencrypt/live/tracker.your-domain.com/{fullchain.pem,privkey.pem}
+
+# certbot автоматически поставит cron на обновление (через DNS-01, без порта 80)
+```
+
+**Конфиг хоста-nginx (тот же что и для ветки 🅰️, но пути к сертификатам от Let's Encrypt):**
+
+```bash
+sudo tee /etc/nginx/sites-available/tracker.your-domain.com.conf > /dev/null <<'NGINX'
+upstream tracker_app {
+    server 127.0.0.1:8000;
+    keepalive 32;
 }
 
 server {
     listen 80;
-    server_name your-domain.com;
+    listen [::]:80;
+    server_name tracker.your-domain.com;
     return 301 https://$host$request_uri;
 }
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name tracker.your-domain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/tracker.your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tracker.your-domain.com/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+
+    client_max_body_size 50m;
+
+    location / {
+        proxy_pass http://tracker_app;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_read_timeout 90s;
+    }
+}
 NGINX
+
+sudo ln -sf /etc/nginx/sites-available/tracker.your-domain.com.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-### 8.2. Rate-limit зона в главном конфиге
+**Проверка:**
 
 ```bash
-sudo grep -q 'limit_req_zone.*zone=auth' /etc/nginx/nginx.conf || \
-sudo sed -i '/^http {/a\    limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;' /etc/nginx/nginx.conf
+curl -sI https://tracker.your-domain.com/ | head -10
+echo | openssl s_client -servername tracker.your-domain.com -connect tracker.your-domain.com:443 2>/dev/null | \
+    openssl x509 -noout -issuer
+# Issuer: O = Let's Encrypt   ← значит ветка 🅱️ активна
 ```
 
-### 8.3. Активация и SSL
+---
+
+### 8.🅲️ Без Cloudflare — standalone certbot (порт 80 должен быть свободен)
 
 ```bash
-sudo ln -sf /etc/nginx/sites-available/practice-loop /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo certbot --nginx -d your-domain.com --agree-tos -m your@email.com --no-eff-email
-sudo systemctl reload nginx
+sudo apt install -y certbot
+sudo certbot certonly --standalone -d your-domain.com --agree-tos -m your-email@example.com
+# Сертификаты: /etc/letsencrypt/live/your-domain.com/{fullchain.pem,privkey.pem}
 ```
 
-Проверь:
-```bash
-curl -sI https://your-domain.com/ | head -5
-curl -sS https://your-domain.com/healthz   # {"status":"ok"}
-```
+Потом — конфиг nginx из ветки 🅱️ (но с портами 80/443 напрямую открытыми через `sudo ufw allow 80/tcp`, который у тебя уже включён в §0).
+
+---
+
+### 8.4. Типичные ошибки SSL
+
+| Симптом | Причина | Фикс |
+|---|---|---|
+| `Error 526: Invalid SSL certificate` в CF | Full Strict, а на origin standalone cert | Понизь до **Full** или используй CF Origin Cert |
+| `Error 521: Web server is down` | Origin не слушает 443 или app упал | `docker compose logs app \| tail -30` |
+| `Error 522: Connection timed out` | ufw блокирует, или IP в CF DNS неверный | `sudo ufw status` — должны быть 80, 443 |
+| `Error 520` | App вернул мусор (часто — заголовок Host неверный) | В nginx → `proxy_set_header Host $host;` (уже есть) |
+| `curl: (60) SSL certificate problem` | Стучишься на IP, минуя CF | Используй **доменное имя** |
 
 ---
 
@@ -269,7 +470,7 @@ docker compose restart app
 
 ### 10.3. Регистрация webhook
 
-После того как nginx + certbot работают, webhook настраивается автоматически при старте. Проверь:
+После того как nginx + SSL работают (любая ветка §8), webhook настраивается автоматически при старте. Проверь:
 ```bash
 docker compose logs app | grep -iE 'webhook|telegram'
 curl -sS "https://api.telegram.org/bot<TOKEN>/getWebhookInfo" | python3 -m json.tool

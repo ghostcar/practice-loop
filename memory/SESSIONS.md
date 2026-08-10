@@ -496,3 +496,24 @@
 - Ожидание БД переведено на compose health dependency; удалён хардкод `tracker` из shell wait-loop.
 - Проверено: обе compose-конфигурации успешно рендерятся, image собирается, PostgreSQL healthy, Alembic 001–016 проходит, Uvicorn стартует, `/healthz` возвращает `ok`.
 - Проверки host toolchain: pytest под системным Python 3.13 завис на первом auth-тесте и был остановлен; ruff обнаружил 15 ранее существовавших замечаний в миграциях 015/016 и `seed_training.py`.
+
+## 2026-08-10 — Сессия 45: SSL через Cloudflare (Origin Certificate вместо certbot)
+
+- Пользователь: домен через CF, certbot не установлен / не нужен. Прежний §8 DEPLOY_VPS.md описывал единственный путь через `certbot --nginx`.
+- **DEPLOY_VPS.md §0**: certbot убран из обязательного `apt install`; перенесён в опциональный комментарий.
+- **DEPLOY_VPS.md §8** переработан в три ветки:
+  - **8.🅰️ Cloudflare Proxied (🟠 orange cloud) → CF Origin Certificate** (15 лет, автопродление не требуется).
+    - CF Dashboard: SSL/TLS → Full (НЕ Strict для Origin Cert).
+    - Сгенерировать Cert + Key в SSL/TLS → Origin Server → Create (Hostnames: tracker.your-domain.com, *.tracker.your-domain.com).
+    - Положить в `/etc/ssl/cloudflare/tracker.your-domain.com.{pem,key}` с правами 600/644.
+    - Конфиг nginx: `ssl_certificate /etc/ssl/cloudflare/...pem`, заголовки HSTS/Frame-Options/Referrer-Policy по Mozilla Intermediate; proxy_pass в upstream `tracker_app { 127.0.0.1:8000 }`; `X-Real-IP $http_cf_connecting_ip` (CF подставляет реальный IP клиента).
+  - **8.🅱️ Cloudflare DNS-only (⚪ grey cloud) → Let's Encrypt через certbot + dns-cloudflare плагин**.
+    - Создать CF API Token → Edit zone DNS.
+    - `sudo apt install certbot python3-certbot-dns-cloudflare`.
+    - `/etc/letsencrypt/cloudflare.ini` с токеном (chmod 600).
+    - `certbot certonly --dns-cloudflare --dns-cloudflare-credentials ... --agree-tos -m ... -d ... -d '*.your-domain.com'`.
+    - cron автопродления через DNS-01 — порт 80 не нужен.
+  - **8.🅲️ Без CF → certbot standalone** (требует открытого порта 80).
+- **DEPLOY_VPS.md §8.4**: новая таблица типичных ошибок CF SSL (Error 520/521/522/526).
+- **DEPLOY_VPS.md §10.3**: убрана формулировка "certbot работают" → "SSL работают".
+- Без правок кода / миграций / тестов — чисто runbook-only.
