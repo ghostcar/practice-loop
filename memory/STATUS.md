@@ -1,6 +1,15 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 49).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 50).
+
+## Сессия 50: геймификация — Stop 500 (await на sync), состояние complete/interrupt, расписание
+
+- [x] **Stop → 500** (app/gamification/handler.py): убран `await` на синхронной `_get_redemption_action_from_config` (был TypeError → 500, запись оставалась pending, redemption не создавался).
+- [x] **Целостность состояний** (app/security.py `complete_once`): обрабатывается только статус `pending` — прерванную задачу больше нельзя завершить для награды; `interrupt_once` без изменений (блокирует completed/interrupted).
+- [x] **Расписание** (app/api/tasks.py): `set_next_due`/`set_retry_block` вызываются только при `not result["idempotent"]` — повторные Complete/Interrupt не двигают `next_due_at`/`retry_not_before_at`.
+- [x] **Telegram-бот** (app/telegram/bot.py): /done, /interrupt, /tasks ищут `status == "pending"` (статуса `active` не существует — задачи создаются `pending`); inline-хендлеры `done:`/`int_confirm:` получили статус-гарды (без двойных наград/штрафов).
+- [x] +4 регрессионных теста (redemption-path не падает и создаёт PenaltyRedemption; complete после interrupt не даёт награду и не двигает расписание; повторный complete/reinterrupt идемпотентны для расписания).
+- [x] 243/243 тестов, ruff 0, format clean.
 
 ## Сессия 49: аудит-фиксы training (чужой entity/subtasks, partial plan, stored XSS)
 

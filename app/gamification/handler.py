@@ -266,7 +266,7 @@ async def on_task_interrupted(
                 entity_id=log.entity_id,
                 activity_log_id=log.id,
             )
-        redemption_action = await _get_redemption_action_from_config(config)
+        redemption_action = _get_redemption_action_from_config(config)  # sync helper — no await
         # Create PenaltyRedemption record
         if redemption_action:
             redemption = PenaltyRedemption(

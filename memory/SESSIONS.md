@@ -603,3 +603,30 @@
 - Валидный тип (`pressure_check`) проходит.
 - `_render_log_entry_row` экранирует все user-поля (прямой unit-тест).
 - **239/239 тестов ✅**, ruff ✅, format ✅.
+
+
+## 2026-08-10 — Сессия 50: геймификация — 500 на Stop с redemption, состояние complete/interrupt, расписание
+
+- Пользователь процитировал аудит: «Stop отвечает 500, запись остаётся pending — ветка с redemption-конфигом делает await синхронной функции»; «Прерванную задачу можно затем завершить и получить награду; повторные Complete/Interrupt продолжают менять расписание».
+
+### 1. Stop → 500 (app/gamification/handler.py)
+- **Было**: `redemption_action = await _get_redemption_action_from_config(config)` — `await` на синхронной функции → `TypeError` → 500, `PenaltyRedemption` не создавался, запись оставалась `pending`.
+- **Стало**: `redemption_action = _get_redemption_action_from_config(config)` (sync, без await); redemption-запись создаётся корректно.
+
+### 2. Целостность состояний (app/security.py, complete_once)
+- **Было**: `complete_once` блокировал только уже `completed` → прерванную задачу можно было завершить и получить награду.
+- **Стало**: обрабатывается только статус `pending` — `interrupted`/`completed` → idempotent-ответ без наград. `interrupt_once` не менялся (блокирует completed/interrupted).
+
+### 3. Повторные Complete/Interrupt меняли расписание (app/api/tasks.py)
+- **Было**: `set_next_due`/`set_retry_block` вызывались всегда → каждый повторный запрос двигал `next_due_at`/`retry_not_before_at`.
+- **Стало**: вызываются только при `not result["idempotent"]` — реальном изменении состояния.
+
+### 4. Telegram-бот (app/telegram/bot.py)
+- **Было**: команды /done, /interrupt, /tasks искали статус `active` (не существует — задачи создаются `pending`) → всегда «нет задач»; inline-хендлеры `done:`/`int_confirm:` не проверяли статус.
+- **Стало**: запросы по `status == "pending"`; на inline-хендлерах статус-гард (`log.status != "pending"` → «Task already finished», без наград/повторного штрафа).
+
+### Тесты (+4, 239→243)
+- Прерывание задачи с redemption-конфигом не падает и создаёт `PenaltyRedemption` (clothespins, points_value>0).
+- После interrupt `complete` → 303, статус остаётся `interrupted`, `total_completed == 0`, `next_due_at` не двигается.
+- Повторный complete не меняет `next_due_at`; повторный interrupt не меняет `retry_not_before_at`.
+- **243/243 тестов ✅**, ruff ✅, format ✅.

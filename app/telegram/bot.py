@@ -185,7 +185,7 @@ if TG_BOT_TOKEN:
                 select(ActivityLog)
                 .where(
                     ActivityLog.user_id == user.id,
-                    ActivityLog.status == "active",
+                    ActivityLog.status == "pending",
                 )
                 .order_by(ActivityLog.created_at.desc())
                 .limit(5)
@@ -222,7 +222,7 @@ if TG_BOT_TOKEN:
                 select(ActivityLog)
                 .where(
                     ActivityLog.user_id == user.id,
-                    ActivityLog.status == "active",
+                    ActivityLog.status == "pending",
                 )
                 .order_by(ActivityLog.created_at.desc())
                 .limit(1)
@@ -265,7 +265,7 @@ if TG_BOT_TOKEN:
                 select(ActivityLog)
                 .where(
                     ActivityLog.user_id == user.id,
-                    ActivityLog.status == "active",
+                    ActivityLog.status == "pending",
                 )
                 .order_by(ActivityLog.created_at.desc())
                 .limit(1)
@@ -308,6 +308,9 @@ if TG_BOT_TOKEN:
             log = result.scalar_one_or_none()
             if log is None:
                 await callback.answer("Task not found.", show_alert=True)
+                return
+            if log.status != "pending":  # State integrity: no reward after interrupt/complete
+                await callback.answer("Task already finished.", show_alert=True)
                 return
 
             log.status = "completed"
@@ -369,6 +372,9 @@ if TG_BOT_TOKEN:
             log = result.scalar_one_or_none()
             if log is None:
                 await callback.answer("Task not found.", show_alert=True)
+                return
+            if log.status != "pending":  # State integrity: no re-interrupt of finished tasks
+                await callback.answer("Task already finished.", show_alert=True)
                 return
 
             log.status = "interrupted"

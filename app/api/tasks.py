@@ -185,9 +185,9 @@ async def complete_task(
         raise HTTPException(status_code=404, detail="Activity not found")
 
     # Idempotent completion
-    await complete_once(db, log, user, on_task_completed)
-    # Set next due for this practice
-    if log.entity_id:
+    result = await complete_once(db, log, user, on_task_completed)
+    # Set next due for this practice only when the state actually changed
+    if not result["idempotent"] and log.entity_id:
         await set_next_due(db, user.id, log.entity_id)
     await db.commit()
 
@@ -208,9 +208,9 @@ async def interrupt_task(
         raise HTTPException(status_code=404, detail="Activity not found")
 
     # Idempotent interruption
-    await interrupt_once(db, log, user, on_task_interrupted)
-    # Block retry for 24h
-    if log.entity_id:
+    result = await interrupt_once(db, log, user, on_task_interrupted)
+    # Block retry only when the state actually changed
+    if not result["idempotent"] and log.entity_id:
         await set_retry_block(db, user.id, log.entity_id)
     await db.commit()
 

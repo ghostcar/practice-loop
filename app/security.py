@@ -138,9 +138,13 @@ async def complete_once(
     user: User,
     on_complete_fn,
 ) -> dict:
-    """Idempotent task completion: only processes if status allows it."""
-    if log.status == "completed":
-        return {"status": "already_completed", "idempotent": True}
+    """Idempotent task completion: only processes if status allows it.
+
+    State integrity (audit): only a `pending` task may be completed — an
+    interrupted (or already completed) task must not grant a reward.
+    """
+    if log.status != "pending":
+        return {"status": f"already_{log.status}", "idempotent": True}
     if log.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
