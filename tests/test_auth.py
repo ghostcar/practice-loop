@@ -161,3 +161,37 @@ async def test_csrf_meta_rendered_on_all_pages(auth_client: AsyncClient):
     response = await auth_client.get("/tasks/", follow_redirects=False)
     assert response.status_code == 200
     assert f'<meta name="csrf-token" content="{csrf}">' in response.text
+
+
+_PROFILE_JSON = {
+    "name": "Weekend",
+    "config": {
+        "points": {"base": 10},
+        "penalties": {"enabled": False},
+        "bonuses": [],
+        "thresholds": {"negative": -100, "warning": 0, "good": 100},
+    },
+}
+
+
+@pytest.mark.asyncio
+async def test_json_api_post_with_csrf_header_passes(auth_client: AsyncClient):
+    """JS-fetch scenario: JSON POST with X-CSRF-Token header is accepted (points/profile)."""
+    response = await auth_client.post("/api/v2/points/profiles", json=_PROFILE_JSON)
+    assert response.status_code == 200
+    assert response.json()["name"] == "Weekend"
+
+    # Profile is actually persisted
+    list_response = await auth_client.get("/api/v2/points/profiles")
+    assert list_response.status_code == 200
+    assert [p["name"] for p in list_response.json()] == ["Weekend"]
+
+
+@pytest.mark.asyncio
+async def test_json_api_post_without_csrf_header_rejected(async_client: AsyncClient, test_user: User):
+    """JS-fetch scenario: JSON POST without the CSRF header is rejected with 403."""
+    headers, _ = _auth_cookie_headers(test_user)
+    async_client.headers.update(headers)
+
+    response = await async_client.post("/api/v2/points/profiles", json=_PROFILE_JSON)
+    assert response.status_code == 403

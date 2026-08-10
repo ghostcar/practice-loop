@@ -570,4 +570,5 @@
 - **Причина 3**: JS-страницы (points, schedule, measurements, inventory, calendar, telegram-link на dashboard) слали `fetch(..., {method:'POST'})` без заголовка CSRF → 403. **Фикс 3**: обёртка `window.fetch` в base.html авто-добавляет `X-CSRF-Token` для same-origin state-changing запросов (учтены `Request`-объекты; внешние origin исключены).
 - **Тесты** (+4 в `tests/test_auth.py`): нативная форма темы → 303 + `user.theme == "light"` (с явным commit — тестовая фикстура переопределяет get_db без авто-commit), нативная форма локали → 303 + `user.locale == "ru"`, неверный `csrf_token` поля → 403, meta-тег с токеном на `/tasks/`. Хелпер `_auth_cookie_headers` возвращает `(headers, csrf)`.
 - Избыточные явные `csrf_token` в контекстах `main.py` (home) и `dashboard.py` удалены — их полностью заменяет context processor.
-- **229/229 тестов ✅**, ruff ✅, format ✅.
+- **Тесты JS-fetch сценария** (+2): JSON POST `/api/v2/points/profiles` с `X-CSRF-Token` → 200 + профиль создан (проверка через GET), без заголовка (только cookie) → 403.
+- **231/231 тестов ✅**, ruff ✅, format ✅.
