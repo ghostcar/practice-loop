@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8000
 
+    # Uploads (user media: inventory photos, photo reports).
+    # Relative to the app working dir; mounted as a named volume in docker-compose.
+    upload_dir: str = "uploads"
+    max_upload_bytes: int = 8 * 1024 * 1024  # 8 MB
+
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = _PLACEHOLDER_TG_SECRET

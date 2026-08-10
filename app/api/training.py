@@ -1,6 +1,7 @@
 """Training API: daily plan generation, subtask tracking, day analysis, log entries."""
 
 import json
+import re
 import uuid
 from datetime import UTC, date, datetime
 
@@ -18,6 +19,7 @@ from app.i18n.helpers import detect_locale, detect_theme
 from app.llm.pipeline import analyze_training_day, generate_daily_plan, get_active_llm_config
 from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
+from app.models.life import ScheduleRule
 from app.models.training import TrainingDay
 from app.models.training_log import TrainingLogEntry
 from app.models.user import User
@@ -35,6 +37,50 @@ def _get_today() -> date:
 
 # === Page ===
 
+_TIME_LABEL_RE = re.compile(r"(\d{1,2}):(\d{2})\s*(?:[–-]|до)\s*(\d{1,2}):(\d{2})")
+
+
+def _parse_time_label(label: str | None) -> tuple[int, int] | None:
+    """Parse "09:00" or "16:30–20:00" into (start_min, end_min); None if unparseable."""
+    if not label:
+        return None
+    m = _TIME_LABEL_RE.search(label)
+    if m:
+        start = int(m.group(1)) * 60 + int(m.group(2))
+        end = int(m.group(3)) * 60 + int(m.group(4))
+    else:
+        m2 = re.match(r"^(\d{1,2}):(\d{2})$", label.strip())
+        if not m2:
+            return None
+        start = int(m2.group(1)) * 60 + int(m2.group(2))
+        end = start + 60
+    # Clamp to the day bounds (0..1440) so blocks never overflow the scale.
+    start = max(0, min(start, 1439))
+    end = max(start + 1, min(end, 1440))
+    return start, end
+
+
+def _plan_dict(day: TrainingDay, logs: list[ActivityLog], entries: list[TrainingLogEntry]) -> dict:
+    """Bundle a training day with its tasks/journal for template rendering."""
+    completed = sum(1 for lg in logs if lg.status == "completed")
+    interrupted = sum(1 for lg in logs if lg.status == "interrupted")
+    total = len(logs)
+    next_day = None
+    if day.next_day_suggestion:
+        try:
+            next_day = json.loads(day.next_day_suggestion)
+        except (json.JSONDecodeError, TypeError):
+            next_day = None
+    return {
+        "day": day,
+        "logs": logs,
+        "log_entries": entries,
+        "completed": completed,
+        "interrupted": interrupted,
+        "total": total,
+        "next_day": next_day,
+    }
+
 
 @router.get("/", response_class=HTMLResponse)
 async def training_page(
@@ -50,33 +96,66 @@ async def training_page(
     result = await db.execute(
         select(TrainingDay)
         .where(TrainingDay.user_id == user.id, TrainingDay.target_date == today)
-        .order_by(TrainingDay.created_at.desc())
-        .limit(1)
+        .order_by(TrainingDay.created_at.asc())
     )
-    training_day = result.scalar_one_or_none()
+    training_days = list(result.scalars().all())
 
-    logs: list[ActivityLog] = []
-    log_entries: list[TrainingLogEntry] = []
-    if training_day:
+    plans: list[dict] = []
+    all_entries: list[TrainingLogEntry] = []
+    for day in training_days:
         logs_result = await db.execute(
-            select(ActivityLog).where(ActivityLog.training_day_id == training_day.id).order_by(ActivityLog.created_at)
+            select(ActivityLog).where(ActivityLog.training_day_id == day.id).order_by(ActivityLog.created_at)
         )
         logs = list(logs_result.scalars().all())
         entries_result = await db.execute(
             select(TrainingLogEntry)
-            .where(TrainingLogEntry.training_day_id == training_day.id)
+            .where(TrainingLogEntry.training_day_id == day.id)
             .order_by(TrainingLogEntry.sort_order, TrainingLogEntry.time_label)
         )
-        log_entries = list(entries_result.scalars().all())
+        entries = list(entries_result.scalars().all())
+        all_entries.extend(entries)
+        plans.append(_plan_dict(day, logs, entries))
+
+    # Timeline: journal entries from all plans + today's schedule rules.
+    timeline_blocks: list[dict] = []
+    for entry in all_entries:
+        span = _parse_time_label(entry.time_label)
+        if span:
+            timeline_blocks.append(
+                {
+                    "kind": "journal",
+                    "start": span[0],
+                    "end": span[1],
+                    "label": entry.time_label,
+                    "sub": entry.entry_type,
+                    "value": entry.actual_value or entry.planned_value or "",
+                }
+            )
+    sched_result = await db.execute(
+        select(ScheduleRule)
+        .where(
+            ScheduleRule.user_id == user.id,
+            ScheduleRule.is_active.is_(True),
+            (ScheduleRule.day_of_week == today.weekday()) | (ScheduleRule.day_of_week == 7),
+        )
+        .order_by(ScheduleRule.start_time)
+    )
+    for rule in sched_result.scalars().all():
+        start = rule.start_time.hour * 60 + rule.start_time.minute
+        end = (rule.end_time.hour * 60 + rule.end_time.minute) if rule.end_time else min(start + 60, 1440)
+        name = rule.entity.real_name if rule.entity else (rule.notes or rule.task_type)
+        timeline_blocks.append(
+            {
+                "kind": "schedule",
+                "start": start,
+                "end": max(end, start + 1),
+                "label": name,
+                "sub": rule.task_type,
+                "value": "",
+            }
+        )
 
     active_config = await get_active_llm_config(db, user.id)
-
-    next_day = None
-    if training_day and training_day.next_day_suggestion:
-        try:
-            next_day = json.loads(training_day.next_day_suggestion)
-        except (json.JSONDecodeError, TypeError):
-            next_day = None
 
     return templates.TemplateResponse(
         request=request,
@@ -87,12 +166,11 @@ async def training_page(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "training_day": training_day,
-            "logs": logs,
-            "log_entries": log_entries,
+            "training_days": training_days,
+            "plans": plans,
             "active_config": active_config,
             "today": today,
-            "next_day": next_day,
+            "timeline_blocks": timeline_blocks,
             "active_nav": "training",
         },
     )
@@ -112,15 +190,15 @@ async def generate_plan(
     if active_config is None:
         return RedirectResponse(url="/training?error=No+active+LLM+provider+configured", status_code=303)
     today = _get_today()
+    form = await request.form()
+    plan_name = (form.get("name", "").strip())[:200] or None
 
-    # A leftover empty plan (e.g. from a failed LLM attempt) must not block retry.
-    existing = await db.execute(
+    # Leftover empty plans (failed LLM attempts) must not block retry.
+    existing_result = await db.execute(
         select(TrainingDay).where(TrainingDay.user_id == user.id, TrainingDay.target_date == today)
     )
-    existing_day = existing.scalar_one_or_none()
-    if existing_day:
-        # Only a truly empty leftover (no tasks AND no journal entries) may be
-        # replaced — otherwise a real plan or journal data would be lost.
+    existing_days = list(existing_result.scalars().all())
+    for existing_day in existing_days:
         logs_count = await db.execute(
             select(func.count(ActivityLog.id)).where(ActivityLog.training_day_id == existing_day.id)
         )
@@ -130,11 +208,17 @@ async def generate_plan(
         if logs_count.scalar_one() == 0 and entries_count.scalar_one() == 0:
             await db.delete(existing_day)
             await db.flush()
-        else:
-            return RedirectResponse(url="/training?error=Plan+already+exists+for+today", status_code=303)
 
+    # Multiple plans per day are allowed — a new one is appended, not blocked.
     try:
-        await generate_daily_plan(db=db, user_id=user.id, llm_config=active_config, target_date=today, locale=locale)
+        await generate_daily_plan(
+            db=db,
+            user_id=user.id,
+            llm_config=active_config,
+            target_date=today,
+            locale=locale,
+            name=plan_name,
+        )
     except (JsonRepairError, ValueError) as e:
         # generate_daily_plan is transactional — nothing is persisted before
         # the LLM response is parsed and validated, so no rollback is needed.
@@ -197,11 +281,26 @@ async def analyze_day(
     db: AsyncSession = Depends(get_db),
 ):
     locale = detect_locale(request, user.locale)
-    today = _get_today()
-    result = await db.execute(
-        select(TrainingDay).where(TrainingDay.user_id == user.id, TrainingDay.target_date == today)
-    )
-    training_day = result.scalar_one_or_none()
+    form = await request.form()
+    plan_id_str = form.get("training_day_id", "")
+    if plan_id_str:
+        try:
+            plan_id = uuid.UUID(str(plan_id_str))
+        except ValueError:
+            plan_id = None
+    else:
+        plan_id = None
+    if plan_id is None:
+        today = _get_today()
+        result = await db.execute(
+            select(TrainingDay).where(TrainingDay.user_id == user.id, TrainingDay.target_date == today)
+        )
+        training_day = result.scalars().first()
+    else:
+        result = await db.execute(select(TrainingDay).where(TrainingDay.id == plan_id))
+        training_day = result.scalar_one_or_none()
+        if training_day is not None and training_day.user_id != user.id:
+            training_day = None
     if training_day is None:
         return RedirectResponse(url="/training?error=No+training+day+found+for+today", status_code=303)
     active_config = await get_active_llm_config(db, user.id)
@@ -214,6 +313,48 @@ async def analyze_day(
         # both LLM calls succeed, so no rollback is needed.
         return RedirectResponse(url=f"/training?error={str(e)}", status_code=303)
     return RedirectResponse(url="/training", status_code=303)
+
+
+# === Log Entry: Reorder ===
+
+
+@router.post("/log-entry/reorder")
+async def reorder_log_entries(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Persist a new drag&drop order for journal entries of one training day."""
+    payload = await request.json()
+    training_day_id_str = payload.get("training_day_id")
+    ids = payload.get("ids", [])
+    if not training_day_id_str or not ids:
+        raise HTTPException(status_code=400, detail="training_day_id and ids required")
+    try:
+        td_id = uuid.UUID(str(training_day_id_str))
+        id_list = [uuid.UUID(str(i)) for i in ids]
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid id format") from None
+
+    td_result = await db.execute(select(TrainingDay).where(TrainingDay.id == td_id))
+    td = td_result.scalar_one_or_none()
+    if td is None or td.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Training day not found")
+
+    result = await db.execute(
+        select(TrainingLogEntry).where(
+            TrainingLogEntry.training_day_id == td_id,
+            TrainingLogEntry.user_id == user.id,
+        )
+    )
+    by_id = {e.id: e for e in result.scalars().all()}
+    if set(id_list) != set(by_id.keys()):
+        raise HTTPException(status_code=400, detail="ids must match all entries of the day")
+    for pos, eid in enumerate(id_list):
+        by_id[eid].sort_order = pos
+        db.add(by_id[eid])
+    await db.flush()
+    return {"status": "ok"}
 
 
 # === Log Entry: Update ===

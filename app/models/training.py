@@ -23,6 +23,9 @@ class TrainingDay(Base):
         index=True,
     )
     target_date: Mapped[date] = mapped_column(Date, nullable=False)
+    name: Mapped[str | None] = mapped_column(
+        String(200), nullable=True
+    )  # optional plan name (e.g. "Morning", "Evening")
     status: Mapped[str] = mapped_column(
         String(20), default="planned", nullable=False
     )  # planned / active / completed / analyzed

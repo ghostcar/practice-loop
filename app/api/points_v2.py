@@ -3,8 +3,9 @@
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,7 @@ from app.schemas.points_v2 import (
     ScheduleRuleOut,
 )
 from app.security import require_entity_owner
+from app.services.uploads import delete_upload, save_image
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/api/v2", tags=["v2"])
@@ -479,6 +481,92 @@ async def create_measurement(
 # ── Inventory ──
 
 
+class _ReorderPayload(BaseModel):
+    ids: list[uuid.UUID]
+
+
+@router.post("/inventory/reorder")
+async def reorder_inventory(
+    payload: _ReorderPayload,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Persist drag&drop ordering of inventory items.
+
+    Accepts a *subset* of items (the currently rendered, possibly filtered
+    list) and re-ranks only those relative to each other; items not mentioned
+    keep their original order. This makes drag&drop work with filters active.
+    """
+    result = await db.execute(select(InventoryItem).where(InventoryItem.user_id == user.id))
+    items = list(result.scalars().all())
+    by_id = {i.id: i for i in items}
+    unknown = [iid for iid in payload.ids if iid not in by_id]
+    if unknown:
+        raise HTTPException(400, "Unknown item ids in payload")
+
+    # Anchor: the smallest sort_order among the moved items determines where
+    # the re-ranked block starts, so unmentioned items stay in place.
+    moved = [by_id[iid] for iid in payload.ids]
+    anchor = min((i.sort_order for i in moved), default=0)
+    for pos, iid in enumerate(payload.ids):
+        by_id[iid].sort_order = anchor + pos
+        db.add(by_id[iid])
+
+    # Re-normalize all items to dense ranks in the new relative order.
+    ordered = sorted(items, key=lambda i: (i.sort_order, i.created_at))
+    for pos, i in enumerate(ordered):
+        i.sort_order = pos
+        db.add(i)
+    await db.flush()
+    return {"status": "ok"}
+
+
+@router.post("/inventory/{item_id}/image")
+async def upload_inventory_image(
+    item_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Upload (or replace) a photo for an inventory item."""
+    result = await db.execute(
+        select(InventoryItem).where(InventoryItem.id == item_id, InventoryItem.user_id == user.id)
+    )
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(404, "Item not found")
+    url = await save_image(file, subdir="inventory")
+    old = item.image_path
+    item.image_path = url
+    db.add(item)
+    await db.commit()
+    if old:
+        delete_upload(old)
+    return {"status": "ok", "image_path": url}
+
+
+@router.delete("/inventory/{item_id}/image")
+async def delete_inventory_image(
+    item_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Remove the photo from an inventory item."""
+    result = await db.execute(
+        select(InventoryItem).where(InventoryItem.id == item_id, InventoryItem.user_id == user.id)
+    )
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(404, "Item not found")
+    old = item.image_path
+    item.image_path = None
+    db.add(item)
+    await db.commit()
+    if old:
+        delete_upload(old)
+    return {"status": "ok"}
+
+
 @router.get("/inventory", response_model=list[InventoryItemOut])
 async def get_inventory(
     category: str | None = None,
@@ -494,7 +582,7 @@ async def get_inventory(
         query = query.where(InventoryItem.status == status)
     if shopping_list is not None:
         query = query.where(InventoryItem.is_shopping_list == shopping_list)
-    query = query.order_by(InventoryItem.priority.desc(), InventoryItem.name)
+    query = query.order_by(InventoryItem.sort_order.asc(), InventoryItem.priority.desc(), InventoryItem.name)
     result = await db.execute(query)
     return [InventoryItemOut.model_validate(i) for i in result.scalars().all()]
 

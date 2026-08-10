@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block title %}{{ t.diets_title }} – Practice Loop{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.diets_title }}</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.diets_subtitle }}</p>
+        </div>
+        <button onclick="showDietForm()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors min-h-[44px]">+ {{ t.diets_btn_add }}</button>
+    </div>
+
+    {% if request.query_params.get('error') %}
+    <div class="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-300">{{ request.query_params.get('error') }}</div>
+    {% endif %}
+
+    <!-- Add diet form (hidden) -->
+    <div id="diet-form" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.diets_new_diet }}</h3>
+        <form id="diet-form-fields" class="space-y-3">
+            <input id="diet-name" required maxlength="200" placeholder="{{ t.diets_ph_name }}"
+                   class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
+            <input id="diet-goal" maxlength="500" placeholder="{{ t.diets_ph_goal }}"
+                   class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
+            <textarea id="diet-desc" rows="2" maxlength="5000" placeholder="{{ t.diets_ph_desc }}"
+                      class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100"></textarea>
+            <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <input type="checkbox" id="diet-active" class="w-4 h-4"> {{ t.diets_active }}
+                </label>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg min-h-[44px]">{{ t.diets_btn_save }}</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Diets list -->
+    <div id="diets-list" class="space-y-4"></div>
+
+    {% if not diets %}
+    <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+        <p class="text-slate-500 dark:text-slate-400">{{ t.diets_empty }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const I18N = {
+  active: "{{ t.diets_active }}",
+  inactive: "{{ t.diets_inactive }}",
+  goal: "{{ t.diets_goal }}",
+  items: "{{ t.diets_items }}",
+  no_items: "{{ t.diets_no_items }}",
+  delete: "{{ t.diets_btn_delete }}",
+  save: "{{ t.diets_btn_save }}",
+  edit: "{{ t.diets_btn_edit }}",
+  add_item: "{{ t.diets_btn_add_item }}",
+  ph_item: "{{ t.diets_ph_item }}",
+  ph_qty: "{{ t.diets_ph_qty }}",
+  ph_unit: "{{ t.diets_ph_unit }}",
+  ph_meal: "{{ t.diets_ph_meal }}",
+  ph_notes: "{{ t.diets_ph_notes }}",
+  combined: "{{ t.diets_combined_hint }}",
+};
+
+let diets = {{ diets | tojson }};
+let dragItemId = null;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function qtyStr(it) {
+  if (it.quantity == null) return '';
+  const q = Number(it.quantity);
+  const num = Number.isInteger(q) ? String(q) : q.toFixed(1).replace(/\.0$/, '');
+  return it.unit ? num + ' ' + it.unit : num;
+}
+
+function renderDiets() {
+  const list = document.getElementById('diets-list');
+  list.innerHTML = '';
+  diets.forEach(d => list.appendChild(renderDietCard(d)));
+  // Combined hint when several diets active
+  const active = diets.filter(d => d.is_active);
+  const hint = document.getElementById('combined-hint');
+  if (active.length > 1) {
+    if (!hint) {
+      const h = el('div', 'p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-300');
+      h.id = 'combined-hint';
+      h.textContent = I18N.combined + ': ' + active.map(d => d.name).join(' + ');
+      list.prepend(h);
+    } else {
+      hint.textContent = I18N.combined + ': ' + active.map(d => d.name).join(' + ');
+    }
+  } else if (hint) {
+    hint.remove();
+  }
+}
+
+function renderDietCard(d) {
+  const card = el('div', 'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden' + (d.is_active ? ' border-emerald-300 dark:border-emerald-700' : ''));
+
+  // Header
+  const head = el('div', 'flex items-start justify-between gap-3 p-4 border-b border-slate-100 dark:border-slate-800');
+  const left = el('div', 'flex-1 min-w-0');
+  const titleRow = el('div', 'flex items-center gap-2 flex-wrap');
+  titleRow.appendChild(el('h3', 'font-semibold text-slate-800 dark:text-slate-100', d.name));
+  if (d.is_active) titleRow.appendChild(el('span', 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', I18N.active));
+  left.appendChild(titleRow);
+  if (d.goal) left.appendChild(el('p', 'text-xs text-slate-500 dark:text-slate-400 mt-1', I18N.goal + ': ' + d.goal));
+  if (d.description) left.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500 mt-0.5', d.description));
+  head.appendChild(left);
+
+  const actions = el('div', 'flex items-center gap-2 flex-shrink-0');
+  const activeBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] border ' +
+    (d.is_active ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-emerald-400'));
+  activeBtn.textContent = d.is_active ? I18N.active : I18N.inactive;
+  activeBtn.title = I18N.active;
+  activeBtn.onclick = () => toggleDiet(d.id, !d.is_active);
+  actions.appendChild(activeBtn);
+
+  const editBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-400', I18N.edit);
+  editBtn.onclick = () => editDiet(d);
+  actions.appendChild(editBtn);
+
+  const delBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-red-500 hover:border-red-400', I18N.delete);
+  delBtn.onclick = () => deleteDiet(d.id);
+  actions.appendChild(delBtn);
+  head.appendChild(actions);
+  card.appendChild(head);
+
+  // Items
+  const body = el('div', 'p-4');
+  const itemsWrap = el('div', 'space-y-1.5');
+  itemsWrap.dataset.dietId = d.id;
+  if (d.items && d.items.length) {
+    d.items.forEach(it => itemsWrap.appendChild(renderItemRow(d.id, it)));
+  } else {
+    itemsWrap.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500 py-2', I18N.no_items));
+  }
+  body.appendChild(itemsWrap);
+
+  // Add item form
+  const addForm = el('form', 'mt-3 flex flex-wrap gap-2 items-center');
+  const iName = el('input', 'flex-1 min-w-[140px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
+  iName.placeholder = I18N.ph_item; iName.required = true;
+  const iQty = el('input', 'w-16 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
+  iQty.placeholder = I18N.ph_qty; iQty.type = 'number'; iQty.step = 'any';
+  const iUnit = el('input', 'w-16 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
+  iUnit.placeholder = I18N.ph_unit; iUnit.maxLength = 20;
+  const iMeal = el('input', 'w-20 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
+  iMeal.placeholder = I18N.ph_meal; iMeal.maxLength = 30;
+  const iNotes = el('input', 'flex-1 min-w-[120px] px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
+  iNotes.placeholder = I18N.ph_notes; iNotes.maxLength = 2000;
+  const iBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.add_item);
+  iBtn.type = 'submit';
+  [iName, iQty, iUnit, iMeal, iNotes, iBtn].forEach(c => addForm.appendChild(c));
+  addForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    await addItem(d.id, {
+      name: iName.value.trim(),
+      quantity: iQty.value === '' ? null : parseFloat(iQty.value),
+      unit: iUnit.value.trim() || null,
+      meal_time: iMeal.value.trim() || null,
+      notes: iNotes.value.trim() || null,
+    });
+    iName.value = ''; iQty.value = ''; iUnit.value = ''; iMeal.value = ''; iNotes.value = '';
+  });
+  body.appendChild(addForm);
+  card.appendChild(body);
+  return card;
+}
+
+function renderItemRow(dietId, it) {
+  const row = el('div', 'flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 cursor-grab drag-item');
+  row.draggable = true;
+  row.dataset.id = it.id;
+  const grip = el('span', 'text-slate-300 dark:text-slate-600 select-none', '⠿');
+  const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate', it.name);
+  const meta = el('span', 'text-xs text-slate-400 flex-shrink-0');
+  meta.textContent = [qtyStr(it), it.meal_time].filter(Boolean).join(' · ');
+  const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '✕');
+  del.onclick = () => deleteItem(dietId, it.id);
+  [grip, name, meta, del].forEach(c => row.appendChild(c));
+
+  row.addEventListener('dragstart', e => { dragItemId = it.id; row.classList.add('opacity-50'); e.dataTransfer.effectAllowed = 'move'; });
+  row.addEventListener('dragend', () => { row.classList.remove('opacity-50'); dragItemId = null; });
+  row.addEventListener('dragover', e => { e.preventDefault(); });
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    if (!dragItemId || dragItemId === it.id) return;
+    const wrap = row.parentElement;
+    const ids = Array.from(wrap.querySelectorAll('.drag-item')).map(r => r.dataset.id);
+    const from = ids.indexOf(dragItemId);
+    const to = ids.indexOf(it.id);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, dragItemId);
+    reorderItems(dietId, ids);
+  });
+  return row;
+}
+
+// ── API calls ──
+
+async function api(url, method, body) {
+  const opts = { method, headers: {} };
+  if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const res = await fetch(url, opts);
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.detail || 'Request failed'); }
+  return res.status === 204 ? null : res.json();
+}
+
+async function toggleDiet(id, active) {
+  await api('/diets/api/' + id, 'PUT', { is_active: active });
+  const d = diets.find(x => x.id === id);
+  if (d) d.is_active = active;
+  renderDiets();
+}
+
+async function deleteDiet(id) {
+  if (!confirm(I18N.delete + '?')) return;
+  await api('/diets/api/' + id, 'DELETE');
+  diets = diets.filter(x => x.id !== id);
+  renderDiets();
+}
+
+function editDiet(d) {
+  document.getElementById('diet-form').classList.remove('hidden');
+  document.getElementById('diet-name').value = d.name;
+  document.getElementById('diet-goal').value = d.goal || '';
+  document.getElementById('diet-desc').value = d.description || '';
+  document.getElementById('diet-active').checked = d.is_active;
+  document.getElementById('diet-form-fields').dataset.editingId = d.id;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function addItem(dietId, data) {
+  await api('/diets/api/' + dietId + '/items', 'POST', data);
+  await reloadDiets();
+}
+
+async function deleteItem(dietId, itemId) {
+  await api('/diets/api/' + dietId + '/items/' + itemId, 'DELETE');
+  await reloadDiets();
+}
+
+async function reorderItems(dietId, ids) {
+  await api('/diets/api/' + dietId + '/items/reorder', 'POST', { ids });
+  await reloadDiets();
+}
+
+async function reloadDiets() {
+  const res = await fetch('/diets/api');
+  diets = await res.json();
+  renderDiets();
+}
+
+// ── Init ──
+
+function showDietForm() {
+  const f = document.getElementById('diet-form');
+  f.classList.toggle('hidden');
+  if (!f.classList.contains('hidden')) {
+    document.getElementById('diet-form-fields').dataset.editingId = '';
+    document.getElementById('diet-name').value = '';
+    document.getElementById('diet-goal').value = '';
+    document.getElementById('diet-desc').value = '';
+    document.getElementById('diet-active').checked = false;
+    document.getElementById('diet-name').focus();
+  }
+}
+
+document.getElementById('diet-form-fields').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fields = e.target;
+  const editingId = fields.dataset.editingId || '';
+  const body = {
+    name: document.getElementById('diet-name').value.trim(),
+    goal: document.getElementById('diet-goal').value.trim() || null,
+    description: document.getElementById('diet-desc').value.trim() || null,
+    is_active: document.getElementById('diet-active').checked,
+  };
+  if (editingId) {
+    await api('/diets/api/' + editingId, 'PUT', body);
+  } else {
+    await api('/diets/api', 'POST', body);
+  }
+  document.getElementById('diet-form').classList.add('hidden');
+  await reloadDiets();
+});
+
+// Fetch full list including items
+(async () => {
+  const res = await fetch('/diets/api');
+  diets = await res.json();
+  renderDiets();
+})();
+</script>
+{% endblock %}

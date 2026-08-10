@@ -231,6 +231,8 @@ class InventoryItemOut(BaseModel):
     is_shopping_list: bool
     status: str
     priority: int
+    sort_order: int = 0
+    image_path: str | None = None
     created_at: datetime
     updated_at: datetime
 

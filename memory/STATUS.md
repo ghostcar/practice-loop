@@ -1,6 +1,18 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 53).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 54).
+
+## Сессия 54: drag&drop везде, изображения инвентаря, фото-отчёты, диеты, параллельные тренировки
+
+- [x] **Drag&drop сортировка**: журнал тренировки (эндпоинт `POST /training/log-entry/reorder`, `sort_order` уже был), инвентарь (`POST /api/v2/inventory/reorder` — partial: работает с активными фильтрами, unknown id → 400), позиции диет (`POST /diets/api/{id}/items/reorder`), плюс `sort_order` добавлен в `schedule_rules` и `availability_windows` (миграция 018, UI-сортировка там позже).
+- [x] **Изображения инвентаря**: `inventory_items.image_path` + `POST/DELETE /api/v2/inventory/{id}/image` (валидация content-type + magic-bytes, лимит 8 МБ), превью и 📷-кнопка в inventory.html, drag&drop строк.
+- [x] **Фото-отчёты (универсальные)**: таблица `attachments` (owner_type/owner_id, allowlist), API `POST/GET/DELETE /attachments`; UI — на карточках задач в training.html (загрузка/просмотр/удаление). `delete_upload` защищён от path traversal (resolve + префикс).
+- [x] **Диеты**: таблицы `diets` + `diet_items`, API `/diets/api` CRUD + items + reorder + toggle `is_active` (комбинирование = несколько активных), страница `/diets` в навигации (drag&drop позиций, бейдж «комбинируются»).
+- [x] **Параллельные тренировки (гибрид)**: `training_days.name`; `/training/plan` больше НЕ блокирует второй план — добавляет (leftover-пустые удаляются); `analyze_day` принимает `training_day_id`; страница — колонки планов (grid до 2) + общая timeline-шкала дня (журнал всех планов + правила расписания, lane-packing в JS, clamp 0..1440).
+- [x] **Инфраструктура загрузок**: `config.upload_dir`/`max_upload_bytes`, docker-compose volume `uploads:/app/uploads` + `UPLOAD_DIR`, mount `/uploads` + CSRF-bypass в main.py, `.gitignore uploads/`, `app/services/uploads.py`.
+- [x] **Миграция 018** проверена на реальном PostgreSQL 15: upgrade 001→018, ORM-вставки/чтения новых таблиц, downgrade 018→017, повторный upgrade — всё ✅.
+- [x] +21 тест (`tests/test_dnd_diets_uploads.py`): reorder (полный/partial/unknown/cross-user), upload (валидация, oversize, delete), attachments (allowlist, изоляция), диеты CRUD, несколько планов, timeline-рендер, pipeline name.
+- [x] 274/274 тестов, ruff 0, format clean.
 
 ## Сессия 53: страница /import — навигация + UX (drag&drop, результат импорта)
 

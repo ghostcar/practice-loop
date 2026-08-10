@@ -6,9 +6,11 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.admin import router as admin_router
+from app.api.attachments import router as attachments_router
 from app.api.auth import router as auth_router
 from app.api.calendar import router as calendar_router
 from app.api.dashboard import router as dashboard_router
+from app.api.diets import router as diets_router
 from app.api.entities import router as entities_router
 from app.api.import_data import router as import_router
 from app.api.llm_configs import router as llm_configs_router
@@ -59,7 +61,11 @@ app = FastAPI(title="Practice Loop", version="0.8.0", lifespan=lifespan)
 
 @app.middleware("http")
 async def csrf_middleware(request: Request, call_next):
-    if request.url.path.startswith("/static") or request.url.path == "/healthz":
+    if (
+        request.url.path.startswith("/static")
+        or request.url.path.startswith("/uploads")
+        or request.url.path == "/healthz"
+    ):
         return await call_next(request)
     try:
         await verify_csrf(request)
@@ -76,6 +82,10 @@ async def csrf_middleware(request: Request, call_next):
 # --- Mount static files ---
 with contextlib.suppress(RuntimeError):
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# --- Mount user uploads (inventory photos, photo reports) ---
+with contextlib.suppress(RuntimeError):
+    app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 
 # --- Health check ---
@@ -122,4 +132,6 @@ app.include_router(dashboard_router)
 app.include_router(points_v2_router)
 app.include_router(import_router)
 app.include_router(calendar_router)
+app.include_router(attachments_router)
+app.include_router(diets_router)
 app.include_router(tg_router)

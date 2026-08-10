@@ -26,6 +26,7 @@ services:
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
       CREDENTIALS_ENCRYPTION_KEY: ${CREDENTIALS_ENCRYPTION_KEY:?err}
       APP_ENV: ${APP_ENV:-production}   # production gate: secrets validated at startup
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       TG_BOT_TOKEN: ${TG_BOT_TOKEN:-}
       TG_WEBHOOK_SECRET: ${TG_WEBHOOK_SECRET:-change-me}
       TG_WEBHOOK_BASE_URL: ${TG_WEBHOOK_BASE_URL:-https://localhost:8443}
@@ -39,6 +40,8 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"
+    volumes:
+      - uploads:/app/uploads
 
   # Optional: built-in nginx. Use 'docker compose --profile full up' to start.
   # If you already have host-level nginx + certbot, skip this and proxy to app:8000 directly.
@@ -62,3 +65,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

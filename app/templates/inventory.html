@@ -10,6 +10,9 @@
     </div>
   </div>
 
+  <!-- Drag&drop hint -->
+  <p class="text-xs text-slate-400 dark:text-slate-500 mb-2">⠿ {{ t.inv_drag_hint|default('Drag items to reorder') }}</p>
+
   <!-- Filters -->
   <div class="flex gap-2 mb-6 flex-wrap">
     <button onclick="filter('')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">{{ t.inventory_filter_all }}</button>
@@ -47,6 +50,9 @@
 
   <!-- List -->
   <div id="inv-list" class="space-y-2"></div>
+
+  <!-- Hidden file input for image upload -->
+  <input type="file" id="inv-img-input" accept="image/*" class="hidden">
 </div>
 {% endblock %}
 {% block scripts %}
@@ -74,15 +80,24 @@ const STATUS_LABEL = {
 };
 
 let currentFilter = '';
+let invItems = [];
+let dragItemId = null;
+
 async function loadInventory(cat, shopOnly) {
   let url = '/api/v2/inventory?';
   if (cat) url += 'category=' + cat + '&';
   if (shopOnly) url += 'shopping_list=true&';
   const res = await fetch(url);
-  const items = await res.json();
+  invItems = await res.json();
+  renderInventory();
+}
+
+function renderInventory() {
   const el = document.getElementById('inv-list');
-  el.innerHTML = items.map(i => `
-    <div class="bg-white dark:bg-slate-900 rounded-lg p-4 flex justify-between items-center border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+  el.innerHTML = invItems.map(i => `
+    <div class="bg-white dark:bg-slate-900 rounded-lg p-4 flex items-center gap-3 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-grab" draggable="true" data-id="${escapeHtml(String(i.id))}">
+      <span class="text-slate-300 dark:text-slate-600 select-none">⠿</span>
+      ${i.image_path ? `<img src="${escapeHtml(i.image_path)}" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-700" loading="lazy">` : ''}
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>
@@ -92,9 +107,70 @@ async function loadInventory(cat, shopOnly) {
         </div>
         <div class="text-xs text-slate-400 mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
       </div>
-      <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-indigo-500 text-sm px-2" title="Photo">📷</button>
+        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-red-500 text-sm px-2" title="Remove photo">✕</button>` : ''}
+        <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
+      </div>
     </div>
   `).join('') || '<p class="text-slate-400 dark:text-slate-500 text-center py-8">' + escapeHtml(I18N.inv_empty) + '</p>';
+}
+
+// Drag&drop reorder
+function bindDrag() {
+  const list = document.getElementById('inv-list');
+  list.addEventListener('dragstart', e => {
+    const row = e.target.closest('[data-id]');
+    if (!row) return;
+    dragItemId = row.dataset.id;
+    row.classList.add('opacity-50');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  list.addEventListener('dragend', e => {
+    const row = e.target.closest('[data-id]');
+    if (row) row.classList.remove('opacity-50');
+    dragItemId = null;
+  });
+  list.addEventListener('dragover', e => { e.preventDefault(); });
+  list.addEventListener('drop', async e => {
+    e.preventDefault();
+    const target = e.target.closest('[data-id]');
+    if (!target || !dragItemId || dragItemId === target.dataset.id) return;
+    const rows = Array.from(list.querySelectorAll('[data-id]'));
+    const from = rows.findIndex(r => r.dataset.id === dragItemId);
+    const to = rows.findIndex(r => r.dataset.id === target.dataset.id);
+    if (from < 0 || to < 0) return;
+    const [moved] = rows.splice(from, 1);
+    rows.splice(to, 0, moved);
+    const ids = rows.map(r => r.dataset.id);
+    await fetch('/api/v2/inventory/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids })
+    });
+    loadInventory(currentFilter, false);
+  });
+}
+
+// Image upload
+let imgTargetId = null;
+function pickImage(id) {
+  imgTargetId = id;
+  document.getElementById('inv-img-input').click();
+}
+document.getElementById('inv-img-input').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || !imgTargetId) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/v2/inventory/' + imgTargetId + '/image', { method: 'POST', body: fd });
+  imgTargetId = null;
+  if (res.ok) loadInventory(currentFilter, false);
+});
+async function delImage(id) {
+  await fetch('/api/v2/inventory/' + id + '/image', { method: 'DELETE' });
+  loadInventory(currentFilter, false);
 }
 function catBadge(c) {
   const m = {clothing:'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',equipment:'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',cosmetics:'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',other:'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'};
@@ -123,6 +199,7 @@ document.getElementById('inv-form').addEventListener('submit', async e => {
   document.getElementById('add-form').classList.add('hidden');
   loadInventory(currentFilter, false);
 });
+bindDrag();
 loadInventory('', false);
 
 // Category chart

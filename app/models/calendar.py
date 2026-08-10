@@ -55,6 +55,7 @@ class AvailabilityWindow(Base):
     # sleep / work / free / commute / exercise / restricted / ...
     policy: Mapped[str] = mapped_column(String(20), default="allowed", nullable=False)
     # allowed / disallowed / passive_only
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     template: Mapped[CalendarTemplate] = relationship("CalendarTemplate", back_populates="windows")

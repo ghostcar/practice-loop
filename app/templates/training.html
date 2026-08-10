@@ -2,7 +2,7 @@
 {% block title %}{{ t.get('training_title', 'Training') }} – Practice Loop{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-5">
+<div class="max-w-4xl mx-auto space-y-5">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.get('training_title', 'Daily Training') }}</h1>
@@ -23,7 +23,7 @@
     </div>
     {% endif %}
 
-    {% if not training_day %}
+    {% if not training_days %}
     <div class="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
         <svg class="w-10 h-10 mx-auto mb-4 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-2">{{ t.training_no_plan }}</h2>
@@ -31,7 +31,7 @@
             {{ t.training_no_plan_desc }}
         </p>
         {% if active_config %}
-        <form method="POST" action="/training/plan">
+        <form method="POST" action="/training/plan" class="inline-flex flex-col items-center gap-2">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg">
                 {{ t.training_generate }}
@@ -43,206 +43,232 @@
         {% endif %}
     </div>
 
-    {% elif training_day.status == 'analyzed' %}
-    <div class="space-y-4">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
-            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{{ t.training_analysis }}</h2>
-            <p class="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                {{ training_day.analysis_summary or 'No analysis available.' }}
-            </p>
-        </div>
-        {% if training_day.next_day_suggestion %}
-        <div class="bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-800 p-5">
-            <h2 class="text-lg font-semibold text-indigo-800 dark:text-indigo-200 mb-3">{{ t.training_next_day }}</h2>
-            <div class="text-sm text-indigo-700 dark:text-indigo-300 whitespace-pre-wrap">
-                <p class="mb-2">{{ next_day.get('suggestion_summary', '') if next_day else '' }}</p>
-                {% if next_day and next_day.get('tasks') %}
-                <ul class="list-disc pl-5 space-y-1">
-                {% for t in next_day.tasks %}<li>{{ t.get('entity_name', 'Task') }}</li>{% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-        </div>
+    {% else %}
+
+    <!-- Plans header + add plan -->
+    <div class="flex items-center justify-between flex-wrap gap-2">
+        <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ t.training_plans }} ({{ training_days|length }})</h2>
+        {% if active_config %}
+        <form method="POST" action="/training/plan" class="flex items-center gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input type="text" name="name" maxlength="200" placeholder="{{ t.training_plan_name_ph }}"
+                   class="w-40 px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+            <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg min-h-[44px]">{{ t.training_add_plan }}</button>
+        </form>
         {% endif %}
     </div>
 
-    {% else %}
-    {% if training_day.plan_summary %}
-    <div class="p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
-        <p class="text-sm text-indigo-800 dark:text-indigo-200">{{ training_day.plan_summary }}</p>
-    </div>
-    {% endif %}
-
-    {% if log_entries %}
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.training_log_title }}</h3>
-            <span class="text-xs text-slate-400">{{ log_entries|length }} {{ t.training_log_records }}</span>
-        </div>
-        <div class="space-y-2" id="log-entries-list">
-            {% for entry in log_entries %}
-            {% set type_label = t.get('training_log_type_' + entry.entry_type, entry.entry_type) %}
-            {% set extra_cls = "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20" if entry.is_extra else "" %}
-            <div class="log-entry-row flex items-start gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 {{ extra_cls }}">
-                <div class="flex-shrink-0 w-20">
-                    <span class="text-sm font-mono font-medium text-slate-700 dark:text-slate-300">{{ entry.time_label }}</span>
-                    <span class="block text-xs text-slate-400">{{ type_label }}{% if entry.is_extra %} {{ t.training_log_extra_marker }}{% endif %}</span>
-                </div>
-                <div class="flex-shrink-0 w-24">
-                    <span class="text-xs text-slate-400">{{ entry.planned_value or '—' }} {{ entry.unit or '' }}</span>
-                </div>
-                <form hx-post="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML" class="flex-1 flex items-start gap-2">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <input type="text" name="actual_value" value="{{ entry.actual_value or '' }}"
-                           placeholder="{{ t.training_log_save }} ({{ entry.unit or '' }})"
-                           aria-label="{{ t.training_log_save }}"
-                           class="w-24 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    <input type="text" name="notes" value="{{ entry.notes or '' }}"
-                           placeholder="{{ t.training_log_add_field_notes }}"
-                           aria-label="{{ t.training_log_add_field_notes }}"
-                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    <button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded">
-                        {{ t.training_log_save }}
-                    </button>
-                </form>
-                {% if entry.is_extra %}
-                <button hx-delete="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML"
-                        aria-label="{{ t.training_log_extra_marker }}"
-                        class="text-red-400 hover:text-red-600 text-xs leading-none px-1">✕</button>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Add extra entry -->
-        <details class="mt-4">
-            <summary class="text-sm text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline">+ {{ t.training_log_add }}</summary>
-            <form hx-post="/training/log-entry" hx-target="#log-entries-list" hx-swap="beforeend" class="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-2">
-                <input type="hidden" name="training_day_id" value="{{ training_day.id }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                <div class="flex gap-2">
-                    <input type="text" name="time_label" placeholder="{{ t.training_log_add_field_time }}" required aria-label="{{ t.training_log_add_field_time }}"
-                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    <select name="entry_type" aria-label="{{ t.training_log_add }}" class="px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                        <option value="fluid_intake">{{ t.training_log_type_fluid_intake_long }}</option>
-                        <option value="micro_leak">{{ t.training_log_type_micro_leak_long }}</option>
-                        <option value="pressure_check">{{ t.training_log_type_pressure_check_long }}</option>
-                        <option value="general_note">{{ t.training_log_type_general_note_long }}</option>
-                    </select>
-                </div>
-                <div class="flex gap-2">
-                    <input type="text" name="actual_value" placeholder="{{ t.training_log_add_field_value }}" aria-label="{{ t.training_log_add_field_value }}"
-                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                    <input type="text" name="notes" placeholder="{{ t.training_log_add_field_notes }}" aria-label="{{ t.training_log_add_field_notes }}"
-                           class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
-                </div>
-                <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded">
-                    {{ t.training_log_add }}
-                </button>
-            </form>
-        </details>
-    </div>
-    {% endif %}
-
-    {% if logs %}
-    {% set total_tasks = logs|length %}
-    {% set completed_count = namespace(value=0) %}
-    {% for log in logs %}{% if log.status == 'completed' %}{% set completed_count.value = completed_count.value + 1 %}{% endif %}{% endfor %}
-    <div class="flex items-center gap-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <div class="relative w-16 h-16 flex-shrink-0">
-            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" class="text-slate-200 dark:text-slate-700" stroke-width="6"/>
-                <circle cx="32" cy="32" r="28" fill="none" stroke="#6B57A5" stroke-width="6" stroke-linecap="round"
-                        stroke-dasharray="{{ (175.9 * completed_count.value / total_tasks)|round(1) }} 175.9" class="transition-all duration-700"/>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ completed_count.value }}/{{ total_tasks }}</span>
-            </div>
-        </div>
-        <div>
-            <h3 class="font-semibold text-slate-800 dark:text-slate-100">Daily Progress</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-                {{ (completed_count.value / total_tasks * 100)|int }}%
-            </p>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="space-y-3">
-        {% for log in logs %}
-        <div class="bg-white dark:bg-slate-900 rounded-xl border
-                    {% if log.status == 'completed' %}border-emerald-300 dark:border-emerald-700{% else %}border-slate-200 dark:border-slate-800{% endif %}
-                    p-4">
-            <div class="flex items-start justify-between mb-3">
+    <!-- Plan columns -->
+    <div class="grid grid-cols-1 md:grid-cols-{{ [plans|length, 2]|min }} gap-4 items-start">
+        {% for plan in plans %}
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden
+                    {% if plan.day.status == 'analyzed' %}border-indigo-300 dark:border-indigo-700{% endif %}">
+            <!-- Plan header -->
+            <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
                 <div>
-                    <h3 class="font-medium text-slate-800 dark:text-slate-100">{{ log.selected_entity_name or t.training_no_subtasks }}</h3>
-                    {% if log.status != 'pending' %}
-                    <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium
-                                 {% if log.status == 'completed' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
-                                 {% else %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300{% endif %}">
-                        {{ log.status }}
-                    </span>
+                    <h3 class="font-semibold text-slate-800 dark:text-slate-100">
+                        {{ plan.day.name or t.training_title }}{% if plan.day.name %} <span class="text-xs font-normal text-slate-400">({{ t.training_title }})</span>{% endif %}
+                    </h3>
+                    {% if plan.total %}
+                    <div class="flex items-center gap-2 mt-1">
+                        <div class="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden min-w-[80px]">
+                            <div class="h-full bg-indigo-500 rounded-full transition-all" style="width: {{ (plan.completed / plan.total * 100)|int }}%"></div>
+                        </div>
+                        <span class="text-xs text-slate-400 tabular-nums">{{ plan.completed }}/{{ plan.total }} · {{ (plan.completed / plan.total * 100)|int }}%</span>
+                    </div>
                     {% endif %}
                 </div>
-                {% if log.status == 'pending' and log.subtasks %}
-                {% set all_done = namespace(value=true) %}
-                {% for st in log.subtasks %}{% if not st.get('is_done') %}{% set all_done.value = false %}{% endif %}{% endfor %}
-                {% if all_done.value %}
-                <form method="POST" action="/training/tasks/{{ log.id }}/complete">
+                {% if plan.day.status == 'active' or plan.day.status == 'completed' %}
+                <form method="POST" action="/training/analyze">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg">{{ t.training_complete }}</button>
+                    <input type="hidden" name="training_day_id" value="{{ plan.day.id }}">
+                    <button type="submit" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg min-h-[44px]">{{ t.training_analyze }}</button>
                 </form>
-                {% endif %}
                 {% endif %}
             </div>
 
-            {% if log.subtasks %}
-            <div class="space-y-1.5">
-                {% for st in log.subtasks %}
-                <form method="POST" action="/training/tasks/{{ log.id }}/subtasks/{{ loop.index0 }}/toggle"
-                      class="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center"
-                                   {% if st.get('is_done') %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}
-                                   {% if st.get('is_done') %}bg-indigo-600 border-indigo-600 text-white{% else %}border-slate-300 dark:border-slate-600 hover:border-indigo-400{% endif %}">
-                        {% if st.get('is_done') %}<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>{% endif %}
-                    </button>
-                    <span class="text-sm {% if st.get('is_done') %}line-through text-slate-400 dark:text-slate-500{% else %}text-slate-700 dark:text-slate-300{% endif %}">
-                        {{ st.get('desc', 'Step ' + (loop.index|string)) }}
-                    </span>
-                </form>
-                {% endfor %}
+            {% if plan.day.status == 'analyzed' %}
+            <div class="p-4 space-y-3">
+                <div class="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-200 dark:border-indigo-800 p-4">
+                    <h4 class="text-sm font-semibold text-indigo-800 dark:text-indigo-200 mb-2">{{ t.training_analysis }}</h4>
+                    <p class="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed whitespace-pre-line">{{ plan.day.analysis_summary or '—' }}</p>
+                </div>
+                {% if plan.next_day %}
+                <div class="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-200 dark:border-indigo-800 p-4">
+                    <h4 class="text-sm font-semibold text-indigo-800 dark:text-indigo-200 mb-2">{{ t.training_next_day }}</h4>
+                    <p class="text-sm text-indigo-700 dark:text-indigo-300 whitespace-pre-wrap mb-2">{{ plan.next_day.get('suggestion_summary', '') }}</p>
+                    {% if plan.next_day.get('tasks') %}
+                    <ul class="list-disc pl-5 space-y-1">
+                        {% for task in plan.next_day.tasks %}<li class="text-sm text-indigo-700 dark:text-indigo-300">{{ task.get('entity_name', 'Task') }}</li>{% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
             {% endif %}
 
-            {% if log.subtasks %}
-            {% set done = namespace(value=0) %}
-            {% for st in log.subtasks %}{% if st.get('is_done') %}{% set done.value = done.value + 1 %}{% endif %}{% endfor %}
-            <div class="mt-3 flex items-center gap-2">
-                <div class="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-500 rounded-full transition-all" style="width: {{ (done.value / (log.subtasks|length) * 100)|int }}%"></div>
+            {% if plan.day.plan_summary and plan.day.status != 'analyzed' %}
+            <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-950/30 border-b border-indigo-100 dark:border-indigo-900">
+                <p class="text-xs text-indigo-800 dark:text-indigo-200">{{ plan.day.plan_summary }}</p>
+            </div>
+            {% endif %}
+
+            {% if plan.logs and plan.day.status != 'analyzed' %}
+            <div class="p-3 space-y-3">
+                {% for log in plan.logs %}
+                <div class="rounded-lg border {% if log.status == 'completed' %}border-emerald-300 dark:border-emerald-700{% elif log.status == 'interrupted' %}border-red-300 dark:border-red-700{% else %}border-slate-200 dark:border-slate-700{% endif %} p-3" data-log-id="{{ log.id }}">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="min-w-0">
+                            <h4 class="font-medium text-sm text-slate-800 dark:text-slate-100 break-words">{{ log.selected_entity_name or t.training_no_subtasks }}</h4>
+                            {% if log.status != 'pending' %}
+                            <span class="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full font-medium
+                                         {% if log.status == 'completed' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
+                                         {% else %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300{% endif %}">
+                                {{ log.status }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if log.status == 'pending' and log.subtasks %}
+                        {% set all_done = namespace(value=true) %}
+                        {% for st in log.subtasks %}{% if not st.get('is_done') %}{% set all_done.value = false %}{% endif %}{% endfor %}
+                        {% if all_done.value %}
+                        <form method="POST" action="/training/tasks/{{ log.id }}/complete">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg min-h-[44px]">{{ t.training_complete }}</button>
+                        </form>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                    {% if log.subtasks %}
+                    <div class="space-y-1">
+                        {% for st in log.subtasks %}
+                        <form method="POST" action="/training/tasks/{{ log.id }}/subtasks/{{ loop.index0 }}/toggle"
+                              class="flex items-start gap-2 p-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <button type="submit" class="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center"
+                                           {% if st.get('is_done') %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}
+                                           {% if st.get('is_done') %}bg-indigo-600 border-indigo-600 text-white{% else %}border-slate-300 dark:border-slate-600 hover:border-indigo-400{% endif %}>
+                                {% if st.get('is_done') %}<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>{% endif %}
+                            </button>
+                            <span class="text-xs {% if st.get('is_done') %}line-through text-slate-400 dark:text-slate-500{% else %}text-slate-700 dark:text-slate-300{% endif %}">{{ st.get('desc', 'Step ' + (loop.index|string)) }}</span>
+                        </form>
+                        {% endfor %}
+                    </div>
+                    {% set done = namespace(value=0) %}
+                    {% for st in log.subtasks %}{% if st.get('is_done') %}{% set done.value = done.value + 1 %}{% endif %}{% endfor %}
+                    <div class="mt-2 flex items-center gap-2">
+                        <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 rounded-full" style="width: {{ (done.value / (log.subtasks|length) * 100)|int }}%"></div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 tabular-nums">{{ done.value }}/{{ log.subtasks|length }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Photo report -->
+                    <div class="mt-2 flex items-center gap-2 flex-wrap">
+                        <div class="photo-thumbs flex items-center gap-1.5" data-owner-type="activity_log" data-owner-id="{{ log.id }}"></div>
+                        <button type="button" onclick="pickLogPhoto('{{ log.id }}')"
+                                class="text-[10px] px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors">📷 {{ t.training_photo_add }}</button>
+                    </div>
                 </div>
-                <span class="text-xs text-slate-400 tabular-nums">{{ done.value }}/{{ log.subtasks|length }}</span>
+                {% endfor %}
+            </div>
+            {% elif plan.day.status != 'analyzed' %}
+            <div class="text-center py-6">
+                <p class="text-sm text-slate-400">{{ t.training_empty }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Journal (per plan) -->
+            {% if plan.log_entries and plan.day.status != 'analyzed' %}
+            <div class="px-4 pb-2">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{{ t.training_log_title }}</h4>
+                    <span class="text-[10px] text-slate-400">{{ t.training_drag_hint }} ⠿</span>
+                </div>
+                <div class="space-y-1.5" id="log-entries-{{ plan.day.id }}" data-training-day-id="{{ plan.day.id }}">
+                    {% for entry in plan.log_entries %}
+                    {% set type_label = t.get('training_log_type_' + entry.entry_type, entry.entry_type) %}
+                    {% set extra_cls = "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20" if entry.is_extra else "" %}
+                    <div class="log-entry-row flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 {{ extra_cls }} cursor-grab" draggable="true" data-entry-id="{{ entry.id }}">
+                        <span class="text-slate-300 dark:text-slate-600 select-none">⠿</span>
+                        <span class="text-xs font-mono font-medium text-slate-700 dark:text-slate-300 w-14 flex-shrink-0">{{ entry.time_label }}</span>
+                        <span class="text-[10px] text-slate-400 w-16 flex-shrink-0 truncate">{{ type_label }}{% if entry.is_extra %} *{% endif %}</span>
+                        <span class="text-[10px] text-slate-400 w-16 flex-shrink-0 truncate">{{ entry.planned_value or '—' }} {{ entry.unit or '' }}</span>
+                        <form hx-post="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML" class="flex-1 flex items-center gap-1.5 min-w-0">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <input type="text" name="actual_value" value="{{ entry.actual_value or '' }}"
+                                   placeholder="{{ t.training_log_save }} ({{ entry.unit or '' }})"
+                                   aria-label="{{ t.training_log_save }}"
+                                   class="w-16 px-1.5 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                            <input type="text" name="notes" value="{{ entry.notes or '' }}"
+                                   placeholder="{{ t.training_log_add_field_notes }}"
+                                   aria-label="{{ t.training_log_add_field_notes }}"
+                                   class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                            <button type="submit" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium rounded min-h-[44px]">{{ t.training_log_save }}</button>
+                        </form>
+                        {% if entry.is_extra %}
+                        <button hx-delete="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML"
+                                aria-label="{{ t.training_log_extra_marker }}"
+                                class="text-red-400 hover:text-red-600 text-xs leading-none px-1 min-h-[44px]">✕</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <details class="mt-2">
+                    <summary class="text-xs text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline">+ {{ t.training_log_add }}</summary>
+                    <form hx-post="/training/log-entry" hx-target="#log-entries-{{ plan.day.id }}" hx-swap="beforeend" class="mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1.5">
+                        <input type="hidden" name="training_day_id" value="{{ plan.day.id }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <div class="flex gap-1.5">
+                            <input type="text" name="time_label" placeholder="{{ t.training_log_add_field_time }}" required aria-label="{{ t.training_log_add_field_time }}"
+                                   class="flex-1 px-1.5 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                            <select name="entry_type" aria-label="{{ t.training_log_add }}" class="px-1.5 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                                <option value="fluid_intake">{{ t.training_log_type_fluid_intake_long }}</option>
+                                <option value="micro_leak">{{ t.training_log_type_micro_leak_long }}</option>
+                                <option value="pressure_check">{{ t.training_log_type_pressure_check_long }}</option>
+                                <option value="general_note">{{ t.training_log_type_general_note_long }}</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <input type="text" name="actual_value" placeholder="{{ t.training_log_add_field_value }}" aria-label="{{ t.training_log_add_field_value }}"
+                                   class="flex-1 px-1.5 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                            <input type="text" name="notes" placeholder="{{ t.training_log_add_field_notes }}" aria-label="{{ t.training_log_add_field_notes }}"
+                                   class="flex-1 px-1.5 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">
+                        </div>
+                        <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded min-h-[44px]">{{ t.training_log_add }}</button>
+                    </form>
+                </details>
             </div>
             {% endif %}
         </div>
         {% endfor %}
     </div>
 
-    {% if not logs %}
-    <div class="text-center py-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-        <p class="text-slate-500 dark:text-slate-400">{{ t.training_empty }}</p>
-    </div>
-    {% endif %}
+    <!-- Hidden file input for photo reports -->
+    <input type="file" id="log-photo-input" accept="image/*" class="hidden">
 
-    <div class="flex gap-3">
-        {% if training_day.status == 'active' or training_day.status == 'completed' %}
-        <form method="POST" action="/training/analyze">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg">
-                {{ t.training_analyze }}
-            </button>
-        </form>
+    <!-- Day timeline -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.training_timeline }}</h3>
+            <div class="flex gap-3 text-[10px] text-slate-500 dark:text-slate-400">
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500"></span>{{ t.training_timeline_legend_journal }}</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>{{ t.training_timeline_legend_schedule }}</span>
+            </div>
+        </div>
+        {% if timeline_blocks %}
+        <div id="timeline-scale" class="relative w-full overflow-x-auto pb-1">
+            <div id="timeline-tracks" class="relative min-w-[720px] h-24 bg-slate-50 dark:bg-slate-800/40 rounded-lg"></div>
+            <div class="flex justify-between text-[10px] text-slate-400 font-mono mt-1 min-w-[720px]">
+                <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+            </div>
+        </div>
+        <script id="timeline-data" type="application/json">{{ timeline_blocks | tojson }}</script>
+        {% else %}
+        <p class="text-sm text-slate-400 py-2">{{ t.training_timeline_empty }}</p>
         {% endif %}
     </div>
     {% endif %}
@@ -282,6 +308,125 @@
             }
         });
     } catch(e) { console.warn('Training trend:', e); }
+})();
+
+// ── Journal drag&drop reorder (native HTML5 DnD, per training day) ──
+(function () {
+    let draggedId = null;
+    document.querySelectorAll('[id^="log-entries-"]').forEach(list => {
+        list.addEventListener('dragstart', e => {
+            const row = e.target.closest('.log-entry-row');
+            if (!row) return;
+            draggedId = row.dataset.entryId;
+            row.classList.add('opacity-50');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        list.addEventListener('dragend', e => {
+            const row = e.target.closest('.log-entry-row');
+            if (row) row.classList.remove('opacity-50');
+            draggedId = null;
+        });
+        list.addEventListener('dragover', e => { e.preventDefault(); });
+        list.addEventListener('drop', e => {
+            e.preventDefault();
+            const target = e.target.closest('.log-entry-row');
+            const trainingDayId = list.dataset.trainingDayId;
+            if (!target || !draggedId || !trainingDayId || draggedId === target.dataset.entryId) return;
+            const rows = Array.from(list.querySelectorAll('.log-entry-row'));
+            const from = rows.findIndex(r => r.dataset.entryId === draggedId);
+            const to = rows.findIndex(r => r.dataset.entryId === target.dataset.entryId);
+            if (from < 0 || to < 0) return;
+            const [moved] = rows.splice(from, 1);
+            rows.splice(to, 0, moved);
+            const ids = rows.map(r => r.dataset.entryId);
+            fetch('/training/log-entry/reorder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ training_day_id: trainingDayId, ids: ids })
+            }).then(res => {
+                if (res.ok) location.reload();
+            });
+        });
+    });
+})();
+
+// ── Photo reports (attachments on activity logs) ──
+let logPhotoTarget = null;
+function pickLogPhoto(logId) {
+  logPhotoTarget = logId;
+  document.getElementById('log-photo-input').click();
+}
+document.getElementById('log-photo-input').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || !logPhotoTarget) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/attachments?owner_type=activity_log&owner_id=' + logPhotoTarget, {
+    method: 'POST', body: fd
+  });
+  logPhotoTarget = null;
+  location.reload();
+});
+
+async function loadLogPhotos() {
+  document.querySelectorAll('.photo-thumbs').forEach(async thumbs => {
+    const ownerType = thumbs.dataset.ownerType;
+    const ownerId = thumbs.dataset.ownerId;
+    const res = await fetch('/attachments?owner_type=' + ownerType + '&owner_id=' + ownerId);
+    if (!res.ok) return;
+    const atts = await res.json();
+    thumbs.innerHTML = atts.map(a =>
+      `<span class="relative group inline-block">` +
+        `<img src="${escapeHtml(a.file_path)}" alt="" class="w-10 h-10 rounded object-cover border border-slate-200 dark:border-slate-700" loading="lazy">` +
+        `<button type="button" onclick="delLogPhoto('${escapeHtml(a.id)}')" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] leading-none hidden group-hover:flex items-center justify-center">✕</button>` +
+      `</span>`
+    ).join('');
+  });
+}
+async function delLogPhoto(id) {
+  await fetch('/attachments/' + id, { method: 'DELETE' });
+  location.reload();
+}
+loadLogPhotos();
+
+// ── Day timeline rendering ──
+(function () {
+    const dataEl = document.getElementById('timeline-data');
+    const tracksEl = document.getElementById('timeline-tracks');
+    if (!dataEl || !tracksEl) return;
+    let blocks;
+    try { blocks = JSON.parse(dataEl.textContent); } catch (e) { return; }
+    if (!blocks.length) return;
+
+    const DAY = 1440;
+    // Greedy lane packing: assign each block to the first lane it fits in.
+    const lanes = [];
+    blocks.sort((a, b) => a.start - b.start);
+    blocks.forEach(b => {
+        let lane = lanes.find(l => l.every(x => b.start >= x.end || b.end <= x.start));
+        if (!lane) { lane = []; lanes.push(lane); }
+        lane.push(b);
+        b.lane = lanes.indexOf(lane);
+    });
+
+    const laneH = 28;
+    tracksEl.style.height = (lanes.length * laneH + 4) + 'px';
+    const colors = { journal: '#6B57A5', schedule: '#2F7657' };
+    blocks.forEach(b => {
+        const left = b.start / DAY * 100;
+        const width = Math.max((b.end - b.start) / DAY * 100, 1.2);
+        const div = document.createElement('div');
+        div.className = 'absolute rounded-md px-2 py-0.5 text-[10px] font-medium text-white overflow-hidden whitespace-nowrap';
+        div.style.left = left + '%';
+        div.style.width = width + '%';
+        div.style.top = (b.lane * laneH + 2) + 'px';
+        div.style.height = (laneH - 4) + 'px';
+        div.style.background = colors[b.kind] || '#64748b';
+        div.title = (b.sub || b.kind) + ': ' + b.label + (b.value ? ' — ' + b.value : '');
+        div.textContent = b.label + (b.value ? ' · ' + b.value : '');
+        tracksEl.appendChild(div);
+    });
 })();
 </script>
 {% endblock %}

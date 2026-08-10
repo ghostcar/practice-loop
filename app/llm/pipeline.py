@@ -209,6 +209,7 @@ async def generate_daily_plan(
     llm_config: LLMProviderConfig,
     target_date: date,
     locale: str = "en",
+    name: str | None = None,
 ) -> TrainingDay:
     """Generate a full daily training plan via LLM.
 
@@ -282,6 +283,7 @@ async def generate_daily_plan(
     training_day = TrainingDay(
         user_id=user_id,
         target_date=target_date,
+        name=(name or "").strip()[:200] or None,
         status="active",
         plan_summary=plan_summary,
     )

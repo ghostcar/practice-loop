@@ -681,3 +681,16 @@
 
 ### Действие владельца (деплой)
 - На VPS: `cd ~/tracker && git pull && docker compose up -d --build` — именно `--build`, чтобы образ пересобрался с новым кодом (иначе старый код продолжит давать 403).
+
+## 2026-08-10 — Сессия 54: drag&drop, изображения, фото-отчёты, диеты, параллельные тренировки
+- Обсуждали: внедрение drag&drop «везде», изображения инвентаря, фото-отчёты по активностям, концепт диет (несколько под разные цели, комбинирование), вывод нескольких тренировок на одном экране.
+- Решения владельца: изображения — диск + Docker volume; диеты — отдельные таблицы (диета → продукты/правила); параллельные тренировки — гибрид (несколько планов на дату + объединённая timeline-шкала).
+- **Drag&drop**: журнал тренировки (reorder-эндпоинт, `sort_order` уже существовал), инвентарь (partial reorder — работает с фильтрами; unknown id → 400), позиции диет. `sort_order` добавлен в schedule_rules и availability_windows (миграция 018) — UI-перетаскивание там отложено.
+- **Изображения инвентаря**: `image_path` + upload/delete эндпоинты (валидация content-type + magic-bytes, 8 МБ лимит), превью + 📷 в inventory.html, drag&drop строк.
+- **Фото-отчёты**: таблица `attachments` (owner_type allowlist), API upload/list/delete, UI на карточках задач training.html. `delete_upload` — защита от path traversal (resolve + префикс).
+- **Диеты**: `diets` + `diet_items`, CRUD + reorder + toggle `is_active` (комбинирование = несколько активных одновременно), страница `/diets` в навигации.
+- **Параллельные тренировки**: `training_days.name`, `/training/plan` теперь добавляет второй план вместо блокировки, `analyze_day` по `training_day_id`, страница: колонки планов + timeline-шкала дня (lane-packing JS, clamp 0..1440).
+- **Инфраструктура**: `config.upload_dir`/`max_upload_bytes`, docker-compose volume `uploads`, mount `/uploads` + CSRF-bypass, `.gitignore uploads/`, `app/services/uploads.py`.
+- **Миграция 018** проверена на реальном PostgreSQL 15: upgrade 001→018, ORM-вставки/чтения, downgrade 018→017, повторный upgrade — всё ✅. Временный контейнер удалён.
+- **+21 тест** (`tests/test_dnd_diets_uploads.py`). Ревью поймало: partial-inventory-reorder (с фильтром), path traversal в delete_upload, мёртвый код (non_empty, oldName, legacy context, unused Request), clamp времени timeline — все исправлены.
+- **274/274 тестов ✅**, ruff ✅, format ✅. Коммит после этой записи.
