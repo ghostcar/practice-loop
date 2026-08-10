@@ -321,20 +321,20 @@ async def seed(database_url: str, email: str | None):
 def main():
     parser = argparse.ArgumentParser(description="Seed production database with initial data")
     parser.add_argument("--email", help="User email to seed data for (default: first user in DB)")
-    default_url = os.environ.get("DATABASE_URL")
-    if not default_url:
+    parser.add_argument(
+        "--database-url",
+        default=os.environ.get("DATABASE_URL"),
+        help="PostgreSQL connection string (default: DATABASE_URL env)",
+    )
+    args = parser.parse_args()
+
+    if not args.database_url:
         print(
             "Error: DATABASE_URL is not set. Pass --database-url or export DATABASE_URL "
             "(e.g. postgresql+asyncpg://user:pass@host:5432/db).",
             file=sys.stderr,
         )
         sys.exit(1)
-    parser.add_argument(
-        "--database-url",
-        default=default_url,
-        help="PostgreSQL connection string (default: DATABASE_URL env)",
-    )
-    args = parser.parse_args()
 
     if not args.email:
         print("Warning: no --email given, will seed for the first user found.", file=sys.stderr)

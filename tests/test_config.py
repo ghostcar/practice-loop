@@ -1,5 +1,10 @@
 """Settings / config tests: production gate for placeholder secrets."""
 
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -133,3 +138,70 @@ class TestProductionGate:
         assert "JWT_SECRET_KEY" in msg
         assert "CREDENTIALS_ENCRYPTION_KEY" in msg
         assert "TG_WEBHOOK_SECRET" in msg
+
+
+class TestSeedScriptsNoHardcodedCredentials:
+    """Regression: seed scripts must not embed real DB credentials (audit S51).
+
+    A hardcoded `tracker_dev_2024` password was found in seed_prod.py and
+    seed_training.py and later purged from git history. These tests make sure
+    it never comes back.
+    """
+
+    SEED_FILES = [
+        Path(__file__).resolve().parent.parent / "seed_prod.py",
+        Path(__file__).resolve().parent.parent / "seed_training.py",
+    ]
+
+    def test_no_real_password_in_seed_files(self):
+        for path in self.SEED_FILES:
+            content = path.read_text(encoding="utf-8")
+            assert "tracker_dev_2024" not in content, f"leaked password in {path}"
+
+    def test_no_database_url_with_embedded_credentials(self):
+        """Seeds must not hardcode any user:password@ in a connection string."""
+        import re
+
+        cred_re = re.compile(r"postgres(?:ql|\+asyncpg)?://[^@\s:]+:[^@\s]+@")
+        for path in self.SEED_FILES:
+            content = path.read_text(encoding="utf-8")
+            assert not cred_re.search(content), f"credentials embedded in {path}"
+
+    def test_seed_scripts_refuse_without_database_url(self):
+        """Both seeds must fail fast when DATABASE_URL is missing."""
+        for path in self.SEED_FILES:
+            content = path.read_text(encoding="utf-8")
+            assert "DATABASE_URL" in content
+            assert "sys.exit(1)" in content
+
+    def _run_without_env(self, script: str, *args: str) -> subprocess.CompletedProcess:
+        """Run a seed script with DATABASE_URL removed from the environment."""
+        env = {k: v for k, v in os.environ.items() if k != "DATABASE_URL"}
+        return subprocess.run(
+            [sys.executable, script, *args],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=Path(__file__).resolve().parent.parent,
+            timeout=30,
+        )
+
+    def test_seed_training_fails_fast_without_database_url(self):
+        """seed_training.py exits 1 before any DB work when DATABASE_URL is unset."""
+        proc = self._run_without_env(str(self.SEED_FILES[1]))
+        assert proc.returncode == 1
+        assert "DATABASE_URL" in proc.stderr
+
+    def test_seed_prod_accepts_explicit_database_url_flag(self):
+        """Regression (reviewer): --database-url must work even without DATABASE_URL env.
+
+        The script should get past the credential check and fail on connection
+        (fast-refused localhost port), proving the flag is not dead code.
+        """
+        proc = self._run_without_env(
+            str(self.SEED_FILES[0]),
+            "--database-url",
+            "postgresql+asyncpg://user:pass@127.0.0.1:1/db",
+        )
+        assert proc.returncode != 0
+        assert "DATABASE_URL is not set" not in proc.stderr

@@ -3,26 +3,27 @@
 Requires DATABASE_URL to be set (no hardcoded credentials):
     DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db python seed_training.py
 """
+
 import asyncio
 import os
 import sys
 
 if not os.environ.get("DATABASE_URL"):
     print(
-        "Error: DATABASE_URL is not set. "
-        "Export it (e.g. postgresql+asyncpg://user:pass@host:5432/db) and retry.",
+        "Error: DATABASE_URL is not set. Export it (e.g. postgresql+asyncpg://user:pass@host:5432/db) and retry.",
         file=sys.stderr,
     )
     sys.exit(1)
 
-from datetime import date, datetime, timezone
+from datetime import date
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-import app.models.user  # noqa
 import app.models.training  # noqa
-from app.models.user import User
+import app.models.user  # noqa
 from app.models.training import TrainingDay
+from app.models.user import User
 
 PLAN_TEXT = """## Стартовая сессия — Воскресенье
 
@@ -124,8 +125,8 @@ async def main():
         await db.commit()
         print(f"✅ Training day created for {user.email} on {today}")
         print(f"   ID: {td.id}")
-        print(f"   Status: active")
-        print(f"   Open /training to see the plan")
+        print("   Status: active")
+        print("   Open /training to see the plan")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,16 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 50).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 51).
+
+## Сессия 51: PostgreSQL JSONB-фикс (migration 017) + удаление пароля из git history
+
+- [x] **Migration 017** (`alembic/versions/017_fix_jsonb_columns.py`): `entities.gamification_config` и `points_profiles.config` Text → JSONB (миграция 006 создала Text, ORM/seed передают dict → на чистой PostgreSQL вставка падала). Для `config` сначала дроп server_default (иначе PG не может скастовать `'{}'`), потом тип + `'{}'::jsonb`. Legacy Text-JSON кастится через `postgresql_using`.
+- [x] **Валидация на реальном PostgreSQL 15**: чистая схема → alembic upgrade head (001–017), вставка legacy Text-строк ДО 017 → успешный каст при upgrade, ORM dict-inserts/reads — все проходят.
+- [x] **Пароль `tracker_dev_2024` удалён** из `seed_prod.py` и `seed_training.py` (fail-fast: без DATABASE_URL → понятная ошибка + exit 1; `--database-url` флаг работает — проверка после parse_args, ревью-фикс).
+- [x] **Git history вычищен** (`git filter-repo --replace-text`, пароль → `REDACTED_DB_PASSWORD`), force-push на GitHub выполнен (пользователь одобрил). Бэкап: `/tmp/tracker-backup-20260810-0724.bundle`. ВСЕ хэши коммитов изменились.
+- [x] **Памятка владельцу**: если `tracker_dev_2024` использовался на VPS — ротация пароля БД обязательна (даже после scrub истории пароль был публично доступен); если репо GitHub публичный — чувствительные seed-данные остаются в истории (пользователь решил оставить seed-данные как есть).
+- [x] +5 тестов (`tests/test_config.py` TestSeedScriptsNoHardcodedCredentials): нет известного пароля, нет `user:pass@` в URL, fail-fast (subprocess: seed_training без env → exit 1; seed_prod с `--database-url` при пустом env проходит проверку и падает на коннекте).
+- [x] 248/248 тестов, ruff 0, format clean.
 
 ## Сессия 50: геймификация — Stop 500 (await на sync), состояние complete/interrupt, расписание
 

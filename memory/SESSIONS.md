@@ -630,3 +630,23 @@
 - После interrupt `complete` → 303, статус остаётся `interrupted`, `total_completed == 0`, `next_due_at` не двигается.
 - Повторный complete не меняет `next_due_at`; повторный interrupt не меняет `retry_not_before_at`.
 - **243/243 тестов ✅**, ruff ✅, format ✅.
+
+
+## 2026-08-10 — Сессия 51: PostgreSQL JSONB-фикс + удаление хардкод-пароля из истории
+
+- Пользователь процитировал аудит: «В чистой схеме migration 006 создаёт JSON-поля как Text, тогда как ORM и seed передают словари. Offline SQL строится, но чистый PostgreSQL seed с высокой вероятностью упадёт»; «В публичных seed-файлах находятся персонализированные чувствительные данные и жёстко заданный пароль БД… данные останутся в Git history».
+
+### 1. Migration 006 создаёт JSON как Text (PostgreSQL)
+- **Найдено**: `entities.gamification_config` и `points_profiles.config` созданы в 006 как `sa.Text()`, модели объявляют `JSON`, seed шлёт dict. На чистой PostgreSQL asyncpg не может адаптировать dict → вставка падает. (`points_transactions.meta` уже починен в 014.)
+- **Фикс — миграция 017**: обе колонки → `postgresql.JSONB` с `postgresql_using="...::jsonb"` (каст legacy Text-JSON). Для `points_profiles.config` сначала `server_default=None` — иначе PG: «default for column cannot be cast automatically to type jsonb»; потом тип + `'{}'::jsonb`.
+- **Валидация**: поднят временный postgres:15-alpine, чистая схема → `alembic upgrade head` (001–017) ✅; legacy Text-строки вставлены ДО 017 и успешно скастованы при upgrade ✅; ORM dict-inserts/reads (`Entity.gamification_config`, `PointsProfile.config`) ✅. Контейнер удалён после проверки.
+
+### 2. Хардкод-пароль в seed-файлах (приватность)
+- **Найдено**: `tracker_dev_2024` в `seed_prod.py` (default `--database-url`) и `seed_training.py` (`os.environ.setdefault`). Запушен на GitHub (`github.com/ghostcar/practice-loop`), в истории (коммиты 12736e8, 474177a).
+- **Фикс**: оба скрипта — fail-fast: без `DATABASE_URL` → понятная ошибка + `sys.exit(1)`. `seed_prod.py`: проверка ПОСЛЕ `parse_args()` (ревью-фикс: сначала парсинг, потом валидация — иначе флаг `--database-url` был мёртвым кодом).
+- **Git history scrub** (пользователь одобрил force-push): `git filter-repo --replace-text` (правило `tracker_dev_2024==>REDACTED_DB_PASSWORD`), force-push `main`. Проверка: `git log -S tracker_dev_2024 --all` пуст. Бэкап до переписывания: `/tmp/tracker-backup-20260810-0724.bundle`. **ВНИМАНИЕ: все хэши коммитов изменились.**
+- **Памятка владельцу** (вне кода): если `tracker_dev_2024` использовался на VPS — ротация пароля БД обязательна (пароль был публично доступен в GitHub): `openssl rand -base64 24` → новый пароль в `.env` на VPS + `ALTER USER tracker PASSWORD '...'` + `docker compose up -d db app`. Seed-данные (замеры тела, инвентарь, план гидратации) владелец решил оставить как есть.
+
+### Тесты (+5, 243→248)
+- `TestSeedScriptsNoHardcodedCredentials` в `tests/test_config.py`: пароль не в файлах; нет `user:pass@` в connection string (regex); fail-fast через subprocess (seed_training без env → exit 1; seed_prod с `--database-url` при пустом env проходит проверку креденшелов и падает на коннекте — флаг не мёртвый).
+- **248/248 тестов ✅**, ruff ✅, format ✅.
