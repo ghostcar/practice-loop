@@ -2,13 +2,15 @@
 
 Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 48).
 
-## Сессия 48: фикс CSRF для нативных форм (тема/локаль)
+## Сессия 48: фикс CSRF — нативные формы, контекст шаблонов, JS fetch
 
 - [x] `verify_csrf()` теперь async и валидирует `csrf_token` из поля формы (double-submit cookie) — чинит кнопки темы/локали (нативные POST-формы): раньше проверялся только заголовок `X-CSRF-Token` (HTMX), форма без заголовка всегда получала 403.
 - [x] Парсится только form content-type (`form-urlencoded`/`multipart`); JSON-тела не буферизуются на пути отказа.
 - [x] `await request.body()` вызывается до `request.form()` — обход бага Starlette 1.4.1 (`form()` парсит через `stream()` без заполнения `request._body`, иначе BaseHTTPMiddleware не реплеит тело в endpoint → 422).
-- [x] Регрессионные тесты: нативные формы темы и локали (303 + сохранение в БД), неверный токен поля → 403.
-- [x] 228/228 тестов, ruff 0, format clean.
+- [x] **Найдено при проверке всех форм**: `csrf_token` в контекст шаблона передавали только home и dashboard — на остальных страницах hidden-поля и HTMX meta-тег были пустыми (все нативные формы и HTMX → 403). Фикс: context processor в `templates_setup.py` инжектит токен из cookie во все шаблоны.
+- [x] **JS-страницы** (points/schedule/measurements/inventory/calendar/telegram-link) слали `fetch(..., {method:'POST'})` без заголовка CSRF → 403. Фикс: обёртка `window.fetch` в base.html авто-добавляет `X-CSRF-Token` для same-origin state-changing запросов.
+- [x] Регрессионные тесты: нативные формы темы и локали (303 + сохранение в БД), неверный токен поля → 403, meta-тег с токеном на /tasks/.
+- [x] 229/229 тестов, ruff 0, format clean.
 
 ## Сессия 44: исправление предрелизного Docker Compose
 

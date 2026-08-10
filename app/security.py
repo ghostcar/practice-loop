@@ -44,7 +44,7 @@ def set_csrf_cookie(response: Response) -> str:
     return raw
 
 
-def verify_csrf(request: Request) -> None:
+async def verify_csrf(request: Request) -> None:
     """Verify the CSRF token from header or form field against the cookie."""
     if request.method in CSRF_SAFE_METHODS:
         return
@@ -57,11 +57,29 @@ def verify_csrf(request: Request) -> None:
     if not cookie_token:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token missing")
 
-    # Check header (HTMX auto-includes X-CSRF-Token from meta tag) or form field
+    # 1) Header — HTMX auto-includes X-CSRF-Token from the meta tag
     header_token = request.headers.get(CSRF_HEADER_NAME)
+    if header_token and hmac.compare_digest(header_token, cookie_token):
+        return
 
-    if not header_token or not hmac.compare_digest(header_token, cookie_token):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token missing or invalid")
+    # 2) Form field — native HTML forms send csrf_token as a hidden input.
+    #    Only form content types are parsed; JSON/other bodies are rejected
+    #    without buffering. Cache the raw body first (request.body() sets
+    #    request._body, which BaseHTTPMiddleware replays downstream), then
+    #    parse the form from it. A broad except is intentional: any body-read
+    #    failure (ClientDisconnect, bad multipart) must fail closed as 403.
+    content_type = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
+    if content_type in ("application/x-www-form-urlencoded", "multipart/form-data"):
+        try:
+            await request.body()
+            form = await request.form()
+            form_token = form.get(CSRF_FORM_FIELD)
+        except Exception:
+            form_token = None
+        if form_token is not None and hmac.compare_digest(str(form_token), cookie_token):
+            return
+
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF token missing or invalid")
 
 
 # ── Object-level ownership ──────────────────────────────────────────

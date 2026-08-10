@@ -91,6 +91,29 @@
     <script src="/static/htmx.min.js"></script>
     <script src="/static/chart.umd.min.js"></script>
     <script>
+        // CSRF: attach the X-CSRF-Token header to every same-origin
+        // state-changing fetch() call (JSON API pages use plain fetch, not HTMX).
+        (function () {
+            var origFetch = window.fetch;
+            window.fetch = function (input, init) {
+                init = init || {};
+                var method = (init.method || (input && input.method) || 'GET').toUpperCase();
+                if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+                    var url = typeof input === 'string' ? input : ((input && input.url) || '');
+                    var isSameOrigin = (typeof input === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/')
+                        || (typeof input !== 'string' && url.indexOf(location.origin) === 0);
+                    if (isSameOrigin) {
+                        var headers = new Headers(init.headers || {});
+                        if (!headers.has('X-CSRF-Token')) {
+                            var meta = document.querySelector('meta[name="csrf-token"]');
+                            if (meta) headers.set('X-CSRF-Token', meta.content);
+                        }
+                        init.headers = headers;
+                    }
+                }
+                return origFetch.call(this, input, init);
+            };
+        })();
         // HTMX: auto-include CSRF token in all state-changing requests
         document.addEventListener('DOMContentLoaded', function() {
             document.body.addEventListener('htmx:configRequest', function(evt) {

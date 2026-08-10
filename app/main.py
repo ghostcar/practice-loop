@@ -62,7 +62,7 @@ async def csrf_middleware(request: Request, call_next):
     if request.url.path.startswith("/static") or request.url.path == "/healthz":
         return await call_next(request)
     try:
-        verify_csrf(request)
+        await verify_csrf(request)
     except Exception as e:
         from fastapi import HTTPException
         from fastapi.responses import JSONResponse
