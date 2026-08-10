@@ -488,3 +488,11 @@
 - **Seed**: 27 записей по расписанию гидратации (fluid_intake, micro_leak, general_note)
 - 153/153 тестов, ruff 0
 - Артефакты: +3 файла (модель, миграция, seed_training.py), изменены training.py + training.html
+## 2026-08-10 — Сессия 44: исправление предрелизного Docker Compose
+
+- Воспроизведён crash loop app: Alembic выполнялся на SQLite из автоматически подмешанного `docker-compose.override.yml` и падал на `entities.tags` типа PostgreSQL `JSONB`.
+- Автоматический override удалён; dev-настройки перенесены в `docker-compose.dev.yml`, подключаемый явной парой `-f`.
+- Docker dev и production теперь используют PostgreSQL; hot reload и bind mounts сохранены только в явной dev-конфигурации.
+- Ожидание БД переведено на compose health dependency; удалён хардкод `tracker` из shell wait-loop.
+- Проверено: обе compose-конфигурации успешно рендерятся, image собирается, PostgreSQL healthy, Alembic 001–016 проходит, Uvicorn стартует, `/healthz` возвращает `ok`.
+- Проверки host toolchain: pytest под системным Python 3.13 завис на первом auth-тесте и был остановлен; ruff обнаружил 15 ранее существовавших замечаний в миграциях 015/016 и `seed_training.py`.

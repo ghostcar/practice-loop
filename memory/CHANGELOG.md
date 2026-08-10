@@ -40,6 +40,7 @@
 | 2026-08-09 | Session 41 | `DEPLOY_VPS.md` — standalone VPS deployment runbook (14 шагов, bash-only, copy-paste для второго монитора); ссылка в README Deployment |
 | 2026-08-09 | Session 42 | Troubleshooting в DEPLOY_VPS.md (раздел 13.1): «address already in use: 127.0.0.1:8000» — диагностика (`ss -ltnp`, `docker compose ps -a`), cleanup (`down --remove-orphans`, `fuser -k`), выбор профиля (`--profile prod` vs `--profile full`), типичные причины |
 | 2026-08-09 | Session 43 | Troubleshooting в DEPLOY_VPS.md (раздел 13.2): «порт свободен, но bind всё равно падает» — iptables residue (`DOCKER`/`DOCKER-USER` chain flush), app crash loop (production gate / migration / race с db), conflict имени сети `tracker_default` между compose-проектами; diagnostic all-in-one блок |
+| 2026-08-10 | Session 44 | Docker Compose prerelease fix: автоматический SQLite override заменён явным `docker-compose.dev.yml` на PostgreSQL; app ждёт healthy db через `depends_on`; сборка, миграции 001–016 и `/healthz` проверены |
 
 ---
 
