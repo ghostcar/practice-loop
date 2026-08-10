@@ -43,6 +43,7 @@
 | 2026-08-10 | Session 44 | Docker Compose prerelease fix: автоматический SQLite override заменён явным `docker-compose.dev.yml` на PostgreSQL; app ждёт healthy db через `depends_on`; сборка, миграции 001–016 и `/healthz` проверены |
 | 2026-08-10 | Session 45 | SSL через Cloudflare: DEPLOY_VPS §8 развёрнут в три ветки — 🅰️ CF Origin Certificate (🟠 proxied, 15 лет, без автопродления), 🅱️ certbot-dns-cloudflare (⚪ DNS-only, DNS-01 без порта 80), 🅲️ certbot standalone (без CF); certbot убран из обязательного §0; §8.4 таблица ошибок CF (520/521/522/526); чисто runbook-only |
 | 2026-08-10 | Session 46 | §8.🅰️ DEPLOY_VPS.md развёрнут click-by-click по CF Dashboard (SSL/TLS → Origin Server → Create Certificate); добавлены DNS-проверка и openssl-modulus sanity; убран дубль «Сохранить сертификаты»
+| 2026-08-10 | Session 47 | Реальный домен `gorbunovr.ru`, уже есть wildcard CF Origin Cert (`*.gorbunovr.ru, gorbunovr.ru`). nginx -t emerg: старая `practice-loop` активна с битой ссылкой `/etc/nginx/ssl/origin.pem`. Фикс: `rm /etc/nginx/sites-enabled/practice-loop`. Warn: `listen ... http2` deprecated → `http2 on;` отдельно. DEPLOY_VPS §8.🅰️/🅱️ обновлён на современный синтаксис.
 
 ---
 

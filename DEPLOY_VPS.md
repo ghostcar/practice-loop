@@ -280,8 +280,9 @@ server {
 
 # HTTPS — CF Origin Certificate
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name tracker.your-domain.com;
 
     # === Cloudflare Origin Certificate ===
@@ -397,8 +398,9 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name tracker.your-domain.com;
 
     ssl_certificate     /etc/letsencrypt/live/tracker.your-domain.com/fullchain.pem;

@@ -534,3 +534,28 @@
 - Sanity-check пары: `openssl ... -modulus | openssl md5` для обоих — должны совпадать.
 - Удалён дубль секции «Сохрани сертификаты на VPS» (после рефактора осталась старая версия).
 - Без правок кода / миграций / тестов — чисто runbook-only.
+
+
+## 2026-08-10 — Сессия 47: nginx literal bugs поверх установки tracker.gorbunovr.ru
+
+- Домен пользователя: `gorbunovr.ru`, в CF уже есть CF Origin Cert с wildcard `*.gorbunovr.ru` + `gorbunovr.ru` (2 hosts в SAN).
+- Дам готовый скрипт под реальное имя (а не плейсхолдер) — пользователь копирует и запускает.
+
+### бага 1 (emerg) — старая конфигурация practice-loop активна
+- `nginx -t` падает на `/etc/nginx/sites-enabled/practice-loop:2`, где ссылка на несуществующий `/etc/nginx/ssl/origin.pem`.
+- Фикс: `sudo rm -f /etc/nginx/sites-enabled/practice-loop`. Возможны ещё артефакты в sites-available.
+
+### баг 2 (warn) — устаревший синтаксис http/2
+- На nginx 1.25+ (Ubuntu 24.04) `listen 443 ssl http2;` deprecated → директива `http2 on;` отдельно.
+- **DEPLOY_VPS.md §8.🅰️** (строки 283-285) и **§8.🅱️** (строки 401-403) — обновлено на современный синтаксис.
+- Применён `sed` к VPS-конфигу.
+
+### Тонкость: nginx в compose vs host
+- Если в docker compose активирован `tracker-nginx-1` (--profile full), он конкурирует за 443 с host-nginx. Два варианта:
+  - A. Хост-nginx + отключить compose nginx (`docker compose stop tracker-nginx-1`).
+  - B. Compose nginx + хост-nginx не активен (старая practical-loop в /etc/nginx/sites-enabled отключена вручную).
+
+### Checklist новой версии §8
+- Современный http2 синтаксис — без warning
+- Чёткий single-pass flow: убери старую конфигурацию → положи сертификат → nginx -t → reload
+- Упоминание wildcard case (*.gorbunovr.ru) как пример «уже есть CF cert»
