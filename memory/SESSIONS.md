@@ -559,3 +559,14 @@
 - Современный http2 синтаксис — без warning
 - Чёткий single-pass flow: убери старую конфигурацию → положи сертификат → nginx -t → reload
 - Упоминание wildcard case (*.gorbunovr.ru) как пример «уже есть CF cert»
+
+
+## 2026-08-10 — Сессия 48: Фикс CSRF для нативных форм (тема/локаль)
+
+- Пользователь: клик по кнопке смены темы → `{"detail":"CSRF token missing or invalid"}` на `/settings/theme`.
+- **Причина**: `verify_csrf()` проверяла только заголовок `X-CSRF-Token` (его подставляет HTMX из meta-tag). Кнопки темы/локали — **нативные HTML-формы**: токен уходит в теле запроса (`csrf_token` hidden input), заголовка нет → всегда 403. Константа `CSRF_FORM_FIELD` была объявлена, но нигде не использовалась при проверке. Тесты не ловили: фикстура `auth_client` всегда шлёт заголовок.
+- **Фикс** (`app/security.py`): `verify_csrf` стала async, добавлен фолбэк на поле формы (double-submit cookie) — только для content-type `form-urlencoded`/`multipart` (JSON-тела не буферизуются на пути отказа); неверный/отсутствующий токен → fail-closed 403.
+- **Подводный камень Starlette 1.4.1**: `request.form()` парсит тело через `stream()` и НЕ заполняет `request._body` → `_CachedRequest.wrapped_receive` реплеит downstream пустое тело (endpoint получал 422 «Field required»). Обход: сначала `await request.body()` (заполняет `_body`), затем `request.form()`.
+- `app/main.py`: middleware теперь `await verify_csrf(request)`.
+- **Тесты** (+3 в `tests/test_auth.py`): нативная форма темы → 303 + `user.theme == "light"` (с явным commit — тестовая фикстура переопределяет get_db без авто-commit), нативная форма локали → 303 + `user.locale == "ru"`, неверный `csrf_token` поля → 403. Хелпер `_auth_cookie_headers` возвращает `(headers, csrf)`.
+- **228/228 тестов ✅**, ruff ✅, format ✅.
