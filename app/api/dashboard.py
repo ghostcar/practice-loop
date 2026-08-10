@@ -78,7 +78,6 @@ async def dashboard(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "csrf_token": request.cookies.get("csrf_token", ""),
             "progress": progress,
             "level": level,
             "xp_current": xp_current,

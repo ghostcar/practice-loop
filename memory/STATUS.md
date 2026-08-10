@@ -9,6 +9,7 @@
 - [x] `await request.body()` вызывается до `request.form()` — обход бага Starlette 1.4.1 (`form()` парсит через `stream()` без заполнения `request._body`, иначе BaseHTTPMiddleware не реплеит тело в endpoint → 422).
 - [x] **Найдено при проверке всех форм**: `csrf_token` в контекст шаблона передавали только home и dashboard — на остальных страницах hidden-поля и HTMX meta-тег были пустыми (все нативные формы и HTMX → 403). Фикс: context processor в `templates_setup.py` инжектит токен из cookie во все шаблоны.
 - [x] **JS-страницы** (points/schedule/measurements/inventory/calendar/telegram-link) слали `fetch(..., {method:'POST'})` без заголовка CSRF → 403. Фикс: обёртка `window.fetch` в base.html авто-добавляет `X-CSRF-Token` для same-origin state-changing запросов.
+- [x] Избыточные явные `csrf_token` в контекстах `main.py` (home) и `dashboard.py` убраны — их заменяет context processor.
 - [x] Регрессионные тесты: нативные формы темы и локали (303 + сохранение в БД), неверный токен поля → 403, meta-тег с токеном на /tasks/.
 - [x] 229/229 тестов, ruff 0, format clean.
 

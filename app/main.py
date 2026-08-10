@@ -104,7 +104,6 @@ async def home(request: Request):
             "user": user,
             "locale": locale,
             "theme": theme,
-            "csrf_token": request.cookies.get("csrf_token", ""),
         },
     )
     if user is None:
