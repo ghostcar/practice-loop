@@ -4,25 +4,25 @@
 <div class="animate-fade-in">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">📦 Import & Export</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Download templates, upload data, export your records</p>
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.import_title }}</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ t.import_subtitle }}</p>
         </div>
         <span class="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-            {{ templates|length }} data types
+            {{ templates|length }} {{ t.import_data_types }}
         </span>
     </div>
 
     <!-- Templates section -->
     <div class="mb-8">
         <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-            📥 Download Templates
+            {{ t.import_section_templates }}
         </h2>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Fill these templates and upload them back, or send via API from external services.
+            {{ t.import_section_templates_desc }}
         </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for tkey, tmeta in templates.items() %}
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
                 <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm mb-2">{{ tmeta.label }}</h3>
                 <code class="text-xs text-slate-400 dark:text-slate-500 block mb-3 truncate">{{ tmeta.csv_headers }}</code>
                 <div class="flex gap-2">
@@ -35,10 +35,12 @@
                        class="text-xs px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors font-medium">
                         .JSON
                     </a>
-                    <button onclick="navigator.clipboard.writeText(`https://localhost:8443/import/template/{{ tkey }}?format=json`)"
+                    <button onclick="navigator.clipboard.writeText(`{{ app_url }}/import/template/{{ tkey }}?format=json`)"
+                            type="button"
                             class="text-xs px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                            title="Copy API URL">
-                        🔗
+                            title="{{ t.import_copy_url }}"
+                            aria-label="{{ t.import_copy_url }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14l-2-2m0 0l-2-2m2 2l2-2m-2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </button>
                 </div>
             </div>
@@ -49,7 +51,7 @@
     <!-- Upload section -->
     <div class="mb-8">
         <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-            📤 Upload Data
+            {{ t.import_section_upload }}
         </h2>
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 border-dashed">
             <form id="upload-form"
@@ -58,13 +60,15 @@
                   hx-target="#upload-result"
                   hx-swap="innerHTML">
                 <div class="text-center">
-                    <div class="text-5xl mb-4">📁</div>
+                    <svg class="w-12 h-12 mx-auto mb-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 7.5m0 0L7.5 12M12 7.5v9"/>
+                    </svg>
                     <p class="text-slate-600 dark:text-slate-300 font-medium mb-2">
-                        Drag & drop a <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.csv</code>
-                        or <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.json</code> file here
+                        {{ t.import_drop_hint }} <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.csv</code>
+                        {{ t.import_or }} <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.json</code> {{ t.import_file_label }}
                     </p>
                     <p class="text-sm text-slate-400 dark:text-slate-500 mb-4">
-                        Auto-detects data type from headers. Max 10 MB.
+                        {{ t.import_autodetect_hint }}
                     </p>
                     <input type="file"
                            name="file"
@@ -72,24 +76,24 @@
                            class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-900/30 file:text-indigo-600 dark:file:text-indigo-400 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-900/50 file:cursor-pointer file:transition-colors"
                            required>
                     <button type="submit"
-                            class="mt-4 px-6 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25">
-                        🚀 Import
+                            class="mt-4 px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium">
+                        {{ t.import_submit }}
                     </button>
                 </div>
             </form>
-            <div id="upload-result" class="mt-4"></div>
+            <div id="upload-result" class="mt-4" aria-live="polite"></div>
         </div>
     </div>
 
     <!-- Export section -->
     <div class="mb-8">
         <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-            📤 Export Data
+            {{ t.import_section_export }}
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Per-type exports -->
             {% for etype in export_types %}
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between transition-all duration-200 hover:shadow-md">
+            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between">
                 <div>
                     <span class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ etype | replace('_', ' ') | title }}</span>
                 </div>
@@ -107,15 +111,15 @@
             {% endfor %}
         </div>
 
-        <!-- Full backup -->
-        <div class="mt-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 flex items-center justify-between">
+        <!-- Full backup (solid background, no gradient) -->
+        <div class="mt-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 flex items-center justify-between">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-slate-100">🔄 Full Backup</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Export all your data (measurements, inventory, schedule, entities, points, training, activities) as one JSON file</p>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100">{{ t.import_full_backup }}</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.import_full_backup_desc }}</p>
             </div>
             <a href="/import/export/full"
-               class="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/25 whitespace-nowrap">
-                ⬇️ Download All
+               class="px-5 py-2.5 min-h-[44px] inline-flex items-center rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium whitespace-nowrap">
+                {{ t.import_download_all }}
             </a>
         </div>
     </div>
@@ -123,14 +127,14 @@
     <!-- API docs -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
         <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-            🔌 API for External Services
+            {{ t.import_api_title }}
         </h2>
         <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Push data from scripts, bots, or third-party services via REST API.
+            {{ t.import_api_desc }}
         </p>
         <div class="bg-slate-900 rounded-xl p-4 overflow-x-auto">
-            <pre class="text-xs text-green-400"><code># Push measurements from external script
-curl -X POST https://localhost:8443/import/api \
+            <pre class="text-xs text-green-400"><code># {{ t.import_api_example_title }}
+curl -X POST {{ app_url }}/import/api \
   -H "Cookie: access_token=YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -141,34 +145,8 @@ curl -X POST https://localhost:8443/import/api \
     "mode": "upsert"
   }'
 
-# Also available types: inventory, entities, schedule,
-#   points_transactions, training_days, activity_logs, points_profiles</code></pre>
+# {{ t.import_api_types_line }}</code></pre>
         </div>
     </div>
 </div>
-
-<!-- htmx success animation -->
-<style>
-    #upload-result:has(.success) {
-        animation: fade-in 0.3s ease-out;
-    }
-    .success {
-        background: #ecfdf5;
-        border: 1px solid #a7f3d0;
-        color: #065f46;
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 14px;
-        margin-top: 12px;
-    }
-    .error-badge {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        color: #991b1b;
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 14px;
-        margin-top: 12px;
-    }
-</style>
 {% endblock %}

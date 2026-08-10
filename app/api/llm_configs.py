@@ -47,6 +47,8 @@ async def llm_configs_page(
                 "api_key_masked": mask_api_key(cfg.api_key_encrypted),
                 "model_name": cfg.model_name,
                 "is_active": cfg.is_active,
+                "llm_mode": cfg.llm_mode,
+                "store_raw_response": cfg.store_raw_response,
                 "total_tokens": cfg.total_tokens,
                 "total_cost": cfg.total_cost,
             }
@@ -76,11 +78,14 @@ async def create_llm_config(
     api_base_url: str = Form(...),
     api_key: str = Form(default=""),
     model_name: str = Form(...),
+    store_raw_response: str = Form(default="true"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Add a new LLM provider config."""
     encrypted = encrypt_api_key(api_key) if api_key else None
+    # HTML form values: "true"/"false"/"on"/"1" accepted as True
+    store_raw = store_raw_response.strip().lower() in {"true", "on", "1", "yes"}
     config = LLMProviderConfig(
         user_id=user.id,
         provider_name=provider_name.strip(),
@@ -88,6 +93,7 @@ async def create_llm_config(
         api_key_encrypted=encrypted,
         model_name=model_name.strip(),
         is_active=False,
+        store_raw_response=store_raw,
     )
     db.add(config)
     await db.flush()

@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="flex flex-col items-center justify-center min-h-[70vh] text-center">
-    <h1 class="text-5xl font-extrabold mb-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+<div class="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-slate-900 dark:text-slate-50">
         {{ t.app_title }}
     </h1>
-    <p class="text-xl text-slate-500 dark:text-slate-400 mb-8 max-w-md leading-relaxed">
+    <p class="text-lg text-slate-500 dark:text-slate-400 mb-8 max-w-md leading-relaxed">
         {{ t.app_tagline }}
     </p>
 
     {% if user %}
         <a href="/dashboard"
-           class="px-8 py-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-lg transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5">
+           class="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg">
             {{ t.nav_dashboard }}
         </a>
     {% else %}
-        <div class="flex gap-4">
+        <div class="flex flex-wrap gap-4 justify-center">
             <a href="/register"
-               class="px-8 py-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-lg transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5">
+               class="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg">
                 {{ t.nav_register }}
             </a>
             <a href="/login"
-               class="px-8 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-600 hover:border-indigo-400 dark:hover:border-indigo-400 text-slate-700 dark:text-slate-200 font-semibold text-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+               class="px-8 py-3 rounded-xl border-2 border-slate-300 dark:border-slate-600 hover:border-indigo-500 dark:hover:border-indigo-400 text-slate-700 dark:text-slate-200 font-semibold text-lg">
                 {{ t.nav_login }}
             </a>
         </div>
@@ -29,20 +29,20 @@
 
     <!-- Features teaser -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 max-w-3xl w-full">
-        <div class="p-6 rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div class="text-3xl mb-3">📋</div>
-            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">Catalog</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Curated activities with custom parameters</p>
+        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <svg class="w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.landing_feature_catalog }}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.landing_feature_catalog_desc }}</p>
         </div>
-        <div class="p-6 rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div class="text-3xl mb-3">🤖</div>
-            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">LLM-Suggested</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Smart task selection based on your history</p>
+        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <svg class="w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M9 15h6"/></svg>
+            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.landing_feature_llm }}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.landing_feature_llm_desc }}</p>
         </div>
-        <div class="p-6 rounded-2xl bg-white/60 dark:bg-slate-800/60 backdrop-blur border border-slate-200 dark:border-slate-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <div class="text-3xl mb-3">🏆</div>
-            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">Gamification</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">XP, levels, streaks & achievements</p>
+        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <svg class="w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path d="M6 21V8l6-4 6 4v13M9 21v-7h6v7"/></svg>
+            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.landing_feature_gamification }}</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.landing_feature_gamification_desc }}</p>
         </div>
     </div>
 </div>

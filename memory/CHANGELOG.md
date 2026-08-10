@@ -32,4 +32,32 @@
 | 2026-08-08 | Session 33 | Статические файлы: HTMX 2.0.10, Chart.js 4.5.1, TailwindCSS v4.3.3 |
 | 2026-08-08 | Session 34 | Релиз 0.8.0: env vars, seed config, docker profiles, smoke-test, README deployment |
 | 2026-08-09 | Session 35 | Деплой на VPS: db+app, nginx конфиг, seed тренировочного дня |
+| 2026-08-09 | Session 39 | Frontend-фиксы: P0-баг `unacceptable→strong_aversion`, ~50 новых i18n ключей, градиенты/emoji/hover-translate удалены, CSS variables, skip-link, aria-* (nav, current, live, label, focus), motion easing cubic-bezier, 44px touch targets, CSRF в 8 формах; 153/153 теста ✅, ruff ✅, format ✅ |
+| 2026-08-09 | Session 38 | Frontend-аудит по DESIGN.md: compliance ≈30%, P0-баг enum, hardcoded строки, 0 ARIA, no CSS vars |
+| 2026-08-09 | Session 37 | Бэкенд-аудит: bif REM ↔ ADR, 6 пунктов вразрез |
 | 2026-08-09 | Session 36 | TrainingLogEntry: журнал тренировки с inline-редактированием и внеплановыми записями |
+| 2026-08-09 | Session 40 | Deferred-фиксы: production gate секретов (APP_ENV + 32 chars + change-me-... drain), bif-комментарий в AGENTS.md, store_raw_response flag + TTL 30 days (migration 016), расширение LLM validator (params_schema + enum + min/max), dashboard_v2 4→2 графика, calendar/inventory/import_data JS i18n, localhost:8443→app_url, XSS-fixtures (REM §A14) — **225/225 тестов ✅** |
+
+---
+
+## Подробный changelog сессии 40 (2026-08-09)
+
+- **`app/config.py`**: `app_env` env-toggle + `@model_validator` — при APP_ENV=production запрет `change-me-...` + проверка длины ≥32 для JWT/ENCRYPTION/TG_WEBHOOK. 11 тестов в `tests/test_config.py`.
+- **`AGENTS.md`**: новая секция 0 «Архитектурный bif v0.8-actual ↔ v0.7-spec» с таблицей 6 расхождений и ADR-029/031/032/033/034.
+- **`alembic/versions/016_add_store_raw_response.py`**: миграция (`llm_provider_configs.store_raw_response` + `activity_logs.raw_response_expires_at` + индекс).
+- **`app/models/llm_config.py` + `app/models/activity_log.py`**: добавлены поля `store_raw_response`, `raw_response_expires_at`.
+- **`app/llm/pipeline.py`**: helper `_resolve_raw_response(config, raw)` (TTL 30 дней) — во все 3 точки сохранения ActivityLog.
+- **`app/llm/validator.py`**: `validate_params_against_schema(params, schema)` — типы/min/max/length/enum/optional.
+- **`app/llm/pipeline.py`**: schema-validator подключён в цепочке после `validate_llm_response`.
+- **`app/schemas/llm_config.py`**: `store_raw_response: bool = True` в `LLMConfig*`.
+- **`app/api/llm_configs.py`**: `create_llm_config` принимает `store_raw_response` из формы.
+- **`app/api/import_data.py`**: `app_url = str(request.url_root).rstrip("/")` в контексте шаблона.
+- **`app/templates/dashboard_v2.html`**: 4 графика → 2 канваса + 2 summary-карточки.
+- **`app/templates/calendar.html`**: JS `I18N` dict + `POLICY_LABEL` map; hardcoded EN → `t.calendar_*`.
+- **`app/templates/inventory.html`**: JS `I18N` dict + `STATUS_LABEL` map.
+- **`app/templates/llm_configs.html`**: показывает LLM mode + store_raw_response; 🤖 → SVG.
+- **`app/templates/import_data.html`**: `localhost:8443` → `{{ app_url }}` (+ curl-example); 17 i18n ключей; эмодзи → SVG; градиент → solid.
+- **`app/i18n/en.py` + `app/i18n/ru.py`**: +105 ключей (nav_*, dashboard_*, calendar_*, inventory_*, inv_*, import_*, telegram_*).
+- **`docker-compose.yml` / `docker-compose.override.yml`**: `APP_ENV` default = production / dev override.
+- **Новые тесты**: test_config (11), test_llm_raw_response_policy (5), test_llm_validator (32), test_xss_fixtures (24) — **72 новых**.
+- `ruff check` ✅ | `ruff format` ✅ | `pytest`: **225 passed ✅** (153→225, +72)

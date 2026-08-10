@@ -330,6 +330,127 @@
 - 153/153 тестов, CI зелёный
 - Артефакты: +1 скрипт seed_training.py, конфиг nginx
 
+## 2026-08-09 — Сессия 40: Deferred-фиксы (P0 production gate, bif, JS i18n) — В ПРОЦЕССЕ
+
+Цель: закрыть оставшиеся deferred пункты из Сессій 37 + 39.
+
+### Этап 2 ✅ — AGENTS.md bif-комментарий
+Добавлена секция 0 «Архитектурный bif v0.8-actual ↔ v0.7-spec» в AGENTS.md: явная таблица 6 пунктов расхождения + ссылки на ADR-029, ADR-031, ADR-032, ADR-033, ADR-034. Зафиксировано требование «при работе следуй коду; при пересмотре — отмена ADR явно».
+
+### Этап 3 ✅ — Production gate в config.py
+`app/config.py`: добавлен `app_env` + `@model_validator`, который в production отвергает `change-me-...` placeholder-ы и секреты длиной <32. TG_WEBHOOK_SECRET проверяется только если установлен TG_BOT_TOKEN.
+
+`docker-compose.yml`: `APP_ENV: ${APP_ENV:-production}` — то есть по умолчанию в compose-сборке включён gate.
+
+`docker-compose.override.yml`: принудительно `APP_ENV: development` для dev-окружения.
+
+Новый файл `tests/test_config.py`: 11 тестов:
+- `TestAppEnv`: default development, нормализация регистра/пробелов
+- `TestProductionGate`: dev принимает placeholders, production отклоняет JWT/ENCRYPTION/TG_WEBHOOK, length ≥32 enforced, error message перечисляет все нарушители
+
+Все 11 проходят ✅.
+
+### Этап 4 ✅ — store_raw_response flag (REM §7.5)
+- `alembic/versions/016_add_store_raw_response.py`: миграция добавила поле `llm_provider_configs.store_raw_response BOOLEAN DEFAULT TRUE` + `activity_logs.raw_response_expires_at TIMESTAMPTZ NULL` + индекс на expires_at.
+- `app/models/llm_config.py`: добавлено поле `store_raw_response` (default True, как ADR-034 сохраняет backwards-compat).
+- `app/models/activity_log.py`: добавлено поле `raw_response_expires_at` (nullable, indexed).
+- `app/llm/pipeline.py`: helper `_resolve_raw_response(config, raw)` возвращает `(raw, expires)` в зависимости от `store_raw_response` + TTL 30 дней (константа `RAW_RESPONSE_TTL_DAYS`). Применён во все 3 точки сохранения ActivityLog.
+- `app/schemas/llm_config.py`: добавлен `store_raw_response: bool = Field(default=True)` в `LLMConfigCreate` / `LLMConfigUpdate` / `LLMConfigResponse`.
+- `app/api/llm_configs.py`: form принимает `store_raw_response` (true/false/on/1/yes parsing).
+- `app/templates/llm_configs.html`: показывает LLM mode и store_raw_response; 🤖 emoji заменён на SVG.
+- Новый файл `tests/test_llm_raw_response_policy.py`: 5 тестов (сохраняем с TTL, дроп при отключении, дроп при отсутствии атрибута, дроп для empty raw, sanity TTL в [7,90] дней).
+- Все 5 тестов ✅.
+
+### Этап 5 ✅ — Расширение LLM validator (REM §7.4)
+- `app/llm/validator.py`: новая функция `validate_params_against_schema(params, schema)` — рекусивно проверяет:
+   - тип (`number` / `integer` / `string` / `boolean`);
+   - диапазоны min/max для number+integer;
+   - длины min_length/max_length для строк;
+   - `enum` для строк (whitelist значений);
+   - `optional` для всех ключей (default false);
+   - `PARAMS_NOT_DICT` для неправильных типов контейнера;
+   - `UNKNOWN_PARAM_TYPE` для опечаток в schema.
+- В `app/llm/pipeline.py` после `validate_llm_response` (top-level) вызывается `validate_params_against_schema`, используя `params_schema` из `context[allowed_entities]`.
+- Новый файл `tests/test_llm_validator.py`: 32 теста (4 на top-level + 28 параметризованных на schema validation).
+- Все 32 ✅.
+
+### Этап 6 ✅ — dashboard_v2 refactor (DESIGN §11 ≤2 графика)
+- `app/templates/dashboard_v2.html` (368→ранее): теперь 4 графика → 2 канваса (Weekly Activity + Points Trend) + 2 compact summary cards (categories + completion).
+- Ровно 2 chart-elements per viewport согласно DESIGN.md §11.
+- Completion Rate сжат в одну карточку: «big number + цвет» + пару строк completed/total.
+- Categories сжаты в top-3 bar list с %.
+- Все capture-JS используют переводы через `t.*` + escapeHtml в JS (mini-SSR escape).
+- `app/i18n/en.py` + `app/i18n/ru.py`: +37 ключей (nav_training/tasks/sessions/import/calendar/points/inventory/notifications/achievements, dashboard_points/xp/streak/days_suffix/done/level_label/active_session/loading/link/no_categories/browse_catalog/others/completion_completed/total/see_history/chart_weekly/chart_points_trend/chart_categories_title/chart_completion_title/chart_last_7/chart_last_30/chart_done/chart_stop/chart_pending/telegram_connected/code_ready/not_linked/link/code_valid/code_hint/new_code/open_bot, notifications_title, achievements_title).
+- Шаблон рендерится (28 KB), синтаксис в порядке.
+
+### Этапы 7+8 ✅ — calendar.html & inventory.html JS async i18n
+- `app/templates/calendar.html`: заменены все hardcoded EN тексты → `{{ t.calendar_* }}` ключи (today's legend, header titles, intensity select, day-of-week selector, policy selector); JS использует инжектированный `I18N` dict + `POLICY_LABEL` map; все user-controlled values проходят через `escapeHtml()`; новый `calendar_btn_delete` = «Удалить»/«Delete».
+- `app/templates/inventory.html`: аналогично — All/Clothing/Equipment/Cosmetics/Shopping List → `t.inventory_filter_*`; status badges используют `STATUS_LABEL` map; placeholder'ы, кнопки и labels → i18n; новый блок `inv_*` ключей с RU переводами; `STATUS_LABEL` + `I18N` инжектируются Jinja из статических переводов (безопасны).
+- Добавлены ключи в en.py + ru.py: `inventory_filter_shopping_list`, `inv_btn_add`, `inv_btn_add_new_item`, `inv_btn_save`, `inv_btn_delete`, `inv_ph_category/name/qty/qty_needed/priority`, `inv_shopping_list`, `inv_chart_breakdown`, `inv_qty_label`, `inv_priority_label`, `inv_empty`, `inv_mark_shopping`, `inv_items_counter_suffix`, `inv_status_need/ordered/bought/built/other`. 31 ключ.
+- Шаблоны рендерятся (calendar 20 KB, inventory 19 KB), синтаксис OK.
+
+### Этап 9 ✅ — import_data.html: localhost:8443 → config + i18n + emoji removal
+- `app/api/import_data.py`: добавлен `app_url` в контекст шаблона — `str(request.url_root).rstrip("/")`.Проиходит из `request`, deployments не привязаны к localhost.
+- `app/templates/import_data.html`:
+     - hardcoded `https://localhost:8443` заменены на `{{ app_url }}` в clipboard-button и в curl-примере;
+     - hardcoded EN/RU тексты → `t.import_*` ключи (`import_title`, `import_subtitle`, `import_data_types`, `import_section_templates`, `import_section_upload`, `import_section_export`, `import_drop_hint`, `import_or`, `import_file_label`, `import_autodetect_hint`, `import_submit`, `import_full_backup`, `import_download_all`, `import_api_title`, `import_api_desc`, `import_api_example_title`, `import_api_types_line`).
+     - Все эмодзи 📦📥📤📁🚀🔄⬇️🔌 заменены на SVG-иконки (DESIGN.md 6.3).
+     - Градиент `from-indigo-50 to-purple-50` → solid `bg-indigo-50`.
+     - aria-live на upload-result, aria-label на copy-URL, type="button" на всех кнопках (CSRF-safe).
+- 17 новых ключей в en.py + ru.py.
+- Шаблон рендерится (16 KB), синтаксис OK.
+
+### Этап 10 ✅ — XSS-fixture тесты (REM §A14)
+- Новый файл `tests/test_xss_fixtures.py`: 24 XSS-защитных теста в 4 фазах:
+   1. **Jinja autoescape**: подтверждена, что `{{payload}}` в HTML-аттрибуте/content рендерит контент безопасно;
+   2. **escapeHtml** (mirror base.html): 8 параметризованных тестов на OWASP payloads (script tag, img onerror, mouseover, javascript URI, unicode, None, int, двойное экранирование);
+   3. **end-to-end**: `calendar.html` / `inventory.html` рендер враждебного ввода через Jinja autoescape — `<script>` всегда заменяется на `&lt;script&gt;`;
+   4. **регрессия**: 10 известных payload-ов из OWASP cheat sheet (svg/onload, iframe/src, body/onload, input/autofocus, ERB/Jinja/JS-инъекции).
+- Все 24 ✅.
+
+### Этап 11 ✅ — финальная валидация
+- `ruff check app/ cli.py tests/ seed_prod.py` → All checks passed! ✅
+- `ruff format --check app/ cli.py tests/ seed_prod.py` → 86 files already formatted ✅ (после autoformat)
+- `python3 -m pytest tests/` → **225 passed in 38.49s** ✅ (было 153 → +72 новых: 11+5+32+24)
+- Все P0/P1 из предыдущих сессий закрыты.
+
+## 2026-08-09 — Сессия 39: Frontend-фиксы (P0/P1 из аудита)
+
+- Выполнены все рекомендации из FRONTEND_AUDIT_SESSION_38.md
+- **P0-баг**: catalog.html — enum `unacceptable → strong_aversion` (миграция ADR-029 не покрыла UI-слой)
+- i18n: добавлено ~50 новых ключей в en.py + ru.py; удалён 1 дубль `catalog_no_entities_hint`
+- training.html: 8 RU строк → t.* + CSRF + aria-label
+- Градиент в index.html удалён; SVG иконки вместо эмодзи
+- Эмодзи удалены из заголовков: admin, llm_configs, catalog, notifications, privacy, my_entities, tasks, dashboard
+- Hover-translate и shadow-lift убраны с 16+ карточек
+- base.html: CSS variables (light/dark), skip-link, ARIA, focus ring, motion easing (`cubic-bezier`), 44px touch target, `aria-live`, `aria-current="page"`
+- Градиент в achievements.html → solid
+- **Результат**: 153/153 теста ✅, ruff ✅, format ✅
+- Детальный отчёт: `memory/FIX_SESSION_39.md`
+- Артефакты: +~200 строк в i18n, изменены 15 шаблонов
+
+## 2026-08-09 — Сессия 38: Frontend-аудит (по запросу владельца)
+
+- Прочитан DESIGN.md (694 строки) — приоритетный документ для frontend.
+- Прочитаны все 22 шаблона (2914 строк).
+- Проверки: `grep 'innerHTML'` 18 вхождений / 8 файлов; `grep 'aria-|role='` 0; `grep 'bg-slate|bg-gray'` 465 строк; `grep 'hover:-translate|hover:shadow-lg'` 21 нарушение DESIGN.md 6.3; `grep 'csrf_token'` 4 формы из ~25.
+- Ключевая находка: `app/templates/catalog.html` всё ещё использует enum `unacceptable` после миграции на `strong_aversion` (ADR-029). Это **P0-баг**: CSS ветка в строке 74 не сработает + нет option для нового значения.
+- Найдены hardcoded RU/EN строки вне `t.*` словаря в training.html (8 строк RU), dashboard.html, index.html, catalog.html, calendar.html.
+- 0 ARIA атрибутов во всех 22 шаблонах (нет aria-label, aria-current, aria-live, skip-link).
+- DESIGN.md compliance ≈30%.
+- Результат: `memory/FRONTEND_AUDIT_SESSION_38.md` (полный отчёт), SESSIONS/STATUS/OPEN_QUESTIONS обновлены.
+- Код НЕ изменён. Изменения отложены в Сессию 39.
+
+## 2026-08-09 — Сессия 37: Аудит проекта (по запросу владельца)
+
+- Прочитаны все priority-документы: REMEDIATION_SPEC.md (676), AGENTS.md (219), DESIGN.md (694), tracker-spec.md (409), README.md (304), все 7 memory/* файлов.
+- Снят срез кода: main.py, security.py, entity.py, api/tasks.py, llm/pipeline.py, llm/validator.py, services/scheduler.py, config.py, alembic/versions/* (15 миграций), .github/workflows/ci.yml, docker-compose.yml.
+- Проверки: `rg create_all|metadata.create` — пусто; `rg innerHTML` — 18 совпадений в 8 файлах; `rg eval(` — только htmx; `python3 -m pytest --collect-only` — 153 теста.
+- Бриф-интервью: владелец выбрал bif (REMEDIATION_SPEC.md остаётся целевой, ADR-029–034 — зафиксированный компромисс v0.8-actual) и «эта сессия — только аудит».
+- Результат: `memory/AUDIT_SESSION_37.md` (полный отчёт), SESSIONS.md, STATUS.md, OPEN_QUESTIONS.md (Q7) обновлены.
+- Код НЕ изменён. Изменения AGENTS.md/конфига отложены в Сессию 38.
+- Артефакты: +1 memory-файл, изменены SESSIONS/STATUS/OPEN_QUESTIONS.
+
 ## 2026-08-09 — Сессия 36: TrainingLogEntry — журнал тренировки
 - **Модель** `app/models/training_log.py`: TrainingLogEntry (time_label, entry_type, planned/actual_value, unit, notes, sort_order, is_extra)
 - **Миграция** 015: таблица `training_log_entries`

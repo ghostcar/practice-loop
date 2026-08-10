@@ -218,5 +218,101 @@
 - [x] Docker smoke-test: все эндпоинты OK (/healthz, /static/*, /)
 - [x] README: секция Deployment (хост-nginx + certbot + docker compose + бэкапы)
 
+## Сессия 40: Deferred-фиксы (production gate, bif, JS i18n, XSS-fixtures) (2026-08-09)
+
+Детальный отчёт: `memory/DEFERRED_FIX_SESSION_40.md`.
+
+### Закрыто в S40
+- [x] **Backend P0 — Production gate секретов в config.py**: `app_env` model_validator + длина ≥32 + `change-me-...` отвергаются при APP_ENV=production. `docker-compose.yml` APP_ENV по умолчанию production, `docker-compose.override.yml` явно development.
+- [x] **AGENTS.md bif-комментарий**: новая секция 0 «Архитектурный bif v0.8-actual ↔ v0.7-spec» с таблицей 6 пунктов расхождения и ADR-029/031/032/033/034.
+- [x] **store_raw_response flag** (REM §7.5): миграция 016 + `LLMProviderConfig.store_raw_response` + `ActivityLog.raw_response_expires_at` + helper `_resolve_raw_response` в pipeline.py (TTL 30 дней).
+- [x] **Расширение LLM validator** (REM §7.4): `validate_params_against_schema` с типами (number/integer/string/boolean), min/max, min_length/max_length, enum, optional.
+- [x] **dashboard_v2.html refactor** (DESIGN §11): 4 графика → 2 канваса + 2 summary-карточки (categories top-3 + completion big-number).
+- [x] **calendar.html JS async i18n**: I18N dict + POLICY_LABEL map (Mon..Sun, Allowed/Passive/Blocked, Templates/Overrides, check-result, default-marker).
+- [x] **inventory.html JS async i18n**: I18N dict + STATUS_LABEL map (All/Clothing/Equipment/Cosmetics/Shopping List, status badges, qty/priority labels).
+- [x] **import_data.html: localhost:8443 → app_url** (из `request.url_root`), 17 новых i18n ключей, эмодзи удалены, градиент solid.
+- [x] **XSS-fixture тесты** (REM §A14): 24 теста в 4 фазах (Jinja autoescape, escapeHtml mirror, end-to-end, OWASP regression).
+
+### Метрики
+- ruff check ✅ | ruff format ✅
+- **225/225 тестов** ✅ (было 153 → +72 новых: 11 production gate + 5 raw-response policy + 32 validator + 24 XSS-fixtures)
+- 86 файлов Python отформатированы
+- 105+ i18n ключей добавлено в en.py + ru.py
+- 1 миграция Alembic (016)
+
+## Аудит проекта (Session 37, 2026-08-09)
+
+Детальный отчёт: `memory/AUDIT_SESSION_37.md`.
+
+### Выводы
+- 153 теста ✅, ruff 0, CI 3 job'а зелёные, Docker smoke OK, реальный деплой на VPS.
+- 6 ADR (029–034) сознательно расходятся с REMEDIATION_SPEC.md (bif владельца).
+- Архитектурный bif зафиксирован как принятый (Q7 в OPEN_QUESTIONS, см. ниже).
+- Код НЕ менялся в Сессии 37 — только аудит.
+
+### Открытые дефекты
+- P0: secret defaults в config.py без production gate
+- P0: innerHTML в 6 файлах требует перепроверки (XSS-fixture)
+- P1: LLM validator не покрывает variant_id/automation/risk
+- P1: generate_daily_plan разрешает свободные subtasks (REM 7.1)
+- P1: нет `risk_level` enum на Entity
+- P2: scheduler без advisory lock; pipeline смешивает 3 use-case
+
+### Не закрыто до следующей сессии
+- [ ] Bif SPEC↔ADR: добавить явный комментарий в AGENTS.md
+- [ ] Production gate секретов
+- [ ] innerHTML аудит + A14 XSS-тест
+- [ ] `store_raw_response` флаг в LLMProviderConfig (REM 7.5)
+- [ ] Расширение LLM validator (REM 7.4)
+
+## Frontend-аудит (Session 38, 2026-08-09)
+
+Детальный отчёт: `memory/FRONTEND_AUDIT_SESSION_38.md`.
+
+### Выводы
+- DESIGN.md compliance: **≈30%** (694 строки спецификации).
+- Покрыто: CDN ✅, локальные assetы ✅, CSRF через HTMX ✅, light/dark ✅, CSRF middleware ✅.
+- Не покрыто: **0 ARIA** атрибутов (WCAG AA недостижимо), 1 баг enum, hardcoded строки, градиенты, hover-translate, emoji в навигации, нет feature flags, нет mobile bottom nav, нет self-hosted Inter.
+- **Найден P0-баг:** `app/templates/catalog.html` использует старое значение `unacceptable` (строки 74, 88-89); миграция `strong_aversion` не покрыла UI-слой.
+- **Найдены hardcoded RU строки** в `training.html` (8 строк вне i18n словаря).
+- **Найдены hardcoded EN строки** в `dashboard.html`, `index.html`, `catalog.html`, `calendar.html`.
+
+### Топ-3 критичных фронтенд-фикса
+- [x] catalog.html: enum `unacceptable → strong_aversion` + i18n для строки (P0-баг) — **FIXED S39**
+- [x] training.html: вынести 8 RU строк в t.* словарь — **FIXED S39**
+- [x] index.html: убрать градиент в h1 + emoji из заголовков; добавить ARIA везде — **FIXED S39**
+
+## Frontend-фиксы (Session 39, 2026-08-09)
+
+Детальный отчёт: `memory/FIX_SESSION_39.md`.
+
+### Закрыто
+- [x] P0-баг `unacceptable → strong_aversion` в catalog.html + i18n
+- [x] Хардкоженные RU/EN строки вне t.* словаря
+- [x] Градиенты в `<h1>` (index.html) и в progress (achievements.html)
+- [x] Эмодзи в 8 заголовках (admin, llm_configs, catalog, notifications, privacy, my_entities, tasks, dashboard)
+- [x] Hover-translate/shadow-lift с 16+ карточек
+- [x] CSS variables для light/dark тем (DESIGN.md 6.2) в base.html
+- [x] Skip-link первым focusable (WCAG)
+- [x] aria-label на `<nav>`, aria-current="page" на активной ссылке
+- [x] aria-live на `<main>` + HTMX live region
+- [x] Focus ring `2 px + 2 px offset` через `*:focus-visible`
+- [x] Motion easing `cubic-bezier(0.2, 0, 0, 1)` через CSS variable
+- [x] Touch target `min-h-[44px]` на критичных кнопках
+- [x] CSRF hidden input в 8 новых формах (catalog opt-in, all training forms, dashboard theme/locale, tasks forms)
+- [x] Авто-submit `onchange="this.form.submit()"` удалён (DESIGN 9.2)
+
+### Не закрыто (deferred)
+- [ ] `dashboard_v2.html` refactor: 4 графика одновременно нарушают DESIGN 11 (≤2)
+- [ ] `calendar.html` JS: hardcoded EN (Mon–Sun, Allowed, Passive, Templates, Overrides) — нужен async i18n
+- [ ] `inventory.html` JS: hardcoded EN (All, Clothing, Equipment, Cosmetics) — аналогично
+- [ ] `import_data.html`: hardcoded `https://localhost:8443` URL в copy-button
+- [ ] Полная миграция классов Tailwind → custom CSS variables в шаблонах
+- [ ] XSS-fixture тесты (REM A14) — только запланированы
+- [ ] Self-hosted Inter Variable font (DESIGN 7.1)
+- [ ] Mobile bottom nav (DESIGN 4.4)
+- [ ] JS-hoist в отдельные ES modules (DESIGN 15.4)
+
 ## Следующие шаги
-1. Деплой на VPS: docker compose up -d db app, хост-nginx reverse proxy, certbot, seed
+1. Сессия 38: фикс bif в AGENTS.md + P0/P1 работы из аудита
+2. Деплой: docker compose up -d db app, хост-nginx reverse proxy, certbot, seed

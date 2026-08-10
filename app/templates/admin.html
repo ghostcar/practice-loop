@@ -4,15 +4,15 @@
 <div class="animate-fade-in">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">⚙️ Admin Panel</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Manage catalog, providers, and system settings</p>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ t.admin_title_page }}</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ t.admin_subtitle }}</p>
         </div>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <!-- Catalog management -->
         <a href="/entities/catalog"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 group">
+           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
             <div class="text-4xl mb-3">📋</div>
             <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-500 transition-colors">Catalog</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Browse entities, manage opt-ins, filter by category</p>
@@ -20,7 +20,7 @@
 
         <!-- Personal entities -->
         <a href="/entities/my"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 group">
+           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
             <div class="text-4xl mb-3">📝</div>
             <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-500 transition-colors">My Entities</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create and manage your personal tasks</p>
@@ -28,7 +28,7 @@
 
         <!-- LLM Configs -->
         <a href="/llm-configs/"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 group">
+           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
             <div class="text-4xl mb-3">🤖</div>
             <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-500 transition-colors">LLM Providers</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure BYOK providers (Omniroute, Groq, OpenRouter…)</p>
@@ -42,13 +42,13 @@
             <div class="flex gap-2">
                 <form action="/admin/seed-entities" method="post">
                     <button type="submit"
-                            class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-all duration-200">
+                            class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
                         Seed 30+ Entities
                     </button>
                 </form>
                 <form action="/admin/seed-llm-presets" method="post">
                     <button type="submit"
-                            class="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium transition-all duration-200">
+                            class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium">
                         Seed LLM Presets
                     </button>
                 </form>

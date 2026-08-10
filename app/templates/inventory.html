@@ -1,45 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Inventory{% endblock %}
+{% block title %}{{ t.inventory_title }}{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-4">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.get('inventory_title', 'Inventory') }}</h1>
     <div class="flex gap-2">
-      <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">+ Add</button>
-      <a href="/import/template/inventory" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg text-sm transition-colors">Template</a>
+      <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">+ {{ t.inv_btn_add|default('Add') }}</button>
+      <a href="/import/template/inventory" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg text-sm transition-colors">{{ t.inventory_btn_template }}</a>
     </div>
   </div>
 
   <!-- Filters -->
   <div class="flex gap-2 mb-6 flex-wrap">
-    <button onclick="filter('')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">All</button>
-    <button onclick="filter('clothing')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">Clothing</button>
-    <button onclick="filter('equipment')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">Equipment</button>
-    <button onclick="filter('cosmetics')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">Cosmetics</button>
-    <button onclick="filterShoppingList()" class="filter-btn px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-sm font-medium transition-colors">Shopping List</button>
+    <button onclick="filter('')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">{{ t.inventory_filter_all }}</button>
+    <button onclick="filter('clothing')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">{{ t.inventory_filter_clothing }}</button>
+    <button onclick="filter('equipment')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">{{ t.inventory_filter_equipment }}</button>
+    <button onclick="filter('cosmetics')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">{{ t.inventory_filter_cosmetics }}</button>
+    <button onclick="filterShoppingList()" class="filter-btn px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 text-sm font-medium transition-colors">{{ t.inventory_filter_shopping_list|default('Shopping List') }}</button>
   </div>
 
   <!-- Add form (hidden) -->
   <div id="add-form" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 mb-6">
-    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">New Item</h3>
+    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.inv_btn_add_new_item|default('New Item') }}</h3>
     <form id="inv-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <input id="inv-cat" placeholder="category" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
-      <input id="inv-name" placeholder="name" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 col-span-2">
-      <input id="inv-qty" type="number" placeholder="qty" value="1" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
-      <input id="inv-qtyn" type="number" placeholder="qty needed" value="1" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+      <input id="inv-cat" placeholder="{{ t.inv_ph_category|default('category') }}" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+      <input id="inv-name" placeholder="{{ t.inv_ph_name|default('name') }}" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 col-span-2">
+      <input id="inv-qty" type="number" placeholder="{{ t.inv_ph_qty|default('qty') }}" value="1" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+      <input id="inv-qtyn" type="number" placeholder="{{ t.inv_ph_qty_needed|default('qty needed') }}" value="1" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
       <select id="inv-status" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
-        <option value="need">Need</option><option value="ordered">Ordered</option><option value="bought">Bought</option><option value="built">Built</option>
+        <option value="need">{{ t.inv_status_need|default('Need') }}</option><option value="ordered">{{ t.inv_status_ordered|default('Ordered') }}</option><option value="bought">{{ t.inv_status_bought|default('Bought') }}</option><option value="built">{{ t.inv_status_built|default('Built') }}</option>
       </select>
-      <input id="inv-prio" type="number" placeholder="priority" value="0" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
-      <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 col-span-2"><input type="checkbox" id="inv-shop"> Shopping list</label>
-      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm col-span-full transition-colors font-medium">Save</button>
+      <input id="inv-prio" type="number" placeholder="{{ t.inv_ph_priority|default('priority') }}" value="0" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+      <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 col-span-2"><input type="checkbox" id="inv-shop"> {{ t.inv_shopping_list|default('Shopping list') }}</label>
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm col-span-full transition-colors font-medium">{{ t.inv_btn_save|default('Save') }}</button>
     </form>
   </div>
 
   <!-- Category distribution chart -->
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
-        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Category Breakdown</h3>
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.inv_chart_breakdown|default('Category Breakdown') }}</h3>
         <span id="inv-total" class="text-xs text-slate-400"></span>
     </div>
     <div class="h-36"><canvas id="inv-chart"></canvas></div>
@@ -51,6 +51,28 @@
 {% endblock %}
 {% block scripts %}
 <script>
+// Translations injected from server (static; safe).
+const I18N = {
+  inv_qty_label: "{{ t.inv_qty_label|default('Qty') }}",
+  inv_priority_label: "{{ t.inv_priority_label|default('Priority') }}",
+  inv_empty: "{{ t.inv_empty|default('No items yet.') }}",
+  inv_btn_delete: "{{ t.calendar_btn_delete|default('Delete') }}",
+  inv_mark_shopping: "{{ t.inv_mark_shopping|default('Shopping') }}",
+  inv_items_counter_suffix: "{{ t.inv_items_counter_suffix|default('items') }}",
+  // Status labels (used in JS for badge text)
+  inv_status_need: "{{ t.inv_status_need|default('Need') }}",
+  inv_status_ordered: "{{ t.inv_status_ordered|default('Ordered') }}",
+  inv_status_bought: "{{ t.inv_status_bought|default('Bought') }}",
+  inv_status_built: "{{ t.inv_status_built|default('Built') }}",
+  inv_status_other: "{{ t.inv_status_other|default('Other') }}",
+};
+const STATUS_LABEL = {
+  need: I18N.inv_status_need,
+  ordered: I18N.inv_status_ordered,
+  bought: I18N.inv_status_bought,
+  built: I18N.inv_status_built,
+};
+
 let currentFilter = '';
 async function loadInventory(cat, shopOnly) {
   let url = '/api/v2/inventory?';
@@ -65,14 +87,14 @@ async function loadInventory(cat, shopOnly) {
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>
           <span class="font-medium text-slate-800 dark:text-slate-100">${escapeHtml(i.name)}</span>
-          <span class="text-xs font-medium ${statusBadge(escapeHtml(i.status))}">${escapeHtml(i.status)}</span>
-          ${i.is_shopping_list ? '<span class="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">Shopping</span>' : ''}
+          <span class="text-xs font-medium ${statusBadge(escapeHtml(i.status))}">${escapeHtml(STATUS_LABEL[i.status] || i.status)}</span>
+          ${i.is_shopping_list ? `<span class="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">${escapeHtml(I18N.inv_mark_shopping)}</span>` : ''}
         </div>
-        <div class="text-xs text-slate-400 mt-1">Qty: ${i.quantity}/${i.quantity_needed} &middot; Priority: ${i.priority}</div>
+        <div class="text-xs text-slate-400 mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
       </div>
-      <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">Delete</button>
+      <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
     </div>
-  `).join('') || '<p class="text-slate-400 dark:text-slate-500 text-center py-8">No items yet.</p>';
+  `).join('') || '<p class="text-slate-400 dark:text-slate-500 text-center py-8">' + escapeHtml(I18N.inv_empty) + '</p>';
 }
 function catBadge(c) {
   const m = {clothing:'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',equipment:'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',cosmetics:'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',other:'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'};
@@ -108,7 +130,7 @@ loadInventory('', false);
     try {
         const res = await fetch('/api/v2/inventory');
         const items = await res.json();
-        document.getElementById('inv-total').textContent = items.length + ' items';
+        document.getElementById('inv-total').textContent = items.length + ' ' + escapeHtml(I18N.inv_items_counter_suffix);
         const cats = {};
         items.forEach(i => { cats[i.category] = (cats[i.category] || 0) + 1; });
         const colors = { clothing: '#ec4899', equipment: '#3b82f6', cosmetics: '#a855f7', other: '#6b7280' };

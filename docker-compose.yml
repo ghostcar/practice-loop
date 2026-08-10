@@ -25,6 +25,7 @@ services:
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
       CREDENTIALS_ENCRYPTION_KEY: ${CREDENTIALS_ENCRYPTION_KEY:?err}
+      APP_ENV: ${APP_ENV:-production}   # production gate: secrets validated at startup
       TG_BOT_TOKEN: ${TG_BOT_TOKEN:-}
       TG_WEBHOOK_SECRET: ${TG_WEBHOOK_SECRET:-change-me}
       TG_WEBHOOK_BASE_URL: ${TG_WEBHOOK_BASE_URL:-https://localhost:8443}

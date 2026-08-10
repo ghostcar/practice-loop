@@ -12,6 +12,7 @@ services:
     environment:
       # Use SQLite for local dev (no PostgreSQL needed)
       DATABASE_URL: sqlite+aiosqlite:///./tracker.db
+      APP_ENV: development           # explicitly disable production gate in dev
       TG_POLLING: "true"          # polling mode (no webhook URL needed)
       TG_BOT_TOKEN: ${TG_BOT_TOKEN:-}  # set in .env for Telegram testing
     command: >

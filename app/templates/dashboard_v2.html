@@ -9,14 +9,14 @@
             <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.dashboard_welcome }}</p>
         </div>
         <div class="flex gap-2">
-            <a href="/notifications" class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <a href="/notifications" class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="{{ t.notifications_title }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
                 {% if unread_notifs > 0 %}
                 <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">{{ unread_notifs }}</span>
                 {% endif %}
             </a>
-            <a href="/achievements" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+            <a href="/achievements" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="{{ t.achievements_title }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
             </a>
         </div>
     </div>
@@ -24,61 +24,75 @@
     <!-- Stats row: compact, no hover, no emoji -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Points</div>
+            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_points }}</div>
             <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums" id="stat-points">{{ progress.points_balance }}</div>
         </div>
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">XP</div>
+            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_xp }}</div>
             <div class="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums" id="stat-xp">{{ progress.xp }}</div>
         </div>
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Streak</div>
-            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ progress.current_streak }}<span class="text-sm font-normal text-slate-400">d</span></div>
+            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_streak }}</div>
+            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ progress.current_streak }}<span class="text-sm font-normal text-slate-400">{{ t.dashboard_days_suffix }}</span></div>
         </div>
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Done</div>
+            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_done }}</div>
             <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{{ progress.total_completed }}</div>
         </div>
     </div>
 
-    <!-- Charts: 2x2 grid, compact heights per DESIGN.md -->
+    <!-- DESIGN.md §11: at most 2 charts per viewport.
+         The remaining two (category donut + completion-rate gauge) are presented
+         as compact summary cards below — numbers with mini-bars, no canvas. -->
+
+    <!-- Charts: at most 2 per viewport, side-by-side on lg+ -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Weekly Activity -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Weekly Activity</h2>
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_weekly }}</h2>
                 <div class="flex gap-2 text-xs">
-                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span> Done</span>
-                    <span class="inline-flex items-center gap-1 text-red-500"><span class="w-2 h-2 rounded-sm bg-red-500"></span> Stop</span>
+                    <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span> {{ t.dashboard_chart_done }}</span>
+                    <span class="inline-flex items-center gap-1 text-red-500"><span class="w-2 h-2 rounded-sm bg-red-500"></span> {{ t.dashboard_chart_stop }}</span>
                 </div>
             </div>
             <div class="h-56"><canvas id="activity-chart"></canvas></div>
         </div>
 
-        <!-- Category Distribution -->
+        <!-- Points Trend -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Categories (30d)</h2>
-            <div class="flex items-center gap-5">
-                <div class="w-32 h-32 flex-shrink-0"><canvas id="category-chart"></canvas></div>
-                <div id="category-legend" class="flex-1 space-y-1.5 text-sm"></div>
+            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.dashboard_chart_points_trend }}</h2>
+            <p class="text-xs text-slate-400 mb-3">{{ t.dashboard_chart_last_30 }}</p>
+            <div class="h-56"><canvas id="points-trend-chart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Compact stats summaries (replaces donut + gauge with text+bar summaries) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Category summary (top-3 categories) -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_categories_title }}</h2>
+                <a href="/sessions" class="text-xs text-indigo-500 underline">{{ t.dashboard_see_history }}</a>
+            </div>
+            <div id="category-summary" class="space-y-2.5">
+                <p class="text-sm text-slate-400 dark:text-slate-500">{{ t.dashboard_loading_categories }}</p>
             </div>
         </div>
 
-        <!-- Points Trend -->
+        <!-- Completion summary -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Points Trend</h2>
-            <p class="text-xs text-slate-400 mb-3">Last 30 days</p>
-            <div class="h-48"><canvas id="points-trend-chart"></canvas></div>
-        </div>
-
-        <!-- Completion Rate -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Completion Rate</h2>
-            <div class="flex items-center gap-5">
-                <div class="w-28 h-28 flex-shrink-0"><canvas id="gauge-chart"></canvas></div>
-                <div class="flex-1">
-                    <div id="gauge-stats" class="space-y-0.5 text-sm"></div>
-                    <div class="h-12 mt-2"><canvas id="rate-sparkline"></canvas></div>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_completion_title }}</h2>
+                <a href="/achievements" class="text-xs text-indigo-500 underline">{{ t.dashboard_see_history }}</a>
+            </div>
+            <div id="completion-summary" class="flex items-center gap-4">
+                <div>
+                    <div id="completion-rate-big" class="text-3xl font-bold tabular-nums text-slate-700 dark:text-slate-100">—</div>
+                    <div class="text-xs text-slate-400">{{ t.dashboard_chart_last_7 }}</div>
+                </div>
+                <div class="flex-1 space-y-1 text-xs" id="completion-stats">
+                    <p class="text-slate-400">{{ t.dashboard_loading_stats }}</p>
                 </div>
             </div>
         </div>
@@ -88,9 +102,9 @@
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
         <div class="flex items-end justify-between mb-2">
             <div>
-                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Level {{ level }}</span>
-                <span class="text-xs text-slate-400 ml-2">→ Level {{ level + 1 }}</span>
-                <span class="text-xs text-slate-400 ml-1">{{ xp_current }} / {{ xp_next }} XP</span>
+                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_level_label }} {{ level }}</span>
+                <span class="text-xs text-slate-400 ml-2">→ {{ t.dashboard_level_label }} {{ level + 1 }}</span>
+                <span class="text-xs text-slate-400 ml-1">{{ xp_current }} / {{ xp_next }} {{ t.dashboard_xp }}</span>
             </div>
             <span class="text-xs font-mono text-indigo-500 tabular-nums">{{ xp_percent }}%</span>
         </div>
@@ -104,14 +118,14 @@
     {% if active_session %}
     <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex items-center gap-3 text-sm">
         <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-        <span class="text-indigo-700 dark:text-indigo-300 font-medium">Active session &mdash; {{ active_session.status }}</span>
-        <a href="/sessions" class="ml-auto text-indigo-500 underline text-xs">Manage</a>
+        <span class="text-indigo-700 dark:text-indigo-300 font-medium">{{ t.dashboard_active_session }}: {{ active_session.status }}</span>
+        <a href="/sessions" class="ml-auto text-indigo-500 underline text-xs">{{ t.dashboard_manage }}</a>
     </div>
     {% endif %}
 
     <!-- Recent activity -->
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Recent Activity</h2>
+        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.dashboard_recent_activity }}</h2>
         {% if recent_logs %}
         <div class="divide-y divide-slate-100 dark:divide-slate-800">
             {% for log in recent_logs %}
@@ -134,7 +148,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No activity yet. <a href="/tasks/" class="text-indigo-500 underline">Generate a task</a>.</p>
+        <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-4">{{ t.dashboard_no_activity }} <a href="/tasks/" class="text-indigo-500 underline">{{ t.dashboard_generate_task }}</a>.</p>
         {% endif %}
     </div>
 
@@ -142,35 +156,34 @@
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
         <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
-                <svg class="w-5 h-5 flex-shrink-0 text-sky-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.66-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.41-.88.03-.24.37-.49 1.02-.74 3.98-1.73 6.64-2.88 7.98-3.43 3.8-1.58 4.59-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>
+                <svg class="w-5 h-5 flex-shrink-0 text-sky-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.66-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.41-.88.03-.24.37-.49 1.02-.74 3.98-1.73 6.64-2.88 7.98-3.43 3.8-1.58 4.59-1.85 5.1-1.86.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"/></svg>
                 <div class="min-w-0">
-                    <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Telegram Bot</h2>
-                    <p class="text-xs text-slate-400 truncate" id="tg-status-text">Checking...</p>
+                    <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_telegram_link }}</h2>
+                    <p class="text-xs text-slate-400 truncate" id="tg-status-text">{{ t.dashboard_loading }}</p>
                 </div>
             </div>
             <button onclick="generateLinkCode()" id="tg-link-btn"
                     class="flex-shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
-                Link
+                {{ t.dashboard_link }}
             </button>
         </div>
         <div id="tg-code-display" class="hidden mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-center">
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">Your code (valid 30 min):</p>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">{{ t.dashboard_telegram_code_valid }}</p>
             <code id="tg-code" class="text-2xl font-bold tracking-widest text-indigo-600 dark:text-indigo-400"></code>
-            <p class="text-xs text-slate-400 mt-1">Send <code class="bg-slate-200 dark:bg-slate-700 px-1 rounded">/link CODE</code> to the bot</p>
+            <p class="text-xs text-slate-400 mt-1">{{ t.dashboard_telegram_code_hint }}</p>
         </div>
     </div>
 
     <!-- Quick links -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <a href="/training" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Training</a>
-        <a href="/tasks/" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Tasks</a>
-        <a href="/entities/catalog" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Catalog</a>
-        <a href="/sessions" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Sessions</a>
-        <a href="/import" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Import</a>
-        <a href="/calendar" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Calendar</a>
-        <a href="/api/v2/points/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Points</a>
-        <a href="/api/v2/measurements/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Body</a>
-        <a href="/api/v2/inventory/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">Inventory</a>
+        <a href="/training" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_training }}</a>
+        <a href="/tasks/" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_tasks }}</a>
+        <a href="/entities/catalog" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_catalog }}</a>
+        <a href="/sessions" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_sessions }}</a>
+        <a href="/import" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_import }}</a>
+        <a href="/calendar" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_calendar }}</a>
+        <a href="/api/v2/points/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_points }}</a>
+        <a href="/api/v2/inventory/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_inventory }}</a>
     </div>
 </div>
 {% endblock %}
@@ -188,15 +201,15 @@ async function checkTelegramStatus() {
         const statusEl = document.getElementById('tg-status-text');
         const btnEl = document.getElementById('tg-link-btn');
         if (data.linked) {
-            statusEl.textContent = 'Connected';
-            btnEl.textContent = 'Open Bot';
+            statusEl.textContent = '{{ t.dashboard_telegram_connected }}';
+            btnEl.textContent = '{{ t.dashboard_open_bot }}';
             const botUser = '{{ tg_bot_username }}';
             btnEl.onclick = () => window.open('https://t.me/' + botUser, '_blank');
         } else if (data.code) {
-            statusEl.textContent = 'Code ready';
+            statusEl.textContent = '{{ t.dashboard_telegram_code_ready }}';
             showCode(data.code);
         } else {
-            statusEl.textContent = 'Not linked';
+            statusEl.textContent = '{{ t.dashboard_telegram_not_linked }}';
         }
     } catch(e) { console.warn('TG status:', e); }
 }
@@ -208,14 +221,14 @@ async function generateLinkCode() {
         const res = await fetch('/profile/telegram-link-code', { method: 'POST' });
         const data = await res.json();
         showCode(data.code);
-        document.getElementById('tg-status-text').textContent = 'Code ready';
+        document.getElementById('tg-status-text').textContent = '{{ t.dashboard_telegram_code_ready }}';
     } catch(e) {}
 }
 
 function showCode(code) {
     document.getElementById('tg-code').textContent = code;
     document.getElementById('tg-code-display').classList.remove('hidden');
-    document.getElementById('tg-link-btn').textContent = 'New Code';
+    document.getElementById('tg-link-btn').textContent = '{{ t.dashboard_new_code }}';
 }
 
 // ── Color palette (DESIGN.md sematic tokens) ──
@@ -239,9 +252,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             data: {
                 labels: data.labels,
                 datasets: [
-                    { label: 'Completed', data: data.completed, backgroundColor: '#2F7657', borderRadius: 4, borderSkipped: false },
-                    { label: 'Stopped', data: data.interrupted, backgroundColor: '#A83B4A', borderRadius: 4, borderSkipped: false },
-                    { label: 'Pending', data: data.pending, backgroundColor: '#E1DFE7', borderRadius: 4, borderSkipped: false },
+                    { label: '{{ t.dashboard_chart_done }}', data: data.completed, backgroundColor: '#2F7657', borderRadius: 4, borderSkipped: false },
+                    { label: '{{ t.dashboard_chart_stop }}', data: data.interrupted, backgroundColor: '#A83B4A', borderRadius: 4, borderSkipped: false },
+                    { label: '{{ t.dashboard_chart_pending }}', data: data.pending, backgroundColor: '#E1DFE7', borderRadius: 4, borderSkipped: false },
                 ]
             },
             options: {
@@ -257,27 +270,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     } catch(e) { console.warn('Activity chart:', e); }
 
-    // ── Category Donut ──
+    // ── Category Summary (replaces 4th chart, DESIGN.md §11) ──
     try {
         const catRes = await fetch('/api/v2/charts/category-breakdown?days=30');
         const catData = await catRes.json();
         const colors = PALETTE.slice(0, Math.max(catData.labels.length, 1));
-        new Chart(document.getElementById('category-chart'), {
-            type: 'doughnut',
-            data: {
-                labels: catData.labels,
-                datasets: [{ data: catData.values, backgroundColor: colors, borderColor: 'transparent', borderWidth: 0 }]
-            },
-            options: {
-                responsive: true,
-                cutout: '65%',
-                plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1E293B', titleColor: '#F8FAFC', bodyColor: '#CBD5E1', padding: 8, cornerRadius: 6 } }
-            }
-        });
-        document.getElementById('category-legend').innerHTML = catData.labels.map((l, i) =>
-            `<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm flex-shrink-0" style="background:${colors[i]}"></span><span class="text-slate-600 dark:text-slate-400 truncate">${l}</span><span class="text-slate-400 dark:text-slate-500 ml-auto text-xs tabular-nums">${catData.values[i]}</span></div>`
-        ).join('');
-    } catch(e) { console.warn('Category chart:', e); }
+        const total = catData.values.reduce((a, b) => a + b, 0);
+        const el = document.getElementById('category-summary');
+        if (total === 0) {
+            el.innerHTML = '<p class="text-sm text-slate-400 dark:text-slate-500">{{ t.dashboard_no_categories }} <a href="/entities/catalog" class="text-indigo-500 underline">{{ t.dashboard_browse_catalog }}</a>.</p>';
+        } else {
+            // Show top-3 in compact form. Remaining: small "+N others" line.
+            const entries = catData.labels.map((l, i) => ({ label: l, value: catData.values[i], color: colors[i] }))
+                .sort((a, b) => b.value - a.value);
+            const top3 = entries.slice(0, 3);
+            const rest = entries.length - top3.length;
+            el.innerHTML = top3.map(e => {
+                const pct = total ? Math.round(e.value / total * 100) : 0;
+                return `
+                <div class="flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-sm flex-shrink-0" style="background:${e.color}" aria-hidden="true"></span>
+                    <span class="text-sm text-slate-600 dark:text-slate-300 truncate flex-1 min-w-0">${escapeHtml(e.label)}</span>
+                    <span class="text-xs text-slate-400 tabular-nums">${e.value}  ·  ${pct}%</span>
+                </div>`;
+            }).join('') + (rest > 0 ? `<div class="text-xs text-slate-400 pt-1">+ ${rest} {{ t.dashboard_others }}</div>` : '');
+        }
+    } catch(e) { console.warn('Category summary:', e); }
 
     // ── Points Trend (30 days) ──
     try {
@@ -317,34 +335,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('stat-points').textContent = lastBalance;
     } catch(e) { console.warn('Points trend:', e); }
 
-    // ── Completion Rate Gauge + Sparkline ──
+    // ── Completion Rate Summary (replaces 4th chart, DESIGN.md §11) ──
     try {
         const rateRes = await fetch('/api/v2/charts/completion-rate?days=7');
         const rateData = await rateRes.json();
         const rate = rateData.overall_rate;
-        const gaugeColor = rate >= 75 ? '#2F7657' : rate >= 40 ? '#9A6415' : '#A83B4A';
-        new Chart(document.getElementById('gauge-chart'), {
-            type: 'doughnut',
-            data: { datasets: [{ data: [rate, 100 - rate], backgroundColor: [gaugeColor, '#E2E8F0'], borderWidth: 0, borderRadius: 100 }] },
-            options: { responsive: true, cutout: '78%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
-        });
-        document.getElementById('gauge-stats').innerHTML =
-            `<div class="text-2xl font-bold tabular-nums" style="color:${gaugeColor}">${rate}%</div>
-             <div class="text-slate-500 dark:text-slate-400">${rateData.completed_tasks} / ${rateData.total_tasks} tasks</div>`;
-
-        new Chart(document.getElementById('rate-sparkline'), {
-            type: 'line',
-            data: {
-                labels: rateData.labels,
-                datasets: [{ data: rateData.rates, borderColor: gaugeColor, borderWidth: 2, fill: false, tension: 0.3, pointRadius: 0 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } }
-            }
-        });
-    } catch(e) { console.warn('Completion rate:', e); }
+        const big = document.getElementById('completion-rate-big');
+        big.textContent = rate + '%';
+        big.style.color = rate >= 75 ? '#2F7657' : rate >= 40 ? '#9A6415' : '#A83B4A';
+        document.getElementById('completion-stats').innerHTML =
+            `<div class="flex justify-between"><span>{{ t.dashboard_completion_completed }}</span><span class="font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">${rateData.completed_tasks}</span></div>
+             <div class="flex justify-between"><span>{{ t.dashboard_completion_total }}</span><span class="font-medium text-slate-700 dark:text-slate-300 tabular-nums">${rateData.total_tasks}</span></div>`;
+    } catch(e) { console.warn('Completion summary:', e); }
 
     // ── XP Sparkline ──
     try {

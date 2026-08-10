@@ -29,7 +29,7 @@
             <span class="text-xs font-mono text-indigo-400">{{ (my_achievements|length / 13 * 100)|int }}%</span>
         </div>
         <div class="w-full h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
-            <div class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 rounded-full transition-all duration-700 relative"
+            <div class="h-full bg-amber-500 rounded-full relative"
                  style="width: {{ (my_achievements|length / 13 * 100)|int }}%">
                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
             </div>
@@ -40,7 +40,7 @@
     <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">My Achievements</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {% for ach in my_achievements %}
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 transition-all hover:shadow-md
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5
                     {% if ach.is_hidden %}opacity-50{% endif %}">
             <div class="flex items-start justify-between mb-2">
                 <div class="w-10 h-10 rounded-xl bg-{{ ach.color }}-100 dark:bg-{{ ach.color }}-900/40 flex items-center justify-center text-lg">

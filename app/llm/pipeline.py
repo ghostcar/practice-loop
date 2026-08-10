@@ -7,7 +7,7 @@ import contextlib
 import json
 import logging
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +21,11 @@ from app.llm.training_prompts import (
     PLAN_DAY_SYSTEM,
     SUGGEST_NEXT_DAY_SYSTEM,
 )
-from app.llm.validator import get_allowed_ids, validate_llm_response
+from app.llm.validator import (
+    get_allowed_ids,
+    validate_llm_response,
+    validate_params_against_schema,
+)
 from app.models.activity_log import ActivityLog
 from app.models.llm_config import LLMProviderConfig
 from app.models.training import TrainingDay
@@ -29,6 +33,25 @@ from app.models.training import TrainingDay
 logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
+# REM §7.5: TTL on retained raw LLM responses — 30 days is a sensible default
+# for "debug for a while, then forget". Configurable per-companies per ADR.
+RAW_RESPONSE_TTL_DAYS = 30
+
+
+def _resolve_raw_response(config: LLMProviderConfig, raw: str) -> tuple[str | None, datetime | None]:
+    """Apply REM §7.5 / ADR-034 retention policy.
+
+    Returns (raw_response_to_store, expires_at_or_None).
+    If `store_raw_response` is False (or raw is empty) → returns (None, None).
+    Otherwise → returns (raw, now + TTL).
+    """
+    if not getattr(config, "store_raw_response", True):
+        return None, None
+    if not raw:
+        return None, None
+    expires = datetime.now(UTC) + timedelta(days=RAW_RESPONSE_TTL_DAYS)
+    return raw, expires
+
 
 _RULES = """\
 1. Choose based on user's recent history, stats, desire levels, and active penalties.
@@ -125,13 +148,23 @@ async def generate_task(
     if validation_errors:
         raise ValueError(f"LLM response validation failed: {'; '.join(validation_errors)}")
 
+    # Validate params against the entity's params_schema (REM §7.4).
+    # Look up schema from the context to avoid a second DB roundtrip.
+    entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
+    schema = entities_by_id.get(str(entity_id), {}).get("params_schema") if entity_id else None
+    schema_errors = validate_params_against_schema(params, schema)
+    if schema_errors:
+        raise ValueError(f"LLM params fail entity schema: {'; '.join(schema_errors)}")
+
+    raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
     log = ActivityLog(
         user_id=user_id,
         session_id=session_id,
         entity_id=uuid.UUID(entity_id) if entity_id else None,
         status="pending",
         user_prompt=custom_prompt or context_text[:500],
-        raw_llm_response=raw_response,
+        raw_llm_response=raw_to_store,
+        raw_response_expires_at=raw_expires,
         cleaned_response=parsed,
         selected_entity_name=entity_name,
         selected_params=params,
@@ -223,12 +256,14 @@ async def generate_daily_plan(
             for i, s in enumerate(raw_subtasks)
         ]
 
+        raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
         log = ActivityLog(
             user_id=user_id,
             entity_id=uuid.UUID(entity_id_str) if entity_id_str else None,
             status="pending",
             user_prompt=f"Training day plan for {target_date}",
-            raw_llm_response=raw_response,
+            raw_llm_response=raw_to_store,
+            raw_response_expires_at=raw_expires,
             cleaned_response=parsed,
             selected_entity_name=entity_name,
             selected_params=params,

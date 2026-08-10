@@ -4,6 +4,25 @@
 > При расхождении — верхний документ главнее.
 > `tracker-spec.md` сохраняется как историческая спецификация прототипа.
 
+### 0. Архитектурный bif v0.8-actual ↔ v0.7-spec (зафиксировано в Сессии 37)
+
+**Актуальная кодовая база v0.8.actual сознательно расходится с целевой спецификацией
+`REMEDIATION_SPEC.md` (v0.7-spec) в 6 пунктах.** Это — решение владельца, оформленное
+как ADR-029–034 (см. `memory/DECISIONS.md`, `memory/OPEN_QUESTIONS.md` Q7). Не регрессия.
+
+| # | Что в SPEC v0.7 | Что в коде v0.8-actual | ADR |
+|---|---|---|---|
+| 1 | 8 таблиц (PracticeTemplate / PracticeVariant / UserPractice / Plan / …) | 1 таблица `entities` + `user_entity_opt_in`; без версионирования | ADR-031 |
+| 2 | Остановка атомарна; отрицательные баллы выключены по умолчанию | Прерывание всегда со штрафом | ADR-029 |
+| 3 | `raw_llm_response` хранение выключено; debug.payload шифруется + `expires_at` | Хранится по умолчанию (флаг `store_raw_response` — не реализован в v0.8) | ADR-034 |
+| 4 | Training → заменяется «Планом дня»; вкладка удаляется (12.3) | Training — отдельная страница с `TrainingDay`/`TrainingLogEntry` | ADR-032 |
+| 5 | Onboarding secondary (Points/Inventory/Schedule/TG) — через «Ещё» + feature flags | Всё в главной навигации | ADR-033 |
+| 6 | Навигация: «Сегодня / Каталог / История / Ещё» (12.1) | 6 пунктов: dashboard / tasks / training / catalog / points / admin | ADR-033 |
+
+**При работе с кодом:** следуй фактическому состоянию (`AGENTS.md` + `memory/STATUS.md`).
+**При пересмотре архитектуры:** владелец должен явно отменить соответствующий ADR —
+это потребует миграций и слома обратной совместимости.
+
 ## 1. Цель и роль
 
 Ты — эксперт по Python-разработке (FastAPI, SQLAlchemy 2.0, HTMX, LLM-интеграции, Docker).

@@ -45,6 +45,9 @@ class ActivityLog(Base):
     )  # pending / completed / interrupted
     user_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_llm_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_response_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )  # REM §7.5 — TTL on raw payload (None = no expiry / retained)
     cleaned_response: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # cleaned_response: {"entity_id": ..., "params": ..., "reasoning": ...}
     selected_entity_name: Mapped[str | None] = mapped_column(String(500), nullable=True)
