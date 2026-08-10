@@ -41,12 +41,14 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">Initialize the catalog and provider presets</p>
             <div class="flex gap-2">
                 <form action="/admin/seed-entities" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit"
                             class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
                         Seed 30+ Entities
                     </button>
                 </form>
                 <form action="/admin/seed-llm-presets" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit"
                             class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium">
                         Seed LLM Presets

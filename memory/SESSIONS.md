@@ -650,3 +650,20 @@
 ### Тесты (+5, 243→248)
 - `TestSeedScriptsNoHardcodedCredentials` в `tests/test_config.py`: пароль не в файлах; нет `user:pass@` в connection string (regex); fail-fast через subprocess (seed_training без env → exit 1; seed_prod с `--database-url` при пустом env проходит проверку креденшелов и падает на коннекте — флаг не мёртвый).
 - **248/248 тестов ✅**, ruff ✅, format ✅.
+
+
+## 2026-08-10 — Сессия 52: CSRF 403 на /admin/seed-entities — старый образ + формы без hidden-поля
+
+- Пользователь: обновил контейнеры после смены пароля БД, но `/admin/seed-entities` → `{"detail":"CSRF token missing or invalid"}`.
+
+### Диагноз: две причины
+1. **Контейнер крутит старый образ** (`docker compose up -d` без `--build`). Проверка `docker exec tracker-app-1 grep ...`: в `/app/app/security.py` есть `CSRF_FORM_FIELD` (был объявлен и до S48), но НЕТ `async def verify_csrf`, в `templates_setup.py` НЕТ context processor — это код до Session 48. Dockerfile `COPY app/` запекает код в образ при сборке; `up -d` лишь пересоздаёт контейнер из того же образа. → нужен `docker compose up -d --build`.
+2. **Код: 7 шаблонов с native POST-формами без hidden `csrf_token`** — admin (seed-entities, seed-llm-presets), achievements (hide), llm_configs (set-active, delete, add), my_entities (create, publish, delete), notifications (read), privacy (delete), sessions (new, start, end). В Session 48/39 hidden-поля добавили только в tasks/training/catalog/base — остальные пропущены, поэтому на деплое даже с новым кодом эти POST-формы дают 403 (native-форма не шлёт заголовок X-CSRF-Token).
+
+### Фикс
+- Добавлены `<input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">` во все 14 форм (7 шаблонов). login.html/register.html сознательно не тронуты — неаутентифицированные запросы пропускают CSRF (нет access_token cookie).
+- **+3 регрессионных теста**: `test_all_native_post_forms_have_csrf_hidden_field` (статическая проверка всех шаблонов: каждый method=post содержит hidden, login/register exempt); `test_admin_seed_with_form_csrf_token_passes` (admin POST /admin/seed-entities с form-encoded csrf_token → 303 + сущности реально созданы); `test_admin_seed_without_csrf_field_rejected` (без поля → 403). Ревью: эвристика теста упрощена (slice до первого `</form>`, nested forms запрещены валидным HTML).
+- **251/251 тестов ✅**, ruff ✅, format ✅.
+
+### Действие владельца (деплой)
+- На VPS: `cd ~/tracker && git pull && docker compose up -d --build` — именно `--build`, чтобы образ пересобрался с новым кодом (иначе старый код продолжит давать 403).

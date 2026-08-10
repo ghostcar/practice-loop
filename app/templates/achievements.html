@@ -47,6 +47,7 @@
                     🏆
                 </div>
                 <form action="/achievements/{{ ach.id }}/hide" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         {{ 'Show' if ach.is_hidden else 'Hide' }}
                     </button>

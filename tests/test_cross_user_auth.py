@@ -8,8 +8,10 @@ from datetime import date, time
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.main import app
 from app.models.activity_log import ActivityLog
 from app.models.calendar import AvailabilityWindow, CalendarTemplate
 from app.models.entity import Entity
@@ -391,6 +393,83 @@ async def test_non_admin_cannot_access_admin(auth_client: AsyncClient):
 async def test_non_admin_cannot_seed(auth_client: AsyncClient):
     """Regular user cannot seed entities."""
     response = await auth_client.post("/admin/seed-entities", follow_redirects=False)
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_admin_seed_with_form_csrf_token_passes(db_session: AsyncSession):
+    """Admin POST /admin/seed-entities with form-encoded csrf_token is accepted (S51).
+
+    Regression for the reported bug: native form POSTs without a hidden
+    csrf_token field returned 403 'CSRF token missing or invalid'.
+    """
+    import secrets
+
+    from httpx import ASGITransport, AsyncClient
+
+    from app.auth import create_access_token, hash_password
+    from app.models.user import User
+
+    admin = User(
+        email="admin@example.com",
+        password_hash=hash_password("secret123"),
+        locale="en",
+        theme="dark",
+        role="admin",
+    )
+    db_session.add(admin)
+    await db_session.flush()
+
+    token = create_access_token(admin.id)
+    csrf = secrets.token_hex(32)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Cookie": f"access_token={token}; csrf_token={csrf}"},
+    ) as client:
+        # No X-CSRF-Token header — exactly like a native HTML form submit
+        response = await client.post(
+            "/admin/seed-entities",
+            data={"csrf_token": csrf},
+            follow_redirects=False,
+        )
+    assert response.status_code == 303
+
+    # Entities were actually seeded
+    result = await db_session.execute(select(Entity))
+    assert result.scalars().first() is not None
+
+
+@pytest.mark.asyncio
+async def test_admin_seed_without_csrf_field_rejected(db_session: AsyncSession):
+    """Admin POST /admin/seed-entities without csrf_token form field → 403 (S51)."""
+    import secrets
+
+    from httpx import ASGITransport, AsyncClient
+
+    from app.auth import create_access_token, hash_password
+    from app.models.user import User
+
+    admin = User(
+        email="admin2@example.com",
+        password_hash=hash_password("secret123"),
+        locale="en",
+        theme="dark",
+        role="admin",
+    )
+    db_session.add(admin)
+    await db_session.flush()
+
+    token = create_access_token(admin.id)
+    csrf = secrets.token_hex(32)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Cookie": f"access_token={token}; csrf_token={csrf}"},
+    ) as client:
+        response = await client.post("/admin/seed-entities", data={}, follow_redirects=False)
     assert response.status_code == 403
 
 

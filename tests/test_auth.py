@@ -195,3 +195,42 @@ async def test_json_api_post_without_csrf_header_rejected(async_client: AsyncCli
 
     response = await async_client.post("/api/v2/points/profiles", json=_PROFILE_JSON)
     assert response.status_code == 403
+
+
+# --- Regression (S51): every native POST form must carry a hidden csrf_token ---
+
+
+def test_all_native_post_forms_have_csrf_hidden_field():
+    """Static check: every `<form ... method="post">` in authenticated templates
+    must include `<input ... name="csrf_token">`. Missed forms (admin seed,
+    sessions, my_entities, llm_configs, privacy, notifications, achievements)
+    silently returned 403 on a fresh deploy.
+
+    login/register are exempt: unauthenticated requests skip CSRF verification.
+    """
+    import re
+    from pathlib import Path
+
+    templates_dir = Path(__file__).resolve().parent.parent / "app" / "templates"
+    exempt = {"login.html", "register.html"}
+    form_re = re.compile(r"<form[^>]*method=['\"]post['\"]")
+    hidden_re = re.compile(r"name=['\"]csrf_token['\"]")
+
+    missing: list[str] = []
+    for path in sorted(templates_dir.glob("*.html")):
+        if path.name in exempt:
+            continue
+        content = path.read_text(encoding="utf-8")
+        forms = list(form_re.finditer(content))
+        for form in forms:
+            # The hidden input must appear inside this <form>...</form> block.
+            # Valid HTML forbids nested forms, so slicing to the first
+            # </form> is unambiguous.
+            closing = content.find("</form>", form.end())
+            if closing == -1:
+                raise AssertionError(f"{path.name}: unclosed <form> tag")
+            form_body = content[form.end() : closing]
+            if not hidden_re.search(form_body):
+                missing.append(f"{path.name}: {form.group(0)[:60]}...")
+
+    assert not missing, "POST forms without csrf_token hidden field:\n" + "\n".join(missing)

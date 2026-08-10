@@ -1,6 +1,14 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 51).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 52).
+
+## Сессия 52: CSRF-покрытие оставшихся native форм (admin seed и др.) + rebuild контейнера
+
+- [x] **Симптом**: `/admin/seed-entities` → 403 «CSRF token missing or invalid» после обновления контейнеров.
+- [x] **Причина 1 (деплой)**: `docker compose up -d` НЕ пересобирает образ — Dockerfile `COPY app/` запекает код при сборке. Контейнер крутил код до Session 48 (нет `async def verify_csrf`, нет context processor) → native POST без заголовка всегда 403. Фикс: `docker compose up -d --build`.
+- [x] **Причина 2 (код)**: 7 шаблонов (admin, achievements, llm_configs, my_entities, notifications, privacy, sessions) содержали native `<form method="post">` БЕЗ hidden `csrf_token` — пропущены в Session 48 (покрыли только tasks/training/catalog/base). Добавлены hidden-поля во все 14 форм; login/register не требуют (неаутентифицированные запросы пропускают CSRF).
+- [x] +3 регрессионных теста: статическая проверка всех шаблонов (каждый method=post содержит hidden csrf_token), интеграционный admin-тест (POST /admin/seed-entities с form-token → 303 + реальный seed), admin без form-token → 403.
+- [x] 251/251 тестов, ruff 0, format clean.
 
 ## Сессия 51: PostgreSQL JSONB-фикс (migration 017) + удаление пароля из git history
 

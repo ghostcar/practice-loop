@@ -24,6 +24,7 @@
             </div>
             {% if not n.is_read %}
             <form action="/notifications/{{ n.id }}/read" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                 <button class="text-xs text-indigo-500 hover:text-indigo-400">Read</button>
             </form>
             {% endif %}
