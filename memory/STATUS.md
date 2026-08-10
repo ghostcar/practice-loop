@@ -1,6 +1,15 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 52).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 53).
+
+## Сессия 53: страница /import — навигация + UX (drag&drop, результат импорта)
+
+- [x] **/import добавлена в навигацию** (base.html, ключ `nav_import` уже был в i18n, но ссылки не было) + `active_nav: "import"`.
+- [x] **Фикс латентного краша**: `request.url_root` не существует в Starlette 1.4.1 → `request.base_url` (страница /import падала бы с AttributeError при открытии).
+- [x] **UX**: карточки шаблонов показывают подсказку «Колонки:» с полями; upload-зона — drag&drop с подсветкой, имя выбранного файла, кнопка Import disabled до выбора файла; JSON-ответ `/import/upload` теперь рендерится красивым баннером (импортировано/пропущено), ошибки — с реальным текстом (`data.detail`), не-JSON ответы — raw text.
+- [x] +3 i18n ключа (import_fields_hint, import_result_imported, import_result_skipped, import_result_error) в en/ru.
+- [x] +2 теста: /import рендерится с nav-ссылкой и drop-zone; у всех шаблонов есть CSV/JSON download + API-эндпоинт отдаёт CSV с Content-Disposition.
+- [x] 253/253 тестов, ruff 0, format clean.
 
 ## Сессия 52: CSRF-покрытие оставшихся native форм (admin seed и др.) + rebuild контейнера
 

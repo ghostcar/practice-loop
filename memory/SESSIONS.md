@@ -652,6 +652,20 @@
 - **248/248 тестов ✅**, ruff ✅, format ✅.
 
 
+## 2026-08-10 — Сессия 53: страница /import — навигация + UX для ручной работы
+
+- Пользователь: «сделаем отдельную страницу удобную для ручной работы — скачать шаблон, загрузить файл с данными».
+- **Найдено**: страница `/import` уже существует (роут + `import_data.html`) со скачиванием шаблонов/загрузкой/экспортом/API-доками, но на неё НЕТ ссылки в навигации (nav: dashboard/tasks/training/catalog/points/admin) — потому пользователь её не видел. Пользователь выбрал «доработать + добавить в навигацию» (не новую страницу).
+
+### Сделано
+- **base.html**: ссылка `Import` в nav (`{{ t.nav_import }}` — ключ уже существовал в i18n) + подсветка активной вкладки.
+- **app/api/import_data.py**: `active_nav: "import"` в контекст; **фикс латентного краша** — `str(request.url_root)` → `str(request.base_url)` (в Starlette 1.4.1 `url_root` не существует; раньше открытие /import падало бы с AttributeError — тестов на страницу не было).
+- **import_data.html**: карточки шаблонов с подсказкой «Колонки:» (поля в code-блоке); upload-зона — drag&drop с подсветкой при dragenter/dragover, отображение имени выбранного файла, кнопка Import disabled до выбора файла; обработчик `htmx:afterSwap` парсит JSON-ответ `/import/upload` и рендерит баннер результата (зелёный: N строк импортировано + M пропущено; красный: `import_result_error` + `data.detail` — раньше HTMX вставил бы сырой JSON текстом).
+- **i18n**: +4 ключа (import_fields_hint, import_result_imported, import_result_skipped, import_result_error) в en/ru.
+- **Тесты (+2)**: /import рендерится (nav-ссылка, aria-current, drop-zone, upload-result, download-ссылки csv/json); API-эндпоинт `/import/template/entities?format=csv` отдаёт CSV с Content-Disposition.
+- **253/253 тестов ✅**, ruff ✅, format ✅. Ревью: ошибки импорта теперь показывают реальный текст (data.detail), а не «Error».
+
+
 ## 2026-08-10 — Сессия 52: CSRF 403 на /admin/seed-entities — старый образ + формы без hidden-поля
 
 - Пользователь: обновил контейнеры после смены пароля БД, но `/admin/seed-entities` → `{"detail":"CSRF token missing or invalid"}`.

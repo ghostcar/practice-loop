@@ -291,8 +291,9 @@ async def import_page(
             "theme": theme,
             "templates": {k: {"label": v["label"], "csv_headers": v["csv_headers"]} for k, v in TEMPLATES.items()},
             "export_types": list(EXPORT_TYPES),
+            "active_nav": "import",
             # Used in clipboard URL — derived from request, NOT hardcoded localhost.
-            "app_url": str(request.url_root).rstrip("/"),
+            "app_url": str(request.base_url).rstrip("/"),
         },
     )
 

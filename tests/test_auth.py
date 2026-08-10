@@ -197,6 +197,41 @@ async def test_json_api_post_without_csrf_header_rejected(async_client: AsyncCli
     assert response.status_code == 403
 
 
+# --- Import page (S53): /import reachable from nav + template/upload UI ---
+
+
+@pytest.mark.asyncio
+async def test_import_page_renders_with_nav_link(auth_client: AsyncClient):
+    """Import page is reachable and the navbar links to it."""
+    response = await auth_client.get("/import", follow_redirects=False)
+    assert response.status_code == 200
+
+    # Nav link present on the page itself (active state)
+    assert 'href="/import"' in response.text
+    assert 'aria-current="page"' in response.text
+
+    # Template cards + upload UI render
+    assert "/import/template/" in response.text
+    assert "drop-zone" in response.text
+    assert "upload-result" in response.text
+
+
+@pytest.mark.asyncio
+async def test_import_page_has_download_links(auth_client: AsyncClient):
+    """Every template type offers CSV + JSON download links."""
+    response = await auth_client.get("/import", follow_redirects=False)
+    assert response.status_code == 200
+
+    for fmt in ("csv", "json"):
+        assert f"?format={fmt}" in response.text
+
+    # The API template endpoint itself serves a downloadable CSV
+    tpl = await auth_client.get("/import/template/entities?format=csv")
+    assert tpl.status_code == 200
+    assert "Content-Disposition" in tpl.headers
+    assert "type,real_name" in tpl.text
+
+
 # --- Regression (S51): every native POST form must carry a hidden csrf_token ---
 
 

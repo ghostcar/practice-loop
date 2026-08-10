@@ -165,6 +165,7 @@
                     <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>{{ t.training_title }}</a>
                     <a href="/entities/catalog" class="{{ nav_class }}{{ nav_active if active_nav == 'catalog' else nav_inactive }}"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>{{ t.catalog_title }}</a>
                     <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }}"{% if active_nav == 'points' %} aria-current="page"{% endif %}>{{ t.nav_dashboard if false else 'Points' }}</a>
+                    <a href="/import" class="{{ nav_class }}{{ nav_active if active_nav == 'import' else nav_inactive }}"{% if active_nav == 'import' %} aria-current="page"{% endif %}>{{ t.nav_import }}</a>
                     <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }}"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ t.admin_title_page }}</a>
                     <a href="/auth/logout" class="text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400">{{ t.nav_logout }}</a>
                 {% else %}
