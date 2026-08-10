@@ -158,7 +158,7 @@ docker compose exec app alembic current        # 016_add_store_raw_response (hea
 
 Открой в браузере (после шага 8, чтобы был доступ через домен):
 ```
-https://your-domain.com/auth/register
+https://your-domain.com/register
 ```
 
 Создай аккаунт. Запомни email — он нужен для seed.
@@ -665,7 +665,7 @@ curl -sI https://your-domain.com/ | head -3
 # 3. Статика грузится
 curl -sI https://your-domain.com/static/tailwindcss.js | head -3
 # 4. Логин-страница рендерится
-curl -sS https://your-domain.com/auth/login | grep -E '<title>|<h1' | head -3
+curl -sS https://your-domain.com/login | grep -E '<title>|<h1' | head -3
 # 5. БД активна
 docker compose exec db pg_isready -U tracker -d tracker
 ```

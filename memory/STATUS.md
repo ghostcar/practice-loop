@@ -1,6 +1,19 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 54).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 55).
+
+## Сессия 55: Внешний аудит (P0) + диеты с LLM-контролем
+
+- [x] **P0 deps**: pyproject `httpx<0.28`; requirements.txt/lock перегенерированы pip-compile (httpx==0.27.2 + openai==1.59.9 совместимы; lock чист, без apt-мусора); CI `ruff==0.5.7` + docker build job (проверяет seed/cli внутри образа).
+- [x] **P0 CSRF**: dashboard больше не перевыпускает CSRF-cookie после рендера; `ensure_csrf_cookie` ставит только если нет; `GET /` больше не 500 (get_optional_user переживает прямой вызов, home через ensure_csrf_cookie).
+- [x] **P0 safety gate LLM**: промпт subtasks «3-5» → «1-5 при необходимости»; `format_context_abstract` не раскрывает реальные имена из истории (+entity_id в history); `entity_name` из LLM заменяется каноническим серверным (generate_task + generate_daily_plan); **training-пайплайн теперь тоже уважает llm_mode abstract** (generate_daily_plan → format_context_abstract, analyze_training_day → entity_id вместо имени).
+- [x] **Целостность**: interrupted training-задачу нельзя завершить (complete_once атомарный UPDATE WHERE status='pending', rowcount=0 → idempotent); уникальный индекс `uq_points_txn_activity_log` (не даёт двойного начисления); `activity_logs.completed_at` (импорт + атомарный complete); `ScheduleRuleCreate.entity_id` → UUID (PG больше не 500).
+- [x] **Cross-user**: `/api/v2/points/balance` скрывает чужие thresholds; импорт Entity по имени — только owner/public.
+- [x] **Ops/security**: login/CSRF куки Secure в production; logout только POST; TTL-очистка raw payload — `cleanup_expired_raw_responses(db)` в scheduler (каждые 6ч); Dockerfile включает cli.py/seed*.py; DEPLOY_VPS/README → /register /login; UI llm_configs: переключатели llm_mode + store_raw (+ эндпоинт `/llm-configs/{id}/update`).
+- [x] **Диеты v2 (LLM)**: `diets.direction` (направление: weight_loss/muscle_gain/health/…), `last_evaluation`/`evaluated_at`; `diet_consumptions` (факт: что реально съедено, CRUD + limit 200); LLM-генерация диеты (`generate_diet` — санитизация: cap 20 items, длины, qty>0); LLM-оценка adherence (`evaluate_diet` — score 0-100, findings, adjustments add/modify/remove по точному имени, никаких свободных id от LLM); UI diets.html: select направления, форма AI-генерации, журнал питания, блок оценки.
+- [x] **Латентный баг**: `SYSTEM_PROMPT_TEMPLATE` — неэкранированные `{`/`}` в JSON-примере ломали `.format()` (KeyError) → экранированы (test поймал).
+- [x] **Миграция 019** проверена на PG15: upgrade 001→019, downgrade 019→018, повторный upgrade, ORM-цикл (Diet/DietItem/DietConsumption с direction).
+- [x] **Тесты**: +17 (tests/test_audit_s55.py) — 291/291 ✅, ruff ✅.
 
 ## Сессия 54: drag&drop везде, изображения инвентаря, фото-отчёты, диеты, параллельные тренировки
 

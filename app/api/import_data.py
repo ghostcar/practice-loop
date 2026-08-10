@@ -476,7 +476,15 @@ async def _import_entities(rows: list[dict], db: AsyncSession, user: User, mode:
             parent_id = None
             parent_code = row.get("parent_code")
             if parent_code:
-                p_result = await db.execute(select(Entity.id).where(Entity.real_name == str(parent_code)).limit(1))
+                # Only link to own/public entities — never to another user's private one.
+                p_result = await db.execute(
+                    select(Entity.id)
+                    .where(
+                        Entity.real_name == str(parent_code),
+                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
+                    )
+                    .limit(1)
+                )
                 p_row = p_result.first()
                 if p_row:
                     parent_id = p_row[0]
@@ -513,7 +521,14 @@ async def _import_schedule(rows: list[dict], db: AsyncSession, user: User, mode:
             entity_id = None
             entity_name = row.get("entity_name") or row.get("entity_code")
             if entity_name:
-                e_result = await db.execute(select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1))
+                e_result = await db.execute(
+                    select(Entity.id)
+                    .where(
+                        Entity.real_name == str(entity_name),
+                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
+                    )
+                    .limit(1)
+                )
                 e_row = e_result.first()
                 if e_row:
                     entity_id = e_row[0]
@@ -549,7 +564,14 @@ async def _import_points_transactions(rows: list[dict], db: AsyncSession, user: 
             entity_id = None
             entity_name = row.get("entity_name") or row.get("entity_code")
             if entity_name:
-                e_result = await db.execute(select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1))
+                e_result = await db.execute(
+                    select(Entity.id)
+                    .where(
+                        Entity.real_name == str(entity_name),
+                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
+                    )
+                    .limit(1)
+                )
                 e_row = e_result.first()
                 if e_row:
                     entity_id = e_row[0]
@@ -602,7 +624,14 @@ async def _import_activity_logs(rows: list[dict], db: AsyncSession, user: User, 
             entity_id = None
             entity_name = row.get("entity_name") or row.get("entity_code")
             if entity_name:
-                e_result = await db.execute(select(Entity.id).where(Entity.real_name == str(entity_name)).limit(1))
+                e_result = await db.execute(
+                    select(Entity.id)
+                    .where(
+                        Entity.real_name == str(entity_name),
+                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
+                    )
+                    .limit(1)
+                )
                 e_row = e_result.first()
                 if e_row:
                     entity_id = e_row[0]

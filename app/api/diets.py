@@ -1,10 +1,13 @@
-"""Diets API: combinable diet plans with food items.
+"""Diets API: combinable diet plans with food items + actual consumption.
 
-A user may create several diets (each aimed at a different goal), toggle any
-subset active at once (combining diets), and reorder items within a diet.
+A user may create several diets (each aimed at a different direction/goal),
+toggle any subset active at once (combining diets), reorder items within a
+diet, log what they actually ate (diet_consumptions), and ask the LLM to
+generate a diet or evaluate adherence against the plan.
 """
 
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -16,11 +19,17 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.diet import Diet, DietItem
+from app.llm.pipeline import evaluate_diet, generate_diet, get_active_llm_config
+from app.llm.repair import JsonRepairError
+from app.models.diet import Diet, DietConsumption, DietItem
 from app.models.user import User
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/diets", tags=["diets"])
+
+# Allowed diet directions (why the diet exists). Free-form goal text is still
+# accepted, this list powers the UI selector + LLM generation.
+DIET_DIRECTIONS = {"weight_loss", "muscle_gain", "health", "energy", "endurance", "general", "other"}
 
 
 # ── Schemas ──
@@ -28,6 +37,7 @@ router = APIRouter(prefix="/diets", tags=["diets"])
 
 class DietCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
+    direction: str | None = Field(default=None, max_length=50)
     goal: str | None = Field(default=None, max_length=500)
     description: str | None = Field(default=None, max_length=5000)
     is_active: bool = False
@@ -35,9 +45,30 @@ class DietCreate(BaseModel):
 
 class DietUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
+    direction: str | None = Field(default=None, max_length=50)
     goal: str | None = Field(default=None, max_length=500)
     description: str | None = Field(default=None, max_length=5000)
     is_active: bool | None = None
+
+
+class DietGenerateRequest(BaseModel):
+    direction: str | None = Field(default=None, max_length=50)
+    goal: str | None = Field(default=None, max_length=500)
+    preferences: str | None = Field(default=None, max_length=1000)
+
+
+class DietEvaluateRequest(BaseModel):
+    days: int = Field(default=7, ge=1, le=30)
+
+
+class ConsumptionCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=300)
+    quantity: float | None = None
+    unit: str | None = Field(default=None, max_length=20)
+    meal_time: str | None = Field(default=None, max_length=30)
+    diet_id: uuid.UUID | None = None
+    consumed_date: date | None = None
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class DietItemCreate(BaseModel):
@@ -79,14 +110,31 @@ def _diet_dict(d: Diet, with_items: bool = True) -> dict:
     out = {
         "id": str(d.id),
         "name": d.name,
+        "direction": d.direction,
         "goal": d.goal,
         "description": d.description,
         "is_active": d.is_active,
+        "last_evaluation": d.last_evaluation,
+        "evaluated_at": d.evaluated_at.isoformat() if d.evaluated_at else None,
         "created_at": d.created_at.isoformat() if d.created_at else None,
     }
     if with_items:
         out["items"] = [_item_dict(i) for i in d.items]
     return out
+
+
+def _consumption_dict(c: DietConsumption) -> dict:
+    return {
+        "id": str(c.id),
+        "name": c.name,
+        "quantity": c.quantity,
+        "unit": c.unit,
+        "meal_time": c.meal_time,
+        "diet_id": str(c.diet_id) if c.diet_id else None,
+        "consumed_date": c.consumed_date.isoformat(),
+        "notes": c.notes,
+        "created_at": c.created_at.isoformat() if c.created_at else None,
+    }
 
 
 # ── Page ──
@@ -106,6 +154,7 @@ async def diets_page(
         select(Diet).where(Diet.user_id == user.id).order_by(Diet.is_active.desc(), Diet.created_at.asc())
     )
     diets = [_diet_dict(d) for d in result.scalars().all()]
+    active_config = await get_active_llm_config(db, user.id)
     return templates.TemplateResponse(
         request=request,
         name="diets.html",
@@ -116,6 +165,9 @@ async def diets_page(
             "locale": locale,
             "theme": theme,
             "diets": diets,
+            "active_config": active_config,
+            "directions": sorted(DIET_DIRECTIONS),
+            "today": date.today().isoformat(),
             "active_nav": "diets",
         },
     )
@@ -268,3 +320,122 @@ async def reorder_diet_items(
         db.add(items[iid])
     await db.flush()
     return {"status": "ok"}
+
+
+# ── Actual consumption (the «fact» side) ──
+
+
+@router.get("/api/consumptions")
+async def list_consumptions(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    consumed_date: date | None = None,
+):
+    """List what the user actually ate; filter by date if given."""
+    stmt = select(DietConsumption).where(DietConsumption.user_id == user.id)
+    if consumed_date:
+        stmt = stmt.where(DietConsumption.consumed_date == consumed_date)
+    stmt = stmt.order_by(DietConsumption.consumed_date.desc(), DietConsumption.created_at).limit(200)
+    result = await db.execute(stmt)
+    return [_consumption_dict(c) for c in result.scalars().all()]
+
+
+@router.post("/api/consumptions")
+async def create_consumption(
+    data: ConsumptionCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Log a food the user actually consumed."""
+    if data.diet_id is not None:
+        diet_result = await db.execute(select(Diet).where(Diet.id == data.diet_id, Diet.user_id == user.id))
+        if diet_result.scalar_one_or_none() is None:
+            raise HTTPException(404, "Diet not found")
+    consumption = DietConsumption(
+        user_id=user.id,
+        consumed_date=data.consumed_date or date.today(),
+        **data.model_dump(exclude={"consumed_date"}),
+    )
+    db.add(consumption)
+    await db.commit()
+    await db.refresh(consumption)
+    return _consumption_dict(consumption)
+
+
+@router.delete("/api/consumptions/{consumption_id}")
+async def delete_consumption(
+    consumption_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(DietConsumption).where(DietConsumption.id == consumption_id, DietConsumption.user_id == user.id)
+    )
+    consumption = result.scalar_one_or_none()
+    if not consumption:
+        raise HTTPException(404, "Consumption not found")
+    await db.delete(consumption)
+    await db.commit()
+    return {"status": "deleted"}
+
+
+# ── LLM: generate a diet plan ──
+
+
+@router.post("/api/generate")
+async def generate_diet_plan(
+    data: DietGenerateRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Ask the LLM to create a diet for a given direction/goal/preferences."""
+    active_config = await get_active_llm_config(db, user.id)
+    if active_config is None:
+        raise HTTPException(400, "No active LLM provider configured")
+    locale = detect_locale(request, user.locale)
+    direction = data.direction if data.direction in DIET_DIRECTIONS else None
+    try:
+        diet = await generate_diet(
+            db=db,
+            user_id=user.id,
+            llm_config=active_config,
+            locale=locale,
+            direction=direction,
+            goal=data.goal,
+            preferences=data.preferences,
+        )
+    except (JsonRepairError, ValueError) as e:
+        raise HTTPException(422, str(e)) from None
+    await db.commit()
+    await db.refresh(diet)
+    return _diet_dict(diet)
+
+
+# ── LLM: evaluate adherence + adjust plan ──
+
+
+@router.post("/api/{diet_id}/evaluate")
+async def evaluate_diet_plan(
+    diet_id: uuid.UUID,
+    data: DietEvaluateRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Evaluate actual consumption against the plan and apply LLM adjustments."""
+    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
+    diet = result.scalar_one_or_none()
+    if not diet:
+        raise HTTPException(404, "Diet not found")
+    active_config = await get_active_llm_config(db, user.id)
+    if active_config is None:
+        raise HTTPException(400, "No active LLM provider configured")
+    locale = detect_locale(request, user.locale)
+    try:
+        evaluation = await evaluate_diet(db=db, diet=diet, llm_config=active_config, locale=locale, days=data.days)
+    except (JsonRepairError, ValueError) as e:
+        raise HTTPException(422, str(e)) from None
+    await db.commit()
+    await db.refresh(diet)
+    return {"evaluation": evaluation, "diet": _diet_dict(diet)}

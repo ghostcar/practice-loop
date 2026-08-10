@@ -128,7 +128,7 @@ class PointsBalanceOut(BaseModel):
 
 
 class ScheduleRuleCreate(BaseModel):
-    entity_id: str | None = None
+    entity_id: uuid.UUID | None = None
     day_of_week: int = Field(ge=0, le=7)  # 7 = every day
     start_time: time
     end_time: time | None = None

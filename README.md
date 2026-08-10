@@ -178,7 +178,7 @@ Reload nginx: `sudo systemctl reload nginx`.
 **5. Seed production data (optional):**
 
 ```bash
-# Register first at https://your-domain.com/auth/register
+# Register first at https://your-domain.com/register
 # Then seed:
 python seed_prod.py --email your@email.com --database-url postgresql+asyncpg://tracker:PASSWORD@localhost:5432/tracker
 ```

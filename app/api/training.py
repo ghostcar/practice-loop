@@ -23,6 +23,7 @@ from app.models.life import ScheduleRule
 from app.models.training import TrainingDay
 from app.models.training_log import TrainingLogEntry
 from app.models.user import User
+from app.security import complete_once
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/training", tags=["training"])
@@ -262,12 +263,11 @@ async def complete_training_task(
     log = result.scalar_one_or_none()
     if log is None or log.user_id != user.id:
         raise HTTPException(status_code=404, detail="Task not found")
-    if log.status == "completed":
-        return RedirectResponse(url="/training", status_code=303)
-    log.status = "completed"
-    db.add(log)
-    await db.flush()
-    await on_task_completed(db, user.id, log)
+    # Audit: only a `pending` task may be completed — an interrupted (or already
+    # completed) task must not grant XP/points. Uses the atomic idempotency guard.
+    outcome = await complete_once(db, log, user, on_task_completed)
+    if not outcome["idempotent"]:
+        await db.flush()
     return RedirectResponse(url="/training", status_code=303)
 
 

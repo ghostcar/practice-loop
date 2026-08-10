@@ -138,13 +138,15 @@ async def login(
         )
 
     # Create JWT and redirect to dashboard
+    from app.config import settings
+
     token = create_access_token(user.id)
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,  # True in production with HTTPS
+        secure=settings.app_env == "production",  # HTTPS-only in production
         samesite="lax",
         max_age=86400,  # 24 hours
         path="/",
@@ -153,12 +155,12 @@ async def login(
     return response
 
 
-# --- API: Logout ---
+# --- API: Logout (POST only — audit: GET logout is a CSRF/logout vector) ---
 
 
-@router.get("/auth/logout")
+@router.post("/auth/logout")
 async def logout():
-    """Clear auth cookie and redirect to home."""
+    """Clear auth cookie and redirect to home. POST only."""
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token", path="/")
     response.delete_cookie("csrf_token", path="/")

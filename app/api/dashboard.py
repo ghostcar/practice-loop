@@ -22,7 +22,7 @@ from app.models.activity_log import ActivityLog
 from app.models.notification import Notification
 from app.models.session import ActivitySession
 from app.models.user import User
-from app.security import set_csrf_cookie
+from app.security import ensure_csrf_cookie
 from app.templates_setup import templates
 
 router = APIRouter(tags=["dashboard-v2"])
@@ -90,7 +90,9 @@ async def dashboard(
             "active_nav": "dashboard",
         },
     )
-    set_csrf_cookie(response)
+    # Set CSRF cookie ONLY if absent — re-issuing it here after render used to
+    # desync the HTML meta token from the browser cookie (audit: P0 login→dashboard 403).
+    ensure_csrf_cookie(request, response)
     return response
 
 

@@ -111,12 +111,14 @@ async def get_points_balance(
     )
     txns = [PointsTransactionOut.model_validate(t) for t in result.scalars().all()]
 
-    # Get default thresholds from any entity that has them
+    # Get thresholds only from entities the user can see (own or public) —
+    # never from another user's private entity (audit: cross-user leak).
     thresholds = None
     result_e = await db.execute(
         select(Entity.gamification_config)
         .where(
             Entity.gamification_config.is_not(None),
+            (Entity.owner_id == user.id) | Entity.is_public.is_(True),
         )
         .limit(1)
     )

@@ -4,10 +4,11 @@ import hashlib
 import hmac
 import secrets
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, Request, status
 from fastapi.responses import Response
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -38,10 +39,24 @@ def set_csrf_cookie(response: Response) -> str:
         value=raw,
         httponly=False,  # JS must be able to read it for HTMX headers
         samesite="lax",
-        secure=False,  # Allow HTTP in dev; set True in production
+        secure=settings.app_env == "production",  # HTTPS-only in production
         max_age=86400,
     )
     return raw
+
+
+def ensure_csrf_cookie(request: Request, response: Response) -> str:
+    """Set the CSRF cookie only when the request doesn't already carry one.
+
+    Re-issuing a fresh token on every page render (as the dashboard used to do)
+    desynchronizes the token embedded in the HTML from the cookie the browser
+    sends on the next request, which breaks the first POST with 403. The token
+    is set once at login (or first anonymous visit) and then left untouched.
+    """
+    existing = request.cookies.get(CSRF_COOKIE_NAME)
+    if existing:
+        return existing
+    return set_csrf_cookie(response)
 
 
 async def verify_csrf(request: Request) -> None:
@@ -138,19 +153,35 @@ async def complete_once(
     user: User,
     on_complete_fn,
 ) -> dict:
-    """Idempotent task completion: only processes if status allows it.
+    """Atomically complete a task exactly once.
 
-    State integrity (audit): only a `pending` task may be completed — an
-    interrupted (or already completed) task must not grant a reward.
+    Audit hardening: an atomic ``UPDATE ... WHERE status='pending'`` (instead
+    of read-check-write) makes concurrent double-complete safe — the second
+    caller sees zero affected rows and gets an idempotent result, so a reward
+    is granted only once. Interrupted tasks keep their interrupted status and
+    never receive completion rewards.
     """
-    if log.status != "pending":
-        return {"status": f"already_{log.status}", "idempotent": True}
     if log.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
+    from app.models.activity_log import ActivityLog
+
+    now = datetime.now(UTC)
+    res = await db.execute(
+        update(ActivityLog)
+        .where(
+            ActivityLog.id == log.id,
+            ActivityLog.user_id == user.id,
+            ActivityLog.status == "pending",
+        )
+        .values(status="completed", completed_at=now)
+    )
+    if res.rowcount == 0:
+        await db.refresh(log)
+        return {"status": f"already_{log.status}", "idempotent": True}
+
     log.status = "completed"
-    db.add(log)
-    await db.flush()
+    log.completed_at = now
     result = await on_complete_fn(db, user.id, log)
     result["idempotent"] = False
     return result
@@ -162,15 +193,26 @@ async def interrupt_once(
     user: User,
     on_interrupt_fn,
 ) -> dict:
-    """Idempotent task interruption: only processes if status allows it."""
-    if log.status in ("interrupted", "completed"):
-        return {"status": f"already_{log.status}", "idempotent": True}
+    """Atomically interrupt a task exactly once."""
     if log.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
+    from app.models.activity_log import ActivityLog
+
+    res = await db.execute(
+        update(ActivityLog)
+        .where(
+            ActivityLog.id == log.id,
+            ActivityLog.user_id == user.id,
+            ActivityLog.status == "pending",
+        )
+        .values(status="interrupted")
+    )
+    if res.rowcount == 0:
+        await db.refresh(log)
+        return {"status": f"already_{log.status}", "idempotent": True}
+
     log.status = "interrupted"
-    db.add(log)
-    await db.flush()
     result = await on_interrupt_fn(db, user.id, log)
     result["idempotent"] = False
     return result

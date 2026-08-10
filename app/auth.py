@@ -103,7 +103,13 @@ async def get_optional_user(
     token: str | None = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User | None:
-    """Dependency: extract user or return None (no 401)."""
+    """Dependency: extract user or return None (no 401).
+
+    Safe to call both via FastAPI DI and directly (e.g. the `/` home page,
+    which has no DB session): when `token`/`db` are still Depends sentinels
+    rather than resolved values, the cookie is used and a throwaway session
+    is opened for the lookup.
+    """
     # When called directly (not via FastAPI DI), token may be a Depends object
     if token is not None and not isinstance(token, str):
         token = None
@@ -115,6 +121,14 @@ async def get_optional_user(
     user_id = decode_access_token(token)
     if user_id is None:
         return None
+
+    if not isinstance(db, AsyncSession):
+        # Direct call without DI: open a throwaway session for the lookup.
+        from app.database import async_session_factory
+
+        async with async_session_factory() as session:
+            result = await session.execute(select(User).where(User.id == user_id))
+            return result.scalar_one_or_none()
 
     result = await db.execute(select(User).where(User.id == user_id))
     return result.scalar_one_or_none()

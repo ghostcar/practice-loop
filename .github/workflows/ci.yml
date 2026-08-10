@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install ruff
+      - run: pip install ruff==0.5.7
       - run: ruff check app/ cli.py tests/ seed_prod.py
       - run: ruff format --check app/ cli.py tests/ seed_prod.py
 
@@ -85,3 +85,14 @@ jobs:
         run: alembic upgrade head
         env:
           DATABASE_URL: postgresql+asyncpg://tracker:tracker@localhost:5432/tracker_test
+
+  # ── Docker image build (P0: production deps must actually install) ──
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t tracker:ci .
+      - name: Verify seeds & CLI are inside the image
+        run: |
+          docker run --rm --entrypoint ls tracker:ci /app/seed_prod.py /app/seed_training.py /app/cli.py

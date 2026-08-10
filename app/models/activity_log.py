@@ -59,6 +59,7 @@ class ActivityLog(Base):
     actual_value: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # Points awarded for this task (for economy system)
     points_awarded: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Training
     training_day_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),

@@ -36,12 +36,32 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
+                    <form action="/llm-configs/{{ cfg.id }}/update" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <div class="flex items-center gap-3 mr-1">
+                            <select name="llm_mode" title="{{ t.llm_mode_label }}"
+                                    class="text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="full" {% if cfg.llm_mode == 'full' %}selected{% endif %}>full</option>
+                                <option value="abstract" {% if cfg.llm_mode == 'abstract' %}selected{% endif %}>abstract</option>
+                            </select>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
+                                <input type="checkbox" name="store_raw_response" value="1"
+                                       {% if cfg.store_raw_response %}checked{% endif %}
+                                       class="rounded border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-500">
+                                raw
+                            </label>
+                            <button type="submit"
+                                    class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-900 transition-colors">
+                                {{ t.llm_save }}
+                            </button>
+                        </div>
+                    </form>
                     {% if not cfg.is_active %}
                     <form action="/llm-configs/{{ cfg.id }}/set-active" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit"
                                 class="px-3 py-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors">
-                            Set Active
+                            {{ t.llm_set_active }}
                         </button>
                     </form>
                     {% endif %}
@@ -50,7 +70,7 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit"
                                 class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors">
-                            Delete
+                            {{ t.llm_delete }}
                         </button>
                     </form>
                 </div>
@@ -98,6 +118,22 @@
                     <input name="api_key" type="password"
                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                            placeholder="sk-... (leave empty for keyless providers)">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t.llm_mode_label }}</label>
+                    <select name="llm_mode"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="full">full — {{ t.llm_mode_full }}</option>
+                        <option value="abstract">abstract — {{ t.llm_mode_abstract }}</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="store_raw_response" value="1" checked
+                               class="rounded border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-500">
+                        {{ t.llm_store_raw_label }}
+                    </label>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ t.llm_store_raw_hint }}</p>
                 </div>
             </div>
             <button type="submit"

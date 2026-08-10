@@ -89,6 +89,7 @@ async def _get_recent_history(db: AsyncSession, user_id: uuid.UUID, limit: int =
         history.append(
             {
                 "id": str(log.id),
+                "entity_id": str(log.entity_id) if log.entity_id else None,
                 "entity_name": log.selected_entity_name,
                 "status": log.status,
                 "params": log.selected_params,
@@ -178,7 +179,10 @@ def format_context_abstract(context: dict) -> str:
 
     parts.append("## Recent History")
     for h in context["recent_history"]:
-        parts.append(f"- [{h['status']}] entity={h.get('entity_name', '?')[:20]} at {h.get('created_at')}")
+        # Abstract mode: real entity names MUST NOT be revealed (audit: the
+        # abstract context previously leaked them from history).
+        eid = h.get("entity_id") or h.get("id") or "?"
+        parts.append(f"- [{h['status']}] entity_id={eid} at {h.get('created_at')}")
     parts.append("")
 
     return "\n".join(parts)

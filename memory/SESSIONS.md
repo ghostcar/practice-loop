@@ -3,6 +3,15 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-10 — Сессия 55: Внешний аудит (P0) + диеты с LLM-контролем
+- **P0-блокеры устранены**: httpx 0.28.1+openai 1.39 несовместимы → pyproject pin `httpx<0.28`, requirements.txt/lock перегенерированы (openai==1.59.9, httpx==0.27.2, lock без системного мусора); CSRF login→dashboard (dashboard перевыпускал cookie после рендера → `ensure_csrf_cookie` только при отсутствии); safety gate LLM (промпт subtasks 3-5 смягчён, abstract-контекст больше не раскрывает имена из истории, `entity_name` заменяется каноническим серверным).
+- **Целостность**: `GET /` больше не 500 (get_optional_user при прямом вызове); schedule rule с UUID entity_id; interrupted training-задачу нельзя завершить (+XP) — `complete_once` атомарный `UPDATE...WHERE status='pending'` + unique-индекс ledger (миграция 019); `activity_logs.completed_at` добавлена (импорт).
+- **Cross-user**: `/points/balance` не отдаёт чужие thresholds; импорт Entity ищет по имени с учётом owner/public.
+- **Ops**: Secure-куки в production, logout только POST (форма в base.html), TTL-очистка raw payload (scheduler, каждые 6ч), переключатели llm_mode (full/abstract) + store_raw в UI конфигов, Dockerfile включает seed/cli, runbook → /register /login, CI: ruff==0.5.7 pin + docker build job.
+- **Диеты v2 (LLM)**: `Diet.direction` (направление), журнал фактического потребления `diet_consumptions` (CRUD), LLM-генерация диеты (`POST /diets/api/generate`), LLM-оценка adherence + корректировка плана (`POST /diets/api/{id}/evaluate`, add/modify/remove по имени, score 0-100).
+- **Найден и починен латентный баг**: `SYSTEM_PROMPT_TEMPLATE` с неэкранированными `{}` падал при `.format()` — generate_task всегда бы крашился.
+- Артефакты: миграция 019 (PG15 upgrade/downgrade/ORM проверены), tests/test_audit_s55.py (+17), 291/291 тестов, ruff ✅.
+
 ## 2026-08-06 — Сессия 1: Интервью (базовое)
 - Обсуждали: скоуп, пользователи, язык UI, деплой, LLM, провайдеры, ошибки LLM, штрафы, тесты, UI, админка, приватность, геймификация, каталог, уведомления, AGENTS.md, подписки, сессии, бэкапы, логи.
 - Артефакты: `tracker-spec.md`.

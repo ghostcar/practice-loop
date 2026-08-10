@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.client import call_llm
 from app.llm.context_builder import build_context, format_context_abstract, format_context_for_prompt
+from app.llm.diet_prompts import DIET_EVALUATE_SYSTEM, DIET_GENERATE_SYSTEM
 from app.llm.repair import JsonRepairError, parse_llm_json
 from app.llm.tools import TOOLS
 from app.llm.training_prompts import (
@@ -27,6 +28,7 @@ from app.llm.validator import (
     validate_params_against_schema,
 )
 from app.models.activity_log import ActivityLog
+from app.models.diet import Diet, DietConsumption, DietItem
 from app.models.llm_config import LLMProviderConfig
 from app.models.training import TrainingDay
 
@@ -69,12 +71,12 @@ SYSTEM_PROMPT_TEMPLATE = (
     "within the defined ranges.\n\n"
     "Rules:\n" + _RULES + "\n"
     "Response format (JSON):\n"
-    "{\n"
+    "{{\n"
     '  "entity_id": "<uuid>",\n'
     '  "entity_name": "<name>",\n'
     '  "params": {{ ... }},\n'
     '  "reasoning": "<why you chose this task>"\n'
-    "}\n"
+    "}}\n"
 )
 
 
@@ -156,6 +158,11 @@ async def generate_task(
     if schema_errors:
         raise ValueError(f"LLM params fail entity schema: {'; '.join(schema_errors)}")
 
+    # Safety gate: use the CANONICAL server-side name for the selected entity,
+    # never the LLM-supplied one (audit: returned entity_name is not trusted).
+    canonical = entities_by_id.get(str(entity_id), {})
+    entity_name = canonical.get("name") or entity_name
+
     raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
     log = ActivityLog(
         user_id=user_id,
@@ -225,7 +232,11 @@ async def generate_daily_plan(
     allowed_ids = get_allowed_ids(context)
     entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
 
-    context_text = format_context_for_prompt(context)
+    # Abstract mode (strict providers): candidates & history must stay opaque —
+    # no real entity names leak into the prompt (audit: training flow ignored
+    # llm_mode and revealed names even for abstract-mode users).
+    is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
+    context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
 
     system_prompt = PLAN_DAY_SYSTEM.format(locale=locale)
     user_message = f"Context:\n{context_text}\n\nGenerate a daily training plan for {target_date}."
@@ -262,6 +273,10 @@ async def generate_daily_plan(
         if schema_errors:
             raise ValueError(f"LLM params fail entity schema: {'; '.join(schema_errors)}")
 
+        # Safety gate: canonical server-side name, not the LLM-supplied one.
+        canonical_entity = entities_by_id.get(entity_id_str, {})
+        entity_name = canonical_entity.get("name") or entity_name
+
         subtasks = [
             {
                 "id": i + 1,
@@ -269,6 +284,7 @@ async def generate_daily_plan(
                 "is_done": False,
             }
             for i, s in enumerate(raw_subtasks[:SUBTASK_LIMIT])
+            if str(s).strip()  # drop empty/whitespace-only subtasks
         ]
         prepared_tasks.append(
             {
@@ -352,12 +368,16 @@ async def analyze_training_day(
         "",
         "Tasks:",
     ]
+    # Abstract mode: never reveal real entity names in the day summary.
+    is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
     for log_entry in logs:
         sub_done = sum(1 for s in (log_entry.subtasks or []) if s.get("is_done"))
         sub_total = len(log_entry.subtasks or [])
-        day_text_parts.append(
-            f"- [{log_entry.status}] {log_entry.selected_entity_name} (subtasks: {sub_done}/{sub_total})"
-        )
+        if is_abstract:
+            label = f"entity_id={log_entry.entity_id or '?'}"
+        else:
+            label = log_entry.selected_entity_name or "(custom)"
+        day_text_parts.append(f"- [{log_entry.status}] {label} (subtasks: {sub_done}/{sub_total})")
 
     day_text = "\n".join(day_text_parts)
 
@@ -401,3 +421,219 @@ async def analyze_training_day(
     await db.flush()
 
     return training_day
+
+
+# --- Diet Pipeline (LLM planning + adherence evaluation) ---
+
+# Safety limits for LLM-generated diet content.
+DIET_ITEM_LIMIT = 20
+DIET_NAME_MAX = 200
+DIET_DESC_MAX = 3000
+
+
+async def generate_diet(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    llm_config: LLMProviderConfig,
+    locale: str = "en",
+    direction: str | None = None,
+    goal: str | None = None,
+    preferences: str | None = None,
+) -> Diet:
+    """Generate a new diet plan via LLM (name, description, food items).
+
+    The LLM output is sanitized before persistence: item count capped, field
+    lengths clamped, quantities coerced to positive floats. The Diet is created
+    only after the response parses and at least one valid item exists — a
+    failed attempt never leaves a partial diet behind.
+    """
+    user_goal = " ".join(x for x in (direction, goal, preferences) if x) or "balanced healthy diet"
+    system_prompt = DIET_GENERATE_SYSTEM.format(locale=locale)
+    user_message = f"Direction/goal: {user_goal}\n\nCreate a daily diet plan."
+
+    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    raw_response = result["content"]
+    usage = result["usage"]
+    parsed = parse_llm_json(raw_response, is_last_attempt=True)
+
+    name = str(parsed.get("name") or "").strip()[:DIET_NAME_MAX]
+    if not name:
+        raise ValueError("LLM diet response missing name")
+    description = str(parsed.get("description") or "").strip()[:DIET_DESC_MAX] or None
+    raw_items = parsed.get("items", [])
+    if not isinstance(raw_items, list) or not raw_items:
+        raise ValueError("LLM diet response has no items")
+
+    prepared_items = []
+    for it in raw_items[:DIET_ITEM_LIMIT]:
+        if not isinstance(it, dict):
+            continue
+        item_name = str(it.get("name") or "").strip()[:300]
+        if not item_name:
+            continue
+        qty = it.get("quantity")
+        try:
+            qty = float(qty) if qty not in (None, "") else None
+            if qty is not None and (qty <= 0 or qty > 100_000):
+                qty = None
+        except (TypeError, ValueError):
+            qty = None
+        meal = str(it.get("meal_time") or "").strip()[:30] or None
+        unit = str(it.get("unit") or "").strip()[:20] or None
+        notes = str(it.get("notes") or "").strip()[:2000] or None
+        prepared_items.append(
+            {
+                "name": item_name,
+                "quantity": qty,
+                "unit": unit,
+                "meal_time": meal,
+                "notes": notes,
+            }
+        )
+    if not prepared_items:
+        raise ValueError("LLM diet response has no usable items")
+
+    diet = Diet(user_id=user_id, name=name, direction=direction, goal=goal, description=description, is_active=True)
+    db.add(diet)
+    await db.flush()
+    for pos, item in enumerate(prepared_items):
+        db.add(DietItem(diet_id=diet.id, sort_order=pos, **item))
+
+    llm_config.total_tokens += usage["total_tokens"]
+    llm_config.total_cost += usage["cost"]
+    db.add(llm_config)
+    await db.flush()
+    return diet
+
+
+async def evaluate_diet(
+    db: AsyncSession,
+    diet: Diet,
+    llm_config: LLMProviderConfig,
+    locale: str = "en",
+    days: int = 7,
+) -> dict:
+    """Evaluate the user's actual consumption against a diet plan via LLM.
+
+    Returns the parsed evaluation dict and applies sanitized plan adjustments
+    (add / modify / remove of diet items matched by name). Never trusts the
+    LLM with free-form item ids — matches are resolved by exact name against
+    the diet's current items.
+    """
+    start = datetime.now(UTC).date() - timedelta(days=max(1, min(days, 30)))
+    items_result = await db.execute(select(DietItem).where(DietItem.diet_id == diet.id).order_by(DietItem.sort_order))
+    plan_items = list(items_result.scalars().all())
+    cons_result = await db.execute(
+        select(DietConsumption)
+        .where(DietConsumption.user_id == diet.user_id, DietConsumption.consumed_date >= start)
+        .order_by(DietConsumption.consumed_date, DietConsumption.created_at)
+    )
+    consumptions = list(cons_result.scalars().all())
+
+    def _fmt_item(it: DietItem) -> str:
+        qty = f"{it.quantity:g}" if it.quantity else ""
+        return f"- {it.name} ({qty} {it.unit or ''}) [{it.meal_time or 'anytime'}]"
+
+    plan_text = "\n".join(_fmt_item(it) for it in plan_items) or "- (empty plan)"
+    consumed_text = (
+        "\n".join(
+            f"- {c.consumed_date}: {c.name} ({c.quantity or ''} {c.unit or ''}) [{c.meal_time or 'anytime'}]"
+            for c in consumptions
+        )
+        or "- (no consumption recorded)"
+    )
+
+    system_prompt = DIET_EVALUATE_SYSTEM.format(locale=locale)
+    user_message = (
+        f"Diet: {diet.name} (direction: {diet.direction or '—'}, goal: {diet.goal or '—'})\n\n"
+        f"Planned items:\n{plan_text}\n\n"
+        f"Actual consumption (last {days} days):\n{consumed_text}\n\n"
+        "Evaluate adherence and suggest plan adjustments."
+    )
+
+    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    raw_response = result["content"]
+    usage = result["usage"]
+    parsed = parse_llm_json(raw_response, is_last_attempt=True)
+
+    # ── Apply sanitized adjustments ──
+    by_name = {it.name.strip().lower(): it for it in plan_items}
+    applied: list[dict] = []
+    adjustments = parsed.get("adjustments", [])
+    if isinstance(adjustments, list):
+        for adj in adjustments[:10]:
+            if not isinstance(adj, dict):
+                continue
+            action = str(adj.get("action") or "").strip().lower()
+            if action == "add":
+                item_name = str(adj.get("name") or "").strip()[:300]
+                if not item_name:
+                    continue
+                try:
+                    qty = float(adj.get("quantity")) if adj.get("quantity") not in (None, "") else None
+                    if qty is not None and (qty <= 0 or qty > 100_000):
+                        qty = None
+                except (TypeError, ValueError):
+                    qty = None
+                max_o = await db.execute(
+                    select(DietItem.sort_order)
+                    .where(DietItem.diet_id == diet.id)
+                    .order_by(DietItem.sort_order.desc())
+                    .limit(1)
+                )
+                next_order = (max_o.scalar_one_or_none() or -1) + 1
+                new_item = DietItem(
+                    diet_id=diet.id,
+                    name=item_name,
+                    quantity=qty,
+                    unit=str(adj.get("unit") or "").strip()[:20] or None,
+                    meal_time=str(adj.get("meal_time") or "").strip()[:30] or None,
+                    notes=str(adj.get("notes") or "").strip()[:2000] or None,
+                    sort_order=next_order,
+                )
+                db.add(new_item)
+                applied.append({"action": "add", "name": item_name})
+            elif action in ("modify", "remove"):
+                match_name = str(adj.get("match_name") or adj.get("name") or "").strip()
+                target = by_name.get(match_name.lower())
+                if target is None:
+                    continue
+                if action == "remove":
+                    await db.delete(target)
+                    applied.append({"action": "remove", "name": target.name})
+                else:
+                    try:
+                        qty = float(adj.get("quantity")) if adj.get("quantity") not in (None, "") else None
+                        if qty is not None and (qty <= 0 or qty > 100_000):
+                            qty = None
+                    except (TypeError, ValueError):
+                        qty = None
+                    if qty is not None:
+                        target.quantity = qty
+                    target.unit = str(adj.get("unit") or target.unit or "").strip()[:20] or None
+                    target.meal_time = str(adj.get("meal_time") or target.meal_time or "").strip()[:30] or None
+                    notes = str(adj.get("notes") or "").strip()[:2000]
+                    if notes:
+                        target.notes = notes
+                    db.add(target)
+                    applied.append({"action": "modify", "name": target.name})
+
+    # Score & findings are only trusted as numbers/strings.
+    try:
+        score = max(0, min(100, float(parsed.get("score", 0))))
+    except (TypeError, ValueError):
+        score = 0
+    summary = str(parsed.get("summary") or "").strip()[:5000] or "No summary."
+    findings = [str(f)[:500] for f in parsed.get("findings", []) if isinstance(f, str)][:10]
+
+    evaluation = {"score": score, "summary": summary, "findings": findings, "applied": applied}
+    diet.last_evaluation = evaluation
+    diet.evaluated_at = datetime.now(UTC)
+    db.add(diet)
+
+    llm_config.total_tokens += usage["total_tokens"]
+    llm_config.total_cost += usage["cost"]
+    db.add(llm_config)
+    await db.flush()
+
+    return evaluation

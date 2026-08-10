@@ -61,11 +61,17 @@ async def test_login_success(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_logout(async_client: AsyncClient):
-    """Logout clears cookie and redirects."""
+    """Logout clears cookie and redirects. POST only (audit: GET logout is a vector)."""
+    # GET is rejected (no CSRF on GET; logout must be a POST action)
     response = await async_client.get("/auth/logout", follow_redirects=False)
+    assert response.status_code == 405
+
+    # POST clears both cookies and redirects
+    response = await async_client.post("/auth/logout", follow_redirects=False)
     assert response.status_code == 303
-    cookie = response.headers.get("set-cookie", "")
-    assert "access_token=" in cookie
+    set_cookie = response.headers.get("set-cookie", "")
+    assert "access_token=" in set_cookie
+    assert "csrf_token=" in set_cookie
 
 
 @pytest.mark.asyncio

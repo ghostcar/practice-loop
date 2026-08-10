@@ -78,6 +78,7 @@ async def create_llm_config(
     api_base_url: str = Form(...),
     api_key: str = Form(default=""),
     model_name: str = Form(...),
+    llm_mode: str = Form(default="full"),
     store_raw_response: str = Form(default="true"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -86,6 +87,9 @@ async def create_llm_config(
     encrypted = encrypt_api_key(api_key) if api_key else None
     # HTML form values: "true"/"false"/"on"/"1" accepted as True
     store_raw = store_raw_response.strip().lower() in {"true", "on", "1", "yes"}
+    mode = llm_mode.strip().lower()
+    if mode not in ("full", "abstract"):
+        mode = "full"
     config = LLMProviderConfig(
         user_id=user.id,
         provider_name=provider_name.strip(),
@@ -93,8 +97,40 @@ async def create_llm_config(
         api_key_encrypted=encrypted,
         model_name=model_name.strip(),
         is_active=False,
+        llm_mode=mode,
         store_raw_response=store_raw,
     )
+    db.add(config)
+    await db.flush()
+
+    return RedirectResponse(url="/llm-configs/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/{config_id}/update")
+async def update_llm_config(
+    request: Request,
+    config_id: uuid.UUID,
+    llm_mode: str = Form(default="full"),
+    store_raw_response: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle llm_mode (full/abstract) and raw-response retention per config."""
+    result = await db.execute(
+        select(LLMProviderConfig).where(
+            LLMProviderConfig.id == config_id,
+            LLMProviderConfig.user_id == user.id,
+        )
+    )
+    config = result.scalar_one_or_none()
+    if config is None:
+        raise HTTPException(status_code=404, detail="Config not found")
+
+    mode = llm_mode.strip().lower()
+    if mode in ("full", "abstract"):
+        config.llm_mode = mode
+    # Checkbox absent from the form ⇒ unset ⇒ False; "1"/"on" ⇒ True
+    config.store_raw_response = store_raw_response.strip().lower() in {"1", "on", "true", "yes"}
     db.add(config)
     await db.flush()
 

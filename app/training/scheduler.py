@@ -62,12 +62,47 @@ async def _run_auto_analysis() -> None:
                 await db.rollback()
 
 
+async def cleanup_expired_raw_responses(db) -> int:
+    """Delete expired raw_llm_response payloads (REM §7.5 TTL enforcement).
+
+    The TTL is currently only written to the DB; this job actually removes the
+    retained raw payloads once they expire, so the debug data does not live
+    forever (audit: 30-day TTL without cleanup). Returns the number of logs
+    cleared. Caller owns the session/commit.
+    """
+    from sqlalchemy import update as sa_update
+
+    from app.models.activity_log import ActivityLog
+
+    now = datetime.now(UTC)
+    result = await db.execute(
+        sa_update(ActivityLog)
+        .where(
+            ActivityLog.raw_llm_response.is_not(None),
+            ActivityLog.raw_response_expires_at.is_not(None),
+            ActivityLog.raw_response_expires_at < now,
+        )
+        .values(raw_llm_response=None, raw_response_expires_at=None)
+    )
+    return result.rowcount or 0
+
+
+async def _purge_expired_raw_payloads() -> None:
+    """Session wrapper around cleanup_expired_raw_responses for the scheduler loop."""
+    async with async_session_factory() as db:
+        cleared = await cleanup_expired_raw_responses(db)
+        if cleared:
+            logger.info(f"TTL purge: cleared raw payloads from {cleared} activity logs")
+        await db.commit()
+
+
 async def _scheduler_loop(stop_event: asyncio.Event) -> None:
     """Loop that checks every minute whether it's time to run analysis."""
     analysis_hour, analysis_minute = _parse_time(settings.tg_auto_analysis_time)
     logger.info(f"Auto-analysis scheduler started (runs daily at {analysis_hour:02d}:{analysis_minute:02d} UTC)")
 
     last_run_date: date | None = None
+    last_purge: datetime | None = None
 
     while not stop_event.is_set():
         try:
@@ -78,6 +113,11 @@ async def _scheduler_loop(stop_event: asyncio.Event) -> None:
                 logger.info("Auto-analysis: triggering daily run")
                 await _run_auto_analysis()
                 last_run_date = now.date()
+
+            # Purge expired raw payloads every 6 hours (cheap, idempotent)
+            if last_purge is None or (now - last_purge).total_seconds() > 6 * 3600:
+                await _purge_expired_raw_payloads()
+                last_purge = now
 
             # Wait until next check
             await asyncio.wait_for(stop_event.wait(), timeout=_check_interval_seconds)

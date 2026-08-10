@@ -2,7 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
-| 2026-08-10 | Session 54 (+21 тест) | Drag&drop (журнал/инвентарь/диеты, sort_order), изображения инвентаря, фото-отчёты (attachments), диеты (2 таблицы), параллельные планы тренировок + timeline-шкала, uploads-инфраструктура (volume), миграция 018 (PG15 проверена) |
+| 2026-08-10 | Session 55 (+17 тест) | Аудит P0: deps (httpx pin, lock), CSRF login→dashboard, safety gate LLM (subtasks/abstract/канонические имена, training-пайплайн), атомарный complete + completed_at + unique ledger (мигр. 019), GET / 500, UUID schedule, cross-user balance/import, Secure cookies, logout POST, TTL-очистка raw, UI llm_mode/store_raw, Dockerfile seeds, CI docker+ruff pin, runbook пути; диеты v2: direction, diet_consumptions (факт), LLM generate/evaluate + корректировки; баг SYSTEM_PROMPT_TEMPLATE (экранирование {}) |
 | 2026-08-06 | `tracker-spec.md` | Создан по итогам интервью (5 раундов) |
 | 2026-08-06 | `tracker-spec.md` | Решены открытые вопросы; разделы «Решённые/Осталось открытым» |
 | 2026-08-06 | `AGENTS.md` | Полностью переработан в единый стиль (8 разделов, без Semantic Masking) |

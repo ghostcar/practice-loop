@@ -21,7 +21,7 @@ from app.auth import get_optional_user
 from app.config import settings
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.security import set_csrf_cookie, verify_csrf
+from app.security import ensure_csrf_cookie, verify_csrf
 from app.telegram.bot import setup_webhook, start_polling, stop_polling, tg_router
 from app.templates_setup import templates
 from app.training.scheduler import start_auto_analysis, stop_auto_analysis
@@ -116,8 +116,7 @@ async def home(request: Request):
             "theme": theme,
         },
     )
-    if user is None:
-        set_csrf_cookie(response)
+    ensure_csrf_cookie(request, response)
     return response
 
 
