@@ -1,11 +1,13 @@
 """One-shot seed: populate production database with initial v2 data.
 
 Usage:
-    python seed_prod.py --email user@example.com
+    DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db python seed_prod.py --email user@example.com
     python seed_prod.py --email user@example.com --database-url postgresql+asyncpg://...
 
 Environment:
-    DATABASE_URL  — PostgreSQL connection string (fallback if --database-url not given)
+    DATABASE_URL  — PostgreSQL connection string (required unless --database-url given).
+
+No hardcoded credentials: the script refuses to run without an explicit DATABASE_URL.
 """
 
 import argparse
@@ -319,10 +321,18 @@ async def seed(database_url: str, email: str | None):
 def main():
     parser = argparse.ArgumentParser(description="Seed production database with initial data")
     parser.add_argument("--email", help="User email to seed data for (default: first user in DB)")
+    default_url = os.environ.get("DATABASE_URL")
+    if not default_url:
+        print(
+            "Error: DATABASE_URL is not set. Pass --database-url or export DATABASE_URL "
+            "(e.g. postgresql+asyncpg://user:pass@host:5432/db).",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     parser.add_argument(
         "--database-url",
-        default=os.environ.get("DATABASE_URL", "postgresql+asyncpg://tracker:REDACTED_DB_PASSWORD@localhost:5432/tracker"),
-        help="PostgreSQL connection string (default: DATABASE_URL env or localhost)",
+        default=default_url,
+        help="PostgreSQL connection string (default: DATABASE_URL env)",
     )
     args = parser.parse_args()
 

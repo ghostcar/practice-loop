@@ -1,12 +1,19 @@
-"""One-shot: create a training day with hydration schedule for the first user."""
+"""One-shot: create a training day with hydration schedule for the first user.
+
+Requires DATABASE_URL to be set (no hardcoded credentials):
+    DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db python seed_training.py
+"""
 import asyncio
 import os
 import sys
 
-os.environ.setdefault(
-    "DATABASE_URL",
-    "postgresql+asyncpg://tracker:REDACTED_DB_PASSWORD@localhost:5432/tracker",
-)
+if not os.environ.get("DATABASE_URL"):
+    print(
+        "Error: DATABASE_URL is not set. "
+        "Export it (e.g. postgresql+asyncpg://user:pass@host:5432/db) and retry.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 from datetime import date, datetime, timezone
 from sqlalchemy import select
