@@ -1,6 +1,14 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 48).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 49).
+
+## Сессия 49: аудит-фиксы training (чужой entity/subtasks, partial plan, stored XSS)
+
+- [x] **generate_daily_plan** (app/llm/pipeline.py): каждый task плана валидируется — `entity_id` обязан быть в allowed (опт-ин) наборе пользователя (чужой private entity отклоняется), `params` — против `params_schema` сущности; subtasks санитизируются (только строки, ≤20 шт., ≤500 симв.); TrainingDay создаётся только ПОСЛЕ валидации (транзакционно).
+- [x] **Частичный план после ошибки LLM**: `analyze_training_day` мутирует день/usage только после успеха ОБОИХ LLM-вызовов (раньше status/analysis коммитились при падении второго вызова); `generate_plan` при повторе удаляет пустой leftover-день (нет задач И журнала), не блокируя генерацию.
+- [x] **Stored XSS через entry_type**: `add_extra_log_entry` — allowlist `ENTRY_TYPES` (вне списка → `general_note`); `_render_log_entry_row` экранирует label и `unit` (защита и для старых строк); `time_label` ограничен 20 симв. (String(20)).
+- [x] +8 регрессионных тестов (foreign entity → 303 error, params вне диапазона → отклонено, нет partial day при ошибке LLM + повтор не блокируется, leftover заменяется, analyze без partial state, entry_type санитизация/валидный тип, экранирование рендера).
+- [x] 239/239 тестов, ruff 0, format clean.
 
 ## Сессия 48: фикс CSRF — нативные формы, контекст шаблонов, JS fetch
 

@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -24,6 +24,9 @@ from app.models.user import User
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/training", tags=["training"])
+
+# Allowlist for user-supplied journal entry types (audit fix: stored XSS via entry_type).
+ENTRY_TYPES = {"fluid_intake", "micro_leak", "pressure_check", "general_note"}
 
 
 def _get_today() -> date:
@@ -109,14 +112,32 @@ async def generate_plan(
     if active_config is None:
         return RedirectResponse(url="/training?error=No+active+LLM+provider+configured", status_code=303)
     today = _get_today()
+
+    # A leftover empty plan (e.g. from a failed LLM attempt) must not block retry.
     existing = await db.execute(
         select(TrainingDay).where(TrainingDay.user_id == user.id, TrainingDay.target_date == today)
     )
-    if existing.scalar_one_or_none():
-        return RedirectResponse(url="/training?error=Plan+already+exists+for+today", status_code=303)
+    existing_day = existing.scalar_one_or_none()
+    if existing_day:
+        # Only a truly empty leftover (no tasks AND no journal entries) may be
+        # replaced — otherwise a real plan or journal data would be lost.
+        logs_count = await db.execute(
+            select(func.count(ActivityLog.id)).where(ActivityLog.training_day_id == existing_day.id)
+        )
+        entries_count = await db.execute(
+            select(func.count(TrainingLogEntry.id)).where(TrainingLogEntry.training_day_id == existing_day.id)
+        )
+        if logs_count.scalar_one() == 0 and entries_count.scalar_one() == 0:
+            await db.delete(existing_day)
+            await db.flush()
+        else:
+            return RedirectResponse(url="/training?error=Plan+already+exists+for+today", status_code=303)
+
     try:
         await generate_daily_plan(db=db, user_id=user.id, llm_config=active_config, target_date=today, locale=locale)
     except (JsonRepairError, ValueError) as e:
+        # generate_daily_plan is transactional — nothing is persisted before
+        # the LLM response is parsed and validated, so no rollback is needed.
         return RedirectResponse(url=f"/training?error={str(e)}", status_code=303)
     return RedirectResponse(url="/training", status_code=303)
 
@@ -189,6 +210,8 @@ async def analyze_day(
     try:
         await analyze_training_day(db=db, training_day=training_day, llm_config=active_config, locale=locale)
     except (JsonRepairError, ValueError) as e:
+        # analyze_training_day is transactional — state is only mutated after
+        # both LLM calls succeed, so no rollback is needed.
         return RedirectResponse(url=f"/training?error={str(e)}", status_code=303)
     return RedirectResponse(url="/training", status_code=303)
 
@@ -226,7 +249,7 @@ async def add_extra_log_entry(
 ):
     form = await request.form()
     td_str = form.get("training_day_id", "")
-    time_label = form.get("time_label", "").strip()
+    time_label = form.get("time_label", "").strip()[:20]  # column is String(20)
     if not td_str or not time_label:
         raise HTTPException(status_code=400, detail="training_day_id and time_label required")
 
@@ -244,11 +267,15 @@ async def add_extra_log_entry(
     )
     max_order = max_o.scalar_one_or_none() or 0
 
+    # Audit fix: entry_type is stored and rendered in HTML — restrict to the allowlist.
+    raw_type = form.get("entry_type", "general_note").strip()
+    entry_type = raw_type if raw_type in ENTRY_TYPES else "general_note"
+
     entry = TrainingLogEntry(
         training_day_id=td_id,
         user_id=user.id,
         time_label=time_label,
-        entry_type=form.get("entry_type", "general_note").strip(),
+        entry_type=entry_type,
         actual_value=(form.get("actual_value", "").strip()) or None,
         unit="text",
         notes=(form.get("notes", "").strip()) or None,
@@ -300,19 +327,20 @@ def _render_log_entry_row(entry: TrainingLogEntry) -> str:
         if entry.is_extra
         else ""
     )
+    unit_esc = _h.escape(entry.unit or "")
     return (
         f'<div class="log-entry-row flex items-start gap-3 p-3 rounded-lg border'
         f' border-slate-200 dark:border-slate-700 {xc}">'
         f'<div class="flex-shrink-0 w-20">'
         f'<span class="text-sm font-mono font-medium text-slate-700 dark:text-slate-300">'
         f"{_h.escape(entry.time_label)}</span>"
-        f'<span class="block text-xs text-slate-400">{tl}{" *" if entry.is_extra else ""}</span></div>'
+        f'<span class="block text-xs text-slate-400">{_h.escape(tl)}{" *" if entry.is_extra else ""}</span></div>'
         f'<div class="flex-shrink-0 w-24">'
-        f'<span class="text-xs text-slate-400">{_h.escape(entry.planned_value or "—")} {entry.unit or ""}</span></div>'  # noqa: E501
+        f'<span class="text-xs text-slate-400">{_h.escape(entry.planned_value or "—")} {unit_esc}</span></div>'
         f'<form hx-post="/training/log-entry/{entry.id}" hx-target="closest .log-entry-row" hx-swap="outerHTML"'
         f' class="flex-1 flex items-start gap-2">'
         f'<input type="text" name="actual_value" value="{_h.escape(entry.actual_value or "")}"'
-        f' placeholder="Факт ({entry.unit or ""})"'
+        f' placeholder="Факт ({unit_esc})"'
         f' class="w-24 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600'
         f' rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">'
         f'<input type="text" name="notes" value="{_h.escape(entry.notes or "")}"'

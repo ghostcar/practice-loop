@@ -198,6 +198,11 @@ async def get_active_llm_config(db: AsyncSession, user_id: uuid.UUID) -> LLMProv
 # --- Training Pipeline ---
 
 
+# Safety limits for LLM-generated plan content (audit fix: REM §7.1).
+SUBTASK_LIMIT = 20
+SUBTASK_MAX_LENGTH = 500
+
+
 async def generate_daily_plan(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -205,16 +210,20 @@ async def generate_daily_plan(
     target_date: date,
     locale: str = "en",
 ) -> TrainingDay:
-    """Generate a full daily training plan via LLM."""
-    training_day = TrainingDay(
-        user_id=user_id,
-        target_date=target_date,
-        status="planned",
-    )
-    db.add(training_day)
-    await db.flush()
+    """Generate a full daily training plan via LLM.
 
+    Audit hardening:
+    - Every task's entity_id must belong to the user's allowed (opted-in) set
+      — a foreign/private entity is rejected (cross-user protection).
+    - params are validated against the entity's params_schema.
+    - Subtasks are sanitized: strings only, capped count and length.
+    - The TrainingDay is created only after the LLM response has been parsed
+      and validated, so a failed attempt never leaves a partial plan behind.
+    """
     context = await build_context(db, user_id, locale=locale)
+    allowed_ids = get_allowed_ids(context)
+    entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
+
     context_text = format_context_for_prompt(context)
 
     system_prompt = PLAN_DAY_SYSTEM.format(locale=locale)
@@ -237,38 +246,62 @@ async def generate_daily_plan(
     if not tasks:
         raise ValueError("LLM returned empty plan — no tasks generated")
 
-    training_day.plan_summary = plan_summary
-    training_day.status = "active"
-    db.add(training_day)
-
+    # Validate + sanitize every task BEFORE persisting anything.
+    prepared_tasks = []
     for task_data in tasks:
-        entity_id_str = task_data.get("entity_id")
+        entity_id_str = str(task_data.get("entity_id") or "").strip()
         entity_name = task_data.get("entity_name", "Unknown")
         params = task_data.get("params", {})
         raw_subtasks = task_data.get("subtasks", [])
 
+        if entity_id_str not in allowed_ids:
+            raise ValueError(f"LLM plan references unknown entity: {entity_id_str or '<missing>'}")
+        schema = entities_by_id.get(entity_id_str, {}).get("params_schema")
+        schema_errors = validate_params_against_schema(params, schema)
+        if schema_errors:
+            raise ValueError(f"LLM params fail entity schema: {'; '.join(schema_errors)}")
+
         subtasks = [
             {
                 "id": i + 1,
-                "desc": s if isinstance(s, str) else str(s),
+                "desc": str(s)[:SUBTASK_MAX_LENGTH],
                 "is_done": False,
             }
-            for i, s in enumerate(raw_subtasks)
+            for i, s in enumerate(raw_subtasks[:SUBTASK_LIMIT])
         ]
+        prepared_tasks.append(
+            {
+                "entity_id": entity_id_str,
+                "entity_name": entity_name,
+                "params": params,
+                "subtasks": subtasks,
+            }
+        )
 
-        raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
+    # All validations passed — now persist the plan atomically.
+    training_day = TrainingDay(
+        user_id=user_id,
+        target_date=target_date,
+        status="active",
+        plan_summary=plan_summary,
+    )
+    db.add(training_day)
+    await db.flush()
+
+    raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
+    for task in prepared_tasks:
         log = ActivityLog(
             user_id=user_id,
-            entity_id=uuid.UUID(entity_id_str) if entity_id_str else None,
+            entity_id=uuid.UUID(task["entity_id"]),
             status="pending",
             user_prompt=f"Training day plan for {target_date}",
             raw_llm_response=raw_to_store,
             raw_response_expires_at=raw_expires,
             cleaned_response=parsed,
-            selected_entity_name=entity_name,
-            selected_params=params,
+            selected_entity_name=task["entity_name"],
+            selected_params=task["params"],
             training_day_id=training_day.id,
-            subtasks=subtasks,
+            subtasks=task["subtasks"],
             prompt_tokens=usage["prompt_tokens"],
             completion_tokens=usage["completion_tokens"],
             total_tokens=usage["total_tokens"],
@@ -290,7 +323,12 @@ async def analyze_training_day(
     llm_config: LLMProviderConfig,
     locale: str = "en",
 ) -> TrainingDay:
-    """Run end-of-day analysis and generate next-day suggestion via LLM."""
+    """Run end-of-day analysis and generate next-day suggestion via LLM.
+
+    Transactional: training_day and llm_config are only mutated after BOTH
+    LLM calls succeed, so a failed second call never leaves partial state
+    (audit fix: partial analysis committed after LLM error).
+    """
     logs_result = await db.execute(
         select(ActivityLog).where(
             ActivityLog.training_day_id == training_day.id,
@@ -332,18 +370,12 @@ async def analyze_training_day(
         json_mode=True,
     )
     analysis_parsed = parse_llm_json(analysis_result["content"], is_last_attempt=True)
-    training_day.analysis_summary = analysis_parsed.get("analysis", "Day completed.")
-    training_day.status = "completed"
-
+    analysis_summary = analysis_parsed.get("analysis", "Day completed.")
     usage_a = analysis_result["usage"]
-    llm_config.total_tokens += usage_a["total_tokens"]
-    llm_config.total_cost += usage_a["cost"]
 
     # 2. Generate next-day suggestion
     next_system = SUGGEST_NEXT_DAY_SYSTEM.format(locale=locale)
-    next_message = (
-        f"Today's results:\n{day_text}\n\nAnalysis: {training_day.analysis_summary}\n\nSuggest tomorrow's plan."
-    )
+    next_message = f"Today's results:\n{day_text}\n\nAnalysis: {analysis_summary}\n\nSuggest tomorrow's plan."
 
     next_result = await call_llm(
         config=llm_config,
@@ -352,13 +384,15 @@ async def analyze_training_day(
         json_mode=True,
     )
     next_parsed = parse_llm_json(next_result["content"], is_last_attempt=True)
+    usage_n = next_result["usage"]
+
+    # Both LLM calls succeeded — apply all mutations now (transactional).
+    training_day.analysis_summary = analysis_summary
     training_day.next_day_suggestion = next_parsed
     training_day.status = "analyzed"
     training_day.analyzed_at = datetime.now(UTC)
-
-    usage_n = next_result["usage"]
-    llm_config.total_tokens += usage_n["total_tokens"]
-    llm_config.total_cost += usage_n["cost"]
+    llm_config.total_tokens += usage_a["total_tokens"] + usage_n["total_tokens"]
+    llm_config.total_cost += usage_a["cost"] + usage_n["cost"]
 
     db.add(training_day)
     db.add(llm_config)

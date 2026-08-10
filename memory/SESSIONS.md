@@ -572,3 +572,34 @@
 - Избыточные явные `csrf_token` в контекстах `main.py` (home) и `dashboard.py` удалены — их полностью заменяет context processor.
 - **Тесты JS-fetch сценария** (+2): JSON POST `/api/v2/points/profiles` с `X-CSRF-Token` → 200 + профиль создан (проверка через GET), без заголовка (только cookie) → 403.
 - **231/231 тестов ✅**, ruff ✅, format ✅.
+
+
+## 2026-08-10 — Сессия 49: аудит-фиксы training (entity/subtasks, partial plan, stored XSS)
+
+- Пользователь процитировал аудит: «Принимаются чужая private entity и произвольные придуманные subtasks; частично созданный план коммитится после ошибки LLM и блокирует повторную попытку; новый журнал допускает stored XSS через entry_type. См. training.py».
+
+### 1. Чужая entity + произвольные subtasks (app/llm/pipeline.py, generate_daily_plan)
+- **Было**: план принимал ЛЮБОЙ `entity_id` (никакой проверки против allowed-набора, в отличие от `generate_task`) и любые subtasks как строки.
+- **Стало**: каждый task проверяется — `entity_id` обязан быть в `get_allowed_ids(context)` (опт-ин набор; чужая private entity → `ValueError`, план целиком отклонён); `params` валидируются через `validate_params_against_schema` (schema из context); subtasks — только строки, кап `SUBTASK_LIMIT=20` / `SUBTASK_MAX_LENGTH=500`.
+
+### 2. Частичный план после ошибки LLM (транзакционность)
+- **generate_daily_plan**: TrainingDay создаётся только ПОСЛЕ парсинга и валидации (раньше — flush до LLM-вызова → при ошибке `get_db` коммитил пустой «planned» день → повтор блокировался «Plan already exists»).
+- **generate_plan**: при повторе день удаляется, если он пустой (нет ActivityLog И TrainingLogEntry) — это чинит и старые закоммиченные leftover'ы.
+- **analyze_training_day**: все мутации (`analysis_summary`, `status`, `next_day_suggestion`, usage-счётчики) отложены до успеха ОБОИХ LLM-вызовов — раньше при падении второго вызова день коммитился как «completed» с анализом, но без suggestion.
+- Endpoint-rollback НЕ добавлялся: общие тестовые сессии (fixture) делали rollback опасным; транзакционность решена на уровне пайплайна.
+
+### 3. Stored XSS через entry_type (журнал)
+- **add_extra_log_entry**: allowlist `ENTRY_TYPES` — значение вне списка коэрсится в `general_note`.
+- **_render_log_entry_row** (HTMX-рендер): экранированы label `tl` и `unit` (раньше сырые f-строки; шаблон training.html и так автоэкранирует — но HTMX-фрагмент — нет).
+- `time_label` ограничен 20 симв. (колонка String(20), иначе DataError на PostgreSQL).
+
+### Тесты (+8, 231→239)
+- Чужая private entity → план отклонён, ничего не сохранено.
+- Параметры вне `params_schema` (intensity=99 при max=3, с `"type": "integer"`) → отклонено.
+- Ошибка LLM → нет частичного дня, повтор не блокируется.
+- Leftover-день заменяется валидным планом (проверка logs/subtasks в БД).
+- Второй LLM-вызов падает → день остаётся `active`, без analysis/next_day_suggestion.
+- `entry_type="<script>..."` → сохранён как `general_note`, без тегов в HTML.
+- Валидный тип (`pressure_check`) проходит.
+- `_render_log_entry_row` экранирует все user-поля (прямой unit-тест).
+- **239/239 тестов ✅**, ruff ✅, format ✅.
