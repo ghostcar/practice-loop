@@ -201,32 +201,57 @@ dig +short your-domain.com
 
 ### 8.🅰️ Cloudflare Proxied → CF Origin Certificate (рекомендую)
 
-**Подготовка в CF Dashboard:**
-1. `SSL/TLS → Overview → Encryption mode = **Full**` (НЕ Strict — Origin Cert не trusted для публичных CA).
-2. `SSL/TLS → Origin Server → Create Certificate`:
-   - Hostnames: `tracker.your-domain.com, *.tracker.your-domain.com`
-   - Validity: 15 years
-3. Скопируй **Certificate** и **Private Key** (PEM).
+**Навигация по CF Dashboard** (клик за кликом):
 
-**Сохрани сертификаты на VPS:**
+1. Открой `https://dash.cloudflare.com/` → кликни **на свой домен** в списке.
+2. **Левая панель → SSL/TLS** → кликни. Откроется Overview.
+3. В **подменю SSL/TLS** (внизу панели) кликни **`Origin Server`** (не `Edge Certificates`).
+4. В правом верхнем углу секции "Origin Certificates" — большая синяя кнопка **`Create Certificate`**. Нажми.
+5. В форме:
+   - **Private key type**: `RSA` (по умолчанию) или `ECDSA`.
+   - **Hostnames**: впиши два имени — `tracker.your-domain.com` и `*.tracker.your-domain.com`.
+   - **Certificate Validity**: `15 years` (по умолчанию).
+   - Кликни **`Next`**.
+6. CF покажет **два блока**:
+   - **Certificate** (начинается с `-----BEGIN CERTIFICATE-----`)
+   - **Private Key** (начинается с `-----BEGIN PRIVATE KEY-----`).
+   - Скопируй оба блока. **Private Key показывается ОДИН РАЗ.**
+
+**Перед созданием сертификата** — в `SSL/TLS → Overview` поставь **Encryption mode = Full** (НЕ Strict — Origin Cert не trusted публичными CA).
+
+**DNS-проверка перед стартом** (что домен реально proxied через CF):
+
+```bash
+dig +short tracker.your-domain.com
+# Если ответ — IP-адрес CF (104.16.x.x, 172.64.x.x) → Proxied ✅
+# Если ответ — IP твоего VPS → DNS-only, нужна ветка 🅱️
+```
+
+**Сохранение сертификата на VPS:**
 
 ```bash
 sudo mkdir -p /etc/ssl/cloudflare
 sudo tee /etc/ssl/cloudflare/tracker.your-domain.com.pem > /dev/null <<'EOF'
-# (вставь сюда содержимое Certificate из CF)
+# (вставь Certificate из CF — текст целиком, включая BEGIN/END)
 EOF
 
 sudo tee /etc/ssl/cloudflare/tracker.your-domain.com.key > /dev/null <<'EOF'
-# (вставь сюда содержимое Private Key из CF)
+# (вставь Private Key из CF — целиком, включая BEGIN/END)
 EOF
 
 sudo chmod 600 /etc/ssl/cloudflare/tracker.your-domain.com.key
 sudo chmod 644 /etc/ssl/cloudflare/tracker.your-domain.com.pem
+```
 
-# Проверка — пара валидна + 15 лет notAfter
+**Sanity-check пары:**
+
+```bash
 sudo openssl x509 -in /etc/ssl/cloudflare/tracker.your-domain.com.pem -noout -subject -dates
-# Subject: CN = tracker.your-domain.com
-# notAfter: через 15 лет
+# Должно показать Subject: CN = tracker.your-domain.com и notAfter ~+15 лет
+
+sudo openssl x509 -in /etc/ssl/cloudflare/tracker.your-domain.com.pem -noout -modulus | openssl md5
+sudo openssl rsa -in /etc/ssl/cloudflare/tracker.your-domain.com.key -noout -modulus 2>/dev/null | openssl md5
+# Два MD5 должны СОВПАДСТИ → пара валидна (nginx сможет стартануть)
 ```
 
 **Конфиг хоста-nginx:**

@@ -517,3 +517,20 @@
 - **DEPLOY_VPS.md §8.4**: новая таблица типичных ошибок CF SSL (Error 520/521/522/526).
 - **DEPLOY_VPS.md §10.3**: убрана формулировка "certbot работают" → "SSL работают".
 - Без правок кода / миграций / тестов — чисто runbook-only.
+
+
+## 2026-08-10 — Сессия 46: §8.🅰️ — пошаговая навигация по CF Dashboard
+
+- Пользователь подтвердил: 🟠 orange cloud (CF Proxied). Не помнит, где создать Origin Certificate.
+- **DEPLOY_VPS.md §8.🅰️** развёрнут в пошаговую инструкцию click-by-click:
+  1. `https://dash.cloudflare.com/` → кликни на свой домен.
+  2. Левая панель → **SSL/TLS**.
+  3. Подменю SSL/TLS → **Origin Server** (не Edge Certificates).
+  4. Кнопка **Create Certificate**.
+  5. Форма: RSA/ECDSA, hostnames, 15 years → Next.
+  6. Скопировать Certificate + Private Key (PEM). **Private Key один раз.**
+- Перед созданием: SSL/TLS → Overview → Encryption mode = **Full** (не Strict — Origin Cert не trusted).
+- DNS-проверка `dig +short` (ответ CF-IP → Proxied ✅).
+- Sanity-check пары: `openssl ... -modulus | openssl md5` для обоих — должны совпадать.
+- Удалён дубль секции «Сохрани сертификаты на VPS» (после рефактора осталась старая версия).
+- Без правок кода / миграций / тестов — чисто runbook-only.
