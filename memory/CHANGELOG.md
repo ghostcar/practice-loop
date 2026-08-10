@@ -37,6 +37,9 @@
 | 2026-08-09 | Session 37 | Бэкенд-аудит: bif REM ↔ ADR, 6 пунктов вразрез |
 | 2026-08-09 | Session 36 | TrainingLogEntry: журнал тренировки с inline-редактированием и внеплановыми записями |
 | 2026-08-09 | Session 40 | Deferred-фиксы: production gate секретов (APP_ENV + 32 chars + change-me-... drain), bif-комментарий в AGENTS.md, store_raw_response flag + TTL 30 days (migration 016), расширение LLM validator (params_schema + enum + min/max), dashboard_v2 4→2 графика, calendar/inventory/import_data JS i18n, localhost:8443→app_url, XSS-fixtures (REM §A14) — **225/225 тестов ✅** |
+| 2026-08-09 | Session 41 | `DEPLOY_VPS.md` — standalone VPS deployment runbook (14 шагов, bash-only, copy-paste для второго монитора); ссылка в README Deployment |
+| 2026-08-09 | Session 42 | Troubleshooting в DEPLOY_VPS.md (раздел 13.1): «address already in use: 127.0.0.1:8000» — диагностика (`ss -ltnp`, `docker compose ps -a`), cleanup (`down --remove-orphans`, `fuser -k`), выбор профиля (`--profile prod` vs `--profile full`), типичные причины |
+| 2026-08-09 | Session 43 | Troubleshooting в DEPLOY_VPS.md (раздел 13.2): «порт свободен, но bind всё равно падает» — iptables residue (`DOCKER`/`DOCKER-USER` chain flush), app crash loop (production gate / migration / race с db), conflict имени сети `tracker_default` между compose-проектами; diagnostic all-in-one блок |
 
 ---
 

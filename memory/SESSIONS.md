@@ -451,6 +451,32 @@
 - Код НЕ изменён. Изменения AGENTS.md/конфига отложены в Сессию 38.
 - Артефакты: +1 memory-файл, изменены SESSIONS/STATUS/OPEN_QUESTIONS.
 
+## 2026-08-09 — Сессия 42: Troubleshooting «port already in use»
+
+- Симптом пользователя на VPS: `failed to bind host port 127.0.0.1:8000/tcp: address already in use` при `docker compose up -d --build`.
+- Диагностика: `docker compose ps -a` + `sudo ss -ltnp \| grep ':8000'` + `docker ps -a --format ...` — чтобы найти, кто держит порт (предыдущий контейнер, uvicorn напрямую, или неправильный профиль).
+- Cleanup: `docker compose down --remove-orphans` × 3 профиля + `sudo fuser -k 8000/tcp` как ядерный вариант + повторный `up` с консциентным `--profile prod` (или `--profile full`).
+- Добавлена секция **13.1 Troubleshooting** в `DEPLOY_VPS.md` (идентичный копипаста-стиль, как и весь runbook).
+- CHANGELOG.md: строка для сессии 42.
+
+## 2026-08-09 — Сессия 43: Troubleshooting «порт свободен, но bind всё равно падает»
+
+- Продолжение Сесси 42: пользователь подтвердил, что `ss -ltnp | grep ':8000'` пусто, но Docker всё равно падает на старте.
+- Три причины, не зависящие от видимого LISTEN-сокета:
+  - **A. iptables residue** — `DOCKER` и `DOCKER-USER` цепочки в `nat` сохраняют DNAT-правила после экстренной остановки контейнера. Фикс: `sudo iptables -t nat -F DOCKER DOCKER-USER` + повторный up.
+  - **B. App crash loop** — Docker бронирует bind ДО реального старта приложения. Если app сразу крашится (production gate, миграция, race с db), повторная попытка стартует с предыдущим сокетом ещё «занятым». Фикс: `docker compose up -d db` → дождаться pg_isready → `up -d app --no-deps`.
+  - **C. Conflict имени сети `tracker_default`** — если на VPS два клона проекта, оба хотят одну сеть и bind сосуществуют глобально. Фикс: `docker compose --project-name tracker1 ... up`.
+- Добавлена секция **13.2 Troubleshooting** в `DEPLOY_VPS.md` с диагностическим all-in-one блоком.
+- CHANGELOG.md: строка для сессии 43.
+
+## 2026-08-09 — Сессия 41: VPS Deployment runbook (DEPLOY_VPS.md)
+
+- Создан `DEPLOY_VPS.md` в корне проекта — standalone копипаста-инструкция для развёртывания на боевом VPS.
+- **Структура:** 14 шагов (предусловия, DNS, каталог, секреты, .env, сборка, миграции, регистрация, nginx+certbot, seed, Telegram, бэкапы, обновление, аварийные команды, чек-лист «всё ОК»).
+- **Каждый шаг — только bash-блоки**, минимум prose между ними. Подходит для чтения на втором мониторе и копирования блок за блоком.
+- Ссылка добавлена в `README.md` (раздел Deployment) и в этот SESSIONS.
+- Артефакты: +1 файл в корне (`DEPLOY_VPS.md`), изменён README.md.
+
 ## 2026-08-09 — Сессия 36: TrainingLogEntry — журнал тренировки
 - **Модель** `app/models/training_log.py`: TrainingLogEntry (time_label, entry_type, planned/actual_value, unit, notes, sort_order, is_extra)
 - **Миграция** 015: таблица `training_log_entries`
