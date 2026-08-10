@@ -90,6 +90,8 @@ All settings via environment variables or `.env` file:
 
 ## Deployment
 
+> 🆕 **Standalone копипаста-runbook для VPS:** [`DEPLOY_VPS.md`](DEPLOY_VPS.md) — только bash-блоки, 14 шагов от нуля до работающего `https://your-domain.com`. Откройте на втором мониторе и копируйте по порядку.
+
 ### Production setup with host nginx + certbot
 
 This guide assumes you have a VPS with Docker, a domain name, and host-level nginx with certbot SSL.
