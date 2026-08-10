@@ -14,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.client import call_llm
 from app.llm.context_builder import build_context, format_context_abstract, format_context_for_prompt
-from app.llm.diet_prompts import DIET_EVALUATE_SYSTEM, DIET_GENERATE_SYSTEM
+from app.llm.diet_prompts import (
+    DIET_EVALUATE_SYSTEM,
+    DIET_GENERATE_SYSTEM,
+    DIET_TRAINING_SYNERGY_SYSTEM,
+)
 from app.llm.repair import JsonRepairError, parse_llm_json
 from app.llm.tools import TOOLS
 from app.llm.training_prompts import (
@@ -28,7 +32,7 @@ from app.llm.validator import (
     validate_params_against_schema,
 )
 from app.models.activity_log import ActivityLog
-from app.models.diet import Diet, DietConsumption, DietItem
+from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.llm_config import LLMProviderConfig
 from app.models.training import TrainingDay
 
@@ -630,6 +634,20 @@ async def evaluate_diet(
     diet.last_evaluation = evaluation
     diet.evaluated_at = datetime.now(UTC)
     db.add(diet)
+    # History: persist this evaluation so the user can see evolution over time.
+    # created_at set in Python (not server_default) so consecutive evaluations
+    # in the same SQLite transaction get distinct timestamps for stable ordering.
+    db.add(
+        DietEvaluation(
+            diet_id=diet.id,
+            user_id=diet.user_id,
+            score=score,
+            summary=summary,
+            findings=findings or [],
+            applied=applied or [],
+            created_at=datetime.now(UTC),
+        )
+    )
 
     llm_config.total_tokens += usage["total_tokens"]
     llm_config.total_cost += usage["cost"]
@@ -637,3 +655,112 @@ async def evaluate_diet(
     await db.flush()
 
     return evaluation
+
+
+async def analyze_diet_training_synergy(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    llm_config: LLMProviderConfig,
+    locale: str = "en",
+    days: int = 7,
+) -> DietTrainingReview:
+    """Analyze the mutual influence between diets and training via LLM.
+
+    Gathers the period's diet consumption + training results and asks the LLM
+    to find concrete correlations and cross-domain adjustments. The result is
+    persisted as a DietTrainingReview (history is kept).
+    """
+    period_end = datetime.now(UTC).date()
+    period_start = period_end - timedelta(days=max(1, min(days, 30)) - 1)
+
+    # Diet side: consumptions + active diet names
+    cons_result = await db.execute(
+        select(DietConsumption)
+        .where(DietConsumption.user_id == user_id, DietConsumption.consumed_date >= period_start)
+        .order_by(DietConsumption.consumed_date, DietConsumption.created_at)
+    )
+    consumptions = list(cons_result.scalars().all())
+    diet_result = await db.execute(
+        select(Diet).where(Diet.user_id == user_id, Diet.is_active.is_(True)).order_by(Diet.created_at)
+    )
+    active_diets = list(diet_result.scalars().all())
+
+    # Training side: days in period + their task statuses
+    day_result = await db.execute(
+        select(TrainingDay)
+        .where(TrainingDay.user_id == user_id, TrainingDay.target_date >= period_start)
+        .order_by(TrainingDay.target_date)
+    )
+    training_days = list(day_result.scalars().all())
+    day_ids = [td.id for td in training_days]
+    logs_by_day: dict[uuid.UUID, list[ActivityLog]] = {}
+    if day_ids:
+        logs_result = await db.execute(
+            select(ActivityLog).where(ActivityLog.training_day_id.in_(day_ids)).order_by(ActivityLog.created_at)
+        )
+        for log in logs_result.scalars().all():
+            logs_by_day.setdefault(log.training_day_id, []).append(log)
+
+    # ── Build the prompt ──
+    diet_text = (
+        "\n".join(f"- {d.name} (direction: {d.direction or '—'}, goal: {d.goal or '—'})" for d in active_diets)
+        or "- (no active diets)"
+    )
+    consumed_text = (
+        "\n".join(
+            f"- {c.consumed_date}: {c.name} ({c.quantity or ''} {c.unit or ''}) [{c.meal_time or 'anytime'}]"
+            for c in consumptions
+        )
+        or "- (no consumption recorded)"
+    )
+    training_lines = []
+    for td in training_days:
+        logs = logs_by_day.get(td.id, [])
+        completed = sum(1 for lg in logs if lg.status == "completed")
+        interrupted = sum(1 for lg in logs if lg.status == "interrupted")
+        pending = sum(1 for lg in logs if lg.status == "pending")
+        training_lines.append(
+            f"- {td.target_date}: {len(logs)} tasks ({completed} done, {interrupted} interrupted, {pending} left)"
+        )
+    training_text = "\n".join(training_lines) or "- (no training recorded)"
+
+    system_prompt = DIET_TRAINING_SYNERGY_SYSTEM.format(locale=locale)
+    user_message = (
+        f"Period: {period_start} .. {period_end}\n\n"
+        f"Active diets:\n{diet_text}\n\n"
+        f"What was eaten:\n{consumed_text}\n\n"
+        f"Training results:\n{training_text}\n\n"
+        "Analyze the mutual influence between nutrition and training."
+    )
+
+    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    usage = result["usage"]
+    parsed = parse_llm_json(result["content"], is_last_attempt=True)
+
+    # ── Sanitize ──
+    summary = str(parsed.get("summary") or "").strip()[:5000] or "No analysis."
+    correlations = []
+    for c in parsed.get("correlations", []) or []:
+        if not isinstance(c, dict):
+            continue
+        direction = str(c.get("direction") or "").strip()
+        if direction not in ("diet_to_training", "training_to_diet"):
+            direction = "diet_to_training"
+        text = str(c.get("text") or "").strip()[:1000]
+        if text:
+            correlations.append({"direction": direction, "text": text})
+    raw_adj = [str(a).strip()[:1000] for a in (parsed.get("adjustments") or []) if isinstance(a, str) and a.strip()]
+    adjustments = raw_adj[:8]
+
+    review = DietTrainingReview(
+        user_id=user_id,
+        period_start=period_start,
+        period_end=period_end,
+        analysis={"summary": summary, "correlations": correlations, "adjustments": adjustments},
+    )
+    db.add(review)
+    llm_config.total_tokens += usage["total_tokens"]
+    llm_config.total_cost += usage["cost"]
+    db.add(llm_config)
+    await db.flush()
+    return review

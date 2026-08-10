@@ -111,3 +111,57 @@ class DietConsumption(Base):
 
     def __repr__(self) -> str:
         return f"<DietConsumption(id={self.id}, name={self.name[:30]})>"
+
+
+class DietEvaluation(Base):
+    """A persisted LLM adherence evaluation for one diet (history over time).
+
+    Unlike Diet.last_evaluation (which only keeps the newest snapshot), this
+    table records every evaluation run so the user can see how adherence and
+    the plan evolved.
+    """
+
+    __tablename__ = "diet_evaluations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    diet_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("diets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    score: Mapped[float] = mapped_column(Float, nullable=False)  # 0..100 adherence
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    findings: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    applied: Mapped[list | None] = mapped_column(JSON, nullable=True)  # plan adjustments applied
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    diet: Mapped[Diet] = relationship("Diet", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<DietEvaluation(id={self.id}, diet={self.diet_id}, score={self.score})>"
+
+
+class DietTrainingReview(Base):
+    """LLM analysis of the mutual influence between diets and training.
+
+    Each review covers a lookback period (e.g. last 7 days) and answers: how
+    did nutrition affect training performance/recovery, how did training load
+    affect appetite/consumption, and what to adjust in both plans.
+    """
+
+    __tablename__ = "diet_training_reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    period_start: Mapped[date] = mapped_column(Date, nullable=False)
+    period_end: Mapped[date] = mapped_column(Date, nullable=False)
+    analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user: Mapped[User] = relationship("User", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<DietTrainingReview(id={self.id}, {self.period_start}..{self.period_end})>"

@@ -84,6 +84,23 @@
         </div>
     </div>
 
+    <!-- Diet ↔ Training synergy -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
+        <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+            <div>
+                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">🔄 {{ t.diets_synergy_title }}</h3>
+                <span class="text-xs text-slate-400">{{ t.diets_synergy_subtitle }}</span>
+            </div>
+            {% if active_config %}
+            <button id="synergy-btn" onclick="runSynergy()"
+                    class="px-4 py-2 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-sm font-medium rounded-lg min-h-[44px] disabled:opacity-50">{{ t.diets_synergy_btn }}</button>
+            {% endif %}
+        </div>
+        <div id="synergy-reviews" class="mt-3 space-y-3">
+            <p class="text-xs text-slate-400 dark:text-slate-500">{{ t.diets_synergy_empty }}</p>
+        </div>
+    </div>
+
     <!-- Diets list -->
     <div id="diets-list" class="space-y-4"></div>
 
@@ -121,6 +138,20 @@ const I18N = {
   consume_btn: "{{ t.diets_consume_btn }}",
   consumed: "{{ t.diets_consumed }}",
   gen_btn: "{{ t.diets_gen_btn }}",
+  synergy_period: "{{ t.diets_synergy_period }}",
+  synergy_summary: "{{ t.diets_synergy_summary }}",
+  synergy_correlations: "{{ t.diets_synergy_correlations }}",
+  synergy_adjustments: "{{ t.diets_synergy_adjustments }}",
+  synergy_empty: "{{ t.diets_synergy_empty }}",
+  synergy_d2t: "{{ t.diets_synergy_diet_to_training }}",
+  synergy_t2d: "{{ t.diets_synergy_training_to_diet }}",
+  eval_history: "{{ t.diets_eval_history }}",
+  eval_history_empty: "{{ t.diets_eval_history_empty }}",
+  eval_history_btn: "{{ t.diets_eval_history_btn }}",
+  item_edit: "{{ t.diets_item_edit }}",
+  save_item: "{{ t.diets_btn_save_item }}",
+  photo_add: "{{ t.diets_photo_add }}",
+  photo_delete: "{{ t.diets_photo_delete }}",
 };
 
 const HAS_LLM = {% if active_config %}true{% else %}false{% endif %};
@@ -179,6 +210,11 @@ function renderDietCard(d) {
   head.appendChild(left);
 
   const actions = el('div', 'flex items-center gap-2 flex-shrink-0 flex-wrap');
+  const histBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-fuchsia-400');
+  histBtn.textContent = I18N.eval_history_btn;
+  histBtn.title = I18N.eval_history;
+  histBtn.onclick = () => showHistory(d.id, card);
+  actions.appendChild(histBtn);
   {% if active_config %}
   const evalBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white');
   evalBtn.textContent = '🤖';
@@ -203,8 +239,28 @@ function renderDietCard(d) {
   head.appendChild(actions);
   card.appendChild(head);
 
-  // Items
+  // Photos (attachments on owner_type=diet)
   const body = el('div', 'p-4');
+  const photosWrap = el('div', 'flex flex-wrap items-center gap-2 mb-3');
+  photosWrap.dataset.dietPhotos = d.id;
+  const photoBtn = el('label', 'px-3 py-1.5 rounded-lg text-xs font-medium min-h-[44px] cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-400 inline-flex items-center gap-1');
+  photoBtn.textContent = '📷 ' + I18N.photo_add;
+  const photoInput = el('input', 'hidden');
+  photoInput.type = 'file'; photoInput.accept = 'image/*';
+  photoInput.onchange = async () => {
+    if (!photoInput.files.length) return;
+    const fd = new FormData();
+    fd.append('file', photoInput.files[0]);
+    fd.append('owner_type', 'diet');
+    fd.append('owner_id', d.id);
+    await fetch('/attachments', { method: 'POST', body: fd });
+    await loadDietPhotos(d.id);
+  };
+  photoBtn.appendChild(photoInput);
+  photosWrap.appendChild(photoBtn);
+  body.appendChild(photosWrap);
+
+  // Items
   const itemsWrap = el('div', 'space-y-1.5');
   itemsWrap.dataset.dietId = d.id;
   if (d.items && d.items.length) {
@@ -270,12 +326,17 @@ function renderItemRow(dietId, it) {
   row.draggable = true;
   row.dataset.id = it.id;
   const grip = el('span', 'text-slate-300 dark:text-slate-600 select-none', '⠿');
-  const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate', it.name);
+  const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400', it.name);
+  name.title = I18N.item_edit;
   const meta = el('span', 'text-xs text-slate-400 flex-shrink-0');
   meta.textContent = [qtyStr(it), it.meal_time].filter(Boolean).join(' · ');
+  const editBtn = el('button', 'text-slate-400 hover:text-indigo-600 text-xs px-1 min-h-[44px]', '✎');
+  editBtn.title = I18N.item_edit;
   const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '✕');
   del.onclick = () => deleteItem(dietId, it.id);
-  [grip, name, meta, del].forEach(c => row.appendChild(c));
+  editBtn.onclick = () => editItemInline(dietId, it);
+  name.onclick = () => editItemInline(dietId, it);
+  [grip, name, meta, editBtn, del].forEach(c => row.appendChild(c));
 
   row.addEventListener('dragstart', e => { dragItemId = it.id; row.classList.add('opacity-50'); e.dataTransfer.effectAllowed = 'move'; });
   row.addEventListener('dragend', () => { row.classList.remove('opacity-50'); dragItemId = null; });
@@ -293,6 +354,43 @@ function renderItemRow(dietId, it) {
     reorderItems(dietId, ids);
   });
   return row;
+}
+
+function editItemInline(dietId, it) {
+  const wrap = document.querySelector('#diets-list [data-diet-id="' + dietId + '"]');
+  const row = wrap && wrap.querySelector('[data-id="' + it.id + '"]');
+  if (!row) return;
+  const form = document.createElement('form');
+  form.className = 'flex flex-wrap items-center gap-2 p-2 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20';
+  const fName = el('input', 'flex-1 min-w-[120px] px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
+  fName.value = it.name; fName.maxLength = 300; fName.required = true;
+  const fQty = el('input', 'w-16 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
+  fQty.type = 'number'; fQty.step = 'any'; fQty.placeholder = I18N.ph_qty;
+  fQty.value = it.quantity == null ? '' : it.quantity;
+  const fUnit = el('input', 'w-16 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
+  fUnit.placeholder = I18N.ph_unit; fUnit.maxLength = 20; fUnit.value = it.unit || '';
+  const fMeal = el('input', 'w-20 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
+  fMeal.placeholder = I18N.ph_meal; fMeal.maxLength = 30; fMeal.value = it.meal_time || '';
+  const fNotes = el('input', 'flex-1 min-w-[120px] px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
+  fNotes.placeholder = I18N.ph_notes; fNotes.maxLength = 2000; fNotes.value = it.notes || '';
+  const fBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.save_item);
+  fBtn.type = 'submit';
+  const fCancel = el('button', 'px-3 py-1.5 text-xs font-medium rounded-lg min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300', '✕');
+  fCancel.type = 'button';
+  fCancel.onclick = () => { row.replaceWith(renderItemRow(dietId, it)); };
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    await api('/diets/api/' + dietId + '/items/' + it.id, 'PUT', {
+      name: fName.value.trim(),
+      quantity: fQty.value === '' ? null : parseFloat(fQty.value),
+      unit: fUnit.value.trim() || null,
+      meal_time: fMeal.value.trim() || null,
+      notes: fNotes.value.trim() || null,
+    });
+    await reloadDiets();
+  });
+  [fName, fQty, fUnit, fMeal, fNotes, fBtn, fCancel].forEach(c => form.appendChild(c));
+  row.replaceWith(form);
 }
 
 // ── API calls ──
@@ -349,6 +447,7 @@ async function reloadDiets() {
   const res = await fetch('/diets/api');
   diets = await res.json();
   renderDiets();
+  diets.forEach(d => loadDietPhotos(d.id));
 }
 
 // ── AI generation ──
@@ -425,6 +524,112 @@ async function loadConsumptions() {
   });
 }
 
+// ── Diet photos ──
+
+async function loadDietPhotos(dietId) {
+  const wrap = document.querySelector('#diets-list [data-diet-photos="' + dietId + '"]');
+  if (!wrap) return;
+  // Remove old thumbnails (keep the upload button)
+  Array.from(wrap.querySelectorAll('[data-photo]')).forEach(x => x.remove());
+  const res = await fetch('/attachments?owner_type=diet&owner_id=' + dietId);
+  const atts = await res.json();
+  atts.forEach(a => {
+    const imgWrap = el('div', 'relative group');
+    imgWrap.dataset.photo = a.id;
+    const img = el('img', 'w-14 h-14 object-cover rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer');
+    img.src = a.file_path;
+    img.onclick = () => window.open(a.file_path, '_blank');
+    const delBtn = el('button', 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs leading-none opacity-0 group-hover:opacity-100 transition-opacity', '✕');
+    delBtn.title = I18N.photo_delete;
+    delBtn.onclick = async () => { await api('/attachments/' + a.id, 'DELETE'); await loadDietPhotos(dietId); };
+    imgWrap.appendChild(img);
+    imgWrap.appendChild(delBtn);
+    wrap.appendChild(imgWrap);
+  });
+}
+
+// ── Evaluation history ──
+
+async function showHistory(dietId, card) {
+  const d = diets.find(x => x.id === dietId);
+  if (!d) return;
+  const res = await fetch('/diets/api/' + dietId + '/evaluations');
+  const evals = await res.json();
+  const body = el('div', 'mt-3 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700');
+  body.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2', I18N.eval_history + ' — ' + d.name));
+  if (!evals.length) {
+    body.appendChild(el('p', 'text-xs text-slate-400', I18N.eval_history_empty));
+  } else {
+    evals.forEach(ev => {
+      const item = el('div', 'border-t border-slate-100 dark:border-slate-700 pt-2 mt-2 first:border-t-0 first:pt-0 first:mt-0');
+      const headRow = el('div', 'flex items-center gap-2');
+      const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+      headRow.appendChild(el('span', 'text-sm font-bold ' + scoreColor, Math.round(ev.score) + '/100'));
+      if (ev.created_at) headRow.appendChild(el('span', 'text-xs text-slate-400', new Date(ev.created_at).toLocaleDateString()));
+      item.appendChild(headRow);
+      item.appendChild(el('p', 'text-xs text-slate-500 dark:text-slate-400 mt-1', ev.summary || ''));
+      body.appendChild(item);
+    });
+  }
+  const closeBtn = el('button', 'mt-3 text-xs text-slate-400 hover:text-slate-600', '✕ close');
+  closeBtn.onclick = () => body.remove();
+  body.appendChild(closeBtn);
+  if (card) card.appendChild(body);
+}
+
+// ── Diet ↔ Training synergy ──
+
+async function loadSynergyReviews() {
+  const wrap = document.getElementById('synergy-reviews');
+  const res = await fetch('/diets/api/synergy');
+  const reviews = await res.json();
+  wrap.innerHTML = '';
+  if (!reviews.length) {
+    wrap.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500', I18N.synergy_empty));
+    return;
+  }
+  reviews.forEach(r => renderSynergyReview(wrap, r));
+}
+
+function renderSynergyReview(wrap, r) {
+  const a = r.analysis || {};
+  const block = el('div', 'p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60');
+  const head = el('div', 'flex items-center gap-2 mb-1 flex-wrap');
+  head.appendChild(el('span', 'text-xs font-semibold text-amber-700 dark:text-amber-300', I18N.synergy_period + ': ' + r.period_start + ' — ' + r.period_end));
+  if (r.created_at) head.appendChild(el('span', 'text-xs text-slate-400', new Date(r.created_at).toLocaleDateString()));
+  block.appendChild(head);
+  block.appendChild(el('p', 'text-sm text-slate-700 dark:text-slate-200', a.summary || ''));
+  if (a.correlations && a.correlations.length) {
+    block.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2', I18N.synergy_correlations + ':'));
+    a.correlations.forEach(c => {
+      const dirLabel = c.direction === 'training_to_diet' ? I18N.synergy_t2d : I18N.synergy_d2t;
+      block.appendChild(el('li', 'text-xs text-slate-600 dark:text-slate-300 ml-4 list-disc', '[' + dirLabel + '] ' + c.text));
+    });
+  }
+  if (a.adjustments && a.adjustments.length) {
+    block.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2', I18N.synergy_adjustments + ':'));
+    a.adjustments.forEach(adj => block.appendChild(el('li', 'text-xs text-slate-600 dark:text-slate-300 ml-4 list-disc', adj)));
+  }
+  wrap.appendChild(block);
+}
+
+async function runSynergy() {
+  const btn = document.getElementById('synergy-btn');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    await api('/diets/api/synergy', 'POST', { days: 7 });
+    await loadSynergyReviews();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
 document.getElementById('consume-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('consume-name').value.trim();
@@ -476,12 +681,14 @@ document.getElementById('diet-form-fields').addEventListener('submit', async e =
   await reloadDiets();
 });
 
-// Fetch full list including items + today's consumptions
+// Fetch full list including items + today's consumptions + synergy + photos
 (async () => {
   const res = await fetch('/diets/api');
   diets = await res.json();
   renderDiets();
   await loadConsumptions();
+  await loadSynergyReviews();
+  diets.forEach(d => loadDietPhotos(d.id));
 })();
 </script>
 {% endblock %}

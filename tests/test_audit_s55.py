@@ -14,9 +14,10 @@ import pytest
 from sqlalchemy import select
 
 from app.models.activity_log import ActivityLog
-from app.models.diet import Diet, DietConsumption, DietItem
+from app.models.diet import Diet, DietConsumption, DietItem, DietTrainingReview
 from app.models.entity import Entity
 from app.models.llm_config import LLMProviderConfig
+from app.models.training import TrainingDay
 
 
 def _llm_cfg(db, user, mode="full", store_raw=True) -> LLMProviderConfig:
@@ -440,6 +441,165 @@ async def test_generate_task_uses_canonical_entity_name(db_session, test_user):
     ):
         log = await generate_task(db=db_session, user_id=test_user.id, llm_config=cfg, locale="en")
     assert log.selected_entity_name == "Real Name"
+
+
+# ── Diets: evaluation history + synergy ──
+
+
+@pytest.mark.asyncio
+async def test_evaluation_history_persisted(auth_client, db_session, test_user):
+    """Every evaluate run appends to diet_evaluations (history over time)."""
+    _llm_cfg(db_session, test_user)
+    diet = Diet(user_id=test_user.id, name="Keto")
+    db_session.add(diet)
+    await db_session.flush()
+
+    payload = {"score": 60, "summary": "First", "findings": [], "adjustments": []}
+    with patch(
+        "app.llm.pipeline.call_llm",
+        new=AsyncMock(
+            return_value={
+                "content": json.dumps(payload),
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2, "cost": 0.0},
+            }
+        ),
+    ):
+        res = await auth_client.post(f"/diets/api/{diet.id}/evaluate", json={"days": 7})
+        assert res.status_code == 200
+
+    res = await auth_client.get(f"/diets/api/{diet.id}/evaluations")
+    assert res.status_code == 200
+    history = res.json()
+    assert len(history) == 1
+    assert history[0]["score"] == 60
+    assert history[0]["summary"] == "First"
+
+    # Second run appends, newest first
+    payload2 = {"score": 80, "summary": "Second", "findings": [], "adjustments": []}
+    with patch(
+        "app.llm.pipeline.call_llm",
+        new=AsyncMock(
+            return_value={
+                "content": json.dumps(payload2),
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2, "cost": 0.0},
+            }
+        ),
+    ):
+        res = await auth_client.post(f"/diets/api/{diet.id}/evaluate", json={"days": 7})
+        assert res.status_code == 200
+    res = await auth_client.get(f"/diets/api/{diet.id}/evaluations")
+    history = res.json()
+    assert len(history) == 2
+    assert history[0]["summary"] == "Second"
+
+
+@pytest.mark.asyncio
+async def test_evaluation_history_cross_user(auth_client, db_session, test_user):
+    other = Diet(user_id=uuid.uuid4(), name="Other")
+    db_session.add(other)
+    await db_session.flush()
+
+    res = await auth_client.get(f"/diets/api/{other.id}/evaluations")
+    assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_diet_training_synergy(db_session, test_user):
+    from app.llm.pipeline import analyze_diet_training_synergy
+
+    cfg = _llm_cfg(db_session, test_user)
+    diet = Diet(user_id=test_user.id, name="Keto", direction="weight_loss", is_active=True)
+    db_session.add(diet)
+    await db_session.flush()
+    db_session.add(
+        DietConsumption(
+            user_id=test_user.id, diet_id=diet.id, name="Oats", quantity=80, unit="g", consumed_date=date.today()
+        )
+    )
+    td = TrainingDay(user_id=test_user.id, target_date=date.today(), status="active")
+    db_session.add(td)
+    await db_session.flush()
+    await db_session.flush()
+
+    payload = {
+        "summary": "Carbs on training days help.",
+        "correlations": [
+            {"direction": "diet_to_training", "text": "Higher carbs → more completed tasks"},
+            {"direction": "training_to_diet", "text": "Heavy days → more snacks"},
+        ],
+        "adjustments": ["Add a pre-workout snack on training days"],
+    }
+    with patch(
+        "app.llm.pipeline.call_llm",
+        new=AsyncMock(
+            return_value={
+                "content": json.dumps(payload),
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2, "cost": 0.0},
+            }
+        ),
+    ):
+        review = await analyze_diet_training_synergy(
+            db=db_session, user_id=test_user.id, llm_config=cfg, locale="en", days=7
+        )
+    assert review.analysis["summary"] == "Carbs on training days help."
+    assert len(review.analysis["correlations"]) == 2
+    assert len(review.analysis["adjustments"]) == 1
+    assert review.period_end == date.today()
+
+    result = await db_session.execute(select(DietTrainingReview).where(DietTrainingReview.user_id == test_user.id))
+    assert result.scalars().all()[0].id == review.id
+
+
+@pytest.mark.asyncio
+async def test_synergy_endpoint_requires_llm(auth_client, db_session, test_user):
+    res = await auth_client.post("/diets/api/synergy", json={"days": 7})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_synergy_endpoint_and_list(auth_client, db_session, test_user):
+    _llm_cfg(db_session, test_user)
+    await db_session.flush()
+
+    payload = {"summary": "S", "correlations": [], "adjustments": []}
+    with patch(
+        "app.llm.pipeline.call_llm",
+        new=AsyncMock(
+            return_value={
+                "content": json.dumps(payload),
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2, "cost": 0.0},
+            }
+        ),
+    ):
+        res = await auth_client.post("/diets/api/synergy", json={"days": 7})
+    assert res.status_code == 200
+    review = res.json()
+    assert review["analysis"]["summary"] == "S"
+
+    res = await auth_client.get("/diets/api/synergy")
+    assert res.status_code == 200
+    assert len(res.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_diet_item_inline_update(auth_client, db_session, test_user):
+    """Inline edit of a diet item via PUT (name/qty/unit/meal/notes)."""
+    diet = Diet(user_id=test_user.id, name="Keto")
+    db_session.add(diet)
+    await db_session.flush()
+    item = DietItem(diet_id=diet.id, name="Eggs", quantity=2, unit="pcs", sort_order=0)
+    db_session.add(item)
+    await db_session.flush()
+
+    res = await auth_client.put(
+        f"/diets/api/{diet.id}/items/{item.id}",
+        json={"name": "Boiled eggs", "quantity": 3, "meal_time": "breakfast"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["name"] == "Boiled eggs"
+    assert body["quantity"] == 3
+    assert body["meal_time"] == "breakfast"
 
 
 # ── Scheduler: raw payload TTL cleanup ──

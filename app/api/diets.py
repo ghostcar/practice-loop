@@ -19,9 +19,14 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.llm.pipeline import evaluate_diet, generate_diet, get_active_llm_config
+from app.llm.pipeline import (
+    analyze_diet_training_synergy,
+    evaluate_diet,
+    generate_diet,
+    get_active_llm_config,
+)
 from app.llm.repair import JsonRepairError
-from app.models.diet import Diet, DietConsumption, DietItem
+from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.user import User
 from app.templates_setup import templates
 
@@ -58,6 +63,10 @@ class DietGenerateRequest(BaseModel):
 
 
 class DietEvaluateRequest(BaseModel):
+    days: int = Field(default=7, ge=1, le=30)
+
+
+class SynergyRequest(BaseModel):
     days: int = Field(default=7, ge=1, le=30)
 
 
@@ -134,6 +143,27 @@ def _consumption_dict(c: DietConsumption) -> dict:
         "consumed_date": c.consumed_date.isoformat(),
         "notes": c.notes,
         "created_at": c.created_at.isoformat() if c.created_at else None,
+    }
+
+
+def _evaluation_dict(ev: DietEvaluation) -> dict:
+    return {
+        "id": str(ev.id),
+        "score": ev.score,
+        "summary": ev.summary,
+        "findings": ev.findings or [],
+        "applied": ev.applied or [],
+        "created_at": ev.created_at.isoformat() if ev.created_at else None,
+    }
+
+
+def _review_dict(r: DietTrainingReview) -> dict:
+    return {
+        "id": str(r.id),
+        "period_start": r.period_start.isoformat(),
+        "period_end": r.period_end.isoformat(),
+        "analysis": r.analysis,
+        "created_at": r.created_at.isoformat() if r.created_at else None,
     }
 
 
@@ -439,3 +469,66 @@ async def evaluate_diet_plan(
     await db.commit()
     await db.refresh(diet)
     return {"evaluation": evaluation, "diet": _diet_dict(diet)}
+
+
+# ── Evaluation history ──
+
+
+@router.get("/api/{diet_id}/evaluations")
+async def list_diet_evaluations(
+    diet_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Full history of LLM adherence evaluations for one diet (newest first)."""
+    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(404, "Diet not found")
+    ev_result = await db.execute(
+        select(DietEvaluation)
+        .where(DietEvaluation.diet_id == diet_id)
+        .order_by(DietEvaluation.created_at.desc(), DietEvaluation.id.desc())
+        .limit(50)
+    )
+    return [_evaluation_dict(ev) for ev in ev_result.scalars().all()]
+
+
+# ── LLM: diet ↔ training synergy ──
+
+
+@router.post("/api/synergy")
+async def create_synergy_review(
+    data: SynergyRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Run an LLM analysis of how diets and training influence each other."""
+    active_config = await get_active_llm_config(db, user.id)
+    if active_config is None:
+        raise HTTPException(400, "No active LLM provider configured")
+    locale = detect_locale(request, user.locale)
+    try:
+        review = await analyze_diet_training_synergy(
+            db=db, user_id=user.id, llm_config=active_config, locale=locale, days=data.days
+        )
+    except (JsonRepairError, ValueError) as e:
+        raise HTTPException(422, str(e)) from None
+    await db.commit()
+    await db.refresh(review)
+    return _review_dict(review)
+
+
+@router.get("/api/synergy")
+async def list_synergy_reviews(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """History of diet↔training synergy reviews (newest first)."""
+    result = await db.execute(
+        select(DietTrainingReview)
+        .where(DietTrainingReview.user_id == user.id)
+        .order_by(DietTrainingReview.created_at.desc(), DietTrainingReview.id.desc())
+        .limit(20)
+    )
+    return [_review_dict(r) for r in result.scalars().all()]
