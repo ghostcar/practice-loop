@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-11 | docs | tracker-spec §9.9 — задокументирована Points v2 схема баллов (gamification_config: points/penalties/bonuses/thresholds, формула начисления, typed DSL без eval, штрафы + redemption, траты/профили, пороги-уведомления; max_per_day помечен как зарезервированный) |
 | 2026-08-11 | docs | tracker-spec §9.5 — задокументирована точная формула XP (BASE_XP 25/50/15, серии +5/день, комбо +10%/потолок +50%, интенсивность +10%/уровень, таблица порогов 0…25000 +2500/уровень, штраф 25×эскалация ×5, training-режим, points v2); Q3 закрыт |
 | 2026-08-11 | Session 57 (+16 тестов) | Закрыты все deferred Q9/Q10: risk_level на Entity (REM §5.2, мигр. 021 + LLM-gate + бейджи); typed gamification DSL (без eval, whitelist операторов, Pydantic-валидаторы); subtask/risk gate тесты; Inter self-hosted шрифт; mobile bottom nav (4 пункта, safe-area); JS-hoist в ES modules (app.js + 10 page-модулей + JSON-блоки i18n); ревью-фиксы (утечка api_key_encrypted через tojson → boolean, дублирование nav, i18n Tasks) |
 | 2026-08-10 | Session 56 (+6 тестов) | Диеты v3: история оценок (diet_evaluations), синергия диеты↔тренировки (diet_training_reviews + LLM analyze_diet_training_synergy), inline-редактирование позиций, фото диет; миграция 020 (PG15); фиксы по ревью (showHistory карточка, стабильный порядок) |

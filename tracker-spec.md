@@ -283,10 +283,10 @@ XP = base + streak_bonus + combo_bonus + intensity_bonus
 - **Training-режим** (задача привязана к `training_day_id`): серии и комбо НЕ трогаются,
   но XP начисляется.
 - **Points v2**: если у сущности есть `gamification_config`, дополнительно начисляются
-  баллы по гибкой схеме (см. 9.1) — XP и баллы независимы.
+  баллы по гибкой схеме (см. 9.9) — XP и баллы независимы.
 - При прерывании: база штрафа `base_penalty = 25 XP`, `penalty_xp = base_penalty × эскалация`
   (см. 9.3/9.6), вычитается из XP (не ниже 0), комбо сбрасывается. Если у сущности есть
-  `gamification_config` — дополнительно списываются баллы (points) по схеме 9.1.
+  `gamification_config` — дополнительно списываются баллы (points) по схеме 9.9.
 
 #### Уровни
 
@@ -317,6 +317,100 @@ XP = base + streak_bonus + combo_bonus + intensity_bonus
 
 ### 9.8. Недельные челленджи
 - Авто-предложения («7 задач за неделю») + ручное создание (цель, срок, награда).
+
+### 9.9. Points v2 — гибкая схема баллов (текущая реализация — `app/gamification/points_v2.py`)
+
+Параллельно с XP действует независимая система баллов. Если у сущности заполнен
+`gamification_config` (JSON на `Entity`), при выполнении/прерывании задачи начисляются
+**баллы (points)** по гибкой схеме — в дополнение к XP. Схема типизирована
+Pydantic-моделями (`app/schemas/points_v2.py`) и валидируется при сохранении.
+
+Структура `gamification_config`:
+
+```jsonc
+{
+  "points": {                     // начисление за выполнение
+    "base": 10,                   // базовые баллы
+    "max_per_day": 50,            // зарезервировано (в схеме, в движке не применяется)
+    "profile_id": null,           // UUID PointsProfile (если назначен)
+    "formula": null               // зарезервировано под кастомную формулу
+  },
+  "penalties": {                  // штраф за прерывание (см. 9.3/9.6)
+    "enabled": true,
+    "levels": [                   // условия по типу срыва
+      {
+        "level": 1,
+        "deduction": 5,           // баллов
+        "condition": "missed",    // missed / partial / late (whitelist)
+        "redemption": {           // опциональная «отработка» штрафа
+          "type": "clothespins",
+          "duration_min": 10,
+          "count": 0,
+          "description": ""
+        },
+        "auto_apply": true
+      }
+    ],
+    "escalation": false,
+    "escalation_step": 1.5,
+    "escalation_cap": 5
+  },
+  "bonuses": [                    // бонусные условия (typed DSL, без eval)
+    {
+      "code": "extra_fluid",
+      "condition": "extra_fluid_ml > 0",  // "поле оператор значение" | простое поле
+      "reward": 20,
+      "per_unit": false,          // true → reward × количество по полю условия
+      "description": "",
+      "enabled": true
+    }
+  ],
+  "thresholds": {                 // пороги баланса → авто-уведомления
+    "negative": -100,
+    "warning": 0,
+    "good": 100
+  }
+}
+```
+
+#### Начисление (выполнение задачи)
+
+```
+base = points.base × (1 + (intensity − 1) × 0.10)   // интенсивность из params
+bonus = Σ reward (для каждого сработавшего bonus.condition)
+        × (per_unit ? количество по полю условия : 1)
+points = base + bonus_total
+```
+
+- Условия бонусов — **типизированный DSL без `eval`** (`app/gamification/dsl.py`):
+  whitelist операторов `> < >= <= == !=`, поле `[A-Za-z_][A-Za-z0-9_]*`, значение —
+  число / `true|false` / короткая строка в кавычках.
+- Транзакция пишется в `PointsTransaction` (`transaction_type=earn`) с уникальной
+  привязкой к `activity_log_id` (двойное начисление невозможно).
+
+#### Штраф (прерывание)
+
+- `penalty = deduction` уровня с `condition == "missed"` × эскалация (см. 9.6).
+- Баланс не опускается ниже −1000; пишется транзакция `penalty`.
+- Если у уровня задан `redemption` — создаётся запись `PenaltyRedemption`
+  (`pending`), которую можно **отработать**: `/api/v2/points/redemptions/{id}/complete`
+  возвращает `points_value` баллов (транзакция `redeem`); `skip` — без возврата.
+
+#### Траты и профили
+
+- `/api/v2/points/spend` — списание баллов на награду (`spend`).
+- **PointsProfile** — переиспользуемые шаблоны `gamification_config`;
+  `POST /api/v2/points/entities/{id}/assign-profile` копирует конфиг профиля в сущность
+  и проставляет `points.profile_id`.
+
+#### Пороги (thresholds)
+
+- После каждого начисления баланс сверяется с порогами сущности (только свои/публичные
+  сущности — защита от cross-user утечки):
+  - `balance < negative` → уведомление «Critical points» (ограничения активны);
+  - `balance < warning` → «Low points»;
+  - `balance >= good` → «Points milestone».
+- Пороги приходят в `GET /api/v2/points/balance` → UI подсвечивает статус.
 
 ---
 
