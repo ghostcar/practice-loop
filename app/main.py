@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 import app.platform.composition as _comp
 from app.auth import get_optional_user
@@ -130,6 +131,22 @@ with contextlib.suppress(RuntimeError):
 @app.get("/healthz", response_class=PlainTextResponse)
 async def healthz():
     return "ok"
+
+
+@app.get("/healthz/readiness", response_class=PlainTextResponse)
+async def readiness():
+    """Readiness probe — checks DB connectivity."""
+    from app.database import get_db
+
+    try:
+        async for db in get_db():
+            await db.execute(text("SELECT 1"))
+            return "ready"
+    except Exception as exc:
+        from fastapi.responses import PlainTextResponse
+
+        return PlainTextResponse(f"not ready: {exc}", status_code=503)
+    return "ready"
 
 
 # ---------------------------------------------------------------------------

@@ -3,6 +3,19 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 68 (C9): Hardening — concurrency tests, secret scan, runbook, owner allowlist
+
+- **Concurrency tests** (tests/test_concurrency.py): 11 сценариев из 13_TEST_PLAN.md §5 — double start (only one active), double open/close (idempotent), open+stop, submit vs skip, penalty idempotency (duplicate→None, 1 row), job idempotency (1 row), outbox uniqueness (distinct events), cross-user safety stop (404), complete idempotency, recovery after stop (new draft allowed). Все 11 ✅.
+- **Secret scan**: grep по hardcoded password/api_key/JWT — ничего не найдено. `.env` в .gitignore (7 строк). Fake test keys (gsk_test123, encrypted-key) — в тестовых фикстурах, безопасны.
+- **Dependency audit**: pip-audit/safety не установлены (PEP 668 system python). pip freeze → 80+ пакетов, критические CVEs не проверены (отложено до CI-интеграции).
+- **Owner allowlist**: `locktimer_owner_allowlist` (comma-separated emails) в config.py → gate в locktimer_ui.py (`_check_owner_allowlist`). Пустая строка = без ограничений.
+- **RUNBOOK.md**: 11 разделов — pre-deploy checklist, deploy, migration runbook, rollback (6 сценариев), backup/restore (daily cron + quarterly drill), health checks, incident playbooks (5 сценариев), monitoring commands, feature flag reference, variant reference, SLOs.
+- **pre_deploy_check.sh**: 7 шагов (git status, pytest, ruff, secret scan, config .env, docker build, alembic heads).
+- **Readiness**: `/healthz/readiness` с DB-проверкой (SELECT 1, 503 на ошибке).
+- **ADR**: ADR-057 (C9 hardening).
+- **Тесты**: **518/518 ✅** (+11 concurrency), ruff ✅, format ✅.
+- **Артефакты**: 4 новых файла (tests/test_concurrency.py, RUNBOOK.md, pre_deploy_check.sh, +readiness endpoint). Изменены: main.py, config.py, locktimer_ui.py, capabilities.py.
+
 ## 2026-08-11 — Сессия 67: Universal media + verification (platform C6, без OCR)
 
 - **Решение владельца**: универсальная медиа-система (не только для Timer), OCR отложен.

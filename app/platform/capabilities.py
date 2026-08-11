@@ -1,4 +1,6 @@
-"""GET /api/v1/platform/capabilities — versioned discovery endpoint (03A §4, 06 §1)."""
+"""GET /api/v1/platform/capabilities — versioned discovery endpoint (03A §4, 06 §1).
+
+GET /api/v1/platform/readiness — DB + health check."""
 
 from __future__ import annotations
 

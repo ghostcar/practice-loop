@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     media_max_upload_bytes: int = 15 * 1024 * 1024  # 15 MB per media asset
     challenge_hmac_key: str = _PLACEHOLDER_ENCRYPTION  # separate key for verification challenge HMAC
 
+    # Owner allowlist for staged rollout (14_ROLLOUT_OPERATIONS.md §1).
+    # Comma-separated email list; empty = no restriction.
+    locktimer_owner_allowlist: str = ""
+
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = _PLACEHOLDER_TG_SECRET

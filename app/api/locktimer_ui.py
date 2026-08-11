@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
+from app.config import settings
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale
@@ -39,6 +40,18 @@ from app.templates_setup import templates
 router = APIRouter(prefix="/locktimer", tags=["locktimer-pages"])
 
 
+def _check_owner_allowlist(user: User) -> None:
+    """Gate: if owner allowlist is set, only listed emails may access LockTimer."""
+    allowlist = settings.locktimer_owner_allowlist.strip()
+    if not allowlist:
+        return  # no restriction
+    allowed = {e.strip().lower() for e in allowlist.split(",") if e.strip()}
+    if (user.email or "").lower() not in allowed:
+        from fastapi import HTTPException
+
+        raise HTTPException(403, "LockTimer Core is in restricted pilot — you are not on the allowlist.")
+
+
 def _now() -> datetime:
     return datetime.now(UTC)
 
@@ -55,6 +68,8 @@ async def locktimer_overview(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _check_owner_allowlist(current_user)
+
     locale = detect_locale(request, current_user.locale)
     t = get_translations(locale)
 
@@ -107,6 +122,8 @@ async def locktimer_session_detail(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _check_owner_allowlist(current_user)
+
     locale = detect_locale(request, current_user.locale)
     t = get_translations(locale)
 
