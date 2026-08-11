@@ -1,6 +1,20 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 58).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 59).
+
+## Сессия 59 (update2.md): справочники BodyPart / TaskLocation / InventoryCategory, DSL-селекторы, API, тесты, UI, импорт
+
+- [x] **Модели**: `BodyPart` (иерархический справочник зон тела, 40 seed), `TaskBodyTarget` (связь задачи с зонами: роль, сторона, интенсивность, snapshot), `TaskLocation` (системные + пользовательские места, privacy_level, location_type, 25 seed), `TaskLocationUsage` (связь задачи с местами, snapshot), `InventoryCategory` (нормализованный справочник 16 категорий), `TaskInventoryUsage` (связь задачи с инвентарём: роль, quantity, snapshot), `ActivityBodyPartRequirement` / `ActivityLocationRequirement` / `ActivityInventoryRequirement` (шаблонные требования Activity к справочникам).
+- [x] **InventoryItem**: +`inventory_category_id` FK, +`inventory_status` (available/in_use/cleaning/charging/maintenance/unavailable/archived — operational-измерение), старый `status` (shopping: need/ordered/bought/built) сохранён.
+- [x] **Миграция 023**: 9 новых таблиц + 2 колонки в `inventory_items`.
+- [x] **DSL расширен (ADR-046)**: 3 новых типа в `app/params.py` — `inventory_selector` (single/multiple mode), `body_part_selector`, `location_selector` — с нормализацией и валидацией.
+- [x] **Seed**: `body_parts` (40 иерархических зон), `locations` (25 системных мест), `inventory_categories` (16 категорий) — все идемпотентны; новый endpoint `POST /admin/seed-references`.
+- [x] **API (23 эндпоинта)**: `app/api/references.py` + `app/schemas/references.py` — BodyPart (плоский список, дерево, фильтр по body_system), TaskLocation (CRUD пользовательских, архив, проверка ссылок → 409), InventoryCategory (список), TaskBodyTarget/TaskLocationUsage/TaskInventoryUsage (batch-replace атомарно + auto-snapshot), Inventory available (фильтр по категории + operational-статусу), Task search (11 фильтров: status, body_part_id, body_system, location_id, location_type, inventory_item_id, inventory_category_slug, session_id, training_day_id, date_from, date_to, limit/offset).
+- [x] **UI**: `body_parts.html` (иерархическое дерево ▸/▾, поиск, фильтр по системе, индикатор чувствительных зон), `locations.html` (список + поиск + фильтр по типу, CRUD форма, archive, delete), доработка `inventory.html` (динамические фильтры категорий, бейджи operational-статусов), +2 карточки в админке.
+- [x] **Импорт/Экспорт**: 3 новых шаблона (`body_parts`, `locations`, `inventory_categories`), 3 handler'а (upsert по slug), CSV-шаблон инвентаря расширен (`inventory_category_slug` + `inventory_status`).
+- [x] **i18n**: +48 ключей EN/RU (body_parts_*, locations_*, inventory_cat_*, inventory_status_*).
+- [x] **Тесты**: +34 в `tests/test_references.py` — seed (иерархия, идемпотентность), API (CRUD, batch-replace, snapshot, cross-user, архив), search (6 фильтров), inventory available, DSL selectors (регистрация, нормализация, валидация), совместимость (старые задачи без связей).
+- [x] **Проверки**: ruff ✅, compile ✅.
 
 ## Сессия 58 (Phase 2): backend новой модели — DSL параметров, title-генератор, API переходов статусов
 
