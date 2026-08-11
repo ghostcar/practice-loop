@@ -74,9 +74,7 @@ class TestMediaAssetModel:
         db_session.add(asset)
         await db_session.flush()
 
-        result = await db_session.execute(
-            select(MediaAsset).where(MediaAsset.owner_id == test_user.id)
-        )
+        result = await db_session.execute(select(MediaAsset).where(MediaAsset.owner_id == test_user.id))
         saved = result.scalar_one()
         assert saved.state == "staged"
         assert saved.mime_type == "image/jpeg"
@@ -95,9 +93,7 @@ class TestMediaAssetModel:
         await db_session.flush()
 
         other_id = uuid.uuid4()
-        result = await db_session.execute(
-            select(MediaAsset).where(MediaAsset.owner_id == other_id)
-        )
+        result = await db_session.execute(select(MediaAsset).where(MediaAsset.owner_id == other_id))
         assert result.scalar_one_or_none() is None
 
 
@@ -168,7 +164,7 @@ class TestMediaApi:
             b"\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
             b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xc4\x00\xb5\x10\x00\x02"
             b"\x01\x03\x03\x02\x04\x03\x05\x05\x04\x04\x00\x00\x01}\x01\x02\x03\x00"
-            b"\x04\x11\x05\x12!1A\x06\x13Qa\x07\"q\x142\x81\x91\xa1\x08#B\xb1\xc1"
+            b'\x04\x11\x05\x12!1A\x06\x13Qa\x07"q\x142\x81\x91\xa1\x08#B\xb1\xc1'
             b"\x15R\xd1\xf0$3br\x82\t\n\x16\x17\x18\x19\x1a%&'()*456789:CDEFGHIJS"
             b"TUVWXYZcdefghijstuvwxyz\x83\x84\x85\x86\x87\x88\x89\x8a\x92\x93\x94\x95"
             b"\x96\x97\x98\x99\x9a\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xb2\xb3\xb4\xb5"
@@ -179,9 +175,7 @@ class TestMediaApi:
             b"\xff\xd9"
         )
         files = {"file": ("test.jpg", io.BytesIO(data), "image/jpeg")}
-        response = await auth_client.post(
-            "/api/v1/media?owner_type=general", files=files
-        )
+        response = await auth_client.post("/api/v1/media?owner_type=general", files=files)
         assert response.status_code == 200
         body = response.json()
         assert body["state"] == "staged"
@@ -190,9 +184,7 @@ class TestMediaApi:
 
     async def test_upload_rejects_bad_mime(self, auth_client) -> None:
         files = {"file": ("test.txt", io.BytesIO(b"hello"), "text/plain")}
-        response = await auth_client.post(
-            "/api/v1/media?owner_type=general", files=files
-        )
+        response = await auth_client.post("/api/v1/media?owner_type=general", files=files)
         assert response.status_code == 400
 
     async def test_list_media(self, auth_client, test_user: User) -> None:

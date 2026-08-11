@@ -79,9 +79,7 @@ class TestLlmProposalModel:
         db_session.add(proposal)
         await db_session.flush()
 
-        result = await db_session.execute(
-            select(LockLlmProposal).where(LockLlmProposal.session_id == session.id)
-        )
+        result = await db_session.execute(select(LockLlmProposal).where(LockLlmProposal.session_id == session.id))
         saved = result.scalar_one()
         assert saved.kind == "pre_start_plan"
         assert len(saved.items) == 2
@@ -100,9 +98,7 @@ class TestLlmProposalModel:
 
         # Other user's query returns nothing
         other_id = uuid.uuid4()
-        result = await db_session.execute(
-            select(LockLlmProposal).where(LockLlmProposal.owner_id == other_id)
-        )
+        result = await db_session.execute(select(LockLlmProposal).where(LockLlmProposal.owner_id == other_id))
         assert result.scalar_one_or_none() is None
 
 
