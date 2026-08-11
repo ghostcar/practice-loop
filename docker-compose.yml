@@ -33,6 +33,9 @@ services:
       TG_BOT_USERNAME: ${TG_BOT_USERNAME:-practice_loop_bot}
       TG_POLLING: ${TG_POLLING:-false}
       TG_AUTO_ANALYSIS_TIME: ${TG_AUTO_ANALYSIS_TIME:-23:00}
+      LOCKTIMER_CORE_ENABLED: ${LOCKTIMER_CORE_ENABLED:-false}
+      LOCKTIMER_OWNER_ALLOWLIST: ${LOCKTIMER_OWNER_ALLOWLIST:-}
+      CHALLENGE_HMAC_KEY: ${CHALLENGE_HMAC_KEY:-}
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
