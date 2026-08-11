@@ -3,6 +3,24 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 65 (C3+C4+C5): LockTimer execution services — draft/start, materializer, slot/task/penalty/safety-stop
+
+- **C3 — Draft + Start**: `create_draft`/`update_draft`, `add_slot_rule`/`add_task_rule`/delete, `start_session` (atomic conditional UPDATE+rowcount, canonical snapshot+hash, materializer chaining).
+- **C4 — Materializer**: 5 slot schedule types (every_n_days, exact_datetime, recurring_from_date, flexible_window_once, after_previous_close placeholder) + 6 task schedule types (daily, every_n_days, recurring_from_date, exact_datetime, anytime_before_end, deterministic_random). Rolling horizon (90 days default, capped by session max_end).
+- **C4 — Job Runner**: `enqueue_job` (idempotent by job_key), `claim_jobs` (SELECT FOR UPDATE SKIP LOCKED, lease).
+- **C5 — Slot execution**: `open_slot` (eligibility window check + late-open extension with rule.extend_on_late_open), `close_slot`. Audit on every transition.
+- **C5 — Task execution**: `reveal_task` (scheduled→visible state transition), `submit_task`, `complete_task` (idempotent), `skip_task`. Audit trail.
+- **C5 — Penalty**: `apply_penalty` (allowlisted types + idempotency key, add_time with cap/max_end via `apply_extension`, capped_noop when max exceeded). Event flushed before write_audit.
+- **C5 — Safety Stop**: `safety_stop` (active→safety_stopped, cancel future slot+task occurrences, audit).
+- **C5 — Outbox**: `emit_outbox_event` (transactional domain events, pending state).
+- **SQLite compat fix**: all `update().returning()` replaced with `update()` + `flush()` + `select()`/`db.get()` (avoid ResourceClosedError on async SQLite).
+- **reveal_task fix**: scheduled→visible state transition (was only setting content_visible=True).
+- **late_open fix**: `_started_session_with_slot` helper missing `extend_on_late_open=True` → extension_applied_seconds was 0.
+- **penalty flush fix**: penalty event flushed before write_audit to assign id.
+- **Тесты**: 29 service integration tests (`tests/test_locktimer_services.py`) — draft/start/slot/task/penalty/safety-stop/outbox/job-runner/materializer. **479/479 ✅**, ruff ✅, format ✅.
+- **ADR**: ADR-054 (C3+C4+C5 execution services).
+- **Артефакты**: `app/locktimer/services/__init__.py`, `app/locktimer/services/execution.py` (800+ lines), `tests/test_locktimer_services.py`; изменены tests/conftest.py (import cleanup), alembic/versions/025 (JSONB→JSON), app/models/locktimer.py (JSONB→JSON).
+
 ## 2026-08-11 — Сессия 64 (C1+C2): LockTimer domain + persistence — 12 таблиц, state machines, repositories
 
 - **C1 — Pure domain** (`app/locktimer/`):

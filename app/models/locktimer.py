@@ -9,6 +9,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -18,7 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
@@ -36,7 +37,7 @@ class LockTimerTemplate(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
-    config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    config: Mapped[dict] = mapped_column(JSON, nullable=False)
     config_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -98,7 +99,7 @@ class LockSessionSnapshot(Base):
         ForeignKey("lock_sessions.id", ondelete="CASCADE"), nullable=False, unique=True
     )
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
-    canonical_config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    canonical_config: Mapped[dict] = mapped_column(JSON, nullable=False)
     config_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -117,7 +118,7 @@ class LockInnerPeriod(Base):
     client_key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     rule_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    rule_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    rule_data: Mapped[dict] = mapped_column(JSON, nullable=False)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -145,15 +146,15 @@ class LockSlotRule(Base):
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     rule_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    schedule: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    schedule: Mapped[dict] = mapped_column(JSON, nullable=False)
     duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     allow_late_open: Mapped[bool] = mapped_column(default=False, nullable=False)
     max_late_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     extend_on_late_open: Mapped[bool] = mapped_column(default=False, nullable=False)
     require_close_media: Mapped[bool] = mapped_column(default=False, nullable=False)
     close_grace_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    late_close_policy: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    llm_flags: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    late_close_policy: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    llm_flags: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -216,16 +217,16 @@ class LockTaskRule(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(String(100), nullable=False, default="general")
     schedule_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    schedule: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    schedule: Mapped[dict] = mapped_column(JSON, nullable=False)
     due_window_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     hide_until_due: Mapped[bool] = mapped_column(default=False, nullable=False)
     requires_report: Mapped[bool] = mapped_column(default=False, nullable=False)
-    media_policy: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    verification_policy: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    penalty_policy: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    availability_policy: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    llm_flags: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    media_policy: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    verification_policy: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    penalty_policy: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    availability_policy: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    llm_flags: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -248,7 +249,7 @@ class LockTaskOccurrence(Base):
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     state: Mapped[str] = mapped_column(String(24), nullable=False, default="scheduled")
     content_visible: Mapped[bool] = mapped_column(default=False, nullable=False)
-    occurrence_snapshot: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    occurrence_snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
     revealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     final_reason_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
@@ -277,7 +278,7 @@ class LockPenaltyEvent(Base):
     state: Mapped[str] = mapped_column(String(20), nullable=False, default="applied")
     reason_code: Mapped[str] = mapped_column(String(60), nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
-    penalty_metadata: Mapped[dict] = mapped_column("penalty_metadata", JSONB, nullable=False, default=dict)
+    penalty_metadata: Mapped[dict] = mapped_column("penalty_metadata", JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -302,7 +303,7 @@ class LockAuditEvent(Base):
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     from_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     to_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -318,7 +319,7 @@ class LockJobReceipt(Base):
     job_key: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
     job_type: Mapped[str] = mapped_column(String(60), nullable=False)
     state: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     run_after: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -340,7 +341,7 @@ class LockOutboxEvent(Base):
     aggregate_type: Mapped[str] = mapped_column(String(40), nullable=False)
     aggregate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     state: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

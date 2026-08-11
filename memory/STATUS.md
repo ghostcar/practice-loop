@@ -1,16 +1,24 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 63 — C0 Platform Foundation).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 65 — C3+C4+C5 execution services).
 
-## LockTimer — Product Composition (C0) ✅ + Domain & Persistence (C1+C2) ✅
+## LockTimer — C0 ✅ + C1+C2 ✅ + C3+C4+C5 ✅
 
-- [x] **C0**: APP_PRODUCT_VARIANT, feature flags, ProductComposition, GET /api/v1/platform/capabilities, User.timezone + migration 024, conditional nav, ADR 047–052.
-- [x] **C1 Domain**: enums (6 session + 7 slot + 10 task states + transitions), state machines (can_transition, is_terminal), duration/extension/clamp, canonical JSON+SHA256, deterministic random, seed generation+commitment, occurrence keys, safety stop validation.
-- [x] **C2 Persistence**: 12 таблиц lock_* (templates, sessions, snapshots, inner_periods, slot_rules/occurrences, task_rules/occurrences, penalty_events, audit_events, job_receipts, outbox_events); миграция 025 (PG15 up/down/up ✅); owner-scoped repositories + conditional UPDATE + append-only audit.
-- [x] **ADR** 047–053 записаны.
-- [x] **Тесты**: 450/450 ✅ (+31 domain), ruff ✅, format ✅.
+- [x] **C0**: APP_PRODUCT_VARIANT, feature flags, ProductComposition, capabilities endpoint, User.timezone, conditional nav, ADR 047–052.
+- [x] **C1 Domain**: 6+7+10 enums/state machines, domain utils (duration/clamp, canonical JSON+SHA256, deterministic random, seed, occurrence keys, safety stop).
+- [x] **C2 Persistence**: 12 таблиц lock_*, миграция 025 (PG15 ✅), owner-scoped repositories.
+- [x] **C3 Draft/Start**: create/update draft, add/delete rules, atomic start (conditional UPDATE+rowcount, snapshot+hash, materializer chaining).
+- [x] **C4 Materializer**: 5 slot + 6 task schedule types, rolling horizon 90 days, deterministic random scheduler.
+- [x] **C4 Job Runner**: enqueue (idempotent), claim (SELECT FOR UPDATE SKIP LOCKED, lease).
+- [x] **C5 Slots**: open (eligibility+late-open extension), close — with audit.
+- [x] **C5 Tasks**: reveal (scheduled→visible), submit, complete (idempotent), skip — with audit.
+- [x] **C5 Penalties**: allowlisted types + idempotency key, add_time with cap/max_end.
+- [x] **C5 Safety Stop**: active→safety_stopped + cancel future occurrences.
+- [x] **C5 Outbox**: transactional domain events.
+- [x] **ADR** 047–054 записаны.
+- [x] **Тесты**: 479/479 ✅ (+60 LockTimer), ruff ✅, format ✅.
 
-**Осталось по LockTimer**: C3–C5 (draft/start, materializer/jobs, execution/safety) → C6–C9 (media/LLM/UI/hardening) → Platform Social
+**Осталось по LockTimer**: C6–C9 (media/LLM/UI/hardening) → Platform Social
 
 ## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 
