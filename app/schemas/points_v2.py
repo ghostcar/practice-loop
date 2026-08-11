@@ -224,6 +224,8 @@ class InventoryItemCreate(BaseModel):
     quantity_needed: int = 1
     is_shopping_list: bool = False
     status: str = "need"
+    inventory_category_id: uuid.UUID | None = None
+    inventory_status: str = "available"
     priority: int = 0
 
 
@@ -235,6 +237,8 @@ class InventoryItemUpdate(BaseModel):
     quantity_needed: int | None = None
     is_shopping_list: bool | None = None
     status: str | None = None
+    inventory_category_id: uuid.UUID | None = None
+    inventory_status: str | None = None
     priority: int | None = None
 
 
@@ -248,6 +252,8 @@ class InventoryItemOut(BaseModel):
     quantity_needed: int
     is_shopping_list: bool
     status: str
+    inventory_category_id: uuid.UUID | None = None
+    inventory_status: str = "available"
     priority: int
     sort_order: int = 0
     image_path: str | None = None

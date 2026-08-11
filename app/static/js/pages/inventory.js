@@ -20,6 +20,14 @@
     inv_status_ordered: T.inv_status_ordered || 'Ordered',
     inv_status_bought: T.inv_status_bought || 'Bought',
     inv_status_built: T.inv_status_built || 'Built',
+    inv_category_filter: T.inventory_filter_category || 'Category',
+    inv_status_filter: T.inventory_filter_status || 'Status',
+    inv_status_available: T.inventory_status_available || 'Available',
+    inv_status_in_use: T.inventory_status_in_use || 'In use',
+    inv_status_cleaning: T.inventory_status_cleaning || 'Cleaning',
+    inv_status_maintenance: T.inventory_status_maintenance || 'Maintenance',
+    inv_status_archived: T.inventory_status_archived || 'Archived',
+    inv_status_unavailable: T.inventory_status_unavailable || 'Unavailable',
   };
   const STATUS_LABEL = {
     need: I18N.inv_status_need,
@@ -27,11 +35,21 @@
     bought: I18N.inv_status_bought,
     built: I18N.inv_status_built,
   };
+  const INV_STATUS_LABEL = {
+    available: I18N.inv_status_available,
+    in_use: I18N.inv_status_in_use,
+    cleaning: I18N.inv_status_cleaning,
+    maintenance: I18N.inv_status_maintenance,
+    archived: I18N.inv_status_archived,
+    unavailable: I18N.inv_status_unavailable,
+  };
+  let invCategories = [];
 
   const root = document.getElementById('inv-list');
   if (!root) return;
 
   let currentFilter = '';
+  let currentCatId = '';
   let invItems = [];
   let dragItemId = null;
 
@@ -41,6 +59,39 @@
     if (shopOnly) url += 'shopping_list=true&';
     const res = await fetch(url);
     invItems = await res.json();
+    renderInventory();
+  }
+
+  // Category filter buttons
+  async function loadCategories() {
+    try {
+      const r = await fetch('/api/v2/inventory-categories');
+      invCategories = await r.json();
+      renderCatFilters();
+    } catch (e) { /* no categories yet */ }
+  }
+
+  function renderCatFilters() {
+    const container = document.getElementById('inv-cat-filters');
+    if (!container) return;
+    container.innerHTML = invCategories.map(c =>
+      `<button onclick="filterByCat('${c.id}')" data-cat="${c.id}" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">${escapeHtml(c.title)}</button>`
+    ).join('');
+  }
+
+  function filterByCat(catId) {
+    currentCatId = catId;
+    currentFilter = '';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-indigo-600', 'text-white'));
+    const btn = document.querySelector(`[data-cat="${catId}"]`);
+    if (btn) btn.classList.add('bg-indigo-600', 'text-white');
+    loadByCat();
+  }
+
+  async function loadByCat() {
+    if (!currentCatId) { loadInventory(currentFilter, false); return; }
+    const r = await fetch(`/api/v2/inventory/available?inventory_category_id=${currentCatId}`);
+    invItems = await r.json();
     renderInventory();
   }
 
@@ -58,6 +109,7 @@
           <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>
           <span class="font-medium text-slate-800 dark:text-slate-100">${escapeHtml(i.name)}</span>
           <span class="text-xs font-medium ${statusBadge(escapeHtml(i.status))}">${escapeHtml(STATUS_LABEL[i.status] || i.status)}</span>
+          ${i.inventory_status && i.inventory_status !== 'available' ? `<span class="text-[10px] px-1.5 py-0.5 rounded ${invStatusBadge(i.inventory_status)}">${escapeHtml(INV_STATUS_LABEL[i.inventory_status] || i.inventory_status)}</span>` : ''}
           ${i.is_shopping_list ? `<span class="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">${escapeHtml(I18N.inv_mark_shopping)}</span>` : ''}
         </div>
         <div class="text-xs text-slate-400 mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
@@ -152,6 +204,18 @@
     };
     return m[s] || 'text-slate-400';
   }
+  function invStatusBadge(s) {
+    const m = {
+      available: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+      in_use: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+      cleaning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+      charging: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+      maintenance: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+      archived: 'bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400',
+      unavailable: 'bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400',
+    };
+    return m[s] || 'text-slate-400';
+  }
   function filter(c) {
     currentFilter = c;
     document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('bg-indigo-600'));
@@ -194,6 +258,7 @@
   }
   bindDrag();
   loadInventory('', false);
+  loadCategories();
 
   // Category chart
   (async () => {
@@ -239,6 +304,7 @@
   window.delImage = delImage;
   window.filter = filter;
   window.filterShoppingList = filterShoppingList;
+  window.filterByCat = filterByCat;
   window.pickImage = pickImage;
   window.showForm = showForm;
 })();

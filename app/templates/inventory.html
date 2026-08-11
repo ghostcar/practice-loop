@@ -13,6 +13,12 @@
   <!-- Drag&drop hint -->
   <p class="text-xs text-slate-400 dark:text-slate-500 mb-2">⠿ {{ t.inv_drag_hint|default('Drag items to reorder') }}</p>
 
+  <!-- Category filters (dynamic from API) -->
+  <div class="mb-3">
+    <span class="text-xs text-slate-400 dark:text-slate-500 mr-2">{{ t.inventory_filter_category }}:</span>
+    <div id="inv-cat-filters" class="inline-flex gap-1.5 flex-wrap"></div>
+  </div>
+
   <!-- Filters -->
   <div class="flex gap-2 mb-6 flex-wrap">
     <button onclick="filter('')" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">{{ t.inventory_filter_all }}</button>

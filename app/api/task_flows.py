@@ -12,6 +12,7 @@ Also exposes the transition graph so the UI can render quick actions.
 """
 
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -24,6 +25,7 @@ from app.gamification.handler import on_task_completed, on_task_interrupted
 from app.models.activity_log import ActivityLog
 from app.models.task_status import (
     COMPLETED,
+    PARTIALLY_COMPLETED,
     STATUS_TRANSITIONS,
     STOPPED,
     TASK_STATUSES,
@@ -38,6 +40,8 @@ router = APIRouter(prefix="/api/v2/tasks", tags=["task-flows"])
 class TransitionIn(BaseModel):
     to_status: str
     comment: str | None = None
+    # ADR-041: actual parameters recorded when completing a task
+    actual_parameters: dict | None = None
 
 
 async def _get_owned_task(db: AsyncSession, task_id: uuid.UUID, user: User) -> ActivityLog:
@@ -81,6 +85,15 @@ async def transition_task(
         hook = _reward_hook
     elif data.to_status == STOPPED:
         hook = _penalty_hook
+
+    # ADR-041/036: record actual parameters + completion comment on finishing states
+    if data.to_status in (COMPLETED, PARTIALLY_COMPLETED):
+        if data.actual_parameters is not None:
+            log.actual_parameters = data.actual_parameters
+        if data.comment:
+            log.completion_comment = data.comment
+        log.completed_at = datetime.now(UTC)
+        db.add(log)
 
     result = await transition_once(db, log, user, data.to_status, comment=data.comment, on_transition_fn=hook)
     await db.commit()

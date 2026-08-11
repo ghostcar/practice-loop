@@ -10,6 +10,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.models.category import ActivityCategory
 from app.models.entity import Entity
 from app.models.opt_in import UserEntityOptIn
 from app.models.user import User
@@ -20,6 +21,42 @@ from app.templates_setup import templates
 router = APIRouter(prefix="/entities", tags=["entities"])
 
 
+# --- Category tree helpers ---
+
+
+def _build_category_tree(
+    cats: list[ActivityCategory],
+) -> tuple[list[ActivityCategory], dict[uuid.UUID, list[ActivityCategory]]]:
+    """Split categories into top-level roots and a parent→children map."""
+    ids = {c.id for c in cats}
+    roots: list[ActivityCategory] = []
+    children: dict[uuid.UUID, list[ActivityCategory]] = {}
+    for c in cats:
+        if c.parent_id and c.parent_id in ids:
+            children.setdefault(c.parent_id, []).append(c)
+        else:
+            roots.append(c)
+    roots.sort(key=lambda c: (c.sort_order, c.title))
+    for k in children:
+        children[k].sort(key=lambda c: (c.sort_order, c.title))
+    return roots, children
+
+
+def _category_and_descendants(cat_id: uuid.UUID, cats: list[ActivityCategory]) -> set[uuid.UUID]:
+    """Selected category + all of its descendants (for subtree filtering)."""
+    result: set[uuid.UUID] = set()
+    stack = [cat_id]
+    while stack:
+        cur = stack.pop()
+        if cur in result:
+            continue
+        result.add(cur)
+        for c in cats:
+            if c.parent_id == cur:
+                stack.append(c.id)
+    return result
+
+
 # --- Pages ---
 
 
@@ -27,16 +64,38 @@ router = APIRouter(prefix="/entities", tags=["entities"])
 async def catalog_page(
     request: Request,
     category: str | None = Query(None),
+    category_id: uuid.UUID | None = Query(None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Browse the entity catalog."""
+    """Browse the entity catalog — hierarchical ActivityCategory filters (ADR-035).
+
+    Filtering is by ``category_id`` (the normalized table). The legacy
+    ``category`` string filter is kept for backward compatibility with old
+    links and entities that still only carry the string.
+    """
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
+    # Load the full category tree (for filter chips)
+    cat_result = await db.execute(select(ActivityCategory).where(ActivityCategory.is_active.is_(True)))
+    all_categories = list(cat_result.scalars().all())
+    root_categories, subcategories = _build_category_tree(all_categories)
+    # Template-friendly: string-keyed subcategory map
+    subcategories = {str(k): v for k, v in subcategories.items()}
+
     query = select(Entity).where(Entity.is_public | (Entity.owner_id == user.id))
-    if category:
+    active_category_id: uuid.UUID | None = None
+    active_category_str: str | None = None
+
+    if category_id:
+        active_category_id = category_id
+        ids = _category_and_descendants(category_id, all_categories)
+        query = query.where(Entity.category_id.in_(ids))
+    elif category:
+        # Legacy string filter (backward compat)
+        active_category_str = category
         query = query.where(Entity.category == category)
 
     result = await db.execute(query.order_by(Entity.category, Entity.real_name))
@@ -46,9 +105,9 @@ async def catalog_page(
     opt_in_result = await db.execute(select(UserEntityOptIn).where(UserEntityOptIn.user_id == user.id))
     opt_ins = {oi.entity_id: oi for oi in opt_in_result.scalars().all()}
 
-    # Gather unique categories
-    cat_result = await db.execute(select(Entity.category).distinct().order_by(Entity.category))
-    categories = [row[0] for row in cat_result.all()]
+    # Legacy unique category strings (fallback chips for non-normalized entities)
+    legacy_cats_result = await db.execute(select(Entity.category).distinct().order_by(Entity.category))
+    legacy_categories = [row[0] for row in legacy_cats_result.all()]
 
     return templates.TemplateResponse(
         request=request,
@@ -61,8 +120,11 @@ async def catalog_page(
             "theme": theme,
             "entities": entities,
             "opt_ins": opt_ins,
-            "categories": categories,
-            "active_category": category,
+            "root_categories": root_categories,
+            "subcategories": subcategories,
+            "legacy_categories": legacy_categories,
+            "active_category_id": str(active_category_id) if active_category_id else None,
+            "active_category_str": active_category_str,
             "desire_levels": DESIRE_LEVELS,
             "active_nav": "catalog",
         },
@@ -108,10 +170,11 @@ async def create_entity(
     request: Request,
     real_name: str = Form(...),
     type: str = Form(default="one_time"),
-    category: str = Form(...),
+    category: str = Form(default="other"),
     tags: str = Form(default=""),
     is_public: bool = Form(default=False),
     risk_level: str = Form(default="not_assessed"),
+    category_id: uuid.UUID | None = Form(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -120,11 +183,18 @@ async def create_entity(
         type = "one_time"
     if risk_level not in ("not_assessed", "low", "elevated", "high"):
         risk_level = "not_assessed"
+    if category_id is not None:
+        # Normalized category — resolve the legacy display string for back-compat
+        cat_result = await db.execute(select(ActivityCategory).where(ActivityCategory.id == category_id))
+        cat = cat_result.scalar_one_or_none()
+        if cat is not None:
+            category = cat.title
     entity = Entity(
         type=type,
         real_name=real_name.strip(),
         slug=slugify(real_name),
         category=category.strip(),
+        category_id=category_id,
         tags=[t.strip() for t in tags.split(",") if t.strip()] if tags else None,
         owner_id=user.id,
         is_public=is_public,

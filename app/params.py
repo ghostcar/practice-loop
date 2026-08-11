@@ -42,6 +42,10 @@ PARAM_TYPES: tuple[str, ...] = (
     "enum",
     "multi_enum",
     "duration",
+    # update2.md §8: reference selectors
+    "inventory_selector",
+    "body_part_selector",
+    "location_selector",
 )
 
 # Legacy type names → canonical
@@ -161,6 +165,19 @@ def _normalize_definition(d: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"enum param '{key}' requires 'options'")
     if t == "multi_enum" and not isinstance(out.get("options"), list):
         out["options"] = []
+    # Reference selectors (update2.md §8) — validate shape
+    if t in ("inventory_selector", "body_part_selector", "location_selector"):
+        out.setdefault("selection_mode", "single")
+        if t == "inventory_selector":
+            out.setdefault("allowed_categories", [])
+            out.setdefault("allowed_usage_roles", [])
+            out.setdefault("allow_custom_value", False)
+        if t == "body_part_selector":
+            out.setdefault("allowed_body_systems", [])
+            out.setdefault("allow_side_selection", True)
+        if t == "location_selector":
+            out.setdefault("allowed_location_types", [])
+            out.setdefault("include_user_custom_locations", True)
     return out
 
 
@@ -253,5 +270,22 @@ def _validate_value(key: str, value: Any, d: dict[str, Any]) -> list[str]:
         if "enum" in d and value not in d["enum"]:
             errors.append(f"PARAM_NOT_IN_ENUM: {key}={value!r} not in {d['enum']}")
         return errors
+
+    # reference selectors (update2.md §8) — validate shape only;
+    # existence of referenced IDs is checked at service/API layer
+    if t in ("inventory_selector", "body_part_selector", "location_selector"):
+        mode = d.get("selection_mode", "single")
+        if mode == "single":
+            if not isinstance(value, str):
+                return [f"PARAM_TYPE_MISMATCH: {key} expected a single ID string"]
+            return []
+        if mode == "multiple":
+            if not isinstance(value, list):
+                return [f"PARAM_TYPE_MISMATCH: {key} expected a list of IDs"]
+            for i, v in enumerate(value):
+                if not isinstance(v, str):
+                    return [f"PARAM_TYPE_MISMATCH: {key}[{i}] expected string ID"]
+            return []
+        return []
 
     return []

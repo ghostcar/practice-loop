@@ -34,12 +34,28 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure BYOK providers (Omniroute, Groq, OpenRouter…)</p>
         </a>
 
+        <!-- Body Parts reference -->
+        <a href="/api/v2/body-parts/page"
+           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+            <div class="text-4xl mb-3">🦴</div>
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Body Zones</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Anatomical reference: hierarchy, search, filters</p>
+        </a>
+
+        <!-- Locations reference -->
+        <a href="/api/v2/locations/page"
+           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+            <div class="text-4xl mb-3">📍</div>
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Locations</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">System + personal places, CRUD, filters</p>
+        </a>
+
         <!-- Seed data controls -->
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
             <div class="text-4xl mb-3">🌱</div>
             <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Seed Data</h3>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">Initialize the catalog and provider presets</p>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
                 <form action="/admin/seed-entities" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit"
@@ -52,6 +68,13 @@
                     <button type="submit"
                             class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium">
                         Seed LLM Presets
+                    </button>
+                </form>
+                <form action="/admin/seed-references" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit"
+                            class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium">
+                        Seed References
                     </button>
                 </form>
             </div>

@@ -8,7 +8,10 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.user import User
 from app.seed import seed_entities, seed_llm_presets
+from app.seed_body_parts import seed_body_parts
 from app.seed_categories import seed_categories
+from app.seed_inventory_categories import seed_inventory_categories
+from app.seed_locations import seed_locations
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -58,4 +61,17 @@ async def seed_llm_presets_endpoint(
 ):
     """Seed LLM presets — requires admin role."""
     await seed_llm_presets(db, user_id=user.id)
+    return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.post("/seed-references")
+async def seed_references_endpoint(
+    request: Request,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Seed reference data: body parts, locations, inventory categories."""
+    await seed_body_parts(db)
+    await seed_locations(db)
+    await seed_inventory_categories(db)
     return RedirectResponse(url="/admin", status_code=303)

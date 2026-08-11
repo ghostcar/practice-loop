@@ -15,10 +15,12 @@ from app.main import app
 from app.models import Base
 from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401 — ensure table registry
+from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
 from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate  # noqa: F401
 from app.models.category import ActivityCategory  # noqa: F401
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
+from app.models.inventory_category import InventoryCategory  # noqa: F401
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule  # noqa: F401
 from app.models.llm_config import LLMProviderConfig  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
@@ -27,6 +29,8 @@ from app.models.points import PenaltyRedemption, PointsProfile, PointsTransactio
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
 from app.models.task_history import ActivityTaskHistory  # noqa: F401
+from app.models.task_inventory import ActivityInventoryRequirement, TaskInventoryUsage  # noqa: F401
+from app.models.task_location import ActivityLocationRequirement, TaskLocation, TaskLocationUsage  # noqa: F401
 from app.models.training import TrainingDay  # noqa: F401
 from app.models.user import User
 from app.templates_setup import templates

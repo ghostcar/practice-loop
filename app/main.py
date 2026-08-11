@@ -15,6 +15,7 @@ from app.api.entities import router as entities_router
 from app.api.import_data import router as import_router
 from app.api.llm_configs import router as llm_configs_router
 from app.api.points_v2 import router as points_v2_router
+from app.api.references import router as references_router
 from app.api.task_flows import router as task_flows_router
 from app.api.tasks import router as tasks_router
 from app.api.training import router as training_router
@@ -131,6 +132,7 @@ app.include_router(training_router)
 app.include_router(dashboard_router)
 app.include_router(points_v2_router)
 app.include_router(task_flows_router)
+app.include_router(references_router)
 app.include_router(import_router)
 app.include_router(calendar_router)
 app.include_router(attachments_router)

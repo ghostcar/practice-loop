@@ -19,9 +19,12 @@ from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.activity_log import ActivityLog
+from app.models.body_part import BodyPart
 from app.models.entity import Entity
+from app.models.inventory_category import InventoryCategory
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule
 from app.models.points import PointsProfile, PointsTransaction
+from app.models.task_location import TaskLocation
 from app.models.training import TrainingDay
 from app.models.user import User
 from app.schemas.points_v2 import ImportPayload
@@ -57,8 +60,14 @@ TEMPLATES: dict[str, dict] = {
     },
     "inventory": {
         "label": "Inventory / Shopping List",
-        "csv_headers": "category,name,description,quantity,quantity_needed,is_shopping_list,status,priority",
-        "example_csv": ("clothing,Black stockings 40 den,,3,5,true,need,2\nequipment,Rope 6mm 20m,,4,7,true,need,5"),
+        "csv_headers": (
+            "category,name,description,quantity,quantity_needed,"
+            "is_shopping_list,status,priority,inventory_category_slug,inventory_status"
+        ),
+        "example_csv": (
+            "clothing,Black stockings 40 den,,3,5,true,need,2,clothing,available\n"
+            "equipment,Rope 6mm 20m,,4,7,true,need,5,bondage_equipment,available"
+        ),
         "json_schema": {
             "import_type": "inventory",
             "data": [
@@ -176,6 +185,33 @@ TEMPLATES: dict[str, dict] = {
             ],
         },
     },
+    "body_parts": {
+        "label": "Body Parts (Reference)",
+        "csv_headers": "slug,title_ru,title_en,body_system,is_sensitive,parent_slug",
+        "example_csv": "my_custom_zone,My Zone,,general,false,",
+        "json_schema": {
+            "import_type": "body_parts",
+            "data": [{"slug": "my_custom_zone", "title_ru": "My Zone", "body_system": "general"}],
+        },
+    },
+    "locations": {
+        "label": "Locations (Reference)",
+        "csv_headers": "slug,title_ru,title_en,location_type,privacy_level,parent_slug",
+        "example_csv": "my-office,Офис,Office,room,private,",
+        "json_schema": {
+            "import_type": "locations",
+            "data": [{"slug": "my-office", "title_ru": "Офис", "location_type": "room", "privacy_level": "private"}],
+        },
+    },
+    "inventory_categories": {
+        "label": "Inventory Categories (Reference)",
+        "csv_headers": "slug,title,description",
+        "example_csv": "custom_tool,My Custom Tool,Personal equipment",
+        "json_schema": {
+            "import_type": "inventory_categories",
+            "data": [{"slug": "custom_tool", "title": "My Custom Tool", "description": "Personal equipment"}],
+        },
+    },
     "points_profiles": {
         "label": "Points Profiles",
         "csv_headers": "name,is_default",
@@ -217,6 +253,12 @@ EXPORT_TYPES: dict[str, dict] = {
     },
     "training_days": {"model": TrainingDay, "csv_headers": TEMPLATES["training_days"]["csv_headers"].split(",")},
     "activity_logs": {"model": ActivityLog, "csv_headers": TEMPLATES["activity_logs"]["csv_headers"].split(",")},
+    "body_parts": {"model": BodyPart, "csv_headers": TEMPLATES["body_parts"]["csv_headers"].split(",")},
+    "locations": {"model": TaskLocation, "csv_headers": TEMPLATES["locations"]["csv_headers"].split(",")},
+    "inventory_categories": {
+        "model": InventoryCategory,
+        "csv_headers": TEMPLATES["inventory_categories"]["csv_headers"].split(","),
+    },
 }
 
 
@@ -371,6 +413,12 @@ async def _import_csv(content: str, db: AsyncSession, user: User) -> dict:
         return await _import_activity_logs(rows, db, user)
     elif "name" in headers and "is_default" in headers:
         return await _import_points_profiles(rows, db, user)
+    elif "slug" in headers and "body_system" in headers:
+        return await _import_body_parts(rows, db, user)
+    elif "slug" in headers and "location_type" in headers:
+        return await _import_locations(rows, db, user)
+    elif "slug" in headers and "title" in headers and "is_shopping_list" not in headers:
+        return await _import_inventory_categories(rows, db, user)
     else:
         raise HTTPException(400, f"Cannot auto-detect import type from CSV headers: {sorted(headers)}")
 
@@ -389,6 +437,9 @@ async def _import_json(data: dict, db: AsyncSession, user: User, mode: str = "up
         "training_days": _import_training_days,
         "activity_logs": _import_activity_logs,
         "points_profiles": _import_points_profiles,
+        "body_parts": _import_body_parts,
+        "locations": _import_locations,
+        "inventory_categories": _import_inventory_categories,
     }
 
     handler = handlers.get(import_type)
@@ -441,6 +492,15 @@ async def _import_inventory(rows: list[dict], db: AsyncSession, user: User, mode
     imported = skipped = 0
     for row in rows:
         try:
+            # Resolve inventory_category_id from slug if provided
+            cat_id = None
+            cat_slug = row.get("inventory_category_slug")
+            if cat_slug:
+                cat_res = await db.execute(select(InventoryCategory.id).where(InventoryCategory.slug == str(cat_slug)))
+                cat_row = cat_res.first()
+                if cat_row:
+                    cat_id = cat_row[0]
+
             item = InventoryItem(
                 user_id=user.id,
                 category=str(row.get("category", "other")),
@@ -450,6 +510,8 @@ async def _import_inventory(rows: list[dict], db: AsyncSession, user: User, mode
                 quantity_needed=int(row.get("quantity_needed", 1)),
                 is_shopping_list=str(row.get("is_shopping_list", "false")).lower() == "true",
                 status=str(row.get("status", "need")),
+                inventory_category_id=cat_id,
+                inventory_status=str(row.get("inventory_status", "available")),
                 priority=int(row.get("priority", 0)),
             )
             db.add(item)
@@ -679,6 +741,116 @@ async def _import_points_profiles(rows: list[dict], db: AsyncSession, user: User
             imported += 1
         except Exception as e:
             logger.warning(f"Skip points_profile row: {e}")
+            skipped += 1
+    await db.commit()
+    return {"status": "ok", "imported": imported, "skipped": skipped}
+
+
+async def _import_body_parts(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
+    """Import custom body parts (reference data)."""
+    imported = skipped = 0
+    for row in rows:
+        try:
+            slug = str(row.get("slug", ""))
+            existing = (await db.execute(select(BodyPart).where(BodyPart.slug == slug))).scalar_one_or_none()
+            if existing and mode != "insert":
+                if row.get("title_ru"):
+                    existing.title_ru = str(row["title_ru"])
+                if row.get("title_en"):
+                    existing.title_en = str(row["title_en"])
+            else:
+                parent_id = None
+                if row.get("parent_slug"):
+                    pr = await db.execute(select(BodyPart.id).where(BodyPart.slug == str(row["parent_slug"])))
+                    p = pr.first()
+                    if p:
+                        parent_id = p[0]
+                db.add(
+                    BodyPart(
+                        slug=slug,
+                        title_ru=str(row.get("title_ru", slug)),
+                        title_en=str(row.get("title_en", "")) or None,
+                        body_system=str(row.get("body_system", "general")),
+                        is_sensitive=str(row.get("is_sensitive", "false")).lower() == "true",
+                        parent_id=parent_id,
+                    )
+                )
+            imported += 1
+        except Exception as e:
+            logger.warning(f"Skip body_part row: {e}")
+            skipped += 1
+    await db.commit()
+    return {"status": "ok", "imported": imported, "skipped": skipped}
+
+
+async def _import_locations(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
+    """Import custom locations."""
+    imported = skipped = 0
+    for row in rows:
+        try:
+            slug = str(row.get("slug", ""))
+            existing = (
+                await db.execute(
+                    select(TaskLocation).where(TaskLocation.slug == slug, TaskLocation.owner_id == user.id)
+                )
+            ).scalar_one_or_none()
+            if existing and mode != "insert":
+                if row.get("title_ru"):
+                    existing.title_ru = str(row["title_ru"])
+                if row.get("location_type"):
+                    existing.location_type = str(row["location_type"])
+            else:
+                parent_id = None
+                if row.get("parent_slug"):
+                    pr = await db.execute(select(TaskLocation.id).where(TaskLocation.slug == str(row["parent_slug"])))
+                    p = pr.first()
+                    if p:
+                        parent_id = p[0]
+                db.add(
+                    TaskLocation(
+                        slug=slug,
+                        title_ru=str(row.get("title_ru", slug)),
+                        title_en=str(row.get("title_en", "")) or None,
+                        location_type=str(row.get("location_type", "other")),
+                        privacy_level=str(row.get("privacy_level", "private")),
+                        is_custom=True,
+                        owner_id=user.id,
+                        parent_id=parent_id,
+                    )
+                )
+            imported += 1
+        except Exception as e:
+            logger.warning(f"Skip location row: {e}")
+            skipped += 1
+    await db.commit()
+    return {"status": "ok", "imported": imported, "skipped": skipped}
+
+
+async def _import_inventory_categories(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
+    """Import custom inventory categories."""
+    imported = skipped = 0
+    for row in rows:
+        try:
+            slug = str(row.get("slug", ""))
+            existing = (
+                await db.execute(select(InventoryCategory).where(InventoryCategory.slug == slug))
+            ).scalar_one_or_none()
+            if existing and mode != "insert":
+                if row.get("title"):
+                    existing.title = str(row["title"])
+                if row.get("description"):
+                    existing.description = str(row["description"])
+            else:
+                db.add(
+                    InventoryCategory(
+                        slug=slug,
+                        title=str(row.get("title", slug)),
+                        description=str(row.get("description", "")) or None,
+                    )
+                )
+            imported += 1
+        except Exception as e:
+            logger.warning(f"Skip inventory_category row: {e}")
             skipped += 1
     await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

@@ -69,7 +69,12 @@ class BodyMeasurement(Base):
 
 
 class InventoryItem(Base):
-    """Equipment, clothing, cosmetics inventory with shopping list support."""
+    """Equipment, clothing, cosmetics inventory with shopping list support.
+
+    ``status`` = shopping-list status (need / ordered / bought / built).
+    ``inventory_status`` = operational availability (available / in_use /
+    cleaning / charging / maintenance / unavailable / archived).
+    """
 
     __tablename__ = "inventory_items"
 
@@ -78,14 +83,23 @@ class InventoryItem(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    # equipment / clothing / cosmetics / other
+    # legacy free string — kept; prefer inventory_category_id for new items
+    inventory_category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory_categories.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     name: Mapped[str] = mapped_column(String(300), nullable=False)
     description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     quantity_needed: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     is_shopping_list: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="need", nullable=False)
-    # need / ordered / bought / built
+    # need / ordered / bought / built (shopping-list)
+    inventory_status: Mapped[str] = mapped_column(
+        String(20), default="available", nullable=False
+    )  # available / in_use / cleaning / charging / maintenance / unavailable / archived
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)  # /uploads/inventory/<uuid>.jpg

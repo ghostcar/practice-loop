@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ t.body_parts_title }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-4">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.body_parts_title }}</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ t.body_parts_subtitle|default('Anatomical reference for task targeting') }}</p>
+    </div>
+  </div>
+
+  <!-- Search + system filter -->
+  <div class="flex gap-3 mb-4">
+    <input id="bp-search" type="text"
+           placeholder="{{ t.body_parts_search_ph }}"
+           class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100"
+           oninput="window.filterTree()">
+    <select id="bp-system" onchange="window.filterTree()"
+            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100">
+      <option value="">{{ t.body_parts_system_all }}</option>
+      <option value="general">General</option>
+      <option value="head_neck">Head &amp; Neck</option>
+      <option value="torso">Torso</option>
+      <option value="upper_limb">Upper limbs</option>
+      <option value="lower_limb">Lower limbs</option>
+      <option value="intimate">Intimate</option>
+    </select>
+  </div>
+
+  <!-- Tree -->
+  <div id="bp-tree" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+    <div class="p-4 text-sm text-slate-400">{{ t.dashboard_loading|default('Loading…') }}</div>
+  </div>
+
+  <!-- Legend -->
+  <div class="mt-4 flex gap-4 text-xs text-slate-500 dark:text-slate-400">
+    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span> {{ t.body_parts_sensitive }}</span>
+    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span> Standard</span>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/pages/body_parts.js"></script>
+{% endblock %}

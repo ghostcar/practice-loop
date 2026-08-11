@@ -37,8 +37,11 @@ from app.llm.validator import (
     validate_params_against_schema,
 )
 from app.models.activity_log import ActivityLog
+from app.models.body_part import TaskBodyTarget
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.llm_config import LLMProviderConfig
+from app.models.task_inventory import TaskInventoryUsage
+from app.models.task_location import TaskLocationUsage
 from app.models.training import TrainingDay
 
 logger = logging.getLogger(__name__)
@@ -119,6 +122,9 @@ async def generate_task(
     session_id: uuid.UUID | None = None,
     locale: str = "en",
     custom_prompt: str | None = None,
+    body_part_id: str | None = None,
+    location_id: str | None = None,
+    inventory_item_id: str | None = None,
 ) -> ActivityLog:
     """Generate a task via LLM and save to ActivityLog."""
     context = await build_context(db, user_id, session_id=session_id, locale=locale)
@@ -135,6 +141,16 @@ async def generate_task(
     user_message = f"Context:\n{context_text}\n\n"
     if custom_prompt:
         user_message += f"User request: {custom_prompt}\n\n"
+    # Inject preference hints into the prompt
+    prefs: list[str] = []
+    if body_part_id:
+        prefs.append(f"preferred body zone: {body_part_id}")
+    if location_id:
+        prefs.append(f"preferred location: {location_id}")
+    if inventory_item_id:
+        prefs.append(f"available item: {inventory_item_id}")
+    if prefs:
+        user_message += "User preferences: " + "; ".join(prefs) + "\n\n"
     user_message += "Suggest a task from the allowed entities list."
 
     raw_response = ""
@@ -227,6 +243,26 @@ async def generate_task(
     )
     db.add(log)
     await db.flush()
+
+    # Create link records for user preference hints (update2.md: body/location/inventory selectors)
+    if body_part_id:
+        try:
+            bp_id = uuid.UUID(body_part_id)
+            db.add(TaskBodyTarget(task_id=log.id, body_part_id=bp_id, role="target_area"))
+        except (ValueError, KeyError):
+            pass
+    if location_id:
+        try:
+            loc_id = uuid.UUID(location_id)
+            db.add(TaskLocationUsage(task_id=log.id, location_id=loc_id, role="primary"))
+        except (ValueError, KeyError):
+            pass
+    if inventory_item_id:
+        try:
+            inv_id = uuid.UUID(inventory_item_id)
+            db.add(TaskInventoryUsage(task_id=log.id, inventory_item_id=inv_id, role="required"))
+        except (ValueError, KeyError):
+            pass
 
     llm_config.total_tokens += usage["total_tokens"]
     llm_config.total_cost += usage["cost"]

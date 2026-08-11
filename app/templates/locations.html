@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t.locations_title }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-4">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.locations_title }}</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ t.locations_subtitle }}</p>
+    </div>
+    <button onclick="window.showAddForm()"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+      {{ t.locations_btn_add }}
+    </button>
+  </div>
+
+  <!-- Add / Edit form (hidden) -->
+  <div id="loc-form-container" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 mb-6">
+    <h3 id="loc-form-title" class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.locations_btn_add }}</h3>
+    <form id="loc-form" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <input type="hidden" id="loc-id" value="">
+      <input id="loc-name" placeholder="{{ t.locations_ph_name }}" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+      <input id="loc-slug" placeholder="{{ t.locations_ph_slug }}" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+      <select id="loc-type" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+        <option value="home">Home</option><option value="room">Room</option><option value="furniture">Furniture</option>
+        <option value="bathroom">Bathroom</option><option value="training">Training</option>
+        <option value="outdoor">Outdoor</option><option value="remote">Remote</option>
+        <option value="virtual">Virtual</option><option value="other">Other</option>
+      </select>
+      <select id="loc-privacy" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
+        <option value="private">Private</option><option value="shared">Shared</option><option value="public">Public</option><option value="remote">Remote</option>
+      </select>
+      <div class="flex gap-2 col-span-full">
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium">{{ t.locations_btn_save }}</button>
+        <button type="button" onclick="window.hideForm()" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-lg text-sm transition-colors">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Search + filter -->
+  <div class="flex gap-3 mb-4">
+    <input id="loc-search" type="text" placeholder="{{ t.locations_search_ph }}"
+           class="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100"
+           oninput="window.renderList()">
+    <select id="loc-type-filter" onchange="window.renderList()"
+            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-100">
+      <option value="">{{ t.locations_type_all }}</option>
+      <option value="home">Home</option><option value="room">Room</option><option value="bathroom">Bathroom</option>
+      <option value="training">Training</option><option value="furniture">Furniture</option>
+      <option value="outdoor">Outdoor</option><option value="remote">Remote</option><option value="virtual">Virtual</option>
+      <option value="other">Other</option>
+    </select>
+  </div>
+
+  <!-- List -->
+  <div id="loc-list" class="space-y-1">
+    <div class="p-4 text-sm text-slate-400">{{ t.dashboard_loading|default('Loading…') }}</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/pages/locations.js"></script>
+{% endblock %}
