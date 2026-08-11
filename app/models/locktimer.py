@@ -1,6 +1,7 @@
 """LockTimer ORM models — Core tables (05_DATA_MODEL.md).
 
-Media, verification, challenges, results, LLM proposals are deferred to C6-C7.
+Media, verification, challenges, results deferred to C6.
+LLM proposals added in C7.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -347,3 +349,44 @@ class LockOutboxEvent(Base):
     available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# lock_llm_proposals — C7 LLM-generated session proposals
+# ---------------------------------------------------------------------------
+
+
+class LockLlmProposal(Base):
+    """An LLM-generated proposal for a timer session (pre-start or post-start).
+
+    Items are stored as a JSON array; each item can be individually applied or rejected.
+    """
+
+    __tablename__ = "lock_llm_proposals"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lock_sessions.id", ondelete="CASCADE"), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    kind: Mapped[str] = mapped_column(String(40), nullable=False)  # pre_start_plan, hidden_reveal, anchor_fill
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="pending"
+    )  # pending, partial, applied, rejected
+    user_brief: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    # Each item: {item_id, type (slot_rule/task_rule/inner_period/param_override),
+    #              title, data, status (pending/applied/rejected), applied_at}
+
+    llm_provider_config_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("llm_provider_configs.id", ondelete="SET NULL"), nullable=True
+    )
+    llm_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    llm_prompt_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    llm_completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    llm_cost: Mapped[float] = mapped_column(Numeric(14, 6), nullable=False, default=0.0)
+
+    raw_response_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

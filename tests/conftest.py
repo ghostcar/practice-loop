@@ -1,8 +1,12 @@
 """Test fixtures: in-memory SQLite, async client, test user factory."""
 
 import asyncio
+import os
 import secrets
 from collections.abc import AsyncGenerator
+
+# Enable LockTimer Core for tests (must be set before app import).
+os.environ.setdefault("LOCKTIMER_CORE_ENABLED", "true")
 
 import pytest
 import pytest_asyncio
@@ -27,6 +31,7 @@ from app.models.locktimer import (  # noqa: F401
     LockAuditEvent,
     LockInnerPeriod,
     LockJobReceipt,
+    LockLlmProposal,
     LockOutboxEvent,
     LockPenaltyEvent,
     LockSession,

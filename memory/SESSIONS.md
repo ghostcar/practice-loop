@@ -3,6 +3,15 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 66 (C7+C8): LockTimer LLM integration + Timer UI pages
+
+- **C7 — LLM Proposals**: `lock_llm_proposals` таблица (kind, status, items JSON, usage tracking, raw_response_encrypted) + миграция 026. `app/locktimer/llm_context.py` — timer-aware контекст-билдер (build_timer_context + format_timer_prompt с user_brief). `app/api/locktimer_proposals.py` — POST create (LLM call через app.llm.client, JSON repair, item validation), GET proposal, apply item (slot_rule→add_slot_rule, task_rule→add_task_rule, только draft), reject item.
+- **C8 — Timer UI**: `app/api/locktimer_ui.py` — SSR страницы: GET /locktimer (overview: active session + upcoming slots/tasks + drafts + history), GET /locktimer/sessions/{id} (detail: info grid, slot/task rules, occurrences with state badges, LLM proposals). `templates/locktimer/overview.html` + `session_detail.html` — full pages extending base.html.
+- **Routes in main.py**: роуты регистрируются при composition.timer_operational (LOCKTIMER_CORE_ENABLED=true).
+- **Tests**: `LOCKTIMER_CORE_ENABLED=true` в conftest (setdefault до импорта app). test_audit_s57 bottom-nav: 4→5 ссылок (Timer в nav). +9 C78 тестов (context/prompt, модель, cross-user, overview/auth/session-page). **488/488 ✅**, ruff ✅, format ✅.
+- **ADR**: ADR-055 (C7+C8 LLM+UI).
+- **Артефакты**: 6 новых файлов (locktimer/llm_context.py, api/locktimer_proposals.py, api/locktimer_ui.py, templates/locktimer/overview.html, session_detail.html, tests/test_locktimer_c78.py), миграция 026, +23 i18n ключей. Изменены: models/locktimer.py, main.py, conftest.py, test_audit_s57.py.
+
 ## 2026-08-11 — Сессия 65 (C3+C4+C5): LockTimer execution services — draft/start, materializer, slot/task/penalty/safety-stop
 
 - **C3 — Draft + Start**: `create_draft`/`update_draft`, `add_slot_rule`/`add_task_rule`/delete, `start_session` (atomic conditional UPDATE+rowcount, canonical snapshot+hash, materializer chaining).

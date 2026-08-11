@@ -137,9 +137,9 @@ async def test_mobile_bottom_nav_renders(auth_client: AsyncClient):
     html = resp.text
     assert 'aria-label="Mobile"' in html  # bottom nav present
     assert "safe-area-inset-bottom" in html
-    # Exactly 4 bottom-nav items (Dashboard / Tasks / Training / Catalog)
+    # Bottom-nav items: Dashboard / Tasks / Training / Catalog / Timer
     bottom = html.split('aria-label="Mobile"')[1].split("</nav>")[0]
-    assert bottom.count("<a ") == 4
+    assert bottom.count("<a ") == 5
 
 
 @pytest.mark.asyncio

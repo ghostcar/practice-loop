@@ -1,24 +1,18 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 65 — C3+C4+C5 execution services).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 66 — C7+C8 LLM+UI).
 
-## LockTimer — C0 ✅ + C1+C2 ✅ + C3+C4+C5 ✅
+## LockTimer — C0 ✅ + C1+C2 ✅ + C3+C4+C5 ✅ + C7+C8 ✅
 
-- [x] **C0**: APP_PRODUCT_VARIANT, feature flags, ProductComposition, capabilities endpoint, User.timezone, conditional nav, ADR 047–052.
-- [x] **C1 Domain**: 6+7+10 enums/state machines, domain utils (duration/clamp, canonical JSON+SHA256, deterministic random, seed, occurrence keys, safety stop).
-- [x] **C2 Persistence**: 12 таблиц lock_*, миграция 025 (PG15 ✅), owner-scoped repositories.
-- [x] **C3 Draft/Start**: create/update draft, add/delete rules, atomic start (conditional UPDATE+rowcount, snapshot+hash, materializer chaining).
-- [x] **C4 Materializer**: 5 slot + 6 task schedule types, rolling horizon 90 days, deterministic random scheduler.
-- [x] **C4 Job Runner**: enqueue (idempotent), claim (SELECT FOR UPDATE SKIP LOCKED, lease).
-- [x] **C5 Slots**: open (eligibility+late-open extension), close — with audit.
-- [x] **C5 Tasks**: reveal (scheduled→visible), submit, complete (idempotent), skip — with audit.
-- [x] **C5 Penalties**: allowlisted types + idempotency key, add_time with cap/max_end.
-- [x] **C5 Safety Stop**: active→safety_stopped + cancel future occurrences.
-- [x] **C5 Outbox**: transactional domain events.
-- [x] **ADR** 047–054 записаны.
-- [x] **Тесты**: 479/479 ✅ (+60 LockTimer), ruff ✅, format ✅.
+- [x] **C0**: ProductComposition, capabilities endpoint, User.timezone, conditional nav, ADR 047–052.
+- [x] **C1+C2**: Domain (enums/state-machines/utils) + 12 таблиц lock_*, миграция 025, repositories.
+- [x] **C3+C4+C5**: Draft/start, materializer (5+6 schedule types), jobs (FOR UPDATE SKIP LOCKED), slots/tasks/penalties/safety-stop/outbox.
+- [x] **C7 LLM**: lock_llm_proposals (migration 026), timer-aware context builder, proposals API (create/get/apply/reject items).
+- [x] **C8 UI**: SSR pages /locktimer (overview with active/drafts/history) + session detail (rules/occurrences/proposals).
+- [x] **ADR** 047–055 записаны.
+- [x] **Тесты**: 488/488 ✅ (+69 LockTimer: 31 domain + 29 services + 9 C78), ruff ✅, format ✅.
 
-**Осталось по LockTimer**: C6–C9 (media/LLM/UI/hardening) → Platform Social
+**Осталось по LockTimer**: C6 (media/verification) → C9 (hardening) → Platform Social
 
 ## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 

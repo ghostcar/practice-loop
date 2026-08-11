@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Session {{ session.id[:8] }} — {{ t.locktimer_title }}{% endblock %}
+{% set active_nav = "timer" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+
+  <!-- Back + header -->
+  <div class="flex items-center gap-4">
+    <a href="/locktimer" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-lg">←</a>
+    <div>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+        {{ t.locktimer_session_label or "Session" }} <code class="text-sm bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">{{ session.id[:8] }}</code>
+      </h1>
+      <div class="flex items-center gap-2 mt-1">
+        <span class="px-2 py-0.5 text-xs font-medium rounded-full
+          {% if session.state == 'active' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+          {% elif session.state == 'draft' %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400
+          {% elif session.state == 'completed' %}bg-blue-100 text-blue-700
+          {% elif session.state == 'safety_stopped' %}bg-red-100 text-red-700
+          {% else %}bg-gray-100 text-gray-600{% endif %}">
+          {{ session.state_label }}
+        </span>
+        <span class="text-xs text-gray-500">{{ session.duration_type }} · {{ session.timezone }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session info grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm">
+    <div><span class="text-gray-500">{{ t.locktimer_started or "Started" }}</span><p class="font-mono text-gray-900 dark:text-gray-100">{{ session.started_at or '—' }}</p></div>
+    <div><span class="text-gray-500">{{ t.locktimer_ends or "Ends" }}</span><p class="font-mono text-gray-900 dark:text-gray-100">{{ session.effective_end_at or session.max_end_at or '—' }}</p></div>
+    <div><span class="text-gray-500">{{ t.locktimer_merge_gap or "Merge gap" }}</span><p class="text-gray-900 dark:text-gray-100">{{ session.merge_gap_seconds }}s</p></div>
+    <div><span class="text-gray-500">Version</span><p class="text-gray-900 dark:text-gray-100">v{{ session.row_version }}</p></div>
+  </div>
+
+  <!-- Slot rules -->
+  {% if slot_rules %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_slot_rules or "Slot Rules" }}</h2>
+    <div class="grid gap-2">
+      {% for r in slot_rules %}
+      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm">
+        <span class="font-medium text-gray-900 dark:text-gray-100">{{ r.name }}</span>
+        <span class="ml-2 px-1.5 py-0.5 text-xs rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">{{ r.rule_type }}</span>
+        <span class="ml-2 text-gray-500 dark:text-gray-400">{{ r.duration_seconds }}s</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Task rules -->
+  {% if task_rules %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_task_rules or "Task Rules" }}</h2>
+    <div class="grid gap-2">
+      {% for r in task_rules %}
+      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-sm">
+        <span class="font-medium text-gray-900 dark:text-gray-100">{{ r.title }}</span>
+        <span class="ml-2 px-1.5 py-0.5 text-xs rounded bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">{{ r.schedule_type }}</span>
+        <span class="ml-2 text-gray-500 dark:text-gray-400">{{ r.due_window_seconds }}s</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Slot occurrences -->
+  {% if slot_occurrences %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_slot_occurrences or "Slot Occurrences" }} <span class="text-sm font-normal text-gray-500">({{ slot_occurrences|length }})</span></h2>
+    <div class="grid gap-1 max-h-64 overflow-y-auto">
+      {% for o in slot_occurrences %}
+      <div class="flex items-center justify-between p-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-750 rounded">
+        <span class="font-mono text-gray-700 dark:text-gray-300 text-xs">{{ o.planned_open_at }}</span>
+        <span class="px-1.5 py-0.5 text-xs rounded-full
+          {% if o.state == 'open' %}bg-green-100 text-green-800
+          {% elif o.state == 'closed' %}bg-gray-100 text-gray-600
+          {% elif o.state == 'cancelled' %}bg-red-100 text-red-700
+          {% else %}bg-blue-100 text-blue-700{% endif %}">
+          {{ o.state }}
+          {% if o.extension_applied_seconds %}+{{ o.extension_applied_seconds }}s{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Task occurrences -->
+  {% if task_occurrences %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_task_occurrences or "Task Occurrences" }} <span class="text-sm font-normal text-gray-500">({{ task_occurrences|length }})</span></h2>
+    <div class="grid gap-1 max-h-64 overflow-y-auto">
+      {% for o in task_occurrences %}
+      <div class="flex items-center justify-between p-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-750 rounded">
+        <div>
+          <span class="text-gray-700 dark:text-gray-300 text-xs font-mono">{{ o.appears_at }}</span>
+          {% if o.occurrence_snapshot.title %}
+          <span class="ml-2 text-gray-500 dark:text-gray-400">{{ o.occurrence_snapshot.title }}</span>
+          {% endif %}
+        </div>
+        <span class="px-1.5 py-0.5 text-xs rounded-full
+          {% if o.state == 'completed' %}bg-green-100 text-green-800
+          {% elif o.state == 'submitted' %}bg-yellow-100 text-yellow-800
+          {% elif o.state == 'skipped' %}bg-red-100 text-red-700
+          {% else %}bg-blue-100 text-blue-700{% endif %}">
+          {{ o.state }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- LLM Proposals -->
+  {% if proposals %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_proposals or "AI Proposals" }}</h2>
+    {% for p in proposals %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ p.kind }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-full
+          {% if p.status == 'pending' %}bg-yellow-100 text-yellow-800
+          {% elif p.status == 'applied' %}bg-green-100 text-green-800
+          {% else %}bg-gray-100 text-gray-600{% endif %}">
+          {{ p.status }} · {{ p.pending_count }} pending
+        </span>
+      </div>
+      {% if p.items %}
+      <div class="grid gap-1">
+        {% for item in p.items %}
+        <div class="flex items-center justify-between text-xs p-1.5 rounded bg-gray-50 dark:bg-gray-750">
+          <span class="text-gray-700 dark:text-gray-300">{{ item.title }} <code class="text-gray-400">[{{ item.type }}]</code></span>
+          <span class="text-gray-500">{{ item.status }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- Empty state -->
+  {% if not slot_rules and not task_rules and not slot_occurrences and not task_occurrences %}
+  <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+    <p class="text-gray-500 dark:text-gray-400">{{ t.locktimer_session_empty or "No rules or occurrences yet." }}</p>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

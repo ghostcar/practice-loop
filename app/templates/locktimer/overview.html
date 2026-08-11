@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{{ t.locktimer_title }} — Practice Loop{% endblock %}
+{% set active_nav = "timer" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6 space-y-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ t.locktimer_title }}</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_subtitle }}</p>
+    </div>
+    <a href="/locktimer/new"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium">
+      + {{ t.locktimer_new_session or "New Session" }}
+    </a>
+  </div>
+
+  <!-- Active Session -->
+  {% if active_session %}
+  <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_active or "Active Session" }}</h2>
+      <span class="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+        {{ active_session.state_label }}
+      </span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+      <div>
+        <span class="text-gray-500 dark:text-gray-400">{{ t.locktimer_duration or "Duration" }}</span>
+        <p class="font-medium text-gray-900 dark:text-gray-100">{{ active_session.duration_type }}</p>
+      </div>
+      <div>
+        <span class="text-gray-500 dark:text-gray-400">{{ t.locktimer_timezone or "Timezone" }}</span>
+        <p class="font-medium text-gray-900 dark:text-gray-100">{{ active_session.timezone }}</p>
+      </div>
+      <div>
+        <span class="text-gray-500 dark:text-gray-400">{{ t.locktimer_started or "Started" }}</span>
+        <p class="font-medium text-gray-900 dark:text-gray-100">{{ active_session.started_at or '—' }}</p>
+      </div>
+      <div>
+        <span class="text-gray-500 dark:text-gray-400">{{ t.locktimer_ends or "Ends" }}</span>
+        <p class="font-medium text-gray-900 dark:text-gray-100">{{ active_session.effective_end_at or active_session.max_end_at or '—' }}</p>
+      </div>
+    </div>
+
+    <a href="/locktimer/sessions/{{ active_session.id }}"
+       class="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+      {{ t.locktimer_view_details or "View details" }} →
+    </a>
+
+    <!-- Upcoming slots -->
+    {% if active_slots %}
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ t.locktimer_upcoming_slots or "Upcoming Slots" }}</h3>
+      <div class="grid gap-2">
+        {% for s in active_slots[:5] %}
+        <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-750 text-sm">
+          <span class="text-gray-700 dark:text-gray-300">{{ s.planned_open_at }}</span>
+          <span class="px-2 py-0.5 text-xs rounded-full
+            {% if s.state == 'open' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
+            {% elif s.state == 'closed' %}bg-gray-100 text-gray-600
+            {% elif s.state == 'cancelled' %}bg-red-100 text-red-700
+            {% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ s.state }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Active tasks -->
+    {% if active_tasks %}
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ t.locktimer_active_tasks or "Tasks" }}</h3>
+      <div class="grid gap-2">
+        {% for task in active_tasks[:5] %}
+        <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-750 text-sm">
+          <span class="text-gray-700 dark:text-gray-300">
+            {{ task.occurrence_snapshot.get('title', 'Task') }}
+          </span>
+          <span class="px-2 py-0.5 text-xs rounded-full
+            {% if task.state == 'completed' %}bg-green-100 text-green-800
+            {% elif task.state == 'submitted' %}bg-yellow-100 text-yellow-800
+            {% elif task.state == 'skipped' %}bg-red-100 text-red-700
+            {% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ task.state }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  {% else %}
+  <!-- No active session -->
+  <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+    <div class="text-4xl mb-3">⏱️</div>
+    <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">{{ t.locktimer_no_active or "No active timer session" }}</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_no_active_hint or "Create a draft session or start an existing one." }}</p>
+  </section>
+  {% endif %}
+
+  <!-- Drafts -->
+  {% if drafts %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_drafts or "Drafts" }}</h2>
+    <div class="grid gap-3">
+      {% for d in drafts %}
+      <a href="/locktimer/sessions/{{ d.id }}"
+         class="block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-indigo-300 dark:hover:border-indigo-600 transition group">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ t.locktimer_session_label or "Session" }} {{ d.id[:8] }}</span>
+            <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">draft</span>
+          </div>
+          <span class="text-gray-400 group-hover:text-indigo-500 transition">→</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Recent history -->
+  {% if recent %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_recent or "Recent Sessions" }}</h2>
+    <div class="grid gap-2">
+      {% for s in recent %}
+      <a href="/locktimer/sessions/{{ s.id }}"
+         class="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 text-sm">
+        <span class="text-gray-700 dark:text-gray-300">{{ s.id[:8] }} — {{ s.duration_type }}</span>
+        <span class="px-2 py-0.5 text-xs rounded-full
+          {% if s.state == 'active' %}bg-green-100 text-green-800
+          {% elif s.state == 'completed' %}bg-blue-100 text-blue-700
+          {% elif s.state == 'safety_stopped' %}bg-red-100 text-red-700
+          {% else %}bg-gray-100 text-gray-600{% endif %}">
+          {{ s.state_label }}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

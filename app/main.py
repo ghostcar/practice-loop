@@ -185,11 +185,15 @@ if composition.tracker_active:
         app.include_router(_router)
 
 # ---------------------------------------------------------------------------
-# Timer routes (placeholder — registered when C1-C8 implemented)
+# Timer routes (C1-C8 — registered when LOCKTIMER_CORE_ENABLED)
 # ---------------------------------------------------------------------------
 
 if composition.timer_operational:
-    pass  # C1-C8 will register /locktimer and /api/v1/locktimer routers here
+    from app.api.locktimer_proposals import router as locktimer_proposals_router  # noqa: E402
+    from app.api.locktimer_ui import router as locktimer_ui_router  # noqa: E402
+
+    app.include_router(locktimer_proposals_router)
+    app.include_router(locktimer_ui_router)
 
 # ---------------------------------------------------------------------------
 # Root page — adapts to variant
