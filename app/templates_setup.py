@@ -15,7 +15,18 @@ def _csrf_context(request: Request) -> dict:
     return {"csrf_token": request.cookies.get("csrf_token", "")}
 
 
+def _composition_context(request: Request) -> dict:
+    """Inject ProductComposition into every template for dynamic navigation.
+
+    Makes `composition` available in base.html nav blocks so that disabled
+    domain modules never appear in the header / bottom nav.
+    """
+    from app.platform.composition import composition
+
+    return {"composition": composition}
+
+
 templates = Jinja2Templates(
     directory="app/templates",
-    context_processors=[_csrf_context],
+    context_processors=[_csrf_context, _composition_context],
 )

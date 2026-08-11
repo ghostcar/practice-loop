@@ -1,8 +1,23 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 62, финал).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 63 — C0 Platform Foundation).
 
-## Сессия 62 (финал): открытые вопросы закрыты
+## LockTimer — Product Composition (C0) ✅
+
+- [x] **APP_PRODUCT_VARIANT** (tracker|timer|combined, default combined) — config + валидация
+- [x] **Feature flags** (LOCKTIMER_CORE_ENABLED, SOCIAL_ENABLED, etc.) — all default off
+- [x] **ProductComposition** (immutable dataclass) — сборка при import time
+- [x] **Module registry** — Tracker routes только при tracker_active; Timer placeholder
+- [x] **GET /api/v1/platform/capabilities** — variant, modules, social_stage, timer_stage
+- [x] **User.timezone** — модель + миграция 024 (default UTC, IANA-валидация через zoneinfo)
+- [x] **base.html nav** — conditional: tracker nav обёрнут в `{% if composition.tracker_active %}`
+- [x] **templates_setup.py** — composition context processor для всех шаблонов
+- [x] **ADR** 047–052 записаны (границы, варианты, platform, social gate, timezone, flags)
+- [x] **Тесты**: 419/419 ✅, ruff ✅, format ✅, compile ✅
+
+**Осталось по LockTimer**: C1–C9 (Timer Core domain/schema/jobs/execution/UI/hardening) → Platform Social (S0–S8)
+
+## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 
 - [x] **Q2 (стартовый набор 30+)**: `SEED_ENTITIES` = 30 задач (спека §10.5) — **закрыт**.
 - [x] **Q4 (Telegram-тексты)**: формат реализован (Markdown-уведомления всех типов + inline) — **закрыт**.

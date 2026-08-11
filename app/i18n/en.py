@@ -520,4 +520,9 @@ EN = {
     # Status statistics
     "tasks_stats_title": "Status summary",
     "tasks_stats_total": "total",
+    # Timer navigation (LockTimer C0 placeholder)
+    "nav_timer": "Timer",
+    "locktimer_title": "Timer",
+    "locktimer_subtitle": "LockTimer — private self-discipline timer",
+    "locktimer_coming_soon": "LockTimer Core is coming soon. Stay tuned.",
 }

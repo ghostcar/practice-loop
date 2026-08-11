@@ -24,6 +24,8 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)  # user / moderator / admin
     locale: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     theme: Mapped[str] = mapped_column(String(10), default="dark", nullable=False)
+    timezone: Mapped[str] = mapped_column(String(64), default="UTC", nullable=False)
+    timezone_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Telegram linking

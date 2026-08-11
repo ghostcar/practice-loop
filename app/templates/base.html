@@ -133,6 +133,7 @@
                     {% set nav_class = "text-sm font-medium transition-colors " %}
                     {% set nav_active = "text-indigo-500 dark:text-indigo-400 font-semibold " %}
                     {% set nav_inactive = "text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
+                    {% if composition and composition.tracker_active %}
                     <a href="/dashboard" class="{{ nav_class }}{{ nav_active if active_nav == 'dashboard' else nav_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>{{ t.nav_dashboard }}</a>
                     <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>{{ t.nav_tasks }}</a>
                     <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>{{ t.training_title }}</a>
@@ -141,6 +142,10 @@
                     <a href="/import" class="{{ nav_class }}{{ nav_active if active_nav == 'import' else nav_inactive }}"{% if active_nav == 'import' %} aria-current="page"{% endif %}>{{ t.nav_import }}</a>
                     <a href="/diets" class="{{ nav_class }}{{ nav_active if active_nav == 'diets' else nav_inactive }}"{% if active_nav == 'diets' %} aria-current="page"{% endif %}>{{ t.nav_diets }}</a>
                     <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }}"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ t.admin_title_page }}</a>
+                    {% endif %}
+                    {% if composition and composition.timer_operational %}
+                    <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>Timer</a>
+                    {% endif %}
                     <form action="/auth/logout" method="post" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 cursor-pointer min-h-[44px]">{{ t.nav_logout }}</button>
@@ -209,6 +214,7 @@
         {% set bn_active = "text-indigo-600 dark:text-indigo-400 " %}
         {% set bn_inactive = "text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
         <div class="flex h-full max-w-5xl mx-auto">
+            {% if composition and composition.tracker_active %}
             <a href="/dashboard" class="{{ bn_class }}{{ bn_active if active_nav == 'dashboard' else bn_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"/></svg>
                 {{ t.nav_dashboard }}
@@ -225,6 +231,13 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
                 {{ t.catalog_title }}
             </a>
+            {% endif %}
+            {% if composition and composition.timer_operational %}
+            <a href="/locktimer" class="{{ bn_class }}{{ bn_active if active_nav == 'locktimer' else bn_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v6m0 8v6M4 12H2m4.3-5.7l1.4 1.4M18.3 5.7l-1.4 1.4M2 12h2m1.7 5.7l1.4-1.4M22 12h-6"/><circle cx="12" cy="12" r="2"/></svg>
+                Timer
+            </a>
+            {% endif %}
         </div>
     </nav>
     <!-- Spacer so sticky CTAs never hide behind the bottom nav (DESIGN.md 4.4) -->

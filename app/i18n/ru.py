@@ -522,4 +522,9 @@ RU = {
     # Статистика по статусам
     "tasks_stats_title": "Сводка по статусам",
     "tasks_stats_total": "всего",
+    # Timer navigation (LockTimer C0 placeholder)
+    "nav_timer": "Таймер",
+    "locktimer_title": "Таймер",
+    "locktimer_subtitle": "LockTimer — персональный таймер самодисциплины",
+    "locktimer_coming_soon": "LockTimer Core в разработке. Скоро появится.",
 }

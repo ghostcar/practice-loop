@@ -26,6 +26,20 @@ class Settings(BaseSettings):
     # Environment toggle: production | development (default). Read from APP_ENV env var.
     app_env: str = "development"
 
+    # Product variant: tracker | timer | combined (ADR-043).
+    # Defaults to "combined" for existing upgrades; fresh deploys should set explicitly.
+    app_product_variant: str = "combined"
+
+    # Feature flags — all default OFF for safe rollout (03A_PRODUCT_VARIANTS.md §7).
+    locktimer_core_enabled: bool = False
+    locktimer_verification_enabled: bool = False
+    social_enabled: bool = False
+    social_tracker_adapter_enabled: bool = False
+    social_timer_adapter_enabled: bool = False
+    social_public_enabled: bool = False
+    locktimer_keyholder_enabled: bool = False
+    locktimer_cloud_media_enabled: bool = False
+
     # Database
     database_url: str = "postgresql+asyncpg://tracker:tracker@localhost:5432/tracker"
 
@@ -58,6 +72,27 @@ class Settings(BaseSettings):
     @classmethod
     def _normalize_env(cls, v: str) -> str:
         return v.strip().lower()
+
+    @field_validator("app_product_variant")
+    @classmethod
+    def _validate_variant(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v not in ("tracker", "timer", "combined"):
+            raise ValueError(f"APP_PRODUCT_VARIANT must be 'tracker', 'timer', or 'combined', got '{v}'")
+        return v
+
+    @model_validator(mode="after")
+    def _validate_variant_consistency(self) -> "Settings":
+        """Reject timer variant with disabled timer core (03A_PRODUCT_VARIANTS.md §4).
+
+        The only exception is APP_MAINTENANCE_MODE=true (explicit deploy operation).
+        """
+        maintenance = getattr(self, "app_maintenance_mode", False)
+        if self.app_product_variant == "timer" and not self.locktimer_core_enabled and not maintenance:
+            raise ValueError(
+                "APP_PRODUCT_VARIANT=timer requires LOCKTIMER_CORE_ENABLED=true or APP_MAINTENANCE_MODE=true"
+            )
+        return self
 
     @model_validator(mode="after")
     def _reject_placeholders_in_production(self) -> "Settings":

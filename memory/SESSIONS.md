@@ -3,6 +3,24 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
+
+- **Пакет**: `/examples/LT/LockTimer-Agent-Pack` v1.1 (20 файлов, 93 требования, 66 сценариев).
+- **Решение владельца**: «Всё сразу (Core + Social)», но порядок: Core сначала → Social после gate, медиа пока без.
+- **C0 (Platform Foundation + composition)**:
+  - `app/config.py`: `APP_PRODUCT_VARIANT` (tracker|timer|combined, default combined), `LOCKTIMER_CORE_ENABLED` + 6 feature flags (all default off). Валидация: timer без core → maintenance mode gate.
+  - `app/platform/composition.py`: `ProductComposition` (immutable dataclass), `_resolve_enabled_modules()`, `build_product_composition()`, module-level singleton.
+  - `app/platform/capabilities.py`: `GET /api/v1/platform/capabilities` — variant, modules, social_stage, timer_stage, api_versions.
+  - `app/platform/__init__.py`: package doc — platform MUST NOT import domain modules.
+- **User.timezone** (ADR-051): колонки `timezone` (default UTC) + `timezone_confirmed_at`; миграция 024 (up/down/up готово).
+- **main.py**: composition строится при импорте (через module-level singleton); Tracker routers регистрируются только при `tracker_active`; Timer routes — placeholder для C1-C8; capabilities всегда доступен; CSRF exempt для `/api/v1/platform`; homepage получает `composition` в контекст.
+- **templates_setup.py**: `_composition_context` processor — инжектирует `composition` во все шаблоны.
+- **base.html**: desktop + mobile nav — Tracker ссылки обёрнуты в `{% if composition.tracker_active %}`, Timer nav (placeholder) в `{% if composition.timer_operational %}`.
+- **i18n**: +8 ключей EN/RU (nav_timer, locktimer_title/subtitle/coming_soon).
+- **ADR**: +6 (047–052) в DECISIONS.md.
+- **Результат**: **419/419 тестов ✅**, ruff ✅, format ✅, compile ✅.
+- **Артефакты**: +4 файла (platform/__init__.py, composition.py, capabilities.py, миграция 024); изменены config.py, models/user.py, main.py, templates_setup.py, base.html, i18n/en.py, i18n/ru.py, memory/DECISIONS.md.
+
 ## 2026-08-11 — Сессия 62 (финал): открытые вопросы закрыты (Q2/Q4/Q8/Q11)
 
 - **Запрос владельца**: «Закрывай открытые вопросы».
