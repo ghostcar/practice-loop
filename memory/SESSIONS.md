@@ -3,6 +3,16 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 60 (update2.md, финал): селекторы, фильтры, полный прогон тестов
+
+- **Запрос владельца**: «давай селекторы и фильтры» → селекторы в форме задачи, фильтры истории; затем «запусти тесты и прочее, и обнови память».
+- **Селекторы (Preferences) в форме генерации** (`tasks.html` + `tasks.py` + `pipeline.py`): секция body_part / location / inventory; значения уходят в `/tasks/generate`; `generate_task()` принимает `body_part_id`/`location_id`/`inventory_item_id` — предпочтения инжектятся в промпт LLM, после создания ActivityLog создаются link-записи (`TaskBodyTarget`/`TaskLocationUsage`/`TaskInventoryUsage`).
+- **Фильтр-бар истории** (`tasks.html` + `tasks.py`): статус / зона / место / предмет → query-параметры → SQL-фильтрация через exists-подзапросы по link-таблицам.
+- **JS-модули (DESIGN §15.4)**: `tasks.js` (новый), `body_parts.js`, `locations.js` — инлайн-скрипты вынесены, `test_no_inline_scripts_in_pages` ✅.
+- **Тест-фиксы**: системные локации → 404 (owner-фильтр), slug'и зон сверены с seed.
+- **Результат**: **401/401 тестов ✅** (полный прогон, 130s), ruff ✅, format ✅ (переформатирован import_data.py), compile ✅. Новых ADR нет — реализация ADR-046/043/044/045.
+- **Артефакты**: `static/js/pages/tasks.js` (новый), изменены tasks.html / tasks.py / pipeline.py / i18n (en/ru, +14 ключей) / body_parts.js / locations.js / body_parts.html / locations.html.
+
 ## 2026-08-11 — Сессия 59 (update2.md): справочники BodyPart / TaskLocation / InventoryCategory — полный цикл
 
 - **Анализ `examples/update2.md`**: спецификация справочников (BodyPart, TaskLocation, InventoryCategory) + связей (TaskBodyTarget, TaskLocationUsage, TaskInventoryUsage) + DSL-селекторов. Сверка с текущей архитектурой.

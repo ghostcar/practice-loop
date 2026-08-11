@@ -1,6 +1,14 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 59).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 60).
+
+## Сессия 60 (update2.md, финал): селекторы в форме задачи, фильтры истории, полный прогон 401 тестов
+
+- [x] **Селекторы (Preferences) в форме генерации задачи** (`tasks.html`): секция с body_part / location / inventory селекторами — значения передаются как form fields в `/tasks/generate` → `generate_task()` принимает `body_part_id`/`location_id`/`inventory_item_id`, инжектит их в промпт LLM (предпочтения выбора) + создаёт `TaskBodyTarget`/`TaskLocationUsage`/`TaskInventoryUsage` после создания ActivityLog.
+- [x] **Фильтр-бар истории задач** (`tasks.html` + `tasks.py`): 4 select'а — статус / зона тела / место / предмет; `applyFilter()` строит URL с query-параметрами; бэкенд фильтрует SQL (exists-подзапросы через link-таблицы, без N+1).
+- [x] **JS в отдельные модули (DESIGN §15.4)**: инлайн-скрипты вынесены в `static/js/pages/tasks.js` (новый — селекторы + фильтры), `body_parts.js`, `locations.js`; тест `test_no_inline_scripts_in_pages` (test_audit_s57) проходит.
+- [x] **Тест-фиксы**: `test_cannot_edit_system_location` — системные локации (owner_id NULL) дают 404 (не 403) из-за owner-фильтрации; slug'и зон в тестах сверены с реальным seed (`torso_buttocks`, `torso_chest`, `abs`).
+- [x] **Финальная валидация**: полный `pytest tests/` — **401 passed ✅** (130s); ruff check ✅; ruff format (1 файл `import_data.py` переформатирован); py_compile по всем app/tests/alembic ✅.
 
 ## Сессия 59 (update2.md): справочники BodyPart / TaskLocation / InventoryCategory, DSL-селекторы, API, тесты, UI, импорт
 
