@@ -31,7 +31,7 @@ RUN pip install --no-cache-dir /wheels/*
 COPY alembic.ini .
 COPY alembic/ alembic/
 COPY app/ app/
-COPY cli.py seed_prod.py seed_training.py seed.py seed_v2.py ./
+COPY cli.py seed_prod.py seed_training.py seed.py ./
 
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
 USER app

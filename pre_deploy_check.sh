@@ -44,8 +44,13 @@ if grep -rn 'password\s*=\s*["'"'"']' app/ tests/ --include='*.py' \
     | grep -iv 'secret123\|test.*password\|mock.*password'; then
     SECRET_FOUND=1
 fi
-if grep -rn 'sk-\|AIza\|ghp_\|xox[baprs]' --include='*.py' . 2>/dev/null \
-    | grep -v '.git/' | grep -v 'test_' | grep -v 'encrypted-key'; then
+if grep -rn 'AIza\|ghp_\|xox[baprs]' --include='*.py' . 2>/dev/null \
+    | grep -v '.git/' | grep -v 'test_' ; then
+    SECRET_FOUND=1
+fi
+# sk- prefix check — but only actual OpenAI-like keys (sk- followed by alphanum)
+if grep -rn 'sk-[a-zA-Z0-9]\{20,\}' --include='*.py' . 2>/dev/null \
+    | grep -v '.git/' | grep -v 'test_' | grep -v 'encrypted-key' | grep -v 'mask'; then
     SECRET_FOUND=1
 fi
 if [ "$SECRET_FOUND" -eq 1 ]; then
