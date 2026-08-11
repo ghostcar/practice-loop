@@ -114,6 +114,30 @@ async def body_parts_tree(
     return _build(None)
 
 
+@router.get("/body-parts/page", response_class=HTMLResponse)
+async def body_parts_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Body parts catalog page with tree + search."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    tr = get_translations(locale)
+    return templates.TemplateResponse(
+        request=request,
+        name="body_parts.html",
+        context={
+            "request": request,
+            "t": tr,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+        },
+    )
+
+
 @router.get("/body-parts/{body_part_id}", response_model=BodyPartOut)
 async def get_body_part(
     body_part_id: uuid.UUID,
@@ -767,30 +791,6 @@ async def search_tasks(
 # ═════════════════════════════════════════════════════════════════════════
 # HTML Pages
 # ═════════════════════════════════════════════════════════════════════════
-
-
-@router.get("/body-parts/page", response_class=HTMLResponse)
-async def body_parts_page(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    """Body parts catalog page with tree + search."""
-    locale = detect_locale(request, user.locale)
-    theme = detect_theme(user.theme)
-    t = get_translations(locale)
-    return templates.TemplateResponse(
-        request=request,
-        name="body_parts.html",
-        context={
-            "request": request,
-            "t": t,
-            "user": user,
-            "locale": locale,
-            "theme": theme,
-            "active_nav": "admin",
-        },
-    )
 
 
 @router.get("/locations/page", response_class=HTMLResponse)
