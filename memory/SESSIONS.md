@@ -3,6 +3,21 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 67: Universal media + verification (platform C6, без OCR)
+
+- **Решение владельца**: универсальная медиа-система (не только для Timer), OCR отложен.
+- **media_assets** (app/models/media.py): owner-scoped (owner_id/owner_type/owner_ref_id), staged→ready→archived pipeline, MIME+magic-bytes validation, SHA-256, dimensions (Pillow), thumbnail generation (JPEG 400x400), CHECK constraints (size 0-200MB, state enum).
+- **verification_challenges** (app/models/media.py): one-time codes, HMAC-SHA256 stored (plaintext never), alphabet без O0I1l, constant-time comparison (hmac.compare_digest), TTL, max_attempts, auto-expire, new challenge invalidates previous. Code returned exactly once at creation.
+- **app/services/media.py**: save_media (validation pipeline), _get_dimensions (Pillow, max 12000px), _make_thumbnail (LANCZOS resize→JPEG 80%), delete_media_file (path traversal hardened), generate_verification_code, compute_code_hmac, verify_code_constant_time.
+- **API media** (app/api/media.py): POST upload (multipart, max 15MB), POST finalize (staged→ready, bind to owner_ref), GET serve (authorized, nosniff+no-store headers), GET thumbnail, DELETE (staged only), GET list (owner_type/ref_id/state filters).
+- **API verification** (app/api/verification.py): POST create challenge (code returned once), POST verify (constant-time, state machine: active→consumed/failed/expired), GET status (code NEVER returned, auto-expire on read).
+- **Config**: challenge_hmac_key, media_max_upload_bytes (15 MB).
+- **Routes**: media+verification всегда регистрируются (platform-level).
+- **SQLite tz fix**: expires_at comparison с naive→aware нормализацией.
+- **Тесты**: +19 (test_media_verification.py — code gen, HMAC, constant-time, model CRUD, API upload/list/delete, create/verify/wrong/max-attempts/invalidate/status). **507/507 ✅**, ruff ✅, format ✅.
+- **ADR**: ADR-056 (universal media+verification).
+- **Артефакты**: 6 новых файлов (models/media.py, services/media.py, api/media.py, api/verification.py, migration 027, tests/test_media_verification.py). Изменены: config.py (+2 настройки), main.py (+2 роутера), conftest.py (MediaAsset+VerificationChallenge в imports).
+
 ## 2026-08-11 — Сессия 66 (C7+C8): LockTimer LLM integration + Timer UI pages
 
 - **C7 — LLM Proposals**: `lock_llm_proposals` таблица (kind, status, items JSON, usage tracking, raw_response_encrypted) + миграция 026. `app/locktimer/llm_context.py` — timer-aware контекст-билдер (build_timer_context + format_timer_prompt с user_brief). `app/api/locktimer_proposals.py` — POST create (LLM call через app.llm.client, JSON repair, item validation), GET proposal, apply item (slot_rule→add_slot_rule, task_rule→add_task_rule, только draft), reject item.

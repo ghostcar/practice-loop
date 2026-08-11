@@ -1,0 +1,116 @@
+"""Universal platform media assets — shared across Tracker, Timer, Social.
+
+media_assets: staged upload → ready → archived pipeline with SHA-256,
+              MIME detection, dimensions, thumbnail generation.
+verification_challenges: one-time codes with HMAC-SHA256, not OCR-dependent.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models import Base
+
+
+class MediaAsset(Base):
+    """A platform-level media asset — image, video placeholder.
+
+    Shared across Tracker (owner_type=activity_log, training_day, inventory_item,
+    diet, measurement, training_log_entry), Timer (lock_session, lock_slot_occurrence,
+    lock_task_occurrence), and future Social.
+
+    Pipeline: staged (just uploaded, can be deleted) → ready (finalized, immutable for
+    owner) → archived (soft-deleted for retention policy).
+    """
+
+    __tablename__ = "media_assets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    owner_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    owner_ref_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )  # bound to domain object when finalized
+
+    state: Mapped[str] = mapped_column(String(20), nullable=False, default="staged")  # staged, ready, archived
+
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)  # /uploads/media/<uuid>.<ext>
+    thumbnail_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    mime_type: Mapped[str] = mapped_column(String(100), nullable=False, default="application/octet-stream")
+    file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sha256_hex: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Image-specific metadata (nullable — video support deferred)
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    caption: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "file_size_bytes >= 0 AND file_size_bytes <= 209715200", name="ck_media_assets_size"
+        ),  # max 200 MB
+        CheckConstraint("state IN ('staged', 'ready', 'archived')", name="ck_media_assets_state"),
+    )
+
+
+class VerificationChallenge(Base):
+    """One-time verification code with HMAC protection.
+
+    Attached to any domain object via owner_type + owner_id (e.g., lock_session,
+    lock_task_occurrence, or future social verification). The plaintext code is
+    returned only once at creation; subsequent access returns status only.
+
+    OCR support is deferred — for now the code serves as a manual verification
+    mechanism (user types the code they see).
+    """
+
+    __tablename__ = "verification_challenges"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    owner_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    owner_ref_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+
+    code_hmac: Mapped[str] = mapped_column(String(64), nullable=False)  # HMAC-SHA256 of the code
+    code_length: Mapped[int] = mapped_column(Integer, nullable=False, default=7)
+
+    state: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="active"
+    )  # active, consumed, expired, failed
+
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("code_length >= 4 AND code_length <= 16", name="ck_verification_code_length"),
+        CheckConstraint("max_attempts >= 1 AND max_attempts <= 20", name="ck_verification_max_attempts"),
+        CheckConstraint("state IN ('active', 'consumed', 'expired', 'failed')", name="ck_verification_state"),
+    )

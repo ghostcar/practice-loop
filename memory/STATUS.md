@@ -1,18 +1,18 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 66 — C7+C8 LLM+UI).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 67 — universal media + verification).
 
-## LockTimer — C0 ✅ + C1+C2 ✅ + C3+C4+C5 ✅ + C7+C8 ✅
+## LockTimer — C0 ✅ + C1+C2 ✅ + C3+C4+C5 ✅ + C7+C8 ✅ + Universal Media ✅
 
 - [x] **C0**: ProductComposition, capabilities endpoint, User.timezone, conditional nav, ADR 047–052.
-- [x] **C1+C2**: Domain (enums/state-machines/utils) + 12 таблиц lock_*, миграция 025, repositories.
-- [x] **C3+C4+C5**: Draft/start, materializer (5+6 schedule types), jobs (FOR UPDATE SKIP LOCKED), slots/tasks/penalties/safety-stop/outbox.
-- [x] **C7 LLM**: lock_llm_proposals (migration 026), timer-aware context builder, proposals API (create/get/apply/reject items).
-- [x] **C8 UI**: SSR pages /locktimer (overview with active/drafts/history) + session detail (rules/occurrences/proposals).
-- [x] **ADR** 047–055 записаны.
-- [x] **Тесты**: 488/488 ✅ (+69 LockTimer: 31 domain + 29 services + 9 C78), ruff ✅, format ✅.
+- [x] **C1+C2**: Domain + 12 таблиц lock_*, миграция 025, repositories.
+- [x] **C3+C4+C5**: Draft/start, materializer, jobs, slots/tasks/penalties/safety-stop/outbox.
+- [x] **C7+C8**: LLM proposals + Timer UI pages (/locktimer).
+- [x] **Universal Media**: media_assets (staged→ready, magic-bytes, SHA-256, thumbnail), verification_challenges (HMAC, constant-time, no OCR). Platform-level — shared Tracker+Timer.
+- [x] **ADR** 047–056 записаны.
+- [x] **Тесты**: 507/507 ✅ (+88 new), ruff ✅, format ✅.
 
-**Осталось по LockTimer**: C6 (media/verification) → C9 (hardening) → Platform Social
+**Осталось**: C9 (hardening/release gate) → Platform Social
 
 ## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 

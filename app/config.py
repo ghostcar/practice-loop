@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_bytes: int = 8 * 1024 * 1024  # 8 MB
 
+    # Universal media (media_assets table — platform-level, not Timer-specific).
+    media_max_upload_bytes: int = 15 * 1024 * 1024  # 15 MB per media asset
+    challenge_hmac_key: str = _PLACEHOLDER_ENCRYPTION  # separate key for verification challenge HMAC
+
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = _PLACEHOLDER_TG_SECRET

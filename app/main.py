@@ -140,6 +140,13 @@ from app.platform.capabilities import router as capabilities_router  # noqa: E40
 
 app.include_router(capabilities_router)
 
+# Universal media + verification (platform-level, always available)
+from app.api.media import router as media_router  # noqa: E402
+from app.api.verification import router as verification_router  # noqa: E402
+
+app.include_router(media_router)
+app.include_router(verification_router)
+
 from app.api.auth import router as auth_router  # noqa: E402
 
 app.include_router(auth_router)

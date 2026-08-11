@@ -162,7 +162,7 @@ class TestTimerPages:
             schedule={"time_of_day": "10:00"},
             due_window_seconds=3600,
         )
-        started = await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        _started = await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
 
         response = await auth_client.get(f"/locktimer/sessions/{session.id}")
         assert response.status_code == 200
