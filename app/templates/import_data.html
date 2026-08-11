@@ -163,76 +163,7 @@ curl -X POST {{ app_url }}/import/api \
 {% endblock %}
 
 {% block scripts %}
-<script>
-(function () {
-    var zone = document.getElementById('drop-zone');
-    var fileInput = document.getElementById('file-input');
-    var fileName = document.getElementById('file-name');
-    var uploadBtn = document.getElementById('upload-btn');
-    var resultEl = document.getElementById('upload-result');
-    if (!zone || !fileInput) return;
+<script type="application/json" id="page-i18n">{{ {"t": t} | tojson }}</script>
+<script src="/static/js/pages/import_data.js"></script>
 
-    function updateFileName() {
-        if (fileInput.files && fileInput.files.length > 0) {
-            fileName.textContent = fileInput.files[0].name;
-            fileName.classList.remove('hidden');
-            uploadBtn.disabled = false;
-        } else {
-            fileName.classList.add('hidden');
-            uploadBtn.disabled = true;
-        }
-    }
-
-    fileInput.addEventListener('change', updateFileName);
-
-    ['dragenter', 'dragover'].forEach(function (ev) {
-        zone.addEventListener(ev, function (e) {
-            e.preventDefault();
-            zone.classList.remove('border-slate-200', 'dark:border-slate-700');
-            zone.classList.add('border-indigo-400', 'dark:border-indigo-500', 'bg-indigo-50/50', 'dark:bg-indigo-900/10');
-        });
-    });
-    ['dragleave', 'drop'].forEach(function (ev) {
-        zone.addEventListener(ev, function (e) {
-            e.preventDefault();
-            zone.classList.add('border-slate-200', 'dark:border-slate-700');
-            zone.classList.remove('border-indigo-400', 'dark:border-indigo-500', 'bg-indigo-50/50', 'dark:bg-indigo-900/10');
-        });
-    });
-    zone.addEventListener('drop', function (e) {
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            fileInput.files = e.dataTransfer.files;
-            updateFileName();
-        }
-    });
-
-    // The upload endpoint returns JSON ({"status","imported","skipped"}); render it nicely.
-    document.body.addEventListener('htmx:afterSwap', function (evt) {
-        if (!evt.detail || !evt.detail.target || evt.detail.target.id !== 'upload-result') return;
-        var text = (evt.detail.target.textContent || '').trim();
-        if (!text) return;
-        var data;
-        try { data = JSON.parse(text); } catch (e) {
-            // Non-JSON error body (proxy error page etc.) — show raw text.
-            resultEl.innerHTML = '<div class="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">'
-                + escapeHtml(text) + '</div>';
-            return;
-        }
-        var html;
-        if (data.status === 'ok') {
-            var skipped = data.skipped || 0;
-            html = '<div class="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2">'
-                + '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>'
-                + '<span>' + escapeHtml(data.imported) + ' ' + {{ t.import_result_imported|tojson }} + '</span>'
-                + (skipped > 0 ? '<span class="text-amber-600 dark:text-amber-400">' + escapeHtml(skipped) + ' ' + {{ t.import_result_skipped|tojson }} + '</span>' : '')
-                + '</div>';
-        } else {
-            html = '<div class="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">'
-                + {{ t.import_result_error|tojson }} + ': ' + escapeHtml(data.detail || data.message || '')
-                + '</div>';
-        }
-        resultEl.innerHTML = html;
-    });
-})();
-</script>
 {% endblock %}

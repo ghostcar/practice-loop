@@ -42,6 +42,12 @@ class Entity(Base):
     params_schema: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     intensity: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     # active / passive / neutral — determines if activity can bypass calendar restrictions
+    # REM §5.2 safety gate: not_assessed / high are never auto-selected by the LLM;
+    # elevated requires user confirmation before inclusion in a session.
+    risk_level: Mapped[str] = mapped_column(
+        String(20), default="not_assessed", nullable=False, server_default="not_assessed", index=True
+    )
+    # not_assessed / low / elevated / high
     gamification_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # gamification_config JSON structure:
     # {

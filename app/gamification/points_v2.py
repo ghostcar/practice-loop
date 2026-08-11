@@ -11,6 +11,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.gamification.dsl import eval_condition, find_param_key
 from app.models.points import PointsTransaction
 
 logger = logging.getLogger(__name__)
@@ -49,11 +50,11 @@ async def calculate_entity_points(
     for b in bonuses:
         if not b.get("enabled", True):
             continue
-        if _eval_condition(b.get("condition", ""), params):
+        if eval_condition(b.get("condition", ""), params):
             reward = b.get("reward", 0)
             if b.get("per_unit"):
                 # Find the matching param key
-                key = _find_param_key(b.get("condition", ""), params)
+                key = find_param_key(b.get("condition", ""), params)
                 count = params.get(key, 0) if key else 0
                 reward = reward * max(0, count)
             bonus_total += reward
@@ -150,68 +151,4 @@ async def award_points(
     return txn
 
 
-# ── Condition evaluator ──
-
-
-def _eval_condition(condition: str, params: dict) -> bool:
-    """Simple condition evaluator for bonus conditions.
-
-    Supports: 'key > value', 'key == value', 'key != value', 'key', 'key < value'
-    Example: 'extra_fluid_ml > 0', 'level_jump == true'
-    """
-    if not condition:
-        return False
-
-    condition = condition.strip()
-
-    # Just a key name — check if truthy
-    if " " not in condition:
-        return bool(params.get(condition, False))
-
-    # Comparison
-    parts = condition.split()
-    if len(parts) != 3:
-        return False
-
-    key, op, val = parts
-    actual = params.get(key)
-
-    if actual is None:
-        return False
-
-    # Try numeric comparison
-    try:
-        actual_num = float(actual)
-        val_num = float(val)
-        if op == ">":
-            return actual_num > val_num
-        if op == "<":
-            return actual_num < val_num
-        if op == ">=":
-            return actual_num >= val_num
-        if op == "<=":
-            return actual_num <= val_num
-        if op == "==":
-            return actual_num == val_num
-        if op == "!=":
-            return actual_num != val_num
-    except (ValueError, TypeError):
-        pass
-
-    # String comparison
-    actual_str = str(actual).lower()
-    val_str = val.lower()
-    if op == "==":
-        return actual_str == val_str
-    if op == "!=":
-        return actual_str != val_str
-
-    return False
-
-
-def _find_param_key(condition: str, params: dict) -> str | None:
-    """Extract the param key from a condition string."""
-    if not condition:
-        return None
-    key = condition.split()[0] if " " in condition else condition
-    return key if key in params else None
+# Condition evaluation lives in app.gamification.dsl (typed DSL, no eval).

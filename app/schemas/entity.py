@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 # --- Entity ---
 
 
+RISK_LEVELS = ("not_assessed", "low", "elevated", "high")
+
+
 class EntityCreate(BaseModel):
     type: str = Field(default="one_time", pattern=r"^(one_time|series|infinite)$")
     real_name: str = Field(min_length=1, max_length=500)
@@ -13,6 +16,7 @@ class EntityCreate(BaseModel):
     tags: list[str] | None = None
     is_public: bool = False
     params_schema: dict | None = None
+    risk_level: str = Field(default="not_assessed", pattern=r"^(not_assessed|low|elevated|high)$")
 
 
 class EntityUpdate(BaseModel):
@@ -22,6 +26,7 @@ class EntityUpdate(BaseModel):
     tags: list[str] | None = None
     is_public: bool | None = None
     params_schema: dict | None = None
+    risk_level: str | None = Field(default=None, pattern=r"^(not_assessed|low|elevated|high)$")
 
 
 class EntityResponse(BaseModel):
@@ -34,6 +39,7 @@ class EntityResponse(BaseModel):
     is_public: bool
     author_id: uuid.UUID | None = None
     params_schema: dict | None = None
+    risk_level: str = "not_assessed"
     created_at: datetime
 
     model_config = {"from_attributes": True}

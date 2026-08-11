@@ -399,7 +399,13 @@ async def test_generate_task_uses_canonical_entity_name(db_session, test_user):
     from app.llm.pipeline import generate_task
 
     cfg = _llm_cfg(db_session, test_user)
-    ent = Entity(type="one_time", real_name="Real Name", category="fitness", owner_id=test_user.id)
+    ent = Entity(
+        type="one_time",
+        real_name="Real Name",
+        category="fitness",
+        owner_id=test_user.id,
+        risk_level="low",
+    )
     db_session.add(ent)
     await db_session.flush()
 
@@ -413,6 +419,7 @@ async def test_generate_task_uses_canonical_entity_name(db_session, test_user):
                 "params_schema": None,
                 "desire_level": "want",
                 "intensity": "active",
+                "risk_level": "low",
             }
         ],
         "stats": {"total_activities": 0, "completed": 0, "interrupted": 0, "week_activities": 0},

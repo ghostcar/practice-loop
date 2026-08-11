@@ -110,12 +110,15 @@ async def create_entity(
     category: str = Form(...),
     tags: str = Form(default=""),
     is_public: bool = Form(default=False),
+    risk_level: str = Form(default="not_assessed"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new entity."""
     if type not in ("one_time", "series", "infinite"):
         type = "one_time"
+    if risk_level not in ("not_assessed", "low", "elevated", "high"):
+        risk_level = "not_assessed"
     entity = Entity(
         type=type,
         real_name=real_name.strip(),
@@ -124,6 +127,7 @@ async def create_entity(
         owner_id=user.id,
         is_public=is_public,
         author_id=user.id if is_public else None,
+        risk_level=risk_level,
     )
     db.add(entity)
     await db.flush()

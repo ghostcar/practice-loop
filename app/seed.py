@@ -444,6 +444,9 @@ async def seed_entities(db: AsyncSession, owner_id: uuid.UUID | None = None) -> 
             is_public=data["is_public"],
             author_id=owner_id,
             params_schema=data.get("params_schema"),
+            # Curated catalog tasks are pre-assessed by the admin (REM §5.2):
+            # default to "low" so the LLM automation gate stays open for them.
+            risk_level=data.get("risk_level", "low"),
         )
         db.add(entity)
         entities.append(entity)

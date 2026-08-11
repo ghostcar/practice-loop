@@ -41,6 +41,8 @@ async def _make_allowed_entity(db_session: AsyncSession, user_id, owner_id=None)
         category="test",
         owner_id=owner_id or user_id,
         is_public=False,
+        # low risk → eligible for LLM automation (REM §5.2 gate)
+        risk_level="low",
         params_schema={"intensity": {"type": "integer", "min": 1, "max": 3}},
     )
     db_session.add(entity)
@@ -294,6 +296,96 @@ async def test_generate_plan_rejects_out_of_range_params(
     assert "error=" in response.headers["location"]
     days = (await db_session.execute(select(TrainingDay).where(TrainingDay.user_id == test_user.id))).scalars().all()
     assert days == []
+
+
+@pytest.mark.asyncio
+async def test_generate_plan_sanitizes_subtasks(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user, monkeypatch
+):
+    """REM §7.1: subtasks are capped (count + length) and coerced to strings."""
+    entity = await _make_allowed_entity(db_session, test_user.id)
+    await _make_active_config(db_session, test_user.id)
+
+    long_desc = "x" * 900
+    plan = {
+        "plan_summary": "hi",
+        "tasks": [
+            {
+                "entity_id": str(entity.id),
+                "entity_name": "Test Activity",
+                "params": {"intensity": 2},
+                "subtasks": [
+                    long_desc,  # must be truncated to 500
+                    "   ",  # whitespace-only → dropped
+                    123,  # non-string → coerced to "123"
+                    None,  # None → "None" coerced, but kept? no — str(None) not empty
+                ]
+                + [f"step {i}" for i in range(30)],  # 34 raw → capped at 20
+            }
+        ],
+    }
+    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+
+    response = await auth_client.post("/training/plan", follow_redirects=False)
+    assert response.status_code == 303
+
+    day = (await db_session.execute(select(TrainingDay).where(TrainingDay.user_id == test_user.id))).scalars().first()
+    assert day is not None
+    logs = (await db_session.execute(select(ActivityLog).where(ActivityLog.training_day_id == day.id))).scalars().all()
+    assert len(logs) == 1
+    subtasks = logs[0].subtasks
+    assert len(subtasks) <= 20
+    for s in subtasks:
+        assert isinstance(s["desc"], str)
+        assert len(s["desc"]) <= 500
+    assert all(s["is_done"] is False for s in subtasks)
+    assert any(s["desc"].startswith("x" * 500) for s in subtasks)  # long one truncated
+    assert any(s["desc"] == "123" for s in subtasks)  # int coerced to str
+
+
+@pytest.mark.asyncio
+async def test_generate_plan_risk_gate_blocks_unassessed(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user, monkeypatch
+):
+    """REM §5.2: an entity with risk_level not_assessed/high is not auto-selected."""
+    from app.llm.pipeline import filter_automation_eligible
+
+    low = {"id": "a", "risk_level": "low"}
+    na = {"id": "b", "risk_level": "not_assessed"}
+    high = {"id": "c", "risk_level": "high"}
+    elev = {"id": "d", "risk_level": "elevated"}
+
+    eligible = filter_automation_eligible([low, na, high, elev])
+    assert [e["id"] for e in eligible] == ["a"]
+
+    # Explicit consent unlocks elevated only.
+    eligible2 = filter_automation_eligible([low, na, high, elev], allow_elevated=True)
+    assert [e["id"] for e in eligible2] == ["a", "d"]
+
+    # Pipeline gate: a plan referencing only a not_assessed entity is rejected.
+    entity = await _make_allowed_entity(db_session, test_user.id)
+    entity.risk_level = "not_assessed"
+    await db_session.flush()
+    await _make_active_config(db_session, test_user.id)
+
+    plan = {
+        "plan_summary": "hi",
+        "tasks": [
+            {
+                "entity_id": str(entity.id),
+                "entity_name": "Test Activity",
+                "params": {"intensity": 2},
+                "subtasks": ["Step 1"],
+            }
+        ],
+    }
+    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+
+    response = await auth_client.post("/training/plan", follow_redirects=False)
+    assert response.status_code == 303
+    assert "error=" in response.headers["location"]
+    days = (await db_session.execute(select(TrainingDay).where(TrainingDay.user_id == test_user.id))).scalars().all()
+    assert days == []  # not_assessed entity must NOT be auto-planned
 
 
 @pytest.mark.asyncio

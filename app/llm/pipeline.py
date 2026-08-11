@@ -13,7 +13,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm.client import call_llm
-from app.llm.context_builder import build_context, format_context_abstract, format_context_for_prompt
+from app.llm.context_builder import (
+    build_context,
+    filter_automation_eligible,
+    format_context_abstract,
+    format_context_for_prompt,
+)
 from app.llm.diet_prompts import (
     DIET_EVALUATE_SYSTEM,
     DIET_GENERATE_SYSTEM,
@@ -94,6 +99,9 @@ async def generate_task(
 ) -> ActivityLog:
     """Generate a task via LLM and save to ActivityLog."""
     context = await build_context(db, user_id, session_id=session_id, locale=locale)
+    # REM §5.2 automation gate: not_assessed/high (and elevated without consent)
+    # are never auto-selected — they must not even appear in the prompt.
+    context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
     allowed_ids = get_allowed_ids(context)
 
     # Choose format based on LLM mode
@@ -233,6 +241,8 @@ async def generate_daily_plan(
       and validated, so a failed attempt never leaves a partial plan behind.
     """
     context = await build_context(db, user_id, locale=locale)
+    # REM §5.2 automation gate for training plans too.
+    context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
     allowed_ids = get_allowed_ids(context)
     entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
 

@@ -1,6 +1,16 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-10 (сессия 56).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 57).
+
+## Сессия 57: «делай всё» — закрыты все deferred Q9/Q10
+
+- [x] **risk_level enum на Entity (REM §5.2)**: модель + миграция 021 (PG15 up/down/up) + схемы + Form-санитизация; seed → `low`; `filter_automation_eligible` в context_builder, применён в generate_task и generate_daily_plan (not_assessed/high не автоматизируются, elevated — с согласием); бейджи в catalog/my_entities.
+- [x] **Typed gamification_config DSL (P2)**: app/gamification/dsl.py — валидатор условий (whitelist операторов, без eval) + Pydantic-валидаторы в BonusCondition/PenaltyLevel; engine переведён на DSL; тест-гард «нет eval».
+- [x] **Subtask gate (REM §7.1)**: тест санитизации (cap 20/500, коэрция) + риск-gate тест — пункт закрыт.
+- [x] **Inter self-hosted (DESIGN §7.1)**: woff2 в static/fonts, @font-face + font-family, tabular-nums, без CDN.
+- [x] **Mobile bottom nav (DESIGN §4.4)**: 4 пункта 64px + safe-area; desktop-nav скрыт на mobile; тумблеры + logout доступны.
+- [x] **JS-hoist (DESIGN §15.4)**: app.js + 10 page-модулей + JSON-блоки i18n; node --check ✅; ревью-фиксы: утечка api_key_encrypted через tojson ORM-объекта (→ boolean), дублирование nav, хардкод Tasks → nav_tasks.
+- [x] **Тесты**: +16 — **323/323 ✅**, ruff ✅.
 
 ## Сессия 56: Диеты v3 — история оценок, синергия с тренировками, inline-редактирование, фото
 

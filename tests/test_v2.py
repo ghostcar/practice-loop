@@ -147,32 +147,102 @@ class TestCalculateEntityPenalty:
 
 class TestConditionEvaluator:
     def test_simple_key_present(self):
-        from app.gamification.points_v2 import _eval_condition
+        from app.gamification.dsl import eval_condition
 
-        assert _eval_condition("x", {"x": 1}) is True
-        assert _eval_condition("x", {"y": 1}) is False
+        assert eval_condition("x", {"x": 1}) is True
+        assert eval_condition("x", {"y": 1}) is False
 
     def test_numeric_greater(self):
-        from app.gamification.points_v2 import _eval_condition
+        from app.gamification.dsl import eval_condition
 
-        assert _eval_condition("count > 5", {"count": 10}) is True
-        assert _eval_condition("count > 5", {"count": 3}) is False
+        assert eval_condition("count > 5", {"count": 10}) is True
+        assert eval_condition("count > 5", {"count": 3}) is False
 
     def test_numeric_equals(self):
-        from app.gamification.points_v2 import _eval_condition
+        from app.gamification.dsl import eval_condition
 
-        assert _eval_condition("flag == 1", {"flag": 1}) is True
-        assert _eval_condition("flag == 1", {"flag": 0}) is False
+        assert eval_condition("flag == 1", {"flag": 1}) is True
+        assert eval_condition("flag == 1", {"flag": 0}) is False
 
     def test_string_equals(self):
-        from app.gamification.points_v2 import _eval_condition
+        from app.gamification.dsl import eval_condition
 
-        assert _eval_condition("status == done", {"status": "done"}) is True
+        assert eval_condition("status == done", {"status": "done"}) is True
 
     def test_empty_condition(self):
-        from app.gamification.points_v2 import _eval_condition
+        from app.gamification.dsl import eval_condition
 
-        assert _eval_condition("", {}) is False
+        assert eval_condition("", {}) is False
+
+
+class TestTypedConditionDsl:
+    """REM §5.2 typed gamification DSL — no eval, whitelist validation."""
+
+    def test_valid_bare_field(self):
+        from app.gamification.dsl import validate_condition
+
+        assert validate_condition("extra_fluid_ml") is None
+
+    def test_valid_comparison(self):
+        from app.gamification.dsl import validate_condition
+
+        assert validate_condition("extra_fluid_ml > 0") is None
+        assert validate_condition("count >= 5") is None
+        assert validate_condition("flag == true") is None
+        assert validate_condition("status == 'done'") is None
+
+    def test_invalid_field_name(self):
+        from app.gamification.dsl import validate_condition
+
+        assert validate_condition("1bad_field") is not None
+        assert validate_condition("field with spaces") is not None
+
+    def test_unsupported_operator_rejected(self):
+        from app.gamification.dsl import validate_condition
+
+        assert validate_condition("x in (1,2)") is not None
+        assert validate_condition("x and y") is not None
+        assert validate_condition("__import__('os').system('id')") is not None
+
+    def test_invalid_value_rejected(self):
+        from app.gamification.dsl import validate_condition
+
+        assert validate_condition("x = os.system('id')") is not None
+        assert validate_condition("x > __import__") is not None
+
+    def test_penalty_condition_whitelist(self):
+        from app.gamification.dsl import validate_penalty_condition
+
+        assert validate_penalty_condition("missed") is None
+        assert validate_penalty_condition("partial") is None
+        assert validate_penalty_condition("late") is None
+        assert validate_penalty_condition("whenever") is not None
+
+    def test_schema_rejects_bad_bonus_condition(self):
+        from pydantic import ValidationError
+
+        from app.schemas.points_v2 import BonusCondition
+
+        BonusCondition(code="b", condition="extra_fluid_ml > 0")
+        try:
+            BonusCondition(code="b", condition="os.system('id')")
+        except ValidationError:
+            pass
+        else:
+            raise AssertionError("dangerous condition string must be rejected")
+
+    def test_schema_rejects_bad_penalty_condition(self):
+        from pydantic import ValidationError
+
+        from app.schemas.points_v2 import PenaltyLevel
+
+        PenaltyLevel(level=1, deduction=5, condition="missed")
+        try:
+            PenaltyLevel(level=1, deduction=5, condition="whenever")
+        except ValidationError:
+            pass
+        else:
+            raise AssertionError("unknown failure condition must be rejected")
 
 
 # ── Schemas ──

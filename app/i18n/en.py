@@ -167,6 +167,12 @@ EN = {
     "catalog_admin_btn": "Admin",
     "catalog_filter_all": "All",
     "catalog_parameters_label": "Parameters",
+    "risk_level_label": "Risk level",
+    "risk_not_assessed": "Not assessed",
+    "risk_low": "Low risk",
+    "risk_elevated": "Elevated",
+    "risk_high": "High risk",
+    "risk_automation_hint": "Not assessed / high tasks are never auto-selected by AI.",
     "catalog_no_entities_msg": "No entities found",
     "catalog_no_entities_hint": "Create your first entity or seed the catalog from the admin panel.",
     # Calendar

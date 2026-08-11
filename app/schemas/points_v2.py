@@ -6,7 +6,9 @@ import uuid
 from datetime import date, datetime, time
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.gamification.dsl import validate_condition, validate_penalty_condition
 
 # ── Gamification Config (stored as JSON on Entity) ──
 
@@ -38,6 +40,14 @@ class PenaltyLevel(BaseModel):
     redemption: PenaltyRedemption | None = None
     auto_apply: bool = True
 
+    @field_validator("condition")
+    @classmethod
+    def _check_condition(cls, v: str) -> str:
+        err = validate_penalty_condition(v)
+        if err:
+            raise ValueError(err)
+        return v
+
 
 class PenaltyConfig(BaseModel):
     """Penalty configuration for an entity."""
@@ -50,7 +60,7 @@ class PenaltyConfig(BaseModel):
 
 
 class BonusCondition(BaseModel):
-    """Single bonus condition."""
+    """Single bonus condition (typed DSL — REM §5.2, no eval)."""
 
     code: str = ""
     condition: str = ""  # e.g. "extra_fluid_ml > 0", "level_jump == true"
@@ -58,6 +68,14 @@ class BonusCondition(BaseModel):
     per_unit: bool = False  # If True, reward is per unit
     description: str = ""
     enabled: bool = True
+
+    @field_validator("condition")
+    @classmethod
+    def _check_condition(cls, v: str) -> str:
+        err = validate_condition(v)
+        if err:
+            raise ValueError(err)
+        return v
 
 
 class ThresholdConfig(BaseModel):

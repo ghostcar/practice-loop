@@ -107,27 +107,17 @@ def test_calendar_renders_inert_when_name_is_malicious():
         autoescape=select_autoescape(),
     )
 
-    class T:
-        def get(self, k, default=""):
-            from app.i18n.en import EN
+    from app.i18n.en import EN
 
-            return EN.get(k, default)
-
-    class TCall:
-        def __call__(self, k, default=""):
-            from app.i18n.en import EN
-
-            return EN.get(k, default)
-
-    T.__call__ = TCall.__call__
-    env.globals["t"] = T()
+    env.globals["t"] = EN
 
     html = env.get_template("calendar.html").render(
+        t=EN,
         today_schedule={
             "template_name": "Work&<script>alert(1)</script>",
             "date": "2026-08-09",
             "windows": [],
-        }
+        },
     )
     # Bare <script> tag MUST NOT be present anywhere
     assert "<script>alert(1)</script>" not in html

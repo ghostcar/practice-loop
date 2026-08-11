@@ -3,6 +3,18 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 57: «делай всё» — закрыты все deferred Q9/Q10 (risk_level, typed DSL, Inter font, bottom nav, JS modules)
+
+- **risk_level на Entity (REM §5.2)**: колонка (default not_assessed) + миграция 021 (PG15 up/down/up ✅); схемы (EntityCreate/Update/Response, pattern), Form-поле с санитизацией; seed-каталог → `low` (curated pre-assessed); `filter_automation_eligible()` в context_builder (low всегда, elevated только с allow_elevated, not_assessed/high никогда) — подключён в generate_task и generate_daily_plan; бейджи risk в catalog.html и my_entities.html.
+- **Typed gamification DSL (P2)**: `app/gamification/dsl.py` — валидатор условий (whitelist операторов >,<,>=,<=,==,!=; field regex; value: число/true/false/короткая кавычка) + `eval_condition`/`find_param_key` (без eval); `validate_penalty_condition` (missed/partial/late); Pydantic-валидаторы в BonusCondition и PenaltyLevel (схемы); points_v2 engine переведён на DSL; тест-гард «нет eval».
+- **Subtask/risk gate тесты (REM §7.1)**: test_generate_plan_sanitizes_subtasks (cap 20, длина 500, коэрция строк, whitespace-drop) + test_generate_plan_risk_gate_blocks_unassessed.
+- **Inter self-hosted (DESIGN §7.1)**: `app/static/fonts/InterVariable{,-Italic}.woff2` (rsms.me), @font-face + font-family на html, `.tabular-nums`; CDN-ссылок нет.
+- **Mobile bottom nav (DESIGN §4.4)**: 4 пункта (Dashboard/Tasks/Training/Catalog), 64px + safe-area-inset, md:hidden; desktop-nav скрыт на mobile (hidden md:flex), тумблеры locale/theme + logout-иконка видны на всех; хардкод `Tasks` → `t.nav_tasks`.
+- **JS-hoist в ES modules (DESIGN §15.4)**: `app/static/js/app.js` (CSRF-обёртка fetch, HTMX config, escapeHtml) + 10 page-модулей в `app/static/js/pages/`; i18n/данные — через `<script type="application/json" id="page-i18n">` (не inline JS!); `window.*`-экспорты для onclick-хендлеров; все 11 файлов прошли `node --check`.
+- **Ревью-фиксы**: (1) diets JSON-блок сериализовал ORM-объект active_config → утечка api_key_encrypted в DOM — заменено на `active_config is not none`; (2) дублирование навигации на mobile — desktop-nav скрыт; (3) хардкод Tasks → i18n.
+- **Миграция 021** проверена на PG15 (upgrade 001→021, downgrade 021→020, повторный upgrade).
+- **Тесты**: +16 (tests/test_audit_s57.py) — 323/323 ✅, ruff ✅, node --check ✅.
+
 ## 2026-08-10 — Сессия 56: Диеты v3 — история, синергия диет↔тренировки, фичи
 - **История оценок диет**: `diet_evaluations` (каждая оценка сохраняется), UI-кнопка «История» в карточке.
 - **Синергия диет и тренировок**: `diet_training_reviews` + LLM `analyze_diet_training_synergy` — взаимное влияние (питание→тренировки и наоборот), корреляции + корректировки; секция на странице диет с историей.

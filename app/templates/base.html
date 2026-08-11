@@ -7,6 +7,24 @@
     <!-- Local assets — no external CDN dependencies -->
     <script src="/static/tailwindcss.js"></script>
     <style>
+        /* Self-hosted Inter Variable (DESIGN.md 7.1) — no font CDN */
+        @font-face {
+            font-family: 'Inter';
+            src: url('/static/fonts/InterVariable.woff2') format('woff2-variations');
+            font-weight: 100 900;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Inter';
+            src: url('/static/fonts/InterVariable-Italic.woff2') format('woff2-variations');
+            font-weight: 100 900;
+            font-style: italic;
+            font-display: swap;
+        }
+        html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; }
+        /* Metrics (DESIGN.md 7.1): tabular numbers in charts/stats */
+        .tabular-nums, .chart-nums { font-variant-numeric: tabular-nums; }
         /* === Design system semantic tokens (DESIGN.md 6.2) === */
         :root,
         html[data-theme="light"] {
@@ -90,52 +108,7 @@
     <meta name="csrf-token" content="{{ csrf_token or '' }}">
     <script src="/static/htmx.min.js"></script>
     <script src="/static/chart.umd.min.js"></script>
-    <script>
-        // CSRF: attach the X-CSRF-Token header to every same-origin
-        // state-changing fetch() call (JSON API pages use plain fetch, not HTMX).
-        (function () {
-            var origFetch = window.fetch;
-            window.fetch = function (input, init) {
-                init = init || {};
-                var method = (init.method || (input && input.method) || 'GET').toUpperCase();
-                if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-                    var url = typeof input === 'string' ? input : ((input && input.url) || '');
-                    var isSameOrigin = (typeof input === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/')
-                        || (typeof input !== 'string' && url.indexOf(location.origin) === 0);
-                    if (isSameOrigin) {
-                        var headers = new Headers(init.headers || {});
-                        if (!headers.has('X-CSRF-Token')) {
-                            var meta = document.querySelector('meta[name="csrf-token"]');
-                            if (meta) headers.set('X-CSRF-Token', meta.content);
-                        }
-                        init.headers = headers;
-                    }
-                }
-                return origFetch.call(this, input, init);
-            };
-        })();
-        // HTMX: auto-include CSRF token in all state-changing requests
-        document.addEventListener('DOMContentLoaded', function() {
-            document.body.addEventListener('htmx:configRequest', function(evt) {
-                var token = document.querySelector('meta[name="csrf-token"]');
-                if (token) evt.detail.headers['X-CSRF-Token'] = token.content;
-            });
-            // HTMX live region: announce after-swap events
-            var live = document.getElementById('htmx-live-region');
-            document.body.addEventListener('htmx:afterSwap', function(evt) {
-                if (live && evt.detail && evt.detail.target) {
-                    live.textContent = 'Updated ' + (evt.detail.target.id || 'region');
-                }
-            });
-        });
-        // XSS-safe HTML escaping helper
-        function escapeHtml(str) {
-            if (str === null || str === undefined) return '';
-            var div = document.createElement('div');
-            div.textContent = String(str);
-            return div.innerHTML;
-        }
-    </script>
+    <script src="/static/js/app.js"></script>
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
@@ -143,7 +116,7 @@
     <a href="#main-content" class="skip-link">{{ t.locale_label }} / Skip to content</a>
     <!-- Live region for HTMX swap announcements -->
     <div id="htmx-live-region" aria-live="polite" aria-atomic="true"></div>
-    <!-- Navbar -->
+    <!-- Navbar (desktop) -->
     <nav class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 sticky top-0 z-50" aria-label="Main">
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
             <!-- Logo -->
@@ -154,14 +127,14 @@
                 <span class="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">{{ t.app_tagline }}</span>
             </a>
 
-            <!-- Navigation -->
-            <div class="flex items-center gap-3">
+            <!-- Navigation (hidden on mobile — bottom nav takes over, DESIGN.md 4.4) -->
+            <div class="hidden md:flex items-center gap-3">
                 {% if user %}
                     {% set nav_class = "text-sm font-medium transition-colors " %}
                     {% set nav_active = "text-indigo-500 dark:text-indigo-400 font-semibold " %}
                     {% set nav_inactive = "text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
                     <a href="/dashboard" class="{{ nav_class }}{{ nav_active if active_nav == 'dashboard' else nav_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>{{ t.nav_dashboard }}</a>
-                    <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>{{ t.nav_dashboard if false else 'Tasks' }}</a>
+                    <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>{{ t.nav_tasks }}</a>
                     <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>{{ t.training_title }}</a>
                     <a href="/entities/catalog" class="{{ nav_class }}{{ nav_active if active_nav == 'catalog' else nav_inactive }}"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>{{ t.catalog_title }}</a>
                     <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }}"{% if active_nav == 'points' %} aria-current="page"{% endif %}>{{ t.nav_dashboard if false else 'Points' }}</a>
@@ -182,7 +155,19 @@
                         {{ t.nav_register }}
                     </a>
                 {% endif %}
+            </div>
 
+            {% if user %}
+            <form action="/auth/logout" method="post" class="md:hidden inline" title="{{ t.nav_logout }}" aria-label="{{ t.nav_logout }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <button type="submit" class="text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-2 min-h-[44px] min-w-[44px]">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Locale + theme toggles (visible on all viewports) -->
+            <div class="flex items-center gap-3">
                 <!-- Locale toggle -->
                 <form action="/settings/locale" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -215,6 +200,36 @@
             </div>
         </div>
     </nav>
+
+    <!-- Mobile bottom nav (DESIGN.md 4.4): 64px + safe-area, exactly 4 items -->
+    {% if user %}
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700"
+         style="height: 64px; padding-bottom: env(safe-area-inset-bottom);" aria-label="Mobile">
+        {% set bn_class = "flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors flex-1 min-h-[44px] " %}
+        {% set bn_active = "text-indigo-600 dark:text-indigo-400 " %}
+        {% set bn_inactive = "text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
+        <div class="flex h-full max-w-5xl mx-auto">
+            <a href="/dashboard" class="{{ bn_class }}{{ bn_active if active_nav == 'dashboard' else bn_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"/></svg>
+                {{ t.nav_dashboard }}
+            </a>
+            <a href="/tasks/" class="{{ bn_class }}{{ bn_active if active_nav == 'tasks' else bn_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                {{ t.nav_tasks }}
+            </a>
+            <a href="/training" class="{{ bn_class }}{{ bn_active if active_nav == 'training' else bn_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                {{ t.training_title }}
+            </a>
+            <a href="/entities/catalog" class="{{ bn_class }}{{ bn_active if active_nav == 'catalog' else bn_inactive }}"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                {{ t.catalog_title }}
+            </a>
+        </div>
+    </nav>
+    <!-- Spacer so sticky CTAs never hide behind the bottom nav (DESIGN.md 4.4) -->
+    <div class="md:hidden h-16" aria-hidden="true"></div>
+    {% endif %}
 
     <!-- Flash messages -->
     {% if error %}

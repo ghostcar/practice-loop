@@ -169,6 +169,12 @@ RU = {
     "catalog_admin_btn": "Админ",
     "catalog_filter_all": "Все",
     "catalog_parameters_label": "Параметры",
+    "risk_level_label": "Уровень риска",
+    "risk_not_assessed": "Не оценён",
+    "risk_low": "Низкий риск",
+    "risk_elevated": "Повышенный",
+    "risk_high": "Высокий риск",
+    "risk_automation_hint": "Задачи «не оценён» и «высокий риск» никогда не выбираются ИИ автоматически.",
     "catalog_no_entities_msg": "Задачи не найдены",
     "catalog_no_entities_hint": "Создайте первую задачу или заполните каталог из админ-панели.",
     # Calendar
