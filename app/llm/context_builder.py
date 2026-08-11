@@ -71,6 +71,7 @@ async def _get_allowed_entities(db: AsyncSession, user_id: uuid.UUID) -> list[di
                 "tags": entity.tags or [],
                 "intensity": entity.intensity or "active",
                 "params_schema": entity.params_schema,
+                "task_template": entity.task_template,
                 "desire_level": opt_in.desire_level,
                 "rating": opt_in.rating,
                 "risk_level": entity.risk_level or "not_assessed",

@@ -2,6 +2,13 @@
 
 Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 58).
 
+## Сессия 58 (Phase 2): backend новой модели — DSL параметров, title-генератор, API переходов статусов
+
+- [x] **Типизированный DSL параметров (ADR-041)**: app/params.py — normalize_schema принимает legacy map (правила без type инференс: min/max→decimal, enum→enum+options, min_length→string; required по умолчанию true — legacy-контракт) И структурированный список (key/title/type/required/options/min/max/unit_group/visible_when/allow_custom_value); 8 типов (string/text/integer/decimal/boolean/enum/multi_enum/duration); валидация чисто декларативная, БЕЗ eval; UNKNOWN_PARAM_TYPE возвращается вместо исключения; COMMON_PARAMETERS (13 общих параметров из update.md); LLM-валидатор делегирует в DSL (мёртвый код _TYPE_VALIDATORS/_validate_one_param удалён).
+- [x] **Title-генератор (ADR-042)**: app/title_gen.py — priority chain title_override→manual→template→param list→activity title→free task; пустые части шаблона пропускаются (артефакты вычищаются); i18n EN/RU лейблы (tool/zone/count/…/free task); интенсивность как N/5; option titles из схемы; pipeline генерирует авто-заголовок при создании задачи (task_template добавлен в контекст build_context).
+- [x] **API переходов статусов (ADR-040)**: app/api/task_flows.py — POST /api/v2/tasks/{id}/transition (to_status + comment; 409 при нелегальном переходе; completed→on_task_completed награда, stopped→on_task_interrupted штраф, остальные без наград/штрафов — ADR-038) + GET /api/v2/tasks/transitions (граф для UI); security.transition_once — атомарный UPDATE + ActivityTaskHistory (previous захвачен ДО update — synchronize_session фикс; cross-user 404). planned→stopped добавлен в STATUS_TRANSITIONS (ADR-029: прерывание планированной = штраф).
+- [x] **Тесты**: +19 (tests/test_phase2_task_flows.py) — DSL (нормализация обеих форм, отказ от bad schema, валидация без eval, legacy-совместимость), title (override/template/fallback/RU-i18n/enum-titles), transitions (skipped/cancelled/audit/награда/штраф/нелегальные 409/граф/cross-user). **354/354 ✅**, ruff ✅.
+
 ## Сессия 58 (Phase 1): новая модель активностей — категории, статус-машина 11, аудит, эволюция моделей
 
 - [x] **ADR-035…042 записаны** (см. планирование ниже) + **FUNCTIONAL.md** создан (обзор v0.8-actual).

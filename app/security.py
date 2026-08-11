@@ -218,6 +218,9 @@ async def interrupt_once(
     from app.models.task_history import ActivityTaskHistory
     from app.models.task_status import IN_PROGRESS, PLANNED, STOPPED
 
+    # Capture previous status BEFORE the UPDATE (synchronize_session="evaluate"
+    # mutates the in-session object as part of the UPDATE).
+    previous = log.status
     res = await db.execute(
         update(ActivityLog)
         .where(
@@ -234,7 +237,7 @@ async def interrupt_once(
     db.add(
         ActivityTaskHistory(
             task_id=log.id,
-            previous_status=log.status,
+            previous_status=previous,
             new_status=STOPPED,
             actor_id=user.id,
             parameter_snapshot=log.selected_params,
@@ -243,4 +246,74 @@ async def interrupt_once(
     log.status = STOPPED
     result = await on_interrupt_fn(db, user.id, log)
     result["idempotent"] = False
+    return result
+
+
+async def transition_once(
+    db: AsyncSession,
+    log,
+    user: User,
+    to_status: str,
+    comment: str | None = None,
+    on_transition_fn=None,
+) -> dict:
+    """Atomically move a task to any legal status (ADR-040 status machine).
+
+    Uses the same atomic ``UPDATE ... WHERE status=<current>`` pattern as
+    complete_once/interrupt_once so concurrent transitions are safe. The
+    transition is validated against STATUS_TRANSITIONS and recorded in
+    ActivityTaskHistory. On ``completed`` the completed_at is stamped.
+    """
+    if log.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    from app.models.activity_log import ActivityLog
+    from app.models.task_history import ActivityTaskHistory
+    from app.models.task_status import COMPLETED, can_transition
+
+    if not can_transition(log.status, to_status):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Illegal transition: {log.status} → {to_status}",
+        )
+
+    now = datetime.now(UTC)
+    values: dict = {"status": to_status}
+    if to_status == COMPLETED:
+        values["completed_at"] = now
+
+    # Capture the previous status BEFORE the UPDATE: with the default
+    # synchronize_session="evaluate", the in-session object is mutated by
+    # the UPDATE itself, so reading after would yield the new status.
+    previous = log.status
+    res = await db.execute(
+        update(ActivityLog)
+        .where(
+            ActivityLog.id == log.id,
+            ActivityLog.user_id == user.id,
+            ActivityLog.status == previous,
+        )
+        .values(**values)
+    )
+    if res.rowcount == 0:
+        await db.refresh(log)
+        return {"status": f"already_{log.status}", "idempotent": True}
+
+    log.status = to_status
+    if to_status == COMPLETED:
+        log.completed_at = now
+    db.add(
+        ActivityTaskHistory(
+            task_id=log.id,
+            previous_status=previous,
+            new_status=to_status,
+            changed_at=now,
+            comment=comment,
+            parameter_snapshot=log.selected_params,
+            actor_id=user.id,
+        )
+    )
+    result: dict = {"status": to_status, "idempotent": False}
+    if on_transition_fn is not None:
+        result.update(await on_transition_fn(db, user.id, log, previous, to_status))
     return result

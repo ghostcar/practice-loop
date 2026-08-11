@@ -69,6 +69,7 @@ STATUS_TRANSITIONS: dict[str, frozenset[str]] = {
             PARTIALLY_COMPLETED,
             SKIPPED,
             CANCELLED,
+            STOPPED,  # ADR-029: interrupting a planned task still carries a penalty
             SUBSTITUTED,
             NOT_APPLICABLE,
             REVIEW_NEEDED,

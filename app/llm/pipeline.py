@@ -49,6 +49,29 @@ MAX_RETRIES = 3
 RAW_RESPONSE_TTL_DAYS = 30
 
 
+def _generate_task_title(
+    entity_name: str,
+    params: dict | None,
+    schema: dict | list | None,
+    template: str | dict | None = None,
+    locale: str = "en",
+) -> str:
+    """ADR-042: readable task title via template + fallback (locale-aware)."""
+    from app.title_gen import generate_title
+
+    tpl = template if isinstance(template, str) else None
+    try:
+        return generate_title(
+            activity_title=entity_name,
+            params=params,
+            schema=schema,
+            template=tpl,
+            locale=locale,
+        )
+    except Exception:
+        return entity_name
+
+
 def _resolve_raw_response(config: LLMProviderConfig, raw: str) -> tuple[str | None, datetime | None]:
     """Apply REM §7.5 / ADR-034 retention policy.
 
@@ -176,11 +199,21 @@ async def generate_task(
     entity_name = canonical.get("name") or entity_name
 
     raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
+    # ADR-042: auto-generate a readable title from the entity's task_template
+    # (falls back to entity name if no template/params are usable).
+    auto_title = _generate_task_title(
+        entity_name=entity_name,
+        params=params,
+        schema=canonical.get("params_schema"),
+        template=canonical.get("task_template"),
+        locale=locale,
+    )
     log = ActivityLog(
         user_id=user_id,
         session_id=session_id,
         entity_id=uuid.UUID(entity_id) if entity_id else None,
         status="planned",
+        title_override=auto_title if auto_title != entity_name else None,
         user_prompt=custom_prompt or context_text[:500],
         raw_llm_response=raw_to_store,
         raw_response_expires_at=raw_expires,
