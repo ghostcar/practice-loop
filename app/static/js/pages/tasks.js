@@ -166,7 +166,13 @@
         if (f.type === 'checkbox') {
           if (f.checked) actual[name] = true;
         } else if (f.value !== '') {
-          actual[name] = f.value;
+          // Number inputs send numeric values (server DSL validates types)
+          if (f.type === 'number') {
+            var num = Number(f.value);
+            actual[name] = Number.isNaN(num) ? f.value : num;
+          } else {
+            actual[name] = f.value;
+          }
         }
       });
       var commentEl = document.getElementById('completion-comment-' + cTaskId);

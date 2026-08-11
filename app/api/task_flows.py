@@ -23,16 +23,21 @@ from app.api.auth import get_current_user
 from app.database import get_db
 from app.gamification.handler import on_task_completed, on_task_interrupted
 from app.models.activity_log import ActivityLog
+from app.models.entity import Entity
 from app.models.task_status import (
+    CANCELLED,
     COMPLETED,
     PARTIALLY_COMPLETED,
+    SKIPPED,
     STATUS_TRANSITIONS,
     STOPPED,
     TASK_STATUSES,
     is_valid_status,
 )
 from app.models.user import User
+from app.params import validate_params
 from app.security import transition_once
+from app.services.scheduler import set_next_due, set_retry_block
 
 router = APIRouter(prefix="/api/v2/tasks", tags=["task-flows"])
 
@@ -74,6 +79,15 @@ async def transition_task(
 
     log = await _get_owned_task(db, task_id, user)
 
+    # ADR-041: validate actual_parameters against the entity schema when provided
+    if data.actual_parameters is not None and log.entity_id:
+        ent_result = await db.execute(select(Entity).where(Entity.id == log.entity_id))
+        entity = ent_result.scalar_one_or_none()
+        if entity is not None:
+            errors = validate_params(entity.params_schema, data.actual_parameters)
+            if errors:
+                raise HTTPException(400, f"Actual parameters fail entity schema: {errors[0]}")
+
     async def _reward_hook(session, uid, task, previous, to_status):
         return await on_task_completed(session, uid, task)
 
@@ -96,5 +110,17 @@ async def transition_task(
         db.add(log)
 
     result = await transition_once(db, log, user, data.to_status, comment=data.comment, on_transition_fn=hook)
+
+    # Soft scheduler integration (Phase 2 remainder): completion advances the
+    # practice's next_due; skipped/cancelled/stopped set a retry block so the
+    # deterministic fallback doesn't immediately re-suggest the same practice.
+    # Only applied when the state actually changed (idempotent repeats must
+    # not keep extending the schedule — mirrors /tasks/{id}/complete).
+    if log.entity_id and not result.get("idempotent"):
+        if data.to_status in (COMPLETED, PARTIALLY_COMPLETED):
+            await set_next_due(db, user.id, log.entity_id)
+        elif data.to_status in (SKIPPED, CANCELLED, STOPPED):
+            await set_retry_block(db, user.id, log.entity_id)
+
     await db.commit()
     return result

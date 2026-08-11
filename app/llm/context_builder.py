@@ -118,6 +118,9 @@ async def _get_recent_history(db: AsyncSession, user_id: uuid.UUID, limit: int =
                 "entity_name": log.selected_entity_name,
                 "status": log.status,
                 "params": log.selected_params,
+                # ADR-041: actual parameters (what was really done) — lets the
+                # LLM calibrate future suggestions against reality, not just plans
+                "actual_parameters": log.actual_parameters,
                 "created_at": log.created_at.isoformat() if log.created_at else None,
             }
         )
@@ -207,7 +210,11 @@ def format_context_abstract(context: dict) -> str:
         # Abstract mode: real entity names MUST NOT be revealed (audit: the
         # abstract context previously leaked them from history).
         eid = h.get("entity_id") or h.get("id") or "?"
-        parts.append(f"- [{h['status']}] entity_id={eid} at {h.get('created_at')}")
+        line = f"- [{h['status']}] entity_id={eid} at {h.get('created_at')}"
+        actual = h.get("actual_parameters")
+        if actual:
+            line += f" | actual: {json.dumps(actual, ensure_ascii=False)}"
+        parts.append(line)
     parts.append("")
 
     return "\n".join(parts)
@@ -253,7 +260,11 @@ def format_context_for_prompt(context: dict) -> str:
 
     parts.append("## Recent History (last 10)")
     for h in context["recent_history"]:
-        parts.append(f"- [{h['status']}] {h.get('entity_name') or '(custom)'} at {h.get('created_at')}")
+        line = f"- [{h['status']}] {h.get('entity_name') or '(custom)'} at {h.get('created_at')}"
+        actual = h.get("actual_parameters")
+        if actual:
+            line += f" | actual: {json.dumps(actual, ensure_ascii=False)}"
+        parts.append(line)
     parts.append("")
 
     parts.append("## Active Penalties")

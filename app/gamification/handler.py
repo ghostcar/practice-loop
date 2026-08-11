@@ -46,9 +46,12 @@ async def on_task_completed(
     """Process task completion: award XP, update streaks, check achievements."""
     progress = await get_or_create_progress(db, user_id)
 
-    # Extract intensity from params
+    # Extract intensity from ACTUAL params first (what was really done),
+    # falling back to planned params (ADR-041 planned/actual split).
     intensity = 1
-    if log.selected_params and isinstance(log.selected_params, dict):
+    if log.actual_parameters and isinstance(log.actual_parameters, dict):
+        intensity = log.actual_parameters.get("intensity", 1)
+    elif log.selected_params and isinstance(log.selected_params, dict):
         intensity = log.selected_params.get("intensity", 1)
 
     # Training mode: skip streaks and combo
@@ -88,11 +91,13 @@ async def on_task_completed(
     progress.level = level_from_xp(progress.xp)
     progress.total_completed += 1
 
-    # Points v2: if entity has gamification_config, calculate flexible points
+    # Points v2: if entity has gamification_config, calculate flexible points.
+    # Bonus conditions evaluate against actual params when present (ADR-041).
     points_earned = 0
     bonus_descriptions: list[str] = []
     if gamification_config:
-        points_earned, bonus_descriptions, _ = await calculate_entity_points(gamification_config, log.selected_params)
+        eval_params = log.actual_parameters or log.selected_params
+        points_earned, bonus_descriptions, _ = await calculate_entity_points(gamification_config, eval_params)
         progress.points_balance += points_earned
         log.points_awarded = points_earned
         await award_points(

@@ -289,3 +289,137 @@ async def test_tasks_page_shows_quick_actions_and_stats(db_session, auth_client,
     assert "data-transition=" in r.text
     # status labels localized
     assert "planned" in r.text
+
+
+# ── Phase 2 remainder: scheduler + actual params in gamification/LLM ────
+
+
+@pytest.mark.asyncio
+async def test_transition_completed_advances_next_due(db_session, auth_client, test_user):
+    """Transition to completed sets next_due_at on the practice opt-in."""
+    entity = Entity(type="one_time", real_name="T", category="test", owner_id=test_user.id, is_public=True)
+    db_session.add(entity)
+    await db_session.flush()
+    db_session.add(UserEntityOptIn(user_id=test_user.id, entity_id=entity.id, is_opted_in=True))
+    await db_session.flush()
+
+    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="planned", selected_entity_name="T")
+    db_session.add(log)
+    await db_session.flush()
+
+    r = await auth_client.post(f"/api/v2/tasks/{log.id}/transition", json={"to_status": "completed"})
+    assert r.status_code == 200
+
+    result = await db_session.execute(
+        select(UserEntityOptIn).where(
+            UserEntityOptIn.user_id == test_user.id,
+            UserEntityOptIn.entity_id == entity.id,
+        )
+    )
+    opt_in = result.scalar_one()
+    assert opt_in.next_due_at is not None
+    assert opt_in.retry_not_before_at is None
+
+
+@pytest.mark.asyncio
+async def test_transition_skipped_sets_retry_block(db_session, auth_client, test_user):
+    """Skipped/cancelled set a retry block so the practice isn't re-suggested immediately."""
+    entity = Entity(type="one_time", real_name="T", category="test", owner_id=test_user.id, is_public=True)
+    db_session.add(entity)
+    await db_session.flush()
+    db_session.add(UserEntityOptIn(user_id=test_user.id, entity_id=entity.id, is_opted_in=True))
+    await db_session.flush()
+
+    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="planned", selected_entity_name="T")
+    db_session.add(log)
+    await db_session.flush()
+
+    r = await auth_client.post(f"/api/v2/tasks/{log.id}/transition", json={"to_status": "skipped"})
+    assert r.status_code == 200
+
+    result = await db_session.execute(
+        select(UserEntityOptIn).where(
+            UserEntityOptIn.user_id == test_user.id,
+            UserEntityOptIn.entity_id == entity.id,
+        )
+    )
+    opt_in = result.scalar_one()
+    assert opt_in.retry_not_before_at is not None
+
+
+@pytest.mark.asyncio
+async def test_transition_completed_actual_params_validate(db_session, auth_client, test_user):
+    """Invalid actual_parameters are rejected against the entity schema (ADR-041)."""
+    entity = Entity(
+        type="one_time",
+        real_name="T",
+        category="test",
+        owner_id=test_user.id,
+        params_schema={"count": {"min": 1, "max": 10}},
+    )
+    db_session.add(entity)
+    await db_session.flush()
+    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="planned", selected_entity_name="T")
+    db_session.add(log)
+    await db_session.flush()
+
+    r = await auth_client.post(
+        f"/api/v2/tasks/{log.id}/transition",
+        json={"to_status": "completed", "actual_parameters": {"count": 100}},
+    )
+    assert r.status_code == 400
+    await db_session.refresh(log)
+    assert log.status == "planned"  # unchanged
+
+
+@pytest.mark.asyncio
+async def test_context_history_includes_actual_params(db_session, test_user):
+    """build_context recent history carries actual_parameters (ADR-041 LLM adaptation)."""
+    from app.llm.context_builder import build_context
+
+    log = ActivityLog(
+        user_id=test_user.id,
+        status="completed",
+        selected_entity_name="T",
+        selected_params={"count": 10},
+        actual_parameters={"count": 15, "intensity": 4},
+    )
+    db_session.add(log)
+    await db_session.flush()
+
+    ctx = await build_context(db_session, test_user.id)
+    assert ctx["recent_history"]
+    entry = ctx["recent_history"][0]
+    assert entry["actual_parameters"] == {"count": 15, "intensity": 4}
+
+
+@pytest.mark.asyncio
+async def test_on_task_completed_uses_actual_intensity(db_session, test_user):
+    """XP intensity is read from actual_parameters (overrides planned) — ADR-041."""
+    from app.gamification.handler import on_task_completed
+    from app.gamification.xp import calculate_task_xp
+    from app.models.progress import UserProgress
+
+    entity = Entity(type="one_time", real_name="T", category="test", owner_id=test_user.id)
+    db_session.add(entity)
+    await db_session.flush()
+
+    log = ActivityLog(
+        user_id=test_user.id,
+        entity_id=entity.id,
+        status="completed",
+        selected_entity_name="T",
+        selected_params={"intensity": 1},
+        actual_parameters={"intensity": 5},
+    )
+    db_session.add(log)
+    await db_session.flush()
+
+    await on_task_completed(db_session, test_user.id, log)
+
+    # intensity=5 → +40% base (25 * 4 * 0.10 = 10) over base 25 → 35 XP
+    expected = calculate_task_xp(entity_type="one_time", intensity=5, streak_days=1, combo_count=1)
+    result = await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
+    progress = result.scalar_one()
+    assert progress.xp == expected
+    assert progress.xp > calculate_task_xp(entity_type="one_time", intensity=1, streak_days=1, combo_count=1)

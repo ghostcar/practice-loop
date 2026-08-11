@@ -1,6 +1,15 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 61).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 62).
+
+## Сессия 62: «всё по порядку» — коммит 59–61, PG15-валидация 023, деплой-проверка, Phase 2 остаток (LLM/gamification)
+
+- [x] **Коммит кода сессий 59–61** (`c0d30a5`) — всё рабочее дерево (37 файлов) зафиксировано: update2.md справочники + update.md Phase 3 UI.
+- [x] **Миграция 023 на реальном PostgreSQL 15**: временный контейнер postgres:15-alpine — upgrade 001→023 ✅, ORM-цикл (все 9 новых таблиц: BodyPart/TaskBodyTarget/ActivityBodyPartRequirement, TaskLocation/Usage/Requirement, InventoryCategory, TaskInventoryUsage/Requirement + InventoryItem) ✅, downgrade 023→022 ✅, повторный upgrade ✅. Контейнер удалён.
+- [x] **Деплой подготовлен**: seed-кнопки `/admin/seed-references` (body_parts/locations/inventory_categories) и `/admin/seed-entities` (categories) на месте; Dockerfile `COPY app/` включает все seed-файлы; runbook: `git pull && docker compose up -d --build` + `alembic upgrade head` + кнопки seed.
+- [x] **Phase 2 остаток (LLM-адаптация planned/actual)**: transition API (ADR-040) теперь интегрирован с soft-scheduler (`set_next_due` на completed/partial, `set_retry_block` на skipped/cancelled/stopped — только при не-идемпотентном переходе); `actual_parameters` валидируются против entity.params_schema (400 при невалидных); `build_context`/промпты включают actual_parameters из истории (LLM видит факт, не только план); `on_task_completed` читает intensity из actual (fallback planned), Points v2-бонусы оцениваются по actual params.
+- [x] **Ревью-фиксы**: идемпотентность планировщика (повторные POST не двигают расписание); JS коэрция number-полей в actual_parameters (числа как числа); тавтологический тест заменён на реальный async-тест handler'а.
+- [x] **Проверки**: 419/419 тестов ✅ (+5), ruff ✅, format ✅, compile ✅, node --check ✅.
 
 ## Сессия 61 (update.md Phase 3 UI): фильтры категорий, динамическая форма параметров, быстрые действия, карточка выполнения, статистика
 
