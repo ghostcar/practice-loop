@@ -3,6 +3,19 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 64 (C1+C2): LockTimer domain + persistence — 12 таблиц, state machines, repositories
+
+- **C1 — Pure domain** (`app/locktimer/`):
+  - `app/locktimer/enums.py`: 6 session states + transitions (draft→validating→active→completed/safety_stopped), 7 slot states + transitions (pending→eligible→open→closed), 10 task states + transitions (scheduled→visible→submitted→…→completed/review/failed), 5 slot rule types, 6 task schedule types, 4 penalty types + event states.
+  - `app/locktimer/domain.py`: `apply_extension(clamp, max_end)`, `canonical_json` (sorted keys), `sha256_hex`, `deterministic_random(seed, rule_id, index)` → [0,1), `generate_random_seed`/`compute_seed_commitment`, `make_occurrence_key`, `validate_safety_stop_reason`.
+- **C2 — Persistence** (`app/models/locktimer.py`):
+  - 12 таблиц: `lock_timer_templates` (owner-scoped, config+sha256, archived_at), `lock_sessions` (state/duration_type/timezone/started_at/effective_end_at/max_end_at/merge_gap/random_seed/row_version/safety_stop), `lock_session_snapshots` (immutable canonical_config+sha256), `lock_inner_periods` (rule_type+rule_data, client_key), `lock_slot_rules` (5 types, duration/grace/late checks, schedule JSONB), `lock_slot_occurrences` (occurrence_key, planned_open/close, eligible window, state, extension), `lock_task_rules` (6 schedule types, source_entity FK, media/verification/penalty/availability policies), `lock_task_occurrences` (appears_at/due_at, content_visible, snapshot, state), `lock_penalty_events` (allowlist types, idempotency_key unique), `lock_audit_events` (actor/correlation/versions, append-only), `lock_job_receipts` (job_key unique, lease, attempts), `lock_outbox_events` (aggregate, payload, state).
+  - Named constraints: ck_lock_sessions_merge_gap, ck_lock_slot_rules_duration/late/grace, ck_lock_task_rules_window, partial unique uq_lock_sessions_active_owner (WHERE state='active').
+- **Миграция 025**: PG15 up/down/up ✅ (12 CREATE TABLE + indexes + constraints + partial unique index).
+- **Repositories**: `app/locktimer/repositories.py` — owner-scoped queries (get_session, get_active_session, list_sessions, list_slot_rules/task_rules, list_slot/task_occurrences), `transition_session` (conditional UPDATE with row_version increment), `write_audit` (append-only).
+- **Тесты**: +31 domain unit test (`tests/test_locktimer_domain.py`) — states/transitions, duration/extension, canonical JSON, deterministic random, seed generation, occurrence keys, safety stop. **450/450 ✅**, ruff ✅, format ✅.
+- **ADR**: ADR-053 (C1+C2 domain+persistence).
+
 ## 2026-08-11 — Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 
 - **Пакет**: `/examples/LT/LockTimer-Agent-Pack` v1.1 (20 файлов, 93 требования, 66 сценариев).

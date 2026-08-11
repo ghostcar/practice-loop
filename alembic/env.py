@@ -16,6 +16,20 @@ from app.models.entity import Entity  # noqa: F401
 from app.models.inventory_category import InventoryCategory  # noqa: F401
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule  # noqa: F401
 from app.models.llm_config import LLMProviderConfig  # noqa: F401
+from app.models.locktimer import (  # noqa: F401
+    LockAuditEvent,
+    LockInnerPeriod,
+    LockJobReceipt,
+    LockOutboxEvent,
+    LockPenaltyEvent,
+    LockSession,
+    LockSessionSnapshot,
+    LockSlotOccurrence,
+    LockSlotRule,
+    LockTaskOccurrence,
+    LockTaskRule,
+    LockTimerTemplate,
+)
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401

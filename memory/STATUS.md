@@ -2,20 +2,15 @@
 
 Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 63 — C0 Platform Foundation).
 
-## LockTimer — Product Composition (C0) ✅
+## LockTimer — Product Composition (C0) ✅ + Domain & Persistence (C1+C2) ✅
 
-- [x] **APP_PRODUCT_VARIANT** (tracker|timer|combined, default combined) — config + валидация
-- [x] **Feature flags** (LOCKTIMER_CORE_ENABLED, SOCIAL_ENABLED, etc.) — all default off
-- [x] **ProductComposition** (immutable dataclass) — сборка при import time
-- [x] **Module registry** — Tracker routes только при tracker_active; Timer placeholder
-- [x] **GET /api/v1/platform/capabilities** — variant, modules, social_stage, timer_stage
-- [x] **User.timezone** — модель + миграция 024 (default UTC, IANA-валидация через zoneinfo)
-- [x] **base.html nav** — conditional: tracker nav обёрнут в `{% if composition.tracker_active %}`
-- [x] **templates_setup.py** — composition context processor для всех шаблонов
-- [x] **ADR** 047–052 записаны (границы, варианты, platform, social gate, timezone, flags)
-- [x] **Тесты**: 419/419 ✅, ruff ✅, format ✅, compile ✅
+- [x] **C0**: APP_PRODUCT_VARIANT, feature flags, ProductComposition, GET /api/v1/platform/capabilities, User.timezone + migration 024, conditional nav, ADR 047–052.
+- [x] **C1 Domain**: enums (6 session + 7 slot + 10 task states + transitions), state machines (can_transition, is_terminal), duration/extension/clamp, canonical JSON+SHA256, deterministic random, seed generation+commitment, occurrence keys, safety stop validation.
+- [x] **C2 Persistence**: 12 таблиц lock_* (templates, sessions, snapshots, inner_periods, slot_rules/occurrences, task_rules/occurrences, penalty_events, audit_events, job_receipts, outbox_events); миграция 025 (PG15 up/down/up ✅); owner-scoped repositories + conditional UPDATE + append-only audit.
+- [x] **ADR** 047–053 записаны.
+- [x] **Тесты**: 450/450 ✅ (+31 domain), ruff ✅, format ✅.
 
-**Осталось по LockTimer**: C1–C9 (Timer Core domain/schema/jobs/execution/UI/hardening) → Platform Social (S0–S8)
+**Осталось по LockTimer**: C3–C5 (draft/start, materializer/jobs, execution/safety) → C6–C9 (media/LLM/UI/hardening) → Platform Social
 
 ## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 
