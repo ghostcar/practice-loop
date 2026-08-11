@@ -180,7 +180,7 @@ async def generate_task(
         user_id=user_id,
         session_id=session_id,
         entity_id=uuid.UUID(entity_id) if entity_id else None,
-        status="pending",
+        status="planned",
         user_prompt=custom_prompt or context_text[:500],
         raw_llm_response=raw_to_store,
         raw_response_expires_at=raw_expires,
@@ -325,7 +325,7 @@ async def generate_daily_plan(
         log = ActivityLog(
             user_id=user_id,
             entity_id=uuid.UUID(task["entity_id"]),
-            status="pending",
+            status="planned",
             user_prompt=f"Training day plan for {target_date}",
             raw_llm_response=raw_to_store,
             raw_response_expires_at=raw_expires,
@@ -369,16 +369,16 @@ async def analyze_training_day(
     logs = list(logs_result.scalars().all())
 
     completed = sum(1 for log_entry in logs if log_entry.status == "completed")
-    interrupted = sum(1 for log_entry in logs if log_entry.status == "interrupted")
-    pending = sum(1 for log_entry in logs if log_entry.status == "pending")
+    stopped = sum(1 for log_entry in logs if log_entry.status == "stopped")
+    planned = sum(1 for log_entry in logs if log_entry.status == "planned")
     total = len(logs)
 
     day_text_parts = [
         f"Training day: {training_day.target_date}",
         f"Total tasks: {total}",
         f"Completed: {completed}",
-        f"Interrupted: {interrupted}",
-        f"Remaining: {pending}",
+        f"Stopped: {stopped}",
+        f"Remaining: {planned}",
         "",
         "Tasks:",
     ]
@@ -727,10 +727,10 @@ async def analyze_diet_training_synergy(
     for td in training_days:
         logs = logs_by_day.get(td.id, [])
         completed = sum(1 for lg in logs if lg.status == "completed")
-        interrupted = sum(1 for lg in logs if lg.status == "interrupted")
-        pending = sum(1 for lg in logs if lg.status == "pending")
+        stopped = sum(1 for lg in logs if lg.status == "stopped")
+        planned = sum(1 for lg in logs if lg.status == "planned")
         training_lines.append(
-            f"- {td.target_date}: {len(logs)} tasks ({completed} done, {interrupted} interrupted, {pending} left)"
+            f"- {td.target_date}: {len(logs)} tasks ({completed} done, {stopped} stopped, {planned} left)"
         )
     training_text = "\n".join(training_lines) or "- (no training recorded)"
 

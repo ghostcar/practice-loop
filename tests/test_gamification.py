@@ -54,7 +54,7 @@ async def test_on_task_completed_earns_xp(db_session: AsyncSession, test_user):
     log = ActivityLog(
         user_id=test_user.id,
         entity_id=entity.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Test Task",
         selected_params={"intensity": 2},
     )
@@ -89,7 +89,7 @@ async def test_on_task_completed_streak_once_per_day(db_session: AsyncSession, t
     log1 = ActivityLog(
         user_id=test_user.id,
         entity_id=entity.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Streak Test",
         selected_params={"intensity": 1},
     )
@@ -102,7 +102,7 @@ async def test_on_task_completed_streak_once_per_day(db_session: AsyncSession, t
     log2 = ActivityLog(
         user_id=test_user.id,
         entity_id=entity.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Streak Test",
         selected_params={"intensity": 1},
     )
@@ -132,7 +132,7 @@ async def test_on_task_completed_level_up(db_session: AsyncSession, test_user):
     log = ActivityLog(
         user_id=test_user.id,
         entity_id=entity.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Big Task",
         selected_params={"intensity": 1},
     )
@@ -161,7 +161,7 @@ async def test_on_task_interrupted_applies_penalty(db_session: AsyncSession, tes
 
     log = ActivityLog(
         user_id=test_user.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Task",
     )
     db_session.add(log)
@@ -232,7 +232,7 @@ async def test_interrupt_with_redemption_config_creates_redemption(db_session: A
     log = ActivityLog(
         user_id=test_user.id,
         entity_id=entity.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Redemption Task",
     )
     db_session.add(log)
@@ -261,7 +261,7 @@ async def test_cannot_complete_after_interrupt(auth_client: AsyncClient, db_sess
     db_session.add(opt_in)
     await db_session.flush()
 
-    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="pending", selected_entity_name="T")
+    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="planned", selected_entity_name="T")
     db_session.add(log)
     await db_session.flush()
 
@@ -272,7 +272,7 @@ async def test_cannot_complete_after_interrupt(auth_client: AsyncClient, db_sess
     assert r2.status_code == 303
 
     await db_session.refresh(log)
-    assert log.status == "interrupted"  # unchanged — no reward granted
+    assert log.status == "stopped"  # unchanged — no reward granted
     progress = await get_or_create_progress(db_session, test_user.id)
     await db_session.refresh(progress)
     assert progress.total_completed == 0
@@ -291,7 +291,7 @@ async def test_repeated_complete_does_not_reschedule(auth_client: AsyncClient, d
     db_session.add(opt_in)
     await db_session.flush()
 
-    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="pending", selected_entity_name="T")
+    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="planned", selected_entity_name="T")
     db_session.add(log)
     await db_session.flush()
 
@@ -317,7 +317,7 @@ async def test_repeated_interrupt_does_not_reblock(auth_client: AsyncClient, db_
     db_session.add(opt_in)
     await db_session.flush()
 
-    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="pending", selected_entity_name="T")
+    log = ActivityLog(user_id=test_user.id, entity_id=entity.id, status="planned", selected_entity_name="T")
     db_session.add(log)
     await db_session.flush()
 

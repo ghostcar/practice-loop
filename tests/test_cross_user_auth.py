@@ -318,7 +318,7 @@ async def test_cannot_complete_others_training_task(auth_client: AsyncClient, db
 
     log = ActivityLog(
         user_id=user_b.id,
-        status="pending",
+        status="planned",
         selected_entity_name="B's task",
         training_day_id=td.id,
     )
@@ -338,7 +338,7 @@ async def test_cannot_toggle_others_subtask(auth_client: AsyncClient, db_session
 
     log = ActivityLog(
         user_id=user_b.id,
-        status="pending",
+        status="planned",
         selected_entity_name="B's task",
         training_day_id=td.id,
         subtasks=[{"id": 1, "desc": "Step 1", "is_done": False}],
@@ -358,7 +358,7 @@ async def test_cannot_toggle_others_subtask(auth_client: AsyncClient, db_session
 @pytest.mark.asyncio
 async def test_cannot_complete_others_task(auth_client: AsyncClient, db_session: AsyncSession, user_b):
     """User A cannot complete user B's activity log."""
-    log = ActivityLog(user_id=user_b.id, status="pending", selected_entity_name="B's task")
+    log = ActivityLog(user_id=user_b.id, status="planned", selected_entity_name="B's task")
     db_session.add(log)
     await db_session.flush()
 
@@ -369,7 +369,7 @@ async def test_cannot_complete_others_task(auth_client: AsyncClient, db_session:
 @pytest.mark.asyncio
 async def test_cannot_interrupt_others_task(auth_client: AsyncClient, db_session: AsyncSession, user_b):
     """User A cannot interrupt user B's activity log."""
-    log = ActivityLog(user_id=user_b.id, status="pending", selected_entity_name="B's task")
+    log = ActivityLog(user_id=user_b.id, status="planned", selected_entity_name="B's task")
     db_session.add(log)
     await db_session.flush()
 

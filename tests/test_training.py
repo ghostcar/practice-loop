@@ -129,7 +129,7 @@ async def test_activity_log_with_training(db_session: AsyncSession, test_user):
 
     log = ActivityLog(
         user_id=test_user.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Test Task",
         training_day_id=td.id,
         subtasks=subtasks,
@@ -159,7 +159,7 @@ async def test_toggle_subtask_toggles(auth_client: AsyncClient, db_session: Asyn
 
     log = ActivityLog(
         user_id=test_user.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Toggle Test",
         training_day_id=td.id,
         subtasks=[{"id": 1, "desc": "Step 1", "is_done": False}],
@@ -209,7 +209,7 @@ async def test_training_completion_skips_streak(db_session: AsyncSession, test_u
     log = ActivityLog(
         user_id=test_user.id,
         entity_id=entity.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Training Entity",
         selected_params={"intensity": 1},
         training_day_id=td.id,

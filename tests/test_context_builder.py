@@ -12,7 +12,7 @@ async def test_format_context_for_prompt():
         "stats": {
             "total_activities": 42,
             "completed": 30,
-            "interrupted": 12,
+            "stopped": 12,
             "week_activities": 7,
         },
         "allowed_entities": [
@@ -72,7 +72,7 @@ async def test_format_context_empty_penalties():
         "stats": {
             "total_activities": 0,
             "completed": 0,
-            "interrupted": 0,
+            "stopped": 0,
             "week_activities": 0,
         },
         "allowed_entities": [],
@@ -92,7 +92,7 @@ async def test_format_context_params_schema():
         "stats": {
             "total_activities": 0,
             "completed": 0,
-            "interrupted": 0,
+            "stopped": 0,
             "week_activities": 0,
         },
         "allowed_entities": [

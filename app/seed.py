@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.encryption import encrypt_api_key
 from app.models.entity import Entity
 from app.models.llm_config import LLMProviderConfig
+from app.slugify import slugify
 
 # ---------------------------------------------------------------------------
 # Seed Entities (30+ tasks from tracker-spec.md §10.5)
@@ -438,6 +439,7 @@ async def seed_entities(db: AsyncSession, owner_id: uuid.UUID | None = None) -> 
         entity = Entity(
             type=data["type"],
             real_name=data["real_name"],
+            slug=slugify(data["real_name"]),
             category=data["category"],
             tags=data.get("tags"),
             owner_id=owner_id,

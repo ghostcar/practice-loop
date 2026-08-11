@@ -157,7 +157,7 @@ async def generate_deterministic(
     log = ActivityLog(
         user_id=user.id,
         entity_id=entity_id,
-        status="pending",
+        status="planned",
         selected_entity_name=p["entity_name"],
         selected_params={"intensity": 1, "source": "deterministic"},
         user_prompt="Deterministic fallback — no LLM",
@@ -201,7 +201,7 @@ async def interrupt_task(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Mark a task as interrupted (penalty)."""
+    """Mark a task as stopped (penalty)."""
     result = await db.execute(select(ActivityLog).where(ActivityLog.id == log_id))
     log = result.scalar_one_or_none()
     if log is None or log.user_id != user.id:

@@ -3,6 +3,18 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 58: новая модель активностей — Phase 1 (ADR-035…042): категории, статус-машина 11, аудит, эволюция моделей
+
+- **Анализ `examples/update.md`**: предложенная система хранения активностей сверена с v0.8 — философия «базовая активность + шаблон + экземпляр» уже реализована; выявлены пробелы (ActivityCategory, 11 статусов, аудит, planned/actual параметры, title-генератор) и конфликты (ADR-029 vs «не запрещать остановку», Training, геймификация). Решения владельца зафиксированы в ADR-035…042 (см. DECISIONS.md). Создан `FUNCTIONAL.md` — читаемый обзор текущего функционала.
+- **Phase 1 — модели**: `ActivityCategory` (slug/title/description/sort_order/is_active/parent_id, иерархия); `Entity` → Activity (+slug, short_title, role_tags, task_template, category_id FK, penalty_enabled, updated_at); `ActivityLog` → ActivityTask (+title_override, scheduled_at, planned_comment, completion_comment, actual_parameters, updated_at; статусы 3 → 11); `ActivityTaskHistory` (аудит переходов: prev/new status, snapshot, comment, actor); `ActivitySession` (+title, notes, planned_start_at/end, accepted_at).
+- **Статус-машина** (`app/models/task_status.py`): 11 статусов, `STATUS_TRANSITIONS` (draft→planned→in_progress→completed/partially_completed/stopped; planned→skipped/cancelled/substituted/not_applicable/review_needed), `can_transition()`, `normalize_status()` (legacy pending→planned, interrupted→stopped). Константы используются в security.py (complete_once/interrupt_once теперь атомарно пишут ActivityTaskHistory; interrupt разрешён из planned И in_progress).
+- **Миграция 022** (PG15 up/down/up ✅): таблицы activity_categories + activity_task_history; колонки entities/activity_logs/activity_sessions; ремап статусов pending→planned, interrupted→stopped; backfill категорий из legacy-строк entities.category (транслит-slug, idempotent).
+- **Seed**: `app/seed_categories.py` — 16 категорий с подкатегориями из update.md; `seed_categories()` идемпотентна, вызывается из /admin/seed-entities; seed.py добавляет slug.
+- **Код-обновление статусов**: pipeline, context_builder (stats keys → stopped), points_v2 (chart SQL label/response → stopped/planned + JS dashboard/sessions), training (счётчики), telegram/bot (planned/stopped), i18n (11 статусов EN/RU). Ревью-фиксы: match.interrupted AttributeError в charts/activity, interrupt из in_progress, JS-контракт data.stopped/data.planned, косметика.
+- **Тесты**: +12 (`tests/test_phase1_task_model.py`) — категории/seed, статус-машина (переходы, legacy), колонки эволюции, аудит, сессии, penalty_enabled, slugify. **335/335 ✅**, ruff ✅, node --check ✅.
+- **Артефакты**: `FUNCTIONAL.md`, ADR-035…042, миграция 022, 6 новых/изменённых моделей, seed_categories.
+- ⚠️ **VPS**: `git pull && docker compose up -d --build` — миграция 022 применится автоматически (статусы задач переименуются).
+
 ## 2026-08-11 — Сессия 57: «делай всё» — закрыты все deferred Q9/Q10 (risk_level, typed DSL, Inter font, bottom nav, JS modules)
 
 - **risk_level на Entity (REM §5.2)**: колонка (default not_assessed) + миграция 021 (PG15 up/down/up ✅); схемы (EntityCreate/Update/Response, pattern), Form-поле с санитизацией; seed-каталог → `low` (curated pre-assessed); `filter_automation_eligible()` в context_builder (low всегда, elevated только с allow_elevated, not_assessed/high никогда) — подключён в generate_task и generate_daily_plan; бейджи risk в catalog.html и my_entities.html.

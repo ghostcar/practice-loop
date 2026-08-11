@@ -24,7 +24,7 @@
             },
             {
               label: 'Stopped',
-              data: data.interrupted,
+              data: data.stopped,
               borderColor: '#A83B4A',
               backgroundColor: 'rgba(168,59,74,0.06)',
               fill: true,

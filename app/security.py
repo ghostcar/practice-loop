@@ -155,16 +155,18 @@ async def complete_once(
 ) -> dict:
     """Atomically complete a task exactly once.
 
-    Audit hardening: an atomic ``UPDATE ... WHERE status='pending'`` (instead
+    Audit hardening: an atomic ``UPDATE ... WHERE status='planned'`` (instead
     of read-check-write) makes concurrent double-complete safe — the second
     caller sees zero affected rows and gets an idempotent result, so a reward
-    is granted only once. Interrupted tasks keep their interrupted status and
+    is granted only once. Stopped/other-status tasks keep their status and
     never receive completion rewards.
     """
     if log.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     from app.models.activity_log import ActivityLog
+    from app.models.task_history import ActivityTaskHistory
+    from app.models.task_status import COMPLETED, PLANNED
 
     now = datetime.now(UTC)
     res = await db.execute(
@@ -172,16 +174,26 @@ async def complete_once(
         .where(
             ActivityLog.id == log.id,
             ActivityLog.user_id == user.id,
-            ActivityLog.status == "pending",
+            ActivityLog.status == PLANNED,
         )
-        .values(status="completed", completed_at=now)
+        .values(status=COMPLETED, completed_at=now)
     )
     if res.rowcount == 0:
         await db.refresh(log)
         return {"status": f"already_{log.status}", "idempotent": True}
 
-    log.status = "completed"
+    log.status = COMPLETED
     log.completed_at = now
+    db.add(
+        ActivityTaskHistory(
+            task_id=log.id,
+            previous_status=PLANNED,
+            new_status=COMPLETED,
+            actor_id=user.id,
+            parameter_snapshot=log.selected_params,
+            comment=log.completion_comment,
+        )
+    )
     result = await on_complete_fn(db, user.id, log)
     result["idempotent"] = False
     return result
@@ -193,26 +205,42 @@ async def interrupt_once(
     user: User,
     on_interrupt_fn,
 ) -> dict:
-    """Atomically interrupt a task exactly once."""
+    """Atomically interrupt/stop a task exactly once.
+
+    A task may be stopped while planned OR in progress (status machine:
+    planned→stopped, in_progress→stopped). Once stopped it can never be
+    stopped again or completed for a reward.
+    """
     if log.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
     from app.models.activity_log import ActivityLog
+    from app.models.task_history import ActivityTaskHistory
+    from app.models.task_status import IN_PROGRESS, PLANNED, STOPPED
 
     res = await db.execute(
         update(ActivityLog)
         .where(
             ActivityLog.id == log.id,
             ActivityLog.user_id == user.id,
-            ActivityLog.status == "pending",
+            ActivityLog.status.in_([PLANNED, IN_PROGRESS]),
         )
-        .values(status="interrupted")
+        .values(status=STOPPED)
     )
     if res.rowcount == 0:
         await db.refresh(log)
         return {"status": f"already_{log.status}", "idempotent": True}
 
-    log.status = "interrupted"
+    db.add(
+        ActivityTaskHistory(
+            task_id=log.id,
+            previous_status=log.status,
+            new_status=STOPPED,
+            actor_id=user.id,
+            parameter_snapshot=log.selected_params,
+        )
+    )
+    log.status = STOPPED
     result = await on_interrupt_fn(db, user.id, log)
     result["idempotent"] = False
     return result

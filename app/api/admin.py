@@ -8,6 +8,7 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.user import User
 from app.seed import seed_entities, seed_llm_presets
+from app.seed_categories import seed_categories
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -43,7 +44,8 @@ async def seed_entities_endpoint(
     user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Seed entity catalog — requires admin role."""
+    """Seed entity catalog + activity categories — requires admin role."""
+    await seed_categories(db)
     await seed_entities(db, owner_id=user.id)
     return RedirectResponse(url="/admin", status_code=303)
 

@@ -422,8 +422,18 @@ EN = {
     "landing_feature_gamification": "Gamification",
     "landing_feature_gamification_desc": "XP, levels, streaks & achievements",
     # Status badges
-    "status_pending": "pending",
+    "status_pending": "pending",  # legacy alias
+    "status_draft": "draft",
+    "status_planned": "planned",
+    "status_in_progress": "in progress",
     "status_completed": "completed",
-    "status_interrupted": "interrupted",
+    "status_partially_completed": "partially completed",
+    "status_skipped": "skipped",
+    "status_cancelled": "cancelled",
+    "status_stopped": "stopped",
+    "status_substituted": "substituted",
+    "status_not_applicable": "not applicable",
+    "status_review_needed": "review needed",
+    "status_interrupted": "stopped",  # legacy alias → stopped
     "status_stop": "Stop",
 }

@@ -14,6 +14,7 @@ from app.models.entity import Entity
 from app.models.opt_in import UserEntityOptIn
 from app.models.user import User
 from app.schemas.entity import DESIRE_LEVELS
+from app.slugify import slugify
 from app.templates_setup import templates
 
 router = APIRouter(prefix="/entities", tags=["entities"])
@@ -122,6 +123,7 @@ async def create_entity(
     entity = Entity(
         type=type,
         real_name=real_name.strip(),
+        slug=slugify(real_name),
         category=category.strip(),
         tags=[t.strip() for t in tags.split(",") if t.strip()] if tags else None,
         owner_id=user.id,

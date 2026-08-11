@@ -671,7 +671,7 @@ async def get_activity_chart(
             func.date(ActivityLog.created_at).label("day"),
             func.count(ActivityLog.id).label("total"),
             func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
-            func.sum(case((ActivityLog.status == "interrupted", 1), else_=0)).label("interrupted"),
+            func.sum(case((ActivityLog.status == "stopped", 1), else_=0)).label("stopped"),
         )
         .where(ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff)
         .group_by(func.date(ActivityLog.created_at))
@@ -682,24 +682,24 @@ async def get_activity_chart(
     # Build daily arrays
     labels = []
     completed = []
-    interrupted = []
-    pending = []
+    stopped = []
+    planned = []
     for i in range(days):
         d = date.today() - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a %d"))
         match = next((r for r in rows if str(r.day) == d.isoformat()), None)
         c = int(match.completed or 0) if match else 0
-        i_count = int(match.interrupted or 0) if match else 0
+        s_count = int(match.stopped or 0) if match else 0
         t = int(match.total or 0) if match else 0
         completed.append(c)
-        interrupted.append(i_count)
-        pending.append(max(0, t - c - i_count))
+        stopped.append(s_count)
+        planned.append(max(0, t - c - s_count))
 
     return {
         "labels": labels,
         "completed": completed,
-        "interrupted": interrupted,
-        "pending": pending,
+        "stopped": stopped,
+        "planned": planned,
     }
 
 

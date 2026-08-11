@@ -129,7 +129,7 @@ async def _get_user_stats(db: AsyncSession, user_id: uuid.UUID) -> dict:
         select(
             func.count(ActivityLog.id).label("total"),
             func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
-            func.sum(case((ActivityLog.status == "interrupted", 1), else_=0)).label("interrupted"),
+            func.sum(case((ActivityLog.status == "stopped", 1), else_=0)).label("stopped"),
         ).where(ActivityLog.user_id == user_id)
     )
     row = result.one()
@@ -148,20 +148,20 @@ async def _get_user_stats(db: AsyncSession, user_id: uuid.UUID) -> dict:
     return {
         "total_activities": total,
         "completed": completed,
-        "interrupted": row.interrupted or 0,
+        "stopped": row.stopped or 0,
         "week_activities": week_count,
     }
 
 
 async def _get_active_penalties(db: AsyncSession, user_id: uuid.UUID, session_id: uuid.UUID | None) -> list[dict]:
-    """Return active penalties (escalation count, interrupted tasks)."""
-    interrupted = await db.execute(
+    """Return active penalties (escalation count, stopped tasks)."""
+    stopped_count = await db.execute(
         select(func.count(ActivityLog.id)).where(
             ActivityLog.user_id == user_id,
-            ActivityLog.status == "interrupted",
+            ActivityLog.status == "stopped",
         )
     )
-    total_interruptions = interrupted.scalar() or 0
+    total_interruptions = stopped_count.scalar() or 0
 
     recent = await db.execute(
         select(ActivityLog.status)
@@ -172,7 +172,7 @@ async def _get_active_penalties(db: AsyncSession, user_id: uuid.UUID, session_id
     statuses = [row[0] for row in recent.all()]
     consecutive_interruptions = 0
     for s in statuses:
-        if s == "interrupted":
+        if s == "stopped":
             consecutive_interruptions += 1
         else:
             break
@@ -189,7 +189,7 @@ def format_context_abstract(context: dict) -> str:
     parts.append("## User Stats")
     stats = context["stats"]
     parts.append(f"- Completed: {stats['completed']}")
-    parts.append(f"- Interrupted: {stats['interrupted']}")
+    parts.append(f"- Stopped: {stats['stopped']}")
     parts.append("")
 
     parts.append("## Available Candidates (opaque IDs)")
@@ -219,7 +219,7 @@ def format_context_for_prompt(context: dict) -> str:
     stats = context["stats"]
     parts.append(f"- Total activities: {stats['total_activities']}")
     parts.append(f"- Completed: {stats['completed']}")
-    parts.append(f"- Interrupted: {stats['interrupted']}")
+    parts.append(f"- Stopped: {stats['stopped']}")
     parts.append(f"- This week: {stats['week_activities']}")
     parts.append("")
 

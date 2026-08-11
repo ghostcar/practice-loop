@@ -76,7 +76,7 @@ async def test_training_day_status_transitions(db_session: AsyncSession, test_us
     # Add a pending task
     log = ActivityLog(
         user_id=test_user.id,
-        status="pending",
+        status="planned",
         selected_entity_name="Test task",
         training_day_id=td.id,
     )

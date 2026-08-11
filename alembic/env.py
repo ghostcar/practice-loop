@@ -10,12 +10,14 @@ from app.config import settings
 from app.models import Base  # noqa: F401 — import all models for autogenerate
 from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401
+from app.models.category import ActivityCategory  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
 from app.models.llm_config import LLMProviderConfig  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
+from app.models.task_history import ActivityTaskHistory  # noqa: F401
 from app.models.user import User  # noqa: F401
 
 # Alembic Config object

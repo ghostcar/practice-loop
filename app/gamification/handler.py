@@ -345,7 +345,7 @@ async def _get_escalation(db: AsyncSession, user_id: uuid.UUID) -> int:
     statuses = [row[0] for row in result.all()]
     consecutive = 0
     for s in statuses:
-        if s == "interrupted":
+        if s == "stopped":
             consecutive += 1
         else:
             break

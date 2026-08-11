@@ -424,8 +424,18 @@ RU = {
     "landing_feature_gamification": "Геймификация",
     "landing_feature_gamification_desc": "Опыт, уровни, серии и достижения",
     # Status badges
-    "status_pending": "в ожидании",
+    "status_pending": "в ожидании",  # legacy alias
+    "status_draft": "черновик",
+    "status_planned": "запланировано",
+    "status_in_progress": "в процессе",
     "status_completed": "завершено",
-    "status_interrupted": "прервано",
+    "status_partially_completed": "частично выполнено",
+    "status_skipped": "пропущено",
+    "status_cancelled": "отменено",
+    "status_stopped": "остановлено",
+    "status_substituted": "заменено",
+    "status_not_applicable": "неактуально",
+    "status_review_needed": "требует обсуждения",
+    "status_interrupted": "остановлено",  # legacy alias → stopped
     "status_stop": "Прервать",
 }

@@ -340,7 +340,7 @@ async def test_interrupted_training_task_cannot_complete(auth_client, db_session
     log = ActivityLog(
         user_id=test_user.id,
         entity_id=ent.id,
-        status="interrupted",
+        status="stopped",
         selected_entity_name="Task",
     )
     db_session.add(log)
@@ -350,7 +350,7 @@ async def test_interrupted_training_task_cannot_complete(auth_client, db_session
     # The endpoint redirects regardless; verify via DB that status unchanged
     assert res.status_code == 303
     await db_session.refresh(log)
-    assert log.status == "interrupted"
+    assert log.status == "stopped"
     assert log.completed_at is None
 
 
@@ -422,7 +422,7 @@ async def test_generate_task_uses_canonical_entity_name(db_session, test_user):
                 "risk_level": "low",
             }
         ],
-        "stats": {"total_activities": 0, "completed": 0, "interrupted": 0, "week_activities": 0},
+        "stats": {"total_activities": 0, "completed": 0, "stopped": 0, "week_activities": 0},
         "recent_history": [],
         "active_penalties": [],
         "calendar_schedule": None,
@@ -631,7 +631,7 @@ async def test_raw_response_cleanup_deletes_expired(db_session, test_user):
     fresh = ActivityLog(
         user_id=test_user.id,
         entity_id=ent.id,
-        status="pending",
+        status="planned",
         selected_entity_name="E",
         raw_llm_response="keep",
         raw_response_expires_at=datetime.now(UTC) + timedelta(days=10),

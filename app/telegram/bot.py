@@ -185,7 +185,7 @@ if TG_BOT_TOKEN:
                 select(ActivityLog)
                 .where(
                     ActivityLog.user_id == user.id,
-                    ActivityLog.status == "pending",
+                    ActivityLog.status == "planned",
                 )
                 .order_by(ActivityLog.created_at.desc())
                 .limit(5)
@@ -222,7 +222,7 @@ if TG_BOT_TOKEN:
                 select(ActivityLog)
                 .where(
                     ActivityLog.user_id == user.id,
-                    ActivityLog.status == "pending",
+                    ActivityLog.status == "planned",
                 )
                 .order_by(ActivityLog.created_at.desc())
                 .limit(1)
@@ -265,7 +265,7 @@ if TG_BOT_TOKEN:
                 select(ActivityLog)
                 .where(
                     ActivityLog.user_id == user.id,
-                    ActivityLog.status == "pending",
+                    ActivityLog.status == "planned",
                 )
                 .order_by(ActivityLog.created_at.desc())
                 .limit(1)
@@ -309,7 +309,7 @@ if TG_BOT_TOKEN:
             if log is None:
                 await callback.answer("Task not found.", show_alert=True)
                 return
-            if log.status != "pending":  # State integrity: no reward after interrupt/complete
+            if log.status != "planned":  # State integrity: no reward after interrupt/complete
                 await callback.answer("Task already finished.", show_alert=True)
                 return
 
@@ -373,11 +373,11 @@ if TG_BOT_TOKEN:
             if log is None:
                 await callback.answer("Task not found.", show_alert=True)
                 return
-            if log.status != "pending":  # State integrity: no re-interrupt of finished tasks
+            if log.status != "planned":  # State integrity: no re-interrupt of finished tasks
                 await callback.answer("Task already finished.", show_alert=True)
                 return
 
-            log.status = "interrupted"
+            log.status = "stopped"
             db.add(log)
             await db.flush()
             penalty = await on_task_interrupted(db, user.id, log)
@@ -385,7 +385,7 @@ if TG_BOT_TOKEN:
 
         name = log.selected_entity_name or "Task"
         lines = [
-            f"⏹ **{name}** — interrupted",
+            f"⏹ **{name}** — stopped",
             f"🔻 -{penalty['xp_penalty']} XP (escalation ×{penalty['escalation']})",
         ]
         if penalty.get("xp_penalty", 0) > 0:

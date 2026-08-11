@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, func
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,7 +16,14 @@ if TYPE_CHECKING:
 
 
 class ActivitySession(Base):
-    """A tracking session — groups activity logs under shared rules."""
+    """A tracking session — a bounded set of interrelated activities (ADR-037).
+
+    A session is a group of tasks that must be performed together within a
+    limited time (e.g. an evening scenario: several acts within one hour).
+    While the session is in the planning phase (status=created) its content
+    can be freely edited; once accepted (``accepted_at`` set) any change to
+    the task set or parameters carries a penalty.
+    """
 
     __tablename__ = "activity_sessions"
 
@@ -28,6 +35,8 @@ class ActivitySession(Base):
         index=True,
     )
     status: Mapped[str] = mapped_column(String(20), default="created", nullable=False)  # created / active / ended
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     llm_config_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("llm_provider_configs.id", ondelete="SET NULL"),
@@ -35,8 +44,12 @@ class ActivitySession(Base):
     )
     session_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # JSON: штраф, лимиты, получатели уведомлений, эскалация, параллельные задачи
+    planned_start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    planned_end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # ADR-037: once set, the session is "accepted" — later content changes are penalized
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships

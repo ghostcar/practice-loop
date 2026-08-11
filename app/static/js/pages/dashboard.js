@@ -83,8 +83,8 @@
           labels: data.labels,
           datasets: [
             { label: T.dashboard_chart_done || '', data: data.completed, backgroundColor: '#2F7657', borderRadius: 4, borderSkipped: false },
-            { label: T.dashboard_chart_stop || '', data: data.interrupted, backgroundColor: '#A83B4A', borderRadius: 4, borderSkipped: false },
-            { label: T.dashboard_chart_pending || '', data: data.pending, backgroundColor: '#E1DFE7', borderRadius: 4, borderSkipped: false },
+            { label: T.dashboard_chart_stop || '', data: data.stopped, backgroundColor: '#A83B4A', borderRadius: 4, borderSkipped: false },
+            { label: T.dashboard_chart_pending || '', data: data.planned, backgroundColor: '#E1DFE7', borderRadius: 4, borderSkipped: false },
           ],
         },
         options: {

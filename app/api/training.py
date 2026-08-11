@@ -64,7 +64,7 @@ def _parse_time_label(label: str | None) -> tuple[int, int] | None:
 def _plan_dict(day: TrainingDay, logs: list[ActivityLog], entries: list[TrainingLogEntry]) -> dict:
     """Bundle a training day with its tasks/journal for template rendering."""
     completed = sum(1 for lg in logs if lg.status == "completed")
-    interrupted = sum(1 for lg in logs if lg.status == "interrupted")
+    stopped = sum(1 for lg in logs if lg.status == "stopped")
     total = len(logs)
     next_day = None
     if day.next_day_suggestion:
@@ -77,7 +77,7 @@ def _plan_dict(day: TrainingDay, logs: list[ActivityLog], entries: list[Training
         "logs": logs,
         "log_entries": entries,
         "completed": completed,
-        "interrupted": interrupted,
+        "stopped": stopped,
         "total": total,
         "next_day": next_day,
     }

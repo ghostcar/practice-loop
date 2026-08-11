@@ -373,7 +373,7 @@ async def test_training_page_shows_multiple_plans_and_timeline(auth_client, db_s
             user_id=test_user.id,
             entity_id=ent.id,
             training_day_id=d1.id,
-            status="pending",
+            status="planned",
             selected_entity_name="Plank",
             subtasks=[{"id": 1, "desc": "Hold", "is_done": False}],
         )
@@ -446,7 +446,7 @@ async def test_generate_daily_plan_accepts_name(db_session, test_user):
         "stats": {
             "total_activities": 0,
             "completed": 0,
-            "interrupted": 0,
+            "stopped": 0,
             "week_activities": 0,
         },
         "recent_history": [],

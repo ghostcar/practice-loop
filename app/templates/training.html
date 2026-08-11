@@ -116,7 +116,7 @@
             {% if plan.logs and plan.day.status != 'analyzed' %}
             <div class="p-3 space-y-3">
                 {% for log in plan.logs %}
-                <div class="rounded-lg border {% if log.status == 'completed' %}border-emerald-300 dark:border-emerald-700{% elif log.status == 'interrupted' %}border-red-300 dark:border-red-700{% else %}border-slate-200 dark:border-slate-700{% endif %} p-3" data-log-id="{{ log.id }}">
+                <div class="rounded-lg border {% if log.status == 'completed' %}border-emerald-300 dark:border-emerald-700{% elif log.status == 'stopped' %}border-red-300 dark:border-red-700{% else %}border-slate-200 dark:border-slate-700{% endif %} p-3" data-log-id="{{ log.id }}">
                     <div class="flex items-start justify-between gap-2 mb-2">
                         <div class="min-w-0">
                             <h4 class="font-medium text-sm text-slate-800 dark:text-slate-100 break-words">{{ log.selected_entity_name or t.training_no_subtasks }}</h4>

@@ -2,7 +2,19 @@
 
 Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 58).
 
-## Сессия 58: планирование новой модели активностей (ADR-035…042) + FUNCTIONAL.md
+## Сессия 58 (Phase 1): новая модель активностей — категории, статус-машина 11, аудит, эволюция моделей
+
+- [x] **ADR-035…042 записаны** (см. планирование ниже) + **FUNCTIONAL.md** создан (обзор v0.8-actual).
+- [x] **ActivityCategory** (app/models/category.py): иерархия (parent_id), slug/title/description/sort_order/is_active; **seed_categories** — 16 категорий с подкатегориями из examples/update.md (идемпотентно, /admin/seed-entities).
+- [x] **Entity → Activity**: +slug (slugify RU→EN), short_title, role_tags, task_template, category_id FK, penalty_enabled (ADR-038), updated_at.
+- [x] **ActivityLog → ActivityTask**: +title_override, scheduled_at (index), planned_comment, completion_comment, actual_parameters, updated_at; **статусы 3 → 11** (task_status.py: TASK_STATUSES, STATUS_TRANSITIONS, can_transition, normalize_status legacy pending→planned / interrupted→stopped).
+- [x] **ActivityTaskHistory** (аудит переходов): complete_once/interrupt_once пишут prev/new status + snapshot + actor; interrupt разрешён из planned и in_progress.
+- [x] **ActivitySession**: +title, notes, planned_start_at/end, accepted_at (ADR-037).
+- [x] **Миграция 022**: таблицы + колонки + ремап статусов + backfill категорий из legacy-строк (транслит-slug); PG15 up/down/up ✅.
+- [x] **Код**: pipeline/context_builder/training/points_v2/telegram/i18n переведены на planned/stopped; charts/activity SQL label + response + JS → stopped/planned (ревью-фикс AttributeError); шаблоны обновлены.
+- [x] **Тесты**: +12 (tests/test_phase1_task_model.py) — **335/335 ✅**, ruff ✅, node --check ✅.
+
+## Сессия 58 (планирование): ADR-035…042 + FUNCTIONAL.md
 
 - [x] **Анализ examples/update.md** — предложенная система хранения активностей сверена с текущей архитектурой (v0.8): философия «базовая активность + шаблон + экземпляр» уже реализована; выявлены пробелы (категории-таблица, 11 статусов, аудит, planned/actual параметры, title-генератор) и конфликты (ADR-029 vs «не запрещать остановку», Training, геймификация).
 - [x] **Решения владельца** (ask_user): штрафы — гибрид (cancelled/skipped до начала без штрафа, stopped — штраф, partially_completed без награды, per-activity penalty_enabled, сессии-accepted: изменения после принятия = штраф); ActivityTask = эволюция ActivityLog (не новая таблица); Training остаётся отдельной системой программ.
