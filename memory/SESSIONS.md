@@ -3,6 +3,18 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-11 — Сессия 61 (update.md Phase 3 UI): каталог-категории, форма параметров, быстрые действия, карточка выполнения
+
+- **Запрос владельца**: «что дальше?» → выбрал update.md Phase 3 UI (Q11): каталог с фильтрами по категориям, динамическая форма параметров, список задач с быстрыми действиями, карточка выполнения, статистика.
+- **Каталог (ADR-035)**: фильтры переведены на иерархическую таблицу `ActivityCategory` (дерево root+children, подкатегории активной категории, фильтр с потомками), legacy `?category=` сохранён; `create_entity` +`category_id`.
+- **Форма параметров (ADR-041)**: partial `partials/params_form.html` рендерит поля по типам DSL (enum+allow_custom_value, multi_enum checkboxes, number/textarea/boolean, reference selectors data-selector); `GET /tasks/params-form?entity_id=&prefix=`, `POST /tasks/create` (planned, validate_params, title_gen).
+- **Быстрые действия (ADR-040)**: серверно рендерится граф `next_actions`, кнопки-переходы в карточках; completed/partial открывают карточку выполнения с actual_parameters + completion_comment (TransitionIn расширен, completed_at).
+- **Статистика**: `status_stats` чипы (7 статусов + total) на tasks.html.
+- **JS**: tasks.js переписан (загрузка формы, селекторы в динамических формах, fetch-переходы с CSRF, карточка выполнения), фикс бага исходного `selInv`.
+- **Ревью**: custom enum value, аннотация _coerce_param, i18n reactivate — исправлены.
+- **Результат**: **414/414 тестов ✅** (+13), ruff ✅, node --check ✅.
+- **Артефакты**: `partials/params_form.html` (новый), `tests/test_phase3_task_ui.py` (новый, 13 тестов); изменены entities.py / tasks.py / task_flows.py / catalog.html / tasks.html / tasks.js / i18n en+ru.
+
 ## 2026-08-11 — Сессия 60 (update2.md, финал): селекторы, фильтры, полный прогон тестов
 
 - **Запрос владельца**: «давай селекторы и фильтры» → селекторы в форме задачи, фильтры истории; затем «запусти тесты и прочее, и обнови память».

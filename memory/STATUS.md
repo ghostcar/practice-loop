@@ -1,6 +1,19 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 60).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 61).
+
+## Сессия 61 (update.md Phase 3 UI): фильтры категорий, динамическая форма параметров, быстрые действия, карточка выполнения, статистика
+
+- [x] **Каталог с фильтрами по категориям (ADR-035)**: catalog_page переведён на нормализованную таблицу `ActivityCategory` — иерархическое дерево (root + подкатегории), фильтр по `category_id` с включением потомков (`_category_and_descendants`), fallback legacy `?category=` для старых ссылок; название категории на карточке из `category_rel.title`; `create_entity` принимает `category_id`.
+- [x] **Динамическая форма параметров (ADR-041)**: `GET /tasks/params-form` (partial) рендерит поля из `normalize_schema` по типам (string/text/integer/decimal/duration/boolean/enum+allow_custom_value/multi_enum/selectors) с `prefix` для planned/actual; `POST /tasks/create` — ручное создание задачи (planned) с типизированными параметрами, `validate_params`, title через `generate_title` (ADR-042), planned_comment.
+- [x] **Быстрые действия (ADR-040)**: в tasks.html каждая задача получает кнопки допустимых переходов из `STATUS_TRANSITIONS` (start/complete/partial/skip/cancel/stop/review/reactivate/…), клик → `POST /api/v2/tasks/{id}/transition`; граф `next_actions` рендерится серверно.
+- [x] **Карточка выполнения**: для completed/partially_completed открывается форма с actual-параметрами (lazy-загрузка params-form c prefix=actual_) + completion_comment; `TransitionIn.actual_parameters` + `completion_comment` + `completed_at` сохраняются на бэкенде.
+- [x] **Статистика по статусам**: `status_stats` (GROUP BY status) — чипы в tasks.html (planned/completed/in_progress/stopped/skipped/partial/review/total).
+- [x] **JS**: tasks.js переписан — загрузка формы параметров при выборе сущности, init selector-полей в динамических формах, быстрые действия, карточка выполнения, CSRF-fetch; фикс бага `selInv` (пропущенная `;` из оригинала).
+- [x] **i18n**: +35 ключей EN/RU (tasks_manual_*, tasks_form_*, tasks_action_*, tasks_complete_*, tasks_stats_*).
+- [x] **Тесты**: +13 (`tests/test_phase3_task_ui.py`) — фильтры категорий (root/child/legacy), params-form (типы, prefix, cross-user 404), create manual (planned, валидация, cross-user), transition с actual_parameters (completed/partial), задачи-страница (быстрые действия + статистика). **414/414 ✅**.
+- [x] **Ревью-фиксы**: `_coerce_param` аннотация → object; сбор custom-значения enum (`param_{key}_custom`); маппинг `planned`-действия → `tasks_action_reactivate`; мёртвые i18n-ключи убраны из шаблона.
+- [x] **Проверки**: ruff ✅, format ✅, compile ✅, node --check ✅, полный pytest 414 ✅.
 
 ## Сессия 60 (update2.md, финал): селекторы в форме задачи, фильтры истории, полный прогон 401 тестов
 
