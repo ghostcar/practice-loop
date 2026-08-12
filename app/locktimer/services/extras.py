@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.locktimer import domain as d
 from app.locktimer import enums as e
-from app.locktimer.repositories import list_slot_rules, list_task_rules
+from app.locktimer.repositories import list_slot_rules, list_task_rules, list_templates
 from app.models.locktimer import (
     LockSession,
     LockSlotOccurrence,
@@ -320,15 +320,6 @@ async def instantiate_template(
 
     await db.flush()
     return session
-
-
-async def list_templates(db: AsyncSession, owner_id: uuid.UUID) -> list[LockTimerTemplate]:
-    result = await db.execute(
-        select(LockTimerTemplate)
-        .where(LockTimerTemplate.owner_id == owner_id, LockTimerTemplate.archived_at.is_(None))
-        .order_by(LockTimerTemplate.sort_order, LockTimerTemplate.updated_at.desc())
-    )
-    return list(result.scalars().all())
 
 
 async def archive_template(db: AsyncSession, template_id: uuid.UUID, owner_id: uuid.UUID) -> None:

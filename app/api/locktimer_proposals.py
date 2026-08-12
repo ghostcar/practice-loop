@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -250,7 +251,7 @@ async def apply_proposal_item(
 
     # Mark item as applied
     items[item_idx]["status"] = "applied"
-    items[item_idx]["applied_at"] = None  # TODO: set datetime
+    items[item_idx]["applied_at"] = datetime.now(UTC).isoformat()
 
     # Update proposal status
     all_statuses = {it.get("status") for it in items}
