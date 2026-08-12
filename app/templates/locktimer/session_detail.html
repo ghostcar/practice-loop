@@ -245,10 +245,20 @@
           <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer">Open</button>
         </form>
         {% elif session.state == 'active' and o.state == 'open' %}
-        <form action="/api/v1/locktimer/slot-occurrences/{{ o.id }}/close" method="post" class="flex-shrink-0">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">Close</button>
-        </form>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <form action="/api/v1/locktimer/slot-occurrences/{{ o.id }}/close" method="post" class="flex items-center gap-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input type="text" name="tag_number" placeholder="Tag #" maxlength="100" class="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
+            <button type="submit" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">Close</button>
+          </form>
+        </div>
+        {% elif o.state == 'closed' %}
+        <div class="flex items-center gap-1 flex-shrink-0">
+          {% if o.close_tag_number %}
+          <span class="text-xs text-gray-500 font-mono">🏷️ {{ o.close_tag_number }}</span>
+          {% endif %}
+          <button onclick="verifyTag('{{ o.id }}', '{{ o.close_tag_number or '' }}')" class="px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">{{ t.locktimer_verify_tag or "Verify" }}</button>
+        </div>
         {% endif %}
       </div>
       {% endfor %}
@@ -373,7 +383,7 @@
   setInterval(tick, 1000);
 })();
 
-// Validate session (fetch JSON, show result in a popup-like banner)
+// Validate session
 function validateSession(sessionId) {
   var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   fetch('/api/v1/locktimer/sessions/' + sessionId + '/validate', {
@@ -404,7 +414,32 @@ function validateSession(sessionId) {
     setTimeout(function() { banner.remove(); }, 8000);
   })
   .catch(function() {
-    alert('Validation request failed. Check console.');
+    alert('Validation request failed.');
+  });
+}
+
+// Verify tag
+function verifyTag(occId, expectedTag) {
+  var provided = prompt('Enter tag number for verification:');
+  if (!provided) return;
+  var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  var body = 'csrf_token=' + encodeURIComponent(csrf) + '&tag_number=' + encodeURIComponent(provided);
+  fetch('/api/v1/locktimer/slot-occurrences/' + occId + '/verify-tag', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.matched) {
+      alert('✅ Tag matches! Tag #' + data.expected_tag + ' confirmed.');
+    } else {
+      alert('🚨 TAG MISMATCH! Expected: ' + (data.expected_tag || 'none') + ', Got: ' + data.provided_tag + '. Violation recorded.');
+      location.reload();
+    }
+  })
+  .catch(function() {
+    alert('Verification request failed.');
   });
 }
 </script>

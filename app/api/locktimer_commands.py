@@ -39,12 +39,15 @@ from app.locktimer.services.execution import (
     complete_task,
     delete_slot_rule,
     delete_task_rule,
+    list_tag_violations,
+    lookup_tag,
     open_slot,
     reveal_task,
     safety_stop,
     skip_task,
     start_session,
     update_draft,
+    verify_tag,
 )
 from app.locktimer.services.extras import (
     archive_template,
@@ -140,10 +143,11 @@ async def api_open_slot(
 async def api_close_slot(
     occurrence_id: uuid.UUID,
     request: Request,
+    tag_number: str | None = Form(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Close an open slot (open → closed)."""
+    """Close an open slot (open → closed). Optional tag_number for numbered seal."""
     occ = await db.get(LockSlotOccurrence, occurrence_id)
     if occ is None:
         raise HTTPException(404, "Slot occurrence not found")
@@ -153,7 +157,7 @@ async def api_close_slot(
         raise HTTPException(404, "Slot occurrence not found")
 
     try:
-        await close_slot(db, occurrence=occ, owner_id=current_user.id)
+        await close_slot(db, occurrence=occ, owner_id=current_user.id, tag_number=tag_number)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
@@ -476,6 +480,77 @@ async def api_instantiate_template(
         raise HTTPException(400, str(exc)) from exc
 
     return RedirectResponse(f"/locktimer/sessions/{session.id}", status_code=303)
+
+
+@router.post("/slot-occurrences/{occurrence_id}/verify-tag")
+async def api_verify_tag(
+    occurrence_id: uuid.UUID,
+    request: Request,
+    tag_number: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Verify a tag number against the stored close_tag_number."""
+    occ = await db.get(LockSlotOccurrence, occurrence_id)
+    if occ is None:
+        raise HTTPException(404, "Slot occurrence not found")
+
+    try:
+        result = await verify_tag(db, occurrence=occ, provided_tag=tag_number, owner_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(result)
+
+
+@router.get("/tag-violations/{session_id}")
+async def api_tag_violations(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List tag violations for a session (JSON)."""
+    from fastapi.responses import JSONResponse
+
+    try:
+        violations = await list_tag_violations(db, session_id, current_user.id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+    return JSONResponse([
+        {
+            "id": str(v.id),
+            "slot_occurrence_id": str(v.slot_occurrence_id),
+            "expected_tag": v.expected_tag,
+            "provided_tag": v.provided_tag,
+            "reason": v.reason,
+            "created_at": v.created_at.isoformat() if v.created_at else None,
+        }
+        for v in violations
+    ])
+
+
+@router.get("/tag-lookup/{session_id}")
+async def api_tag_lookup(
+    session_id: uuid.UUID,
+    tag_number: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Look up which slot was closed with a given tag number."""
+    from fastapi.responses import JSONResponse
+
+    try:
+        result = await lookup_tag(db, tag_number=tag_number, session_id=session_id, owner_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+    if result is None:
+        raise HTTPException(404, f"No slot found with tag '{tag_number}'")
+
+    return JSONResponse(result)
 
 
 @router.post("/templates/{template_id}/archive")

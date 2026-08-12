@@ -309,6 +309,7 @@ def _serialize_slot_occ(occ: LockSlotOccurrence, t) -> dict:
         "close_due_at": occ.close_due_at.isoformat() if occ.close_due_at else None,
         "extension_applied_seconds": occ.extension_applied_seconds,
         "blocked_reason_code": occ.blocked_reason_code,
+        "close_tag_number": occ.close_tag_number,
     }
 
 

@@ -567,6 +567,8 @@ EN = {
     "locktimer_archive": "Archive",
     "locktimer_no_templates": "No saved templates yet.",
     "locktimer_no_templates_hint": "Create a draft session with rules, then save it as a template.",
+    "locktimer_verify_tag": "Verify",
+    "locktimer_tag_number": "Tag #",
     # Dashboard timer card
     "dashboard_timer_active": "Active Timer",
     "dashboard_timer_duration": "Duration",

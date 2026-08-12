@@ -28,6 +28,7 @@ from app.models.locktimer import (
     LockSessionSnapshot,
     LockSlotOccurrence,
     LockSlotRule,
+    LockTagViolation,
     LockTaskOccurrence,
     LockTaskRule,
 )
@@ -661,14 +662,41 @@ async def close_slot(
     *,
     occurrence: LockSlotOccurrence,
     owner_id: uuid.UUID,
+    tag_number: str | None = None,
     now: datetime | None = None,
 ) -> LockSlotOccurrence:
-    """Close an open slot."""
+    """Close an open slot. If rule requires tag, tag_number is mandatory."""
     if now is None:
         now = _now()
 
     if occurrence.state != e.SLOT_OPEN:
         raise ValueError(f"Cannot close slot in state {occurrence.state}")
+
+    # Check tag requirement
+    rule = await db.get(LockSlotRule, occurrence.rule_id)
+    if rule and rule.require_tag and not tag_number:
+        raise ValueError("Tag number is required for this slot — rule requires a numbered tag")
+
+    # Check tag uniqueness within session (if provided)
+    if tag_number:
+        existing_result = await db.execute(
+            select(LockSlotOccurrence).where(
+                LockSlotOccurrence.session_id == occurrence.session_id,
+                LockSlotOccurrence.close_tag_number == tag_number,
+                LockSlotOccurrence.id != occurrence.id,
+            )
+        )
+        if existing_result.scalars().first():
+            raise ValueError(f"Tag number '{tag_number}' has already been used in this session")
+
+    values: dict = {
+        "state": e.SLOT_CLOSED,
+        "actual_closed_at": now,
+        "row_version": LockSlotOccurrence.row_version + 1,
+        "updated_at": now,
+    }
+    if tag_number:
+        values["close_tag_number"] = tag_number
 
     stmt = (
         update(LockSlotOccurrence)
@@ -676,12 +704,7 @@ async def close_slot(
             LockSlotOccurrence.id == occurrence.id,
             LockSlotOccurrence.state == e.SLOT_OPEN,
         )
-        .values(
-            state=e.SLOT_CLOSED,
-            actual_closed_at=now,
-            row_version=LockSlotOccurrence.row_version + 1,
-            updated_at=now,
-        )
+        .values(**values)
     )
     result = await db.execute(stmt)
     if result.rowcount == 0:
@@ -1195,3 +1218,116 @@ async def claim_jobs(
 
     await db.flush()
     return jobs
+
+
+# ============================================================================
+# Tag verification (numbered tags)
+# ============================================================================
+
+
+async def verify_tag(
+    db: AsyncSession,
+    *,
+    occurrence: LockSlotOccurrence,
+    provided_tag: str,
+    owner_id: uuid.UUID,
+    now: datetime | None = None,
+) -> dict:
+    """Verify that a provided tag number matches the one stored at close.
+
+    If mismatch, records a violation. Returns dict with match status.
+    """
+    if now is None:
+        now = _now()
+
+    session = await db.get(LockSession, occurrence.session_id)
+    if session is None or session.owner_id != owner_id:
+        raise ValueError("Session not found")
+
+    expected = occurrence.close_tag_number
+    matched = expected == provided_tag
+
+    if not matched:
+        violation = LockTagViolation(
+            session_id=occurrence.session_id,
+            slot_occurrence_id=occurrence.id,
+            expected_tag=expected,
+            provided_tag=provided_tag,
+            reason="mismatch",
+            created_at=now,
+        )
+        db.add(violation)
+        await db.flush()
+
+        await write_audit(
+            db,
+            session_id=occurrence.session_id,
+            actor_type="user",
+            actor_user_id=owner_id,
+            event_type="locktimer.tag.verified_mismatch",
+            object_type="lock_slot_occurrence",
+            object_id=occurrence.id,
+            payload={
+                "expected_tag": expected,
+                "provided_tag": provided_tag,
+                "violation_id": str(violation.id),
+            },
+        )
+
+    return {
+        "matched": matched,
+        "expected_tag": expected,
+        "provided_tag": provided_tag,
+        "violation_id": str(violation.id) if not matched else None,
+    }
+
+
+async def lookup_tag(
+    db: AsyncSession,
+    *,
+    tag_number: str,
+    session_id: uuid.UUID,
+    owner_id: uuid.UUID,
+) -> dict | None:
+    """Look up which slot was closed with a given tag number."""
+    session = await db.get(LockSession, session_id)
+    if session is None or session.owner_id != owner_id:
+        raise ValueError("Session not found")
+
+    result = await db.execute(
+        select(LockSlotOccurrence).where(
+            LockSlotOccurrence.session_id == session_id,
+            LockSlotOccurrence.close_tag_number == tag_number,
+        )
+    )
+    occ = result.scalars().first()
+    if occ is None:
+        return None
+
+    return {
+        "slot_occurrence_id": str(occ.id),
+        "session_id": str(occ.session_id),
+        "state": occ.state,
+        "close_tag_number": occ.close_tag_number,
+        "actual_closed_at": occ.actual_closed_at.isoformat() if occ.actual_closed_at else None,
+    }
+
+
+async def list_tag_violations(
+    db: AsyncSession,
+    session_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    limit: int = 50,
+) -> list[LockTagViolation]:
+    """List tag violations for a session (owner-scoped)."""
+    session = await db.get(LockSession, session_id)
+    if session is None or session.owner_id != owner_id:
+        raise ValueError("Session not found")
+
+    result = await db.execute(
+        select(LockTagViolation)
+        .where(LockTagViolation.session_id == session_id)
+        .order_by(LockTagViolation.created_at.desc())
+        .limit(limit)
+    )
+    return list(result.scalars().all())

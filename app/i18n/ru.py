@@ -569,6 +569,8 @@ RU = {
     "locktimer_archive": "Архивировать",
     "locktimer_no_templates": "Нет сохранённых шаблонов.",
     "locktimer_no_templates_hint": "Создайте черновик с правилами, затем сохраните его как шаблон.",
+    "locktimer_verify_tag": "Проверить",
+    "locktimer_tag_number": "Бирка #",
     # Dashboard timer card
     "dashboard_timer_active": "Активный таймер",
     "dashboard_timer_duration": "Длительность",
