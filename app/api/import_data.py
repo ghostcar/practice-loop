@@ -1,9 +1,13 @@
-"""Import/Export module: CSV/JSON templates, upload, API for external services, full export."""
+"""Import/Export module: CSV/JSON templates, upload, API for external services, full export.
+
+REFACTORING.md step 2 (Session 83): per-type import handlers moved to
+app/api/importers/* — import them from there, not from this module. This module
+keeps the FastAPI router, template/export metadata and the export endpoints.
+"""
 
 import csv
 import io
 import json
-import logging
 import uuid
 from datetime import date, datetime, time
 from typing import Any
@@ -14,6 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
+from app.api.importers.base import _import_csv, _import_json
 from app.auth import get_optional_user
 from app.database import get_db
 from app.i18n import get_translations
@@ -23,19 +28,14 @@ from app.models.body_part import BodyPart
 from app.models.entity import Entity
 from app.models.inventory_category import InventoryCategory
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule
-from app.models.points import PointsProfile, PointsTransaction
+from app.models.points import PointsTransaction
 from app.models.task_location import TaskLocation
 from app.models.training import TrainingDay
 from app.models.user import User
 from app.schemas.points_v2 import ImportPayload
 from app.templates_setup import templates
 
-logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/import", tags=["import"])
-
-
-# ── Template definitions (8 types) ──
 
 TEMPLATES: dict[str, dict] = {
     "measurements": {
@@ -240,7 +240,6 @@ TEMPLATES: dict[str, dict] = {
     },
 }
 
-# ── Exportable types mapping ──
 
 EXPORT_TYPES: dict[str, dict] = {
     "measurements": {"model": BodyMeasurement, "csv_headers": TEMPLATES["measurements"]["csv_headers"].split(",")},
@@ -302,11 +301,6 @@ async def get_template(
         raise HTTPException(400, "Format must be csv or json")
 
 
-# ═══════════════════════════════════════════════════════════
-# Web UI page
-# ═══════════════════════════════════════════════════════════
-
-
 @router.get("", response_class=HTMLResponse)
 async def import_page(
     request: Request,
@@ -340,11 +334,6 @@ async def import_page(
     )
 
 
-# ═══════════════════════════════════════════════════════════
-# Upload endpoint
-# ═══════════════════════════════════════════════════════════
-
-
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
@@ -363,11 +352,6 @@ async def upload_file(
         raise HTTPException(400, "Unsupported file format. Use .csv or .json")
 
 
-# ═══════════════════════════════════════════════════════════
-# API push endpoint for external services
-# ═══════════════════════════════════════════════════════════
-
-
 @router.post("/api")
 async def api_push(
     payload: ImportPayload,
@@ -381,479 +365,6 @@ async def api_push(
         user,
         mode=payload.mode,
     )
-
-
-# ═══════════════════════════════════════════════════════════
-# Import logic
-# ═══════════════════════════════════════════════════════════
-
-
-async def _import_csv(content: str, db: AsyncSession, user: User) -> dict:
-    """Parse CSV and auto-detect import type from headers."""
-    reader = csv.DictReader(io.StringIO(content))
-    rows = list(reader)
-    if not rows:
-        return {"status": "ok", "imported": 0, "message": "Empty file"}
-
-    headers = set(rows[0].keys())
-
-    if "weight" in headers or "measured_date" in headers:
-        return await _import_measurements(rows, db, user)
-    elif "category" in headers and "name" in headers and "quantity" in headers:
-        return await _import_inventory(rows, db, user)
-    elif "real_name" in headers and "category" in headers:
-        return await _import_entities(rows, db, user)
-    elif "day_of_week" in headers and "start_time" in headers:
-        return await _import_schedule(rows, db, user)
-    elif "transaction_type" in headers and "amount" in headers:
-        return await _import_points_transactions(rows, db, user)
-    elif "target_date" in headers and "status" in headers:
-        return await _import_training_days(rows, db, user)
-    elif "status" in headers and "selected_entity_name" in headers:
-        return await _import_activity_logs(rows, db, user)
-    elif "name" in headers and "is_default" in headers:
-        return await _import_points_profiles(rows, db, user)
-    elif "slug" in headers and "body_system" in headers:
-        return await _import_body_parts(rows, db, user)
-    elif "slug" in headers and "location_type" in headers:
-        return await _import_locations(rows, db, user)
-    elif "slug" in headers and "title" in headers and "is_shopping_list" not in headers:
-        return await _import_inventory_categories(rows, db, user)
-    else:
-        raise HTTPException(400, f"Cannot auto-detect import type from CSV headers: {sorted(headers)}")
-
-
-async def _import_json(data: dict, db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    """Import from JSON payload."""
-    import_type = data.get("import_type", "")
-    rows = data.get("data", [])
-
-    handlers: dict[str, Any] = {
-        "measurements": _import_measurements,
-        "inventory": _import_inventory,
-        "entities": _import_entities,
-        "schedule": _import_schedule,
-        "points_transactions": _import_points_transactions,
-        "training_days": _import_training_days,
-        "activity_logs": _import_activity_logs,
-        "points_profiles": _import_points_profiles,
-        "body_parts": _import_body_parts,
-        "locations": _import_locations,
-        "inventory_categories": _import_inventory_categories,
-    }
-
-    handler = handlers.get(import_type)
-    if not handler:
-        raise HTTPException(400, f"Unknown import_type: {import_type}. Available: {list(handlers)}")
-
-    return await handler(rows, db, user, mode)
-
-
-# ── Individual import handlers ──
-
-
-async def _import_measurements(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            d = {
-                "measured_date": date.fromisoformat(str(row.get("measured_date", row.get("date", "")))),
-                "time_of_day": str(row.get("time_of_day", "morning")),
-                "weight": _float_or_none(row.get("weight")),
-                "chest": _float_or_none(row.get("chest")),
-                "under_chest": _float_or_none(row.get("under_chest")),
-                "waist": _float_or_none(row.get("waist")),
-                "hips": _float_or_none(row.get("hips")),
-                "thigh": _float_or_none(row.get("thigh")),
-                "notes": str(row.get("notes", "")) or None,
-            }
-            result = await db.execute(
-                select(BodyMeasurement).where(
-                    BodyMeasurement.user_id == user.id,
-                    BodyMeasurement.measured_date == d["measured_date"],
-                    BodyMeasurement.time_of_day == d["time_of_day"],
-                )
-            )
-            existing = result.scalar_one_or_none()
-            if existing and mode != "insert":
-                for k, v in d.items():
-                    setattr(existing, k, v)
-            else:
-                db.add(BodyMeasurement(user_id=user.id, **d))
-            imported += 1
-        except (ValueError, KeyError) as e:
-            logger.warning(f"Skip measurement row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_inventory(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            # Resolve inventory_category_id from slug if provided
-            cat_id = None
-            cat_slug = row.get("inventory_category_slug")
-            if cat_slug:
-                cat_res = await db.execute(select(InventoryCategory.id).where(InventoryCategory.slug == str(cat_slug)))
-                cat_row = cat_res.first()
-                if cat_row:
-                    cat_id = cat_row[0]
-
-            item = InventoryItem(
-                user_id=user.id,
-                category=str(row.get("category", "other")),
-                name=str(row.get("name", "")),
-                description=str(row.get("description", "")) or None,
-                quantity=int(row.get("quantity", 1)),
-                quantity_needed=int(row.get("quantity_needed", 1)),
-                is_shopping_list=str(row.get("is_shopping_list", "false")).lower() == "true",
-                status=str(row.get("status", "need")),
-                inventory_category_id=cat_id,
-                inventory_status=str(row.get("inventory_status", "available")),
-                priority=int(row.get("priority", 0)),
-            )
-            db.add(item)
-            imported += 1
-        except (ValueError, KeyError) as e:
-            logger.warning(f"Skip inventory row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_entities(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            gc = row.get("gamification_config")
-            if isinstance(gc, dict):
-                pass
-            elif isinstance(gc, str) and gc:
-                gc = json.loads(gc)
-            else:
-                gc = None
-
-            parent_id = None
-            parent_code = row.get("parent_code")
-            if parent_code:
-                # Only link to own/public entities — never to another user's private one.
-                p_result = await db.execute(
-                    select(Entity.id)
-                    .where(
-                        Entity.real_name == str(parent_code),
-                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
-                    )
-                    .limit(1)
-                )
-                p_row = p_result.first()
-                if p_row:
-                    parent_id = p_row[0]
-
-            tags = row.get("tags")
-            if isinstance(tags, str) and tags:
-                tags = [t.strip() for t in tags.split(",")]
-
-            entity = Entity(
-                type=str(row.get("type", "one_time")),
-                real_name=str(row.get("real_name", "")),
-                category=str(row.get("category", "general")),
-                level=int(row.get("level", 1)),
-                parent_id=parent_id,
-                tags=tags,
-                is_public=str(row.get("is_public", "false")).lower() == "true",
-                author_id=user.id,
-                owner_id=user.id,
-                gamification_config=gc,
-            )
-            db.add(entity)
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip entity row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_schedule(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            entity_id = None
-            entity_name = row.get("entity_name") or row.get("entity_code")
-            if entity_name:
-                e_result = await db.execute(
-                    select(Entity.id)
-                    .where(
-                        Entity.real_name == str(entity_name),
-                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
-                    )
-                    .limit(1)
-                )
-                e_row = e_result.first()
-                if e_row:
-                    entity_id = e_row[0]
-
-            start_time = datetime.strptime(str(row.get("start_time", "00:00")), "%H:%M").time()
-            end_time = None
-            if row.get("end_time"):
-                end_time = datetime.strptime(str(row["end_time"]), "%H:%M").time()
-
-            rule = ScheduleRule(
-                user_id=user.id,
-                entity_id=entity_id,
-                day_of_week=int(row.get("day_of_week", 0)),
-                start_time=start_time,
-                end_time=end_time,
-                task_type=str(row.get("task_type", "mandatory")),
-                recurring=str(row.get("recurring", "true")).lower() == "true",
-                notes=str(row.get("notes", "")) or None,
-            )
-            db.add(rule)
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip schedule row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_points_transactions(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            entity_id = None
-            entity_name = row.get("entity_name") or row.get("entity_code")
-            if entity_name:
-                e_result = await db.execute(
-                    select(Entity.id)
-                    .where(
-                        Entity.real_name == str(entity_name),
-                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
-                    )
-                    .limit(1)
-                )
-                e_row = e_result.first()
-                if e_row:
-                    entity_id = e_row[0]
-
-            created_at = datetime.now()
-            if row.get("created_at"):
-                created_at = datetime.fromisoformat(str(row["created_at"]))
-
-            txn = PointsTransaction(
-                user_id=user.id,
-                amount=int(row.get("amount", 0)),
-                transaction_type=str(row.get("transaction_type", "earn")),
-                reason=str(row.get("reason", "")) or None,
-                entity_id=entity_id,
-                created_at=created_at,
-            )
-            db.add(txn)
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip points_transaction row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_training_days(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            td = TrainingDay(
-                user_id=user.id,
-                target_date=date.fromisoformat(str(row.get("target_date", date.today().isoformat()))),
-                status=str(row.get("status", "planned")),
-                plan_summary=str(row.get("plan_summary", "")) or None,
-                analysis_summary=str(row.get("analysis_summary", "")) or None,
-            )
-            db.add(td)
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip training_day row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_activity_logs(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            entity_id = None
-            entity_name = row.get("entity_name") or row.get("entity_code")
-            if entity_name:
-                e_result = await db.execute(
-                    select(Entity.id)
-                    .where(
-                        Entity.real_name == str(entity_name),
-                        (Entity.owner_id == user.id) | Entity.is_public.is_(True),
-                    )
-                    .limit(1)
-                )
-                e_row = e_result.first()
-                if e_row:
-                    entity_id = e_row[0]
-
-            created_at = datetime.now()
-            if row.get("created_at"):
-                created_at = datetime.fromisoformat(str(row["created_at"]))
-
-            completed_at = None
-            if row.get("completed_at"):
-                completed_at = datetime.fromisoformat(str(row["completed_at"]))
-
-            log = ActivityLog(
-                user_id=user.id,
-                entity_id=entity_id,
-                status=str(row.get("status", "created")),
-                selected_entity_name=str(row.get("selected_entity_name", "")),
-                created_at=created_at,
-                completed_at=completed_at,
-            )
-            db.add(log)
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip activity_log row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_points_profiles(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    imported = skipped = 0
-    for row in rows:
-        try:
-            config = row.get("config", {})
-            if isinstance(config, str) and config:
-                config = json.loads(config)
-
-            profile = PointsProfile(
-                user_id=user.id,
-                name=str(row.get("name", "Unnamed Profile")),
-                config=config,
-                is_default=str(row.get("is_default", "false")).lower() == "true",
-            )
-            db.add(profile)
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip points_profile row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_body_parts(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    """Import custom body parts (reference data)."""
-    imported = skipped = 0
-    for row in rows:
-        try:
-            slug = str(row.get("slug", ""))
-            existing = (await db.execute(select(BodyPart).where(BodyPart.slug == slug))).scalar_one_or_none()
-            if existing and mode != "insert":
-                if row.get("title_ru"):
-                    existing.title_ru = str(row["title_ru"])
-                if row.get("title_en"):
-                    existing.title_en = str(row["title_en"])
-            else:
-                parent_id = None
-                if row.get("parent_slug"):
-                    pr = await db.execute(select(BodyPart.id).where(BodyPart.slug == str(row["parent_slug"])))
-                    p = pr.first()
-                    if p:
-                        parent_id = p[0]
-                db.add(
-                    BodyPart(
-                        slug=slug,
-                        title_ru=str(row.get("title_ru", slug)),
-                        title_en=str(row.get("title_en", "")) or None,
-                        body_system=str(row.get("body_system", "general")),
-                        is_sensitive=str(row.get("is_sensitive", "false")).lower() == "true",
-                        parent_id=parent_id,
-                    )
-                )
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip body_part row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_locations(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    """Import custom locations."""
-    imported = skipped = 0
-    for row in rows:
-        try:
-            slug = str(row.get("slug", ""))
-            existing = (
-                await db.execute(
-                    select(TaskLocation).where(TaskLocation.slug == slug, TaskLocation.owner_id == user.id)
-                )
-            ).scalar_one_or_none()
-            if existing and mode != "insert":
-                if row.get("title_ru"):
-                    existing.title_ru = str(row["title_ru"])
-                if row.get("location_type"):
-                    existing.location_type = str(row["location_type"])
-            else:
-                parent_id = None
-                if row.get("parent_slug"):
-                    pr = await db.execute(select(TaskLocation.id).where(TaskLocation.slug == str(row["parent_slug"])))
-                    p = pr.first()
-                    if p:
-                        parent_id = p[0]
-                db.add(
-                    TaskLocation(
-                        slug=slug,
-                        title_ru=str(row.get("title_ru", slug)),
-                        title_en=str(row.get("title_en", "")) or None,
-                        location_type=str(row.get("location_type", "other")),
-                        privacy_level=str(row.get("privacy_level", "private")),
-                        is_custom=True,
-                        owner_id=user.id,
-                        parent_id=parent_id,
-                    )
-                )
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip location row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
-
-
-async def _import_inventory_categories(rows: list[dict], db: AsyncSession, user: User, mode: str = "upsert") -> dict:
-    """Import custom inventory categories."""
-    imported = skipped = 0
-    for row in rows:
-        try:
-            slug = str(row.get("slug", ""))
-            existing = (
-                await db.execute(select(InventoryCategory).where(InventoryCategory.slug == slug))
-            ).scalar_one_or_none()
-            if existing and mode != "insert":
-                if row.get("title"):
-                    existing.title = str(row["title"])
-                if row.get("description"):
-                    existing.description = str(row["description"])
-            else:
-                db.add(
-                    InventoryCategory(
-                        slug=slug,
-                        title=str(row.get("title", slug)),
-                        description=str(row.get("description", "")) or None,
-                    )
-                )
-            imported += 1
-        except Exception as e:
-            logger.warning(f"Skip inventory_category row: {e}")
-            skipped += 1
-    await db.commit()
-    return {"status": "ok", "imported": imported, "skipped": skipped}
 
 
 # ═══════════════════════════════════════════════════════════
@@ -938,6 +449,11 @@ async def export_type(
         return JSONResponse({"export_type": export_type, "count": len(data), "data": data})
 
 
+# ═══════════════════════════════════════════════════════════
+# Export helpers
+# ═══════════════════════════════════════════════════════════
+
+
 def _model_to_dict(obj: Any) -> dict:
     """Convert a SQLAlchemy model instance to a JSON-safe dict."""
     data: dict = {}
@@ -974,15 +490,3 @@ def _rows_to_csv(rows: list, headers: list[str], export_type: str) -> PlainTextR
         output.getvalue(),
         headers={"Content-Disposition": f"attachment; filename={export_type}_export.csv"},
     )
-
-
-# ── Helpers ──
-
-
-def _float_or_none(val: Any) -> float | None:
-    if val is None or val == "":
-        return None
-    try:
-        return float(val)
-    except (ValueError, TypeError):
-        return None
