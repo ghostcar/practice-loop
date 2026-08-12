@@ -547,4 +547,12 @@ EN = {
     "locktimer_task_occurrences": "Task Occurrences",
     "locktimer_proposals": "AI Proposals",
     "locktimer_session_empty": "No rules or occurrences yet.",
+    # Dashboard timer card
+    "dashboard_timer_active": "Active Timer",
+    "dashboard_timer_duration": "Duration",
+    "dashboard_timer_tz": "TZ",
+    "dashboard_timer_slots": "Slots",
+    "dashboard_timer_tasks": "Tasks",
+    "dashboard_timer_ends": "Ends",
+    "dashboard_timer_view": "View",
 }

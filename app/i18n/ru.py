@@ -549,4 +549,12 @@ RU = {
     "locktimer_task_occurrences": "Задачи",
     "locktimer_proposals": "AI-предложения",
     "locktimer_session_empty": "Правил и событий пока нет.",
+    # Dashboard timer card
+    "dashboard_timer_active": "Активный таймер",
+    "dashboard_timer_duration": "Длительность",
+    "dashboard_timer_tz": "TZ",
+    "dashboard_timer_slots": "Слоты",
+    "dashboard_timer_tasks": "Задачи",
+    "dashboard_timer_ends": "Конец",
+    "dashboard_timer_view": "Смотреть",
 }

@@ -1,16 +1,18 @@
 """LockTimer SSR pages — C8.
 
-GET /locktimer                     — overview (active session, drafts, history)
-GET /locktimer/sessions/{id}       — session detail (rules, occurrences, timeline)
+GET  /locktimer                     — overview (active session, drafts, history)
+POST /locktimer/new                 — create draft session, redirect to detail
+GET  /locktimer/sessions/{id}       — session detail (rules, occurrences, timeline)
 """
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,6 +33,7 @@ from app.locktimer.repositories import (
 )
 from app.models.locktimer import (
     LockLlmProposal,
+    LockSession,
     LockSlotOccurrence,
     LockTaskOccurrence,
 )
@@ -54,6 +57,37 @@ def _check_owner_allowlist(user: User) -> None:
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+# ---------------------------------------------------------------------------
+# POST /locktimer/new — create draft session
+# ---------------------------------------------------------------------------
+
+
+@router.post("/new")
+async def locktimer_create_draft(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _check_owner_allowlist(current_user)
+
+    now = _now()
+    seed = secrets.token_hex(16)
+    session = LockSession(
+        owner_id=current_user.id,
+        state=e.SESSION_DRAFT,
+        duration_type="duration_from_start",
+        timezone=getattr(current_user, "timezone", "UTC") or "UTC",
+        random_seed_encrypted=seed,
+        random_seed_commitment=seed,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(session)
+    await db.flush()
+
+    return RedirectResponse(f"/locktimer/sessions/{session.id}", status_code=303)
 
 
 # ---------------------------------------------------------------------------
@@ -129,8 +163,6 @@ async def locktimer_session_detail(
 
     session = await get_session(db, session_id, current_user.id)
     if session is None:
-        from fastapi.responses import RedirectResponse
-
         return RedirectResponse("/locktimer", status_code=303)
 
     slot_rules = await list_slot_rules(db, session_id)
@@ -197,8 +229,6 @@ async def locktimer_session_detail(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-from app.models.locktimer import LockSession  # noqa: E402 — used above in select
 
 
 def _serialize_session(session, t) -> dict | None:

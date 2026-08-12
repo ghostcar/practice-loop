@@ -69,6 +69,35 @@ async def dashboard(
     )
     unread_notifs = notif_count_result.scalar() or 0
 
+    # LockTimer active session (if timer operational)
+    locktimer_session = None
+    locktimer_slots_count = 0
+    locktimer_tasks_count = 0
+    try:
+        from app.platform.composition import composition
+
+        if composition.timer_operational:
+            from app.locktimer.repositories import get_active_session as get_lt_active
+
+            lt_active = await get_lt_active(db, user.id)
+            if lt_active:
+                from app.locktimer.repositories import list_slot_occurrences, list_task_occurrences
+
+                lt_slots = await list_slot_occurrences(db, lt_active.id, limit=50)
+                lt_tasks = await list_task_occurrences(db, lt_active.id, limit=50)
+                locktimer_session = {
+                    "id": str(lt_active.id),
+                    "state": lt_active.state,
+                    "duration_type": lt_active.duration_type,
+                    "timezone": lt_active.timezone,
+                    "started_at": lt_active.started_at.isoformat() if lt_active.started_at else None,
+                    "effective_end_at": lt_active.effective_end_at.isoformat() if lt_active.effective_end_at else None,
+                }
+                locktimer_slots_count = len(lt_slots)
+                locktimer_tasks_count = len(lt_tasks)
+    except Exception:
+        pass  # LockTimer may not be deployed yet
+
     response = templates.TemplateResponse(
         request=request,
         name="dashboard_v2.html",
@@ -88,6 +117,9 @@ async def dashboard(
             "unread_notifs": unread_notifs,
             "tg_bot_username": settings.tg_bot_username,
             "active_nav": "dashboard",
+            "locktimer_session": locktimer_session,
+            "locktimer_slots_count": locktimer_slots_count,
+            "locktimer_tasks_count": locktimer_tasks_count,
         },
     )
     # Set CSRF cookie ONLY if absent — re-issuing it here after render used to
