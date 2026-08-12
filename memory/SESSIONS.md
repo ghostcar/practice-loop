@@ -1,3 +1,11 @@
+## 2026-08-12 — Сессия 80 (Housekeeping)
+
+- **Git**: 47 непушедших коммитов → origin/main (bf1fd7f..033494f); удалена влитая ветка feat/product-composition-locktimer-core; рабочее дерево чистое.
+- **Дубль list_templates**: extras.py теперь импортирует из repositories (было две идентичные реализации — риск расхождения зафиксирован и устранён).
+- **TODO закрыт**: locktimer_proposals.py — `applied_at` теперь `datetime.now(UTC).isoformat()` (был None).
+- **STATUS.md**: S78/S79 строки расцеплены (S79 содержала хвост S78).
+- 101 locktimer-тест ✅, ruff ✅, задеплоено, healthz ok.
+
 ## 2026-08-12 — Сессия 79 (Timer): drag&drop переупорядочивание шаблонов
 
 - **Данные**: миграция 035 — `sort_order` (INTEGER, NOT NULL, default 0) на `lock_timer_templates`.
