@@ -643,4 +643,18 @@ EN = {
     "social_subjects_created": "Registered",
     "social_subjects_adapters": "Available Adapters",
     "social_subjects_no_adapters": "No domain adapters registered.",
+    # S2 — Relationships
+    "social_rel_title": "Relationships",
+    "social_rel_pending": "Pending Invitations",
+    "social_rel_invite": "Send Invitation",
+    "social_rel_send": "Send",
+    "social_rel_accept": "Accept",
+    "social_rel_decline": "Decline",
+    "social_rel_revoke": "Revoke",
+    "social_rel_active": "Connections",
+    "social_rel_empty": "No connections yet. Find users by alias to connect.",
+    "social_rel_block": "Blocked Users",
+    "social_rel_block_btn": "Block",
+    "social_rel_unblock": "Unblock",
+    "social_rel_notif": "Notifications",
 }

@@ -9,7 +9,17 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -118,4 +128,148 @@ class SocialSubject(Base):
             "subject_type", "domain_object_id",
             name="uq_social_subject_type_object",
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# S2 — Relationships, blocks, grants, notifications
+# ---------------------------------------------------------------------------
+
+RELATIONSHIP_STATUSES = frozenset({"pending", "accepted", "declined", "expired", "revoked"})
+ROLE_PRESETS = frozenset({"viewer", "coach", "mentor", "curator"})
+GRANT_SCOPES = frozenset({"subject", "module", "global"})
+GRANT_STATUSES = frozenset({"proposed", "accepted", "revoked", "expired"})
+NOTIFICATION_TYPES = frozenset({
+    "invitation_received", "invitation_accepted", "invitation_declined",
+    "grant_proposed", "grant_accepted", "grant_revoked",
+    "block_created", "block_removed",
+    "relationship_revoked",
+})
+
+
+class SocialRelationship(Base):
+    """Invitation lifecycle — single pair uniqueness across entire product."""
+
+    __tablename__ = "social_relationships"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    requester_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    recipient_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Status machine: pending → accepted | declined | expired | revoked
+    # accepted → revoked (either side)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+
+    # Display role (UI preset only — no capability grants).
+    display_role: Mapped[str] = mapped_column(String(20), default="viewer", nullable=False)
+
+    # Cooldown for re-invite after decline/expiry.
+    cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "requester_id", "recipient_id",
+            name="uq_social_relationship_pair",
+        ),
+    )
+
+
+class SocialBlock(Base):
+    """Cross-product block — shuts down all interactions immediately."""
+
+    __tablename__ = "social_blocks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    blocker_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    blocked_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "blocker_id", "blocked_id",
+            name="uq_social_block_pair",
+        ),
+    )
+
+
+class SocialGrant(Base):
+    """Scoped capability grant — requires relationship acceptance + recipient accept."""
+
+    __tablename__ = "social_grants"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    relationship_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("social_relationships.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Scope: subject (specific social_subjects.id), module (tracker.*), global (platform)
+    scope_type: Mapped[str] = mapped_column(String(20), default="subject", nullable=False)
+    scope_namespace: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    subject_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("social_subjects.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+
+    # Capabilities JSON: {caps: ["tracker.activity.view_summary", ...]}
+    caps: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    # Status: proposed → accepted | revoked | expired
+    status: Mapped[str] = mapped_column(String(20), default="proposed", nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+    )
+
+
+class SocialNotification(Base):
+    """In-app notification outbox for social events."""
+
+    __tablename__ = "social_notifications"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Type from NOTIFICATION_TYPES
+    notification_type: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    # Flexible payload: {actor_alias, relationship_id, grant_id, ...}
+    payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
     )

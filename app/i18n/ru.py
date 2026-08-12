@@ -648,4 +648,18 @@ RU = {
     "social_subjects_created": "Зарегистрирован",
     "social_subjects_adapters": "Доступные адаптеры",
     "social_subjects_no_adapters": "Доменные адаптеры не зарегистрированы.",
+    # S2 — Relationships
+    "social_rel_title": "Отношения",
+    "social_rel_pending": "Входящие приглашения",
+    "social_rel_invite": "Отправить приглашение",
+    "social_rel_send": "Отправить",
+    "social_rel_accept": "Принять",
+    "social_rel_decline": "Отклонить",
+    "social_rel_revoke": "Отозвать",
+    "social_rel_active": "Связи",
+    "social_rel_empty": "Связей пока нет. Найдите пользователей по псевдониму.",
+    "social_rel_block": "Заблокированные",
+    "social_rel_block_btn": "Заблокировать",
+    "social_rel_unblock": "Разблокировать",
+    "social_rel_notif": "Уведомления",
 }

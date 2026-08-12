@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% set active_nav = "social" %}
+
+{% block title %}{{ t.social_rel_title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8 space-y-8">
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.social_rel_title }}</h1>
+
+  <!-- Pending invitations -->
+  {% if pending_invites %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_pending }}</h2>
+    {% for item in pending_invites %}
+    <div class="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-gray-900 dark:text-white">@{{ item.requester_alias }}</span>
+        <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+          {{ item.invite.display_role }}
+        </span>
+        <span class="text-xs text-gray-400">{{ item.invite.created_at.strftime('%Y-%m-%d') if item.invite.created_at else '' }}</span>
+      </div>
+      <div class="flex gap-2">
+        <form action="/social/invite/{{ item.invite.id }}/accept" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <button type="submit" class="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">{{ t.social_rel_accept }}</button>
+        </form>
+        <form action="/social/invite/{{ item.invite.id }}/decline" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <button type="submit" class="px-4 py-1.5 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600">{{ t.social_rel_decline }}</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- Send invitation -->
+  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_invite }}</h2>
+    <form action="/social/invite" method="post" class="space-y-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      <div class="flex gap-3 flex-wrap">
+        <input type="text" name="alias" required minlength="3" maxlength="80"
+               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-white"
+               placeholder="@alias">
+        <select name="display_role"
+                class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+          <option value="viewer">Viewer</option>
+          <option value="coach">Coach</option>
+          <option value="mentor">Mentor</option>
+          <option value="curator">Curator</option>
+        </select>
+        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">{{ t.social_rel_send }}</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Active relationships -->
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_active }}</h2>
+    {% if relationships %}
+    {% for item in relationships %}
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold text-gray-900 dark:text-white">@{{ item.other_alias }}</span>
+          <span class="text-xs px-2 py-0.5 rounded
+            {% if item.rel.status == 'accepted' %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300
+            {% elif item.rel.status == 'pending' %}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300
+            {% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+            {{ item.rel.status }}
+          </span>
+          <span class="text-xs text-gray-400">{{ item.rel.display_role }}</span>
+        </div>
+        <form action="/social/invite/{{ item.rel.id }}/revoke" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <button type="submit" class="text-xs text-red-500 hover:text-red-700">{{ t.social_rel_revoke }}</button>
+        </form>
+      </div>
+      <!-- Grants -->
+      {% if item.grants %}
+      <div class="ml-4 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+        {% for grant in item.grants %}
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-gray-600 dark:text-gray-400">{{ grant.scope_type }}{% if grant.scope_namespace %}/{{ grant.scope_namespace }}{% endif %}</span>
+            <span class="px-1.5 py-0.5 rounded
+              {% if grant.status == 'accepted' %}bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400
+              {% elif grant.status == 'proposed' %}bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400
+              {% else %}bg-gray-100 dark:bg-gray-700 text-gray-500{% endif %}">
+              {{ grant.status }}
+            </span>
+          </div>
+          <div class="flex gap-2">
+            {% if grant.status == 'proposed' and item.rel.recipient_id == user.id %}
+            <form action="/social/grant/{{ grant.id }}/accept" method="post" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+              <button class="text-green-600 hover:text-green-800">{{ t.social_rel_accept }}</button>
+            </form>
+            {% endif %}
+            <form action="/social/grant/{{ grant.id }}/revoke" method="post" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+              <button class="text-red-500 hover:text-red-700">{{ t.social_rel_revoke }}</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_rel_empty }}</p>
+    {% endif %}
+  </section>
+
+  <!-- Block section -->
+  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_block }}</h2>
+    {% if blocks %}
+    <div class="space-y-1 mb-3">
+    {% for item in blocks %}
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-gray-700 dark:text-gray-300">🚫 @{{ item.blocked_alias }}</span>
+        <form action="/social/block/{{ item.block.blocked_id }}/remove" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <button type="submit" class="text-xs text-indigo-500 hover:text-indigo-700">{{ t.social_rel_unblock }}</button>
+        </form>
+      </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+    <form action="/social/block" method="post" class="flex gap-2 flex-wrap">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      <input type="text" name="alias" required minlength="3" maxlength="80"
+             class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-white flex-1"
+             placeholder="@alias">
+      <button type="submit" class="px-6 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">{{ t.social_rel_block_btn }}</button>
+    </form>
+  </section>
+
+  <!-- Notifications -->
+  {% if notifications %}
+  <section class="space-y-3">
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_notif }}</h2>
+    <div class="space-y-1">
+    {% for notif in notifications %}
+      <div class="flex items-center justify-between text-sm py-1 {% if not notif.is_read %}font-semibold{% endif %}">
+        <span class="text-gray-700 dark:text-gray-300">
+          {{ notif.notification_type }}
+          {% if not notif.is_read %}<span class="ml-1 w-2 h-2 inline-block rounded-full bg-indigo-500"></span>{% endif %}
+        </span>
+        <span class="text-xs text-gray-400">{{ notif.created_at.strftime('%m-%d %H:%M') if notif.created_at else '' }}</span>
+      </div>
+    {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
