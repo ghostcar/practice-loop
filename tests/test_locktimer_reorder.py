@@ -214,6 +214,70 @@ class TestReorderService:
             )
 
 
+class TestTemplateReorderService:
+    """Template reordering on /locktimer/templates."""
+
+    async def _make_templates(self, db_session: AsyncSession, user: User, names: list[str]):
+        from app.locktimer.services.extras import save_template
+
+        ids = []
+        for name in names:
+            session = await create_draft(db_session, owner_id=user.id)
+            tmpl = await save_template(db_session, session_id=session.id, owner_id=user.id, name=name)
+            ids.append(tmpl.id)
+        return ids
+
+    async def test_new_templates_append_in_order(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.services.extras import list_templates
+
+        ids = await self._make_templates(db_session, test_user, ["A", "B", "C"])
+        templates = await list_templates(db_session, test_user.id)
+        assert [t.id for t in templates] == ids
+        assert [t.sort_order for t in templates] == [0, 1, 2]
+
+    async def test_reorder_templates_persists_order(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.services.extras import list_templates, reorder_templates
+
+        ids = await self._make_templates(db_session, test_user, ["A", "B", "C"])
+        await reorder_templates(db_session, owner_id=test_user.id, template_ids=list(reversed(ids)))
+        templates = await list_templates(db_session, test_user.id)
+        assert [t.id for t in templates] == list(reversed(ids))
+        assert [t.sort_order for t in templates] == [0, 1, 2]
+
+    async def test_reorder_ignores_archived(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.services.extras import archive_template, list_templates, reorder_templates
+
+        ids = await self._make_templates(db_session, test_user, ["A", "B", "C"])
+        await archive_template(db_session, ids[0], test_user.id)
+        visible = await list_templates(db_session, test_user.id)
+        assert [t.id for t in visible] == ids[1:]
+        # Reorder only the visible set
+        await reorder_templates(db_session, owner_id=test_user.id, template_ids=list(reversed(ids[1:])))
+        visible_after = await list_templates(db_session, test_user.id)
+        assert [t.id for t in visible_after] == list(reversed(ids[1:]))
+
+    async def test_reorder_rejects_foreign_template(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.services.extras import reorder_templates
+
+        ids = await self._make_templates(db_session, test_user, ["A", "B"])
+        with pytest.raises(ValueError, match="exactly the owner"):
+            await reorder_templates(db_session, owner_id=test_user.id, template_ids=[uuid.uuid4(), ids[0]])
+
+    async def test_reorder_rejects_duplicates(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.services.extras import reorder_templates
+
+        ids = await self._make_templates(db_session, test_user, ["A", "B"])
+        with pytest.raises(ValueError, match="Duplicate"):
+            await reorder_templates(db_session, owner_id=test_user.id, template_ids=[ids[0], ids[0]])
+
+    async def test_reorder_rejects_empty(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.services.extras import reorder_templates
+
+        await self._make_templates(db_session, test_user, ["A"])
+        with pytest.raises(ValueError, match="must not be empty"):
+            await reorder_templates(db_session, owner_id=test_user.id, template_ids=[])
+
+
 class TestReorderApi:
     """API endpoints for rule reordering."""
 
@@ -278,6 +342,38 @@ class TestReorderApi:
         )
         assert resp.status_code == 400
 
+    async def test_reorder_templates_api(self, db_session: AsyncSession, auth_client, test_user: User) -> None:
+        from app.locktimer.services.extras import list_templates, save_template
+
+        session = await create_draft(db_session, owner_id=test_user.id)
+        t1 = await save_template(db_session, session_id=session.id, owner_id=test_user.id, name="A")
+        session2 = await create_draft(db_session, owner_id=test_user.id)
+        t2 = await save_template(db_session, session_id=session2.id, owner_id=test_user.id, name="B")
+
+        resp = await auth_client.post(
+            "/api/v1/locktimer/templates/reorder",
+            data={"template_ids": f"{t2.id},{t1.id}"},
+            follow_redirects=False,
+        )
+        assert resp.status_code in (303, 302)
+        templates = await list_templates(db_session, test_user.id)
+        assert [t.id for t in templates] == [t2.id, t1.id]
+
+    async def test_reorder_templates_api_rejects_incomplete(self, db_session, auth_client, test_user: User) -> None:
+        from app.locktimer.services.extras import save_template
+
+        session = await create_draft(db_session, owner_id=test_user.id)
+        t1 = await save_template(db_session, session_id=session.id, owner_id=test_user.id, name="A")
+        session2 = await create_draft(db_session, owner_id=test_user.id)
+        await save_template(db_session, session_id=session2.id, owner_id=test_user.id, name="B")
+
+        resp = await auth_client.post(
+            "/api/v1/locktimer/templates/reorder",
+            data={"template_ids": str(t1.id)},  # missing second template
+            follow_redirects=False,
+        )
+        assert resp.status_code == 400
+
 
 class TestReorderUi:
     """Session detail page renders drag&drop affordances in draft only."""
@@ -321,3 +417,17 @@ class TestReorderUi:
         assert resp.status_code == 200
         assert "draggable=" not in resp.text
         assert "⠿" not in resp.text
+
+    async def test_templates_page_renders_draggable(self, db_session, auth_client, test_user: User) -> None:
+        from app.locktimer.services.extras import save_template
+
+        session = await create_draft(db_session, owner_id=test_user.id)
+        tmpl = await save_template(db_session, session_id=session.id, owner_id=test_user.id, name="A")
+        resp = await auth_client.get("/locktimer/templates")
+        assert resp.status_code == 200
+        text = resp.text
+        assert 'id="templates-list"' in text
+        assert 'draggable="true"' in text
+        assert "⠿" in text  # drag handle
+        assert f'data-template-id="{tmpl.id}"' in text
+        assert "drag to reorder" in text

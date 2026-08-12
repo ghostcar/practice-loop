@@ -54,6 +54,7 @@ from app.locktimer.services.extras import (
     archive_template,
     extend_horizon,
     instantiate_template,
+    reorder_templates,
     save_template,
     validate_session,
 )
@@ -612,4 +613,20 @@ async def api_archive_template(
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
+    return RedirectResponse("/locktimer/templates", status_code=303)
+
+
+@router.post("/templates/reorder")
+async def api_reorder_templates(
+    request: Request,
+    template_ids: str = Form(default=""),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reorder the owner's templates. Expects comma-separated template ids."""
+    parsed = [uuid.UUID(x.strip()) for x in template_ids.split(",") if x.strip()]
+    try:
+        await reorder_templates(db, owner_id=current_user.id, template_ids=parsed)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return RedirectResponse("/locktimer/templates", status_code=303)

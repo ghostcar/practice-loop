@@ -14,17 +14,22 @@
   </div>
 
   {% if templates %}
-  <div class="grid gap-3">
+  <p class="text-xs text-gray-400 -mb-2">({{ t.locktimer_drag_hint or "drag to reorder" }})</p>
+  <div id="templates-list" class="grid gap-3">
     {% for tmpl in templates %}
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 cursor-grab active:cursor-grabbing"
+      data-template-id="{{ tmpl.id }}" draggable="true">
       <div class="flex items-center justify-between">
-        <div>
-          <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ tmpl.name }}</h3>
-          {% if tmpl.description %}<p class="text-xs text-gray-500 mt-0.5">{{ tmpl.description }}</p>{% endif %}
-          <div class="flex gap-3 mt-1 text-xs text-gray-400">
-            <span>{{ tmpl.slot_count }} slot rule(s)</span>
-            <span>{{ tmpl.task_count }} task rule(s)</span>
-            {% if tmpl.updated_at %}<span>updated {{ tmpl.updated_at[:10] }}</span>{% endif %}
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="text-gray-300 dark:text-gray-600 select-none" aria-hidden="true">⠿</span>
+          <div class="min-w-0">
+            <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ tmpl.name }}</h3>
+            {% if tmpl.description %}<p class="text-xs text-gray-500 mt-0.5">{{ tmpl.description }}</p>{% endif %}
+            <div class="flex gap-3 mt-1 text-xs text-gray-400">
+              <span>{{ tmpl.slot_count }} slot rule(s)</span>
+              <span>{{ tmpl.task_count }} task rule(s)</span>
+              {% if tmpl.updated_at %}<span>updated {{ tmpl.updated_at[:10] }}</span>{% endif %}
+            </div>
           </div>
         </div>
         <div class="flex gap-2 flex-shrink-0">
@@ -49,4 +54,78 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Drag&drop template reordering
+(function() {
+  var list = document.getElementById('templates-list');
+  if (!list) return;
+  var items = Array.prototype.slice.call(list.querySelectorAll('[data-template-id]'));
+  if (items.length < 2) return;
+
+  var csrf = document.querySelector('meta[name="csrf-token"]');
+  var csrfValue = csrf ? csrf.getAttribute('content') : '';
+  var dragEl = null;
+
+  items.forEach(function(item) {
+    item.addEventListener('dragstart', function(ev) {
+      dragEl = item;
+      ev.dataTransfer.effectAllowed = 'move';
+      item.classList.add('opacity-50', 'ring-2', 'ring-indigo-400');
+    });
+    item.addEventListener('dragend', function() {
+      items.forEach(function(i) { i.classList.remove('ring-2', 'ring-indigo-300', 'ring-indigo-400', 'opacity-50'); });
+      dragEl = null;
+    });
+    item.addEventListener('dragover', function(ev) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      items.forEach(function(i) { i.classList.remove('ring-2', 'ring-indigo-300'); });
+      item.classList.add('ring-2', 'ring-indigo-300');
+    });
+    item.addEventListener('dragleave', function() {
+      item.classList.remove('ring-2', 'ring-indigo-300');
+    });
+    item.addEventListener('drop', function(ev) {
+      ev.preventDefault();
+      if (!dragEl || dragEl === item) return;
+      var rect = item.getBoundingClientRect();
+      var before = ev.clientY < rect.top + rect.height / 2;
+      if (before) {
+        list.insertBefore(dragEl, item);
+      } else {
+        list.insertBefore(dragEl, item.nextSibling);
+      }
+      items.forEach(function(i) { i.classList.remove('ring-2', 'ring-indigo-300', 'ring-indigo-400', 'opacity-50'); });
+
+      // Persist new order
+      var ordered = Array.prototype.slice.call(list.querySelectorAll('[data-template-id]'))
+        .map(function(i) { return i.getAttribute('data-template-id'); });
+      var formData = new URLSearchParams();
+      formData.append('csrf_token', csrfValue);
+      formData.append('template_ids', ordered.join(','));
+      fetch('/api/v1/locktimer/templates/reorder', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrfValue, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+      })
+      .then(function(r) {
+        if (r.ok) {
+          list.classList.add('opacity-60');
+          setTimeout(function() { list.classList.remove('opacity-60'); }, 300);
+        } else {
+          console.error('Template reorder failed', r.status);
+          location.reload();  // revert optimistic DOM to server state
+        }
+      })
+      .catch(function(err) {
+        console.error('Template reorder error', err);
+        location.reload();  // revert optimistic DOM to server state
+      });
+    });
+  });
+})();
+</script>
 {% endblock %}

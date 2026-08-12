@@ -39,7 +39,7 @@ async def list_templates(db: AsyncSession, owner_id: uuid.UUID) -> list[LockTime
             LockTimerTemplate.owner_id == owner_id,
             LockTimerTemplate.archived_at.is_(None),
         )
-        .order_by(LockTimerTemplate.updated_at.desc())
+        .order_by(LockTimerTemplate.sort_order, LockTimerTemplate.updated_at.desc())
     )
     return list(result.scalars().all())
 

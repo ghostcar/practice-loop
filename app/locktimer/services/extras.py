@@ -249,6 +249,10 @@ async def save_template(
         ],
     }
 
+    # New templates append at the end of the owner's list
+    existing = await list_templates(db, owner_id)
+    next_order = (existing[-1].sort_order + 1) if existing else 0
+
     template = LockTimerTemplate(
         owner_id=owner_id,
         name=name,
@@ -256,6 +260,7 @@ async def save_template(
         schema_version=1,
         config=config,
         config_sha256=d.sha256_hex(d.canonical_json(config)),
+        sort_order=next_order,
     )
     db.add(template)
     await db.flush()
@@ -321,7 +326,7 @@ async def list_templates(db: AsyncSession, owner_id: uuid.UUID) -> list[LockTime
     result = await db.execute(
         select(LockTimerTemplate)
         .where(LockTimerTemplate.owner_id == owner_id, LockTimerTemplate.archived_at.is_(None))
-        .order_by(LockTimerTemplate.updated_at.desc())
+        .order_by(LockTimerTemplate.sort_order, LockTimerTemplate.updated_at.desc())
     )
     return list(result.scalars().all())
 
@@ -331,4 +336,38 @@ async def archive_template(db: AsyncSession, template_id: uuid.UUID, owner_id: u
     if template is None or template.owner_id != owner_id:
         raise ValueError("Template not found")
     template.archived_at = _now()
+    await db.flush()
+
+
+async def reorder_templates(
+    db: AsyncSession,
+    *,
+    owner_id: uuid.UUID,
+    template_ids: list[uuid.UUID],
+) -> None:
+    """Reorder the owner's non-archived templates by the given id order.
+
+    Validates that every provided id belongs to the owner and that the set of
+    ids matches the current non-archived templates exactly, then rewrites
+    sort_order to match the requested sequence.
+    """
+    result = await db.execute(
+        select(LockTimerTemplate).where(
+            LockTimerTemplate.owner_id == owner_id,
+            LockTimerTemplate.archived_at.is_(None),
+        )
+    )
+    existing = list(result.scalars().all())
+    existing_ids = {t.id for t in existing}
+
+    if not template_ids:
+        raise ValueError("Template list must not be empty")
+    if len(template_ids) != len(set(template_ids)):
+        raise ValueError("Duplicate template ids in reorder request")
+    if set(template_ids) != existing_ids:
+        raise ValueError("Template list must contain exactly the owner's current templates")
+
+    by_id = {t.id: t for t in existing}
+    for position, template_id in enumerate(template_ids):
+        by_id[template_id].sort_order = position
     await db.flush()
