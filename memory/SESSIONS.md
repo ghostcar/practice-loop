@@ -1,3 +1,11 @@
+## 2026-08-12 — Сессия 85 (Рефакторинг, шаг 4: points_v2.py → пакет api/points/)
+
+- **Сплит** points_v2.py (940 строк, 35 эндпоинтов): 10 модулей — helpers(18: `_get_progress`), config(52), balance(82), profiles(83), redemptions(113), schedule(72), measurements(92), inventory(179: 8 эндпоинтов + `_ReorderPayload`), charts(228: 5 chart-эндпоинтов с lazy-импортами), pages(75: 4 HTML-страницы).
+- **Префикс-паттерн**: суб-роутеры без префикса (только tags), агрегатор с `prefix="/api/v2"` — идентично шагу 3 (references). Первая версия имела двойной префикс (суб-роутеры тоже с `/api/v2`) → 404 на всех /api/v2/* эндпоинтах — исправлено.
+- **main.py**: `from app.api.points import router` (было `points_v2`) — переменная `points_router`.
+- **Замечания ревьюера**: `uuid` мёртвый в 3 модулях (charts/measurements/pages) — удалён.
+- **Проверки**: 112 релевантных тестов, полный прогон 598/598 ✅, ruff clean.
+
 ## 2026-08-12 — Сессия 84 (Рефакторинг, шаг 3: references.py → пакет api/references/)
 
 - **Сплит** references.py (817 строк): 4 суб-роутера — body_parts(111, 4 роута), locations(217, 7 роутов + CRUD), categories(25, 1 роут), task_targets(460, 11 роутов). __init__.py — агрегатор через include_router (23 роута под /api/v2).
