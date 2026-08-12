@@ -1,3 +1,11 @@
+## 2026-08-12 — Сессия 82 (Рефакторинг, шаг 1: execution.py → пакет services/)
+
+- **Сплит** `app/locktimer/services/execution.py` (1409 строк) по REFACTORING.md: drafts(233: create/update draft + правила + reorder), materializer(261: генерация occurrence), session(256: start + safety_stop + _cancel_future), jobs(104: outbox + очередь), tags(123: verify/lookup/audit пломб), execution(525: C5-ядро open/close/tasks/penalty + ре-экспорт-фасад).
+- **Метод**: скрипт на AST (ast.get_source_segment) — тела функций извлечены побайтово, каждый модуль провалидирован ast.parse; `__all__` из 33 имён подавляет F401 и сохраняет все исторические пути импортов (locktimer_commands, locktimer_proposals, locktimer_ui, extras lazy-импорты, тесты).
+- **Правки ревьюера**: tags.py вынесен отдельно (execution.py 628→525 строк); `LockSession` возвращён в импорты execution.py (apply_penalty); `uuid` добавлен в tags.py (type-hint).
+- **Замечания зафиксированы**: `_now` продублирован в 5 модулях (приемлемо, при 6-м — вынести в _util); фасад execution.py остаётся точкой входа потребителей (follow-up — миграция на точные модули).
+- **Проверки**: ruff format/check ✅, полный прогон **592/592 ✅**, деплой на VPS ✅.
+
 ## 2026-08-12 — Сессия 81 (Личный контур: честный фронт + нормализация + план рефакторинга)
 
 - **Честный фронт (ADR-062)**: решения владельца зафиксированы ранее — lock = chastity, таблицы не меняем. Реализовано: i18n EN/RU (значения, ключи не тронуты, паритет 0 расхождений): `locktimer_title` → "Lock Timer"/"Таймер замка", `locktimer_session_label` → "Lock Session", `locktimer_slot_occurrences` → "Unlock Windows"/"Окна разблокировки", `locktimer_slot_rules` → "Unlock Rules", `locktimer_tag_number` → "Seal #"/"Пломба #", `locktimer_verify_tag` → "Verify Seal", audit → "Seal Audit".

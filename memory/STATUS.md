@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 81 — Honest frontend + линт-нормализация + план рефакторинга).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 82 — Рефакторинг шаг 1: execution.py → services-пакет).
 
 ## Общий статус: 592/592 тестов ✅, ruff ✅, format ✅
 
@@ -22,7 +22,8 @@
 - [x] **S72**: Numbered tags (close_tag_number, require_tag, verify-tag, lock_tag_violations, 20 tag mechanics tests)
 - [x] **S78**: Drag&drop rule reordering — sort_order (миграция 034), reorder_rules service (draft-only + audit), API /slot-rules/reorder + /task-rules/reorder, HTML5 DnD в session detail (16 тестов)
 - [x] **S79**: Template reordering — sort_order на lock_timer_templates (миграция 035), reorder_templates service, API /templates/reorder, HTML5 DnD в /locktimer/templates (+9 тестов)
-- [x] **S81**: Honest frontend (ADR-062) — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
+- [x] **S81**: Honest frontend (ADR-062)
+- [x] **S82**: REFACTORING.md шаг 1 — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
 ## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
