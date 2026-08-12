@@ -1,3 +1,12 @@
+## 2026-08-12 — Сессия 83 (Рефакторинг, шаг 2: import_data.py → пакет api/importers/)
+
+- **Сплит** `app/api/import_data.py` (988 строк): api/importers/base.py (126: `_import_csv`/`_import_json` dispatch + `_json_handlers()` с lazy-импортами + `_float_or_none`) + 10 модулей-импортёров (measurements 49, inventory 47, entities 65, schedule 56, points 76, training 31, activity_logs 57, body_parts 48, locations 54, categories 41). import_data.py → 486 строк: роутер (7 роутов) + TEMPLATES/EXPORT_TYPES + экспорт.
+- **Метод**: AST-извлечение тел (побайтово); для декорированных роут-функций пришлось учитывать decorator_list — `ast.get_source_segment` их пропускает (первая сборка потеряла декораторы, пересобрано из git HEAD с исправленным извлечением + assert-стража `'@router.' in seg`).
+- **Циклы импортов**: нет — handlers импортируют base на уровне модуля (measurements → `_float_or_none`), base импортирует handlers только внутри функций (lazy).
+- **Контракт зафиксирован**: импортёры живут в app.api.importers, из import_data.py их больше не импортировать (docstring + REFACTORING.md).
+- **Тесты**: +6 HTTP-тестов dispatch (tests/test_importers_dispatch.py): /import/upload (measurements/inventory/unknown-400), /import/api (measurements/locations/unknown-400) — проверяют и ответ, и данные в БД. **598/598 ✅**, ruff ✅.
+- **Замечания ревьюера учтены**: контракт в docstring, +HTTP-тесты на dispatch; logger-метки (app.api.importers.*) — осознанное изменение.
+
 ## 2026-08-12 — Сессия 82 (Рефакторинг, шаг 1: execution.py → пакет services/)
 
 - **Сплит** `app/locktimer/services/execution.py` (1409 строк) по REFACTORING.md: drafts(233: create/update draft + правила + reorder), materializer(261: генерация occurrence), session(256: start + safety_stop + _cancel_future), jobs(104: outbox + очередь), tags(123: verify/lookup/audit пломб), execution(525: C5-ядро open/close/tasks/penalty + ре-экспорт-фасад).
