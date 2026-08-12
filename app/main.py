@@ -222,6 +222,26 @@ if composition.timer_operational:
     app.include_router(locktimer_ui_router)
 
 # ---------------------------------------------------------------------------
+# Register domain social adapters (S1 — after route registration)
+# ---------------------------------------------------------------------------
+
+if composition.social_operational and composition.social_tracker_adapter_enabled:
+    logger.info("Social Tracker adapter enabled — adapter registration reserved for S6")
+
+if composition.social_operational and composition.social_timer_adapter_enabled:
+    logger.info("Social Timer adapter enabled — adapter registration reserved for S6")
+
+# ---------------------------------------------------------------------------
+# Platform Social routes (S0+ — registered when SOCIAL_ENABLED)
+# ---------------------------------------------------------------------------
+
+if composition.social_operational:
+    from app.platform.social.api import router as social_router  # noqa: E402
+
+    app.include_router(social_router)
+    logger.info("Platform Social enabled")
+
+# ---------------------------------------------------------------------------
 # Root page — adapts to variant
 # ---------------------------------------------------------------------------
 

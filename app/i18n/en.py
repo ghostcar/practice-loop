@@ -579,4 +579,68 @@ EN = {
     "dashboard_timer_view": "View",
     "dashboard_timer_start": "▶ Start",
     "dashboard_timer_new": "+ New Timer",
+    # Platform Social
+    "nav_social": "Social",
+    "social_profile_title": "Social Profile",
+    "social_profile_subtitle": "Your public identity — choose an alias and set your preferences.",
+    "social_create_profile": "Create your profile",
+    "social_alias_label": "Alias",
+    "social_alias_hint": "3–80 characters, letters, numbers, underscore, hyphen. This is how others will see you.",
+    "social_bio_label": "Bio (optional)",
+    "social_bio_placeholder": "A few words about yourself…",
+    "social_create_btn": "Create Profile",
+    "social_save_btn": "Save",
+    "social_discoverable": "Allow alias search",
+    "social_show_in_feed": "Show in public feed",
+    "social_profile_created": "Profile created",
+    "social_consent_title": "Privacy Consent",
+    "social_consent_desc": "By accepting, you confirm you are an adult and agree to the platform privacy terms.",
+    "social_consent_accepted": "Consent accepted — you can use Social features.",
+    "social_consent_accept_btn": "I Accept",
+    "social_privacy_link": "Privacy Policy",
+    "social_privacy_title": "Privacy Policy",
+    "social_privacy_last_updated": "Last updated: 2026-08-12",
+    "social_privacy_s1_title": "1. Data We Collect",
+    "social_privacy_s1_body": (
+        "We store only the data you explicitly provide: "
+        "your alias, optional bio, and privacy preferences. "
+        "Your email address is never shared with other users."
+    ),
+    "social_privacy_s2_title": "2. What Others Can See",
+    "social_privacy_s2_body": (
+        "Other users can see your alias and bio. "
+        "Your real email, login history, and private activity data "
+        "are never visible through Social features."
+    ),
+    "social_privacy_s3_title": "3. Data Sharing",
+    "social_privacy_s3_body": (
+        "You control exactly what to share. Each domain object "
+        "(tracker activity, timer session) requires your explicit "
+        "authorization before any projection is shared."
+    ),
+    "social_privacy_s4_title": "4. Data Retention",
+    "social_privacy_s4_body": (
+        "You can withdraw any shared content at any time. "
+        "Account deletion removes your public profile and "
+        "pseudonymizes audit records."
+    ),
+    "social_privacy_s5_title": "5. Contact",
+    "social_privacy_s5_body": (
+        "For privacy questions or data export requests, contact "
+        "the platform administrator through the in-app notification system."
+    ),
+    "social_privacy_footer": (
+        "This policy applies to the Platform Social features. "
+        "Core Tracker and Timer features are private by default and unaffected."
+    ),
+    "social_subjects_title": "My Subjects",
+    "social_subjects_subtitle": "Domain objects you can share with others through Platform Social.",
+    "social_subjects_empty": "No subjects registered yet.",
+    "social_subjects_empty_hint": (
+        "Subjects are created when you share a tracker activity "
+        "or timer session through an adapter."
+    ),
+    "social_subjects_created": "Registered",
+    "social_subjects_adapters": "Available Adapters",
+    "social_subjects_no_adapters": "No domain adapters registered.",
 }

@@ -39,6 +39,7 @@ from app.models.task_inventory import ActivityInventoryRequirement, TaskInventor
 from app.models.task_location import ActivityLocationRequirement, TaskLocation, TaskLocationUsage  # noqa: F401
 from app.models.training import TrainingDay  # noqa: F401
 from app.models.user import User  # noqa: F401
+from app.platform.social.models import SocialConsent, SocialProfile, SocialSubject  # noqa: F401
 
 # Alembic Config object
 config = context.config

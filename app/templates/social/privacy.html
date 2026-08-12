@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.social_privacy_title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8 space-y-6 text-gray-900 dark:text-white">
+  <h1 class="text-2xl font-bold">{{ t.social_privacy_title }}</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_privacy_last_updated }}</p>
+
+  <div class="prose dark:prose-invert max-w-none space-y-4 text-sm">
+    <h2 class="text-lg font-semibold">{{ t.social_privacy_s1_title }}</h2>
+    <p>{{ t.social_privacy_s1_body }}</p>
+
+    <h2 class="text-lg font-semibold">{{ t.social_privacy_s2_title }}</h2>
+    <p>{{ t.social_privacy_s2_body }}</p>
+
+    <h2 class="text-lg font-semibold">{{ t.social_privacy_s3_title }}</h2>
+    <p>{{ t.social_privacy_s3_body }}</p>
+
+    <h2 class="text-lg font-semibold">{{ t.social_privacy_s4_title }}</h2>
+    <p>{{ t.social_privacy_s4_body }}</p>
+
+    <h2 class="text-lg font-semibold">{{ t.social_privacy_s5_title }}</h2>
+    <p>{{ t.social_privacy_s5_body }}</p>
+  </div>
+
+  <p class="text-xs text-gray-400">{{ t.social_privacy_footer }}</p>
+</div>
+{% endblock %}

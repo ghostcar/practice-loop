@@ -143,6 +143,9 @@
                     <a href="/diets" class="{{ nav_class }}{{ nav_active if active_nav == 'diets' else nav_inactive }}"{% if active_nav == 'diets' %} aria-current="page"{% endif %}>{{ t.nav_diets }}</a>
                     <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }}"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ t.admin_title_page }}</a>
                     {% endif %}
+                    {% if composition and composition.social_operational %}
+                    <a href="/social/profile" class="{{ nav_class }}{{ nav_active if active_nav == 'social' else nav_inactive }}"{% if active_nav == 'social' %} aria-current="page"{% endif %}>{{ t.nav_social }}</a>
+                    {% endif %}
                     {% if composition and composition.timer_operational %}
                     <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>Timer</a>
                     {% endif %}
