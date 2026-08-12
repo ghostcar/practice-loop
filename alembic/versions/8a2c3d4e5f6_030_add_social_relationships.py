@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers
-revision: str = "030_add_social_relationships"
+revision: str = "8a2c3d4e5f6"
 down_revision: str | None = "5d1f9a8b2c3e"  # 029_add_social_foundation
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
