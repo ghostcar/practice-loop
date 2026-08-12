@@ -746,4 +746,12 @@ EN = {
 "locktimer_slots_closed": "Slots closed",
 "locktimer_tasks_done": "Tasks done",
 "locktimer_streak_weeks": "Week streak",
+    # Dashboard enhanced
+    "dashboard_view_all": "View all",
+    "dashboard_today_tasks": "Today's Tasks",
+    "dashboard_no_tasks": "No tasks scheduled for today",
+    "dashboard_no_diets": "No active diets",
+    "dashboard_no_training": "No training plans today",
+    "dashboard_meals_today": "meals logged today",
+    "dashboard_plans_today": "plans today",
 }

@@ -751,4 +751,12 @@ RU = {
 "locktimer_slots_closed": "Слотов закрыто",
 "locktimer_tasks_done": "Задач выполнено",
 "locktimer_streak_weeks": "Недель подряд",
+    # Dashboard enhanced
+    "dashboard_view_all": "Все",
+    "dashboard_today_tasks": "Задачи на сегодня",
+    "dashboard_no_tasks": "Нет задач на сегодня",
+    "dashboard_no_diets": "Нет активных диет",
+    "dashboard_no_training": "Нет планов тренировок",
+    "dashboard_meals_today": "приёмов пищи сегодня",
+    "dashboard_plans_today": "планов сегодня",
 }

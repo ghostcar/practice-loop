@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
@@ -19,8 +19,10 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.achievement import Achievement, UserAchievement
 from app.models.activity_log import ActivityLog
+from app.models.diet import Diet
 from app.models.notification import Notification
 from app.models.session import ActivitySession
+from app.models.training import TrainingDay
 from app.models.user import User
 from app.security import ensure_csrf_cookie
 from app.templates_setup import templates
@@ -45,7 +47,68 @@ async def dashboard(
     progress = await get_or_create_progress(db, user.id)
     level, xp_current, xp_next = xp_progress(progress.xp)
 
-    # Recent logs
+    # Today's scheduled tasks
+    today = datetime.now(UTC).date()
+    today_start = datetime(today.year, today.month, today.day, tzinfo=UTC)
+    today_end = today_start + timedelta(days=1)
+    today_tasks_result = await db.execute(
+        select(ActivityLog)
+        .where(
+            ActivityLog.user_id == user.id,
+            ActivityLog.scheduled_at >= today_start,
+            ActivityLog.scheduled_at < today_end,
+            ActivityLog.status.in_(["planned", "in_progress"]),
+        )
+        .order_by(ActivityLog.scheduled_at)
+        .limit(10)
+    )
+    today_tasks = list(today_tasks_result.scalars().all())
+
+    # Active diets summary
+    diets_result = await db.execute(
+        select(Diet).where(Diet.user_id == user.id, Diet.is_active.is_(True)).order_by(Diet.created_at).limit(3)
+    )
+    active_diets = list(diets_result.scalars().all())
+
+    # Today's training plans
+    training_result = await db.execute(
+        select(TrainingDay).where(
+            TrainingDay.user_id == user.id,
+            TrainingDay.target_date == today,
+        ).order_by(TrainingDay.created_at).limit(3)
+    )
+    today_training = list(training_result.scalars().all())
+    # Get task counts for today's training
+    training_task_counts: dict = {}
+    if today_training:
+        td_ids = [td.id for td in today_training]
+
+        counts_result = await db.execute(
+            select(
+                ActivityLog.training_day_id,                func.count(ActivityLog.id),
+                    func.sum(case((ActivityLog.status == "completed", 1), else_=0)),
+            )
+            .where(ActivityLog.training_day_id.in_(td_ids))
+            .group_by(ActivityLog.training_day_id)
+        )
+        for row in counts_result:
+            training_task_counts[str(row[0])] = {"total": row[1] or 0, "completed": row[2] or 0}
+
+    # Today's calendar schedule (reuse existing call)
+    from app.api.calendar import get_day_schedule
+
+    today_schedule = await get_day_schedule(db, user.id, today)
+
+    # Today's diet consumption count
+    from app.models.diet import DietConsumption
+
+    consumption_count_result = await db.execute(
+        select(func.count(DietConsumption.id)).where(
+            DietConsumption.user_id == user.id,
+            DietConsumption.consumed_date == today,
+        )
+    )
+    today_meals = consumption_count_result.scalar() or 0
     result = await db.execute(
         select(ActivityLog).where(ActivityLog.user_id == user.id).order_by(ActivityLog.created_at.desc()).limit(5)
     )
@@ -120,6 +183,12 @@ async def dashboard(
             "locktimer_session": locktimer_session,
             "locktimer_slots_count": locktimer_slots_count,
             "locktimer_tasks_count": locktimer_tasks_count,
+            "today_tasks": today_tasks,
+            "active_diets": active_diets,
+            "today_training": today_training,
+            "training_task_counts": training_task_counts,
+            "today_schedule": today_schedule,
+            "today_meals": today_meals,
         },
     )
     # Set CSRF cookie ONLY if absent — re-issuing it here after render used to

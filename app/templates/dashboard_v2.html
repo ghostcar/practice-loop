@@ -112,6 +112,138 @@
         <div class="mt-3 h-8"><canvas id="xp-sparkline"></canvas></div>
     </div>
 
+    <!-- Quick actions row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <a href="/tasks/" class="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl p-3 flex items-center gap-2 hover:border-indigo-400 transition-colors group">
+            <span class="text-lg group-hover:scale-110 transition-transform">🎯</span>
+            <div>
+                <div class="text-sm font-medium text-indigo-700 dark:text-indigo-300">{{ t.tasks_btn_generate_llm or "Generate Task" }}</div>
+                <div class="text-xs text-indigo-400">{{ t.tasks_section_generate }}</div>
+            </div>
+        </a>
+        <a href="/locktimer" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-center gap-2 hover:border-amber-400 transition-colors group">
+            <span class="text-lg group-hover:scale-110 transition-transform">⏱️</span>
+            <div>
+                <div class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ t.nav_timer or "Timer" }}</div>
+                <div class="text-xs text-amber-400">{{ t.locktimer_title or "LockTimer" }}</div>
+            </div>
+        </a>
+        <a href="/diets" class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-center gap-2 hover:border-emerald-400 transition-colors group">
+            <span class="text-lg group-hover:scale-110 transition-transform">🥗</span>
+            <div>
+                <div class="text-sm font-medium text-emerald-700 dark:text-emerald-300">{{ t.nav_diets or "Diets" }}</div>
+                <div class="text-xs text-emerald-400">{{ today_meals }} {{ t.dashboard_meals_today or "meals today" }}</div>
+            </div>
+        </a>
+        <a href="/training" class="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-3 flex items-center gap-2 hover:border-purple-400 transition-colors group">
+            <span class="text-lg group-hover:scale-110 transition-transform">🏋️</span>
+            <div>
+                <div class="text-sm font-medium text-purple-700 dark:text-purple-300">{{ t.nav_training or "Training" }}</div>
+                <div class="text-xs text-purple-400">{{ today_training | length }} {{ t.dashboard_plans_today or "plans today" }}</div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Today: schedule + diets + training combined -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Today's tasks -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">📋 {{ t.dashboard_today_tasks or "Today's Tasks" }}</h2>
+                <a href="/tasks/" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+            </div>
+            {% if today_tasks %}
+            <div class="space-y-2">
+                {% for task in today_tasks %}
+                <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0
+                            {% if task.status == 'in_progress' %}bg-blue-500 animate-pulse
+                            {% else %}bg-amber-400{% endif %}"></span>
+                        <span class="text-sm text-slate-700 dark:text-slate-300 truncate">{{ task.title_override or task.selected_entity_name or '(task)' }}</span>
+                    </div>
+                    <span class="text-xs text-slate-400 flex-shrink-0 ml-2">{{ task.scheduled_at.strftime('%H:%M') if task.scheduled_at else '' }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-3">{{ t.dashboard_no_tasks or "No tasks scheduled for today" }}</p>
+            <div class="text-center mt-1">
+                <a href="/tasks/" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_generate_task or "Generate a task" }}</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Active diets -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">🥗 {{ t.nav_diets or "Diets" }}</h2>
+                <a href="/diets" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+            </div>
+            {% if active_diets %}
+            <div class="space-y-2">
+                {% for diet in active_diets %}
+                <div class="py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ diet.name }}</span>
+                        {% if diet.last_evaluation and diet.last_evaluation.score is defined %}
+                        <span class="text-xs px-1.5 py-0.5 rounded-full
+                            {% if diet.last_evaluation.score >= 80 %}bg-emerald-100 text-emerald-700
+                            {% elif diet.last_evaluation.score >= 50 %}bg-amber-100 text-amber-700
+                            {% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ diet.last_evaluation.score }}%
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if diet.direction %}<p class="text-xs text-slate-400 mt-0.5">{{ diet.direction }}</p>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-3">{{ t.dashboard_no_diets or "No active diets" }}</p>
+            {% endif %}
+            <div class="text-xs text-slate-400 text-center mt-1">{{ today_meals }} {{ t.dashboard_meals_today or "meals logged today" }}</div>
+        </div>
+
+        <!-- Today's training -->
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">🏋️ {{ t.nav_training or "Training" }}</h2>
+                <a href="/training" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+            </div>
+            {% if today_training %}
+            <div class="space-y-2">
+                {% for td in today_training[:3] %}
+                {% set tcounts = training_task_counts.get(td.id | string, {}) %}
+                <div class="py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ td.name or 'Plan ' + (td.id | string)[:8] }}</span>
+                        <span class="text-xs px-1.5 py-0.5 rounded-full
+                            {% if td.status == 'active' %}bg-blue-100 text-blue-700
+                            {% elif td.status == 'analyzed' %}bg-purple-100 text-purple-700
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {% if td.status == 'active' %}⏳ Active
+                            {% elif td.status == 'analyzed' %}✅ Done
+                            {% else %}{{ td.status }}{% endif %}
+                        </span>
+                    </div>
+                    {% if tcounts %}
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 rounded-full" style="width: {{ (tcounts.completed / max(tcounts.total, 1) * 100) | int }}%"></div>
+                        </div>
+                        <span class="text-[10px] text-slate-400">{{ tcounts.completed }}/{{ tcounts.total }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-3">{{ t.dashboard_no_training or "No training plans today" }}</p>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- LockTimer active session card -->
     {% if locktimer_session %}
     <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5 space-y-3">
