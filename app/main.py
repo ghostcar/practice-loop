@@ -102,7 +102,7 @@ async def csrf_middleware(request: Request, call_next):
         request.url.path.startswith("/static")
         or request.url.path.startswith("/uploads")
         or request.url.path == "/healthz"
-        or request.url.path.startswith("/api/v1/platform")  # readonly discovery
+        or request.url.path.startswith("/api/v2/platform")  # readonly discovery
     ):
         return await call_next(request)
     try:

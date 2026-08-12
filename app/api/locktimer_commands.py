@@ -66,7 +66,7 @@ from app.models.locktimer import (
 )
 from app.models.user import User
 
-router = APIRouter(prefix="/api/v1/locktimer", tags=["locktimer-commands"])
+router = APIRouter(prefix="/api/v2/locktimer", tags=["locktimer-commands"])
 
 
 def _now() -> datetime:

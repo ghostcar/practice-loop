@@ -1,9 +1,9 @@
 """LockTimer LLM proposals API — C7.
 
-POST /api/v1/locktimer/sessions/{id}/proposals — generate LLM proposal
-GET  /api/v1/locktimer/proposals/{id}            — get proposal
-POST /api/v1/locktimer/proposals/{id}/items/{item_id}/apply  — apply item
-POST /api/v1/locktimer/proposals/{id}/items/{item_id}/reject — reject item
+POST /api/v2/locktimer/sessions/{id}/proposals — generate LLM proposal
+GET  /api/v2/locktimer/proposals/{id}            — get proposal
+POST /api/v2/locktimer/proposals/{id}/items/{item_id}/apply  — apply item
+POST /api/v2/locktimer/proposals/{id}/items/{item_id}/reject — reject item
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/locktimer", tags=["locktimer-proposals"])
+router = APIRouter(prefix="/api/v2/locktimer", tags=["locktimer-proposals"])
 
 
 # ---------------------------------------------------------------------------

@@ -175,7 +175,7 @@ class TestMediaApi:
             b"\xff\xd9"
         )
         files = {"file": ("test.jpg", io.BytesIO(data), "image/jpeg")}
-        response = await auth_client.post("/api/v1/media?owner_type=general", files=files)
+        response = await auth_client.post("/api/v2/media?owner_type=general", files=files)
         assert response.status_code == 200
         body = response.json()
         assert body["state"] == "staged"
@@ -184,16 +184,16 @@ class TestMediaApi:
 
     async def test_upload_rejects_bad_mime(self, auth_client) -> None:
         files = {"file": ("test.txt", io.BytesIO(b"hello"), "text/plain")}
-        response = await auth_client.post("/api/v1/media?owner_type=general", files=files)
+        response = await auth_client.post("/api/v2/media?owner_type=general", files=files)
         assert response.status_code == 400
 
     async def test_list_media(self, auth_client, test_user: User) -> None:
-        response = await auth_client.get("/api/v1/media")
+        response = await auth_client.get("/api/v2/media")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
     async def test_media_requires_auth(self, async_client) -> None:
-        response = await async_client.get("/api/v1/media")
+        response = await async_client.get("/api/v2/media")
         assert response.status_code in (401, 403)
 
     async def test_delete_staged(self, auth_client, db_session: AsyncSession, test_user: User) -> None:
@@ -209,7 +209,7 @@ class TestMediaApi:
         await db_session.commit()
         await db_session.refresh(asset)
 
-        response = await auth_client.delete(f"/api/v1/media/{asset.id}")
+        response = await auth_client.delete(f"/api/v2/media/{asset.id}")
         assert response.status_code == 200
         assert response.json()["status"] == "deleted"
 
@@ -221,7 +221,7 @@ class TestVerificationApi:
     async def test_create_and_verify_challenge(self, auth_client) -> None:
         ref_id = str(uuid.uuid4())
         response = await auth_client.post(
-            "/api/v1/verification/challenges",
+            "/api/v2/verification/challenges",
             json={"owner_type": "lock_session", "owner_ref_id": ref_id},
         )
         assert response.status_code == 200
@@ -232,7 +232,7 @@ class TestVerificationApi:
 
         # Verify with correct code
         verify_resp = await auth_client.post(
-            f"/api/v1/verification/challenges/{challenge_id}/verify",
+            f"/api/v2/verification/challenges/{challenge_id}/verify",
             json={"code": body["code"]},
         )
         assert verify_resp.status_code == 200
@@ -240,7 +240,7 @@ class TestVerificationApi:
 
         # Re-verify should fail (already consumed)
         verify_resp2 = await auth_client.post(
-            f"/api/v1/verification/challenges/{challenge_id}/verify",
+            f"/api/v2/verification/challenges/{challenge_id}/verify",
             json={"code": body["code"]},
         )
         assert verify_resp2.status_code == 409
@@ -248,14 +248,14 @@ class TestVerificationApi:
     async def test_verify_wrong_code(self, auth_client) -> None:
         ref_id = str(uuid.uuid4())
         response = await auth_client.post(
-            "/api/v1/verification/challenges",
+            "/api/v2/verification/challenges",
             json={"owner_type": "lock_session", "owner_ref_id": ref_id},
         )
         challenge_id = response.json()["id"]
 
         # Wrong code — different char set, should fail
         verify_resp = await auth_client.post(
-            f"/api/v1/verification/challenges/{challenge_id}/verify",
+            f"/api/v2/verification/challenges/{challenge_id}/verify",
             json={"code": "0000000"},
         )
         assert verify_resp.status_code == 403
@@ -263,39 +263,39 @@ class TestVerificationApi:
     async def test_status_endpoint_never_returns_code(self, auth_client) -> None:
         ref_id = str(uuid.uuid4())
         create_resp = await auth_client.post(
-            "/api/v1/verification/challenges",
+            "/api/v2/verification/challenges",
             json={"owner_type": "lock_session", "owner_ref_id": ref_id},
         )
         challenge_id = create_resp.json()["id"]
 
-        status_resp = await auth_client.get(f"/api/v1/verification/challenges/{challenge_id}")
+        status_resp = await auth_client.get(f"/api/v2/verification/challenges/{challenge_id}")
         assert status_resp.status_code == 200
         assert "code" not in status_resp.json()
         assert status_resp.json()["state"] == "active"
 
     async def test_cross_user_challenge_not_found(self, auth_client) -> None:
         random_id = str(uuid.uuid4())
-        response = await auth_client.get(f"/api/v1/verification/challenges/{random_id}")
+        response = await auth_client.get(f"/api/v2/verification/challenges/{random_id}")
         assert response.status_code == 404
 
     async def test_new_challenge_invalidates_previous(self, auth_client) -> None:
         ref_id = str(uuid.uuid4())
         c1 = await auth_client.post(
-            "/api/v1/verification/challenges",
+            "/api/v2/verification/challenges",
             json={"owner_type": "lock_session", "owner_ref_id": ref_id},
         )
         c1_id = c1.json()["id"]
 
         c2 = await auth_client.post(
-            "/api/v1/verification/challenges",
+            "/api/v2/verification/challenges",
             json={"owner_type": "lock_session", "owner_ref_id": ref_id},
         )
         c2_id = c2.json()["id"]
 
         # First challenge should be expired
-        status = await auth_client.get(f"/api/v1/verification/challenges/{c1_id}")
+        status = await auth_client.get(f"/api/v2/verification/challenges/{c1_id}")
         assert status.json()["state"] == "expired"
 
         # Second should be active
-        status2 = await auth_client.get(f"/api/v1/verification/challenges/{c2_id}")
+        status2 = await auth_client.get(f"/api/v2/verification/challenges/{c2_id}")
         assert status2.json()["state"] == "active"

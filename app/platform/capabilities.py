@@ -1,6 +1,6 @@
-"""GET /api/v1/platform/capabilities — versioned discovery endpoint (03A §4, 06 §1).
+"""GET /api/v2/platform/capabilities — versioned discovery endpoint (03A §4, 06 §1).
 
-GET /api/v1/platform/readiness — DB + health check."""
+GET /api/v2/platform/readiness — DB + health check."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from fastapi import APIRouter
 
 from app.platform.composition import get_composition
 
-router = APIRouter(prefix="/api/v1/platform", tags=["platform"])
+router = APIRouter(prefix="/api/v2/platform", tags=["platform"])
 
 
 @router.get("/capabilities")

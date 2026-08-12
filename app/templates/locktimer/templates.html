@@ -33,11 +33,11 @@
           </div>
         </div>
         <div class="flex gap-2 flex-shrink-0">
-          <form action="/api/v1/locktimer/templates/{{ tmpl.id }}/instantiate" method="post">
+          <form action="/api/v2/locktimer/templates/{{ tmpl.id }}/instantiate" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs hover:bg-indigo-700 transition cursor-pointer">+ {{ t.locktimer_use or "Use" }}</button>
           </form>
-          <form action="/api/v1/locktimer/templates/{{ tmpl.id }}/archive" method="post" onsubmit="return confirm('Archive this template?')">
+          <form action="/api/v2/locktimer/templates/{{ tmpl.id }}/archive" method="post" onsubmit="return confirm('Archive this template?')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-3 py-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs transition cursor-pointer">{{ t.locktimer_archive or "Archive" }}</button>
           </form>
@@ -106,7 +106,7 @@
       var formData = new URLSearchParams();
       formData.append('csrf_token', csrfValue);
       formData.append('template_ids', ordered.join(','));
-      fetch('/api/v1/locktimer/templates/reorder', {
+      fetch('/api/v2/locktimer/templates/reorder', {
         method: 'POST',
         headers: { 'X-CSRF-Token': csrfValue, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData.toString()

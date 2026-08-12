@@ -31,7 +31,7 @@
 | 4 | `app/api/points_v2.py` | 940 | ✅ Session 85 — api/points/: helpers(18, `_get_progress`), config(52), balance(82), profiles(83), redemptions(113), schedule(72), measurements(92), inventory(179, 8 эндпоинтов + `_ReorderPayload`), charts(228, 5 chart-эндпоинтов), pages(75, 4 HTML); __init__.py → агрегатор (prefix на агрегаторе, суб-роутеры без) — идентично шагу 3. 598/598 ✅, ruff ✅ |
 | 5 | `app/platform/social/repositories.py` | 1070 | ✅ Session 86 — social/repositories/: profile(64), consent(38), subjects(67), relationships(254), notifications(56), publications(130), verification(140), comments(95), moderation(192). __init__.py — явный ре-экспорт 52 имён. 598/598 ✅, ruff ✅ |
 | 6 | `app/platform/social/api.py` | 1011 | ✅ Session 87 — social/api/: profile(136, 7), subjects(59, 2), relationships(317, 11), feed(131, 3), verification(95, 3), comments(84, 4), moderation(199, 5). __init__.py — prefix="/social" + include_router. 598/598 ✅, ruff ✅ |
-| 7 | `app/llm/pipeline.py` | 953 | пакет `llm/`: `generate.py` (task/weekly/active config), `training.py` (daily plan/analysis), `diet.py` (diet/evaluate/synergy) | Средний — LLM-флоу |
+| 7 | `app/llm/pipeline.py` | 953 | ✅ Session 88 — llm/pipeline/: generate(369), training(252), diet(355). __init__.py — ре-экспорт + shim. 581/581 ✅, ruff ✅ |
 
 ## Метод выполнения шага (checklist)
 

@@ -1,8 +1,8 @@
 """Verification challenge API — platform-level, not OCR-dependent.
 
-POST   /api/v1/verification/challenges            — create a challenge
-POST   /api/v1/verification/challenges/{id}/verify — verify a code
-GET    /api/v1/verification/challenges/{id}         — status (code never returned)
+POST   /api/v2/verification/challenges            — create a challenge
+POST   /api/v2/verification/challenges/{id}/verify — verify a code
+GET    /api/v2/verification/challenges/{id}         — status (code never returned)
 
 OCR support deferred for future iteration.
 """
@@ -27,7 +27,7 @@ from app.services.media import (
     verify_code_constant_time,
 )
 
-router = APIRouter(prefix="/api/v1/verification", tags=["verification"])
+router = APIRouter(prefix="/api/v2/verification", tags=["verification"])
 
 DEFAULT_TTL_MINUTES = 10
 DEFAULT_CODE_LENGTH = 7

@@ -49,14 +49,14 @@ class TestTimerStandalone:
         """Verify key timer API endpoints respond (not 405 — route exists)."""
         # JSON API tag violations — may return 404 for nonexistent session
         resp = await auth_client.get(
-            "/api/v1/locktimer/tag-violations/00000000-0000-0000-0000-000000000000",
+            "/api/v2/locktimer/tag-violations/00000000-0000-0000-0000-000000000000",
         )
         # 404 = session not found (route exists), 405 = method not allowed
         assert resp.status_code != 405, f"Route not found: {resp.status_code}"
 
     async def test_timer_capabilities_endpoint(self, auth_client: AsyncClient) -> None:
-        """GET /api/v1/platform/capabilities — timer is listed as enabled module."""
-        resp = await auth_client.get("/api/v1/platform/capabilities")
+        """GET /api/v2/platform/capabilities — timer is listed as enabled module."""
+        resp = await auth_client.get("/api/v2/platform/capabilities")
         assert resp.status_code == 200
         data = resp.json()
         assert "enabled_modules" in data or "social_stage" in data

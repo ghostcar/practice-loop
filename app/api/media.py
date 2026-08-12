@@ -1,11 +1,11 @@
 """Universal media API — platform-level, not Timer-specific.
 
-POST   /api/v1/media                  — staged upload
-POST   /api/v1/media/{id}/finalize    — staged → ready (bind to owner_ref)
-GET    /api/v1/media/{id}             — authorized stream
-GET    /api/v1/media/{id}/thumbnail   — authorized thumbnail
-DELETE /api/v1/media/{id}             — owner-only delete (staged only)
-GET    /api/v1/media                  — list user's media (paginated)
+POST   /api/v2/media                  — staged upload
+POST   /api/v2/media/{id}/finalize    — staged → ready (bind to owner_ref)
+GET    /api/v2/media/{id}             — authorized stream
+GET    /api/v2/media/{id}/thumbnail   — authorized thumbnail
+DELETE /api/v2/media/{id}             — owner-only delete (staged only)
+GET    /api/v2/media                  — list user's media (paginated)
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from app.models.media import MediaAsset
 from app.models.user import User
 from app.services.media import delete_media_file, save_media
 
-router = APIRouter(prefix="/api/v1/media", tags=["media"])
+router = APIRouter(prefix="/api/v2/media", tags=["media"])
 
 # Allowlist: owner types that can bind media assets.
 ALLOWED_OWNER_TYPES = {

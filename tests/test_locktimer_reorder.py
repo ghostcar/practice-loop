@@ -266,7 +266,7 @@ class TestReorderApi:
     async def test_reorder_slot_rules_api(self, db_session: AsyncSession, auth_client, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         resp = await auth_client.post(
-            f"/api/v1/locktimer/sessions/{session.id}/slot-rules/reorder",
+            f"/api/v2/locktimer/sessions/{session.id}/slot-rules/reorder",
             data={"rule_ids": ",".join(str(r) for r in reversed(rule_ids))},
             follow_redirects=False,
         )
@@ -289,7 +289,7 @@ class TestReorderApi:
             task_ids.append(rule.id)
 
         resp = await auth_client.post(
-            f"/api/v1/locktimer/sessions/{session.id}/task-rules/reorder",
+            f"/api/v2/locktimer/sessions/{session.id}/task-rules/reorder",
             data={"rule_ids": ",".join(str(r) for r in reversed(task_ids))},
             follow_redirects=False,
         )
@@ -302,7 +302,7 @@ class TestReorderApi:
     ) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         resp = await auth_client.post(
-            f"/api/v1/locktimer/sessions/{session.id}/slot-rules/reorder",
+            f"/api/v2/locktimer/sessions/{session.id}/slot-rules/reorder",
             data={"rule_ids": str(rule_ids[0])},  # incomplete
             follow_redirects=False,
         )
@@ -314,7 +314,7 @@ class TestReorderApi:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
         resp = await auth_client.post(
-            f"/api/v1/locktimer/sessions/{session.id}/slot-rules/reorder",
+            f"/api/v2/locktimer/sessions/{session.id}/slot-rules/reorder",
             data={"rule_ids": ",".join(str(r) for r in reversed(rule_ids))},
             follow_redirects=False,
         )
@@ -329,7 +329,7 @@ class TestReorderApi:
         t2 = await save_template(db_session, session_id=session2.id, owner_id=test_user.id, name="B")
 
         resp = await auth_client.post(
-            "/api/v1/locktimer/templates/reorder",
+            "/api/v2/locktimer/templates/reorder",
             data={"template_ids": f"{t2.id},{t1.id}"},
             follow_redirects=False,
         )
@@ -346,7 +346,7 @@ class TestReorderApi:
         await save_template(db_session, session_id=session2.id, owner_id=test_user.id, name="B")
 
         resp = await auth_client.post(
-            "/api/v1/locktimer/templates/reorder",
+            "/api/v2/locktimer/templates/reorder",
             data={"template_ids": str(t1.id)},  # missing second template
             follow_redirects=False,
         )

@@ -32,7 +32,7 @@
       <button onclick="validateSession('{{ session.id }}')" class="px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium transition cursor-pointer">
         🔍 {{ t.locktimer_validate or "Validate" }}
       </button>
-      <form action="/api/v1/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this lock session? Rules will be frozen.')">
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this lock session? Rules will be frozen.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition cursor-pointer">
           ▶ {{ t.locktimer_start or "Start" }}
@@ -41,13 +41,13 @@
       {% endif %}
 
       {% if session.state == 'active' %}
-      <form action="/api/v1/locktimer/sessions/{{ session.id }}/extend-horizon" method="post">
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/extend-horizon" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button type="submit" class="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-medium transition cursor-pointer">
           + {{ t.locktimer_extend or "Extend horizon" }}
         </button>
       </form>
-      <form action="/api/v1/locktimer/sessions/{{ session.id }}/safety-stop" method="post" onsubmit="return confirm('Safety stop? Future occurrences will be cancelled. This cannot be undone.')">
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/safety-stop" method="post" onsubmit="return confirm('Safety stop? Future occurrences will be cancelled. This cannot be undone.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <input type="hidden" name="reason_code" value="user_requested">
         <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition cursor-pointer">
@@ -77,7 +77,7 @@
   <!-- Draft: save as template -->
   <details class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
     <summary class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">💾 {{ t.locktimer_save_template or "Save as Template" }}</summary>
-    <form action="/api/v1/locktimer/sessions/{{ session.id }}/save-template" method="post" class="mt-3 flex gap-2">
+    <form action="/api/v2/locktimer/sessions/{{ session.id }}/save-template" method="post" class="mt-3 flex gap-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <input name="name" placeholder="Template name" required class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
       <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm cursor-pointer">Save</button>
@@ -85,7 +85,7 @@
   </details>
 
   <!-- Draft: quick metadata edit -->
-  <form action="/api/v1/locktimer/sessions/{{ session.id }}/update" method="post" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+  <form action="/api/v2/locktimer/sessions/{{ session.id }}/update" method="post" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">⚙️ {{ t.locktimer_settings or "Settings" }}</h3>
     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -111,7 +111,7 @@
   <!-- Draft: add slot rule -->
   <details class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 group">
     <summary class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">+ {{ t.locktimer_add_slot_rule or "Add Slot Rule" }}</summary>
-    <form action="/api/v1/locktimer/sessions/{{ session.id }}/slot-rules" method="post" class="mt-3 space-y-3">
+    <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules" method="post" class="mt-3 space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input name="name" placeholder="Unlock window name (e.g. Morning unlock)" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2" required>
@@ -142,7 +142,7 @@
   <!-- Draft: add task rule -->
   <details class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 group">
     <summary class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">+ {{ t.locktimer_add_task_rule or "Add Task Rule" }}</summary>
-    <form action="/api/v1/locktimer/sessions/{{ session.id }}/task-rules" method="post" class="mt-3 space-y-3">
+    <form action="/api/v2/locktimer/sessions/{{ session.id }}/task-rules" method="post" class="mt-3 space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input name="title" placeholder="Task title" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2" required>
@@ -190,7 +190,7 @@
           <span class="ml-1 text-gray-500 dark:text-gray-400">{{ r.duration_seconds }}s</span>
         </div>
         {% if session.state == 'draft' %}
-        <form action="/api/v1/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <button type="submit" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">✕</button>
         </form>
@@ -220,7 +220,7 @@
           <span class="ml-1 text-gray-500 dark:text-gray-400">{{ r.due_window_seconds }}s</span>
         </div>
         {% if session.state == 'draft' %}
-        <form action="/api/v1/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <button type="submit" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">✕</button>
         </form>
@@ -252,13 +252,13 @@
           {% if o.close_due_at %}<span class="text-xs text-gray-400 hidden sm:inline">due {{ o.close_due_at[:19] }}</span>{% endif %}
         </div>
         {% if session.state == 'active' and o.state in ('pending', 'eligible') %}
-        <form action="/api/v1/locktimer/slot-occurrences/{{ o.id }}/open" method="post" class="flex-shrink-0">
+        <form action="/api/v2/locktimer/slot-occurrences/{{ o.id }}/open" method="post" class="flex-shrink-0">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer">Unlock</button>
         </form>
         {% elif session.state == 'active' and o.state == 'open' %}
         <div class="flex items-center gap-1 flex-shrink-0">
-          <form action="/api/v1/locktimer/slot-occurrences/{{ o.id }}/close" method="post" class="flex items-center gap-1">
+          <form action="/api/v2/locktimer/slot-occurrences/{{ o.id }}/close" method="post" class="flex items-center gap-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <input type="text" name="tag_number" placeholder="{{ t.locktimer_tag_number or 'Seal #' }}" maxlength="100" class="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
             <button type="submit" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">Lock</button>
@@ -309,19 +309,19 @@
         {% if session.state == 'active' %}
         <div class="flex gap-1 flex-shrink-0">
           {% if o.state == 'scheduled' and not o.content_visible %}
-          <form action="/api/v1/locktimer/task-occurrences/{{ o.id }}/reveal" method="post">
+          <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/reveal" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-2 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 transition cursor-pointer">Reveal</button>
           </form>
           {% endif %}
           {% if o.state in ('visible', 'submitted') %}
-          <form action="/api/v1/locktimer/task-occurrences/{{ o.id }}/complete" method="post">
+          <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/complete" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer">✓ Done</button>
           </form>
           {% endif %}
           {% if o.state in ('scheduled', 'visible') %}
-          <form action="/api/v1/locktimer/task-occurrences/{{ o.id }}/skip" method="post" onsubmit="return confirm('Skip this task? Penalty may apply.')">
+          <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/skip" method="post" onsubmit="return confirm('Skip this task? Penalty may apply.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition cursor-pointer">Skip</button>
           </form>
@@ -398,7 +398,7 @@
 // Validate session
 function validateSession(sessionId) {
   var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-  fetch('/api/v1/locktimer/sessions/' + sessionId + '/validate', {
+  fetch('/api/v2/locktimer/sessions/' + sessionId + '/validate', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'csrf_token=' + encodeURIComponent(csrf)
@@ -436,7 +436,7 @@ function verifyTag(occId, expectedTag) {
   if (!provided) return;
   var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   var body = 'csrf_token=' + encodeURIComponent(csrf) + '&tag_number=' + encodeURIComponent(provided);
-  fetch('/api/v1/locktimer/slot-occurrences/' + occId + '/verify-tag', {
+  fetch('/api/v2/locktimer/slot-occurrences/' + occId + '/verify-tag', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body
@@ -510,7 +510,7 @@ function verifyTag(occId, expectedTag) {
         var formData = new URLSearchParams();
         formData.append('csrf_token', csrfValue);
         formData.append('rule_ids', ordered.join(','));
-        fetch('/api/v1/locktimer/sessions/' + sessionId + '/' + kind + '-rules/reorder', {
+        fetch('/api/v2/locktimer/sessions/' + sessionId + '/' + kind + '-rules/reorder', {
           method: 'POST',
           headers: { 'X-CSRF-Token': csrfValue, 'Content-Type': 'application/x-www-form-urlencoded' },
           body: formData.toString()
