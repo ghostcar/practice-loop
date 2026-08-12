@@ -1,3 +1,9 @@
+## 2026-08-12 — Сессия 88 (Финал рефакторинга + API v1→v2)
+
+- **Шаг 7**: pipeline.py (953) → llm/pipeline/{generate(369), training(252), diet(355)}. __init__.py — ре-экспорт + backward-compat shims (call_llm, build_context, get_allowed_ids). 581/581 ✅.
+- **API v1→v2**: 67 замен в 11 файлах (app: media/locktimer_commands/locktimer_proposals/verification/capabilities/main.py; templates: locktimer/session_detail+ templates; tests: 3 файла). Все роуты под /api/v2.
+- **REFACTORING.md — ВСЕ 7 ШАГОВ ЗАВЕРШЕНЫ** ✅: execution(1409→525), import_data(988→486), references(817→пакет), points_v2(940→пакет), repositories(1070→пакет), api(1011→пакет), pipeline(953→пакет).
+
 ## 2026-08-12 — Сессия 87 (Рефакторинг, шаг 6: api.py → пакет social/api/)
 
 - **Сплит** api.py (1011 строк, 25 роутов): 7 суб-роутеров — profile(136, 7: profile+consent+privacy+`_check_social_access`+`CURRENT_CONSENT_VERSION`), subjects(59, 2), relationships(317, 11: invites+blocks+grants+notifications), feed(131, 3: feed+publish+withdraw), verification(95, 3), comments(84, 4), moderation(199, 5: reports+actions+`_check_moderator`). __init__.py — агрегатор (prefix="/social", include_router).
