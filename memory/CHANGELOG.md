@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-12 | Session 89 — Фикс LLM-тестов | **17 тестов после S88-сплита**: late-binding call_llm/build_context/get_allowed_ids через source-модули (generate/training/diet), ре-экспорт filter_automation_eligible, репойнт 21 patch-таргета. **598/598 ✅** |
 | 2026-08-12 | Session 75+76 — Social S4-S7 + Q12 | **Social complete**: S4 verification+comments (5 tables, 8 endpoints, /social/verification), S5 moderation (reports+queue+immutable audit, /social/moderation), S6 Tracker adapter (14 proto methods), S7 hardening (11 concurrency+11 privacy audit tests, pre_deploy_check §8, DEPLOY_VPS §15), S3 publications/feed; FUNCTIONAL.md §17 expanded + PRODUCT.md updated; Q12 closed (tag audit UI + timer smoke test); **567/567 ✅** |
 
 | 2026-08-12 | Session 74 — Social S2 | **Relationships & Grants**: social_relationships (invitation lifecycle pending→accepted/declined/expired/revoked, display_role presets, cooldown), social_blocks (cross-product, unique pair), social_grants (subject/module/global scope, caps JSON, propose→accept/revoke), social_notifications (9 types, outbox); migration 030 (4 таблицы); API 14 эндпоинтов (invite/accept/decline/revoke, block/unblock, grant CRUD, notification read); /social/relationships page (pending+active+blocks+notif); +13 i18n keys EN/RU; fix 029 revision to hash convention; 538/538 ✅, deployed |

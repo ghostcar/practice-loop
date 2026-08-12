@@ -1,3 +1,11 @@
+## 2026-08-12 — Сессия 89 (Фикс 17 LLM-тестов после сплита pipeline)
+
+- **Корень**: НЕ cryptography/fernet на Py3.13 (ошибочный диагноз из S88). Причина — S88-сплит сломал monkeypatch: суб-модули делали `from app.llm.client import call_llm` (связывание на import-тайме), поэтому patch `app.llm.pipeline.call_llm` (и `app.llm.client.call_llm`) не доходил до вызовов → тесты уходили в реальный HTTP (`APIConnectionError`).
+- **Фикс**: late-binding в generate/training/diet — `from app.llm import client, context_builder, validator` + вызовы `client.call_llm(...)` / `context_builder.build_context(...)` / `validator.get_allowed_ids(...)` на call-тайме.
+- **__init__.py**: добавлен ре-экспорт `filter_automation_eligible` (его импортирует тест), удалены 3 мёртвых shim-ре-экспорта (call_llm/build_context/get_allowed_ids), поправлен docstring.
+- **Тесты**: 21 patch-таргет переведён на source-модули (app.llm.client.call_llm / app.llm.context_builder.build_context / app.llm.validator.get_allowed_ids) в 3 файлах.
+- **Проверки**: 598/598 ✅, ruff clean.
+
 ## 2026-08-12 — Сессия 88 (Финал рефакторинга + API v1→v2)
 
 - **Шаг 7**: pipeline.py (953) → llm/pipeline/{generate(369), training(252), diet(355)}. __init__.py — ре-экспорт + backward-compat shims (call_llm, build_context, get_allowed_ids). 581/581 ✅.
