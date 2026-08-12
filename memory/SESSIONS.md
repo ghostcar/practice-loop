@@ -1,3 +1,12 @@
+## 2026-08-12 — Сессия 79 (Timer): drag&drop переупорядочивание шаблонов
+
+- **Данные**: миграция 035 — `sort_order` (INTEGER, NOT NULL, default 0) на `lock_timer_templates`.
+- **Репозитории**: оба `list_templates` (repositories.py + extras.py) сортируют по `(sort_order, updated_at.desc())`.
+- **Сервисы**: `save_template` добавляет новые шаблоны в конец списка (max+1); `reorder_templates` — точная валидация набора (empty/duplicate/foreign), archived-шаблоны исключены из обязательного набора.
+- **API**: `POST /api/v1/locktimer/templates/reorder` — `template_ids` (comma-separated), 400 на ошибки, 303 redirect.
+- **UI** (templates.html): нативный HTML5 drag&drop — ручка ⠿, draggable-карточки, подсветка ring, оптимистичный reorder + fetch, `location.reload()` при ошибке. Хинт переиспользует `locktimer_drag_hint`.
+- **Тесты**: +9 (6 service, 2 API, 1 UI) — всего 25 в test_locktimer_reorder.py. **592/592 ✅**, ruff ✅, задеплоено (миграция 035 применена).
+
 ## 2026-08-12 — Сессия 78 (Timer): drag&drop переупорядочивание слотов
 
 - **Данные**: миграция 034 — `sort_order` (INTEGER, NOT NULL, default 0) на `lock_slot_rules` и `lock_task_rules`. Модели LockSlotRule/LockTaskRule обновлены.

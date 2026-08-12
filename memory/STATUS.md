@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 78 — Timer drag&drop rule reordering).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 79 — Templates drag&drop reorder).
 
-## Общий статус: 583/583 тестов ✅, ruff ✅, format ✅
+## Общий статус: 592/592 тестов ✅, ruff ✅, format ✅
 
 ## LockTimer Core — C0–C9 полностью ✅
 
@@ -20,7 +20,8 @@
 - [x] **S70**: Interactive UI — commands API (start/safety-stop/slots/tasks), session detail buttons, dashboard quick links
 - [x] **S71**: Real-time countdown JS, validation (conflict check), extend horizon, templates CRUD
 - [x] **S72**: Numbered tags (close_tag_number, require_tag, verify-tag, lock_tag_violations, 20 tag mechanics tests)
-- [x] **S78**: Drag&drop rule reordering — sort_order (миграция 034), reorder_rules service (draft-only + audit), API /slot-rules/reorder + /task-rules/reorder, HTML5 DnD в session detail (16 тестов)
+- [x] **S78**: Drag&drop rule reordering
+- [x] **S79**: Template reordering — sort_order на lock_timer_templates (миграция 035), reorder_templates service, API /templates/reorder, HTML5 DnD в /locktimer/templates (+9 тестов) — sort_order (миграция 034), reorder_rules service (draft-only + audit), API /slot-rules/reorder + /task-rules/reorder, HTML5 DnD в session detail (16 тестов)
 
 
 ## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
