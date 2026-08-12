@@ -719,4 +719,13 @@ EN = {
     "social_report_reason": "Reason",
     "social_report_details_ph": "Details (optional)",
     "social_report_submit": "Submit report",
+    # Tag audit UI
+    "locktimer_tag_audit_title": "Tag Audit",
+    "locktimer_tag_audit_subtitle": "Verification violations for session",
+    "locktimer_tag_audit_empty": "No tag violations — all verifications passed.",
+    "locktimer_tag_mismatch": "Mismatch",
+    "locktimer_tag_missing": "Missing",
+    "locktimer_tag_expected": "Expected",
+    "locktimer_tag_provided": "Provided",
+    "locktimer_tag_audit_link": "Tag audit",
 }

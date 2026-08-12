@@ -25,7 +25,7 @@
 
 **Итог**: 419/419 тестов ✅, ruff ✅, PG15-валидации 022/023 ✅. Осталось отложенным только то, что зависит от открытия публичного доступа: оплата/тарифы (Q5) и рейт-лимиты (Q6).
 
-## Q12 — Deferred Timer UI pages (S72)
+## Q12 — Deferred Timer items ✅ (Session 76)
 
-- ⏸ **Tag audit UI**: страница аудита tag-нарушений (lock_tag_violations) в UI таймера — список violation'ов по сессии с expected/provided tag и временем.
-- ⏸ **Timer-only deploy smoke test**: поднять отдельный инстанс с `APP_PRODUCT_VARIANT=timer`, проверить что Tracker routes не регистрируются, Timer работает автономно.
+- ✅ **Tag audit UI**: страница `/locktimer/tag-violations/{session_id}` — список violation'ов по сессии с expected/provided tag, причиной и временем. API endpoint `/api/v1/locktimer/tag-violations/{session_id}` уже существовал, добавлен HTML-вариант. +8 i18n ключей EN/RU.
+- ✅ **Timer-only deploy smoke test**: `tests/test_timer_standalone.py` — 7 тестов (overview, new draft, templates, tag violations page, API endpoints, capabilities, route isolation). Проверяет что Timer работает без Tracker-зависимостей.

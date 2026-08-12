@@ -724,4 +724,13 @@ RU = {
     "social_report_reason": "Причина",
     "social_report_details_ph": "Подробности (опционально)",
     "social_report_submit": "Отправить жалобу",
+    # Tag audit UI
+    "locktimer_tag_audit_title": "Аудит бирок",
+    "locktimer_tag_audit_subtitle": "Нарушения верификации для сессии",
+    "locktimer_tag_audit_empty": "Нарушений бирок нет — все проверки пройдены.",
+    "locktimer_tag_mismatch": "Расхождение",
+    "locktimer_tag_missing": "Отсутствует",
+    "locktimer_tag_expected": "Ожидался",
+    "locktimer_tag_provided": "Предъявлен",
+    "locktimer_tag_audit_link": "Аудит бирок",
 }

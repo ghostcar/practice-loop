@@ -4,6 +4,7 @@ GET  /locktimer                     — overview (active session, drafts, histor
 POST /locktimer/new                 — create draft session, redirect to detail
 GET  /locktimer/sessions/{id}       — session detail (rules, occurrences, timeline)
 GET  /locktimer/templates           — saved templates
+GET  /locktimer/tag-violations/{id} — tag violation audit
 """
 
 from __future__ import annotations
@@ -269,6 +270,54 @@ async def locktimer_templates(
 
 
 # ---------------------------------------------------------------------------
+# GET /locktimer/tag-violations/{session_id} — tag audit
+# ---------------------------------------------------------------------------
+
+
+@router.get("/tag-violations/{session_id}", response_class=HTMLResponse)
+async def locktimer_tag_violations(
+    session_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _check_owner_allowlist(current_user)
+
+    locale = detect_locale(request, current_user.locale)
+    t = get_translations(locale)
+
+    session = await get_session(db, session_id, current_user.id)
+    if session is None:
+        return RedirectResponse("/locktimer", status_code=303)
+
+    from app.locktimer.services.execution import list_tag_violations
+
+    violations = await list_tag_violations(db, session_id, current_user.id)
+
+    return templates.TemplateResponse(
+        request,
+        "locktimer/tag_violations.html",
+        {
+            "t": t,
+            "user": current_user,
+            "locale": locale,
+            "session": _serialize_session(session, t),
+            "violations": [
+                {
+                    "id": str(v.id),
+                    "slot_occurrence_id": str(v.slot_occurrence_id),
+                    "expected_tag": v.expected_tag or "—",
+                    "provided_tag": v.provided_tag,
+                    "reason": v.reason,
+                    "created_at": v.created_at.isoformat() if v.created_at else None,
+                }
+                for v in violations
+            ],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -294,7 +343,11 @@ def _serialize_session(session, t) -> dict | None:
             "completed": "Completed",
             "safety_stopped": "Safety Stopped",
         }.get(session.state, session.state),
-        "remaining_seconds": max(0, (session.effective_end_at - _now()).total_seconds()) if session.effective_end_at and session.state == "active" else None,
+        "remaining_seconds": (
+            max(0, (session.effective_end_at - _now()).total_seconds())
+            if session.effective_end_at and session.state == "active"
+            else None
+        ),
     }
 
 

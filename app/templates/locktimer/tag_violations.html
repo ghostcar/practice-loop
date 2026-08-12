@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t.locktimer_tag_audit_title }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.locktimer_tag_audit_title }}</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        {{ t.locktimer_tag_audit_subtitle }}: {{ session.id[:8] }}…
+      </p>
+    </div>
+    <a href="/locktimer/sessions/{{ session.id }}"
+       class="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+      ← {{ t.locktimer_view_details }}
+    </a>
+  </div>
+
+  {% if violations %}
+  <div class="space-y-2">
+    {% for v in violations %}
+    <div class="border rounded-xl p-4 space-y-1.5
+      {% if v.reason == 'mismatch' %}border-red-200 bg-red-50/30 dark:border-red-900 dark:bg-red-950/20
+      {% else %}border-amber-200 bg-amber-50/30 dark:border-amber-900 dark:bg-amber-950/20{% endif %}">
+      <div class="flex items-start justify-between text-sm">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            {% if v.reason == 'mismatch' %}
+            <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">{{ t.locktimer_tag_mismatch }}</span>
+            {% else %}
+            <span class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ t.locktimer_tag_missing }}</span>
+            {% endif %}
+            <span class="text-gray-400 text-xs">{{ v.created_at[:19] | replace("T", " ") }}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
+            <div>
+              <span class="text-gray-400">{{ t.locktimer_tag_expected }}:</span>
+              <span class="font-mono">{{ v.expected_tag }}</span>
+            </div>
+            <div>
+              <span class="text-gray-400">{{ t.locktimer_tag_provided }}:</span>
+              <span class="font-mono {% if v.reason == 'mismatch' %}text-red-600 dark:text-red-400{% endif %}">{{ v.provided_tag }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs text-gray-400">
+          {{ t.locktimer_slot }}{{ v.slot_occurrence_id[:8] }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="border border-dashed rounded-xl p-8 text-center text-gray-400 dark:border-gray-700">
+    {{ t.locktimer_tag_audit_empty }}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
