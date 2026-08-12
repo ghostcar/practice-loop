@@ -1,3 +1,12 @@
+## 2026-08-12 — Сессия 78 (Timer): drag&drop переупорядочивание слотов
+
+- **Данные**: миграция 034 — `sort_order` (INTEGER, NOT NULL, default 0) на `lock_slot_rules` и `lock_task_rules`. Модели LockSlotRule/LockTaskRule обновлены.
+- **Репозитории**: `list_slot_rules`/`list_task_rules` сортируют по `(sort_order, created_at)`.
+- **Сервисы**: `add_slot_rule`/`add_task_rule` автоматически добавляют новые правила в конец (max(sort_order)+1); `reorder_rules` — draft-only, точная валидация набора (нет missing/foreign/duplicate ids), audit-событие `locktimer.slot_rules.reordered` / `locktimer.task_rules.reordered`.
+- **API**: `POST /api/v1/locktimer/sessions/{id}/slot-rules/reorder` и `.../task-rules/reorder` — на вход `rule_ids` (comma-separated), 400 на ошибки валидации, 303 redirect.
+- **UI** (session_detail.html): нативный HTML5 drag&drop только в draft — ручка ⠿, draggable-строки, подсветка ring, оптимистичное перемещение в DOM + fetch для сохранения. Хинт «drag to reorder» / «перетащите для порядка» (i18n).
+- **Тесты**: `tests/test_locktimer_reorder.py` — 16 тестов (service: порядок, валидация, audit; API; UI-атрибуты draft/active). **583/583 ✅**, ruff ✅, задеплоено.
+
 # Журнал сессий
 
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
