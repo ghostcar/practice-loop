@@ -49,10 +49,22 @@
       </div>
     </div>
 
-    <a href="/locktimer/sessions/{{ active_session.id }}"
-       class="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
-      {{ t.locktimer_view_details or "View details" }} →
-    </a>
+    {% if active_session.remaining_seconds is not none %}
+    <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-center gap-3">
+      <span class="text-xs text-green-700 dark:text-green-300">{{ t.locktimer_remaining or "Remaining" }}:</span>
+      <span id="countdown-display" class="text-lg font-mono font-bold text-green-800 dark:text-green-200 tabular-nums" data-end-ts="{{ active_session.effective_end_ts }}">--:--:--</span>
+    </div>
+    {% endif %}
+
+    <div class="flex gap-3">
+      <a href="/locktimer/sessions/{{ active_session.id }}"
+         class="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+        {{ t.locktimer_view_details or "View details" }} →
+      </a>
+      <a href="/locktimer/templates" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-500 transition">
+        {{ t.locktimer_templates_title or "Templates" }}
+      </a>
+    </div>
 
     <!-- Upcoming slots -->
     {% if active_slots %}
@@ -152,4 +164,25 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var el = document.getElementById('countdown-display');
+  if (!el) return;
+  var endTs = parseFloat(el.getAttribute('data-end-ts'));
+  if (!endTs) return;
+  function tick() {
+    var remaining = Math.max(0, endTs - Date.now() / 1000);
+    if (remaining <= 0) { el.textContent = '00:00:00'; return; }
+    var h = Math.floor(remaining / 3600);
+    var m = Math.floor((remaining % 3600) / 60);
+    var s = Math.floor(remaining % 60);
+    el.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
 {% endblock %}

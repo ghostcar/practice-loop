@@ -1,17 +1,22 @@
-"""LockTimer command API — C5 execution + C3 draft management.
+"""LockTimer command API — C5 execution + C3 draft management + C4 horizon + templates.
 
-POST /api/v1/locktimer/sessions/{id}/start            — draft → active
-POST /api/v1/locktimer/sessions/{id}/safety-stop      — active → safety_stopped
-POST /api/v1/locktimer/slot-occurrences/{id}/open     — pending → open
-POST /api/v1/locktimer/slot-occurrences/{id}/close    — open → closed
-POST /api/v1/locktimer/task-occurrences/{id}/reveal   — scheduled → visible
-POST /api/v1/locktimer/task-occurrences/{id}/complete — submitted → completed
-POST /api/v1/locktimer/task-occurrences/{id}/skip     — scheduled/visible → skipped
-POST /api/v1/locktimer/sessions/{id}/slot-rules       — add slot rule (draft)
-POST /api/v1/locktimer/sessions/{id}/task-rules       — add task rule (draft)
-DELETE /api/v1/locktimer/sessions/{id}/slot-rules/{rule_id} — delete slot rule (draft)
-DELETE /api/v1/locktimer/sessions/{id}/task-rules/{rule_id} — delete task rule (draft)
-PATCH /api/v1/locktimer/sessions/{id}                 — update draft metadata
+POST .../sessions/{id}/start            — draft → active
+POST .../sessions/{id}/safety-stop      — active → safety_stopped
+POST .../sessions/{id}/validate         — pre-start validation (JSON)
+POST .../sessions/{id}/extend-horizon   — materialize future days
+POST .../sessions/{id}/save-template    — save draft as template
+POST .../templates/{id}/instantiate     — create draft from template
+POST .../templates/{id}/archive         — archive template
+POST .../slot-occurrences/{id}/open     — pending → open
+POST .../slot-occurrences/{id}/close    — open → closed
+POST .../task-occurrences/{id}/reveal   — scheduled → visible
+POST .../task-occurrences/{id}/complete — submitted → completed
+POST .../task-occurrences/{id}/skip     — scheduled/visible → skipped
+POST .../sessions/{id}/slot-rules       — add slot rule (draft)
+POST .../sessions/{id}/task-rules       — add task rule (draft)
+POST .../sessions/{id}/slot-rules/{rule_id}/delete — delete slot rule (draft)
+POST .../sessions/{id}/task-rules/{rule_id}/delete — delete task rule (draft)
+POST .../sessions/{id}/update           — update draft metadata
 """
 
 from __future__ import annotations
@@ -40,6 +45,13 @@ from app.locktimer.services.execution import (
     skip_task,
     start_session,
     update_draft,
+)
+from app.locktimer.services.extras import (
+    archive_template,
+    extend_horizon,
+    instantiate_template,
+    save_template,
+    validate_session,
 )
 from app.models.locktimer import (
     LockSlotOccurrence,
@@ -386,3 +398,96 @@ async def api_update_draft(
 
     await update_draft(db, session, **fields)
     return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Validation + Horizon extension
+# ---------------------------------------------------------------------------
+
+
+@router.post("/sessions/{session_id}/validate")
+async def api_validate_session(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run pre-start validation (returns JSON)."""
+    from fastapi.responses import JSONResponse
+
+    result = await validate_session(db, session_id, current_user.id)
+    return JSONResponse(result)
+
+
+@router.post("/sessions/{session_id}/extend-horizon")
+async def api_extend_horizon(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Extend occurrence horizon for an active session."""
+    from fastapi.responses import JSONResponse
+
+    try:
+        result = await extend_horizon(db, session_id, current_user.id)
+        return JSONResponse(result)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Template management
+# ---------------------------------------------------------------------------
+
+
+@router.post("/sessions/{session_id}/save-template")
+async def api_save_template(
+    session_id: uuid.UUID,
+    request: Request,
+    name: str = Form(...),
+    description: str | None = Form(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Save current draft session as a reusable template."""
+    try:
+        await save_template(
+            db,
+            session_id=session_id,
+            owner_id=current_user.id,
+            name=name,
+            description=description,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return RedirectResponse("/locktimer/templates", status_code=303)
+
+
+@router.post("/templates/{template_id}/instantiate")
+async def api_instantiate_template(
+    template_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new draft session from a template."""
+    try:
+        session = await instantiate_template(db, template_id=template_id, owner_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return RedirectResponse(f"/locktimer/sessions/{session.id}", status_code=303)
+
+
+@router.post("/templates/{template_id}/archive")
+async def api_archive_template(
+    template_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Archive a template."""
+    try:
+        await archive_template(db, template_id, current_user.id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return RedirectResponse("/locktimer/templates", status_code=303)

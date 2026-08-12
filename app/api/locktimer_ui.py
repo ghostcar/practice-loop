@@ -3,6 +3,7 @@
 GET  /locktimer                     — overview (active session, drafts, history)
 POST /locktimer/new                 — create draft session, redirect to detail
 GET  /locktimer/sessions/{id}       — session detail (rules, occurrences, timeline)
+GET  /locktimer/templates           — saved templates
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ from app.locktimer.repositories import (
     list_task_occurrences,
     list_task_rules,
 )
+from app.locktimer.services.extras import list_templates
 from app.models.locktimer import (
     LockLlmProposal,
     LockSession,
@@ -227,6 +229,46 @@ async def locktimer_session_detail(
 
 
 # ---------------------------------------------------------------------------
+# GET /locktimer/templates — saved templates
+# ---------------------------------------------------------------------------
+
+
+@router.get("/templates", response_class=HTMLResponse)
+async def locktimer_templates(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _check_owner_allowlist(current_user)
+
+    locale = detect_locale(request, current_user.locale)
+    t = get_translations(locale)
+
+    templates_list = await list_templates(db, current_user.id)
+
+    return templates.TemplateResponse(
+        request,
+        "locktimer/templates.html",
+        {
+            "t": t,
+            "user": current_user,
+            "locale": locale,
+            "templates": [
+                {
+                    "id": str(tmpl.id),
+                    "name": tmpl.name,
+                    "description": tmpl.description,
+                    "slot_count": len(tmpl.config.get("slot_rules", [])),
+                    "task_count": len(tmpl.config.get("task_rules", [])),
+                    "updated_at": tmpl.updated_at.isoformat() if tmpl.updated_at else None,
+                }
+                for tmpl in templates_list
+            ],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -241,6 +283,7 @@ def _serialize_session(session, t) -> dict | None:
         "timezone": session.timezone,
         "started_at": session.started_at.isoformat() if session.started_at else None,
         "effective_end_at": session.effective_end_at.isoformat() if session.effective_end_at else None,
+        "effective_end_ts": session.effective_end_at.timestamp() if session.effective_end_at else None,
         "max_end_at": session.max_end_at.isoformat() if session.max_end_at else None,
         "merge_gap_seconds": session.merge_gap_seconds,
         "row_version": session.row_version,
@@ -251,6 +294,7 @@ def _serialize_session(session, t) -> dict | None:
             "completed": "Completed",
             "safety_stopped": "Safety Stopped",
         }.get(session.state, session.state),
+        "remaining_seconds": max(0, (session.effective_end_at - _now()).total_seconds()) if session.effective_end_at and session.state == "active" else None,
     }
 
 
