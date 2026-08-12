@@ -65,3 +65,25 @@
 | ADR-058 | 2026-08-12 | Platform Social S0+S1 — foundation + subject registry | `app/platform/social/` — независимый пакет, не импортирует Tracker/Timer. social_profiles: alias-based public identity (3-80 chars, case-insensitive), consent versioned. social_subjects: opaque registry для domain adapters. SocialSubjectAdapter Protocol (14 методов) + adapter registry. SOCIAL_ENABLED gate в composition. 3 таблицы, миграция 029. **538/538 ✅** | принято |
 | ADR-059 | 2026-08-12 | Platform Social S2 — relationships, blocks, grants | Единый relationship/block graph на весь продукт. Invitation lifecycle: pending→accepted/declined/expired/revoked, cooldown 24h. Display_role — UI-лейбл без capability grants. Grants: subject/module/global scope, JSON caps, separate accept. Block отменяет pending + отключает accepted grants. Notification outbox (9 types). 4 таблицы, миграция 030, 14 API эндпоинтов. **538/538 ✅** | принято |
 | ADR-060 | 2026-08-12 | Timer numbered tags (S72) | Номерные бирки: close_tag_number на LockSlotOccurrence (свободный формат), require_tag на LockSlotRule (опционально). verify_tag: сверка номера, расхождение → lock_tag_violations. Бирка опциональна при закрытии если require_tag=False. Для будущих social-функций (уведомление keyholder, verification challenge). Миграция 028, 20 тестов. | принято |
+
+
+### ADR-061 — Social S4+S6 (Verification + Tracker Adapter)
+**Date:** 2026-08-12
+**Decision:** Implement verification (S4) and Tracker adapter (S6) together as Path A.
+
+**S4 — Verification:**
+- Policies are frozen snapshots at request creation time
+- Quorum: min_approvals → verified, max_rejections → review_required, deadline → no_quorum_action
+- One vote per verifier per request (unique constraint)
+- Owner cannot vote on own requests
+- Comments on publications and verification requests, edit+delete support
+- Encouragements are lightweight (no executable state change): thumbs_up, support, celebrate, motivate
+
+**S6 — Tracker Adapter:**
+- Single TrackerSocialAdapter covering tracker.activity_log and tracker.entity
+- Authorize: checks ActivityLog.user_id or Entity.owner_id
+- build_redacted_projection: strips raw_llm_response, penalty_details, user_id
+- Capabilities: view_summary, view_details, verify (allowlisted per subject type)
+- Timer adapter is a valid skeleton (all methods, returns empty/not_implemented)
+
+**Rationale:** Verification without real domain data is a hollow shell; adapter without verification has no consumer. Together they form the minimum viable Social loop: share tracker data → verify results → comment.

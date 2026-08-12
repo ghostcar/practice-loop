@@ -941,3 +941,16 @@
 - **Миграция 018** проверена на реальном PostgreSQL 15: upgrade 001→018, ORM-вставки/чтения, downgrade 018→017, повторный upgrade — всё ✅. Временный контейнер удалён.
 - **+21 тест** (`tests/test_dnd_diets_uploads.py`). Ревью поймало: partial-inventory-reorder (с фильтром), path traversal в delete_upload, мёртвый код (non_empty, oldName, legacy context, unused Request), clamp времени timeline — все исправлены.
 - **274/274 тестов ✅**, ruff ✅, format ✅. Коммит после этой записи.
+
+
+### Session 75 — 2026-08-12 (Social S4+S6)
+- **S4 — Verification & Comments:** 5 new tables (verification_policies, verification_requests, verification_votes, social_comments, social_encouragements), migration 032
+- Quorum-based verification: min_approvals → verified, max_rejections → review_required, deadline → no_quorum_action
+- Comments CRUD with edit support, encouragements (4 types: thumbs_up, support, celebrate, motivate)
+- 8 API endpoints: /social/verification page, verify/create, vote with quorum, comment create/edit/delete, encourage
+- /social/verification page (dashboard with request list, vote form, comments section)
+- +28 i18n keys EN/RU
+- **S6 — Tracker Adapter:** app/platform/social/adapters.py — TrackerSocialAdapter (14 protocol methods), TimerSocialAdapter (skeleton)
+- TrackerAdapter: authorize_subject (ActivityLog + Entity), build_redacted_projection (safe snapshots), list_shareable_capabilities, validate_grant_constraints
+- Adapters registered at startup in main.py via composition flags
+- 538/538 ✅ · ruff ✅ · migration 032 ✅ · deployed
