@@ -43,10 +43,6 @@
         </div>
     </div>
 
-    <!-- DESIGN.md §11: at most 2 charts per viewport.
-         The remaining two (category donut + completion-rate gauge) are presented
-         as compact summary cards below — numbers with mini-bars, no canvas. -->
-
     <!-- Charts: at most 2 per viewport, side-by-side on lg+ -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Weekly Activity -->
@@ -69,9 +65,9 @@
         </div>
     </div>
 
-    <!-- Compact stats summaries (replaces donut + gauge with text+bar summaries) -->
+    <!-- Compact stats summaries -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Category summary (top-3 categories) -->
+        <!-- Category summary -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_categories_title }}</h2>
@@ -100,7 +96,7 @@
         </div>
     </div>
 
-    <!-- XP Level bar: solid, no gradient -->
+    <!-- XP Level bar -->
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
         <div class="flex items-end justify-between mb-2">
             <div>
@@ -118,15 +114,25 @@
 
     <!-- LockTimer active session card -->
     {% if locktimer_session %}
-    <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5 space-y-3">
+    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5 space-y-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
           <h2 class="text-sm font-semibold text-amber-800 dark:text-amber-200">⏱️ {{ t.dashboard_timer_active or "Active Timer" }}</h2>
+          {% if locktimer_session.state == 'draft' %}
+          <span class="px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">draft</span>
+          {% endif %}
         </div>
-        <a href="/locktimer/sessions/{{ locktimer_session.id }}" class="text-xs font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 underline">
-          {{ t.dashboard_timer_view or "View" }} →
-        </a>
+        <div class="flex gap-2">
+          {% if locktimer_session.state == 'draft' %}
+          <a href="/locktimer/sessions/{{ locktimer_session.id }}" class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition">
+            ✏️ Edit Draft
+          </a>
+          {% endif %}
+          <a href="/locktimer/sessions/{{ locktimer_session.id }}" class="text-xs font-medium text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 underline">
+            {{ t.dashboard_timer_view or "View" }} →
+          </a>
+        </div>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
         <div>

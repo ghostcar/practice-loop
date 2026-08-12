@@ -213,9 +213,11 @@ if composition.tracker_active:
 # ---------------------------------------------------------------------------
 
 if composition.timer_operational:
+    from app.api.locktimer_commands import router as locktimer_commands_router  # noqa: E402
     from app.api.locktimer_proposals import router as locktimer_proposals_router  # noqa: E402
     from app.api.locktimer_ui import router as locktimer_ui_router  # noqa: E402
 
+    app.include_router(locktimer_commands_router)
     app.include_router(locktimer_proposals_router)
     app.include_router(locktimer_ui_router)
 

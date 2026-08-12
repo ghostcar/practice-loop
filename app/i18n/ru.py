@@ -549,6 +549,16 @@ RU = {
     "locktimer_task_occurrences": "Задачи",
     "locktimer_proposals": "AI-предложения",
     "locktimer_session_empty": "Правил и событий пока нет.",
+    # Timer interactive actions
+    "locktimer_start": "Старт",
+    "locktimer_safety_stop": "Экстренная остановка",
+    "locktimer_settings": "Настройки",
+    "locktimer_save": "Сохранить",
+    "locktimer_add": "Добавить",
+    "locktimer_add_slot_rule": "Добавить правило слота",
+    "locktimer_add_task_rule": "Добавить правило задачи",
+    "locktimer_allow_late": "Разрешить опоздание",
+    "locktimer_requires_report": "Требуется отчёт",
     # Dashboard timer card
     "dashboard_timer_active": "Активный таймер",
     "dashboard_timer_duration": "Длительность",
@@ -557,4 +567,6 @@ RU = {
     "dashboard_timer_tasks": "Задачи",
     "dashboard_timer_ends": "Конец",
     "dashboard_timer_view": "Смотреть",
+    "dashboard_timer_start": "▶ Старт",
+    "dashboard_timer_new": "+ Новый таймер",
 }

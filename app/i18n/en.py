@@ -547,6 +547,16 @@ EN = {
     "locktimer_task_occurrences": "Task Occurrences",
     "locktimer_proposals": "AI Proposals",
     "locktimer_session_empty": "No rules or occurrences yet.",
+    # Timer interactive actions
+    "locktimer_start": "Start",
+    "locktimer_safety_stop": "Safety Stop",
+    "locktimer_settings": "Settings",
+    "locktimer_save": "Save",
+    "locktimer_add": "Add",
+    "locktimer_add_slot_rule": "Add Slot Rule",
+    "locktimer_add_task_rule": "Add Task Rule",
+    "locktimer_allow_late": "Allow late open",
+    "locktimer_requires_report": "Requires report",
     # Dashboard timer card
     "dashboard_timer_active": "Active Timer",
     "dashboard_timer_duration": "Duration",
@@ -555,4 +565,6 @@ EN = {
     "dashboard_timer_tasks": "Tasks",
     "dashboard_timer_ends": "Ends",
     "dashboard_timer_view": "View",
+    "dashboard_timer_start": "▶ Start",
+    "dashboard_timer_new": "+ New Timer",
 }
