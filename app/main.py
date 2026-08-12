@@ -226,10 +226,18 @@ if composition.timer_operational:
 # ---------------------------------------------------------------------------
 
 if composition.social_operational and composition.social_tracker_adapter_enabled:
-    logger.info("Social Tracker adapter enabled — adapter registration reserved for S6")
+    from app.platform.social import register_adapter
+    from app.platform.social.adapters import TrackerSocialAdapter
+
+    register_adapter(TrackerSocialAdapter())
+    logger.info("Social Tracker adapter registered")
 
 if composition.social_operational and composition.social_timer_adapter_enabled:
-    logger.info("Social Timer adapter enabled — adapter registration reserved for S6")
+    from app.platform.social import register_adapter
+    from app.platform.social.adapters import TimerSocialAdapter
+
+    register_adapter(TimerSocialAdapter())
+    logger.info("Social Timer adapter registered")
 
 # ---------------------------------------------------------------------------
 # Platform Social routes (S0+ — registered when SOCIAL_ENABLED)

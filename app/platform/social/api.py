@@ -24,12 +24,20 @@ from app.platform.social.repositories import (
     accept_grant,
     accept_invitation,
     block_user,
+    cast_vote,
+    check_quorum_and_finalize,
+    create_comment,
+    create_encouragement,
     create_grant,
     create_invitation,
     create_notification,
     create_profile,
     create_publication,
+    create_verification_policy,
+    create_verification_request,
     decline_invitation,
+    delete_comment,
+    edit_comment,
     get_profile,
     get_profile_by_alias,
     get_relationship,
@@ -627,4 +635,147 @@ async def social_withdraw(
     pub = await withdraw_publication(db, pub_uuid, current_user.id)
     if pub is None:
         raise HTTPException(404, "Publication not found")
+    return RedirectResponse(url="/social/feed", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# S4 — Verification, comments, encouragement
+# ---------------------------------------------------------------------------
+
+
+@router.get("/verification", response_class=HTMLResponse)
+async def social_verification_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """GET /social/verification — verification dashboard."""
+    locale = detect_locale(request, current_user.locale)
+    t = get_translations(locale)
+    profile = await get_profile(db, current_user.id)
+    if profile is None:
+        return RedirectResponse(url="/social/profile", status_code=303)
+
+    return templates.TemplateResponse(
+        request,
+        "social/verification.html",
+        {"t": t, "locale": locale, "user": current_user, "profile": profile},
+    )
+
+
+@router.post("/verify/create", response_class=HTMLResponse)
+async def social_verify_create(
+    request: Request,
+    subject_id: str = Form(...),
+    min_approvals: int = Form(1),
+    deadline_hours: int = Form(72),
+    verifier_alias: str | None = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/verify/create — create a verification request."""
+    subject_uuid = __import__("uuid").UUID(subject_id)
+    subject = await get_subject(db, subject_uuid)
+    if subject is None or subject.owner_id != current_user.id:
+        raise HTTPException(404, "Subject not found")
+
+    verifier_scope = {"type": "all_accepted"}
+    if verifier_alias:
+        target = await get_profile_by_alias(db, verifier_alias.strip().lower())
+        if target:
+            verifier_scope = {"type": "specific", "user_ids": [str(target.user_id)]}
+
+    policy = await create_verification_policy(
+        db, current_user.id, f"Verify {subject.subject_type}",
+        verifier_scope, min_approvals=min_approvals, deadline_hours=deadline_hours,
+    )
+    await create_verification_request(db, policy.id, subject_uuid, current_user.id, deadline_hours)
+    return RedirectResponse(url="/social/verification", status_code=303)
+
+
+@router.post("/verify/{req_id}/vote", response_class=HTMLResponse)
+async def social_verify_vote(
+    req_id: str,
+    value: str = Form(...),
+    comment: str | None = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/verify/{id}/vote — cast a vote on a verification request."""
+    if value not in ("approve", "reject", "abstain"):
+        raise HTTPException(400, "Invalid vote value")
+
+    req_uuid = __import__("uuid").UUID(req_id)
+    vote = await cast_vote(db, req_uuid, current_user.id, value, comment)
+    if vote is None:
+        raise HTTPException(400, "Cannot vote — already voted, owner, or request closed")
+    await check_quorum_and_finalize(db, req_uuid)
+    return RedirectResponse(url="/social/verification", status_code=303)
+
+
+# --- Comments ---
+
+
+@router.post("/comment", response_class=HTMLResponse)
+async def social_comment_create(
+    request: Request,
+    target_type: str = Form(...),
+    target_id: str = Form(...),
+    body: str = Form(max_length=2000),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/comment — create a comment."""
+    if target_type not in ("publication", "verification_request"):
+        raise HTTPException(400, "Invalid target type")
+    await create_comment(
+        db, current_user.id, target_type, __import__("uuid").UUID(target_id), body,
+    )
+    return RedirectResponse(url="/social/feed", status_code=303)
+
+
+@router.post("/comment/{comment_id}/edit", response_class=HTMLResponse)
+async def social_comment_edit(
+    comment_id: str,
+    body: str = Form(max_length=2000),
+    redirect_url: str = Form("/social/feed"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/comment/{id}/edit — edit own comment."""
+    await edit_comment(db, __import__("uuid").UUID(comment_id), current_user.id, body)
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+@router.post("/comment/{comment_id}/delete", response_class=HTMLResponse)
+async def social_comment_delete(
+    comment_id: str,
+    redirect_url: str = Form("/social/feed"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/comment/{id}/delete — delete own comment."""
+    await delete_comment(db, __import__("uuid").UUID(comment_id), current_user.id)
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+# --- Encouragement ---
+
+
+@router.post("/encourage", response_class=HTMLResponse)
+async def social_encourage(
+    request: Request,
+    target_type: str = Form(...),
+    target_id: str = Form(...),
+    encouragement_type: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/encourage — send encouragement."""
+    if encouragement_type not in ("thumbs_up", "support", "celebrate", "motivate"):
+        raise HTTPException(400, "Invalid encouragement type")
+    await create_encouragement(
+        db, current_user.id, target_type,
+        __import__("uuid").UUID(target_id), encouragement_type,
+    )
     return RedirectResponse(url="/social/feed", status_code=303)

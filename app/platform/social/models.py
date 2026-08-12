@@ -318,3 +318,161 @@ class SocialPublication(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False,
     )
     withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# S4 — Verification & Comments
+# ---------------------------------------------------------------------------
+
+VERIFICATION_STATES = frozenset({"open", "verified", "review_required", "failed", "cancelled"})
+VOTE_VALUES = frozenset({"approve", "reject", "abstain"})
+
+
+class SocialVerificationPolicy(Base):
+    """Frozen policy snapshot for a verification request."""
+
+    __tablename__ = "social_verification_policies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Verifier scope: relationship_ids list or "all_accepted"
+    verifier_scope: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    # Quorum settings
+    min_approvals: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    max_rejections: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deadline_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=72)
+    no_quorum_action: Mapped[str] = mapped_column(String(20), default="review_required", nullable=False)
+
+    # Whether comment is required on reject
+    require_reject_comment: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+
+
+class SocialVerificationRequest(Base):
+    """Verification request — targets a social subject with a frozen policy."""
+
+    __tablename__ = "social_verification_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    policy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("social_verification_policies.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("social_subjects.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    requester_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # State machine: open → verified | review_required | failed | cancelled
+    state: Mapped[str] = mapped_column(String(20), default="open", nullable=False)
+
+    # Quorum tracking
+    approvals: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    rejections: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Deadline
+    deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    # Final result (set when state != open)
+    result_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+
+
+class SocialVerificationVote(Base):
+    """One vote per verifier per request."""
+
+    __tablename__ = "social_verification_votes"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("social_verification_requests.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    voter_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Vote value: approve | reject | abstain
+    value: Mapped[str] = mapped_column(String(10), nullable=False)
+
+    # Optional comment on reject
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("request_id", "voter_id", name="uq_verification_vote"),
+    )
+
+
+class SocialComment(Base):
+    """Plain text comment on a publication or verification request."""
+
+    __tablename__ = "social_comments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    author_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Target: publication or verification request
+    target_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Edit support
+    is_edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+
+
+class SocialEncouragement(Base):
+    """Lightweight encouragement — carries no executable state change."""
+
+    __tablename__ = "social_encouragements"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sender_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    target_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+    # Pre-defined encouragement types: thumbs_up, support, celebrate, motivate
+    encouragement_type: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("sender_id", "target_type", "target_id", name="uq_encouragement_once"),
+    )
