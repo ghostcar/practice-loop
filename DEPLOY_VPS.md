@@ -1,7 +1,7 @@
 # Practice Loop — VPS Deployment Runbook
 
-> **Версия:** 0.8.0 (commit `576c432`, session 40)
-> **Цель:** голый VPS → рабочий `https://your-domain.com` с PostgreSQL, app, Telegram-ботом.
+> **Версия:** 0.9.0 (Social S0-S5, LockTimer C0-C9)
+> **Цель:** голый VPS → рабочий `https://your-domain.com` с PostgreSQL, app, Telegram-ботом, Platform Social.
 > **Стиль:** только блоки кода — копируй и выполняй по порядку.
 
 ---
@@ -834,3 +834,94 @@ docker network ls --format 'table {{.Name}}\t{{.Driver}}' | grep -E 'tracker|NAM
 ---
 
 > Все перечисленные проверки работают без интернета, только через локальные ресурсы.
+
+---
+
+## 15. Platform Social — Ops Runbook
+
+### 15.1. Включение Social
+
+Social features выключены по умолчанию. Для включения:
+
+```bash
+cd /opt/tracker
+# Добавь в .env:
+cat >> .env <<'EOF'
+
+# Platform Social (off by default)
+SOCIAL_ENABLED=true
+SOCIAL_TRACKER_ADAPTER_ENABLED=true
+SOCIAL_TIMER_ADAPTER_ENABLED=false
+SOCIAL_PUBLIC_ENABLED=false
+EOF
+
+docker compose up -d app
+```
+
+Проверка:
+```bash
+curl -sI https://your-domain.com/social/privacy | head -3
+# HTTP/2 200
+curl -sI https://your-domain.com/social/api/capabilities
+# HTTP/2 200
+```
+
+### 15.2. Social hardening checks
+
+Перед каждым деплоем с Social-изменениями — запусти:
+
+```bash
+cd /opt/tracker
+bash pre_deploy_check.sh
+```
+
+Скрипт проверяет:
+- Тесты (включая social concurrency + privacy audit)
+- Ruff lint
+- Secret scan (API keys, JWT, credentials hardcoded)
+- Social privacy audit (email/raw_llm_response/penalty_details leaks)
+- Docker build + single alembic head
+
+### 15.3. Social data isolation
+
+**Social НИКОГДА не читает приватные Tracker/Timer таблицы напрямую.**
+
+Таблицы Social (все с префиксом `social_`):
+- `social_profiles` — публичные псевдонимы
+- `social_consents` — версионированные согласия
+- `social_subjects` — opaque registry
+- `social_relationships` — связи
+- `social_blocks` — блокировки
+- `social_grants` — scoped grants
+- `social_notifications` — уведомления
+- `social_publications` — immutable redacted snapshots
+- `social_verification_policies/requests/votes` — верификация
+- `social_comments`, `social_encouragements` — обсуждение
+- `moderation_reports`, `moderation_actions` — модерация
+
+### 15.4. Что НЕЛЬЗЯ делать с Social
+
+- ❌ JOIN social_* с activity_logs, entities, training_days, lock_sessions
+- ❌ Возвращать `user.email` или `user.password_hash` в social API
+- ❌ Показывать `raw_llm_response` или `penalty_details` в social responses
+- ❌ Раскрывать identity reporter'а цели жалобы
+
+### 15.5. Social troubleshooting
+
+| Симптом | Причина | Фикс |
+|---|---|---|
+| `/social/*` → 404 | `SOCIAL_ENABLED=false` в .env | Включи → `docker compose up -d app` |
+| `/social/moderation` → 403 | Пользователь не в owner allowlist | Проверь `LOCKTIMER_OWNER_ALLOWLIST` в .env |
+| Social nav не показывается | `SOCIAL_ENABLED` не передан в compose | Добавь в `environment:` секцию `docker-compose.yml` |
+| Report не создаётся | Reason code невалидный | Допустимы: harassment, privacy, non_consensual, impersonation, dangerous_content, spam, other |
+| Feed пустой после публикации | Нет accepted relationship | `relationship_only` видно только accepted connections; переключи на `public` |
+
+### 15.6. Social миграции
+
+Миграции Social: 029 (profiles+subjects), 030 (relationships), 031 (publications), 032 (verification), 033 (moderation).
+
+```bash
+docker compose exec app alembic current
+# Должен показать c3d4e5f6a7b (033) или новее
+docker compose exec app alembic history | grep -E '029|030|031|032|033'
+```
