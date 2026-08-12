@@ -328,6 +328,66 @@ inventory_items, attachments, user_progress.
 - Страница: `/social/relationships` (pending invites, send form, active connections + grants,
   blocks, notification feed).
 
+### S3 — Publications & Feed
+- **SocialPublication**: immutable redacted snapshots. SHA-256 hash подтверждает целостность.
+  visibility: relationship_only / unlisted / public. subject_namespace для фильтрации
+  (tracker / timer). Активная → withdrawn (никогда не редактируется).
+- **Feed**: cursor-based. Читает ТОЛЬКО таблицу `social_publications` — никогда не
+  присоединяет приватные Tracker/Timer таблицы. Block-aware (исключает публикации
+  заблокированных). Accepted-relationship gating для relationship_only.
+- API: `/social/feed` (namespace filter), `/social/publish`, `/social/publish/{id}/withdraw`.
+- Страница: `/social/feed` (publish form, feed с namespace tabs, own publications).
+
+### S4 — Verification & Comments
+- **SocialVerificationPolicy**: frozen policy snapshots (min_approvals, max_rejections,
+  deadline_hours, no_quorum_action, require_reject_comment).
+- **SocialVerificationRequest**: open → verified / review_required / failed / cancelled.
+  Счётчики approvals/rejections, deadline. Владелец не может голосовать.
+- **SocialVerificationVote**: approve / reject / abstain. One vote per verifier per request.
+- **SocialComment**: plain text comment на publication или verification request.
+  Edit + delete, is_edited tracking.
+- **SocialEncouragement**: thumbs_up / support / celebrate / motivate.
+  One per sender per target (уникальный constraint).
+- Quorum: min_approvals → verified, max_rejections → review_required, deadline → no_quorum_action.
+- API: `/social/verification`, verify/create, vote, comment CRUD, encourage.
+- Страница: `/social/verification`.
+
+### S5 — Moderation
+- **ModerationReport**: abuse reports (profile/publication/comment/vote).
+  7 reason codes: harassment, privacy, non_consensual, impersonation,
+  dangerous_content, spam, other. States: open → reviewing → resolved / dismissed.
+  Reporter identity НЕ раскрывается цели.
+- **ModerationAction**: immutable append-only audit trail. 6 action types:
+  hide_publication, hide_comment, invalidate_vote, resolve_report, dismiss_report,
+  request_evidence. Каждое действие: moderator_id + reason + timestamp.
+- Репозитории: hide_publication (is_active=False), hide_comment (body→[removed]),
+  invalidate_vote (удаление + корректировка счётчиков).
+- API: `/social/report` (любой пользователь), `/social/moderation` (admin-only очередь),
+  assign, action.
+- Страница: `/social/moderation` (состояние-бейджи, форма действий, лог).
+
+### S6 — Domain Adapters
+- **TrackerSocialAdapter** (14 методов протокола): authorize_subject (ActivityLog.user_id
+  / Entity.owner_id), build_redacted_projection (strips raw_llm_response, penalty_details,
+  user_id), list_shareable_capabilities (view_summary/view_details/verify),
+  validate_grant_constraints.
+- **TimerSocialAdapter**: skeleton (все методы реализованы, возвращают empty/not_implemented).
+- Adapters регистрируются при старте через composition flags.
+
+### S7 — Hardening & Limited Rollout
+- 11 social concurrency tests: double-accept, invite+block race, feed isolation after
+  moderation hide, grant idempotency, block propagation, cross-user isolation.
+- 11 privacy audit tests: все social роуты просканированы на forbidden patterns
+  (email, password_hash, raw_llm_response, penalty_details, ip_address, user_prompt).
+- pre_deploy_check.sh §8: social privacy scan (grep-проверка утечек в social коде).
+- DEPLOY_VPS.md §15: Social Ops Runbook (включение, hardening checks, troubleshooting).
+
+### Social таблицы (все с префиксом `social_`)
+social_profiles, social_consents, social_subjects, social_relationships, social_blocks,
+social_grants, social_notifications, social_publications, social_verification_policies,
+social_verification_requests, social_verification_votes, social_comments,
+social_encouragements, moderation_reports, moderation_actions.
+
 ---
 
 ## 18. Универсальная медиа-система
