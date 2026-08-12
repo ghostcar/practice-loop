@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 77 — Q12 closed, Social S0-S7 complete).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 78 — Timer drag&drop rule reordering).
 
 ## Общий статус: 583/583 тестов ✅, ruff ✅, format ✅
 
@@ -20,6 +20,7 @@
 - [x] **S70**: Interactive UI — commands API (start/safety-stop/slots/tasks), session detail buttons, dashboard quick links
 - [x] **S71**: Real-time countdown JS, validation (conflict check), extend horizon, templates CRUD
 - [x] **S72**: Numbered tags (close_tag_number, require_tag, verify-tag, lock_tag_violations, 20 tag mechanics tests)
+- [x] **S78**: Drag&drop rule reordering — sort_order (миграция 034), reorder_rules service (draft-only + audit), API /slot-rules/reorder + /task-rules/reorder, HTML5 DnD в session detail (16 тестов)
 
 
 ## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
