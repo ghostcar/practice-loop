@@ -40,6 +40,8 @@ from app.models.task_location import ActivityLocationRequirement, TaskLocation, 
 from app.models.training import TrainingDay  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.platform.social.models import (  # noqa: F401
+    ModerationAction,
+    ModerationReport,
     SocialBlock,
     SocialComment,
     SocialConsent,

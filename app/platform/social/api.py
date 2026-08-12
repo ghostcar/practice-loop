@@ -23,6 +23,7 @@ from app.platform.social.repositories import (
     _is_blocked,
     accept_grant,
     accept_invitation,
+    assign_report,
     block_user,
     cast_vote,
     check_quorum_and_finalize,
@@ -30,30 +31,41 @@ from app.platform.social.repositories import (
     create_encouragement,
     create_grant,
     create_invitation,
+    create_moderation_action,
     create_notification,
     create_profile,
     create_publication,
+    create_report,
     create_verification_policy,
     create_verification_request,
     decline_invitation,
     delete_comment,
+    dismiss_report,
     edit_comment,
     get_profile,
     get_profile_by_alias,
+    get_publication,
     get_relationship,
     get_relationship_by_pair,
+    get_report,
     get_subject,
     has_accepted_consent,
+    hide_comment,
+    hide_publication,
+    invalidate_vote,
     list_feed,
     list_grants_for_relationship,
+    list_moderation_actions,
     list_notifications,
     list_owner_publications,
     list_owner_subjects,
     list_pending_invitations,
+    list_reports,
     list_user_blocks,
     list_user_relationships,
     mark_notification_read,
     record_consent,
+    resolve_report,
     revoke_grant,
     revoke_relationship,
     unblock_user,
@@ -779,3 +791,167 @@ async def social_encourage(
         __import__("uuid").UUID(target_id), encouragement_type,
     )
     return RedirectResponse(url="/social/feed", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# S5 — Moderation (admin-only)
+# ---------------------------------------------------------------------------
+
+
+async def _check_moderator(user: User) -> None:
+    """Only users in the owner allowlist can access moderation."""
+    from app.api.locktimer_ui import _check_owner_allowlist
+
+    _check_owner_allowlist(user)
+
+
+@router.get("/moderation", response_class=HTMLResponse)
+async def social_moderation_page(
+    request: Request,
+    state: str | None = None,
+    target_type: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """GET /social/moderation — moderator dashboard (admin-only)."""
+    _check_moderator(current_user)
+    locale = detect_locale(request, current_user.locale)
+    t = get_translations(locale)
+
+    reports = await list_reports(db, state=state, target_type=target_type, limit=100)
+
+    # Enrich with reporter/target aliases (reporter NOT exposed to target in UI)
+    enriched = []
+    for report in reports:
+        reporter_alias = None
+        if report.reporter_id:
+            reporter_profile = await get_profile(db, report.reporter_id)
+            reporter_alias = reporter_profile.alias if reporter_profile else None
+
+        # Get target context based on type
+        target_desc = None
+        if report.target_type == "publication":
+            pub = await get_publication(db, report.target_id)
+            if pub:
+                subj = await get_subject(db, pub.subject_id)
+                target_desc = f"Publication: {subj.subject_type if subj else 'unknown'}"
+        elif report.target_type == "comment":
+            target_desc = "Comment"
+        else:
+            target_desc = f"{report.target_type}: {report.target_id}"
+
+        actions = await list_moderation_actions(db, report.id)
+        enriched.append({
+            "report": report,
+            "reporter_alias": reporter_alias or "anonymous",
+            "target_desc": target_desc,
+            "actions": actions,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "social/moderation.html",
+        {
+            "t": t,
+            "locale": locale,
+            "user": current_user,
+            "reports": enriched,
+            "current_state": state or "all",
+            "current_target_type": target_type or "all",
+        },
+    )
+
+
+# --- Report filing (any authenticated user) ---
+
+
+@router.post("/report", response_class=HTMLResponse)
+async def social_report(
+    request: Request,
+    target_type: str = Form(...),
+    target_id: str = Form(...),
+    reason_code: str = Form(...),
+    details: str | None = Form(None),
+    redirect_url: str = Form("/social/feed"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/report — file an abuse report. Reporter identity protected."""
+    if target_type not in ("profile", "publication", "comment", "vote"):
+        raise HTTPException(400, "Invalid target type")
+    if reason_code not in (
+        "harassment", "privacy", "non_consensual", "impersonation",
+        "dangerous_content", "spam", "other",
+    ):
+        raise HTTPException(400, "Invalid reason code")
+
+    await create_report(
+        db, current_user.id, target_type,
+        __import__("uuid").UUID(target_id), reason_code, details,
+    )
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+# --- Moderator actions (admin-only) ---
+
+
+@router.post("/moderation/{report_id}/assign", response_class=HTMLResponse)
+async def social_moderation_assign(
+    report_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/moderation/{id}/assign — moderator takes a report."""
+    _check_moderator(current_user)
+    await assign_report(db, __import__("uuid").UUID(report_id), current_user.id)
+    return RedirectResponse(url="/social/moderation", status_code=303)
+
+
+@router.post("/moderation/{report_id}/action", response_class=HTMLResponse)
+async def social_moderation_action(
+    report_id: str,
+    action_type: str = Form(...),
+    reason: str = Form(...),
+    action_target_id: str | None = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """POST /social/moderation/{id}/action — execute a moderation action."""
+    _check_moderator(current_user)
+
+    if action_type not in (
+        "hide_publication", "hide_comment", "invalidate_vote",
+        "resolve_report", "dismiss_report", "request_evidence",
+    ):
+        raise HTTPException(400, "Invalid action type")
+
+    report_uuid = __import__("uuid").UUID(report_id)
+    report = await get_report(db, report_uuid)
+    if report is None:
+        raise HTTPException(404, "Report not found")
+
+    # Execute domain action based on type
+    action_metadata = {"target_id": action_target_id} if action_target_id else {}
+
+    if action_type == "hide_publication" and action_target_id:
+        ok = await hide_publication(db, __import__("uuid").UUID(action_target_id))
+        if not ok:
+            raise HTTPException(404, "Publication not found")
+    elif action_type == "hide_comment" and action_target_id:
+        ok = await hide_comment(db, __import__("uuid").UUID(action_target_id))
+        if not ok:
+            raise HTTPException(404, "Comment not found")
+    elif action_type == "invalidate_vote" and action_target_id:
+        ok = await invalidate_vote(db, __import__("uuid").UUID(action_target_id))
+        if not ok:
+            raise HTTPException(404, "Vote not found")
+    elif action_type == "resolve_report":
+        await resolve_report(db, report_uuid, current_user.id)
+    elif action_type == "dismiss_report":
+        await dismiss_report(db, report_uuid, current_user.id)
+
+    # Record immutable action
+    await create_moderation_action(
+        db, report_uuid, current_user.id, action_type, reason, action_metadata,
+    )
+    return RedirectResponse(url="/social/moderation", status_code=303)

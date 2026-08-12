@@ -476,3 +476,95 @@ class SocialEncouragement(Base):
     __table_args__ = (
         UniqueConstraint("sender_id", "target_type", "target_id", name="uq_encouragement_once"),
     )
+
+
+# ---------------------------------------------------------------------------
+# S5 — Moderation (reports, queue, actions)
+# ---------------------------------------------------------------------------
+
+REPORT_TARGETS = frozenset({"profile", "publication", "comment", "vote"})
+REPORT_REASONS = frozenset({
+    "harassment", "privacy", "non_consensual", "impersonation",
+    "dangerous_content", "spam", "other",
+})
+REPORT_STATES = frozenset({"open", "reviewing", "resolved", "dismissed"})
+MOD_ACTION_TYPES = frozenset({
+    "hide_publication", "hide_comment", "invalidate_vote",
+    "suspend_social", "resolve_report", "dismiss_report",
+    "request_evidence",
+})
+
+
+class ModerationReport(Base):
+    """Abuse report — filed by any user against a target.
+
+    Reporter identity is NOT disclosed to the target (11_SOCIAL_SPEC.md §11).
+    """
+
+    __tablename__ = "moderation_reports"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # Reporter (identity protected — never exposed to target)
+    reporter_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+
+    # Target: profile(user_id), publication(id), comment(id), vote(id)
+    target_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+
+    # Pre-defined reason code + optional free-text details
+    reason_code: Mapped[str] = mapped_column(String(30), nullable=False)
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # State: open → reviewing → resolved | dismissed
+    state: Mapped[str] = mapped_column(String(20), default="open", nullable=False)
+
+    # Queue assignment
+    assigned_to: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+    )
+
+
+class ModerationAction(Base):
+    """Immutable moderation event — every moderator decision is recorded.
+
+    Append-only audit trail (11_SOCIAL_SPEC.md §11).
+    """
+
+    __tablename__ = "moderation_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("moderation_reports.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Moderator who took the action
+    moderator_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+
+    # Action type from MOD_ACTION_TYPES
+    action_type: Mapped[str] = mapped_column(String(30), nullable=False)
+
+    # Human-readable reason (mandatory)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Target-specific metadata (e.g. which publication was hidden)
+    action_metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
