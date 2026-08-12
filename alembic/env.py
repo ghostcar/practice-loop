@@ -45,6 +45,7 @@ from app.platform.social.models import (  # noqa: F401
     SocialGrant,
     SocialNotification,
     SocialProfile,
+    SocialPublication,
     SocialRelationship,
     SocialSubject,
 )

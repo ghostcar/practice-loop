@@ -657,4 +657,17 @@ EN = {
     "social_rel_block_btn": "Block",
     "social_rel_unblock": "Unblock",
     "social_rel_notif": "Notifications",
+    # S3 — Feed & Publications
+    "social_feed_title": "Feed",
+    "social_feed_all": "All",
+    "social_feed_publish": "Publish",
+    "social_feed_publish_btn": "Publish",
+    "social_feed_rel_only": "Relationships only",
+    "social_feed_unlisted": "Unlisted",
+    "social_feed_public": "Public",
+    "social_feed_recent": "Recent Publications",
+    "social_feed_empty": "No publications in your feed yet.",
+    "social_feed_my": "My Publications",
+    "social_feed_my_empty": "You haven't published anything yet.",
+    "social_feed_withdraw": "Withdraw",
 }

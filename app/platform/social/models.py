@@ -273,3 +273,48 @@ class SocialNotification(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False,
     )
+
+
+# ---------------------------------------------------------------------------
+# S3 — Publications
+# ---------------------------------------------------------------------------
+
+VISIBILITY_LEVELS = frozenset({"relationship_only", "unlisted", "public"})
+
+
+class SocialPublication(Base):
+    """Immutable redacted snapshot — published through domain adapter.
+
+    Social never reads private domain tables directly. The adapter builds a
+    preview, owner confirms the hash, and the immutable snapshot is stored here.
+    Feed queries ONLY this table — never joins Tracker/Timer private tables.
+    """
+
+    __tablename__ = "social_publications"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("social_subjects.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+
+    # Visibility: relationship_only | unlisted | public
+    visibility: Mapped[str] = mapped_column(String(20), default="relationship_only", nullable=False)
+
+    # Immutable redacted snapshot (built by adapter, confirmed by owner)
+    snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
+    snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    # Subject namespace for feed filtering (tracker.* / timer.*)
+    subject_namespace: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+
+    # Lifecycle: active → withdrawn (never edited)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False,
+    )
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

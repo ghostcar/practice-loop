@@ -662,4 +662,17 @@ RU = {
     "social_rel_block_btn": "Заблокировать",
     "social_rel_unblock": "Разблокировать",
     "social_rel_notif": "Уведомления",
+    # S3 — Feed & Publications
+    "social_feed_title": "Лента",
+    "social_feed_all": "Все",
+    "social_feed_publish": "Опубликовать",
+    "social_feed_publish_btn": "Опубликовать",
+    "social_feed_rel_only": "Только для связей",
+    "social_feed_unlisted": "По ссылке",
+    "social_feed_public": "Публично",
+    "social_feed_recent": "Последние публикации",
+    "social_feed_empty": "Публикаций в ленте пока нет.",
+    "social_feed_my": "Мои публикации",
+    "social_feed_my_empty": "Вы ещё ничего не публиковали.",
+    "social_feed_withdraw": "Отозвать",
 }
