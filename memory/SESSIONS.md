@@ -1,3 +1,10 @@
+## 2026-08-12 — Сессия 90 (Полный ре-экспорт + аудит сплитов + utcnow)
+
+- **Полный ре-экспорт** `llm/pipeline/__init__.py` (S88 заузил поверхность): prompt-константы (DIET_EVALUATE/GENERATE/TRAINING_SYNERGY_SYSTEM, ANALYZE_DAY_SYSTEM, PLAN_DAY_SYSTEM, SUGGEST_NEXT_DAY_SYSTEM, SYSTEM_PROMPT_TEMPLATE), модели (ActivityLog, Diet/DietConsumption/DietEvaluation/DietItem/DietTrainingReview, LLMProviderConfig, TaskBodyTarget, TaskInventoryUsage, TaskLocationUsage, TrainingDay), repair/tools/validator (JsonRepairError, parse_llm_json, TOOLS, get_allowed_ids, validate_llm_response, validate_params_against_schema), cross-модули (call_llm, build_context, format_context_*).
+- **Аудит остальных 6 сплитов** (AST-сравнение исходной поверхности vs пакета): execution-фасад восстановил 5 моделей + get_session/get_active_session; import_data — PointsProfile; social/repositories — 15 model-классов; references/points_v2/social-api — только `router` снаружи (no-op).
+- **utcnow → datetime.now(UTC)** в 8 social-файлах (все DateTime(timezone=True)); убраны хаки `__import__("datetime").timedelta`; нормализация tz (`replace(tzinfo=UTC)` при naive) перед сравнением cooldown_until (api/relationships) и deadline_at (repositories/verification) — SQLite возвращает naive, PG — aware.
+- **Проверки**: 598/598 ✅, ruff ✅, format ✅, ревью (Nit Pick Nick) учтено.
+
 ## 2026-08-12 — Сессия 89 (Фикс 17 LLM-тестов после сплита pipeline)
 
 - **Корень**: НЕ cryptography/fernet на Py3.13 (ошибочный диагноз из S88). Причина — S88-сплит сломал monkeypatch: суб-модули делали `from app.llm.client import call_llm` (связывание на import-тайме), поэтому patch `app.llm.pipeline.call_llm` (и `app.llm.client.call_llm`) не доходил до вызовов → тесты уходили в реальный HTTP (`APIConnectionError`).
