@@ -248,6 +248,8 @@ async def reorder_rules(
     existing = list(result.scalars().all())
     existing_ids = {rule.id for rule in existing}
 
+    if not rule_ids:
+        raise ValueError("Rule list must not be empty")
     if len(rule_ids) != len(set(rule_ids)):
         raise ValueError("Duplicate rule ids in reorder request")
     if set(rule_ids) != existing_ids:

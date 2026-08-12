@@ -522,9 +522,13 @@ function verifyTag(occId, expectedTag) {
             setTimeout(function() { list.classList.remove('opacity-60'); }, 300);
           } else {
             console.error('Reorder failed', r.status);
+            location.reload();  // revert optimistic DOM to server state
           }
         })
-        .catch(function(err) { console.error('Reorder error', err); });
+        .catch(function(err) {
+          console.error('Reorder error', err);
+          location.reload();  // revert optimistic DOM to server state
+        });
       });
     });
   }
