@@ -9,6 +9,7 @@
 |---|---|---|
 | 1 | `app/locktimer/services/execution.py` (1409 → пакет) | ✅ Session 82 — drafts(233)/materializer(261)/session(256)/jobs(104)/tags(123)/execution(525, ядро + фасад). AST-извлечение (тела побайтово), `__all__` ре-экспорт 33 имён, мёртвый `_NOW` удалён, 592/592 ✅, ruff ✅ |
 | 2 | `app/api/import_data.py` (988 → пакет) | ✅ Session 83 — api/importers/: base(126, CSV/JSON dispatch с lazy-импортами + `_float_or_none`) + 10 импортёров (31–76 строк); import_data.py → 486 (роутер + TEMPLATES/EXPORT_TYPES + экспорт). Контракт: импортёры — из app.api.importers, не из import_data. +6 HTTP dispatch-тестов, 598/598 ✅, ruff ✅ |
+| 3 | `app/api/references.py` (817 → пакет) | ✅ Session 84 — api/references/: body_parts(111, 4 роута), locations(217, 7 роутов), categories(25, 1 роут), task_targets(460, 11 роутов); __init__.py → агрегатор (include_router). ALL 23 routes preserved, 598/598 ✅, ruff ✅ |
 
 ## Принципы
 
