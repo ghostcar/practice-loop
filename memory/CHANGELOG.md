@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-12 | Session 69 — Timer UI | **Timer frontend fixes + dashboard card**: fixed active_nav mismatch ('timer' → 'locktimer') — nav highlight now works; POST /locktimer/new creates draft session + redirects (was 404); LockTimer active session card on dashboard (amber theme, shows duration/TZ/slots/tasks/end time); dashboard.py fetches locktimer active session via composition gate; +7 i18n keys (dashboard_timer_*); 518/518 ✅, deployed |
 | 2026-08-11 | Session 68 — C9 | **Hardening**: 11 concurrency tests (double-start/open/close/penalty/job/outbox/cross-user/complete/recovery); secret scan (clean); owner allowlist gate; RUNBOOK.md (11 разделов); pre_deploy_check.sh (7 steps); /healthz/readiness; ADR-057. **518/518 ✅** |
 | 2026-08-11 | Session 67 — Media | **Universal media + verification**: media_assets (staged→ready, magic-bytes+SHA-256, thumbnail via Pillow), verification_challenges (HMAC-SHA256, constant-time, no OCR), API upload/serve/thumbnail/delete/finalize + create/verify/status; migration 027; config (challenge_hmac_key, media_max_upload_bytes 15MB). Platform-level — shared Tracker+Timer. +19 tests. **507/507 ✅**, ADR-056 |
 | 2026-08-11 | Session 66 — C7+C8 | **LockTimer LLM + UI**: lock_llm_proposals (migration 026); timer-aware context builder + proposals API (create/get/apply/reject by type); SSR pages /locktimer overview + session detail; LOCKTIMER_CORE_ENABLED=true in conftest; +23 i18n keys EN/RU; +9 C78 tests. **488/488 ✅**, ADR-055 |
