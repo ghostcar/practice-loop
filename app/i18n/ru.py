@@ -759,4 +759,7 @@ RU = {
     "dashboard_no_training": "Нет планов тренировок",
     "dashboard_meals_today": "приёмов пищи сегодня",
     "dashboard_plans_today": "планов сегодня",
+    # Rule reordering (drag&drop)
+    "locktimer_drag_hint": "перетащите для порядка",
 }
+

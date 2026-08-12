@@ -45,6 +45,19 @@ def _now() -> datetime:
 _NOW = _now()  # snapshot for deterministic materialization in a single call
 
 
+async def _next_rule_sort_order(
+    db: AsyncSession, model: type[LockSlotRule] | type[LockTaskRule], session_id: uuid.UUID
+) -> int:
+    """Return max(sort_order)+1 for rules of a session — new rules append at the end."""
+    from sqlalchemy import func
+
+    result = await db.execute(
+        select(func.max(model.sort_order)).where(model.session_id == session_id)
+    )
+    current_max = result.scalar_one_or_none()
+    return (current_max if current_max is not None else -1) + 1
+
+
 # ============================================================================
 # C3 — Draft Service
 # ============================================================================
@@ -126,6 +139,7 @@ async def add_slot_rule(
     inner_period_id: uuid.UUID | None = None,
     **extra,
 ) -> LockSlotRule:
+    next_order = await _next_rule_sort_order(db, LockSlotRule, session_id)
     rule = LockSlotRule(
         session_id=session_id,
         client_key=uuid.uuid4(),
@@ -134,6 +148,7 @@ async def add_slot_rule(
         rule_type=rule_type,
         schedule=schedule,
         duration_seconds=duration_seconds,
+        sort_order=next_order,
         allow_late_open=extra.get("allow_late_open", False),
         max_late_seconds=extra.get("max_late_seconds", 0),
         extend_on_late_open=extra.get("extend_on_late_open", False),
@@ -160,12 +175,14 @@ async def add_task_rule(
     source_entity_id: uuid.UUID | None = None,
     **extra,
 ) -> LockTaskRule:
+    next_order = await _next_rule_sort_order(db, LockTaskRule, session_id)
     rule = LockTaskRule(
         session_id=session_id,
         client_key=uuid.uuid4(),
         inner_period_id=inner_period_id,
         source_entity_id=source_entity_id,
         title=title,
+        sort_order=next_order,
         description=extra.get("description"),
         category=extra.get("category", "general"),
         schedule_type=schedule_type,
@@ -193,6 +210,63 @@ async def delete_slot_rule(db: AsyncSession, rule: LockSlotRule) -> None:
 
 async def delete_task_rule(db: AsyncSession, rule: LockTaskRule) -> None:
     await db.delete(rule)
+    await db.flush()
+
+
+async def reorder_rules(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    owner_id: uuid.UUID,
+    kind: str,  # "slot" or "task"
+    rule_ids: list[uuid.UUID],
+) -> None:
+    """Reorder slot/task rules of a draft session by the given id order.
+
+    Validates that every provided id belongs to the session and that the set
+    of ids matches the current rules exactly, then rewrites sort_order to
+    match the requested sequence. Writes an audit event.
+    """
+    session = await get_session(db, session_id, owner_id)
+    if session is None:
+        raise ValueError("Session not found")
+    if session.state != e.SESSION_DRAFT:
+        raise ValueError("Only draft sessions can be reordered")
+
+    if kind == "slot":
+        model = LockSlotRule
+        object_type = "lock_slot_rule"
+        event_type = "locktimer.slot_rules.reordered"
+    elif kind == "task":
+        model = LockTaskRule
+        object_type = "lock_task_rule"
+        event_type = "locktimer.task_rules.reordered"
+    else:
+        raise ValueError(f"Unknown rule kind: {kind}")
+
+    result = await db.execute(select(model).where(model.session_id == session_id))
+    existing = list(result.scalars().all())
+    existing_ids = {rule.id for rule in existing}
+
+    if len(rule_ids) != len(set(rule_ids)):
+        raise ValueError("Duplicate rule ids in reorder request")
+    if set(rule_ids) != existing_ids:
+        raise ValueError("Rule list must contain exactly the session's current rules")
+
+    by_id = {rule.id: rule for rule in existing}
+    for position, rule_id in enumerate(rule_ids):
+        by_id[rule_id].sort_order = position
+
+    await write_audit(
+        db,
+        session_id=session_id,
+        actor_type="user",
+        actor_user_id=owner_id,
+        event_type=event_type,
+        object_type=object_type,
+        object_id=session_id,
+        payload={"rule_ids": [str(r) for r in rule_ids]},
+    )
     await db.flush()
 
 

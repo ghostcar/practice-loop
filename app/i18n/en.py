@@ -754,4 +754,7 @@ EN = {
     "dashboard_no_training": "No training plans today",
     "dashboard_meals_today": "meals logged today",
     "dashboard_plans_today": "plans today",
+    # Rule reordering (drag&drop)
+    "locktimer_drag_hint": "drag to reorder",
 }
+

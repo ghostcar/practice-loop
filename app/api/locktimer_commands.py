@@ -42,6 +42,7 @@ from app.locktimer.services.execution import (
     list_tag_violations,
     lookup_tag,
     open_slot,
+    reorder_rules,
     reveal_task,
     safety_stop,
     skip_task,
@@ -372,6 +373,52 @@ async def api_delete_task_rule(
         raise HTTPException(404, "Task rule not found")
 
     await delete_task_rule(db, rule)
+    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+
+
+@router.post("/sessions/{session_id}/slot-rules/reorder")
+async def api_reorder_slot_rules(
+    session_id: uuid.UUID,
+    request: Request,
+    rule_ids: str = Form(default=""),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reorder slot rules of a draft session. Expects comma-separated rule ids."""
+    parsed = [uuid.UUID(x.strip()) for x in rule_ids.split(",") if x.strip()]
+    try:
+        await reorder_rules(
+            db,
+            session_id=session_id,
+            owner_id=current_user.id,
+            kind="slot",
+            rule_ids=parsed,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+
+
+@router.post("/sessions/{session_id}/task-rules/reorder")
+async def api_reorder_task_rules(
+    session_id: uuid.UUID,
+    request: Request,
+    rule_ids: str = Form(default=""),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reorder task rules of a draft session. Expects comma-separated rule ids."""
+    parsed = [uuid.UUID(x.strip()) for x in rule_ids.split(",") if x.strip()]
+    try:
+        await reorder_rules(
+            db,
+            session_id=session_id,
+            owner_id=current_user.id,
+            kind="task",
+            rule_ids=parsed,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
 
 

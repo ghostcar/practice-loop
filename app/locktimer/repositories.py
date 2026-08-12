@@ -193,12 +193,20 @@ async def transition_session(
 
 
 async def list_slot_rules(db: AsyncSession, session_id: uuid.UUID) -> list[LockSlotRule]:
-    result = await db.execute(select(LockSlotRule).where(LockSlotRule.session_id == session_id))
+    result = await db.execute(
+        select(LockSlotRule)
+        .where(LockSlotRule.session_id == session_id)
+        .order_by(LockSlotRule.sort_order, LockSlotRule.created_at)
+    )
     return list(result.scalars().all())
 
 
 async def list_task_rules(db: AsyncSession, session_id: uuid.UUID) -> list[LockTaskRule]:
-    result = await db.execute(select(LockTaskRule).where(LockTaskRule.session_id == session_id))
+    result = await db.execute(
+        select(LockTaskRule)
+        .where(LockTaskRule.session_id == session_id)
+        .order_by(LockTaskRule.sort_order, LockTaskRule.created_at)
+    )
     return list(result.scalars().all())
 
 

@@ -158,6 +158,7 @@ class LockSlotRule(Base):
     late_close_policy: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     llm_flags: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     require_tag: Mapped[bool] = mapped_column(default=False, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -231,6 +232,7 @@ class LockTaskRule(Base):
     penalty_policy: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     availability_policy: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     llm_flags: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -404,7 +406,9 @@ class LockTagViolation(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lock_sessions.id", ondelete="CASCADE"), nullable=False)
-    slot_occurrence_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lock_slot_occurrences.id", ondelete="CASCADE"), nullable=False)
+    slot_occurrence_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lock_slot_occurrences.id", ondelete="CASCADE"), nullable=False
+    )
     expected_tag: Mapped[str | None] = mapped_column(String(100), nullable=True)
     provided_tag: Mapped[str] = mapped_column(String(100), nullable=False)
     reason: Mapped[str] = mapped_column(String(40), nullable=False, default="mismatch")  # mismatch, missing_required
