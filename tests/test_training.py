@@ -260,7 +260,7 @@ async def test_generate_plan_rejects_foreign_private_entity(
             }
         ],
     }
-    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+    monkeypatch.setattr("app.llm.client.call_llm", await _fake_llm(plan))
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
@@ -289,7 +289,7 @@ async def test_generate_plan_rejects_out_of_range_params(
             }
         ],
     }
-    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+    monkeypatch.setattr("app.llm.client.call_llm", await _fake_llm(plan))
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
@@ -324,7 +324,7 @@ async def test_generate_plan_sanitizes_subtasks(
             }
         ],
     }
-    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+    monkeypatch.setattr("app.llm.client.call_llm", await _fake_llm(plan))
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
@@ -379,7 +379,7 @@ async def test_generate_plan_risk_gate_blocks_unassessed(
             }
         ],
     }
-    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+    monkeypatch.setattr("app.llm.client.call_llm", await _fake_llm(plan))
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
@@ -398,7 +398,7 @@ async def test_generate_plan_no_partial_day_on_llm_error(
     async def failing_llm(**kwargs):
         raise JsonRepairError("boom")
 
-    monkeypatch.setattr("app.llm.pipeline.call_llm", failing_llm)
+    monkeypatch.setattr("app.llm.client.call_llm", failing_llm)
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
@@ -437,7 +437,7 @@ async def test_generate_plan_removes_leftover_empty_plan(
             }
         ],
     }
-    monkeypatch.setattr("app.llm.pipeline.call_llm", await _fake_llm(plan))
+    monkeypatch.setattr("app.llm.client.call_llm", await _fake_llm(plan))
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
@@ -472,7 +472,7 @@ async def test_analyze_day_no_partial_state_on_second_llm_error(
             return {"content": json.dumps({"analysis": "Good day"}), "usage": _USAGE}
         raise JsonRepairError("second call failed")
 
-    monkeypatch.setattr("app.llm.pipeline.call_llm", analyze_llm)
+    monkeypatch.setattr("app.llm.client.call_llm", analyze_llm)
 
     response = await auth_client.post("/training/analyze", follow_redirects=False)
     assert response.status_code == 303

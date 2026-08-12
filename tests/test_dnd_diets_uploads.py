@@ -456,10 +456,10 @@ async def test_generate_daily_plan_accepts_name(db_session, test_user):
     }
 
     with (
-        patch("app.llm.pipeline.build_context", new=AsyncMock(return_value=full_context)),
-        patch("app.llm.pipeline.get_allowed_ids", return_value={plan_payload["tasks"][0]["entity_id"]}),
+        patch("app.llm.context_builder.build_context", new=AsyncMock(return_value=full_context)),
+        patch("app.llm.validator.get_allowed_ids", return_value={plan_payload["tasks"][0]["entity_id"]}),
         patch(
-            "app.llm.pipeline.call_llm",
+            "app.llm.client.call_llm",
             new=AsyncMock(
                 return_value={
                     "content": json.dumps(plan_payload),

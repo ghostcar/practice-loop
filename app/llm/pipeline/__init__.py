@@ -5,13 +5,16 @@ Sub-modules:
 - training.py — daily plan generation + day analysis
 - diet.py — diet generation + evaluation + training synergy
 
-Re-exports all public names so existing imports and monkeypatches remain unchanged:
-    from app.llm.pipeline import generate_task, call_llm, ...
+Re-exports all public names so existing imports remain unchanged:
+    from app.llm.pipeline import generate_task, generate_daily_plan, ...
+
+Note on testability: the sub-modules reference ``call_llm``, ``build_context``
+and ``get_allowed_ids`` through their source modules at call time
+(``app.llm.client`` / ``app.llm.context_builder`` / ``app.llm.validator``),
+so tests patch those source modules directly — not this package.
 """
 
-# Re-export sub-module contents (backward compat for tests that monkeypatch these).
-from app.llm.client import call_llm  # noqa: F401
-from app.llm.context_builder import build_context  # noqa: F401
+from app.llm.context_builder import filter_automation_eligible  # noqa: F401
 from app.llm.pipeline.diet import (  # noqa: F401
     DIET_DESC_MAX,
     DIET_ITEM_LIMIT,
@@ -35,4 +38,3 @@ from app.llm.pipeline.training import (  # noqa: F401
     analyze_training_day,
     generate_daily_plan,
 )
-from app.llm.validator import get_allowed_ids  # noqa: F401

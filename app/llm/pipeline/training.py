@@ -9,9 +9,8 @@ from datetime import UTC, date, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.llm.client import call_llm
+from app.llm import client, context_builder, validator
 from app.llm.context_builder import (
-    build_context,
     filter_automation_eligible,
     format_context_abstract,
     format_context_for_prompt,
@@ -26,7 +25,6 @@ from app.llm.training_prompts import (
     SUGGEST_NEXT_DAY_SYSTEM,
 )
 from app.llm.validator import (
-    get_allowed_ids,
     validate_params_against_schema,
 )
 from app.models.activity_log import ActivityLog
@@ -57,10 +55,10 @@ async def generate_daily_plan(
     - The TrainingDay is created only after the LLM response has been parsed
       and validated, so a failed attempt never leaves a partial plan behind.
     """
-    context = await build_context(db, user_id, locale=locale)
+    context = await context_builder.build_context(db, user_id, locale=locale)
     # REM §5.2 automation gate for training plans too.
     context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
-    allowed_ids = get_allowed_ids(context)
+    allowed_ids = validator.get_allowed_ids(context)
     entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
 
     # Abstract mode (strict providers): candidates & history must stay opaque —
@@ -72,7 +70,7 @@ async def generate_daily_plan(
     system_prompt = PLAN_DAY_SYSTEM.format(locale=locale)
     user_message = f"Context:\n{context_text}\n\nGenerate a daily training plan for {target_date}."
 
-    result = await call_llm(
+    result = await client.call_llm(
         config=llm_config,
         system_prompt=system_prompt,
         user_message=user_message,
@@ -216,7 +214,7 @@ async def analyze_training_day(
     system_prompt = ANALYZE_DAY_SYSTEM.format(locale=locale)
     user_message = f"Day results:\n{day_text}\n\nProvide analysis."
 
-    analysis_result = await call_llm(
+    analysis_result = await client.call_llm(
         config=llm_config,
         system_prompt=system_prompt,
         user_message=user_message,
@@ -230,7 +228,7 @@ async def analyze_training_day(
     next_system = SUGGEST_NEXT_DAY_SYSTEM.format(locale=locale)
     next_message = f"Today's results:\n{day_text}\n\nAnalysis: {analysis_summary}\n\nSuggest tomorrow's plan."
 
-    next_result = await call_llm(
+    next_result = await client.call_llm(
         config=llm_config,
         system_prompt=next_system,
         user_message=next_message,

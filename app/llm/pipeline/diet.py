@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.llm.client import call_llm
+from app.llm import client
 from app.llm.diet_prompts import (
     DIET_EVALUATE_SYSTEM,
     DIET_GENERATE_SYSTEM,
@@ -48,7 +48,9 @@ async def generate_diet(
     system_prompt = DIET_GENERATE_SYSTEM.format(locale=locale)
     user_message = f"Direction/goal: {user_goal}\n\nCreate a daily diet plan."
 
-    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    result = await client.call_llm(
+        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+    )
     raw_response = result["content"]
     usage = result["usage"]
     parsed = parse_llm_json(raw_response, is_last_attempt=True)
@@ -148,7 +150,9 @@ async def evaluate_diet(
         "Evaluate adherence and suggest plan adjustments."
     )
 
-    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    result = await client.call_llm(
+        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+    )
     raw_response = result["content"]
     usage = result["usage"]
     parsed = parse_llm_json(raw_response, is_last_attempt=True)
@@ -326,7 +330,9 @@ async def analyze_diet_training_synergy(
         "Analyze the mutual influence between nutrition and training."
     )
 
-    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    result = await client.call_llm(
+        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+    )
     usage = result["usage"]
     parsed = parse_llm_json(result["content"], is_last_attempt=True)
 

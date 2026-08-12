@@ -108,7 +108,7 @@ async def test_diet_llm_generate(db_session, test_user):
         ],
     }
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),
@@ -144,7 +144,7 @@ async def test_diet_llm_generate_rejects_empty(db_session, test_user):
 
     with (
         patch(
-            "app.llm.pipeline.call_llm",
+            "app.llm.client.call_llm",
             new=AsyncMock(
                 return_value={
                     "content": json.dumps({"name": "Empty", "items": []}),
@@ -168,7 +168,7 @@ async def test_diet_llm_generate_endpoint(auth_client, db_session, test_user):
         "items": [{"name": "Eggs", "quantity": 2, "unit": "pcs", "meal_time": "breakfast"}],
     }
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),
@@ -225,7 +225,7 @@ async def test_diet_llm_evaluate_applies_adjustments(db_session, test_user):
         ],
     }
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),
@@ -265,7 +265,7 @@ async def test_diet_llm_evaluate_endpoint(auth_client, db_session, test_user):
 
     payload = {"score": 80, "summary": "Good", "findings": [], "adjustments": []}
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),
@@ -435,9 +435,9 @@ async def test_generate_task_uses_canonical_entity_name(db_session, test_user):
         "reasoning": "r",
     }
     with (
-        patch("app.llm.pipeline.build_context", new=AsyncMock(return_value=full_context)),
+        patch("app.llm.context_builder.build_context", new=AsyncMock(return_value=full_context)),
         patch(
-            "app.llm.pipeline.call_llm",
+            "app.llm.client.call_llm",
             new=AsyncMock(
                 return_value={
                     "content": json.dumps(payload),
@@ -463,7 +463,7 @@ async def test_evaluation_history_persisted(auth_client, db_session, test_user):
 
     payload = {"score": 60, "summary": "First", "findings": [], "adjustments": []}
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),
@@ -484,7 +484,7 @@ async def test_evaluation_history_persisted(auth_client, db_session, test_user):
     # Second run appends, newest first
     payload2 = {"score": 80, "summary": "Second", "findings": [], "adjustments": []}
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload2),
@@ -537,7 +537,7 @@ async def test_diet_training_synergy(db_session, test_user):
         "adjustments": ["Add a pre-workout snack on training days"],
     }
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),
@@ -570,7 +570,7 @@ async def test_synergy_endpoint_and_list(auth_client, db_session, test_user):
 
     payload = {"summary": "S", "correlations": [], "adjustments": []}
     with patch(
-        "app.llm.pipeline.call_llm",
+        "app.llm.client.call_llm",
         new=AsyncMock(
             return_value={
                 "content": json.dumps(payload),

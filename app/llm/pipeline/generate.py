@@ -11,9 +11,8 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.llm.client import call_llm
+from app.llm import client, context_builder, validator
 from app.llm.context_builder import (
-    build_context,
     filter_automation_eligible,
     format_context_abstract,
     format_context_for_prompt,
@@ -21,7 +20,6 @@ from app.llm.context_builder import (
 from app.llm.repair import JsonRepairError, parse_llm_json
 from app.llm.tools import TOOLS
 from app.llm.validator import (
-    get_allowed_ids,
     validate_llm_response,
     validate_params_against_schema,
 )
@@ -112,11 +110,11 @@ async def generate_task(
     inventory_item_id: str | None = None,
 ) -> ActivityLog:
     """Generate a task via LLM and save to ActivityLog."""
-    context = await build_context(db, user_id, session_id=session_id, locale=locale)
+    context = await context_builder.build_context(db, user_id, session_id=session_id, locale=locale)
     # REM §5.2 automation gate: not_assessed/high (and elevated without consent)
     # are never auto-selected — they must not even appear in the prompt.
     context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
-    allowed_ids = get_allowed_ids(context)
+    allowed_ids = validator.get_allowed_ids(context)
 
     # Choose format based on LLM mode
     is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
@@ -145,7 +143,7 @@ async def generate_task(
     for attempt in range(MAX_RETRIES):
         is_last = attempt == MAX_RETRIES - 1
         try:
-            result = await call_llm(
+            result = await client.call_llm(
                 config=llm_config,
                 system_prompt=system_prompt,
                 user_message=user_message,
@@ -270,9 +268,9 @@ async def generate_weekly_tasks(
     target_dates = [start_date + timedelta(days=i) for i in range(days)]
     date_labels = [d.isoformat() for d in target_dates]
 
-    context = await build_context(db, user_id, locale=locale)
+    context = await context_builder.build_context(db, user_id, locale=locale)
     context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
-    allowed_ids = get_allowed_ids(context)
+    allowed_ids = validator.get_allowed_ids(context)
     entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
 
     is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
@@ -292,7 +290,9 @@ async def generate_weekly_tasks(
         f"Generate exactly ONE task per day ({days} tasks total)."
     )
 
-    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    result = await client.call_llm(
+        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+    )
     raw_response = result["content"]
     usage = result["usage"]
     parsed = parse_llm_json(raw_response, is_last_attempt=True)
