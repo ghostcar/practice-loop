@@ -1,15 +1,39 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-11 (сессия 68 — C9 hardening).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 74 — Social S2 Relationships).
 
-## LockTimer — C0 ✅ + C1+C2 ✅ + C3+C4+C5 ✅ + C7+C8 ✅ + Universal Media ✅ + C9 ✅
+## Общий статус: 538/538 тестов ✅, ruff ✅, format ✅
 
-- [x] **C0–C8**: Product composition, domain, persistence, execution, LLM, UI, media.
-- [x] **C9 Hardening**: 11 concurrency tests (double-start/open/close/penalty/job/outbox, cross-user, complete idempotency, recovery). Secret scan (чисто). Owner allowlist. RUNBOOK.md (деплой/миграция/rollback/backup/инциденты/SLO). pre_deploy_check.sh (7 шагов). /healthz/readiness.
-- [x] **ADR** 047–057 записаны.
-- [x] **Тесты**: 518/518 ✅ (+99 new total), ruff ✅, format ✅.
+## LockTimer Core — C0–C9 полностью ✅
 
-**Осталось**: Platform Social (S0–S8)
+- [x] **C0**: Platform composition, 3 варианта (tracker/timer/combined), feature flags
+- [x] **C1+C2**: Domain (6+7+10 state machines) + persistence (12 таблиц lock_*, миграция 025)
+- [x] **C3+C4+C5**: Draft/Start, Materializer (5 slot + 6 task типов, rolling 90d), Slots/Tasks/Penalty/Safety-Stop/Outbox
+- [x] **C7+C8**: LLM proposals + Timer UI (overview, session detail, interactive actions)
+- [x] **Universal Media**: media_assets + verification_challenges (platform-level, shared)
+- [x] **C9 Hardening**: 11 concurrency tests, secret scan, owner allowlist, RUNBOOK.md, /healthz/readiness
+- [x] **ADR**: 047–057
+
+## Timer UI (Sessions 69–72)
+
+- [x] **S69**: active_nav fix, POST /locktimer/new, dashboard timer card
+- [x] **S70**: Interactive UI — commands API (start/safety-stop/slots/tasks), session detail buttons, dashboard quick links
+- [x] **S71**: Real-time countdown JS, validation (conflict check), extend horizon, templates CRUD
+- [x] **S72**: Numbered tags (close_tag_number, require_tag, verify-tag, lock_tag_violations, 20 tag mechanics tests)
+
+**Осталось по Timer**: ⏸ tag audit UI page (Q12), timer-only deploy smoke test (Q12)
+
+## Platform Social — S0 ✅ + S1 ✅ + S2 ✅ (Sessions 73–74)
+
+- [x] **S0**: app/platform/social/ package, social_profiles (alias-based identity), social_consents, /social/profile, /social/privacy
+- [x] **S1**: social_subjects registry, SocialSubjectAdapter protocol, adapter registry, /social/subjects, /social/api/capabilities
+- [x] **S2**: social_relationships (invitation lifecycle), social_blocks (cross-product), social_grants (scoped caps), social_notifications (outbox), /social/relationships
+- [x] **ADR**: 058–059
+- [x] **Миграции**: 029 (S0+S1) + 030 (S2)
+- [x] **i18n**: +51 ключей EN/RU (social_*)
+- [x] **ENV**: SOCIAL_ENABLED + adapter flags в docker-compose.yml
+
+**Осталось по Social**: S3 (publications), S4 (verification+comments), S5 (moderation), S6 (adapters), S7 (hardening), S8 (keyholder design)
 
 ## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 

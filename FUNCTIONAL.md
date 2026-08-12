@@ -256,7 +256,94 @@ inventory_items, attachments, user_progress.
 
 ---
 
-## 16. Планы / направление развития
+## 16. LockTimer — персональный таймер самодисциплины
+
+Отдельный bounded context (`app/locktimer/`) с таблицами `lock_*`. Включается флагом
+`LOCKTIMER_CORE_ENABLED=true`. Доступен на странице `/locktimer`.
+
+### Модель
+- **LockSession**: draft → active → completed / safety_stopped. duration_type, timezone,
+  effective_end_at, merge_gap, random_seed (детерминированная генерация).
+- **LockSlotRule**: 5 типов расписания (every_n_days, exact_datetime, recurring_from_date,
+  flexible_window_once, after_previous_close). duration, grace, extend_on_late_open,
+  require_tag.
+- **LockTaskRule**: 6 типов расписания (daily, every_n_days, recurring_from_date,
+  exact_datetime, anytime_before_end, deterministic_random). source_entity FK,
+  media/verification/penalty/availability policies.
+- **LockSlotOccurrence**: состояние pending→eligible→open→closed, planned_open/close,
+  extension, close_tag_number.
+- **LockTaskOccurrence**: состояние scheduled→visible→submitted→completed/review/failed/skipped.
+- **LockTagViolation**: запись расхождения номерной бирки при verify.
+- **LockLlmProposal**: AI-предложения правил (kind, items JSON, apply/reject).
+
+### Действия
+- **Создание**: POST /locktimer/new → draft с правилами слотов/задач (JSON-расписания)
+- **Старт**: атомарный переход draft→active + снапшот + материализация слотов/задач на 90 дней
+- **Выполнение**: открытие/закрытие слотов, reveal/complete/skip задач
+- **Safety stop**: экстренная остановка с отменой будущих occurrences
+- **Бирки**: опциональная нумерация при закрытии слотов, verify-tag + violation audit
+- **Валидация**: pre-start conflict check (пересечение слотов, распределение задач)
+- **Расширение**: extend horizon — материализация на следующие 90 дней
+- **Шаблоны**: сохранение draft как шаблона, инстанциирование
+- **Countdown**: JS-таймер реального времени (HH:MM:SS) до effective_end_at
+
+### Страницы
+- `/locktimer` — обзор (активная сессия, слоты, задачи, черновики, история)
+- `/locktimer/sessions/{id}` — детали (info grid, правила, occurrences, proposals)
+- `/locktimer/templates` — сохранённые шаблоны
+
+### Интеграция
+- Dashboard: карточка активного таймера (amber-тема, duration/TZ/slots/tasks/end)
+- LLM: timer-aware context builder → proposals API
+- Media: универсальная медиа-система (platform-level, shared с Tracker)
+
+---
+
+## 17. Platform Social — социальная подсистема
+
+Общая capability-based подсистема (`app/platform/social/`). Включается флагом
+`SOCIAL_ENABLED=true`. Не импортирует Tracker/Timer — взаимодействует через адаптеры.
+
+### S0 — Identity
+- **SocialProfile**: публичная личность (alias 3-80 chars, case-insensitive unique),
+  bio, настройки приватности (discoverable, show_in_feed).
+- **SocialConsent**: версионированное согласие (adult attestation + privacy terms).
+- Страницы: `/social/profile` (создание/редактирование), `/social/privacy` (публичная).
+
+### S1 — Subject Registry
+- **SocialSubject**: opaque registry для domain объектов. subject_type (tracker.* / timer.*),
+  domain_object_id, projection_snapshot + version, lifecycle (active/tombstoned).
+- **SocialSubjectAdapter Protocol**: 14 методов (authorize, build_redacted_projection,
+  list_shareable_capabilities, validate_grant_constraints, execute_authorized_action, …).
+- **Adapter registry**: register_adapter / get_adapter_registry.
+- Страницы: `/social/subjects`, `/social/api/capabilities`.
+
+### S2 — Relationships & Grants
+- **SocialRelationship**: invitation lifecycle (pending→accepted/declined/expired/revoked),
+  display_role presets (viewer/coach/mentor/curator), cooldown 24h.
+- **SocialBlock**: cross-product block (shuts down all interactions immediately).
+- **SocialGrant**: scoped capability grants (subject/module/global scope, JSON caps,
+  propose→accept/revoke). Требует accepted relationship + recipient accept.
+- **SocialNotification**: outbox (9 типов: invitation_*, grant_*, block_*, relationship_*).
+- Страница: `/social/relationships` (pending invites, send form, active connections + grants,
+  blocks, notification feed).
+
+---
+
+## 18. Универсальная медиа-система
+
+Platform-level (`app/api/media.py`, `app/api/verification.py`), общая для Tracker и Timer.
+
+- **media_assets**: owner-scoped (owner_type/owner_id), staged→ready→archived pipeline,
+  MIME+magic-bytes validation, SHA-256, thumbnail (Pillow LANCZOS 400x400).
+- **verification_challenges**: одноразовые коды, HMAC-SHA256 (plaintext не хранится),
+  constant-time сравнение, TTL, max_attempts, алфавит без O0I1l.
+- API: upload (multipart 15MB), finalize, serve (nosniff+no-store), thumbnail, delete;
+  create/verify/status challenge.
+
+---
+
+## 19. Планы / направление развития
 
 На основе `examples/update.md` утверждены ADR-035…042 (записаны в `memory/DECISIONS.md`):
 

@@ -3,6 +3,64 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+## 2026-08-12 — Сессия 74 (S2): Platform Social — Relationships & Grants
+
+- social_relationships: invitation lifecycle (pending→accepted/declined/expired/revoked), display_role presets (viewer/coach/mentor/curator), cooldown 24h
+- social_blocks: cross-product block, unique pair, immediate shutdown
+- social_grants: subject/module/global scope, JSON caps, propose→accept/revoke lifecycle, requires accepted relationship
+- social_notifications: outbox (9 types), payload JSON, read status
+- Миграция 030 (4 таблицы). API: 14 эндпоинтов (invite by alias, accept/decline/revoke, block/unblock, grant CRUD, notification read)
+- UI: /social/relationships — 4 секции (pending, send form, active+grants, blocks+notifications)
+- i18n: +13 keys EN/RU. Fix: 029 migration revision → hash convention
+- **538/538 ✅**, ruff ✅, deployed
+
+## 2026-08-12 — Сессия 73 (S0+S1): Platform Social — Foundation + Subject Registry
+
+- app/platform/social/ package (models, repos, API — не импортирует Tracker/Timer)
+- social_profiles: alias-based identity (3-80 chars, case-insensitive unique), bio, discoverable/show_in_feed
+- social_consents: versioned, IP hash, /social/consent/accept
+- social_subjects: opaque registry для domain adapters
+- SocialSubjectAdapter Protocol + adapter registry (register_adapter/get_adapter_registry)
+- /social/profile (CRUD), /social/privacy (public page), /social/subjects, /social/api/capabilities
+- nav_social в base.html guarded by composition.social_operational
+- SOCIAL_ENABLED + adapter flags в docker-compose.yml + .env
+- Миграция 029 (3 таблицы). i18n: +38 keys EN/RU
+- Deferred: Q12 (tag audit UI, timer-only deploy)
+- **538/538 ✅**, ruff ✅, deployed
+
+## 2026-08-12 — Сессия 72 (Tag mechanics): Numbered tags for timer
+
+- close_tag_number на LockSlotOccurrence, require_tag на LockSlotRule
+- lock_tag_violations: запись расхождения при verify
+- close_slot(tag_number) — валидация дубликата + require_tag
+- verify_tag → match ✅ / mismatch → violation + audit
+- lookup_tag, list_tag_violations
+- Миграция 028. UI: tag field в close form + verify button
+- +20 tag mechanics tests. **538/538 ✅**
+
+## 2026-08-12 — Сессия 71 (Timer extras): Countdown, validation, horizon, templates
+
+- JS countdown timer (HH:MM:SS) на active sessions
+- POST /validate — pre-start conflict check (slots overlap, task distribution)
+- POST /extend-horizon — materialize +90 days
+- LockTimerTemplate: save draft as template, instantiate, archive
+- /locktimer/templates page. +12 i18n keys. **518/518 ✅**
+
+## 2026-08-12 — Сессия 70 (Timer interactivity): Interactive actions
+
+- locktimer_commands.py: 12 endpoints (start/safety-stop, slot open/close, task reveal/complete/skip, draft add/delete rules, PATCH metadata)
+- Session detail page: action buttons for each state
+- Dashboard timer card: quick Start/Edit links
+- +16 i18n keys. **518/518 ✅**
+
+## 2026-08-12 — Сессия 69 (Timer UI fixes): Frontend fixes + dashboard integration
+
+- Fix active_nav mismatch: 'timer' → 'locktimer' in templates
+- POST /locktimer/new → creates draft + redirects
+- LockTimer active session card on dashboard (amber theme, duration/slots/tasks)
+- dashboard.py fetches locktimer session via composition.timer_operational
+- Fix: /body-parts/page route ordering (before /{body_part_id})
+
 ## 2026-08-11 — Сессия 68 (C9): Hardening — concurrency tests, secret scan, runbook, owner allowlist
 
 - **Concurrency tests** (tests/test_concurrency.py): 11 сценариев из 13_TEST_PLAN.md §5 — double start (only one active), double open/close (idempotent), open+stop, submit vs skip, penalty idempotency (duplicate→None, 1 row), job idempotency (1 row), outbox uniqueness (distinct events), cross-user safety stop (404), complete idempotency, recovery after stop (new draft allowed). Все 11 ✅.
