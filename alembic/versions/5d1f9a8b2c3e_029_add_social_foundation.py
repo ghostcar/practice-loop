@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "029_add_social_foundation"
+revision: str = "5d1f9a8b2c3e"
 down_revision: str | None = "7bf818094186"  # 028_add_tag_numbers
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
