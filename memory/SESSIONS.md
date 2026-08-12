@@ -1,3 +1,11 @@
+## 2026-08-12 — Сессия 86 (Рефакторинг, шаг 5: repositories.py → пакет social/repositories/)
+
+- **Сплит** repositories.py (1070 строк, 55 функций): 9 модулей — profile(64, 5), consent(38, 3), subjects(67, 5), relationships(254, 17: invites+blocks+grants+`_is_blocked`+`INVITE_COOLDOWN_HOURS`), notifications(56, 3), publications(130, 5: feed+CRUD), verification(140, 5), comments(95, 5), moderation(192, 11). __init__.py — явный ре-экспорт 52 имён (noqa:F401).
+- **Потребители**: api.py (52 импорта) + 2 тестовых файла — пути импортов не изменились.
+- **Циклов импортов нет**: модули импортируют только models; __init__ импортирует все 9.
+- **Мёртвые `datetime`** убраны из consent/notifications.
+- **Проверки**: 22/22 social-тестов, полный прогон 598/598 ✅, ruff clean.
+
 ## 2026-08-12 — Сессия 85 (Рефакторинг, шаг 4: points_v2.py → пакет api/points/)
 
 - **Сплит** points_v2.py (940 строк, 35 эндпоинтов): 10 модулей — helpers(18: `_get_progress`), config(52), balance(82), profiles(83), redemptions(113), schedule(72), measurements(92), inventory(179: 8 эндпоинтов + `_ReorderPayload`), charts(228: 5 chart-эндпоинтов с lazy-импортами), pages(75: 4 HTML-страницы).

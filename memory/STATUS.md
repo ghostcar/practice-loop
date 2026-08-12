@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 85 — Рефакторинг шаг 4: points_v2.py → api/points).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 86 — Рефакторинг шаг 5: repositories.py → social/repositories).
 
 ## Общий статус: 598/598 тестов ✅, ruff ✅, format ✅
 
@@ -26,7 +26,8 @@
 - [x] **S82**: REFACTORING.md шаг 1
 - [x] **S83**: REFACTORING.md шаг 2
 - [x] **S84**: REFACTORING.md шаг 3
-- [x] **S85**: REFACTORING.md шаг 4 — points_v2.py (940) → api/points/{helpers, config, balance, profiles, redemptions, schedule, measurements, inventory, charts, pages}; префикс на агрегаторе, 598/598 ✅ — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
+- [x] **S85**: REFACTORING.md шаг 4
+- [x] **S86**: REFACTORING.md шаг 5 — repositories.py (1070) → social/repositories/{profile, consent, subjects, relationships, notifications, publications, verification, comments, moderation}; явный ре-экспорт 52 имён, 598/598 ✅ — points_v2.py (940) → api/points/{helpers, config, balance, profiles, redemptions, schedule, measurements, inventory, charts, pages}; префикс на агрегаторе, 598/598 ✅ — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
 ## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
