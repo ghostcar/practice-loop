@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,7 +49,7 @@ async def withdraw_publication(
     if pub is None:
         return None
     pub.is_active = False
-    pub.withdrawn_at = datetime.utcnow()
+    pub.withdrawn_at = datetime.now(UTC)
     await db.flush()
     return pub
 

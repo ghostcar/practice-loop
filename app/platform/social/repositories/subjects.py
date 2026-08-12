@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +53,7 @@ async def tombstone_subject(db: AsyncSession, subject_id: uuid.UUID) -> SocialSu
     if subject is None:
         return None
     subject.is_active = False
-    subject.tombstoned_at = datetime.utcnow()
+    subject.tombstoned_at = datetime.now(UTC)
     await db.flush()
     return subject
 

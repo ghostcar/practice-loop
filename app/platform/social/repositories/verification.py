@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +53,7 @@ async def create_verification_request(
         policy_id=policy_id,
         subject_id=subject_id,
         requester_id=requester_id,
-        deadline_at=datetime.utcnow() + __import__("datetime").timedelta(hours=deadline_hours),
+        deadline_at=datetime.now(UTC) + timedelta(hours=deadline_hours),
     )
     db.add(req)
     await db.flush()
@@ -117,7 +117,7 @@ async def check_quorum_and_finalize(
     if policy is None:
         return req
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     # Check approvals
     if req.approvals >= policy.min_approvals:
@@ -136,7 +136,10 @@ async def check_quorum_and_finalize(
         return req
 
     # Check deadline
-    if req.deadline_at <= now:
+    deadline = req.deadline_at
+    if deadline.tzinfo is None:
+        deadline = deadline.replace(tzinfo=UTC)
+    if deadline <= now:
         req.state = policy.no_quorum_action
         req.result_summary = "No quorum by deadline"
         req.finalized_at = now

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,7 +46,7 @@ async def edit_comment(
         return None
     comment.body = body
     comment.is_edited = True
-    comment.edited_at = datetime.utcnow()
+    comment.edited_at = datetime.now(UTC)
     await db.flush()
     return comment
 

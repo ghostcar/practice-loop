@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -143,8 +143,12 @@ async def social_invite_send(
         if existing.status == "pending":
             raise HTTPException(409, "Invitation already pending")
         # declined/expired/revoked — check cooldown
-        if existing.cooldown_until and existing.cooldown_until > datetime.utcnow():
-            raise HTTPException(409, "Cooldown active — try later")
+        cooldown = existing.cooldown_until
+        if cooldown is not None:
+            if cooldown.tzinfo is None:
+                cooldown = cooldown.replace(tzinfo=UTC)
+            if cooldown > datetime.now(UTC):
+                raise HTTPException(409, "Cooldown active — try later")
 
     rel = await create_invitation(db, current_user.id, recipient_profile.user_id, display_role)
     await create_notification(

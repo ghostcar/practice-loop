@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,7 +56,7 @@ async def update_profile(
         profile.discoverable = discoverable
     if show_in_feed is not None:
         profile.show_in_feed = show_in_feed
-    profile.updated_at = datetime.utcnow()
+    profile.updated_at = datetime.now(UTC)
     await db.flush()
     return profile
 

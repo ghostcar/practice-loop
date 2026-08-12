@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,7 +76,7 @@ async def accept_invitation(
     if rel is None or rel.recipient_id != user_id or rel.status != "pending":
         return None
     rel.status = "accepted"
-    rel.updated_at = datetime.utcnow()
+    rel.updated_at = datetime.now(UTC)
     await db.flush()
     return rel
 
@@ -90,8 +90,8 @@ async def decline_invitation(
     if rel is None or rel.recipient_id != user_id or rel.status != "pending":
         return None
     rel.status = "declined"
-    rel.cooldown_until = datetime.utcnow() + __import__("datetime").timedelta(hours=INVITE_COOLDOWN_HOURS)
-    rel.updated_at = datetime.utcnow()
+    rel.cooldown_until = datetime.now(UTC) + timedelta(hours=INVITE_COOLDOWN_HOURS)
+    rel.updated_at = datetime.now(UTC)
     await db.flush()
     return rel
 
@@ -109,7 +109,7 @@ async def revoke_relationship(
     if rel.status not in ("pending", "accepted"):
         return None
     rel.status = "revoked"
-    rel.updated_at = datetime.utcnow()
+    rel.updated_at = datetime.now(UTC)
     await db.flush()
     return rel
 
@@ -229,7 +229,7 @@ async def accept_grant(
     if grant is None:
         return None
     grant.status = "accepted"
-    grant.updated_at = datetime.utcnow()
+    grant.updated_at = datetime.now(UTC)
     await db.flush()
     return grant
 
@@ -252,7 +252,7 @@ async def revoke_grant(
     if grant is None:
         return None
     grant.status = "revoked"
-    grant.updated_at = datetime.utcnow()
+    grant.updated_at = datetime.now(UTC)
     await db.flush()
     return grant
 

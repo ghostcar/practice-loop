@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -71,7 +71,7 @@ async def assign_report(
         return None
     report.assigned_to = moderator_id
     report.state = "reviewing"
-    report.updated_at = datetime.utcnow()
+    report.updated_at = datetime.now(UTC)
     await db.flush()
     return report
 
@@ -86,7 +86,7 @@ async def resolve_report(
         return None
     report.state = "resolved"
     report.assigned_to = moderator_id
-    report.updated_at = datetime.utcnow()
+    report.updated_at = datetime.now(UTC)
     await db.flush()
     return report
 
@@ -101,7 +101,7 @@ async def dismiss_report(
         return None
     report.state = "dismissed"
     report.assigned_to = moderator_id
-    report.updated_at = datetime.utcnow()
+    report.updated_at = datetime.now(UTC)
     await db.flush()
     return report
 
@@ -154,7 +154,7 @@ async def hide_publication(
     if pub is None:
         return False
     pub.is_active = False
-    pub.withdrawn_at = datetime.utcnow()
+    pub.withdrawn_at = datetime.now(UTC)
     await db.flush()
     return True
 
@@ -170,7 +170,7 @@ async def hide_comment(
         return False
     comment.body = "[removed by moderation]"
     comment.is_edited = True
-    comment.edited_at = datetime.utcnow()
+    comment.edited_at = datetime.now(UTC)
     await db.flush()
     return True
 

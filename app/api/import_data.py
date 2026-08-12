@@ -28,7 +28,7 @@ from app.models.body_part import BodyPart
 from app.models.entity import Entity
 from app.models.inventory_category import InventoryCategory
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule
-from app.models.points import PointsTransaction
+from app.models.points import PointsProfile, PointsTransaction  # noqa: F401 (PointsProfile re-export)
 from app.models.task_location import TaskLocation
 from app.models.training import TrainingDay
 from app.models.user import User

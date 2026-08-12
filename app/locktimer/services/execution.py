@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.locktimer import domain as d
 from app.locktimer import enums as e
-from app.locktimer.repositories import write_audit
+from app.locktimer.repositories import get_active_session, get_session, write_audit
 from app.locktimer.services.drafts import (
     _next_rule_sort_order,
     add_slot_rule,
@@ -45,11 +45,16 @@ from app.locktimer.services.materializer import (
 from app.locktimer.services.session import _cancel_future_occurrences, safety_stop, start_session
 from app.locktimer.services.tags import list_tag_violations, lookup_tag, verify_tag
 from app.models.locktimer import (
+    LockJobReceipt,
+    LockOutboxEvent,
     LockPenaltyEvent,
     LockSession,
+    LockSessionSnapshot,
     LockSlotOccurrence,
     LockSlotRule,
+    LockTagViolation,
     LockTaskOccurrence,
+    LockTaskRule,
 )
 
 __all__ = [
@@ -92,6 +97,14 @@ __all__ = [
     "complete_task",
     "skip_task",
     "apply_penalty",
+    # re-exported models + repository queries (historical import paths)
+    "LockJobReceipt",
+    "LockOutboxEvent",
+    "LockSessionSnapshot",
+    "LockTagViolation",
+    "LockTaskRule",
+    "get_active_session",
+    "get_session",
 ]
 
 

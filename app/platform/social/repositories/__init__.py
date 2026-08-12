@@ -15,6 +15,25 @@ Re-exports all public names so existing imports remain unchanged:
     from app.platform.social.repositories import create_profile, ...
 """
 
+# --- model classes re-exported for backward compatibility (imported at module
+# level by the pre-split repositories.py)
+from app.platform.social.models import (  # noqa: F401
+    ModerationAction,
+    ModerationReport,
+    SocialBlock,
+    SocialComment,
+    SocialConsent,
+    SocialEncouragement,
+    SocialGrant,
+    SocialNotification,
+    SocialProfile,
+    SocialPublication,
+    SocialRelationship,
+    SocialSubject,
+    SocialVerificationPolicy,
+    SocialVerificationRequest,
+    SocialVerificationVote,
+)
 from app.platform.social.repositories.comments import (  # noqa: F401
     create_comment,
     create_encouragement,
