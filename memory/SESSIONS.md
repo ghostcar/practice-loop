@@ -1,3 +1,10 @@
+## 2026-08-12 — Сессия 84 (Рефакторинг, шаг 3: references.py → пакет api/references/)
+
+- **Сплит** references.py (817 строк): 4 суб-роутера — body_parts(111, 4 роута), locations(217, 7 роутов + CRUD), categories(25, 1 роут), task_targets(460, 11 роутов). __init__.py — агрегатор через include_router (23 роута под /api/v2).
+- **Пакет-vs-модуль**: директория app/api/references/ затенила одноимённый модуль — решение: удалить модуль, агрегатор в __init__.py (from app.api.references import router продолжает работать).
+- **AST-извлечение** с фиксом decorator_list; исправлены пропущенные импорты User (3 модуля) и дубль exists (task_targets).
+- **Проверки**: 58 релевантных тестов + полный прогон 598/598 ✅, ruff clean, деплой ✅, /api/v2/body-parts отвечает на VPS.
+
 ## 2026-08-12 — Сессия 83 (Рефакторинг, шаг 2: import_data.py → пакет api/importers/)
 
 - **Сплит** `app/api/import_data.py` (988 строк): api/importers/base.py (126: `_import_csv`/`_import_json` dispatch + `_json_handlers()` с lazy-импортами + `_float_or_none`) + 10 модулей-импортёров (measurements 49, inventory 47, entities 65, schedule 56, points 76, training 31, activity_logs 57, body_parts 48, locations 54, categories 41). import_data.py → 486 строк: роутер (7 роутов) + TEMPLATES/EXPORT_TYPES + экспорт.

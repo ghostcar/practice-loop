@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 83 — Рефакторинг шаг 2: import_data.py → api/importers).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 84 — Рефакторинг шаг 3: references.py → api/references).
 
 ## Общий статус: 598/598 тестов ✅, ruff ✅, format ✅
 
@@ -24,7 +24,8 @@
 - [x] **S79**: Template reordering — sort_order на lock_timer_templates (миграция 035), reorder_templates service, API /templates/reorder, HTML5 DnD в /locktimer/templates (+9 тестов)
 - [x] **S81**: Honest frontend (ADR-062)
 - [x] **S82**: REFACTORING.md шаг 1
-- [x] **S83**: REFACTORING.md шаг 2 — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
+- [x] **S83**: REFACTORING.md шаг 2
+- [x] **S84**: REFACTORING.md шаг 3 — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
 ## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
