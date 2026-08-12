@@ -1,3 +1,9 @@
+## 2026-08-12 — Сессия 87 (Рефакторинг, шаг 6: api.py → пакет social/api/)
+
+- **Сплит** api.py (1011 строк, 25 роутов): 7 суб-роутеров — profile(136, 7: profile+consent+privacy+`_check_social_access`+`CURRENT_CONSENT_VERSION`), subjects(59, 2), relationships(317, 11: invites+blocks+grants+notifications), feed(131, 3: feed+publish+withdraw), verification(95, 3), comments(84, 4), moderation(199, 5: reports+actions+`_check_moderator`). __init__.py — агрегатор (prefix="/social", include_router).
+- **Фиксы**: SocialProfile импорт добавлен (profile.py), мёртвые datetime/templates убраны.
+- **Проверки**: 22/22 social-тестов, полный прогон 598/598 ✅, ruff clean.
+
 ## 2026-08-12 — Сессия 86 (Рефакторинг, шаг 5: repositories.py → пакет social/repositories/)
 
 - **Сплит** repositories.py (1070 строк, 55 функций): 9 модулей — profile(64, 5), consent(38, 3), subjects(67, 5), relationships(254, 17: invites+blocks+grants+`_is_blocked`+`INVITE_COOLDOWN_HOURS`), notifications(56, 3), publications(130, 5: feed+CRUD), verification(140, 5), comments(95, 5), moderation(192, 11). __init__.py — явный ре-экспорт 52 имён (noqa:F401).
