@@ -185,7 +185,7 @@ if composition.tracker_active:
     from app.api.entities import router as entities_router  # noqa: E402
     from app.api.import_data import router as import_router  # noqa: E402
     from app.api.llm_configs import router as llm_configs_router  # noqa: E402
-    from app.api.points_v2 import router as points_v2_router  # noqa: E402
+    from app.api.points import router as points_router  # noqa: E402
     from app.api.references import router as references_router  # noqa: E402
     from app.api.task_flows import router as task_flows_router  # noqa: E402
     from app.api.tasks import router as tasks_router  # noqa: E402
@@ -198,7 +198,7 @@ if composition.tracker_active:
         tasks_router,
         training_router,
         dashboard_router,
-        points_v2_router,
+        points_router,
         task_flows_router,
         references_router,
         import_router,
