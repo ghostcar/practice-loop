@@ -262,11 +262,14 @@ async def generate_weekly_endpoint(
     llm_config = await get_active_llm_config(db, user.id)
     if llm_config is None:
         return RedirectResponse(
-            url="/tasks/?error=no_llm", status_code=status.HTTP_303_SEE_OTHER,
+            url="/tasks/?error=no_llm",
+            status_code=status.HTTP_303_SEE_OTHER,
         )
     try:
         await generate_weekly_tasks(
-            db, user.id, llm_config,
+            db,
+            user.id,
+            llm_config,
             locale=detect_locale(request, user.locale),
             days=days,
         )
@@ -277,7 +280,6 @@ async def generate_weekly_endpoint(
             status_code=status.HTTP_303_SEE_OTHER,
         )
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
-
 
 
 def _coerce_param(value: str | None, d: dict) -> object:

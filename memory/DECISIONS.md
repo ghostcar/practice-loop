@@ -87,3 +87,25 @@
 - Timer adapter is a valid skeleton (all methods, returns empty/not_implemented)
 
 **Rationale:** Verification without real domain data is a hollow shell; adapter without verification has no consumer. Together they form the minimum viable Social loop: share tracker data → verify results → comment.
+
+### ADR-062 — Терминология: lock = chastity, таблицы не меняем, фронт честный (PD-017)
+**Date:** 2026-08-12
+**Decision:** «Lock» происходит от закрытия/замка — это и есть chastity. Таблицы, код и API остаются `lock_*`; переименование таблиц и миграции **не производятся** (миграции ради имени недопустимы). Честная терминология (device, wearer, lock-on, unlock window, keyholder) даётся во фронте, уведомлениях и внешних текстах; внутренние имена остаются нейтральными. Прямой Chastity Timer в UI, нейтральность только для discretion-уведомлений.
+**Supersedes:** прежняя нейтральная семантика LockTimer UI (ADR-047…052 не меняются — они технические).
+**Rationale:** честность предметной модели (PD-004) + отказ от дорогих миграций. Переименование 12+ таблиц lock_* дало бы риск регрессий без продуктовой ценности.
+**Status:** ✅ Implemented в Session 81 — честные i18n EN/RU (Lock Timer / Unlock Windows / Seal #), кнопки Unlock/Lock, nav через t.nav_timer; таблицы и API не тронуты.
+
+### ADR-063 — Мобильный клиент: кроссплатформенный, после портала (PD-018)
+**Date:** 2026-08-12
+**Decision:** После запуска базового портала разрабатывается мобильное приложение (Flutter или React Native, выбор — PQ-008). Это полноценный клиент Personal, не обёртка над web. Требования закладываются с этого момента: JSON API-first (PD-020), bearer-auth, push-уведомления (FCM/APNs) помимо Telegram.
+**Rationale:** мобильный клиент — первый внешний потребитель внутреннего API; закладывать JSON-first сейчас дешевле, чем переписывать контракты потом.
+
+### ADR-064 — Масштабирование: обязательство по трём осям (PD-019)
+**Date:** 2026-08-12
+**Decision:** Масштабирование = (1) много пользователей, (2) объём данных одного, (3) горизонтальная инфраструктура. Сейчас закладываются дешёвые решения: owner-scoped как контракт (уже соблюдается), storage-абстракция (uploads → S3-совместимый интерфейс), JSON-first. Rate limits, очередь, partition, реплика БД — по мере реальной потребности, без преждевременной постройки.
+**Rationale:** избегаем over-engineering сейчас, но фиксируем направление, чтобы не перестраивать при открытии доступа.
+
+### ADR-065 — JSON-first контракт для action-эндпоинтов (PD-020)
+**Date:** 2026-08-12
+**Decision:** Все новые и изменяемые action-эндпоинты возвращают JSON (JSONResponse), а не HTML/redirect. HTMX-фронт работает через те же JSON-контракты (fetch). HTML-рендер остаётся только для страниц. Пилот: timer start/safety-stop и ключевые действия перевести на JSON.
+**Rationale:** фундамент для мобильного клиента (ADR-063) и масштабирования (ADR-064); единый контракт для всех клиентов.

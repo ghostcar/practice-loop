@@ -72,10 +72,13 @@ async def dashboard(
 
     # Today's training plans
     training_result = await db.execute(
-        select(TrainingDay).where(
+        select(TrainingDay)
+        .where(
             TrainingDay.user_id == user.id,
             TrainingDay.target_date == today,
-        ).order_by(TrainingDay.created_at).limit(3)
+        )
+        .order_by(TrainingDay.created_at)
+        .limit(3)
     )
     today_training = list(training_result.scalars().all())
     # Get task counts for today's training
@@ -85,8 +88,9 @@ async def dashboard(
 
         counts_result = await db.execute(
             select(
-                ActivityLog.training_day_id,                func.count(ActivityLog.id),
-                    func.sum(case((ActivityLog.status == "completed", 1), else_=0)),
+                ActivityLog.training_day_id,
+                func.count(ActivityLog.id),
+                func.sum(case((ActivityLog.status == "completed", 1), else_=0)),
             )
             .where(ActivityLog.training_day_id.in_(td_ids))
             .group_by(ActivityLog.training_day_id)

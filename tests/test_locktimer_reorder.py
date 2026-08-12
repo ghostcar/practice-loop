@@ -52,9 +52,7 @@ async def _make_session_with_slot_rules(db: AsyncSession, user: User):
 class TestReorderService:
     """C3 — reorder_rules service."""
 
-    async def test_reorder_slot_rules_persists_order(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_slot_rules_persists_order(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         # Reverse the order
         await reorder_rules(
@@ -68,9 +66,7 @@ class TestReorderService:
         assert [r.id for r in rules] == list(reversed(rule_ids))
         assert [r.sort_order for r in rules] == [0, 1, 2]
 
-    async def test_reorder_task_rules_persists_order(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_task_rules_persists_order(self, db_session: AsyncSession, test_user: User) -> None:
         session = await create_draft(db_session, owner_id=test_user.id)
         task_ids = []
         for title in ["A", "B", "C"]:
@@ -95,9 +91,7 @@ class TestReorderService:
         assert [r.id for r in rules] == [task_ids[2], task_ids[0], task_ids[1]]
         assert [r.sort_order for r in rules] == [0, 1, 2]
 
-    async def test_reorder_new_rules_appended_after_existing(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_new_rules_appended_after_existing(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         extra = await add_slot_rule(
             db_session,
@@ -113,9 +107,7 @@ class TestReorderService:
         assert rules[-1].sort_order == 3
         assert rule_ids == [r.id for r in rules[:3]]
 
-    async def test_reorder_rejects_missing_rule(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_rejects_missing_rule(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         with pytest.raises(ValueError, match="exactly the session"):
             await reorder_rules(
@@ -126,9 +118,7 @@ class TestReorderService:
                 rule_ids=rule_ids[:2],  # one missing
             )
 
-    async def test_reorder_rejects_foreign_rule(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_rejects_foreign_rule(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         other = await add_slot_rule(
             db_session,
@@ -152,9 +142,7 @@ class TestReorderService:
         fresh = await db_session.get(LockSlotRule, other.id)
         assert fresh is not None and fresh.sort_order == 3
 
-    async def test_reorder_rejects_duplicates(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_rejects_duplicates(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         with pytest.raises(ValueError, match="Duplicate"):
             await reorder_rules(
@@ -165,9 +153,7 @@ class TestReorderService:
                 rule_ids=[rule_ids[0], rule_ids[0], rule_ids[1]],
             )
 
-    async def test_reorder_only_draft(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_only_draft(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
         with pytest.raises(ValueError, match="Only draft"):
@@ -179,9 +165,7 @@ class TestReorderService:
                 rule_ids=list(reversed(rule_ids)),
             )
 
-    async def test_reorder_writes_audit_event(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_writes_audit_event(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         await reorder_rules(
             db_session,
@@ -200,9 +184,7 @@ class TestReorderService:
         assert len(events) == 1
         assert events[0].payload["rule_ids"] == [str(r) for r in reversed(rule_ids)]
 
-    async def test_reorder_unknown_kind(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_reorder_unknown_kind(self, db_session: AsyncSession, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         with pytest.raises(ValueError, match="Unknown rule kind"):
             await reorder_rules(
@@ -281,9 +263,7 @@ class TestTemplateReorderService:
 class TestReorderApi:
     """API endpoints for rule reordering."""
 
-    async def test_reorder_slot_rules_api(
-        self, db_session: AsyncSession, auth_client, test_user: User
-    ) -> None:
+    async def test_reorder_slot_rules_api(self, db_session: AsyncSession, auth_client, test_user: User) -> None:
         session, rule_ids = await _make_session_with_slot_rules(db_session, test_user)
         resp = await auth_client.post(
             f"/api/v1/locktimer/sessions/{session.id}/slot-rules/reorder",
@@ -294,9 +274,7 @@ class TestReorderApi:
         rules = await list_slot_rules(db_session, session.id)
         assert [r.id for r in rules] == list(reversed(rule_ids))
 
-    async def test_reorder_task_rules_api(
-        self, db_session: AsyncSession, auth_client, test_user: User
-    ) -> None:
+    async def test_reorder_task_rules_api(self, db_session: AsyncSession, auth_client, test_user: User) -> None:
         session = await create_draft(db_session, owner_id=test_user.id)
         task_ids = []
         for title in ["A", "B"]:

@@ -147,7 +147,7 @@
                     <a href="/social/profile" class="{{ nav_class }}{{ nav_active if active_nav == 'social' else nav_inactive }}"{% if active_nav == 'social' %} aria-current="page"{% endif %}>{{ t.nav_social }}</a>
                     {% endif %}
                     {% if composition and composition.timer_operational %}
-                    <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>Timer</a>
+                    <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>{{ t.nav_timer or "Lock Timer" }}</a>
                     {% endif %}
                     <form action="/auth/logout" method="post" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -238,7 +238,7 @@
             {% if composition and composition.timer_operational %}
             <a href="/locktimer" class="{{ bn_class }}{{ bn_active if active_nav == 'locktimer' else bn_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v6m0 8v6M4 12H2m4.3-5.7l1.4 1.4M18.3 5.7l-1.4 1.4M2 12h2m1.7 5.7l1.4-1.4M22 12h-6"/><circle cx="12" cy="12" r="2"/></svg>
-                Timer
+                {{ t.nav_timer or "Lock Timer" }}
             </a>
             {% endif %}
         </div>

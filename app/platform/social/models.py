@@ -41,8 +41,11 @@ class SocialProfile(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        unique=True, nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+        index=True,
     )
 
     # Public alias — case-insensitive unique, 3..80 chars.
@@ -57,10 +60,15 @@ class SocialProfile(Base):
     show_in_feed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
 
@@ -71,19 +79,21 @@ class SocialConsent(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     consent_version: Mapped[int] = mapped_column(Integer, nullable=False)
     accepted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     ip_address_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "consent_version", name="uq_social_consent_user_version"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "consent_version", name="uq_social_consent_user_version"),)
 
 
 # ---------------------------------------------------------------------------
@@ -102,8 +112,10 @@ class SocialSubject(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Namespaced type: "tracker.*" or "timer.*"
@@ -119,13 +131,16 @@ class SocialSubject(Base):
     # Lifecycle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     tombstoned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         UniqueConstraint(
-            "subject_type", "domain_object_id",
+            "subject_type",
+            "domain_object_id",
             name="uq_social_subject_type_object",
         ),
     )
@@ -139,12 +154,19 @@ RELATIONSHIP_STATUSES = frozenset({"pending", "accepted", "declined", "expired",
 ROLE_PRESETS = frozenset({"viewer", "coach", "mentor", "curator"})
 GRANT_SCOPES = frozenset({"subject", "module", "global"})
 GRANT_STATUSES = frozenset({"proposed", "accepted", "revoked", "expired"})
-NOTIFICATION_TYPES = frozenset({
-    "invitation_received", "invitation_accepted", "invitation_declined",
-    "grant_proposed", "grant_accepted", "grant_revoked",
-    "block_created", "block_removed",
-    "relationship_revoked",
-})
+NOTIFICATION_TYPES = frozenset(
+    {
+        "invitation_received",
+        "invitation_accepted",
+        "invitation_declined",
+        "grant_proposed",
+        "grant_accepted",
+        "grant_revoked",
+        "block_created",
+        "block_removed",
+        "relationship_revoked",
+    }
+)
 
 
 class SocialRelationship(Base):
@@ -154,12 +176,16 @@ class SocialRelationship(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     requester_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     recipient_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Status machine: pending → accepted | declined | expired | revoked
@@ -173,15 +199,21 @@ class SocialRelationship(Base):
     cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "requester_id", "recipient_id",
+            "requester_id",
+            "recipient_id",
             name="uq_social_relationship_pair",
         ),
     )
@@ -194,24 +226,31 @@ class SocialBlock(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     blocker_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     blocked_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "blocker_id", "blocked_id",
+            "blocker_id",
+            "blocked_id",
             name="uq_social_block_pair",
         ),
     )
@@ -224,16 +263,20 @@ class SocialGrant(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     relationship_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("social_relationships.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("social_relationships.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Scope: subject (specific social_subjects.id), module (tracker.*), global (platform)
     scope_type: Mapped[str] = mapped_column(String(20), default="subject", nullable=False)
     scope_namespace: Mapped[str | None] = mapped_column(String(80), nullable=True)
     subject_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("social_subjects.id", ondelete="SET NULL"),
-        nullable=True, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("social_subjects.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     # Capabilities JSON: {caps: ["tracker.activity.view_summary", ...]}
@@ -244,10 +287,15 @@ class SocialGrant(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
 
@@ -258,8 +306,10 @@ class SocialNotification(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Type from NOTIFICATION_TYPES
@@ -271,7 +321,9 @@ class SocialNotification(Base):
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
 
@@ -294,12 +346,16 @@ class SocialPublication(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     subject_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("social_subjects.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("social_subjects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Visibility: relationship_only | unlisted | public
@@ -315,7 +371,9 @@ class SocialPublication(Base):
     # Lifecycle: active → withdrawn (never edited)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -335,8 +393,10 @@ class SocialVerificationPolicy(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -354,7 +414,9 @@ class SocialVerificationPolicy(Base):
     require_reject_comment: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
 
@@ -365,16 +427,21 @@ class SocialVerificationRequest(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     policy_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("social_verification_policies.id", ondelete="CASCADE"),
+        UUID(as_uuid=True),
+        ForeignKey("social_verification_policies.id", ondelete="CASCADE"),
         nullable=False,
     )
     subject_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("social_subjects.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("social_subjects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     requester_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # State machine: open → verified | review_required | failed | cancelled
@@ -392,7 +459,9 @@ class SocialVerificationRequest(Base):
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
 
@@ -403,12 +472,16 @@ class SocialVerificationVote(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     request_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("social_verification_requests.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("social_verification_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     voter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Vote value: approve | reject | abstain
@@ -418,12 +491,12 @@ class SocialVerificationVote(Base):
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
-    __table_args__ = (
-        UniqueConstraint("request_id", "voter_id", name="uq_verification_vote"),
-    )
+    __table_args__ = (UniqueConstraint("request_id", "voter_id", name="uq_verification_vote"),)
 
 
 class SocialComment(Base):
@@ -433,8 +506,10 @@ class SocialComment(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     author_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Target: publication or verification request
@@ -448,7 +523,9 @@ class SocialComment(Base):
     edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
 
@@ -459,8 +536,10 @@ class SocialEncouragement(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sender_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     target_type: Mapped[str] = mapped_column(String(30), nullable=False)
@@ -470,12 +549,12 @@ class SocialEncouragement(Base):
     encouragement_type: Mapped[str] = mapped_column(String(30), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
 
-    __table_args__ = (
-        UniqueConstraint("sender_id", "target_type", "target_id", name="uq_encouragement_once"),
-    )
+    __table_args__ = (UniqueConstraint("sender_id", "target_type", "target_id", name="uq_encouragement_once"),)
 
 
 # ---------------------------------------------------------------------------
@@ -483,16 +562,29 @@ class SocialEncouragement(Base):
 # ---------------------------------------------------------------------------
 
 REPORT_TARGETS = frozenset({"profile", "publication", "comment", "vote"})
-REPORT_REASONS = frozenset({
-    "harassment", "privacy", "non_consensual", "impersonation",
-    "dangerous_content", "spam", "other",
-})
+REPORT_REASONS = frozenset(
+    {
+        "harassment",
+        "privacy",
+        "non_consensual",
+        "impersonation",
+        "dangerous_content",
+        "spam",
+        "other",
+    }
+)
 REPORT_STATES = frozenset({"open", "reviewing", "resolved", "dismissed"})
-MOD_ACTION_TYPES = frozenset({
-    "hide_publication", "hide_comment", "invalidate_vote",
-    "suspend_social", "resolve_report", "dismiss_report",
-    "request_evidence",
-})
+MOD_ACTION_TYPES = frozenset(
+    {
+        "hide_publication",
+        "hide_comment",
+        "invalidate_vote",
+        "suspend_social",
+        "resolve_report",
+        "dismiss_report",
+        "request_evidence",
+    }
+)
 
 
 class ModerationReport(Base):
@@ -507,8 +599,10 @@ class ModerationReport(Base):
 
     # Reporter (identity protected — never exposed to target)
     reporter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     # Target: profile(user_id), publication(id), comment(id), vote(id)
@@ -524,15 +618,22 @@ class ModerationReport(Base):
 
     # Queue assignment
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
 
@@ -546,14 +647,18 @@ class ModerationAction(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     report_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("moderation_reports.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("moderation_reports.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     # Moderator who took the action
     moderator_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True, index=True,
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     # Action type from MOD_ACTION_TYPES
@@ -566,5 +671,7 @@ class ModerationAction(Base):
     action_metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False,
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
     )

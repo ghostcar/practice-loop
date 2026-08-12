@@ -383,11 +383,13 @@ async def locktimer_calendar(
         if not s.started_at:
             continue
         day = s.started_at.day
-        day_map.setdefault(day, []).append({
-            "id": str(s.id),
-            "state": s.state,
-            "duration_type": s.duration_type,
-        })
+        day_map.setdefault(day, []).append(
+            {
+                "id": str(s.id),
+                "state": s.state,
+                "duration_type": s.duration_type,
+            }
+        )
 
     # Compliance for the month
     compliance = await get_weekly_compliance(db, current_user.id, weeks=4)
@@ -405,7 +407,7 @@ async def locktimer_calendar(
     for _ in range(first_weekday):
         grid.append({"day": 0, "is_today": False, "sessions": []})
     for d in range(1, days_in_month + 1):
-        is_today = (today.year == ym.year and today.month == ym.month and today.day == d)
+        is_today = today.year == ym.year and today.month == ym.month and today.day == d
         grid.append({"day": d, "is_today": is_today, "sessions": day_map.get(d, [])})
 
     return templates.TemplateResponse(

@@ -37,7 +37,10 @@ pytestmark = pytest.mark.anyio
 
 
 async def _create_profile(
-    db: AsyncSession, user: User, alias: str, bio: str | None = None,
+    db: AsyncSession,
+    user: User,
+    alias: str,
+    bio: str | None = None,
 ):
     """Create a social profile for a test user."""
     from app.platform.social.repositories import create_profile as _cp
@@ -46,7 +49,9 @@ async def _create_profile(
 
 
 async def _create_profiles(
-    db: AsyncSession, user_a: User, user_b: User,
+    db: AsyncSession,
+    user_a: User,
+    user_b: User,
 ) -> tuple:
     """Create profiles for two users."""
     pa = await _create_profile(db, user_a, f"user_{user_a.id.hex[:8]}")
@@ -59,7 +64,9 @@ async def _create_profiles(
 
 class TestDoubleAccept:
     async def test_only_one_accept_succeeds(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         # Create second user
         u2 = User(email="u2@test.com", password_hash="x", locale="en", theme="dark")
@@ -82,7 +89,9 @@ class TestDoubleAccept:
 
 class TestInviteBlockRace:
     async def test_block_prevents_invite(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         u2 = User(email="u3@test.com", password_hash="x", locale="en", theme="dark")
         db_session.add(u2)
@@ -99,7 +108,9 @@ class TestInviteBlockRace:
         assert rel is None
 
     async def test_block_does_not_affect_invite_from_blocked(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         u2 = User(email="u4@test.com", password_hash="x", locale="en", theme="dark")
         db_session.add(u2)
@@ -121,7 +132,9 @@ class TestInviteBlockRace:
 
 class TestFeedWithModeration:
     async def test_hidden_publication_not_in_feed(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         from app.platform.social.repositories import register_subject
 
@@ -136,12 +149,17 @@ class TestFeedWithModeration:
 
         # Register a subject
         subj = await register_subject(
-            db_session, test_user.id, "tracker.activity_log", str(uuid.uuid4()),
+            db_session,
+            test_user.id,
+            "tracker.activity_log",
+            str(uuid.uuid4()),
         )
 
         # Publish
         pub = await create_publication(
-            db_session, test_user.id, subj.id,
+            db_session,
+            test_user.id,
+            subj.id,
             visibility="relationship_only",
             snapshot={"key": "val"},
             snapshot_hash="abc123",
@@ -167,7 +185,9 @@ class TestFeedWithModeration:
 
 class TestGrantIdempotency:
     async def test_double_accept_grant(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         from app.platform.social.repositories import accept_grant as ag
 
@@ -195,7 +215,9 @@ class TestGrantIdempotency:
 
 class TestReportIdempotency:
     async def test_duplicate_reports_allowed(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         """Multiple reports on the same target are allowed (different reporters or timestamps)."""
         pub_id = uuid.uuid4()
@@ -211,13 +233,18 @@ class TestReportIdempotency:
 
 class TestModerationActionImmutability:
     async def test_action_cannot_be_deleted(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         """Moderation actions are append-only — no update/delete paths exist."""
         pub_id = uuid.uuid4()
         report = await create_report(db_session, test_user.id, "publication", pub_id, "spam")
         action = await create_moderation_action(
-            db_session, report.id, test_user.id, "resolve_report",
+            db_session,
+            report.id,
+            test_user.id,
+            "resolve_report",
             reason="Test resolution",
         )
 
@@ -233,7 +260,9 @@ class TestModerationActionImmutability:
 
 class TestBlockPropagation:
     async def test_block_hides_content_from_blocked_user(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         from app.platform.social.repositories import register_subject
 
@@ -248,10 +277,15 @@ class TestBlockPropagation:
 
         # Publish
         subj = await register_subject(
-            db_session, test_user.id, "tracker.activity_log", str(uuid.uuid4()),
+            db_session,
+            test_user.id,
+            "tracker.activity_log",
+            str(uuid.uuid4()),
         )
         await create_publication(
-            db_session, test_user.id, subj.id,
+            db_session,
+            test_user.id,
+            subj.id,
             visibility="relationship_only",
             snapshot={"key": "pre_block"},
             snapshot_hash="hash1",
@@ -272,7 +306,9 @@ class TestBlockPropagation:
 
 class TestCrossUserModeration:
     async def test_non_moderator_cannot_act(
-        self, db_session: AsyncSession, test_user: User,
+        self,
+        db_session: AsyncSession,
+        test_user: User,
     ) -> None:
         """Repository-level: assign_report doesn't enforce permissions — API layer does."""
         u2 = User(email="u8@test.com", password_hash="x", locale="en", theme="dark")

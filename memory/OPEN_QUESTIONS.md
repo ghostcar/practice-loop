@@ -29,3 +29,10 @@
 
 - ✅ **Tag audit UI**: страница `/locktimer/tag-violations/{session_id}` — список violation'ов по сессии с expected/provided tag, причиной и временем. API endpoint `/api/v1/locktimer/tag-violations/{session_id}` уже существовал, добавлен HTML-вариант. +8 i18n ключей EN/RU.
 - ✅ **Timer-only deploy smoke test**: `tests/test_timer_standalone.py` — 7 тестов (overview, new draft, templates, tag violations page, API endpoints, capabilities, route isolation). Проверяет что Timer работает без Tracker-зависимостей.
+
+## Q13 — OCR/LLM верификация одноразовых кодов (отложено, Session 81)
+
+- ⏸ **OCR/LLM-распознавание кода по фото**: verification_challenges реализованы (HMAC-SHA256, constant-time, TTL, max attempts, code never returned после создания) — это ручная верификация (пользователь вводит код с фото). OCR/LLM-распознавание кода по загруженной фотографии **отложено** (три места: `app/models/media.py`, `app/services/media.py`, `app/api/verification.py` — «OCR support deferred»).
+- **Когда**: при предметной обвязке Chastity Timer (Этап 3) или по отдельному решению владельца.
+- **Замечание**: LLM не должен быть источником истины для кода (PD-014) — OCR/LLM допустим только как подсказка/ускорение ввода, финальная верификация остаётся constant-time HMAC.
+

@@ -567,17 +567,19 @@ async def api_tag_violations(
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from exc
 
-    return JSONResponse([
-        {
-            "id": str(v.id),
-            "slot_occurrence_id": str(v.slot_occurrence_id),
-            "expected_tag": v.expected_tag,
-            "provided_tag": v.provided_tag,
-            "reason": v.reason,
-            "created_at": v.created_at.isoformat() if v.created_at else None,
-        }
-        for v in violations
-    ])
+    return JSONResponse(
+        [
+            {
+                "id": str(v.id),
+                "slot_occurrence_id": str(v.slot_occurrence_id),
+                "expected_tag": v.expected_tag,
+                "provided_tag": v.provided_tag,
+                "reason": v.reason,
+                "created_at": v.created_at.isoformat() if v.created_at else None,
+            }
+            for v in violations
+        ]
+    )
 
 
 @router.get("/tag-lookup/{session_id}")

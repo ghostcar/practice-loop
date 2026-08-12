@@ -227,9 +227,7 @@ async def _get_today_training(db: AsyncSession, user_id: uuid.UUID) -> dict | No
         return None
 
     day_ids = [d.id for d in days]
-    logs_result = await db.execute(
-        select(ActivityLog).where(ActivityLog.training_day_id.in_(day_ids))
-    )
+    logs_result = await db.execute(select(ActivityLog).where(ActivityLog.training_day_id.in_(day_ids)))
     logs = list(logs_result.scalars().all())
 
     completed = sum(1 for lg in logs if lg.status == "completed")

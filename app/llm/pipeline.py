@@ -272,8 +272,6 @@ async def generate_task(
     return log
 
 
-
-
 async def generate_weekly_tasks(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -356,7 +354,10 @@ async def generate_weekly_tasks(
             selected_entity_name=entity_name,
             selected_params=params,
             planned_comment=reasoning[:500] if reasoning else None,
-            prompt_tokens=0, completion_tokens=0, total_tokens=0, cost=0.0,
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            cost=0.0,
         )
         db.add(log)
         logs.append(log)
@@ -380,7 +381,6 @@ async def generate_weekly_tasks(
 
 
 async def get_active_llm_config(db: AsyncSession, user_id: uuid.UUID) -> LLMProviderConfig | None:
-
     """Get the user's active LLM provider config."""
     result = await db.execute(
         select(LLMProviderConfig).where(

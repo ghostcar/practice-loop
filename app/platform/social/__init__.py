@@ -49,14 +49,15 @@ class SocialSubjectAdapter(Protocol):
         """Return namespaced subject types this adapter handles."""
         ...
 
-    async def authorize_subject(
-        self, db: Any, actor_id: str, subject_id: str
-    ) -> bool:
+    async def authorize_subject(self, db: Any, actor_id: str, subject_id: str) -> bool:
         """Prove actor has ownership/access to the domain subject."""
         ...
 
     async def build_redacted_projection(
-        self, db: Any, subject_id: str, requested_fields: set[str] | None = None,
+        self,
+        db: Any,
+        subject_id: str,
+        requested_fields: set[str] | None = None,
     ) -> dict[str, Any]:
         """Build an immutable redacted projection safe for Social storage."""
         ...
@@ -66,7 +67,10 @@ class SocialSubjectAdapter(Protocol):
         ...
 
     async def validate_grant_constraints(
-        self, db: Any, subject_id: str, grant_caps: dict[str, Any],
+        self,
+        db: Any,
+        subject_id: str,
+        grant_caps: dict[str, Any],
     ) -> list[str]:
         """Return validation errors (empty = valid)."""
         ...
@@ -114,9 +118,7 @@ _registry: dict[str, SocialSubjectAdapter] = {}
 def register_adapter(adapter: SocialSubjectAdapter) -> None:
     """Register a domain adapter. Called once at startup per enabled module."""
     if adapter.namespace in _registry:
-        raise ValueError(
-            f"SocialSubjectAdapter namespace '{adapter.namespace}' already registered"
-        )
+        raise ValueError(f"SocialSubjectAdapter namespace '{adapter.namespace}' already registered")
     _registry[adapter.namespace] = adapter
 
 

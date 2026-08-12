@@ -29,9 +29,7 @@ class TrackerSocialAdapter:
     def subject_types(self) -> list[str]:
         return ["tracker.activity_log", "tracker.entity"]
 
-    async def authorize_subject(
-        self, db: Any, actor_id: str, subject_id: str
-    ) -> bool:
+    async def authorize_subject(self, db: Any, actor_id: str, subject_id: str) -> bool:
         """Check ownership — subject_id is the string form of the domain object pk."""
         from uuid import UUID
 
@@ -47,9 +45,7 @@ class TrackerSocialAdapter:
 
         # Try ActivityLog
         result = await db.execute(
-            select(ActivityLog).where(
-                ActivityLog.id == sid, ActivityLog.user_id == UUID(actor_id)
-            )
+            select(ActivityLog).where(ActivityLog.id == sid, ActivityLog.user_id == UUID(actor_id))
         )
         if result.scalar_one_or_none() is not None:
             return True
@@ -83,9 +79,7 @@ class TrackerSocialAdapter:
         sid = UUID(subject_id)
 
         # Build from ActivityLog
-        result = await db.execute(
-            select(ActivityLog).where(ActivityLog.id == sid)
-        )
+        result = await db.execute(select(ActivityLog).where(ActivityLog.id == sid))
         log = result.scalar_one_or_none()
         if log is not None:
             return {
@@ -98,9 +92,7 @@ class TrackerSocialAdapter:
             }
 
         # Build from Entity
-        result = await db.execute(
-            select(Entity).where(Entity.id == sid)
-        )
+        result = await db.execute(select(Entity).where(Entity.id == sid))
         entity = result.scalar_one_or_none()
         if entity is not None:
             return {
@@ -136,7 +128,10 @@ class TrackerSocialAdapter:
         ]
 
     async def validate_grant_constraints(
-        self, db: Any, subject_id: str, grant_caps: dict[str, Any],
+        self,
+        db: Any,
+        subject_id: str,
+        grant_caps: dict[str, Any],
     ) -> list[str]:
         """Validate grant caps against allowlisted capabilities."""
         allowlisted = {c["name"] for c in self.list_shareable_capabilities(subject_id)}
@@ -156,9 +151,7 @@ class TrackerSocialAdapter:
         """Execute a domain action. Currently a stub — actions are self-contained in S4."""
         return {"status": "not_implemented", "action_id": action_id}
 
-    async def on_revoke_or_block(
-        self, db: Any, subject_id: str, actor_id: str
-    ) -> None:
+    async def on_revoke_or_block(self, db: Any, subject_id: str, actor_id: str) -> None:
         """Cleanup on revoke/block — no tracker-side side effects needed."""
         pass
 
@@ -186,9 +179,7 @@ class TimerSocialAdapter:
     def subject_types(self) -> list[str]:
         return ["timer.session", "timer.slot_occurrence", "timer.task_occurrence"]
 
-    async def authorize_subject(
-        self, db: Any, actor_id: str, subject_id: str
-    ) -> bool:
+    async def authorize_subject(self, db: Any, actor_id: str, subject_id: str) -> bool:
         # Skeleton — any adapter implementing all methods is valid
         return False
 
@@ -204,7 +195,10 @@ class TimerSocialAdapter:
         return []
 
     async def validate_grant_constraints(
-        self, db: Any, subject_id: str, grant_caps: dict[str, Any],
+        self,
+        db: Any,
+        subject_id: str,
+        grant_caps: dict[str, Any],
     ) -> list[str]:
         return ["Timer adapter not yet implemented"]
 
@@ -217,9 +211,7 @@ class TimerSocialAdapter:
     ) -> dict[str, Any]:
         return {"status": "not_implemented"}
 
-    async def on_revoke_or_block(
-        self, db: Any, subject_id: str, actor_id: str
-    ) -> None:
+    async def on_revoke_or_block(self, db: Any, subject_id: str, actor_id: str) -> None:
         pass
 
     async def export_data(self, db: Any, subject_id: str) -> dict[str, Any]:

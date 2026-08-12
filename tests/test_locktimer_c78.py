@@ -109,7 +109,7 @@ class TestTimerPages:
         response = await auth_client.get("/locktimer")
         assert response.status_code == 200
         assert "Timer" in response.text
-        assert "No active timer session" in response.text
+        assert "No active lock session" in response.text
 
     async def test_overview_requires_auth(self, async_client) -> None:
         response = await async_client.get("/locktimer")

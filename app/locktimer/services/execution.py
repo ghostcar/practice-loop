@@ -51,9 +51,7 @@ async def _next_rule_sort_order(
     """Return max(sort_order)+1 for rules of a session — new rules append at the end."""
     from sqlalchemy import func
 
-    result = await db.execute(
-        select(func.max(model.sort_order)).where(model.session_id == session_id)
-    )
+    result = await db.execute(select(func.max(model.sort_order)).where(model.session_id == session_id))
     current_max = result.scalar_one_or_none()
     return (current_max if current_max is not None else -1) + 1
 

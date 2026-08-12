@@ -19,16 +19,12 @@ from app.platform.social.models import SocialConsent, SocialProfile, SocialSubje
 
 
 async def get_profile(db: AsyncSession, user_id: uuid.UUID) -> SocialProfile | None:
-    result = await db.execute(
-        select(SocialProfile).where(SocialProfile.user_id == user_id)
-    )
+    result = await db.execute(select(SocialProfile).where(SocialProfile.user_id == user_id))
     return result.scalar_one_or_none()
 
 
 async def get_profile_by_alias(db: AsyncSession, alias_normalized: str) -> SocialProfile | None:
-    result = await db.execute(
-        select(SocialProfile).where(SocialProfile.alias_normalized == alias_normalized)
-    )
+    result = await db.execute(select(SocialProfile).where(SocialProfile.alias_normalized == alias_normalized))
     return result.scalar_one_or_none()
 
 
@@ -123,20 +119,17 @@ async def has_accepted_consent(db: AsyncSession, user_id: uuid.UUID, min_version
 
 
 async def get_subject(db: AsyncSession, subject_id: uuid.UUID) -> SocialSubject | None:
-    result = await db.execute(
-        select(SocialSubject).where(
-            SocialSubject.id == subject_id, SocialSubject.is_active
-        )
-    )
+    result = await db.execute(select(SocialSubject).where(SocialSubject.id == subject_id, SocialSubject.is_active))
     return result.scalar_one_or_none()
 
 
 async def list_owner_subjects(
-    db: AsyncSession, owner_id: uuid.UUID,
+    db: AsyncSession,
+    owner_id: uuid.UUID,
 ) -> list[SocialSubject]:
-    result = await db.execute(        select(SocialSubject).where(
-            SocialSubject.owner_id == owner_id, SocialSubject.is_active
-        )
+    result = await db.execute(
+        select(SocialSubject)
+        .where(SocialSubject.owner_id == owner_id, SocialSubject.is_active)
         .order_by(SocialSubject.created_at.desc())
     )
     return list(result.scalars().all())
@@ -212,14 +205,13 @@ INVITE_COOLDOWN_HOURS = 24
 async def _is_blocked(db: AsyncSession, user_a: uuid.UUID, user_b: uuid.UUID) -> bool:
     """Check if either user has blocked the other."""
     result = await db.execute(
-        select(SocialBlock).where(
-            (
-                (SocialBlock.blocker_id == user_a) & (SocialBlock.blocked_id == user_b)
-            ) | (
-                (SocialBlock.blocker_id == user_b) & (SocialBlock.blocked_id == user_a)
-            ),
+        select(SocialBlock)
+        .where(
+            ((SocialBlock.blocker_id == user_a) & (SocialBlock.blocked_id == user_b))
+            | ((SocialBlock.blocker_id == user_b) & (SocialBlock.blocked_id == user_a)),
             SocialBlock.is_active,
-        ).limit(1)
+        )
+        .limit(1)
     )
     return result.scalar_one_or_none() is not None
 
@@ -245,31 +237,28 @@ async def create_invitation(
 
 
 async def get_relationship(db: AsyncSession, relationship_id: uuid.UUID) -> SocialRelationship | None:
-    result = await db.execute(
-        select(SocialRelationship).where(SocialRelationship.id == relationship_id)
-    )
+    result = await db.execute(select(SocialRelationship).where(SocialRelationship.id == relationship_id))
     return result.scalar_one_or_none()
 
 
 async def get_relationship_by_pair(
-    db: AsyncSession, user_a: uuid.UUID, user_b: uuid.UUID,
+    db: AsyncSession,
+    user_a: uuid.UUID,
+    user_b: uuid.UUID,
 ) -> SocialRelationship | None:
     result = await db.execute(
         select(SocialRelationship).where(
-            (
-                (SocialRelationship.requester_id == user_a)
-                & (SocialRelationship.recipient_id == user_b)
-            ) | (
-                (SocialRelationship.requester_id == user_b)
-                & (SocialRelationship.recipient_id == user_a)
-            ),
+            ((SocialRelationship.requester_id == user_a) & (SocialRelationship.recipient_id == user_b))
+            | ((SocialRelationship.requester_id == user_b) & (SocialRelationship.recipient_id == user_a)),
         )
     )
     return result.scalar_one_or_none()
 
 
 async def accept_invitation(
-    db: AsyncSession, relationship_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    relationship_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> SocialRelationship | None:
     rel = await get_relationship(db, relationship_id)
     if rel is None or rel.recipient_id != user_id or rel.status != "pending":
@@ -281,7 +270,9 @@ async def accept_invitation(
 
 
 async def decline_invitation(
-    db: AsyncSession, relationship_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    relationship_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> SocialRelationship | None:
     rel = await get_relationship(db, relationship_id)
     if rel is None or rel.recipient_id != user_id or rel.status != "pending":
@@ -294,7 +285,9 @@ async def decline_invitation(
 
 
 async def revoke_relationship(
-    db: AsyncSession, relationship_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    relationship_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> SocialRelationship | None:
     rel = await get_relationship(db, relationship_id)
     if rel is None:
@@ -310,25 +303,30 @@ async def revoke_relationship(
 
 
 async def list_user_relationships(
-    db: AsyncSession, user_id: uuid.UUID,
+    db: AsyncSession,
+    user_id: uuid.UUID,
 ) -> list[SocialRelationship]:
     result = await db.execute(
-        select(SocialRelationship).where(
-            (SocialRelationship.requester_id == user_id)
-            | (SocialRelationship.recipient_id == user_id),
-        ).order_by(SocialRelationship.updated_at.desc())
+        select(SocialRelationship)
+        .where(
+            (SocialRelationship.requester_id == user_id) | (SocialRelationship.recipient_id == user_id),
+        )
+        .order_by(SocialRelationship.updated_at.desc())
     )
     return list(result.scalars().all())
 
 
 async def list_pending_invitations(
-    db: AsyncSession, user_id: uuid.UUID,
+    db: AsyncSession,
+    user_id: uuid.UUID,
 ) -> list[SocialRelationship]:
     result = await db.execute(
-        select(SocialRelationship).where(
+        select(SocialRelationship)
+        .where(
             SocialRelationship.recipient_id == user_id,
             SocialRelationship.status == "pending",
-        ).order_by(SocialRelationship.created_at.desc())
+        )
+        .order_by(SocialRelationship.created_at.desc())
     )
     return list(result.scalars().all())
 
@@ -337,7 +335,10 @@ async def list_pending_invitations(
 
 
 async def block_user(
-    db: AsyncSession, blocker_id: uuid.UUID, blocked_id: uuid.UUID, reason: str | None = None,
+    db: AsyncSession,
+    blocker_id: uuid.UUID,
+    blocked_id: uuid.UUID,
+    reason: str | None = None,
 ) -> SocialBlock:
     block = SocialBlock(blocker_id=blocker_id, blocked_id=blocked_id, reason=reason)
     db.add(block)
@@ -346,7 +347,9 @@ async def block_user(
 
 
 async def unblock_user(
-    db: AsyncSession, blocker_id: uuid.UUID, blocked_id: uuid.UUID,
+    db: AsyncSession,
+    blocker_id: uuid.UUID,
+    blocked_id: uuid.UUID,
 ) -> bool:
     result = await db.execute(
         select(SocialBlock).where(
@@ -365,9 +368,12 @@ async def unblock_user(
 
 async def list_user_blocks(db: AsyncSession, user_id: uuid.UUID) -> list[SocialBlock]:
     result = await db.execute(
-        select(SocialBlock).where(
-            SocialBlock.blocker_id == user_id, SocialBlock.is_active,
-        ).order_by(SocialBlock.created_at.desc())
+        select(SocialBlock)
+        .where(
+            SocialBlock.blocker_id == user_id,
+            SocialBlock.is_active,
+        )
+        .order_by(SocialBlock.created_at.desc())
     )
     return list(result.scalars().all())
 
@@ -400,10 +406,14 @@ async def create_grant(
 
 
 async def accept_grant(
-    db: AsyncSession, grant_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    grant_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> SocialGrant | None:
     result = await db.execute(
-        select(SocialGrant).join(SocialRelationship).where(
+        select(SocialGrant)
+        .join(SocialRelationship)
+        .where(
             SocialGrant.id == grant_id,
             SocialGrant.status == "proposed",
             SocialRelationship.recipient_id == user_id,
@@ -419,16 +429,17 @@ async def accept_grant(
 
 
 async def revoke_grant(
-    db: AsyncSession, grant_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    grant_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> SocialGrant | None:
     result = await db.execute(
-        select(SocialGrant).join(SocialRelationship).where(
+        select(SocialGrant)
+        .join(SocialRelationship)
+        .where(
             SocialGrant.id == grant_id,
             SocialGrant.status.in_(["proposed", "accepted"]),
-            (
-                (SocialRelationship.requester_id == user_id)
-                | (SocialRelationship.recipient_id == user_id)
-            ),
+            ((SocialRelationship.requester_id == user_id) | (SocialRelationship.recipient_id == user_id)),
         )
     )
     grant = result.scalar_one_or_none()
@@ -441,12 +452,15 @@ async def revoke_grant(
 
 
 async def list_grants_for_relationship(
-    db: AsyncSession, relationship_id: uuid.UUID,
+    db: AsyncSession,
+    relationship_id: uuid.UUID,
 ) -> list[SocialGrant]:
     result = await db.execute(
-        select(SocialGrant).where(
+        select(SocialGrant)
+        .where(
             SocialGrant.relationship_id == relationship_id,
-        ).order_by(SocialGrant.created_at.desc())
+        )
+        .order_by(SocialGrant.created_at.desc())
     )
     return list(result.scalars().all())
 
@@ -471,7 +485,9 @@ async def create_notification(
 
 
 async def list_notifications(
-    db: AsyncSession, user_id: uuid.UUID, limit: int = 50,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 50,
 ) -> list[SocialNotification]:
     result = await db.execute(
         select(SocialNotification)
@@ -483,7 +499,9 @@ async def list_notifications(
 
 
 async def mark_notification_read(
-    db: AsyncSession, notification_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    notification_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> bool:
     result = await db.execute(
         select(SocialNotification).where(
@@ -527,7 +545,9 @@ async def create_publication(
 
 
 async def withdraw_publication(
-    db: AsyncSession, publication_id: uuid.UUID, owner_id: uuid.UUID,
+    db: AsyncSession,
+    publication_id: uuid.UUID,
+    owner_id: uuid.UUID,
 ) -> SocialPublication | None:
     result = await db.execute(
         select(SocialPublication).where(
@@ -570,8 +590,7 @@ async def list_feed(
             SocialRelationship.status == "accepted",
         )
         .union(
-            select(SocialRelationship.recipient_id)
-            .where(
+            select(SocialRelationship.recipient_id).where(
                 SocialRelationship.requester_id == viewer_id,
                 SocialRelationship.status == "accepted",
             )
@@ -582,10 +601,7 @@ async def list_feed(
     blocked = (
         select(SocialBlock.blocked_id)
         .where(SocialBlock.blocker_id == viewer_id, SocialBlock.is_active)
-        .union(
-            select(SocialBlock.blocker_id)
-            .where(SocialBlock.blocked_id == viewer_id, SocialBlock.is_active)
-        )
+        .union(select(SocialBlock.blocker_id).where(SocialBlock.blocked_id == viewer_id, SocialBlock.is_active))
     ).subquery()
 
     query = (
@@ -612,16 +628,16 @@ async def list_feed(
 
 
 async def get_publication(
-    db: AsyncSession, publication_id: uuid.UUID,
+    db: AsyncSession,
+    publication_id: uuid.UUID,
 ) -> SocialPublication | None:
-    result = await db.execute(
-        select(SocialPublication).where(SocialPublication.id == publication_id)
-    )
+    result = await db.execute(select(SocialPublication).where(SocialPublication.id == publication_id))
     return result.scalar_one_or_none()
 
 
 async def list_owner_publications(
-    db: AsyncSession, owner_id: uuid.UUID,
+    db: AsyncSession,
+    owner_id: uuid.UUID,
 ) -> list[SocialPublication]:
     result = await db.execute(
         select(SocialPublication)
@@ -682,11 +698,10 @@ async def create_verification_request(
 
 
 async def get_verification_request(
-    db: AsyncSession, request_id: uuid.UUID,
+    db: AsyncSession,
+    request_id: uuid.UUID,
 ) -> SocialVerificationRequest | None:
-    result = await db.execute(
-        select(SocialVerificationRequest).where(SocialVerificationRequest.id == request_id)
-    )
+    result = await db.execute(select(SocialVerificationRequest).where(SocialVerificationRequest.id == request_id))
     return result.scalar_one_or_none()
 
 
@@ -705,7 +720,10 @@ async def cast_vote(
         return None  # owner cannot vote
 
     vote = SocialVerificationVote(
-        request_id=request_id, voter_id=voter_id, value=value, comment=comment,
+        request_id=request_id,
+        voter_id=voter_id,
+        value=value,
+        comment=comment,
     )
     db.add(vote)
     await db.flush()
@@ -721,7 +739,8 @@ async def cast_vote(
 
 
 async def check_quorum_and_finalize(
-    db: AsyncSession, request_id: uuid.UUID,
+    db: AsyncSession,
+    request_id: uuid.UUID,
 ) -> SocialVerificationRequest | None:
     """Check quorum after each vote. Finalizes if thresholds met."""
     req = await get_verification_request(db, request_id)
@@ -775,7 +794,10 @@ async def create_comment(
     body: str,
 ) -> SocialComment:
     comment = SocialComment(
-        author_id=author_id, target_type=target_type, target_id=target_id, body=body,
+        author_id=author_id,
+        target_type=target_type,
+        target_id=target_id,
+        body=body,
     )
     db.add(comment)
     await db.flush()
@@ -783,11 +805,15 @@ async def create_comment(
 
 
 async def edit_comment(
-    db: AsyncSession, comment_id: uuid.UUID, author_id: uuid.UUID, body: str,
+    db: AsyncSession,
+    comment_id: uuid.UUID,
+    author_id: uuid.UUID,
+    body: str,
 ) -> SocialComment | None:
     result = await db.execute(
         select(SocialComment).where(
-            SocialComment.id == comment_id, SocialComment.author_id == author_id,
+            SocialComment.id == comment_id,
+            SocialComment.author_id == author_id,
         )
     )
     comment = result.scalar_one_or_none()
@@ -801,11 +827,14 @@ async def edit_comment(
 
 
 async def delete_comment(
-    db: AsyncSession, comment_id: uuid.UUID, author_id: uuid.UUID,
+    db: AsyncSession,
+    comment_id: uuid.UUID,
+    author_id: uuid.UUID,
 ) -> bool:
     result = await db.execute(
         select(SocialComment).where(
-            SocialComment.id == comment_id, SocialComment.author_id == author_id,
+            SocialComment.id == comment_id,
+            SocialComment.author_id == author_id,
         )
     )
     comment = result.scalar_one_or_none()
@@ -817,7 +846,9 @@ async def delete_comment(
 
 
 async def list_comments(
-    db: AsyncSession, target_type: str, target_id: uuid.UUID,
+    db: AsyncSession,
+    target_type: str,
+    target_id: uuid.UUID,
 ) -> list[SocialComment]:
     result = await db.execute(
         select(SocialComment)
@@ -838,8 +869,10 @@ async def create_encouragement(
     encouragement_type: str,
 ) -> SocialEncouragement | None:
     enc = SocialEncouragement(
-        sender_id=sender_id, target_type=target_type,
-        target_id=target_id, encouragement_type=encouragement_type,
+        sender_id=sender_id,
+        target_type=target_type,
+        target_id=target_id,
+        encouragement_type=encouragement_type,
     )
     db.add(enc)
     await db.flush()
@@ -873,9 +906,7 @@ async def create_report(
 
 
 async def get_report(db: AsyncSession, report_id: uuid.UUID) -> ModerationReport | None:
-    result = await db.execute(
-        select(ModerationReport).where(ModerationReport.id == report_id)
-    )
+    result = await db.execute(select(ModerationReport).where(ModerationReport.id == report_id))
     return result.scalar_one_or_none()
 
 
@@ -897,7 +928,9 @@ async def list_reports(
 
 
 async def assign_report(
-    db: AsyncSession, report_id: uuid.UUID, moderator_id: uuid.UUID,
+    db: AsyncSession,
+    report_id: uuid.UUID,
+    moderator_id: uuid.UUID,
 ) -> ModerationReport | None:
     report = await get_report(db, report_id)
     if report is None:
@@ -910,7 +943,9 @@ async def assign_report(
 
 
 async def resolve_report(
-    db: AsyncSession, report_id: uuid.UUID, moderator_id: uuid.UUID,
+    db: AsyncSession,
+    report_id: uuid.UUID,
+    moderator_id: uuid.UUID,
 ) -> ModerationReport | None:
     report = await get_report(db, report_id)
     if report is None:
@@ -923,7 +958,9 @@ async def resolve_report(
 
 
 async def dismiss_report(
-    db: AsyncSession, report_id: uuid.UUID, moderator_id: uuid.UUID,
+    db: AsyncSession,
+    report_id: uuid.UUID,
+    moderator_id: uuid.UUID,
 ) -> ModerationReport | None:
     report = await get_report(db, report_id)
     if report is None:
@@ -957,7 +994,8 @@ async def create_moderation_action(
 
 
 async def list_moderation_actions(
-    db: AsyncSession, report_id: uuid.UUID,
+    db: AsyncSession,
+    report_id: uuid.UUID,
 ) -> list[ModerationAction]:
     result = await db.execute(
         select(ModerationAction)
@@ -968,12 +1006,14 @@ async def list_moderation_actions(
 
 
 async def hide_publication(
-    db: AsyncSession, publication_id: uuid.UUID,
+    db: AsyncSession,
+    publication_id: uuid.UUID,
 ) -> bool:
     """Moderation: hide a publication from feed."""
     result = await db.execute(
         select(SocialPublication).where(
-            SocialPublication.id == publication_id, SocialPublication.is_active,
+            SocialPublication.id == publication_id,
+            SocialPublication.is_active,
         )
     )
     pub = result.scalar_one_or_none()
@@ -986,12 +1026,11 @@ async def hide_publication(
 
 
 async def hide_comment(
-    db: AsyncSession, comment_id: uuid.UUID,
+    db: AsyncSession,
+    comment_id: uuid.UUID,
 ) -> bool:
     """Moderation: hide a comment (set body to '[removed by moderation]')."""
-    result = await db.execute(
-        select(SocialComment).where(SocialComment.id == comment_id)
-    )
+    result = await db.execute(select(SocialComment).where(SocialComment.id == comment_id))
     comment = result.scalar_one_or_none()
     if comment is None:
         return False
@@ -1003,12 +1042,11 @@ async def hide_comment(
 
 
 async def invalidate_vote(
-    db: AsyncSession, vote_id: uuid.UUID,
+    db: AsyncSession,
+    vote_id: uuid.UUID,
 ) -> bool:
     """Moderation: invalidate a verification vote (delete it, adjust counters)."""
-    result = await db.execute(
-        select(SocialVerificationVote).where(SocialVerificationVote.id == vote_id)
-    )
+    result = await db.execute(select(SocialVerificationVote).where(SocialVerificationVote.id == vote_id))
     vote = result.scalar_one_or_none()
     if vote is None:
         return False

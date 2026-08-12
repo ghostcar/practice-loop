@@ -125,7 +125,7 @@
             <span class="text-lg group-hover:scale-110 transition-transform">⏱️</span>
             <div>
                 <div class="text-sm font-medium text-amber-700 dark:text-amber-300">{{ t.nav_timer or "Timer" }}</div>
-                <div class="text-xs text-amber-400">{{ t.locktimer_title or "LockTimer" }}</div>
+                <div class="text-xs text-amber-400">{{ t.locktimer_title or "Lock Timer" }}</div>
             </div>
         </a>
         <a href="/diets" class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-center gap-2 hover:border-emerald-400 transition-colors group">
@@ -250,7 +250,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-          <h2 class="text-sm font-semibold text-amber-800 dark:text-amber-200">⏱️ {{ t.dashboard_timer_active or "Active Timer" }}</h2>
+          <h2 class="text-sm font-semibold text-amber-800 dark:text-amber-200">⏱️ {{ t.dashboard_timer_active or "Active Lock Timer" }}</h2>
           {% if locktimer_session.state == 'draft' %}
           <span class="px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">draft</span>
           {% endif %}
@@ -268,7 +268,7 @@
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
         <div>
-          <span class="text-amber-600/70 dark:text-amber-400/60">{{ t.dashboard_timer_duration or "Duration" }}</span>
+          <span class="text-amber-600/70 dark:text-amber-400/60">{{ t.dashboard_timer_duration or "Lock Duration" }}</span>
           <p class="font-medium text-amber-900 dark:text-amber-100">{{ locktimer_session.duration_type }}</p>
         </div>
         <div>
@@ -276,7 +276,7 @@
           <p class="font-medium text-amber-900 dark:text-amber-100">{{ locktimer_session.timezone }}</p>
         </div>
         <div>
-          <span class="text-amber-600/70 dark:text-amber-400/60">{{ t.dashboard_timer_slots or "Slots" }}</span>
+          <span class="text-amber-600/70 dark:text-amber-400/60">{{ t.dashboard_timer_slots or "Windows" }}</span>
           <p class="font-bold text-amber-900 dark:text-amber-100 tabular-nums">{{ locktimer_slots_count }}</p>
         </div>
         <div>
@@ -286,7 +286,7 @@
       </div>
       {% if locktimer_session.effective_end_at %}
       <div class="text-xs text-amber-600/60 dark:text-amber-400/40">
-        {{ t.dashboard_timer_ends or "Ends" }}: <span class="font-mono">{{ locktimer_session.effective_end_at[:19] }}</span>
+        {{ t.dashboard_timer_ends or "Unlock At" }}: <span class="font-mono">{{ locktimer_session.effective_end_at[:19] }}</span>
       </div>
       {% endif %}
     </div>

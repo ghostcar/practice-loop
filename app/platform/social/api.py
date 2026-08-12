@@ -85,7 +85,9 @@ CURRENT_CONSENT_VERSION = 1
 
 
 async def _check_social_access(
-    db: AsyncSession, user: User, require_consent: bool = True,
+    db: AsyncSession,
+    user: User,
+    require_consent: bool = True,
 ) -> tuple[SocialProfile | None, str]:
     """Verify social is accessible: profile exists + consent accepted."""
     profile = await get_profile(db, user.id)
@@ -175,9 +177,7 @@ async def social_consent_accept(
     current_user: User = Depends(get_current_user),
 ):
     """POST /social/consent/accept — accept privacy terms."""
-    ip_hash = sha256(
-        (request.client.host if request.client else "unknown").encode()
-    ).hexdigest()[:64]
+    ip_hash = sha256((request.client.host if request.client else "unknown").encode()).hexdigest()[:64]
     await record_consent(db, current_user.id, CURRENT_CONSENT_VERSION, ip_hash)
     return RedirectResponse(url="/social/profile", status_code=303)
 
@@ -282,29 +282,35 @@ async def social_relationships_page(
         grants = await list_grants_for_relationship(db, rel.id)
         other_id = rel.requester_id if rel.recipient_id == current_user.id else rel.recipient_id
         other_profile = await get_profile(db, other_id)
-        rel_data.append({
-            "rel": rel,
-            "grants": grants,
-            "other_alias": other_profile.alias if other_profile else "unknown",
-        })
+        rel_data.append(
+            {
+                "rel": rel,
+                "grants": grants,
+                "other_alias": other_profile.alias if other_profile else "unknown",
+            }
+        )
 
     # Enrich blocks with alias
     block_data = []
     for blk in blocks:
         blocked_profile = await get_profile(db, blk.blocked_id)
-        block_data.append({
-            "block": blk,
-            "blocked_alias": blocked_profile.alias if blocked_profile else "unknown",
-        })
+        block_data.append(
+            {
+                "block": blk,
+                "blocked_alias": blocked_profile.alias if blocked_profile else "unknown",
+            }
+        )
 
     # Enrich pending invites with requester alias
     invite_data = []
     for inv in pending_invites:
         requester_profile = await get_profile(db, inv.requester_id)
-        invite_data.append({
-            "invite": inv,
-            "requester_alias": requester_profile.alias if requester_profile else "unknown",
-        })
+        invite_data.append(
+            {
+                "invite": inv,
+                "requester_alias": requester_profile.alias if requester_profile else "unknown",
+            }
+        )
 
     return templates.TemplateResponse(
         request,
@@ -361,7 +367,9 @@ async def social_invite_send(
 
     rel = await create_invitation(db, current_user.id, recipient_profile.user_id, display_role)
     await create_notification(
-        db, recipient_profile.user_id, "invitation_received",
+        db,
+        recipient_profile.user_id,
+        "invitation_received",
         {"relationship_id": str(rel.id), "requester_alias": (await get_profile(db, current_user.id)).alias},
     )
     return RedirectResponse(url="/social/relationships", status_code=303)
@@ -379,7 +387,9 @@ async def social_invite_accept(
     if rel is None:
         raise HTTPException(404, "Invitation not found or not pending")
     await create_notification(
-        db, rel.requester_id, "invitation_accepted",
+        db,
+        rel.requester_id,
+        "invitation_accepted",
         {"relationship_id": str(rel.id)},
     )
     return RedirectResponse(url="/social/relationships", status_code=303)
@@ -397,7 +407,9 @@ async def social_invite_decline(
     if rel is None:
         raise HTTPException(404, "Invitation not found or not pending")
     await create_notification(
-        db, rel.requester_id, "invitation_declined",
+        db,
+        rel.requester_id,
+        "invitation_declined",
         {"relationship_id": str(rel.id)},
     )
     return RedirectResponse(url="/social/relationships", status_code=303)
@@ -416,7 +428,9 @@ async def social_invite_revoke(
         raise HTTPException(404, "Relationship not found")
     other_id = rel.requester_id if rel.recipient_id == current_user.id else rel.recipient_id
     await create_notification(
-        db, other_id, "relationship_revoked",
+        db,
+        other_id,
+        "relationship_revoked",
         {"relationship_id": str(rel.id)},
     )
     return RedirectResponse(url="/social/relationships", status_code=303)
@@ -491,7 +505,9 @@ async def social_grant_create(
 
     grant = await create_grant(db, rel_uuid, scope_type, caps)
     await create_notification(
-        db, rel.recipient_id, "grant_proposed",
+        db,
+        rel.recipient_id,
+        "grant_proposed",
         {"grant_id": str(grant.id), "relationship_id": str(rel.id)},
     )
     return RedirectResponse(url="/social/relationships", status_code=303)
@@ -568,21 +584,25 @@ async def social_feed_page(
     for pub in publications:
         owner_profile = await get_profile(db, pub.owner_id)
         subject = await get_subject(db, pub.subject_id)
-        pub_data.append({
-            "pub": pub,
-            "owner_alias": owner_profile.alias if owner_profile else "unknown",
-            "subject_type": subject.subject_type if subject else "unknown",
-        })
+        pub_data.append(
+            {
+                "pub": pub,
+                "owner_alias": owner_profile.alias if owner_profile else "unknown",
+                "subject_type": subject.subject_type if subject else "unknown",
+            }
+        )
 
     # Also list owner's own publications for management
     own_pubs = await list_owner_publications(db, current_user.id)
     own_data = []
     for pub in own_pubs:
         subject = await get_subject(db, pub.subject_id)
-        own_data.append({
-            "pub": pub,
-            "subject_type": subject.subject_type if subject else "unknown",
-        })
+        own_data.append(
+            {
+                "pub": pub,
+                "subject_type": subject.subject_type if subject else "unknown",
+            }
+        )
 
     return templates.TemplateResponse(
         request,
@@ -625,13 +645,16 @@ async def social_publish(
     except _json.JSONDecodeError:
         raise HTTPException(400, "Invalid snapshot JSON") from None
 
-    snapshot_hash = hashlib.sha256(
-        _json.dumps(snapshot, sort_keys=True).encode()
-    ).hexdigest()
+    snapshot_hash = hashlib.sha256(_json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
 
     await create_publication(
-        db, current_user.id, subject_uuid, visibility,
-        snapshot, snapshot_hash, subject.subject_type.split(".")[0],
+        db,
+        current_user.id,
+        subject_uuid,
+        visibility,
+        snapshot,
+        snapshot_hash,
+        subject.subject_type.split(".")[0],
     )
     return RedirectResponse(url="/social/feed", status_code=303)
 
@@ -698,8 +721,12 @@ async def social_verify_create(
             verifier_scope = {"type": "specific", "user_ids": [str(target.user_id)]}
 
     policy = await create_verification_policy(
-        db, current_user.id, f"Verify {subject.subject_type}",
-        verifier_scope, min_approvals=min_approvals, deadline_hours=deadline_hours,
+        db,
+        current_user.id,
+        f"Verify {subject.subject_type}",
+        verifier_scope,
+        min_approvals=min_approvals,
+        deadline_hours=deadline_hours,
     )
     await create_verification_request(db, policy.id, subject_uuid, current_user.id, deadline_hours)
     return RedirectResponse(url="/social/verification", status_code=303)
@@ -741,7 +768,11 @@ async def social_comment_create(
     if target_type not in ("publication", "verification_request"):
         raise HTTPException(400, "Invalid target type")
     await create_comment(
-        db, current_user.id, target_type, __import__("uuid").UUID(target_id), body,
+        db,
+        current_user.id,
+        target_type,
+        __import__("uuid").UUID(target_id),
+        body,
     )
     return RedirectResponse(url="/social/feed", status_code=303)
 
@@ -787,8 +818,11 @@ async def social_encourage(
     if encouragement_type not in ("thumbs_up", "support", "celebrate", "motivate"):
         raise HTTPException(400, "Invalid encouragement type")
     await create_encouragement(
-        db, current_user.id, target_type,
-        __import__("uuid").UUID(target_id), encouragement_type,
+        db,
+        current_user.id,
+        target_type,
+        __import__("uuid").UUID(target_id),
+        encouragement_type,
     )
     return RedirectResponse(url="/social/feed", status_code=303)
 
@@ -841,12 +875,14 @@ async def social_moderation_page(
             target_desc = f"{report.target_type}: {report.target_id}"
 
         actions = await list_moderation_actions(db, report.id)
-        enriched.append({
-            "report": report,
-            "reporter_alias": reporter_alias or "anonymous",
-            "target_desc": target_desc,
-            "actions": actions,
-        })
+        enriched.append(
+            {
+                "report": report,
+                "reporter_alias": reporter_alias or "anonymous",
+                "target_desc": target_desc,
+                "actions": actions,
+            }
+        )
 
     return templates.TemplateResponse(
         request,
@@ -880,14 +916,23 @@ async def social_report(
     if target_type not in ("profile", "publication", "comment", "vote"):
         raise HTTPException(400, "Invalid target type")
     if reason_code not in (
-        "harassment", "privacy", "non_consensual", "impersonation",
-        "dangerous_content", "spam", "other",
+        "harassment",
+        "privacy",
+        "non_consensual",
+        "impersonation",
+        "dangerous_content",
+        "spam",
+        "other",
     ):
         raise HTTPException(400, "Invalid reason code")
 
     await create_report(
-        db, current_user.id, target_type,
-        __import__("uuid").UUID(target_id), reason_code, details,
+        db,
+        current_user.id,
+        target_type,
+        __import__("uuid").UUID(target_id),
+        reason_code,
+        details,
     )
     return RedirectResponse(url=redirect_url, status_code=303)
 
@@ -920,8 +965,12 @@ async def social_moderation_action(
     _check_moderator(current_user)
 
     if action_type not in (
-        "hide_publication", "hide_comment", "invalidate_vote",
-        "resolve_report", "dismiss_report", "request_evidence",
+        "hide_publication",
+        "hide_comment",
+        "invalidate_vote",
+        "resolve_report",
+        "dismiss_report",
+        "request_evidence",
     ):
         raise HTTPException(400, "Invalid action type")
 
@@ -952,6 +1001,11 @@ async def social_moderation_action(
 
     # Record immutable action
     await create_moderation_action(
-        db, report_uuid, current_user.id, action_type, reason, action_metadata,
+        db,
+        report_uuid,
+        current_user.id,
+        action_type,
+        reason,
+        action_metadata,
     )
     return RedirectResponse(url="/social/moderation", status_code=303)

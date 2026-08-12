@@ -93,9 +93,7 @@ async def list_sessions_by_date_range(
     return list(result.scalars().all())
 
 
-async def get_weekly_compliance(
-    db: AsyncSession, owner_id: uuid.UUID, weeks: int = 4
-) -> list[dict]:
+async def get_weekly_compliance(db: AsyncSession, owner_id: uuid.UUID, weeks: int = 4) -> list[dict]:
     """Return per-week compliance stats: slot close rate and task completion rate."""
     from datetime import date, timedelta
 
@@ -121,9 +119,7 @@ async def get_weekly_compliance(
             slot_result = await db.execute(
                 select(
                     func.count(LockSlotOccurrence.id),
-                    func.sum(
-                        func.case((LockSlotOccurrence.state == "closed", 1), else_=0)
-                    ),
+                    func.sum(func.case((LockSlotOccurrence.state == "closed", 1), else_=0)),
                 ).where(LockSlotOccurrence.session_id.in_(session_ids))
             )
             srow = slot_result.one()
@@ -145,15 +141,17 @@ async def get_weekly_compliance(
             total_tasks = trow[0] or 0
             completed_tasks = trow[1] or 0
 
-        result.append({
-            "week": ws,
-            "week_end": we,
-            "sessions": len(sessions),
-            "slots_closed": closed_slots,
-            "slots_total": total_slots,
-            "tasks_completed": completed_tasks,
-            "tasks_total": total_tasks,
-        })
+        result.append(
+            {
+                "week": ws,
+                "week_end": we,
+                "sessions": len(sessions),
+                "slots_closed": closed_slots,
+                "slots_total": total_slots,
+                "tasks_completed": completed_tasks,
+                "tasks_total": total_tasks,
+            }
+        )
     return result
 
 

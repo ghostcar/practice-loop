@@ -32,7 +32,7 @@
       <button onclick="validateSession('{{ session.id }}')" class="px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium transition cursor-pointer">
         🔍 {{ t.locktimer_validate or "Validate" }}
       </button>
-      <form action="/api/v1/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this session? Rules will be frozen.')">
+      <form action="/api/v1/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this lock session? Rules will be frozen.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition cursor-pointer">
           ▶ {{ t.locktimer_start or "Start" }}
@@ -114,7 +114,7 @@
     <form action="/api/v1/locktimer/sessions/{{ session.id }}/slot-rules" method="post" class="mt-3 space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input name="name" placeholder="Rule name (e.g. Morning slot)" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2" required>
+        <input name="name" placeholder="Unlock window name (e.g. Morning unlock)" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2" required>
         <select name="rule_type" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
           <option value="every_n_days">Every N days</option>
           <option value="exact_datetime">Exact datetime</option>
@@ -254,14 +254,14 @@
         {% if session.state == 'active' and o.state in ('pending', 'eligible') %}
         <form action="/api/v1/locktimer/slot-occurrences/{{ o.id }}/open" method="post" class="flex-shrink-0">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer">Open</button>
+          <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer">Unlock</button>
         </form>
         {% elif session.state == 'active' and o.state == 'open' %}
         <div class="flex items-center gap-1 flex-shrink-0">
           <form action="/api/v1/locktimer/slot-occurrences/{{ o.id }}/close" method="post" class="flex items-center gap-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <input type="text" name="tag_number" placeholder="Tag #" maxlength="100" class="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
-            <button type="submit" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">Close</button>
+            <input type="text" name="tag_number" placeholder="{{ t.locktimer_tag_number or 'Seal #' }}" maxlength="100" class="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
+            <button type="submit" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">Lock</button>
           </form>
         </div>
         {% elif o.state == 'closed' %}
@@ -368,7 +368,7 @@
   {% if not slot_rules and not task_rules and not slot_occurrences and not task_occurrences %}
   <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
     <p class="text-gray-500 dark:text-gray-400">{{ t.locktimer_session_empty or "No rules or occurrences yet." }}</p>
-    {% if session.state == 'draft' %}<p class="text-sm text-gray-400 mt-1">Add slot or task rules above, then start the session.</p>{% endif %}
+    {% if session.state == 'draft' %}<p class="text-sm text-gray-400 mt-1">Add unlock rules and tasks above, then start the lock session.</p>{% endif %}
   </section>
   {% endif %}
 
@@ -432,7 +432,7 @@ function validateSession(sessionId) {
 
 // Verify tag
 function verifyTag(occId, expectedTag) {
-  var provided = prompt('Enter tag number for verification:');
+  var provided = prompt('Enter seal number for verification:');
   if (!provided) return;
   var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
   var body = 'csrf_token=' + encodeURIComponent(csrf) + '&tag_number=' + encodeURIComponent(provided);
@@ -444,9 +444,9 @@ function verifyTag(occId, expectedTag) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.matched) {
-      alert('✅ Tag matches! Tag #' + data.expected_tag + ' confirmed.');
+      alert('✅ Seal matches! Seal #' + data.expected_tag + ' confirmed.');
     } else {
-      alert('🚨 TAG MISMATCH! Expected: ' + (data.expected_tag || 'none') + ', Got: ' + data.provided_tag + '. Violation recorded.');
+      alert('🚨 SEAL MISMATCH! Expected: ' + (data.expected_tag || 'none') + ', Got: ' + data.provided_tag + '. Violation recorded.');
       location.reload();
     }
   })

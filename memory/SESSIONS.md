@@ -1,3 +1,11 @@
+## 2026-08-12 — Сессия 81 (Личный контур: честный фронт + нормализация + план рефакторинга)
+
+- **Честный фронт (ADR-062)**: решения владельца зафиксированы ранее — lock = chastity, таблицы не меняем. Реализовано: i18n EN/RU (значения, ключи не тронуты, паритет 0 расхождений): `locktimer_title` → "Lock Timer"/"Таймер замка", `locktimer_session_label` → "Lock Session", `locktimer_slot_occurrences` → "Unlock Windows"/"Окна разблокировки", `locktimer_slot_rules` → "Unlock Rules", `locktimer_tag_number` → "Seal #"/"Пломба #", `locktimer_verify_tag` → "Verify Seal", audit → "Seal Audit".
+- **Шаблоны**: кнопки Open→Unlock, Close→Lock, placeholder Tag #→Seal #; JS verifyTag — seal-тексты; confirm/empty-state — lock-тексты; base.html навигация (десктоп + мобильная) через `t.nav_timer` (было хардкод "Timer"); добавлен недостающий ключ `locktimer_slot` (tag_violations рендерил пусто).
+- **Линт-нормализация**: `ruff format` — 19 файлов переформатировано, 130 уже ок; `ruff check` чистый; полный прогон **592/592 ✅**.
+- **REFACTORING.md**: утверждённый план декомпозиции 7 файлов >800 строк (execution.py 1409 → services/{drafts,session,materializer,execution,jobs}; import_data → importers/*; references, points_v2, social repositories/api, pipeline) — механический перенос с re-export, ≤500 строк, шаг = файл + полный pytest.
+- **OCR/LLM верификация** зафиксирована как Q13 (отложено, без сроков).
+
 ## 2026-08-12 — Сессия 80 (Housekeeping)
 
 - **Git**: 47 непушедших коммитов → origin/main (bf1fd7f..033494f); удалена влитая ветка feat/product-composition-locktimer-core; рабочее дерево чистое.

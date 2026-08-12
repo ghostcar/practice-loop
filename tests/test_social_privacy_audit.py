@@ -61,7 +61,10 @@ class TestPrivacyAuditSocialPages:
 
     @pytest.mark.parametrize("method,path,expected_status", SOCIAL_ROUTES)
     async def test_social_route_no_private_leak(
-        self, method: str, path: str, expected_status: int,
+        self,
+        method: str,
+        path: str,
+        expected_status: int,
         async_client: AsyncClient,
     ) -> None:
         """Each social route should not leak private data regardless of auth status."""
@@ -131,7 +134,10 @@ class TestPrivacyAuditJsonEndpoints:
 
 class TestPrivacyAuditProfile:
     async def test_profile_does_not_expose_internals(
-        self, db_session, test_user: User, auth_client: AsyncClient,
+        self,
+        db_session,
+        test_user: User,
+        auth_client: AsyncClient,
     ) -> None:
         """After profile creation, profile page must not leak internals."""
         from app.platform.social.repositories import create_profile

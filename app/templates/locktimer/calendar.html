@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ t.locktimer_calendar or "Timer Calendar" }} — Practice Loop{% endblock %}
+{% block title %}{{ t.locktimer_calendar or "Lock Timer Calendar" }} — Practice Loop{% endblock %}
 {% set active_nav = "locktimer" %}
 
 {% block content %}
@@ -8,7 +8,7 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ t.locktimer_calendar or "Timer Calendar" }}</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ t.locktimer_calendar or "Lock Timer Calendar" }}</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_calendar_subtitle or "Session history and weekly compliance" }}</p>
     </div>
     <a href="/locktimer"
@@ -96,7 +96,7 @@
         {% if week.slots_total > 0 %}
         {% set slot_pct = (week.slots_closed / week.slots_total * 100) | int %}
         <div class="flex items-center gap-2 text-xs mb-1">
-          <span class="w-16 text-gray-500 dark:text-gray-400">Slots:</span>
+          <span class="w-16 text-gray-500 dark:text-gray-400">Windows:</span>
           <div class="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div class="h-full rounded-full transition-all
                 {% if slot_pct >= 80 %}bg-green-500

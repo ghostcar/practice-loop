@@ -175,6 +175,7 @@ class TestDuplicateTag:
 
         # Mark first session as completed so we can start a new one
         from app.locktimer.services.execution import safety_stop
+
         await safety_stop(db_session, session_id=sess1_id, owner_id=test_user.id)
 
         _, occ2 = await _started_with_open_slot(db_session, test_user)
