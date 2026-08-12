@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 74 — Social S2 Relationships).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 76 — Q12 closed, Social S0-S7 complete).
 
-## Общий статус: 538/538 тестов ✅, ruff ✅, format ✅
+## Общий статус: 567/567 тестов ✅, ruff ✅, format ✅
 
 ## LockTimer Core — C0–C9 полностью ✅
 
@@ -21,19 +21,21 @@
 - [x] **S71**: Real-time countdown JS, validation (conflict check), extend horizon, templates CRUD
 - [x] **S72**: Numbered tags (close_tag_number, require_tag, verify-tag, lock_tag_violations, 20 tag mechanics tests)
 
-**Осталось по Timer**: ⏸ tag audit UI page (Q12), timer-only deploy smoke test (Q12)
 
-## Platform Social — S0 ✅ + S1 ✅ + S2 ✅ (Sessions 73–74)
+## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
 
-- [x] **S0**: app/platform/social/ package, social_profiles (alias-based identity), social_consents, /social/profile, /social/privacy
+- [x] **S0**: social_profiles (alias-based identity), social_consents, /social/profile, /social/privacy
 - [x] **S1**: social_subjects registry, SocialSubjectAdapter protocol, adapter registry, /social/subjects, /social/api/capabilities
-- [x] **S2**: social_relationships (invitation lifecycle), social_blocks (cross-product), social_grants (scoped caps), social_notifications (outbox), /social/relationships
-- [x] **ADR**: 058–059
-- [x] **Миграции**: 029 (S0+S1) + 030 (S2)
-- [x] **i18n**: +51 ключей EN/RU (social_*)
-- [x] **ENV**: SOCIAL_ENABLED + adapter flags в docker-compose.yml
-
-**Осталось по Social**: S3 (publications), S4 (verification+comments), S5 (moderation), S6 (adapters), S7 (hardening), S8 (keyholder design)
+- [x] **S2**: social_relationships (invitations), social_blocks, social_grants (scoped caps), social_notifications (outbox), /social/relationships
+- [x] **S3**: social_publications (immutable redacted snapshots, SHA-256), cursor feed, /social/feed
+- [x] **S4**: verification policies/requests/votes, quorum check, social_comments, social_encouragements, /social/verification
+- [x] **S5**: moderation_reports (7 reason codes), moderation_actions (immutable audit), /social/moderation (admin-only)
+- [x] **S6**: TrackerSocialAdapter (14 methods), TimerSocialAdapter skeleton, startup registration
+- [x] **S7**: 11 social concurrency tests, 11 privacy audit tests (all routes scanned), pre_deploy_check.sh §8, DEPLOY_VPS.md §15 Social Ops Runbook
+- [x] **ADR**: 058–062
+- [x] **Миграции**: 029–033 (15 social_* таблиц)
+- [x] **i18n**: +148 ключей EN/RU (social_*)
+- [x] **Документация**: FUNCTIONAL.md §17 expanded, PRODUCT.md Social section complete, OPEN_QUESTIONS Q12 ✅ closed
 
 ## Сессия 63 (C0): Platform Foundation + composition root + три варианта приложения
 

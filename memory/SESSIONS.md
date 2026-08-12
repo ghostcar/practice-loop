@@ -3,6 +3,25 @@
 Формат: `дата — Сессия N: тема` → что обсуждали → результаты/договорённости → артефакты.
 Новая запись добавляется **в конце каждой сессии**.
 
+
+## 2026-08-12 — Сессия 76 (Q12): Deferred Timer items closed
+
+- **Tag audit UI**: GET /locktimer/tag-violations/{session_id} — HTML-страница с карточками нарушений (mismatch/missing бейджи, expected vs provided tag, timestamp, ссылка на слот). Переиспользует существующий list_tag_violations сервис. Template: locktimer/tag_violations.html. +8 i18n keys EN/RU.
+- **Timer standalone smoke test**: tests/test_timer_standalone.py — 7 тестов (overview, new draft, templates, tag violations page, API endpoints, capabilities endpoint, route isolation — no raw_llm_response/penalty_details leaks)
+- **OPEN_QUESTIONS.md**: Q12 marked ✅ closed
+- **567/567 ✅**, ruff ✅, deployed
+
+## 2026-08-12 — Сессия 75 (S4+S6+S5+S7+docs): Social verification + comments, Tracker adapter, moderation, hardening, docs
+
+- **S4 — Verification & Comments**: 5 new tables (verification_policies, verification_requests, verification_votes, social_comments, social_encouragements). Quorum-based verification (min_approvals→verified, max_rejections→review_required, deadline→no_quorum). Comments CRUD with edit support. Encouragement (4 types). 8 API endpoints. /social/verification page.
+- **S6 — Tracker Adapter**: TrackerSocialAdapter (14 protocol methods: authorize, projection, capabilities, grant validation). TimerSocialAdapter skeleton. Registered at startup via composition flags.
+- **S5 — Moderation**: moderation_reports (7 reason codes, 4 states), moderation_actions (append-only audit, 6 action types). Admin-only /social/moderation page with queue + action form.
+- **S3 — Publications & Feed**: social_publications (immutable redacted snapshots, SHA-256 hash, 3 visibility levels), cursor-based feed (block-aware, accepted-relationship gated, namespace filter). /social/feed page.
+- **S7 — Hardening**: 11 social concurrency tests (double-accept, invite+block race, feed after hide, grant idempotency, block propagation, cross-user isolation). 11 privacy audit tests (all social routes scanned for email/password_hash/raw_llm_response/penalty_details/ip_address/user_prompt leaks). pre_deploy_check.sh §8. DEPLOY_VPS.md §15 Social Ops Runbook.
+- **Docs**: FUNCTIONAL.md §17 expanded (S3-S7), PRODUCT.md updated (Social section complete, status table all ✅).
+- Миграции 031-033. i18n: +77 keys EN/RU across all S phases.
+- **567/567 ✅**, ruff ✅, deployed.
+
 ## 2026-08-12 — Сессия 74 (S2): Platform Social — Relationships & Grants
 
 - social_relationships: invitation lifecycle (pending→accepted/declined/expired/revoked), display_role presets (viewer/coach/mentor/curator), cooldown 24h
