@@ -272,7 +272,115 @@ async def generate_task(
     return log
 
 
+
+
+async def generate_weekly_tasks(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    llm_config: LLMProviderConfig,
+    locale: str = "en",
+    days: int = 7,
+) -> list[ActivityLog]:
+    """Generate tasks for multiple days ahead."""
+    days = max(1, min(days, 14))
+    start_date = date.today() + timedelta(days=1)
+    target_dates = [start_date + timedelta(days=i) for i in range(days)]
+    date_labels = [d.isoformat() for d in target_dates]
+
+    context = await build_context(db, user_id, locale=locale)
+    context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
+    allowed_ids = get_allowed_ids(context)
+    entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}
+
+    is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
+    context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
+
+    system_prompt = (
+        "You are a weekly activity planner. Distribute activities across the upcoming days. "
+        "Respect calendar windows, align with diet goals, vary activities. "
+        f"Output in {locale}.\n\n"
+        'Response format (JSON): {"plan": [{"date": "YYYY-MM-DD", "entity_id": "<uuid>",'
+        '"entity_name": "<name>", "params": {...}, "reasoning": "..."}]}'
+    )
+
+    user_message = (
+        f"Context:\n{context_text}\n\n"
+        f"Plan tasks for: {', '.join(date_labels)}\n"
+        f"Generate exactly ONE task per day ({days} tasks total)."
+    )
+
+    result = await call_llm(config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True)
+    raw_response = result["content"]
+    usage = result["usage"]
+    parsed = parse_llm_json(raw_response, is_last_attempt=True)
+
+    plan = parsed.get("plan", [])
+    if not plan:
+        raise ValueError("LLM returned empty weekly plan")
+
+    logs: list[ActivityLog] = []
+    raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
+
+    for item in plan[:days]:
+        entity_id_str = str(item.get("entity_id") or "").strip()
+        entity_name = item.get("entity_name", "Unknown")
+        params = item.get("params", {})
+        reasoning = item.get("reasoning", "")
+        date_str = str(item.get("date") or "").strip()
+
+        if entity_id_str not in allowed_ids:
+            continue
+        canonical = entities_by_id.get(entity_id_str, {})
+        entity_name = canonical.get("name") or entity_name
+
+        try:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            target_date = target_dates[len(logs)] if logs else start_date
+
+        schema = canonical.get("params_schema")
+        if validate_params_against_schema(params, schema):
+            continue
+
+        auto_title = _generate_task_title(entity_name, params, schema, canonical.get("task_template"), locale)
+        log = ActivityLog(
+            user_id=user_id,
+            entity_id=uuid.UUID(entity_id_str),
+            status="planned",
+            scheduled_at=datetime(target_date.year, target_date.month, target_date.day, tzinfo=UTC),
+            title_override=auto_title if auto_title != entity_name else None,
+            user_prompt=f"Weekly plan: {reasoning[:200]}",
+            raw_llm_response=raw_to_store,
+            raw_response_expires_at=raw_expires,
+            cleaned_response=parsed,
+            selected_entity_name=entity_name,
+            selected_params=params,
+            planned_comment=reasoning[:500] if reasoning else None,
+            prompt_tokens=0, completion_tokens=0, total_tokens=0, cost=0.0,
+        )
+        db.add(log)
+        logs.append(log)
+
+    if not logs:
+        raise ValueError("LLM weekly plan contained no valid tasks")
+
+    per_tok = usage["total_tokens"] // max(len(logs), 1)
+    per_cost = usage["cost"] / max(len(logs), 1)
+    for lg in logs:
+        lg.prompt_tokens = usage["prompt_tokens"] // max(len(logs), 1)
+        lg.completion_tokens = usage["completion_tokens"] // max(len(logs), 1)
+        lg.total_tokens = per_tok
+        lg.cost = per_cost
+
+    llm_config.total_tokens += usage["total_tokens"]
+    llm_config.total_cost += usage["cost"]
+    db.add(llm_config)
+    await db.flush()
+    return logs
+
+
 async def get_active_llm_config(db: AsyncSession, user_id: uuid.UUID) -> LLMProviderConfig | None:
+
     """Get the user's active LLM provider config."""
     result = await db.execute(
         select(LLMProviderConfig).where(

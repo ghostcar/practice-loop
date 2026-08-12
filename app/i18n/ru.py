@@ -733,4 +733,22 @@ RU = {
     "locktimer_tag_expected": "Ожидался",
     "locktimer_tag_provided": "Предъявлен",
     "locktimer_tag_audit_link": "Аудит бирок",
+    # Weekly batch generation
+    "tasks_btn_plan_week": "План на неделю",
+    "tasks_weekly_success": "Неделя спланирована",
+    "tasks_weekly_failed": "Ошибка планирования",
+# Timer calendar + compliance
+"locktimer_calendar": "Календарь",
+"locktimer_calendar_subtitle": "История сессий и недельная статистика",
+"locktimer_back": "Назад",
+"locktimer_overview": "Обзор",
+"locktimer_weekly_compliance": "Недельная статистика",
+"locktimer_sessions_in_month": "сессий в этом месяце",
+"locktimer_no_data": "Нет данных",
+"locktimer_no_compliance": "Недостаточно данных для статистики.",
+"locktimer_view_all": "Все",
+"locktimer_sessions_this_week": "Сессий на неделе",
+"locktimer_slots_closed": "Слотов закрыто",
+"locktimer_tasks_done": "Задач выполнено",
+"locktimer_streak_weeks": "Недель подряд",
 }

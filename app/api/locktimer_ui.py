@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import secrets
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,9 @@ from app.locktimer import enums as e
 from app.locktimer.repositories import (
     get_active_session,
     get_session,
+    get_weekly_compliance,
     list_sessions,
+    list_sessions_by_date_range,
     list_slot_occurrences,
     list_slot_rules,
     list_task_occurrences,
@@ -131,6 +133,30 @@ async def locktimer_overview(
         task_occs = await list_task_occurrences(db, active.id, limit=20)
         active_tasks = [_serialize_task_occ(o, t) for o in task_occs]
 
+    # Compliance snapshot (current week)
+    compliance = await get_weekly_compliance(db, current_user.id, weeks=1)
+    compliance_snapshot = None
+    if compliance:
+        cw = compliance[0]
+        slot_pct = round(cw["slots_closed"] / cw["slots_total"] * 100) if cw["slots_total"] > 0 else 0
+        task_pct = round(cw["tasks_completed"] / cw["tasks_total"] * 100) if cw["tasks_total"] > 0 else 0
+        # Calculate streak: count consecutive weeks with >50% slot+task compliance
+        all_weeks = await get_weekly_compliance(db, current_user.id, weeks=12)
+        streak = 0
+        for w in all_weeks:
+            ws = round(w["slots_closed"] / w["slots_total"] * 100) if w["slots_total"] > 0 else 100
+            wt = round(w["tasks_completed"] / w["tasks_total"] * 100) if w["tasks_total"] > 0 else 100
+            if (ws + wt) >= 100 or (w["slots_total"] == 0 and w["tasks_total"] == 0):
+                streak += 1
+            else:
+                break
+        compliance_snapshot = {
+            "sessions": cw["sessions"],
+            "slot_pct": slot_pct,
+            "task_pct": task_pct,
+            "streak": streak,
+        }
+
     return templates.TemplateResponse(
         request,
         "locktimer/overview.html",
@@ -143,6 +169,7 @@ async def locktimer_overview(
             "active_tasks": active_tasks,
             "drafts": [_serialize_session(s, t) for s in drafts],
             "recent": [_serialize_session(s, t) for s in recent],
+            "compliance_snapshot": compliance_snapshot,
         },
     )
 
@@ -313,6 +340,91 @@ async def locktimer_tag_violations(
                 }
                 for v in violations
             ],
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /locktimer/calendar — calendar view
+# ---------------------------------------------------------------------------
+
+
+@router.get("/calendar", response_class=HTMLResponse)
+async def locktimer_calendar(
+    request: Request,
+    month: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _check_owner_allowlist(current_user)
+
+    locale = detect_locale(request, current_user.locale)
+    t = get_translations(locale)
+
+    today = date.today()
+    try:
+        ym = datetime.strptime(month or "", "%Y-%m").date().replace(day=1)
+    except (ValueError, TypeError):
+        ym = today.replace(day=1)
+
+    # Month boundaries
+    next_month = ym.replace(year=ym.year + 1, month=1) if ym.month == 12 else ym.replace(month=ym.month + 1)
+    prev_month = ym - timedelta(days=1)
+    prev_month = prev_month.replace(day=1)
+
+    month_start = ym.isoformat()
+    month_end = (next_month - timedelta(days=1)).isoformat()
+
+    sessions = await list_sessions_by_date_range(db, current_user.id, month_start, month_end)
+
+    # Build day → sessions map
+    day_map: dict[int, list[dict]] = {}
+    for s in sessions:
+        if not s.started_at:
+            continue
+        day = s.started_at.day
+        day_map.setdefault(day, []).append({
+            "id": str(s.id),
+            "state": s.state,
+            "duration_type": s.duration_type,
+        })
+
+    # Compliance for the month
+    compliance = await get_weekly_compliance(db, current_user.id, weeks=4)
+
+    # Pre-compute calendar grid (Jinja2 doesn't have mktime/strftime)
+    import calendar as cal_mod
+
+    days_in_month = cal_mod.monthrange(ym.year, ym.month)[1]
+    # weekday(): Monday=0 … Sunday=6
+    first_weekday = ym.weekday()
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    # Build grid: list of {day, is_today, sessions}
+    grid: list[dict] = []
+    for _ in range(first_weekday):
+        grid.append({"day": 0, "is_today": False, "sessions": []})
+    for d in range(1, days_in_month + 1):
+        is_today = (today.year == ym.year and today.month == ym.month and today.day == d)
+        grid.append({"day": d, "is_today": is_today, "sessions": day_map.get(d, [])})
+
+    return templates.TemplateResponse(
+        request,
+        "locktimer/calendar.html",
+        {
+            "t": t,
+            "user": current_user,
+            "locale": locale,
+            "today": today,
+            "year": ym.year,
+            "month": ym.month,
+            "prev_month": prev_month.strftime("%Y-%m"),
+            "next_month": next_month.strftime("%Y-%m"),
+            "month_label": f"{ym.strftime('%B')} {ym.year}",
+            "day_names": day_names,
+            "grid": grid,
+            "sessions_count": len(sessions),
+            "compliance": compliance,
         },
     )
 

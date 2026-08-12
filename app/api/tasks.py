@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import date, datetime
 
@@ -12,7 +13,7 @@ from app.database import get_db
 from app.gamification.handler import on_task_completed, on_task_interrupted
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.llm.pipeline import generate_task, get_active_llm_config
+from app.llm.pipeline import generate_task, generate_weekly_tasks, get_active_llm_config
 from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
 from app.models.body_part import TaskBodyTarget
@@ -27,6 +28,8 @@ from app.security import complete_once, interrupt_once
 from app.services.scheduler import get_due_practices, set_next_due, set_retry_block
 from app.templates_setup import templates
 from app.title_gen import generate_title
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -246,6 +249,35 @@ async def generate_deterministic(
 
 
 # --- API: Manual task creation (dynamic params form from DSL, ADR-041) ---
+
+
+@router.post("/generate-weekly")
+async def generate_weekly_endpoint(
+    request: Request,
+    days: int = Form(7),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """POST /tasks/generate-weekly — batch-plan tasks for upcoming days."""
+    llm_config = await get_active_llm_config(db, user.id)
+    if llm_config is None:
+        return RedirectResponse(
+            url="/tasks/?error=no_llm", status_code=status.HTTP_303_SEE_OTHER,
+        )
+    try:
+        await generate_weekly_tasks(
+            db, user.id, llm_config,
+            locale=detect_locale(request, user.locale),
+            days=days,
+        )
+    except (ValueError, JsonRepairError) as exc:
+        logger.warning("Weekly generation failed: %s", exc)
+        return RedirectResponse(
+            url="/tasks/?error=generation_failed",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
+
 
 
 def _coerce_param(value: str | None, d: dict) -> object:

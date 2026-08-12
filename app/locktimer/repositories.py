@@ -76,6 +76,87 @@ async def list_sessions(db: AsyncSession, owner_id: uuid.UUID, limit: int = 50) 
     return list(result.scalars().all())
 
 
+async def list_sessions_by_date_range(
+    db: AsyncSession, owner_id: uuid.UUID, start_date: str, end_date: str
+) -> list[LockSession]:
+    """Return sessions whose effective period overlaps with [start_date, end_date]."""
+    result = await db.execute(
+        select(LockSession)
+        .where(
+            LockSession.owner_id == owner_id,
+            LockSession.started_at.isnot(None),
+            LockSession.started_at <= end_date,
+            LockSession.effective_end_at >= start_date,
+        )
+        .order_by(LockSession.started_at)
+    )
+    return list(result.scalars().all())
+
+
+async def get_weekly_compliance(
+    db: AsyncSession, owner_id: uuid.UUID, weeks: int = 4
+) -> list[dict]:
+    """Return per-week compliance stats: slot close rate and task completion rate."""
+    from datetime import date, timedelta
+
+    today = date.today()
+    result = []
+    for w in range(weeks - 1, -1, -1):
+        week_start = today - timedelta(days=today.weekday() + w * 7)
+        week_end = week_start + timedelta(days=6)
+        ws = week_start.isoformat()
+        we = week_end.isoformat()
+
+        sessions = await list_sessions_by_date_range(db, owner_id, ws, we)
+        session_ids = [s.id for s in sessions]
+
+        total_slots = 0
+        closed_slots = 0
+        total_tasks = 0
+        completed_tasks = 0
+
+        if session_ids:
+            from sqlalchemy import func
+
+            slot_result = await db.execute(
+                select(
+                    func.count(LockSlotOccurrence.id),
+                    func.sum(
+                        func.case((LockSlotOccurrence.state == "closed", 1), else_=0)
+                    ),
+                ).where(LockSlotOccurrence.session_id.in_(session_ids))
+            )
+            srow = slot_result.one()
+            total_slots = srow[0] or 0
+            closed_slots = srow[1] or 0
+
+            task_result = await db.execute(
+                select(
+                    func.count(LockTaskOccurrence.id),
+                    func.sum(
+                        func.case(
+                            (LockTaskOccurrence.state.in_(["completed", "submitted"]), 1),
+                            else_=0,
+                        )
+                    ),
+                ).where(LockTaskOccurrence.session_id.in_(session_ids))
+            )
+            trow = task_result.one()
+            total_tasks = trow[0] or 0
+            completed_tasks = trow[1] or 0
+
+        result.append({
+            "week": ws,
+            "week_end": we,
+            "sessions": len(sessions),
+            "slots_closed": closed_slots,
+            "slots_total": total_slots,
+            "tasks_completed": completed_tasks,
+            "tasks_total": total_tasks,
+        })
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Conditional UPDATE helper (for atomic state transitions)
 # ---------------------------------------------------------------------------

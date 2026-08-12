@@ -12,8 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.calendar import get_day_schedule
 from app.models.activity_log import ActivityLog
+from app.models.diet import Diet
 from app.models.entity import Entity
 from app.models.opt_in import UserEntityOptIn
+from app.models.training import TrainingDay
 
 
 async def build_context(
@@ -39,12 +41,20 @@ async def build_context(
     # 5. Today's calendar schedule
     calendar_schedule = await get_day_schedule(db, user_id, date.today())
 
+    # 6. Active diets — what nutrition plans are currently active
+    active_diets = await _get_active_diets(db, user_id)
+
+    # 7. Today's training status — what's planned/completed today
+    today_training = await _get_today_training(db, user_id)
+
     return {
         "allowed_entities": allowed_entities,
         "recent_history": recent_logs,
         "stats": stats,
         "active_penalties": active_penalties,
         "calendar_schedule": calendar_schedule,
+        "active_diets": active_diets,
+        "today_training": today_training,
         "locale": locale,
     }
 
@@ -187,6 +197,53 @@ async def _get_active_penalties(db: AsyncSession, user_id: uuid.UUID, session_id
     ]
 
 
+async def _get_active_diets(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
+    """Return the user's active diet plans."""
+    result = await db.execute(
+        select(Diet).where(Diet.user_id == user_id, Diet.is_active.is_(True)).order_by(Diet.created_at)
+    )
+    diets = result.scalars().all()
+    return [
+        {
+            "name": d.name,
+            "direction": d.direction,
+            "goal": d.goal,
+        }
+        for d in diets
+    ]
+
+
+async def _get_today_training(db: AsyncSession, user_id: uuid.UUID) -> dict | None:
+    """Return today's training summary."""
+    today = date.today()
+    day_result = await db.execute(
+        select(TrainingDay).where(
+            TrainingDay.user_id == user_id,
+            TrainingDay.target_date == today,
+        )
+    )
+    days = list(day_result.scalars().all())
+    if not days:
+        return None
+
+    day_ids = [d.id for d in days]
+    logs_result = await db.execute(
+        select(ActivityLog).where(ActivityLog.training_day_id.in_(day_ids))
+    )
+    logs = list(logs_result.scalars().all())
+
+    completed = sum(1 for lg in logs if lg.status == "completed")
+    stopped = sum(1 for lg in logs if lg.status == "stopped")
+    planned = sum(1 for lg in logs if lg.status == "planned")
+
+    return {
+        "plan_count": len(days),
+        "completed": completed,
+        "stopped": stopped,
+        "planned": planned,
+    }
+
+
 def format_context_abstract(context: dict) -> str:
     """Render context with opaque IDs — no real names. For strict providers."""
     parts = []
@@ -266,6 +323,26 @@ def format_context_for_prompt(context: dict) -> str:
             line += f" | actual: {json.dumps(actual, ensure_ascii=False)}"
         parts.append(line)
     parts.append("")
+
+    # Active diets
+    diets = context.get("active_diets", [])
+    if diets:
+        parts.append("## Active Diet Plans")
+        for d in diets:
+            parts.append(f"- {d['name']} (direction: {d.get('direction') or 'general'}, goal: {d.get('goal') or '—'})")
+        parts.append("Consider diet goals when selecting activities — align intensity and type.")
+        parts.append("")
+
+    # Today's training
+    training = context.get("today_training")
+    if training:
+        parts.append("## Today's Training Status")
+        parts.append(f"- Plans: {training.get('plan_count', 0)}")
+        parts.append(f"- Tasks completed: {training.get('completed', 0)}")
+        parts.append(f"- Tasks remaining: {training.get('planned', 0)}")
+        parts.append(f"- Tasks stopped: {training.get('stopped', 0)}")
+        parts.append("Avoid overloading an already busy training day.")
+        parts.append("")
 
     parts.append("## Active Penalties")
     penalties = context.get("active_penalties", [])

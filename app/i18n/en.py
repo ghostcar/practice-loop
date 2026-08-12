@@ -728,4 +728,22 @@ EN = {
     "locktimer_tag_expected": "Expected",
     "locktimer_tag_provided": "Provided",
     "locktimer_tag_audit_link": "Tag audit",
+    # Weekly batch generation
+    "tasks_btn_plan_week": "Plan Week",
+    "tasks_weekly_success": "Week planned",
+    "tasks_weekly_failed": "Planning failed",
+# Timer calendar + compliance
+"locktimer_calendar": "Calendar",
+"locktimer_calendar_subtitle": "Session history and weekly compliance",
+"locktimer_back": "Back",
+"locktimer_overview": "Overview",
+"locktimer_weekly_compliance": "Weekly Compliance",
+"locktimer_sessions_in_month": "sessions this month",
+"locktimer_no_data": "No data",
+"locktimer_no_compliance": "Not enough data for compliance stats.",
+"locktimer_view_all": "View all",
+"locktimer_sessions_this_week": "Sessions this week",
+"locktimer_slots_closed": "Slots closed",
+"locktimer_tasks_done": "Tasks done",
+"locktimer_streak_weeks": "Week streak",
 }

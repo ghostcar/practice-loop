@@ -61,6 +61,9 @@
          class="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
         {{ t.locktimer_view_details or "View details" }} →
       </a>
+      <a href="/locktimer/calendar" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-500 transition">
+        📅 {{ t.locktimer_calendar or "Calendar" }}
+      </a>
       <a href="/locktimer/templates" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-500 transition">
         {{ t.locktimer_templates_title or "Templates" }}
       </a>
@@ -117,6 +120,34 @@
     <div class="text-4xl mb-3">⏱️</div>
     <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">{{ t.locktimer_no_active or "No active timer session" }}</h3>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_no_active_hint or "Create a draft session or start an existing one." }}</p>
+  </section>
+  {% endif %}
+
+  <!-- Quick compliance snapshot -->
+  {% if compliance_snapshot %}
+  <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_weekly_compliance or "Weekly Compliance" }}</h2>
+      <a href="/locktimer/calendar" class="text-xs text-indigo-500 hover:text-indigo-400">{{ t.locktimer_view_all or "View all" }} →</a>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+      <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
+        <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ compliance_snapshot.sessions }}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_sessions_this_week or "Sessions this week" }}</div>
+      </div>
+      <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
+        <div class="text-2xl font-bold {% if compliance_snapshot.slot_pct >= 80 %}text-green-600{% elif compliance_snapshot.slot_pct >= 50 %}text-amber-600{% else %}text-red-600{% endif %}">{{ compliance_snapshot.slot_pct }}%</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_slots_closed or "Slots closed" }}</div>
+      </div>
+      <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
+        <div class="text-2xl font-bold {% if compliance_snapshot.task_pct >= 80 %}text-green-600{% elif compliance_snapshot.task_pct >= 50 %}text-amber-600{% else %}text-red-600{% endif %}">{{ compliance_snapshot.task_pct }}%</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_tasks_done or "Tasks done" }}</div>
+      </div>
+      <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-750">
+        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ compliance_snapshot.streak }}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_streak_weeks or "Week streak" }}</div>
+      </div>
+    </div>
   </section>
   {% endif %}
 
