@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-12 (сессия 90 — полный ре-экспорт + аудит сплитов + utcnow).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 91 — tz-хелпер as_utc + аудит сравнений дат).
 
-## Общий статус: 598/598 тестов ✅, ruff ✅, format ✅
+## Общий статус: 602/602 тестов ✅, ruff ✅, format ✅
 
 ## LockTimer Core — C0–C9 полностью ✅
 
@@ -32,6 +32,7 @@
 - [x] **S88**: REFACTORING.md шаг 7 (pipeline.py → llm/pipeline) + API v1→v2 консолидация (67 замен в 11 файлах); все роуты под /api/v2 — api.py (1011) → social/api/{profile, subjects, relationships, feed, verification, comments, moderation}; prefix="/social", 598/598 ✅ — repositories.py (1070) → social/repositories/{profile, consent, subjects, relationships, notifications, publications, verification, comments, moderation}; явный ре-экспорт 52 имён, 598/598 ✅ — points_v2.py (940) → api/points/{helpers, config, balance, profiles, redemptions, schedule, measurements, inventory, charts, pages}; префикс на агрегаторе, 598/598 ✅ — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
+- [x] **S91**: tz-хелпер as_utc (app/timeutils.py) + рефакторинг 4 дублей replace(tzinfo=UTC) + фикс telegram сравнения + аудит locktimer (open_slot/materializer); +4 теста; 602/602 ✅
 - [x] **S90**: полный ре-экспорт llm/pipeline (prompt-константы/модели/repair/tools/validator/cross-модули), аудит 6 сплитов восстановил execution-фасад + import_data + social/repositories, utcnow→datetime.now(UTC) в 8 social-файлах + tz-нормализация; 598/598 ✅
 - [x] **S89**: фикс 17 LLM-тестов после S88-сплита — late-binding call_llm/build_context/get_allowed_ids через source-модули, ре-экспорт filter_automation_eligible, репойнт 21 patch-таргета в тестах; 598/598 ✅
 

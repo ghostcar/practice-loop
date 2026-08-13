@@ -1,3 +1,12 @@
+## 2026-08-13 — Сессия 91 (tz-хелпер + аудит сравнений дат)
+
+- **Новый `app/timeutils.py`** — `as_utc(dt)`: aware → passthrough, naive → `replace(tzinfo=UTC)` (приложение UTC-only, naive считается UTC).
+- **Рефакторинг 4 дублей** `if x.tzinfo is None: x.replace(tzinfo=UTC)` → `as_utc`: verification.py (2× expires_at), social/repositories/verification.py (deadline_at), social/api/relationships.py (cooldown_until).
+- **Фикс латентного сравнения** telegram/bot.py: `telegram_link_code_expires < now(UTC)` → через `as_utc` (колонка timezone=True; на SQLite naive → TypeError).
+- **Аудит locktimer** (тот же класс TypeError): execution.open_slot — нормализация now + eligible_from/eligible_until/planned_open_at; materializer — нормализация now + session.effective_end_at (local effective_end) в _materialize_session/_generate_*, window_start/end в FLEXIBLE_WINDOW_ONCE.
+- **Тесты**: tests/test_timeutils.py (3), test_locktimer_services.py — tz-agnostic assert + новый регресс aware-now vs naive occurrence. **602/602 ✅, ruff ✅, format ✅**.
+- **Замечание на потом**: naive `datetime.now()` в importers (activity_logs.py:37, points.py:38) для created_at — не сравнение, но неконсистентно с UTC-конвенцией.
+
 ## 2026-08-12 — Сессия 90 (Полный ре-экспорт + аудит сплитов + utcnow)
 
 - **Полный ре-экспорт** `llm/pipeline/__init__.py` (S88 заузил поверхность): prompt-константы (DIET_EVALUATE/GENERATE/TRAINING_SYNERGY_SYSTEM, ANALYZE_DAY_SYSTEM, PLAN_DAY_SYSTEM, SUGGEST_NEXT_DAY_SYSTEM, SYSTEM_PROMPT_TEMPLATE), модели (ActivityLog, Diet/DietConsumption/DietEvaluation/DietItem/DietTrainingReview, LLMProviderConfig, TaskBodyTarget, TaskInventoryUsage, TaskLocationUsage, TrainingDay), repair/tools/validator (JsonRepairError, parse_llm_json, TOOLS, get_allowed_ids, validate_llm_response, validate_params_against_schema), cross-модули (call_llm, build_context, format_context_*).
