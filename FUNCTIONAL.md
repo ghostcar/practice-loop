@@ -12,7 +12,8 @@
 Приватное веб-приложение для отслеживания и управления активностями в личных/парных
 отношениях (только для взрослых, по обоюдному согласию): каталог задач, сессии, история,
 геймификация (XP, баллы, штрафы), LLM-подбор задач, тренировочные программы, диеты с
-LLM-контролем, календарь доступности, замеры, инвентарь, Telegram-бот.
+LLM-контролем, календарь доступности, замеры, инвентарь, Telegram-бот, персональный
+Lock Timer (chastity) и социальная платформа (обезличенный обмен результатами).
 
 **Один пользователь, приватное использование.** Модель данных поддерживает
 межпользовательское взаимодействие (публичный каталог с авторством, опт-ин), но
@@ -28,10 +29,12 @@ LLM-контролем, календарь доступности, замеры,
 | DB | PostgreSQL 15 (prod), SQLite (dev/tests), SQLAlchemy 2.0 async, Alembic |
 | Auth | JWT-cookie + CSRF double-submit (native-формы и JS-fetch покрыты) |
 | Frontend | SSR Jinja2 + HTMX + TailwindCSS, Chart.js; JS вынесен в ES-модули |
-| i18n | EN/RU (403 ключа), темы dark/light с сохранением |
+| i18n | EN/RU (687 ключей), темы dark/light с сохранением |
 | LLM | OpenAI-совместимые endpoints, BYOK: Omniroute (по умолчанию), Groq, OpenRouter |
 | Telegram | aiogram 3.x (вебхук + исходящие уведомления) |
 | Инфра | Docker Compose (app, PostgreSQL, Nginx+SSL), загрузки в volume `uploads` |
+| Время | Всё хранится в UTC; отображение и границы суток — в часовом поясе устройства (cookie `client_tz`); фоновые job — `TG_AUTO_ANALYSIS_TZ` |
+| API | Все JSON-эндпоинты консолидированы под `/api/v2`; SSR-страницы по своим путям (`/locktimer`, `/social`, …) |
 
 ---
 
@@ -70,11 +73,13 @@ LLM-контролем, календарь доступности, замеры,
 Единая модель «базовая активность + шаблон параметров + экземпляр» (ADR-031):
 **не создаются** справочные записи под каждую комбинацию параметров.
 
-- **Поля**: `real_name`, `type` (one_time / series / infinite), `category` (строка),
-  `tags`, `level`, `intensity` (active/passive/neutral), `params_schema` (JSON:
-  диапазоны и фиксированные значения параметров), `risk_level`
-  (not_assessed / low / elevated / high), `gamification_config` (JSON: баллы,
-  бонусы, штрафы, пороги), `is_public`, `owner_id`, `author_id`, `parent_id` (иерархия).
+- **Поля**: `real_name`, `slug` / `short_title`, `type` (one_time / series / infinite),
+  `category` (строка, legacy) + `category_id` (FK → `activity_categories`, 16 категорий
+  с подкатегориями), `tags` / `role_tags`, `level`, `intensity` (active/passive/neutral),
+  `params_schema` (JSON: диапазоны и фиксированные значения), `risk_level`
+  (not_assessed / low / elevated / high), `penalty_enabled` (ADR-038),
+  `gamification_config` (JSON: баллы, бонусы, штрафы, пороги), `is_public`,
+  `owner_id`, `author_id`, `parent_id` (иерархия).
 - **Наполнение**: админ-сид (30+ задач) + пользовательские; публикация с авторством.
 - **Опт-ин** (`user_entity_opt_in`): пользователь осознанно отмечает допустимые задачи
   (да/нет + рейтинг + шкала желания).
@@ -113,7 +118,11 @@ LLM-контролем, календарь доступности, замеры,
 
 ## 6. Задачи (ActivityLog)
 
-Экземпляр активности (статусы: `pending` / `completed` / `interrupted`):
+Экземпляр активности. Строгая статус-машина из 11 состояний (ADR-040):
+`draft` / `planned` / `in_progress` / `completed` / `partially_completed` / `skipped` /
+`cancelled` / `stopped` / `substituted` / `not_applicable` / `review_needed`
+(legacy `pending`→`planned`, `interrupted`→`stopped`); переходы контролируются
+`STATUS_TRANSITIONS`, аудит — `activity_task_history`.
 
 - `entity_id`, `session_id`, `training_day_id`, `user_prompt`, `selected_params`
   (параметры задачи), `planned_value` / `actual_value`, `subtasks` (чек-лист),
@@ -248,15 +257,16 @@ LLM-контролем, календарь доступности, замеры,
 
 ## 15. Модель данных (таблицы)
 
-users, entities, user_entity_opt_in, activity_sessions, activity_logs, training_days,
-training_log_entries, diet*, points_transactions, points_profiles, penalty_redemptions,
-achievements, user_achievements, notifications, llm_provider_configs, calendar_templates,
-availability_windows, calendar_overrides, schedule_rules, body_measurements,
-inventory_items, attachments, user_progress.
+users, entities, user_entity_opt_in, activity_categories, activity_sessions, activity_logs,
+activity_task_history, training_days, training_log_entries, diet*, points_transactions,
+points_profiles, penalty_redemptions, achievements, user_achievements, notifications,
+llm_provider_configs, calendar_templates, availability_windows, calendar_overrides,
+schedule_rules, body_measurements, inventory_items, attachments, user_progress
+(справочные таблицы update2.md: body_parts, task_locations, inventory_categories, …).
 
 ---
 
-## 16. LockTimer — персональный таймер самодисциплины
+## 16. Lock Timer — персональный таймер закрытия (chastity, ADR-062)
 
 Отдельный bounded context (`app/locktimer/`) с таблицами `lock_*`. Включается флагом
 `LOCKTIMER_CORE_ENABLED=true`. Доступен на странице `/locktimer`.
@@ -403,21 +413,32 @@ Platform-level (`app/api/media.py`, `app/api/verification.py`), общая дл�
 
 ---
 
-## 19. Планы / направление развития
+## 19. Дата и время (часовые пояса)
 
-На основе `examples/update.md` утверждены ADR-035…042 (записаны в `memory/DECISIONS.md`):
+- **Хранение**: все даты/время в UTC (`DateTime(timezone=True)`); в тестах SQLite — naive
+  datetime, нормализация через `as_utc()`.
+- **Отображение**: в часовом поясе устройства — Jinja-глобал `localtime()` + JS
+  `applyLocalTimezones()`; браузер определяет tz через `Intl` и передаёт cookie `client_tz`.
+- **Границы суток**: «сегодня» (серии, графики, календарь, расписание, диеты) считается
+  по часовому поясу устройства (`local_today()` / `local_date()` через ContextVar).
+- **Графики**: дневные бары бакетируются по device-календарному дню (ADR-066), а не по
+  UTC-дню БД.
+- **Фоновые задачи** (автоанализ тренировок): часовой пояс — конфиг `TG_AUTO_ANALYSIS_TZ`
+  (по умолчанию UTC), т.к. у фонового job нет request-контекста.
 
-1. **ActivityCategory** — таблица категорий (16 категорий с подкатегориями) + миграция `entities.category`.
-2. **ActivityTask** — эволюция ActivityLog: статус-машина из 11 состояний
-   (draft/planned/in_progress/completed/partially_completed/skipped/cancelled/stopped/
-   substituted/not_applicable/review_needed), title_override, scheduled_at,
-   planned/actual параметры раздельно, комментарии.
+## 20. Реализованные решения и направление развития
+
+### Реализовано (ADR-035…042, сессии 58–62)
+1. **ActivityCategory** — таблица категорий (16 категорий с подкатегориями), `entities.category_id` FK (legacy `category` строка сохранена).
+2. **ActivityTask** — эволюция ActivityLog: статус-машина из 11 состояний, title_override, scheduled_at, planned/actual параметры раздельно, комментарии.
 3. **Аудит переходов** — `activity_task_history`.
 4. **Сессии-accepted** — принятие сессии, после чего изменения = штраф (ADR-037).
-5. **Штрафы** — уточнение: частичное выполнение без награды; cancelled/skipped до начала
-   без штрафа; stopped — штраф; per-activity `penalty_enabled` (ADR-038).
+5. **Штрафы** — частичное выполнение без награды; cancelled/skipped до начала без штрафа; stopped — штраф; per-activity `penalty_enabled` (ADR-038).
 6. **Типизированный DSL параметров** (ADR-041) + **title-генератор** (ADR-042).
-7. Training остаётся отдельной системой программ (ADR-039).
+7. Training — отдельная система программ (ADR-039).
 
-Детальный план реализации: 4 фазы (модель+миграция → backend → UI → тесты/память/деплой),
-зафиксирован в переписке сессии 58.
+### Направление развития
+- **Мобильный клиент** (ADR-063): кроссплатформенное приложение после запуска портала.
+- **Масштабирование** (ADR-064): по трём осям (пользователи / объём данных / инфраструктура), без преждевременного over-engineering.
+- **JSON-first контракт** (ADR-065): action-эндпоинты возвращают JSON — фундамент для мобильного клиента.
+- **OCR/LLM верификация кодов** (Q13 в OPEN_QUESTIONS.md): отложено.
