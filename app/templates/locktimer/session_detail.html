@@ -22,7 +22,7 @@
           {{ session.state_label }}
         </span>
         <span class="text-xs text-gray-500">{{ session.duration_type }} · {{ session.timezone }}</span>
-        {% if session.started_at %}<span class="text-xs text-gray-400">· started {{ session.started_at[:19] }}</span>{% endif %}
+        {% if session.started_at %}<span class="text-xs text-gray-400">· started {{ localtime(session.started_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
       </div>
     </div>
 
@@ -67,8 +67,8 @@
 
   <!-- Session info grid -->
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-sm">
-    <div><span class="text-gray-500">{{ t.locktimer_started or "Started" }}</span><p class="font-mono text-gray-900 dark:text-gray-100">{{ session.started_at or '—' }}</p></div>
-    <div><span class="text-gray-500">{{ t.locktimer_ends or "Ends" }}</span><p class="font-mono text-gray-900 dark:text-gray-100">{{ session.effective_end_at or session.max_end_at or '—' }}</p></div>
+    <div><span class="text-gray-500">{{ t.locktimer_started or "Started" }}</span><p class="font-mono text-gray-900 dark:text-gray-100">{{ localtime(session.started_at, '%Y-%m-%d %H:%M') or '—' }}</p></div>
+    <div><span class="text-gray-500">{{ t.locktimer_ends or "Ends" }}</span><p class="font-mono text-gray-900 dark:text-gray-100">{{ localtime(session.effective_end_at or session.max_end_at, '%Y-%m-%d %H:%M') or '—' }}</p></div>
     <div><span class="text-gray-500">{{ t.locktimer_merge_gap or "Merge gap" }}</span><p class="text-gray-900 dark:text-gray-100">{{ session.merge_gap_seconds }}s</p></div>
     <div><span class="text-gray-500">Version</span><p class="text-gray-900 dark:text-gray-100">v{{ session.row_version }}</p></div>
   </div>
@@ -239,7 +239,7 @@
       {% for o in slot_occurrences %}
       <div class="flex items-center justify-between p-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-750 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
         <div class="flex items-center gap-3 min-w-0">
-          <span class="font-mono text-gray-700 dark:text-gray-300 text-xs flex-shrink-0">{{ o.planned_open_at[:19] if o.planned_open_at else '—' }}</span>
+          <span class="font-mono text-gray-700 dark:text-gray-300 text-xs flex-shrink-0">{{ localtime(o.planned_open_at, '%Y-%m-%d %H:%M') or '—' }}</span>
           <span class="px-1.5 py-0.5 text-xs rounded-full flex-shrink-0
             {% if o.state == 'open' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300
             {% elif o.state == 'closed' %}bg-gray-100 text-gray-600
@@ -249,7 +249,7 @@
             {{ o.state }}
             {% if o.extension_applied_seconds %}+{{ o.extension_applied_seconds }}s{% endif %}
           </span>
-          {% if o.close_due_at %}<span class="text-xs text-gray-400 hidden sm:inline">due {{ o.close_due_at[:19] }}</span>{% endif %}
+          {% if o.close_due_at %}<span class="text-xs text-gray-400 hidden sm:inline">due {{ localtime(o.close_due_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
         </div>
         {% if session.state == 'active' and o.state in ('pending', 'eligible') %}
         <form action="/api/v2/locktimer/slot-occurrences/{{ o.id }}/open" method="post" class="flex-shrink-0">
@@ -286,7 +286,7 @@
       {% for o in task_occurrences %}
       <div class="flex items-center justify-between p-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-750 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
         <div class="flex items-center gap-2 min-w-0">
-          <span class="font-mono text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">{{ o.appears_at[:16] if o.appears_at else '—' }}</span>
+          <span class="font-mono text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">{{ localtime(o.appears_at, '%Y-%m-%d %H:%M') or '—' }}</span>
           <span class="text-gray-700 dark:text-gray-300 truncate font-medium">
             {% if o.content_visible and o.occurrence_snapshot and o.occurrence_snapshot.title %}
               {{ o.occurrence_snapshot.title }}

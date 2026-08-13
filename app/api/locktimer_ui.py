@@ -44,6 +44,7 @@ from app.models.locktimer import (
 )
 from app.models.user import User
 from app.templates_setup import templates
+from app.timeutils import as_utc
 
 router = APIRouter(prefix="/locktimer", tags=["locktimer-pages"])
 
@@ -288,7 +289,7 @@ async def locktimer_templates(
                     "description": tmpl.description,
                     "slot_count": len(tmpl.config.get("slot_rules", [])),
                     "task_count": len(tmpl.config.get("task_rules", [])),
-                    "updated_at": tmpl.updated_at.isoformat() if tmpl.updated_at else None,
+                    "updated_at": tmpl.updated_at,
                 }
                 for tmpl in templates_list
             ],
@@ -336,7 +337,7 @@ async def locktimer_tag_violations(
                     "expected_tag": v.expected_tag or "—",
                     "provided_tag": v.provided_tag,
                     "reason": v.reason,
-                    "created_at": v.created_at.isoformat() if v.created_at else None,
+                    "created_at": v.created_at,
                 }
                 for v in violations
             ],
@@ -439,15 +440,16 @@ async def locktimer_calendar(
 def _serialize_session(session, t) -> dict | None:
     if session is None:
         return None
+    effective_end = as_utc(session.effective_end_at) if session.effective_end_at else None
     return {
         "id": str(session.id),
         "state": session.state,
         "duration_type": session.duration_type,
         "timezone": session.timezone,
-        "started_at": session.started_at.isoformat() if session.started_at else None,
-        "effective_end_at": session.effective_end_at.isoformat() if session.effective_end_at else None,
-        "effective_end_ts": session.effective_end_at.timestamp() if session.effective_end_at else None,
-        "max_end_at": session.max_end_at.isoformat() if session.max_end_at else None,
+        "started_at": session.started_at,
+        "effective_end_at": session.effective_end_at,
+        "effective_end_ts": effective_end.timestamp() if effective_end else None,
+        "max_end_at": session.max_end_at,
         "merge_gap_seconds": session.merge_gap_seconds,
         "row_version": session.row_version,
         "safety_stop_reason_code": session.safety_stop_reason_code,
@@ -458,8 +460,8 @@ def _serialize_session(session, t) -> dict | None:
             "safety_stopped": "Safety Stopped",
         }.get(session.state, session.state),
         "remaining_seconds": (
-            max(0, (session.effective_end_at - _now()).total_seconds())
-            if session.effective_end_at and session.state == "active"
+            max(0, (effective_end - _now()).total_seconds())
+            if effective_end and session.state == "active"
             else None
         ),
     }
@@ -469,11 +471,11 @@ def _serialize_slot_occ(occ: LockSlotOccurrence, t) -> dict:
     return {
         "id": str(occ.id),
         "state": occ.state,
-        "planned_open_at": occ.planned_open_at.isoformat() if occ.planned_open_at else None,
-        "planned_close_at": occ.planned_close_at.isoformat() if occ.planned_close_at else None,
-        "actual_opened_at": occ.actual_opened_at.isoformat() if occ.actual_opened_at else None,
-        "actual_closed_at": occ.actual_closed_at.isoformat() if occ.actual_closed_at else None,
-        "close_due_at": occ.close_due_at.isoformat() if occ.close_due_at else None,
+        "planned_open_at": occ.planned_open_at,
+        "planned_close_at": occ.planned_close_at,
+        "actual_opened_at": occ.actual_opened_at,
+        "actual_closed_at": occ.actual_closed_at,
+        "close_due_at": occ.close_due_at,
         "extension_applied_seconds": occ.extension_applied_seconds,
         "blocked_reason_code": occ.blocked_reason_code,
         "close_tag_number": occ.close_tag_number,
@@ -484,8 +486,8 @@ def _serialize_task_occ(occ: LockTaskOccurrence, t) -> dict:
     return {
         "id": str(occ.id),
         "state": occ.state,
-        "appears_at": occ.appears_at.isoformat() if occ.appears_at else None,
-        "due_at": occ.due_at.isoformat() if occ.due_at else None,
+        "appears_at": occ.appears_at,
+        "due_at": occ.due_at,
         "content_visible": occ.content_visible,
         "occurrence_snapshot": occ.occurrence_snapshot,
         "final_reason_code": occ.final_reason_code,

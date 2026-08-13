@@ -231,7 +231,7 @@ async def achievements_board(
                 "name": ach.name,
                 "description": ach.description,
                 "color": ach.color,
-                "obtained_at": ua.obtained_at.strftime("%Y-%m-%d") if ua.obtained_at else "",
+                "obtained_at": ua.obtained_at,
                 "display_name": "Anonymous" if ua.user_id != user.id else "You",
             }
         )
@@ -253,7 +253,7 @@ async def achievements_board(
                 "description": ach.description,
                 "color": ach.color,
                 "context": ua.context,
-                "obtained_at": ua.obtained_at.strftime("%Y-%m-%d") if ua.obtained_at else "",
+                "obtained_at": ua.obtained_at,
                 "is_hidden": ua.is_hidden,
             }
         )

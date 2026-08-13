@@ -468,7 +468,7 @@
         const headRow = el('div', 'flex items-center gap-2');
         const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
         headRow.appendChild(el('span', 'text-sm font-bold ' + scoreColor, Math.round(ev.score) + '/100'));
-        if (ev.created_at) headRow.appendChild(el('span', 'text-xs text-slate-400', new Date(ev.created_at).toLocaleDateString()));
+        if (ev.created_at) headRow.appendChild(el('span', 'text-xs text-slate-400', window.localDateISO(ev.created_at)));
         item.appendChild(headRow);
         item.appendChild(el('p', 'text-xs text-slate-500 dark:text-slate-400 mt-1', ev.summary || ''));
         body.appendChild(item);
@@ -499,7 +499,7 @@
     const block = el('div', 'p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60');
     const head = el('div', 'flex items-center gap-2 mb-1 flex-wrap');
     head.appendChild(el('span', 'text-xs font-semibold text-amber-700 dark:text-amber-300', I18N.synergy_period + ': ' + r.period_start + ' — ' + r.period_end));
-    if (r.created_at) head.appendChild(el('span', 'text-xs text-slate-400', new Date(r.created_at).toLocaleDateString()));
+    if (r.created_at) head.appendChild(el('span', 'text-xs text-slate-400', window.localDateISO(r.created_at)));
     block.appendChild(head);
     block.appendChild(el('p', 'text-sm text-slate-700 dark:text-slate-200', a.summary || ''));
     if (a.correlations && a.correlations.length) {

@@ -102,6 +102,14 @@
     var d = new Date();
     return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
   };
+  // Convert an ISO instant to the device-local calendar date (YYYY-MM-DD).
+  // Expects an offset-bearing ISO string (e.g. "...+00:00" or "Z"); the API
+  // serializes timezone-aware datetimes, so naive strings should never appear.
+  window.localDateISO = function localDateISO(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  };
   window.localNowLocalInput = function localNowLocalInput() {
     var d = new Date();
     return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +

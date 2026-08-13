@@ -28,7 +28,7 @@
             <div class="flex gap-3 mt-1 text-xs text-gray-400">
               <span>{{ tmpl.slot_count }} slot rule(s)</span>
               <span>{{ tmpl.task_count }} task rule(s)</span>
-              {% if tmpl.updated_at %}<span>updated {{ tmpl.updated_at[:10] }}</span>{% endif %}
+              {% if tmpl.updated_at %}<span>updated {{ localtime(tmpl.updated_at, '%Y-%m-%d') }}</span>{% endif %}
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@
         .map(
           (t) => `
     <tr class="border-t border-slate-100 dark:border-slate-800">
-      <td class="px-4 py-2 text-slate-400 text-xs">${new Date(t.created_at).toLocaleDateString()}</td>
+      <td class="px-4 py-2 text-slate-400 text-xs">${window.localDateISO(t.created_at)}</td>
       <td class="px-4 py-2 ${t.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${t.amount >= 0 ? '+' : ''}${t.amount}</td>
       <td class="px-4 py-2"><span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">${escapeHtml(t.transaction_type)}</span></td>
       <td class="px-4 py-2 text-slate-600 dark:text-slate-300">${escapeHtml(t.reason || '')}</td>

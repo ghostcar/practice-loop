@@ -29,7 +29,7 @@
             {% else %}
             <span class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ t.locktimer_tag_missing }}</span>
             {% endif %}
-            <span class="text-gray-400 text-xs">{{ v.created_at[:19] | replace("T", " ") }}</span>
+            <span class="text-gray-400 text-xs">{{ localtime(v.created_at, '%Y-%m-%d %H:%M') }}</span>
           </div>
           <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
             <div>
