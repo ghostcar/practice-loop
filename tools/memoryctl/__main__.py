@@ -38,6 +38,9 @@ def main(argv: list[str] | None = None) -> int:
     boot.add_argument("--session-id", default=None, help="override session id (for reproducible runs)")
     boot.add_argument("--limit", type=int, default=20, help="max code results (default: 20)")
 
+    bench = sub.add_parser("benchmark", help="run the M3 base retrieval benchmark (writes docs/state/BENCHMARK.json)")
+    bench.add_argument("--json", action="store_true", help="print the full report JSON to stdout")
+
     args = parser.parse_args(argv)
     root = args.root or find_repo_root(Path.cwd())
 
@@ -97,6 +100,19 @@ def main(argv: list[str] | None = None) -> int:
             pp, sp = str(pack_path), str(sentinel_path)
         print(f"wrote {pp} and {sp} ({pack['size_bytes']} B)")
         return 0 if pack["status"] == "ready" else 1
+    if args.command == "benchmark":
+        import json as _json
+
+        from . import benchmark as bench_mod
+
+        report = bench_mod.run_benchmark(root)
+        out_path = bench_mod.write_report(root, report)
+        if args.json:
+            print(_json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True))
+        else:
+            print(bench_mod.render_summary(report))
+            print(f"wrote {out_path.relative_to(root)}")
+        return 0
     parser.error(f"unknown command {args.command!r}")
     return 2
 

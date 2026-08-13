@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 114 — Memory v2 M3 base: memoryctl bootstrap + план на 3 этапа; 694/694 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 115 — Memory v2 M3 benchmark: harness по 12 задачам + baseline; 698/698 ✅).
 
-## Общий статус: 694 теста ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 68==68
+## Общий статус: 698 тестов ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 68==68
 
 ## Аудит проекта — Session 111
 
@@ -16,13 +16,14 @@
 - [x] В этой сессии полный pytest summary не получен; подтверждены collection 661 tests и точечный
   memory test. Предыдущее evidence 661/661 относится к Session 110.
 
-## Memory v2 — M0/M1/M2/M3 (Сессии 110–114)
+## Memory v2 — M0/M1/M2/M3 (Сессии 110–115)
 
 - [x] **M0**: RFC → docs/memory-rfc/ (5 + BENCHMARK_TASKS 12 + STAGE_PLAN); ADR-068 accepted; DOCUMENTATION_MAP row
 - [x] **M1**: tools/memoryctl (schemas/facts/inventory/lint/CLI); tests/memory/ 37; docs/state/FACTS.json + NOW.md
 - [x] **M2 (полный gate)**: ADR-компилятор (68 docs/adr/ + README + bidirectional check); knowledge.md root + 5 domain-local; docs/questions/ (PQ-005/006, EQ-0013/0014); docs/wiki/ 5 страниц; P2-4 denylist/allowlist fix (lint 3 warnings → 0)
 - [x] **M3 base**: memoryctl bootstrap (детерминированный exact-fallback) + STAGE_PLAN на 3 этапа; tests/memory/test_bootstrap.py 13; итого 58 memory-тестов
-- [ ] **M3 benchmark + пилоты** (Этап 2): harness по 12 задачам (recall@5, pack size, MRR); пилоты Qdrant/vectors/graph только с доказательством — решение по embedding у владельца
+- [x] **M3 benchmark** (Этап 2): harness по 12 задачам + baseline (recall@5 0.26, pack ≤9 KiB, 0 forbidden) → docs/state/BENCHMARK.json
+- [ ] **M3 пилоты** (решение по embedding/пилотам у владельца): Qdrant/vectors/graph/QMD — только если benchmark докажет прирост против baseline
 - [ ] **M4 preflight** (Этап 3): .agents/skills/project-memory/SKILL.md + bin/practice-agent + sentinel CI (required после наблюдения)
 
 ## LockTimer Core — C0–C9 полностью ✅

@@ -1,3 +1,16 @@
+## 2026-08-13 — Сессия 115 (Memory v2 M3 benchmark — harness + baseline)
+
+- **Этап 2 (M3 benchmark)** выполнен: `tools/memoryctl/benchmark.py` — harness по 12 задачам из `docs/memory-rfc/BENCHMARK_TASKS.md` с machine-readable ground truth (expected_code / expected_docs / forbidden, glob-паттерны).
+- **Метрики**: recall@5 (code), recall (code/docs/all), MRR, размер pack (детерминированный, лимит 12 KiB), extra reads, forbidden hits; пороги допуска из RFC §7/§12.
+- **Отчёт**: `docs/state/BENCHMARK.json` (HEAD-bound, детерминированный: session_id + head-anchored now) + CLI `memoryctl benchmark [--json]`.
+- **Baseline (M3 base exact/lexical, честный замер)**:
+  - recall@5 (code) = **0.26** (порог 0.9); recall code/docs/all = 0.51 / 0.58 / 0.38; MRR = 0.356.
+  - pack median/max = 7.7 / 9.0 KiB (< 12 ✅); forbidden hits = 0 ✅.
+  - Главный вывод: **лексический fallback находит код по английским символам (T1/T2/T4/T6/T12), но ~0 recall на чисто русских запросах к англ. коду (T3/T8/T10)** — ровно тот зазор, под который RFC закладывает semantic/vector-поиск.
+  - Docs-recall ограничен границей L0/L1: legacy-доки (PRODUCT_DECISIONS.md, memory/DECISIONS.md, OPEN_QUESTIONS.md, CURRENT_STATE.md, alembic.ini) вне корпуса (M5-split) и вне scope search_code.
+- **Нюанс ground truth (T2)**: спек закладывает `app/timeutils.py` + `tests/test_timeutils.py` как потребителей `list_sessions_by_date_range`, но они держат `local_day_bounds` (зависимость, не consumer); все 3 literal-потребителя найдены — зафиксировано в `notes`.
+- **Тесты**: `tests/memory/test_benchmark.py` — 4/4 (pattern-matching, evaluate_task code/forbidden+docs, структура + детерминированность отчёта). Полный suite **698/698 ✅** (+4), ruff ✅, format ✅.
+
 ## 2026-08-13 — Сессия 114 (Memory v2 M3 base — memoryctl bootstrap + план на 3 этапа)
 
 - **План работ на 3 этапа вперёд** зафиксирован в `docs/memory-rfc/STAGE_PLAN.md` (по запросу владельца — чтобы не прыгать): Этап 1 = M3 base (эта сессия), Этап 2 = M3 benchmark + пилоты (Qdrant/vectors/graph — только с доказательством, решение по embedding/пилотам у владельца), Этап 3 = M4 preflight (SKILL.md + practice-agent launcher + sentinel CI). Параллельно (не в плане) — P1/Gate B–D аудита.
