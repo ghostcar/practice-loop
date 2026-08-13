@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 113 (аудит P0-1 + P0-2 — Gate A блокеры)
+
+- **P0-1 (приватный /uploads)**: удалён публичный `StaticFiles` mount `/uploads` в `app/main.py`. Новый авторизованный `GET /uploads/{path:path}` (`app/api/uploads.py`): auth (cookie JWT) + owner reverse-lookup (Attachment.file_path / InventoryItem.image_path / MediaAsset.file_path|thumbnail_path) + hard containment (traversal/absolute/backslash → 404). Аноним → 401, cross-user/несуществующий → 404 (без утечки существования). Universal media по-прежнему дублируется `/api/v2/media/{id}` (уже был авторизован).
+- **P0-2 (CHALLENGE_HMAC_KEY fallback)**: убран `default-challenge-key` fallback в `compute_code_hmac` (пустой ключ → RuntimeError fail-closed). Отдельный placeholder `_PLACEHOLDER_CHALLENGE` + добавлен в production gate `_reject_placeholders_in_production` (пустой/placeholder/<32 → startup fail).
+- **Доки**: `.env.example` + `RUNBOOK.md` — `CHALLENGE_HMAC_KEY` обязателен (отдельный от JWT/ENCRYPTION).
+- **Тесты**: `tests/test_upload_serving.py` (11: containment 5 + API owner/cross-user/anon/missing 6) + 2 config-теста challenge-gate. **681/681 ✅**, ruff ✅.
+- **⚠️ Дефолт**: следующий `docker compose up` на VPS упадёт на startup, пока в `.env` не задан `CHALLENGE_HMAC_KEY` (≥32 chars). Смена ключа инвалидирует активные challenges (короткий TTL — приемлемо).
+
 ## 2026-08-13 — Сессия 112 (Memory v2 M2 — полный gate + P2-4)
 
 - **P2-4 (аудит)**: разделил index-denylist и secret-denylist. `DENYLIST_GLOBS` (index, исправлены мёртвые minified-глобы `app/static/**/htmx.min.js` → `app/static/htmx.min.js` на реальные плоские пути); новый `SECRET_DENYLIST_GLOBS` (настоящие секреты/приватные данные) + `ALLOWLIST_GLOBS` (`.env.example` с provenance). `memoryctl lint` сходится к **0 warnings** (было 3: .env.example + 2 Inter-шрифта).

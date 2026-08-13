@@ -183,9 +183,16 @@ def generate_verification_code(length: int = 7) -> str:
 
 
 def compute_code_hmac(code: str) -> str:
-    """Compute HMAC-SHA256 of a verification code using CHALLENGE_HMAC_KEY."""
-    key = settings.challenge_hmac_key.encode() if settings.challenge_hmac_key else b"default-challenge-key"
-    return hmac.new(key, code.encode(), hashlib.sha256).hexdigest()
+    """Compute HMAC-SHA256 of a verification code using CHALLENGE_HMAC_KEY.
+
+    There is no fallback key (audit P0-2): an empty key fails closed instead of
+    silently signing with a publicly known constant. In production the key is
+    validated at startup by the settings gate.
+    """
+    key = settings.challenge_hmac_key
+    if not key:
+        raise RuntimeError("CHALLENGE_HMAC_KEY is not configured")
+    return hmac.new(key.encode(), code.encode(), hashlib.sha256).hexdigest()
 
 
 def verify_code_constant_time(candidate: str, stored_hmac: str) -> bool:

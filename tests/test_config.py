@@ -13,6 +13,7 @@ from app.config import Settings
 # Placeholder defaults from app.config
 _PLACEHOLDER_JWT = "change-me-to-a-random-secret-at-least-32-chars"
 _PLACEHOLDER_ENCRYPTION = "change-me-encryption-key-at-least-32-chars"
+_PLACEHOLDER_CHALLENGE = "change-me-challenge-hmac-key-at-least-32-chars"
 _PLACEHOLDER_TG_SECRET = "change-me"
 
 
@@ -26,6 +27,7 @@ def _make(**overrides) -> Settings:
         "app_env": "development",
         "jwt_secret_key": _PLACEHOLDER_JWT,
         "credentials_encryption_key": _PLACEHOLDER_ENCRYPTION,
+        "challenge_hmac_key": _PLACEHOLDER_CHALLENGE,
         "tg_webhook_secret": _PLACEHOLDER_TG_SECRET,
         "tg_bot_token": None,
     }
@@ -43,6 +45,7 @@ class TestAppEnv:
             app_env="PRODUCTION",
             jwt_secret_key="A" * 40,
             credentials_encryption_key="B" * 40,
+            challenge_hmac_key="C" * 40,
         )
         assert s.app_env == "production"
 
@@ -51,6 +54,7 @@ class TestAppEnv:
             app_env="  production  ",
             jwt_secret_key="A" * 40,
             credentials_encryption_key="B" * 40,
+            challenge_hmac_key="C" * 40,
         )
         assert s.app_env == "production"
 
@@ -109,6 +113,7 @@ class TestProductionGate:
             app_env="production",
             jwt_secret_key="A" * 40,
             credentials_encryption_key="B" * 40,
+            challenge_hmac_key="C" * 40,
             tg_webhook_secret="change-me",  # ok without tg_bot_token
             tg_bot_token=None,
         )
@@ -120,11 +125,35 @@ class TestProductionGate:
             app_env="production",
             jwt_secret_key="A" * 40,
             credentials_encryption_key="B" * 40,
+            challenge_hmac_key="C" * 40,
             tg_bot_token="real_token",
-            tg_webhook_secret="C" * 40,
+            tg_webhook_secret="D" * 40,
         )
         assert s.app_env == "production"
         assert s.tg_bot_token == "real_token"
+
+    def test_production_rejects_default_challenge_key(self):
+        """Audit P0-2: the placeholder challenge HMAC key must be rejected in prod."""
+        with pytest.raises(ValidationError) as ei:
+            _make(
+                app_env="production",
+                jwt_secret_key="A" * 40,
+                credentials_encryption_key="B" * 40,
+                tg_bot_token=None,
+            )
+        assert "CHALLENGE_HMAC_KEY" in str(ei.value)
+
+    def test_production_rejects_empty_challenge_key(self):
+        """An empty CHALLENGE_HMAC_KEY (old fallback trigger) must be rejected in prod."""
+        with pytest.raises(ValidationError) as ei:
+            _make(
+                app_env="production",
+                jwt_secret_key="A" * 40,
+                credentials_encryption_key="B" * 40,
+                challenge_hmac_key="",
+                tg_bot_token=None,
+            )
+        assert "CHALLENGE_HMAC_KEY" in str(ei.value)
 
     def test_error_message_lists_all_offenders(self):
         """All missing/short secrets are reported together."""

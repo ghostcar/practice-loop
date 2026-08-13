@@ -100,7 +100,6 @@ app = FastAPI(title="Practice Loop", version="0.9.0", lifespan=lifespan)
 async def csrf_middleware(request: Request, call_next):
     if (
         request.url.path.startswith("/static")
-        or request.url.path.startswith("/uploads")
         or request.url.path == "/healthz"
         or request.url.path.startswith("/api/v2/platform")  # readonly discovery
     ):
@@ -141,8 +140,8 @@ async def client_tz_middleware(request: Request, call_next):
 with contextlib.suppress(RuntimeError):
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-with contextlib.suppress(RuntimeError):
-    app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+# Private uploads are no longer mounted publicly (audit P0-1): they are served
+# through the authorized, owner-scoped `GET /uploads/{path}` route in app.api.uploads.
 
 
 @app.get("/healthz", response_class=PlainTextResponse)
@@ -176,9 +175,11 @@ app.include_router(capabilities_router)
 
 # Universal media + verification (platform-level, always available)
 from app.api.media import router as media_router  # noqa: E402
+from app.api.uploads import router as uploads_router  # noqa: E402
 from app.api.verification import router as verification_router  # noqa: E402
 
 app.include_router(media_router)
+app.include_router(uploads_router)
 app.include_router(verification_router)
 
 from app.api.auth import router as auth_router  # noqa: E402

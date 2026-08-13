@@ -13,6 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Placeholder strings that must NEVER appear in a production deployment.
 _PLACEHOLDER_JWT = "change-me-to-a-random-secret-at-least-32-chars"
 _PLACEHOLDER_ENCRYPTION = "change-me-encryption-key-at-least-32-chars"
+_PLACEHOLDER_CHALLENGE = "change-me-challenge-hmac-key-at-least-32-chars"
 _PLACEHOLDER_TG_SECRET = "change-me"
 
 
@@ -62,7 +63,7 @@ class Settings(BaseSettings):
 
     # Universal media (media_assets table — platform-level, not Timer-specific).
     media_max_upload_bytes: int = 15 * 1024 * 1024  # 15 MB per media asset
-    challenge_hmac_key: str = _PLACEHOLDER_ENCRYPTION  # separate key for verification challenge HMAC
+    challenge_hmac_key: str = _PLACEHOLDER_CHALLENGE  # separate key for verification challenge HMAC
 
     # Owner allowlist for staged rollout (14_ROLLOUT_OPERATIONS.md §1).
     # Comma-separated email list; empty = no restriction.
@@ -117,14 +118,19 @@ class Settings(BaseSettings):
             offenders.append("JWT_SECRET_KEY")
         if self.credentials_encryption_key == _PLACEHOLDER_ENCRYPTION:
             offenders.append("CREDENTIALS_ENCRYPTION_KEY")
+        if self.challenge_hmac_key == _PLACEHOLDER_CHALLENGE:
+            offenders.append("CHALLENGE_HMAC_KEY")
         # TG_WEBHOOK_SECRET only required when TG bot is configured.
         if self.tg_bot_token and self.tg_webhook_secret == _PLACEHOLDER_TG_SECRET:
             offenders.append("TG_WEBHOOK_SECRET")
 
         # Length sanity (SPEC requirement: secrets ≥32 chars).
+        # An empty CHALLENGE_HMAC_KEY is also rejected here (len < 32) so the
+        # old "default-challenge-key" fallback can never activate in production.
         for name, val in (
             ("JWT_SECRET_KEY", self.jwt_secret_key),
             ("CREDENTIALS_ENCRYPTION_KEY", self.credentials_encryption_key),
+            ("CHALLENGE_HMAC_KEY", self.challenge_hmac_key),
         ):
             if name not in offenders and len(val) < 32:
                 offenders.append(f"{name} (below 32 chars)")
