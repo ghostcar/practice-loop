@@ -262,10 +262,17 @@ async def api_add_slot_rule(
     schedule_json: str = Form(default="{}"),
     duration_seconds: int = Form(default=3600),
     allow_late_open: bool = Form(default=False),
+    max_late_seconds: int = Form(default=3600),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Add a slot rule to a draft session."""
+    """Add a slot rule to a draft session.
+
+    ``max_late_seconds`` sets the late-open eligibility window (0 = on-time
+    only). Default 3600s keeps the UI ``allow_late_open`` checkbox usable —
+    without it the eligible window collapses to [planned_open, planned_open]
+    and no real-time request can ever open the slot.
+    """
     import json
 
     session = await get_session(db, session_id, current_user.id)
@@ -287,6 +294,7 @@ async def api_add_slot_rule(
         schedule=schedule,
         duration_seconds=duration_seconds,
         allow_late_open=allow_late_open,
+        max_late_seconds=max_late_seconds,
     )
 
     return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)

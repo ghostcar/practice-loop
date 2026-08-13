@@ -556,6 +556,7 @@ EN = {
     "locktimer_add_slot_rule": "Add Unlock Rule",
     "locktimer_add_task_rule": "Add Task Rule",
     "locktimer_allow_late": "Allow late open",
+    "locktimer_max_late_seconds": "Late window (sec)",
     "locktimer_requires_report": "Requires report",
     "locktimer_remaining": "Remaining",
     "locktimer_validate": "Validate",

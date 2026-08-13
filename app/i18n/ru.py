@@ -558,6 +558,7 @@ RU = {
     "locktimer_add_slot_rule": "Добавить правило разблокировки",
     "locktimer_add_task_rule": "Добавить правило задачи",
     "locktimer_allow_late": "Разрешить опоздание",
+    "locktimer_max_late_seconds": "Окно опоздания (сек)",
     "locktimer_requires_report": "Требуется отчёт",
     "locktimer_remaining": "Осталось",
     "locktimer_validate": "Проверить",

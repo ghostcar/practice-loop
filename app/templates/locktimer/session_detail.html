@@ -132,9 +132,15 @@
           <input name="duration_seconds" type="number" value="3600" class="w-full mt-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
         </div>
       </div>
-      <label class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-        <input type="checkbox" name="allow_late_open" value="true"> {{ t.locktimer_allow_late or "Allow late open" }}
-      </label>
+      <div class="flex flex-wrap items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="allow_late_open" value="true"> {{ t.locktimer_allow_late or "Allow late open" }}
+        </label>
+        <label class="flex items-center gap-2">
+          <span>{{ t.locktimer_max_late_seconds or "Late window (sec)" }}</span>
+          <input name="max_late_seconds" type="number" min="0" step="60" value="3600" class="w-24 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
+        </label>
+      </div>
       <button type="submit" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm transition cursor-pointer">{{ t.locktimer_add or "Add" }}</button>
     </form>
   </details>
