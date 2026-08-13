@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 94 — финиш дат | LockTimer сериализаторы → datetime + localtime (4 шаблона); achievements obtained_at → localtime; JS localDateISO (points/diets); свип: нет сырых datetime в шаблонах/JS; 605/605 ✅ |
 | 2026-08-13 | Session 93 — tz устройства | **Jinja localtime()** + JS formatLocalTime/applyLocalTimezones; 15 strftime→localtime; LockTimer-карточка через localtime (+i18n started); фикс UTC off-by-one в дефолтах «сегодня» (measurements/calendar/diets); 605/605 ✅ |
 | 2026-08-13 | Session 92 — финиш дат/времени | naive datetime.now() → datetime.now(UTC) в 6 файлах; materializer EXACT_DATETIME → as_utc; аудит-вывод gamification/context_builder/charts — tz-безопасно (SQL/.date()); 602/602 ✅ |
 | 2026-08-13 | Session 91 — tz-хелпер | **app/timeutils.py** (as_utc naive→aware UTC); рефакторинг 4 дублей replace(tzinfo=UTC) в verification.py/social; фикс telegram_link_code_expires; аудит locktimer (open_slot + materializer naive/aware); +4 теста; 602/602 ✅ |

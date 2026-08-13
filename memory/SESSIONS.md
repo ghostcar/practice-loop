@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 94 (финиш по датам: locktimer + achievements + JS)
+
+- **LockTimer**: `_serialize_session/_serialize_slot_occ/_serialize_task_occ` + tag_violations + templates — теперь передают datetime-объекты (были `.isoformat()` строки); `_serialize_session` нормализует `effective_end` через `as_utc()` для `effective_end_ts` (`.timestamp()`) и `remaining_seconds` (aware-vs-aware).
+- **Шаблоны locktimer** (overview/session_detail/tag_violations/templates): сырое `[:19]/[:16]/[:10]` и `{{ x }}` → `localtime(x, fmt)`.
+- **Achievements**: `obtained_at` теперь datetime (был серверный `.strftime("%Y-%m-%d")`) → `localtime(x, "%Y-%m-%d")` в dashboard.py + achievements.html.
+- **JS**: `window.localDateISO(iso)` (device-local YYYY-MM-DD, документировано ожидание ISO с offset); points.js/diets.js `toLocaleDateString()` → `localDateISO()`.
+- **Финальный свип**: в шаблонах/JS не осталось `[:19]/[:16]/[:10]`, `strftime`, `toLocale*`, `isoformat` (кроме date-only `today` в training.html и `snapshot_hash` в social/feed). **605/605 ✅**, ruff ✅, JS ✅.
+
 ## 2026-08-13 — Сессия 93 (отображение дат в tz устройства)
 
 - **Jinja-глобал `localtime(value, fmt)`** (templates_setup.py): рендерит `<time datetime="...(+00:00)" data-tz-fmt="...">fallback</time>`; naive→UTC через as_utc; экранирование; None→пусто.
