@@ -1,3 +1,12 @@
+## 2026-08-13 — Сессия 93 (отображение дат в tz устройства)
+
+- **Jinja-глобал `localtime(value, fmt)`** (templates_setup.py): рендерит `<time datetime="...(+00:00)" data-tz-fmt="...">fallback</time>`; naive→UTC через as_utc; экранирование; None→пусто.
+- **JS** (app.js): `formatLocalTime()` (%Y %m %d %H %M %S через локальные getters Date) + `applyLocalTimezones()` на DOMContentLoaded + htmx:afterSwap (title = UTC-инстант).
+- **15 вызовов strftime → localtime()**: sessions/tasks/dashboard_v2/notifications + social/{relationships,subjects,profile,moderation,feed}.
+- **LockTimer-карточка дашборда**: started_at/effective_end_at теперь datetime-объекты → localtime (было сырое [:19] UTC); +i18n `dashboard_timer_started` (EN/RU), рендер «Закрыт/Разблокировка».
+- **Фикс UTC-off-by-one в дефолтах «сегодня»**: `window.localTodayISO()`/`localNowLocalInput()` в app.js → measurements.js (meas-date), calendar.js (check-dt), diets.js (consumed_date).
+- **Тесты**: +3 теста localtime в test_timeutils.py. **605/605 ✅**, ruff ✅, JS-синтаксис ✅.
+
 ## 2026-08-13 — Сессия 92 (финиш по датам/времени)
 
 - **naive `datetime.now()` → `datetime.now(UTC)`** (now всегда UTC): importers/activity_logs.py, importers/points.py (default created_at), points/schedule.py (weekday), tasks.py (is_available), import_data.py + cli.py (exported_at).
