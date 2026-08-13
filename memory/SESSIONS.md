@@ -1,3 +1,8 @@
+## 2026-08-13 — Сессия 109 (чекпоинт перед перерывом)
+
+- **Чекпоинт зафиксирован**: `memory/CHECKPOINT_S108.md` — сделано / осталось / не делали + с чего продолжить. Краткий перерыв на сервисные задачи.
+- Ключевое для продолжения: 3 незапушенных коммита (S107–S108); долги Q14 (penalty не в HTTP), on-time slot open UX, Q13 (OCR); allowlist на проде пуст; S8 keyholder / публичный доступ — после личного контура.
+
 ## 2026-08-13 — Сессия 108 (prod timer smoke + фикс open слота)
 
 - **Smoke активной таймер-сессии на проде** (tracker.gorbunovr.ru): throwaway-юзер → draft → tz=UTC → slot-rule (every_n_days, future time_of_day, allow_late_open, max_late_seconds=3600) + 2 task-rule (daily) → validate (valid=True, ~89 slots/178 tasks) → start → probe open до окна (409 expected) → open → close с биркой SMOKE-001 → verify-tag match/mismatch (violation) → task reveal/complete/skip → safety-stop → негативные (extend-horizon 409, open после stop 409) → overview/calendar 200.
