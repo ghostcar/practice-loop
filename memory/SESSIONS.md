@@ -1,3 +1,12 @@
+## 2026-08-13 — Сессия 107 (prod front smoke + фикс 500 на /locktimer)
+
+- **Smoke-тест прода (tracker.gorbunovr.ru через nginx)**: регистрация+логин временного юзера, обход 22 страниц, charts/balance JSON, статика, POST /locktimer/new (черновик) — Chrome на VPS нет, поэтому curl+urllib с cookie-jar (Secure-cookie работает через HTTPS-домен).
+- **Найден и исправлен баг**: `GET /locktimer` и `GET /locktimer/calendar` → 500 на Postgres: `operator does not exist: timestamp with time zone <= character varying` — `list_sessions_by_date_range` сравнивал timestamptz-колонки (`started_at`/`effective_end_at`) с ISO date-строками (asyncpg биндит str как VARCHAR). SQLite (тесты) был снисходителен — 619 тестов проходили.
+- **Фикс**: новый `app.timeutils.local_day_bounds(day)` → [start, next-day-00:00) как aware UTC (client_tz ContextVar, UTC-фолбэк, как local_today/local_date); `list_sessions_by_date_range` парсит `date.fromisoformat` и сравнивает `started_at < end_utc` / `effective_end_at >= start_utc`. Семантика стала корректнее: старый `<= end_date`-строками неявно исключал всё после полуночи последнего дня.
+- **Тесты**: +5 (3 в test_locktimer_services.py: overlap/wide-range/tz-bucketing 16:30 UTC = 08-06 Tokyo; 2 в test_timeutils.py: local_day_bounds UTC+Tokyo). **624/624 ✅**.
+- **Повторный smoke после деплоя: 0 фейлов** — все 22 страницы 200 (включая /locktimer, /locktimer/calendar, /locktimer/templates, /api/v2/measurements/page, /api/v2/inventory/page, /api/v2/schedule/page, /entities/my). 4 «фейла» первого прогона были неверными URL теста (страницы живут под /api/v2, my-entities → /entities/my), не багами. Admin → 403 ожидаемо.
+- **Очистка**: оба smoke-юзера удалены из БД (cascade lock_*), владелец цел (1 юзер).
+
 ## 2026-08-13 — Сессия 106 (деплой правок S103 на VPS)
 
 - **`docker compose up -d --build`**: образ пересобран, контейнер app пересоздан и поднят; `healthz` 200 ok, `readiness` ready, контейнеры healthy (app + db).

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date, timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +17,7 @@ from app.models.locktimer import (
     LockTaskRule,
     LockTimerTemplate,
 )
-from app.timeutils import local_today
+from app.timeutils import local_day_bounds, local_today
 
 # ---------------------------------------------------------------------------
 # LockTimerTemplate
@@ -80,14 +81,21 @@ async def list_sessions(db: AsyncSession, owner_id: uuid.UUID, limit: int = 50) 
 async def list_sessions_by_date_range(
     db: AsyncSession, owner_id: uuid.UUID, start_date: str, end_date: str
 ) -> list[LockSession]:
-    """Return sessions whose effective period overlaps with [start_date, end_date]."""
+    """Return sessions whose effective period overlaps the local-calendar days [start_date, end_date].
+
+    Boundary strings are local calendar dates (``YYYY-MM-DD``). They are converted
+    to timezone-aware UTC instants before hitting the DB (timestamptz columns on
+    PostgreSQL reject bare VARCHAR dates — see ``app.timeutils.local_day_bounds``).
+    """
+    start_utc, _ = local_day_bounds(date.fromisoformat(start_date))
+    _, end_utc = local_day_bounds(date.fromisoformat(end_date))
     result = await db.execute(
         select(LockSession)
         .where(
             LockSession.owner_id == owner_id,
             LockSession.started_at.isnot(None),
-            LockSession.started_at <= end_date,
-            LockSession.effective_end_at >= start_date,
+            LockSession.started_at < end_utc,
+            LockSession.effective_end_at >= start_utc,
         )
         .order_by(LockSession.started_at)
     )
@@ -96,8 +104,6 @@ async def list_sessions_by_date_range(
 
 async def get_weekly_compliance(db: AsyncSession, owner_id: uuid.UUID, weeks: int = 4) -> list[dict]:
     """Return per-week compliance stats: slot close rate and task completion rate."""
-    from datetime import timedelta
-
     today = local_today()
     result = []
     for w in range(weeks - 1, -1, -1):

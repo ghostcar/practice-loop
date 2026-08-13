@@ -108,3 +108,24 @@ def test_resolve_tz_none_is_utc():
     from app.timeutils import resolve_tz
 
     assert resolve_tz(None) is UTC
+
+
+def test_local_day_bounds_utc():
+    from app.timeutils import local_day_bounds
+
+    start, end = local_day_bounds(date(2026, 8, 13))
+    assert start == datetime(2026, 8, 13, 0, 0, tzinfo=UTC)
+    assert end == datetime(2026, 8, 14, 0, 0, tzinfo=UTC)
+
+
+def test_local_day_bounds_converts_to_client_tz():
+    from app.timeutils import local_day_bounds, reset_client_tz, set_client_tz
+
+    token = set_client_tz("Asia/Tokyo")  # UTC+9
+    try:
+        start, end = local_day_bounds(date(2026, 8, 13))
+        # 2026-08-13 00:00 JST == 2026-08-12 15:00 UTC
+        assert start == datetime(2026, 8, 12, 15, 0, tzinfo=UTC)
+        assert end == datetime(2026, 8, 13, 15, 0, tzinfo=UTC)
+    finally:
+        reset_client_tz(token)

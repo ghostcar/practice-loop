@@ -601,3 +601,111 @@ class TestMaterializerScheduleTypes:
         for o1, o2 in zip(occs1, occs2, strict=True):
             assert o1.appears_at == o2.appears_at
             assert o1.due_at == o2.due_at
+
+
+# ---------------------------------------------------------------------------
+# Date-range queries — regression: timestamptz vs VARCHAR (PostgreSQL) +
+# local-day bucketing in the client timezone.
+# ---------------------------------------------------------------------------
+
+
+class TestDateRangeQueries:
+    async def _make_session(
+        self,
+        db_session: AsyncSession,
+        test_user: User,
+        started_at: datetime,
+        effective_end_at: datetime,
+    ) -> LockSession:
+        seed = d.generate_random_seed()
+        session = LockSession(
+            id=uuid.uuid4(),
+            owner_id=test_user.id,
+            state=e.SESSION_COMPLETED,
+            duration_type=e.DURATION_FROM_START,
+            timezone="UTC",
+            merge_gap_seconds=3600,
+            can_extend_duration=False,
+            random_seed_encrypted=seed,
+            random_seed_commitment=d.compute_seed_commitment(seed),
+            privacy_mode="private",
+            row_version=1,
+            started_at=started_at,
+            effective_end_at=effective_end_at,
+        )
+        db_session.add(session)
+        await db_session.flush()
+        return session
+
+    async def test_overlap_semantics(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.repositories import list_sessions_by_date_range
+
+        inside = await self._make_session(
+            db_session,
+            test_user,
+            datetime(2026, 8, 6, 10, 0, tzinfo=UTC),
+            datetime(2026, 8, 6, 12, 0, tzinfo=UTC),
+        )
+        straddles = await self._make_session(
+            db_session,
+            test_user,
+            datetime(2026, 8, 5, 22, 0, tzinfo=UTC),
+            datetime(2026, 8, 6, 2, 0, tzinfo=UTC),
+        )
+        outside = await self._make_session(
+            db_session,
+            test_user,
+            datetime(2026, 8, 1, 10, 0, tzinfo=UTC),
+            datetime(2026, 8, 2, 12, 0, tzinfo=UTC),
+        )
+
+        found = await list_sessions_by_date_range(db_session, test_user.id, "2026-08-06", "2026-08-06")
+        ids = {s.id for s in found}
+        assert inside.id in ids
+        assert straddles.id in ids
+        assert outside.id not in ids
+
+    async def test_wide_range_includes_all(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.repositories import list_sessions_by_date_range
+
+        s1 = await self._make_session(
+            db_session,
+            test_user,
+            datetime(2026, 8, 3, 8, 0, tzinfo=UTC),
+            datetime(2026, 8, 3, 9, 0, tzinfo=UTC),
+        )
+        s2 = await self._make_session(
+            db_session,
+            test_user,
+            datetime(2026, 8, 20, 18, 0, tzinfo=UTC),
+            datetime(2026, 8, 20, 19, 0, tzinfo=UTC),
+        )
+
+        found = await list_sessions_by_date_range(db_session, test_user.id, "2026-08-01", "2026-08-31")
+        ids = {s.id for s in found}
+        assert s1.id in ids
+        assert s2.id in ids
+
+    async def test_client_tz_day_bucketing(self, db_session: AsyncSession, test_user: User) -> None:
+        from app.locktimer.repositories import list_sessions_by_date_range
+        from app.timeutils import reset_client_tz, set_client_tz
+
+        # 2026-08-05 16:30 UTC == 2026-08-06 01:30 in Asia/Tokyo (UTC+9).
+        session = await self._make_session(
+            db_session,
+            test_user,
+            datetime(2026, 8, 5, 16, 30, tzinfo=UTC),
+            datetime(2026, 8, 5, 20, 0, tzinfo=UTC),
+        )
+
+        # No client tz (UTC fallback): the session is on 08-05 → excluded from 08-06.
+        found_utc = await list_sessions_by_date_range(db_session, test_user.id, "2026-08-06", "2026-08-06")
+        assert session.id not in {s.id for s in found_utc}
+
+        # Tokyo cookie: the session is on 08-06 → included.
+        token = set_client_tz("Asia/Tokyo")
+        try:
+            found_tokyo = await list_sessions_by_date_range(db_session, test_user.id, "2026-08-06", "2026-08-06")
+        finally:
+            reset_client_tz(token)
+        assert session.id in {s.id for s in found_tokyo}

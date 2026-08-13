@@ -16,7 +16,7 @@ when no timezone is set (background jobs, tests, no-JS clients).
 from __future__ import annotations
 
 from contextvars import ContextVar, Token
-from datetime import UTC, date, datetime, tzinfo
+from datetime import UTC, date, datetime, time, timedelta, tzinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 _client_tz: ContextVar[str | None] = ContextVar("client_tz", default=None)
@@ -83,3 +83,18 @@ def local_date(dt: datetime | None) -> date | None:
         return None
     z = client_tzinfo()
     return as_utc(dt).astimezone(z or UTC).date()
+
+
+def local_day_bounds(day: date) -> tuple[datetime, datetime]:
+    """Return the [start, next-day-00:00) of a local-calendar day as aware UTC datetimes.
+
+    Uses the request-scoped client timezone (client_tz cookie ContextVar) with a
+    UTC fallback for background jobs and no-JS clients, matching ``local_today()``
+    and ``local_date()``. Use these bounds when querying timestamptz columns by
+    local calendar day — bare ISO date strings are rejected by PostgreSQL
+    (``operator does not exist: timestamp with time zone <= character varying``).
+    """
+    z = client_tzinfo() or UTC
+    start = datetime.combine(day, time.min, tzinfo=z).astimezone(UTC)
+    end = datetime.combine(day + timedelta(days=1), time.min, tzinfo=z).astimezone(UTC)
+    return start, end

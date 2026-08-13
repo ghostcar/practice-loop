@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 107 — prod smoke + fix | 500 на /locktimer и /locktimer/calendar: date-строка против timestamptz в list_sessions_by_date_range → app.timeutils.local_day_bounds() (aware UTC, client-tz); +5 тестов, 624/624 ✅, smoke 0 фейлов |
 | 2026-08-13 | Session 106 — деплой | docker compose up -d --build: healthz 200, readiness ready, контейнеры healthy; в проде правки S103 (формат миграций + locktimer_ui, pre_deploy_check) |
 | 2026-08-13 | Session 105 — финальный прогон | Полный pytest: 619/619 ✅ после всех правок (tz/графики/доки/формат) |
 | 2026-08-13 | Session 104 — сверка §17 | Social-таблицы 15/15 совпадают с app/platform/social/models.py; поправлен заголовок (префикс social_ не у moderation_*) |
