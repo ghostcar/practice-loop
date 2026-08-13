@@ -1,3 +1,10 @@
+## 2026-08-13 — Сессия 96 (финиш tz: device-local дневные бакеты графиков)
+
+- **`app/api/points/charts.py`**: 4 daily-series эндпоинта переведены с SQL `func.date(created_at)` (UTC-день БД) на Python-бакетирование через `local_date(created_at)` (device-календарный день) — бары больше не сдвигаются на день для пользователей вблизи UTC-полуночи относительно подписей `local_today()`. `category-breakdown` не затронут (группировка по category, не по дню).
+- **Убран** `case()/else_/func.sum/group_by` из daily-эндпоинтов; `breakdown` points-trend сохранил прежний cutoff-scope (исходный `type_result`-запрос был cutoff-bounded — проверено по git HEAD).
+- **Гард** `txn_type or "other"` в breakdown (None-ключ в JSON), по аналогии с `row.category or "other"`.
+- **Тесты**: 610/610 ✅, ruff ✅, format ✅.
+
 ## 2026-08-13 — Сессия 95 (границы суток в tz устройства)
 
 - **`app/timeutils.py`**: request-scoped `ContextVar _client_tz` + `set/reset/get_client_tz`, `client_tzinfo()` (ZoneInfo с UTC-фолбэком при отсутствии/ошибке), `local_today()` (device-local «сегодня»), `local_date(dt)` (stored UTC datetime → device-календарная дата).

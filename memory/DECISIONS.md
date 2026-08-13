@@ -109,3 +109,10 @@
 **Date:** 2026-08-12
 **Decision:** Все новые и изменяемые action-эндпоинты возвращают JSON (JSONResponse), а не HTML/redirect. HTMX-фронт работает через те же JSON-контракты (fetch). HTML-рендер остаётся только для страниц. Пилот: timer start/safety-stop и ключевые действия перевести на JSON.
 **Rationale:** фундамент для мобильного клиента (ADR-063) и масштабирования (ADR-064); единый контракт для всех клиентов.
+
+### ADR-066 — Device-tz дневные бакеты графиков (PD-021)
+**Date:** 2026-08-13
+**Decision:** Дневные ряды графиков (activity/points-trend/xp-history/completion-rate) бакетируются в Python через `local_date(created_at)` (device-календарный день из ContextVar `client_tz`), а не SQL `func.date(created_at)` (UTC-день БД). Подписи оси — `local_today()`. `cutoff` остаётся UTC-инстантом.
+**Rationale:** SQL `func.date()` группирует по UTC-дню, сдвигая бары на день относительно device-local подписей для пользователей вблизи UTC-полуночи. Python-бакетирование переносимо между Postgres и SQLite (SQLite не поддерживает `AT TIME ZONE`).
+**Tradeoff:** загрузка сырых строк (≤90–365 дней) вместо агрегации в БД — приемлемо для одного пользователя; при росте объёма вернуться к dialect-specific `AT TIME ZONE`.
+**Status:** ✅ Implemented в Session 96.

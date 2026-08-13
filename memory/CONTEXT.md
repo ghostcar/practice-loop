@@ -32,3 +32,8 @@
 - `AGENTS.md` — рабочая инструкция для агента.
 - `tracker-spec.md` — историческая спецификация прототипа (17 разделов).
 - `memory/*` — состояние, решения, журнал сессий (правила — в `memory/README.md`).
+
+## Соглашения по дате/времени
+- Всё хранится в UTC (`DateTime(timezone=True)`); prod=Postgres aware, tests=SQLite naive → `as_utc()`.
+- Отображение — в tz устройства: Jinja `localtime()` + JS `applyLocalTimezones()`.
+- Границы суток — device-local: cookie `client_tz` → ContextVar → `local_today()`/`local_date()`.

@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 96 — финиш tz (графики) | 4 chart-эндпоинта: SQL func.date() → Python local_date() бакеты (device-день); убран case/group_by; txn_type None-гард; category-breakdown не тронут; 610/610 ✅ |
 | 2026-08-13 | Session 95 — границы суток | **ContextVar tz** + local_today/local_date; middleware client_tz cookie; JS Intl-детект; day-boundary → local_today (13 файлов); streaks через local_date; tzdata==2026.3; 610/610 ✅ |
 | 2026-08-13 | Session 94 — финиш дат | LockTimer сериализаторы → datetime + localtime (4 шаблона); achievements obtained_at → localtime; JS localDateISO (points/diets); свип: нет сырых datetime в шаблонах/JS; 605/605 ✅ |
 | 2026-08-13 | Session 93 — tz устройства | **Jinja localtime()** + JS formatLocalTime/applyLocalTimezones; 15 strftime→localtime; LockTimer-карточка через localtime (+i18n started); фикс UTC off-by-one в дефолтах «сегодня» (measurements/calendar/diets); 605/605 ✅ |

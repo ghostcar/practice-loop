@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 95 — границы суток в tz устройства: ContextVar + local_today/local_date; все даты/время закрыты end-to-end).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 96 — финиш tz: device-local дневные бакеты графиков; все вопросы по датам/времени закрыты end-to-end).
 
-## Общий статус: 605/605 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
+## Общий статус: 610/610 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
 
 ## LockTimer Core — C0–C9 полностью ✅
 
@@ -32,6 +32,10 @@
 - [x] **S88**: REFACTORING.md шаг 7 (pipeline.py → llm/pipeline) + API v1→v2 консолидация (67 замен в 11 файлах); все роуты под /api/v2 — api.py (1011) → social/api/{profile, subjects, relationships, feed, verification, comments, moderation}; prefix="/social", 598/598 ✅ — repositories.py (1070) → social/repositories/{profile, consent, subjects, relationships, notifications, publications, verification, comments, moderation}; явный ре-экспорт 52 имён, 598/598 ✅ — points_v2.py (940) → api/points/{helpers, config, balance, profiles, redemptions, schedule, measurements, inventory, charts, pages}; префикс на агрегаторе, 598/598 ✅ — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
+- [x] **S96**: финиш tz — 4 chart-эндпоинта: SQL func.date() → Python local_date() бакеты (device-день); убран case/group_by; txn_type None-гард; 610/610 ✅
+- [x] **S95**: границы суток в tz устройства — ContextVar _client_tz + local_today/local_date; middleware client_tz cookie; JS Intl-детект; day-boundary → local_today (13 файлов); streaks через local_date; tzdata==2026.3; 610/610 ✅
+- [x] **S94**: финиш по датам — locktimer сериализаторы → datetime + localtime (4 шаблона); achievements obtained_at → localtime; JS localDateISO (points/diets); 605/605 ✅
+- [x] **S93**: tz устройства — Jinja localtime() + JS formatLocalTime/applyLocalTimezones; 15 strftime→localtime; LockTimer-карточка через localtime; фикс UTC off-by-one в дефолтах «сегодня»; 605/605 ✅
 - [x] **S92**: финиш дат/времени — naive datetime.now()→datetime.now(UTC) в 6 файлах + materializer EXACT_DATETIME→as_utc; аудит gamification/context_builder/charts tz-безопасно; 602/602 ✅
 - [x] **S91**: tz-хелпер as_utc (app/timeutils.py) + рефакторинг 4 дублей replace(tzinfo=UTC) + фикс telegram сравнения + аудит locktimer (open_slot/materializer); +4 теста; 602/602 ✅
 - [x] **S90**: полный ре-экспорт llm/pipeline (prompt-константы/модели/repair/tools/validator/cross-модули), аудит 6 сплитов восстановил execution-фасад + import_data + social/repositories, utcnow→datetime.now(UTC) в 8 social-файлах + tz-нормализация; 598/598 ✅
