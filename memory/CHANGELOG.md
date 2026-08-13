@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 116 — решение по M3 пилотам (ADR-069) | Владелец принял: embedding BGE-M3 (multilingual, fastembed/ONNX, local-only) + единственный пилот Qdrant local vectors (shadow); QMD и code graph отложены; зависимости только optional dev-group. STAGE_PLAN.md обновлён |
 | 2026-08-13 | Session 115 — Memory v2 M3 benchmark | `tools/memoryctl/benchmark.py`: harness по 12 задачам BENCHMARK_TASKS.md (recall@5/MRR/размер pack/extra reads/forbidden), отчёт docs/state/BENCHMARK.json (HEAD-bound, детерминированный), CLI `memoryctl benchmark`. Baseline: recall@5 0.26, pack ≤9 KiB, 0 forbidden; зазор на русских запросах→semantic. 698/698 ✅ (+4) |
 | 2026-08-13 | Session 114 — Memory v2 M3 base | `tools/memoryctl/bootstrap.py` (stdlib-only): детерминированная классификация + L0/L1 отбор + exact/lexical code search + impact frontier + risks/checks + context pack/sentinel в .agent-runtime; CLI `memoryctl bootstrap`. План на 3 этапа — docs/memory-rfc/STAGE_PLAN.md. 694/694 ✅ (+13 memory-тестов) |
 | 2026-08-13 | Session 113 — аудит P0-1+P0-2 (Gate A) | Закрыты P0-блокеры: P0-1 убран публичный mount /uploads → авторизованный GET /uploads/{path} (owner reverse-lookup + containment); P0-2 убран fallback default-challenge-key, CHALLENGE_HMAC_KEY обязателен в production gate. +13 тестов, 681/681 ✅ |

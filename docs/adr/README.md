@@ -72,3 +72,4 @@
 | [ADR-066](ADR-066.md) | 2026-08-13 | Device-tz дневные бакеты графиков (PD-021) | accepted |
 | [ADR-067](ADR-067.md) | 2026-08-13 | Фоновые задачи: границы суток через конфиг-tz | accepted |
 | [ADR-068](ADR-068.md) | 2026-08-13 | Memory v2 | accepted |
+| [ADR-069](ADR-069.md) | 2026-08-13 | M3 pilot: Qdrant local + BGE-M3, только vectors | accepted |

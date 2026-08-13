@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 115 — Memory v2 M3 benchmark: harness по 12 задачам + baseline; 698/698 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 116 — решение по M3 пилотам: BGE-M3 + Qdrant local vectors (ADR-069); 698/698 ✅).
 
 ## Общий статус: 698 тестов ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 68==68
 
@@ -23,7 +23,8 @@
 - [x] **M2 (полный gate)**: ADR-компилятор (68 docs/adr/ + README + bidirectional check); knowledge.md root + 5 domain-local; docs/questions/ (PQ-005/006, EQ-0013/0014); docs/wiki/ 5 страниц; P2-4 denylist/allowlist fix (lint 3 warnings → 0)
 - [x] **M3 base**: memoryctl bootstrap (детерминированный exact-fallback) + STAGE_PLAN на 3 этапа; tests/memory/test_bootstrap.py 13; итого 58 memory-тестов
 - [x] **M3 benchmark** (Этап 2): harness по 12 задачам + baseline (recall@5 0.26, pack ≤9 KiB, 0 forbidden) → docs/state/BENCHMARK.json
-- [ ] **M3 пилоты** (решение по embedding/пилотам у владельца): Qdrant/vectors/graph/QMD — только если benchmark докажет прирост против baseline
+- [x] **Решение по пилотам (ADR-069)**: BGE-M3 multilingual + единственный пилот Qdrant local vectors (shadow); QMD/graph отложены; зависимости optional dev-group
+- [ ] **Реализация пилота**: `memoryctl index-code` (структурные code units) + `search-code` (hybrid dense+sparse) + A/B против baseline (gate: прирост recall@5/MRR, pack ≤12 KiB)
 - [ ] **M4 preflight** (Этап 3): .agents/skills/project-memory/SKILL.md + bin/practice-agent + sentinel CI (required после наблюдения)
 
 ## LockTimer Core — C0–C9 полностью ✅

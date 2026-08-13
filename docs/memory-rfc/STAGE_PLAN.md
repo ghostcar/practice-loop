@@ -19,10 +19,19 @@ Gate: unit-тесты на классификацию, выбор docs, поис
 
 ## Этап 2 — M3 benchmark + пилоты (только с доказанным приростом)
 
-- harness по `BENCHMARK_TASKS.md` (12 задач): recall@5, MRR, размер pack, лишние чтения;
-- сравнение baseline v1 workflow ↔ M3-base;
-- после benchmark — решение владельца по пилотам (Qdrant local vectors, codebase-memory-mcp graph,
-  QMD docs) и embedding profile (§10 RFC). Пилоты в `shadow` mode, не обязательны.
+- [x] harness по `BENCHMARK_TASKS.md` (12 задач): recall@5, MRR, размер pack, лишние чтения
+      (`tools/memoryctl/benchmark.py` → `docs/state/BENCHMARK.json`, Сессия 115);
+- [x] baseline M3-base измерен: recall@5 0.26, MRR 0.356, pack ≤9 KiB, 0 forbidden;
+- [x] решение владельца по пилотам (Сессия 116, **ADR-069**):
+      - **embedding**: BGE-M3 (multilingual, fastembed/ONNX, local-only);
+      - **пилот**: только Qdrant local vectors (shadow);
+      - QMD (docs) и codebase-memory-mcp (graph) — отложены;
+      - code-specific второй named-вектор — только если BGE-M3 слаб на коде;
+      - зависимости — только в optional dev-group, рантайм продукта не трогается.
+- [ ] реализация пилота: `memoryctl index-code` (структурные code units) + `memoryctl search-code`
+      (hybrid dense+sparse) + A/B против baseline → решение admit/shadow/off по RFC §12.
+
+Gate: прирост recall@5/MRR против baseline 0.26/0.356 с pack ≤12 KiB; иначе пилот остаётся off/optional.
 
 ## Этап 3 — M4 preflight (обязательный)
 

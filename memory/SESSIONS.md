@@ -1,3 +1,15 @@
+## 2026-08-13 — Сессия 116 (решение по M3 пилотам — ADR-069)
+
+- **Решение владельца по M3 пилотам** (после baseline recall@5 0.26 из Сессии 115), зафиксировано **ADR-069**:
+  - **embedding**: BGE-M3 (multilingual, dense+sparse в одной модели, ONNX через fastembed, local-only) — закрывает доминирующий зазор RU→EN (code-specific его не решает).
+  - **пилот**: только Qdrant local vectors (shadow mode) — единственный; QMD (docs) и codebase-memory-mcp (graph) отложены до доказательства нехватки.
+  - code-specific второй named-вектор — только если BGE-M3 окажется слаб на коде.
+  - зависимости (qdrant-client, fastembed/onnxruntime) — только optional dev-group, рантайм FastAPI не трогается; веса модели в `.memory-local/`.
+- **RFC-контекст**: BGE-M3 — open-weight лидер multilingual (100+ языков, dense+sparse+multi-vector), подтверждено web-поиском; Qdrant local + fastembed — официальный путь hybrid search (dense+sparse), local-mode hybrid может требовать клиентской fusion (как и предписывает RFC §3/§8).
+- **ADR-069**: добавлена строка в таблицу + секция в DECISIONS.md; `memoryctl adr compile` → 69 docs/adr/ + README; bidirectional check 69==69 ✅.
+- **STAGE_PLAN.md**: Этап 2 дополнен — benchmark ✅, baseline ✅, решение ✅; следующее — реализация `index-code` + `search-code` + A/B.
+- **Следующий шаг (Этап 2, остаток)**: реализовать пилот (структурные code units + hybrid dense+sparse + A/B против baseline), gate = прирост recall@5/MRR при pack ≤12 KiB.
+
 ## 2026-08-13 — Сессия 115 (Memory v2 M3 benchmark — harness + baseline)
 
 - **Этап 2 (M3 benchmark)** выполнен: `tools/memoryctl/benchmark.py` — harness по 12 задачам из `docs/memory-rfc/BENCHMARK_TASKS.md` с machine-readable ground truth (expected_code / expected_docs / forbidden, glob-паттерны).

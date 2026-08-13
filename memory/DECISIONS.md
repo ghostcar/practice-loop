@@ -73,6 +73,7 @@
 | ADR-066 | 2026-08-13 | Device-tz дневные бакеты графиков (PD-021) | Дневные ряды бакетируются в Python через local_date (device-день), не SQL func.date (UTC-день); подписи local_today() | принято |
 | ADR-067 | 2026-08-13 | Фоновые задачи: границы суток через конфиг-tz | Training auto-analysis берёт «сегодня» из tg_auto_analysis_tz (IANA, default UTC), не из request ContextVar | принято |
 | ADR-068 | 2026-08-13 | Memory v2 | Многоуровневая память L0–L4 (контракт, wiki/ADR, generated facts, hybrid code retrieval, local-only эпизоды); milestones M0–M6; M0+M1 реализованы | принято |
+| ADR-069 | 2026-08-13 | M3 pilot: Qdrant local + BGE-M3, только vectors | Qdrant local (shadow) — единственный пилот; embedding BGE-M3 multilingual (fastembed/ONNX, local-only); QMD и code graph отложены до доказательства нехватки; зависимости только в optional dev-group, рантайм продукта не трогается | принято |
 
 
 ### ADR-061 — Social S4+S6 (Verification + Tracker Adapter)
@@ -136,3 +137,11 @@
 **Rationale:** `memory/` вырос до ~400 KiB (SESSIONS.md 159 KiB); чтение больших агрегатов в каждой сессии дорого, дублирует факты и смешивает роли (решение/факт/план/история). Целевые лимиты: always-on ≤10 KiB, context pack ≤12 KiB. Вектора не являются источником истины; authority определяется DOCUMENTATION_MAP.md и явным owner-решением.
 **Tradeoff:** стоимость инструментов (memoryctl, benchmark) до появления измеримой экономии контекста; риск «wiki-свалки» — митигируется atomic pages + size lint + draft-only compiler.
 **Status:** ✅ принято владельцем 2026-08-13 (Сессия 110); M0+M1 реализованы.
+
+### ADR-069 — M3 пилот: Qdrant local + BGE-M3 (только vectors, shadow)
+
+**Date:** 2026-08-13
+**Decision:** После baseline M3 (recall@5 = 0.26; доминирующий зазор — русский запрос → английский код, T3/T8/T10 ≈ 0) принят единственный пилот: Qdrant local mode + embedding **BGE-M3** (multilingual, dense+sparse, ONNX через fastembed, local-only). Режим shadow: векторные результаты пишутся в benchmark-отчёт, но не формируют обязательный impact без exact/graph подтверждения (CODE_MEMORY_DESIGN.md §12). QMD (docs) и codebase-memory-mcp (graph) отложены — QMD частично покрывается M5-split, graph ортогонален recall-провалу и требует отдельной impact-recall метрики. Code-specific второй named-вектор — только если BGE-M3 окажется слаб на коде.
+**Rationale:** Доминирующий провал baseline — кросс-языковой RU→EN, который решает только multilingual embedding; code-specific не понимает русские запросы. BGE-M3 — open-weight лидер multilingual (100+ языков) и даёт dense+sparse в одной модели. Этапность RFC §7/§12 требует измерять инкрементально (off → shadow → assist → required), чтобы не размывать причину прироста.
+**Tradeoff:** новые dev-зависимости (qdrant-client, fastembed/onnxruntime) и скачиваемые веса модели (~сотни MB) в .memory-local/; изоляция в optional dev-group обязательна, чтобы рантайм FastAPI не тянул onnxruntime. Первый запуск холодный (скачивание/индексация).
+**Status:** ✅ принято владельцем 2026-08-13 (Сессия 116).
