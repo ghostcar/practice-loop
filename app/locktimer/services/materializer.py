@@ -15,6 +15,7 @@ from app.models.locktimer import (
     LockTaskOccurrence,
     LockTaskRule,
 )
+from app.timeutils import as_utc
 
 
 def _compute_initial_end(session: LockSession, started_at: datetime) -> datetime | None:
@@ -40,9 +41,11 @@ async def _materialize_session(
     now: datetime,
 ) -> None:
     """Generate initial occurrence window for all rules (C4 — rolling horizon)."""
+    now = as_utc(now)
+    effective_end = as_utc(session.effective_end_at) if session.effective_end_at is not None else None
     horizon_end = now + timedelta(days=d.DEFAULT_ROLLING_HORIZON_DAYS)
-    if session.effective_end_at and horizon_end > session.effective_end_at:
-        horizon_end = session.effective_end_at
+    if effective_end is not None and horizon_end > effective_end:
+        horizon_end = effective_end
 
     for rule in slot_rules:
         occurrences = _generate_slot_occurrences(session, rule, now, horizon_end)
@@ -66,6 +69,7 @@ def _generate_slot_occurrences(
     """Generate slot occurrences from a rule between from_dt and to_dt."""
     occurrences: list[LockSlotOccurrence] = []
     schedule = rule.schedule
+    effective_end = as_utc(session.effective_end_at) if session.effective_end_at is not None else None
     idx = 0
 
     if rule.rule_type == e.SLOT_RULE_EVERY_N_DAYS:
@@ -75,8 +79,8 @@ def _generate_slot_occurrences(
         current = _combine_date_time(start_date, time_of_day)
         while current < from_dt:
             current += timedelta(days=n)
-        while current < to_dt and (session.effective_end_at is None or current < session.effective_end_at):
-            if _in_progress_check(current, from_dt, session.effective_end_at):
+        while current < to_dt and (effective_end is None or current < effective_end):
+            if _in_progress_check(current, from_dt, effective_end):
                 occ = _make_slot_occ(session, rule, idx, current, current + timedelta(seconds=rule.duration_seconds))
                 occurrences.append(occ)
                 idx += 1
@@ -96,16 +100,16 @@ def _generate_slot_occurrences(
         current = _combine_date_time(start_date, time_of_day)
         while current < from_dt:
             current += timedelta(days=n)
-        while current < to_dt and (session.effective_end_at is None or current < session.effective_end_at):
-            if _in_progress_check(current, from_dt, session.effective_end_at):
+        while current < to_dt and (effective_end is None or current < effective_end):
+            if _in_progress_check(current, from_dt, effective_end):
                 occ = _make_slot_occ(session, rule, idx, current, current + timedelta(seconds=rule.duration_seconds))
                 occurrences.append(occ)
                 idx += 1
             current += timedelta(days=n)
 
     elif rule.rule_type == e.SLOT_RULE_FLEXIBLE_WINDOW_ONCE:
-        window_start = _parse_date(schedule.get("window_start"), from_dt)
-        window_end = _parse_date(schedule.get("window_end"), to_dt)
+        window_start = as_utc(_parse_date(schedule.get("window_start"), from_dt))
+        window_end = as_utc(_parse_date(schedule.get("window_end"), to_dt))
         if window_start < to_dt and window_end > from_dt:
             occ = _make_slot_occ(session, rule, idx, window_start, None)
             occ.eligible_from = window_start
@@ -128,12 +132,13 @@ def _generate_task_occurrences(
     """Generate task occurrences from a rule between from_dt and to_dt."""
     occurrences: list[LockTaskOccurrence] = []
     schedule = rule.schedule
+    effective_end = as_utc(session.effective_end_at) if session.effective_end_at is not None else None
     idx = 0
 
     if rule.schedule_type == e.TASK_SCHED_DAILY:
         time_of_day = schedule.get("time_of_day", "09:00")
         current = _combine_date_time(from_dt.date(), time_of_day)
-        while current < to_dt and (session.effective_end_at is None or current < session.effective_end_at):
+        while current < to_dt and (effective_end is None or current < effective_end):
             due_at = current + timedelta(seconds=rule.due_window_seconds)
             occ = _make_task_occ(session, rule, idx, current, due_at)
             occurrences.append(occ)
@@ -147,7 +152,7 @@ def _generate_task_occurrences(
         current = _combine_date_time(start_date, time_of_day)
         while current < from_dt:
             current += timedelta(days=n)
-        while current < to_dt and (session.effective_end_at is None or current < session.effective_end_at):
+        while current < to_dt and (effective_end is None or current < effective_end):
             due_at = current + timedelta(seconds=rule.due_window_seconds)
             occ = _make_task_occ(session, rule, idx, current, due_at)
             occurrences.append(occ)
@@ -164,7 +169,7 @@ def _generate_task_occurrences(
 
     elif rule.schedule_type == e.TASK_SCHED_ANYTIME_BEFORE_END:
         # One task that can be done anytime before session end
-        end = session.effective_end_at or to_dt
+        end = effective_end or to_dt
         due_at = end
         occ = _make_task_occ(session, rule, idx, from_dt, due_at)
         occurrences.append(occ)

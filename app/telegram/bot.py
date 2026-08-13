@@ -24,6 +24,7 @@ from app.models.activity_log import ActivityLog
 from app.models.progress import UserProgress
 from app.models.session import ActivitySession
 from app.models.user import User
+from app.timeutils import as_utc
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +103,7 @@ if TG_BOT_TOKEN:
                 await message.answer("❌ Invalid code. Check your web profile and try again.")
                 return
 
-            if user.telegram_link_code_expires and user.telegram_link_code_expires < datetime.now(UTC):
+            if user.telegram_link_code_expires and as_utc(user.telegram_link_code_expires) < datetime.now(UTC):
                 await message.answer("⏰ Code expired. Generate a new one in your web profile.")
                 return
 

@@ -36,6 +36,7 @@ from app.models.locktimer import (
     LockTaskRule,
 )
 from app.models.user import User
+from app.timeutils import as_utc
 
 pytestmark = pytest.mark.anyio
 
@@ -231,7 +232,7 @@ class TestSlotExecution:
         open_time = occ.planned_open_at  # on-time open
         opened = await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=open_time)
         assert opened.state == e.SLOT_OPEN
-        assert opened.actual_opened_at == open_time
+        assert as_utc(opened.actual_opened_at) == as_utc(open_time)
 
     async def test_open_slot_idempotent(self, db_session: AsyncSession, test_user: User) -> None:
         _, occ = await self._started_session_with_slot(db_session, test_user)
@@ -239,6 +240,13 @@ class TestSlotExecution:
         await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=open_time)
         with pytest.raises(ValueError):
             await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=open_time)
+
+    async def test_open_slot_with_aware_now(self, db_session: AsyncSession, test_user: User) -> None:
+        """Aware `now` vs a SQLite-read (naive) occurrence must not raise (tz regression)."""
+        _, occ = await self._started_session_with_slot(db_session, test_user)
+        aware_now = as_utc(occ.planned_open_at)
+        opened = await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=aware_now)
+        assert opened.state == e.SLOT_OPEN
 
     async def test_close_slot(self, db_session: AsyncSession, test_user: User) -> None:
         _, occ = await self._started_session_with_slot(db_session, test_user)

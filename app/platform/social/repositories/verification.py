@@ -13,6 +13,7 @@ from app.platform.social.models import (
     SocialVerificationRequest,
     SocialVerificationVote,
 )
+from app.timeutils import as_utc
 
 
 async def create_verification_policy(
@@ -136,9 +137,7 @@ async def check_quorum_and_finalize(
         return req
 
     # Check deadline
-    deadline = req.deadline_at
-    if deadline.tzinfo is None:
-        deadline = deadline.replace(tzinfo=UTC)
+    deadline = as_utc(req.deadline_at)
     if deadline <= now:
         req.state = policy.no_quorum_action
         req.result_summary = "No quorum by deadline"

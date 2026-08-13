@@ -56,6 +56,7 @@ from app.models.locktimer import (
     LockTaskOccurrence,
     LockTaskRule,
 )
+from app.timeutils import as_utc
 
 __all__ = [
     # drafts
@@ -127,21 +128,25 @@ async def open_slot(
     """Open a slot occurrence. Must be eligible; late open applies extension."""
     if now is None:
         now = _now()
+    now = as_utc(now)
+    eligible_from = as_utc(occurrence.eligible_from)
+    eligible_until = as_utc(occurrence.eligible_until)
+    planned_open_at = as_utc(occurrence.planned_open_at)
 
     if occurrence.state not in (e.SLOT_PENDING, e.SLOT_ELIGIBLE):
         raise ValueError(f"Cannot open slot in state {occurrence.state}")
 
     # Check eligibility
-    if now < occurrence.eligible_from:
+    if now < eligible_from:
         raise ValueError("Slot not yet eligible")
-    if now > occurrence.eligible_until:
+    if now > eligible_until:
         raise ValueError("Slot eligibility window expired")
 
     extension_seconds = 0
     rule = await db.get(LockSlotRule, occurrence.rule_id)
-    if now > occurrence.planned_open_at:
+    if now > planned_open_at:
         # Late open — apply late policy
-        late_seconds = int((now - occurrence.planned_open_at).total_seconds())
+        late_seconds = int((now - planned_open_at).total_seconds())
         if rule and rule.extend_on_late_open:
             extension_seconds = min(late_seconds, rule.max_late_seconds)
 

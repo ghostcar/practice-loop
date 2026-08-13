@@ -26,6 +26,7 @@ from app.services.media import (
     generate_verification_code,
     verify_code_constant_time,
 )
+from app.timeutils import as_utc
 
 router = APIRouter(prefix="/api/v2/verification", tags=["verification"])
 
@@ -144,9 +145,7 @@ async def verify_challenge(
         raise HTTPException(409, "Challenge already consumed")
     if challenge.state == "failed":
         raise HTTPException(409, "Challenge has been failed (max attempts reached)")
-    expires = challenge.expires_at
-    if expires.tzinfo is None:
-        expires = expires.replace(tzinfo=UTC)
+    expires = as_utc(challenge.expires_at)
     if challenge.state == "expired" or expires < now:
         if challenge.state == "active":
             challenge.state = "expired"
@@ -197,9 +196,7 @@ async def get_challenge_status(
 
     # Auto-expire if TTL passed
     now = datetime.now(UTC)
-    expires = challenge.expires_at
-    if expires.tzinfo is None:
-        expires = expires.replace(tzinfo=UTC)
+    expires = as_utc(challenge.expires_at)
     if challenge.state == "active" and expires < now:
         challenge.state = "expired"
         await db.commit()

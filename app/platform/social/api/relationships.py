@@ -37,6 +37,7 @@ from app.platform.social.repositories import (
     unblock_user,
 )
 from app.templates_setup import templates
+from app.timeutils import as_utc
 
 router = APIRouter(tags=["social"])
 
@@ -145,8 +146,7 @@ async def social_invite_send(
         # declined/expired/revoked — check cooldown
         cooldown = existing.cooldown_until
         if cooldown is not None:
-            if cooldown.tzinfo is None:
-                cooldown = cooldown.replace(tzinfo=UTC)
+            cooldown = as_utc(cooldown)
             if cooldown > datetime.now(UTC):
                 raise HTTPException(409, "Cooldown active — try later")
 
