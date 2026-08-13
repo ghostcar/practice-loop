@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 98 — тесты графиков | tests/test_charts_tz.py (5 тестов): device-tz бакетирование 4 chart-эндпоинтов через freeze-фикстуру + client_tz cookie; 618/618 ✅ |
 | 2026-08-13 | Session 97 — tz фонового job | training/scheduler: «сегодня» и время срабатывания через config tg_auto_analysis_tz (resolve_tz, UTC-фолбэк); TTL cleanup остаётся UTC-инстантом; +3 теста resolve_tz; 613/613 ✅ |
 | 2026-08-13 | Session 96 — финиш tz (графики) | 4 chart-эндпоинта: SQL func.date() → Python local_date() бакеты (device-день); убран case/group_by; txn_type None-гард; category-breakdown не тронут; 610/610 ✅ |
 | 2026-08-13 | Session 95 — границы суток | **ContextVar tz** + local_today/local_date; middleware client_tz cookie; JS Intl-детект; day-boundary → local_today (13 файлов); streaks через local_date; tzdata==2026.3; 610/610 ✅ |

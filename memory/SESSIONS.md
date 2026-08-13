@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 98 (тесты chart-эндпоинтов: device-tz бакетирование)
+
+- **`tests/test_charts_tz.py`** (новый, 5 тестов): проверка, что 4 daily-series эндпоинта (activity/points-trend/xp-history/completion-rate) бакетируют по device-календарному дню, а не по UTC-дню БД.
+- **Freeze-фикстура** `freeze_clock`: monkeypatch `datetime.now` в `app.timeutils` + `app.api.points.charts` на замороженный инстант `FROZEN_NOW=2026-08-13 16:30 UTC`.
+- **Сценарий**: запись в 16:00 UTC — это 13 авг по UTC, но 14 авг в Asia/Tokyo (UTC+9); с `client_tz=Asia/Tokyo` попадает в «сегодня» (Aug 14), без cookie — в UTC-день (Aug 13). Проверены labels + completed/stopped/planned, balance+breakdown, values, rates/overall_rate.
+- Cookie собирается строкой (`auth_headers["Cookie"] + "; client_tz=..."`), не через httpx `cookies=` (не теряет access_token).
+- **Тесты**: 618/618 ✅, ruff ✅, format ✅.
+
 ## 2026-08-13 — Сессия 97 (tz фонового job: training/scheduler)
 
 - **`app/config.py`**: `tg_auto_analysis_tz` (IANA, default "UTC") — tz для времени срабатывания и границы суток автоанализа.
