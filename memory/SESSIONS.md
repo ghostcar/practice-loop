@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 97 (tz фонового job: training/scheduler)
+
+- **`app/config.py`**: `tg_auto_analysis_tz` (IANA, default "UTC") — tz для времени срабатывания и границы суток автоанализа.
+- **`app/timeutils.py`**: `resolve_tz(name)` — ZoneInfo с UTC-фолбэком (missing/invalid/None); `client_tzinfo` не тронут.
+- **`app/training/scheduler.py`**: «сегодня» = `datetime.now(resolve_tz(settings.tg_auto_analysis_tz)).date()` (был `date.today()`); `_scheduler_loop` резолвит `analysis_tz` один раз, триггер и once-per-day dedup — в этом tz; лог показывает tz. `cleanup_expired_raw_responses` остаётся `datetime.now(UTC)` (TTL — инстант, не граница суток).
+- **ADR-067**: фоновые задачи берут day-boundary из конфиг-tz, не из request `client_tz`/`User.timezone`.
+- **Тесты**: +3 `resolve_tz` (valid/invalid/None). **613/613 ✅**, ruff ✅, format ✅.
+
 ## 2026-08-13 — Сессия 96 (финиш tz: device-local дневные бакеты графиков)
 
 - **`app/api/points/charts.py`**: 4 daily-series эндпоинта переведены с SQL `func.date(created_at)` (UTC-день БД) на Python-бакетирование через `local_date(created_at)` (device-календарный день) — бары больше не сдвигаются на день для пользователей вблизи UTC-полуночи относительно подписей `local_today()`. `category-breakdown` не затронут (группировка по category, не по дню).

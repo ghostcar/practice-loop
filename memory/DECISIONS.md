@@ -116,3 +116,9 @@
 **Rationale:** SQL `func.date()` группирует по UTC-дню, сдвигая бары на день относительно device-local подписей для пользователей вблизи UTC-полуночи. Python-бакетирование переносимо между Postgres и SQLite (SQLite не поддерживает `AT TIME ZONE`).
 **Tradeoff:** загрузка сырых строк (≤90–365 дней) вместо агрегации в БД — приемлемо для одного пользователя; при росте объёма вернуться к dialect-specific `AT TIME ZONE`.
 **Status:** ✅ Implemented в Session 96.
+
+### ADR-067 — Фоновые задачи: границы суток через конфиг-tz, не request-tz
+**Date:** 2026-08-13
+**Decision:** Фоновые задачи без request-контекста (training auto-analysis scheduler) берут day-boundary «сегодня» из конфиг-настройки `tg_auto_analysis_tz` (IANA, по умолчанию "UTC") через `resolve_tz()`, а не из ContextVar `client_tz` и не из per-user `User.timezone`. Время срабатывания (`tg_auto_analysis_time`) интерпретируется в том же tz. TTL-пурдж raw-ответов остаётся сравнением UTC-инстантов (не граница суток).
+**Rationale:** у фонового job нет request-контекста/cookie; единый глобальный tz дешевле per-user расписаний. Per-user `User.timezone` — возможное уточнение, если автоанализ станет per-user-расписанием.
+**Status:** ✅ Implemented в Session 97.
