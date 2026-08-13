@@ -36,3 +36,9 @@
 - **Когда**: при предметной обвязке Chastity Timer (Этап 3) или по отдельному решению владельца.
 - **Замечание**: LLM не должен быть источником истины для кода (PD-014) — OCR/LLM допустим только как подсказка/ускорение ввода, финальная верификация остаётся constant-time HMAC.
 
+## Q14 — LockTimer penalty не проброшен в HTTP (отложено, Session 108)
+
+- **Факт**: `apply_penalty` (PENALTY_ADD_TIME / BLOCK_NEXT_SLOT / MARK_TASK_FAILED / POINTS, идемпотентность по ключу, cap по max_end_at) реализован в домене и покрыт сервисными тестами, но **не вызывается ни одним HTTP-путём** (grep: только определение + LLM-tool `apply_penalty` — это трекер-домен). На проде `lock_penalty_events` = 0.
+- **Влияние**: UI «Skip this task? Penalty may apply» вводит в заблуждение — skip не накладывает penalty.
+- **Рекомендация**: привязать к `skip_task`/late-close через `rule.penalty_policy` (поле есть в lock_task_rules) + поле в форме правила; либо отдельный HTTP-эндпоинт POST /sessions/{id}/penalties. Требует продуктового решения: тип/размер penalty по умолчанию.
+- **Когда**: при полировке таймера (следующие сессии личного контура).

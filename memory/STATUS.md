@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 107 — prod front smoke 0 фейлов + фикс 500 /locktimer, 624/624 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 108 — prod timer smoke активной сессии + фикс open слота, 624/624 ✅).
 
-## Общий статус: 619/619 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
+## Общий статус: 624/624 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
 
 ## LockTimer Core — C0–C9 полностью ✅
 
@@ -50,6 +50,7 @@
 - [x] **S89**: фикс 17 LLM-тестов после S88-сплита — late-binding call_llm/build_context/get_allowed_ids через source-модули, ре-экспорт filter_automation_eligible, репойнт 21 patch-таргета в тестах; 598/598 ✅
 
 
+- [x] **S108**: prod smoke активной таймер-сессии — draft→rules→validate→start→slot open/close+tag→verify-tag→tasks→safety-stop (0 фейлов); фикс 409 open слота: `api_add_slot_rule` принимает `max_late_seconds` (default 3600) + инпут «Late window (sec)» в форме + i18n; долг Q14 — LockTimer penalty не проброшен в HTTP
 ## Platform Social — S0–S7 полностью ✅ (Sessions 73–76)
 
 - [x] **S0**: social_profiles (alias-based identity), social_consents, /social/profile, /social/privacy

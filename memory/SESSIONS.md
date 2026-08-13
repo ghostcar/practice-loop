@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 108 (prod timer smoke + фикс open слота)
+
+- **Smoke активной таймер-сессии на проде** (tracker.gorbunovr.ru): throwaway-юзер → draft → tz=UTC → slot-rule (every_n_days, future time_of_day, allow_late_open, max_late_seconds=3600) + 2 task-rule (daily) → validate (valid=True, ~89 slots/178 tasks) → start → probe open до окна (409 expected) → open → close с биркой SMOKE-001 → verify-tag match/mismatch (violation) → task reveal/complete/skip → safety-stop → негативные (extend-horizon 409, open после stop 409) → overview/calendar 200.
+- **Найден баг**: `POST /slot-occurrences/{id}/open` всегда 409 на проде — `api_add_slot_rule` игнорировал `max_late_seconds` (Form-поля не было) → `eligible_until == planned_open` (окно open = 0 сек) → ни один real-time запрос не может открыть слот (на SQLite-тестах не видно: сервисные тесты передают точное время). UI-чекбокс «Allow late open» был мёртвым.
+- **Фикс**: `api_add_slot_rule` принимает `max_late_seconds: int = Form(default=3600)` и пробрасывает в `add_slot_rule`; в форму session_detail добавлен инпут «Late window (sec)» (default 3600); i18n en/ru (`locktimer_max_late_seconds`). Редеплой + повторный smoke: **0 фейлов** — DB-проверка: slot closed c SMOKE-001, 1 completed + 1 skipped, 1 violation, session safety_stopped.
+- **Долг (Q14)**: LockTimer penalty не проброшен в HTTP — `apply_penalty` (ADD_TIME/BLOCK_NEXT_SLOT/MARK_TASK_FAILED/POINTS, idempotency, cap max_end_at) не вызывается нигде в app (LLM-tool apply_penalty — трекер-домен); UI «Skip this task? Penalty may apply» вводит в заблуждение.
+- Чистка: 4 smoke-юзера удалены (0 осталось, owner цел). 624/624 ✅, ruff ✅, 33/33 locktimer ✅.
+
 ## 2026-08-13 — Сессия 107 (prod front smoke + фикс 500 на /locktimer)
 
 - **Smoke-тест прода (tracker.gorbunovr.ru через nginx)**: регистрация+логин временного юзера, обход 22 страниц, charts/balance JSON, статика, POST /locktimer/new (черновик) — Chrome на VPS нет, поэтому curl+urllib с cookie-jar (Secure-cookie работает через HTTPS-домен).
