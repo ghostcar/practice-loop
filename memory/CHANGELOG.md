@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 106 — деплой | docker compose up -d --build: healthz 200, readiness ready, контейнеры healthy; в проде правки S103 (формат миграций + locktimer_ui, pre_deploy_check) |
 | 2026-08-13 | Session 105 — финальный прогон | Полный pytest: 619/619 ✅ после всех правок (tz/графики/доки/формат) |
 | 2026-08-13 | Session 104 — сверка §17 | Social-таблицы 15/15 совпадают с app/platform/social/models.py; поправлен заголовок (префикс social_ не у moderation_*) |
 | 2026-08-13 | Session 103 — pre_deploy_check green | Устранён lint-долг в 7 alembic-миграциях + locktimer_ui (I001/E501/format, косметика); pre_deploy_check.sh: путь social/api → social/api/ + case-insensitive strip/expose; все 8 шагов ✅, вердикт Ready to deploy |
