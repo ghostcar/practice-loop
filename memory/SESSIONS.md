@@ -1218,3 +1218,16 @@
 - TrackerAdapter: authorize_subject (ActivityLog + Entity), build_redacted_projection (safe snapshots), list_shareable_capabilities, validate_grant_constraints
 - Adapters registered at startup in main.py via composition flags
 - 538/538 ✅ · ruff ✅ · migration 032 ✅ · deployed
+
+## 2026-08-13 — Сессия 111: полный аудит проекта без изменений кода
+
+- Выполнен read-only review архитектуры, backend, security/privacy, LLM pipeline, media,
+  тестов/CI/Docker/Nginx и frontend/UX/a11y на HEAD `5ae8cc2`.
+- Создан `docs/audits/PROJECT_REVIEW_2026-08-13.md`: оценки качества, 2 P0, 7 P1, 4 P2,
+  сильные стороны и remediation roadmap Gate A–D.
+- P0: `/uploads` смонтирован публично в обход owner-authorized media API; пустой production
+  `CHALLENGE_HMAC_KEY` использует известный `default-challenge-key`.
+- Проверки: ruff/format/compileall/Compose config/Alembic single head/facts-check ✅;
+  memory lint 0 errors + 3 denylist warnings; собрано 661 test. Полный pytest summary в текущем
+  execution environment не получен, поэтому новое утверждение 661/661 не фиксировалось.
+- Исходный код, миграции и runtime-конфигурация не изменялись; новых ADR нет.

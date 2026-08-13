@@ -1,8 +1,20 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 110 — Memory v2 M0+M1: RFC принят (ADR-068), tools/memoryctl + tests/memory 37/37, docs/state, CI memory-lint; полный suite 661/661 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 111 — полный read-only аудит backend/security/LLM/infra/frontend; отчёт `docs/audits/PROJECT_REVIEW_2026-08-13.md`; код не менялся).
 
-## Общий статус: 624/624 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
+## Общий статус: 661 тест собран; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅
+
+## Аудит проекта — Session 111
+
+- [x] Полный documentation-only review на HEAD `5ae8cc2`: архитектура, backend, security/privacy,
+  LLM, тесты/CI/deploy, frontend/UX/a11y.
+- [x] Отчёт: `docs/audits/PROJECT_REVIEW_2026-08-13.md` (2 P0, 7 P1, 4 P2 + remediation gates).
+- [x] Главные блокеры публичного доступа: публичный static mount приватного `/uploads` в обход
+  owner-authorized media API; пустой `CHALLENGE_HMAC_KEY` → известный fallback HMAC key.
+- [x] Frontend: theme token selector mismatch, inline JS/handlers, runtime Tailwind, нет browser
+  E2E/axe gates, неоднородные tokens/i18n/components.
+- [x] В этой сессии полный pytest summary не получен; подтверждены collection 661 tests и точечный
+  memory test. Предыдущее evidence 661/661 относится к Session 110.
 
 ## LockTimer Core — C0–C9 полностью ✅
 
