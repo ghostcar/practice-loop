@@ -1,3 +1,13 @@
+## 2026-08-13 — Сессия 95 (границы суток в tz устройства)
+
+- **`app/timeutils.py`**: request-scoped `ContextVar _client_tz` + `set/reset/get_client_tz`, `client_tzinfo()` (ZoneInfo с UTC-фолбэком при отсутствии/ошибке), `local_today()` (device-local «сегодня»), `local_date(dt)` (stored UTC datetime → device-календарная дата).
+- **`app/main.py`**: middleware `client_tz_middleware` читает cookie `client_tz` → ContextVar (reset в finally).
+- **`app.js`**: `Intl.DateTimeFormat().resolvedOptions().timeZone` → cookie `client_tz` (1y, SameSite=Lax).
+- **Замена day-boundary** `date.today()`/`datetime.now(UTC).date()` → `local_today()`: dashboard, tasks, training (_get_today), calendar, diets (2), points/charts (4, вынесено из циклов), locktimer_ui (календарь), locktimer/repositories (weekly compliance), gamification xp+handler (streaks через `local_date(last_activity_date)`), llm/context_builder (2), llm/pipeline/diet (2), llm/pipeline/generate, importers/training.
+- **Оставлен UTC** (фоновый job, нет request-контекста): `training/scheduler.py`.
+- **`tzdata==2026.3`** в pyproject.toml + requirements.txt (ZoneInfo в slim-образах; проверено python:3.11-slim).
+- **Тесты**: +5 в test_timeutils.py (local_today fallback/with-tz, local_date naive/with-tz, invalid tz). **610/610 ✅**, ruff ✅, JS ✅.
+
 ## 2026-08-13 — Сессия 94 (финиш по датам: locktimer + achievements + JS)
 
 - **LockTimer**: `_serialize_session/_serialize_slot_occ/_serialize_task_occ` + tag_violations + templates — теперь передают datetime-объекты (были `.isoformat()` строки); `_serialize_session` нормализует `effective_end` через `as_utc()` для `effective_end_ts` (`.timestamp()`) и `remaining_seconds` (aware-vs-aware).
