@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 116 — решение по M3 пилотам: BGE-M3 + Qdrant local vectors (ADR-069); 698/698 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 117 — M4 preflight: sentinel/impact/launcher/SKILL/pre-commit; 709/709 ✅).
 
-## Общий статус: 698 тестов ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 68==68
+## Общий статус: 709 тестов ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 69==69
 
 ## Аудит проекта — Session 111
 
@@ -16,7 +16,7 @@
 - [x] В этой сессии полный pytest summary не получен; подтверждены collection 661 tests и точечный
   memory test. Предыдущее evidence 661/661 относится к Session 110.
 
-## Memory v2 — M0/M1/M2/M3 (Сессии 110–115)
+## Memory v2 — M0/M1/M2/M3 (Сессии 110–116)
 
 - [x] **M0**: RFC → docs/memory-rfc/ (5 + BENCHMARK_TASKS 12 + STAGE_PLAN); ADR-068 accepted; DOCUMENTATION_MAP row
 - [x] **M1**: tools/memoryctl (schemas/facts/inventory/lint/CLI); tests/memory/ 37; docs/state/FACTS.json + NOW.md
@@ -25,7 +25,15 @@
 - [x] **M3 benchmark** (Этап 2): harness по 12 задачам + baseline (recall@5 0.26, pack ≤9 KiB, 0 forbidden) → docs/state/BENCHMARK.json
 - [x] **Решение по пилотам (ADR-069)**: BGE-M3 multilingual + единственный пилот Qdrant local vectors (shadow); QMD/graph отложены; зависимости optional dev-group
 - [ ] **Реализация пилота**: `memoryctl index-code` (структурные code units) + `search-code` (hybrid dense+sparse) + A/B против baseline (gate: прирост recall@5/MRR, pack ≤12 KiB)
-- [ ] **M4 preflight** (Этап 3): .agents/skills/project-memory/SKILL.md + bin/practice-agent + sentinel CI (required после наблюдения)
+
+## M4 preflight — Этап 3 (Сессия 117)
+
+- [x] `memoryctl sentinel` (свежий preflight: status/head-ancestor/pack hash/TTL, fail-closed)
+- [x] `memoryctl impact` (advisory: changed paths vs impact frontier)
+- [x] `bin/practice-agent` launcher + `.agents/skills/project-memory/SKILL.md`
+- [x] `.githooks/pre-commit` (opt-in) — блок code-commit без sentinel; RUNBOOK §12
+- [ ] `.agents/practice-loop.ts` (Freebuff SDK), `.agents/mcp.json` (MCP не подключён) — отложены
+- [ ] required CI memory-lint после периода наблюдения; M5 freeze legacy-логов после 10 сессий
 
 ## LockTimer Core — C0–C9 полностью ✅
 

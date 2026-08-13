@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Pre-commit: enforce a fresh Memory v2 preflight for code changes (rail 6).
+#
+# Blocks a commit that changes code (app/, tests/, alembic/, tools/, *.py/html/js)
+# without a fresh `.agent-runtime/session.json` sentinel. Docs/memory-only commits
+# are always allowed. Deliberate bypass: `git commit --no-verify`.
+#
+# Install (opt-in, per clone):  git config core.hooksPath .githooks
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+code_files="$(printf '%s\n' "$staged" | grep -E '^(app|tests|alembic|tools)/|\.(py|html|js|ts|css|toml)$' || true)"
+
+if [ -n "$code_files" ]; then
+  echo "memory: code changes detected, verifying preflight…"
+  if ! python3 -m tools.memoryctl sentinel; then
+    echo ""
+    echo "Blocked: no fresh preflight sentinel."
+    echo "Run:  bin/practice-agent \"<task>\""
+    echo "  or: python -m tools.memoryctl bootstrap --task \"<task>\""
+    echo "Deliberate bypass: git commit --no-verify"
+    exit 1
+  fi
+  python3 -m tools.memoryctl impact || true
+fi
+
+exit 0

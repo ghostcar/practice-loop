@@ -41,6 +41,11 @@ def main(argv: list[str] | None = None) -> int:
     bench = sub.add_parser("benchmark", help="run the M3 base retrieval benchmark (writes docs/state/BENCHMARK.json)")
     bench.add_argument("--json", action="store_true", help="print the full report JSON to stdout")
 
+    sent = sub.add_parser("sentinel", help="verify a fresh preflight sentinel (.agent-runtime/session.json)")
+    sent.add_argument("--ttl-hours", type=float, default=None, help="optional max age of the preflight in hours")
+
+    sub.add_parser("impact", help="advisory check: working-tree changes vs last preflight impact frontier")
+
     args = parser.parse_args(argv)
     root = args.root or find_repo_root(Path.cwd())
 
@@ -113,6 +118,14 @@ def main(argv: list[str] | None = None) -> int:
             print(bench_mod.render_summary(report))
             print(f"wrote {out_path.relative_to(root)}")
         return 0
+    if args.command == "sentinel":
+        from . import sentinel as sentinel_mod
+
+        return sentinel_mod.main_sentinel(root, ttl_hours=args.ttl_hours)
+    if args.command == "impact":
+        from . import impact as impact_mod
+
+        return impact_mod.main_impact(root)
     parser.error(f"unknown command {args.command!r}")
     return 2
 

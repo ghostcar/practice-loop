@@ -195,3 +195,21 @@ docker stats --no-stream
 - No lost/duplicate state transitions
 - RPO: 24h (private pilot)
 - RTO: 4h (private pilot)
+
+## 12. Memory v2 preflight (agent workflow, dev-only)
+
+Для задач с изменением кода используется детерминированный preflight (`memoryctl`).
+
+- **Вход через launcher**: `bin/practice-agent "<задача>"` — запускает
+  `memoryctl bootstrap`, отказывается стартовать без `ready`-sentinel, затем `exec` агента.
+- **Preflight**: `python -m tools.memoryctl bootstrap --task "<задача>"` → классификация,
+  L0/L1-отбор, exact/lexical code search, impact frontier → `.agent-runtime/context-pack.json`
+  + `session.json` (sentinel, gitignored).
+- **Перед завершением**: `python -m tools.memoryctl impact` (advisory) — изменения кода вне
+  impact frontier = сигнал перезапустить bootstrap.
+- **Pre-commit (опционально, локально)**: `git config core.hooksPath .githooks` — блокирует
+  commit кода без свежего sentinel (`memoryctl sentinel`). Docs/memory-only commit всегда проходит.
+- **CI**: job `memory-lint` (informational) — `memoryctl lint` + `facts --check`.
+- **Инварианты**: `docs/state/*` и `docs/adr/*` генерируются (никогда руками); секреты/uploads/
+  raw LLM/эпизоды не индексируются и не коммитятся; продуктовые/safety-решения — только владелец.
+

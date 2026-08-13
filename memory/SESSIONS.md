@@ -1,3 +1,16 @@
+## 2026-08-13 — Сессия 117 (M4 preflight — Этап 3)
+
+- **Этап 3 (M4 preflight)** выполнен — сделать preflight обязательным для поддерживаемого workflow:
+  - `tools/memoryctl/sentinel.py` + CLI `memoryctl sentinel [--ttl-hours N]`: проверка свежего preflight — `kind=session_sentinel`, `status ∈ {ready,degraded}`, `start_head` — предок/равен HEAD (линейный commit агента не инвалидирует, расхождение — fail), `pack_hash` = sha256(байт pack) (integrity), опциональный TTL. Fail-closed.
+  - `tools/memoryctl/impact.py` + CLI `memoryctl impact` (advisory, rail 5): changed paths (git status porcelain) vs `impact_frontier` последнего pack; код вне frontier → `out_of_scope` (сигнал перезапустить bootstrap), новые файлы — `new_files`, docs/config — всегда in-scope.
+  - `bin/practice-agent` — launcher: `memoryctl bootstrap` → отказ без ready-sentinel → `exec` агента (PRACTICE_AGENT_BIN, default freebuff).
+  - `.agents/skills/project-memory/SKILL.md` — единый workflow (preflight → read-don't-trust → impact → pre-commit → close), kind=contract id=C-ENGINEERING-MEMORY.
+  - `.githooks/pre-commit` (opt-in: `git config core.hooksPath .githooks`) — блокирует code-commit без свежего sentinel; docs/memory-only commit проходит; bypass `--no-verify`.
+  - RUNBOOK.md §12 — как пользоваться; STAGE_PLAN.md — Этап 3 отмечен.
+- **Багфикс в bootstrap.py**: `write_sentinel` считал `pack_hash` без trailing newline, а `write_pack` писал с ним → integrity-проверка всегда падала. Вынесен единый `_serialize_pack()` (байты записи == байты хэша).
+- **Тесты**: `test_sentinel.py` (6) + `test_impact.py` (5) — git-repo fixture, ok/stale/bad-status/pack-mismatch/TTL + classification. Полный suite **709/709 ✅** (+11), ruff ✅, format ✅.
+- **Отложено (зафиксировано в STAGE_PLAN)**: `.agents/practice-loop.ts` (требует pinned Freebuff SDK), `.agents/mcp.json` (MCP не подключён, M6), required CI memory-lint (после периода наблюдения), M5 freeze legacy-логов (после 10 сессий).
+
 ## 2026-08-13 — Сессия 116 (решение по M3 пилотам — ADR-069)
 
 - **Решение владельца по M3 пилотам** (после baseline recall@5 0.26 из Сессии 115), зафиксировано **ADR-069**:

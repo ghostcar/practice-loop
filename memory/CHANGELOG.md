@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 117 — M4 preflight (Этап 3) | memoryctl sentinel (свежий preflight: status/head-ancestor/pack hash/TTL) + memoryctl impact (advisory coverage); bin/practice-agent launcher; .agents/skills/project-memory/SKILL.md; .githooks/pre-commit (opt-in); RUNBOOK §12. Фикс pack_hash trailing-newline. 709/709 ✅ (+11) |
 | 2026-08-13 | Session 116 — решение по M3 пилотам (ADR-069) | Владелец принял: embedding BGE-M3 (multilingual, fastembed/ONNX, local-only) + единственный пилот Qdrant local vectors (shadow); QMD и code graph отложены; зависимости только optional dev-group. STAGE_PLAN.md обновлён |
 | 2026-08-13 | Session 115 — Memory v2 M3 benchmark | `tools/memoryctl/benchmark.py`: harness по 12 задачам BENCHMARK_TASKS.md (recall@5/MRR/размер pack/extra reads/forbidden), отчёт docs/state/BENCHMARK.json (HEAD-bound, детерминированный), CLI `memoryctl benchmark`. Baseline: recall@5 0.26, pack ≤9 KiB, 0 forbidden; зазор на русских запросах→semantic. 698/698 ✅ (+4) |
 | 2026-08-13 | Session 114 — Memory v2 M3 base | `tools/memoryctl/bootstrap.py` (stdlib-only): детерминированная классификация + L0/L1 отбор + exact/lexical code search + impact frontier + risks/checks + context pack/sentinel в .agent-runtime; CLI `memoryctl bootstrap`. План на 3 этапа — docs/memory-rfc/STAGE_PLAN.md. 694/694 ✅ (+13 memory-тестов) |

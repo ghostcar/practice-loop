@@ -35,10 +35,18 @@ Gate: прирост recall@5/MRR против baseline 0.26/0.356 с pack ≤12
 
 ## Этап 3 — M4 preflight (обязательный)
 
-- `.agents/skills/project-memory/SKILL.md`;
-- `bin/practice-agent` launcher (bootstrap → freebuff → close);
-- sentinel-проверка (pre-commit) → required CI `memory-lint` после периода наблюдения;
-- M5 (freeze legacy `memory/*` сессионных логов) — отдельным шагом после 10 сессий.
+- [x] `memoryctl sentinel` — проверка свежего preflight (status/head-ancestor/pack hash/TTL);
+- [x] `memoryctl impact` — advisory: изменения кода vs impact frontier последнего pack;
+- [x] `bin/practice-agent` launcher (bootstrap → sentinel-check → exec агента);
+- [x] `.agents/skills/project-memory/SKILL.md` — единый workflow;
+- [x] `.githooks/pre-commit` (opt-in: `git config core.hooksPath .githooks`) — блокирует code-commit без sentinel;
+- [x] RUNBOOK.md §12 — как пользоваться;
+- [ ] `.agents/practice-loop.ts` (Freebuff custom agent) — отложено: требует pinned Freebuff SDK, формат не верифицирован;
+- [ ] `.agents/mcp.json` (per-agent MCP profiles) — отложено: MCP-серверы не подключены (M6);
+- [ ] required CI `memory-lint` после периода наблюдения (сейчас informational);
+- [ ] M5 (freeze legacy `memory/*` сессионных логов) — отдельным шагом после 10 сессий.
+
+Gate: `memoryctl sentinel` блокирует code-commit без preflight; launcher отказывается стартовать без `ready`-sentinel.
 
 ## Вне этого плана (не смешивать)
 

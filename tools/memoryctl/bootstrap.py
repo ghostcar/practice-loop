@@ -597,11 +597,16 @@ def bootstrap(
     return pack
 
 
+def _serialize_pack(pack: dict) -> str:
+    """Single serialization source for the context pack (bytes written == bytes hashed)."""
+    return json.dumps(pack, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+
+
 def write_pack(root: Path, pack: dict, runtime_dir: str = RUNTIME_DIR) -> Path:
     runtime = root / runtime_dir
     runtime.mkdir(parents=True, exist_ok=True)
     path = runtime / "context-pack.json"
-    path.write_text(json.dumps(pack, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(_serialize_pack(pack), encoding="utf-8")
     return path
 
 
@@ -614,8 +619,7 @@ def write_sentinel(root: Path, pack: dict, runtime_dir: str = RUNTIME_DIR) -> Pa
         "session_id": pack["session_id"],
         "task_hash": pack["task_hash"],
         "start_head": pack["start_head"],
-        "pack_hash": "sha256:"
-        + hashlib.sha256(json.dumps(pack, indent=2, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest(),
+        "pack_hash": "sha256:" + hashlib.sha256(_serialize_pack(pack).encode("utf-8")).hexdigest(),
         "created_at": pack["created_at"],
         "status": pack["status"],
     }

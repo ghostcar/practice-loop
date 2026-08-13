@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# practice-agent — documented entry point for Memory v2 preflight (MEMORY_ARCHITECTURE.md §8).
+#
+# Runs `memoryctl bootstrap` for the task, refuses to proceed unless the pack is
+# `ready`, then launches the configured agent. A session that starts here leaves
+# a fresh `.agent-runtime/session.json` sentinel that the pre-commit hook checks.
+#
+# Usage:
+#   bin/practice-agent "<task description>"
+#   PRACTICE_AGENT_BIN=freebuff bin/practice-agent "fix the tz buckets"
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+TASK="${1:-}"
+if [ -z "$TASK" ]; then
+  echo "usage: bin/practice-agent \"<task description>\"" >&2
+  exit 2
+fi
+
+AGENT_BIN="${PRACTICE_AGENT_BIN:-freebuff}"
+
+echo "== memoryctl bootstrap =="
+python3 -m tools.memoryctl bootstrap --task "$TASK"
+if ! python3 -m tools.memoryctl sentinel >/dev/null 2>&1; then
+  echo "preflight blocked: sentinel not ready (see output above). Refusing to start the agent." >&2
+  exit 1
+fi
+
+echo "== starting agent: $AGENT_BIN =="
+exec "$AGENT_BIN" "$@"
