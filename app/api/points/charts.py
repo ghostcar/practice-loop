@@ -1,24 +1,24 @@
 """Chart data endpoints — activity, points trend, XP, category breakdown, completion rate.
 
-Daily bucketing uses SQL ``func.date(created_at)``, which groups by the database's
-UTC date, while the x-axis labels use the device-local day (``local_today()``).
-For users within a few hours of UTC midnight this can mislabel a bar by one day;
-a full fix needs dialect-specific ``created_at AT TIME ZONE <client_tz>`` grouping
-(not available on SQLite)."""
+Daily series are bucketed in Python by ``local_date(created_at)`` so each bar
+falls on the device's local calendar day (matching the ``local_today()`` axis
+labels) rather than the database's UTC date. The per-endpoint ``cutoff`` remains
+a UTC instant; bucketing only affects which *day* a point is attributed to.
+"""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
 from app.database import get_db
 from app.models.entity import Entity
 from app.models.user import User
-from app.timeutils import local_today
+from app.timeutils import local_date, local_today
 
 router = APIRouter(tags=["v2"])
 
@@ -34,20 +34,22 @@ async def get_activity_chart(
 
     cutoff = datetime.now(UTC) - timedelta(days=days)
     result = await db.execute(
-        select(
-            func.date(ActivityLog.created_at).label("day"),
-            func.count(ActivityLog.id).label("total"),
-            func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
-            func.sum(case((ActivityLog.status == "stopped", 1), else_=0)).label("stopped"),
+        select(ActivityLog.created_at, ActivityLog.status).where(
+            ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff
         )
-        .where(ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff)
-        .group_by(func.date(ActivityLog.created_at))
-        .order_by(func.date(ActivityLog.created_at))
     )
-    rows = result.all()
 
-    # Build daily arrays
     today = local_today()
+    buckets = {today - timedelta(days=days - 1 - i): [0, 0, 0] for i in range(days)}  # [total, completed, stopped]
+    for created_at, status in result.all():
+        d = local_date(created_at)
+        if d in buckets:
+            buckets[d][0] += 1
+            if status == "completed":
+                buckets[d][1] += 1
+            elif status == "stopped":
+                buckets[d][2] += 1
+
     labels = []
     completed = []
     stopped = []
@@ -55,10 +57,7 @@ async def get_activity_chart(
     for i in range(days):
         d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a %d"))
-        match = next((r for r in rows if str(r.day) == d.isoformat()), None)
-        c = int(match.completed or 0) if match else 0
-        s_count = int(match.stopped or 0) if match else 0
-        t = int(match.total or 0) if match else 0
+        t, c, s_count = buckets[d]
         completed.append(c)
         stopped.append(s_count)
         planned.append(max(0, t - c - s_count))
@@ -81,40 +80,34 @@ async def get_points_trend(
     from app.models.points import PointsTransaction
 
     cutoff = datetime.now(UTC) - timedelta(days=days)
-
-    # Get daily net change
     result = await db.execute(
         select(
-            func.date(PointsTransaction.created_at).label("day"),
-            func.sum(PointsTransaction.amount).label("net"),
-        )
-        .where(PointsTransaction.user_id == user.id, PointsTransaction.created_at >= cutoff)
-        .group_by(func.date(PointsTransaction.created_at))
-        .order_by(func.date(PointsTransaction.created_at))
+            PointsTransaction.created_at,
+            PointsTransaction.amount,
+            PointsTransaction.transaction_type,
+        ).where(PointsTransaction.user_id == user.id, PointsTransaction.created_at >= cutoff)
     )
-    rows = {str(r.day): int(r.net or 0) for r in result.all()}
+
+    today = local_today()
+    buckets = {today - timedelta(days=days - 1 - i): 0 for i in range(days)}
+    type_sums: dict[str, int] = {}
+    for created_at, amount, txn_type in result.all():
+        amt = int(amount or 0)
+        d = local_date(created_at)
+        if d in buckets:
+            buckets[d] += amt
+        type_sums[txn_type or "other"] = type_sums.get(txn_type or "other", 0) + amt
+    breakdown = {k: abs(v) for k, v in type_sums.items()}
 
     # Build cumulative balance
-    today = local_today()
     labels = []
     balance = []
     cumulative = 0
     for i in range(days):
         d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%d %b"))
-        cumulative += rows.get(d.isoformat(), 0)
+        cumulative += buckets[d]
         balance.append(cumulative)
-
-    # Transaction type breakdown
-    type_result = await db.execute(
-        select(
-            PointsTransaction.transaction_type,
-            func.sum(PointsTransaction.amount).label("total"),
-        )
-        .where(PointsTransaction.user_id == user.id, PointsTransaction.created_at >= cutoff)
-        .group_by(PointsTransaction.transaction_type)
-    )
-    breakdown = {r.transaction_type: abs(int(r.total or 0)) for r in type_result.all()}
 
     return {
         "labels": labels,
@@ -134,27 +127,26 @@ async def get_xp_history(
 
     cutoff = datetime.now(UTC) - timedelta(days=days)
     result = await db.execute(
-        select(
-            func.date(ActivityLog.created_at).label("day"),
-            func.sum(ActivityLog.points_awarded).label("points"),
-        )
-        .where(
+        select(ActivityLog.created_at, ActivityLog.points_awarded).where(
             ActivityLog.user_id == user.id,
             ActivityLog.created_at >= cutoff,
             ActivityLog.status == "completed",
         )
-        .group_by(func.date(ActivityLog.created_at))
-        .order_by(func.date(ActivityLog.created_at))
     )
-    rows = {str(r.day): int(r.points or 0) for r in result.all()}
 
     today = local_today()
+    buckets = {today - timedelta(days=days - 1 - i): 0 for i in range(days)}
+    for created_at, points in result.all():
+        d = local_date(created_at)
+        if d in buckets:
+            buckets[d] += int(points or 0)
+
     labels = []
     values = []
     for i in range(days):
         d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a"))
-        values.append(rows.get(d.isoformat(), 0))
+        values.append(buckets[d])
 
     return {"labels": labels, "values": values}
 
@@ -208,18 +200,20 @@ async def get_completion_rate(
 
     cutoff = datetime.now(UTC) - timedelta(days=days)
     result = await db.execute(
-        select(
-            func.date(ActivityLog.created_at).label("day"),
-            func.count(ActivityLog.id).label("total"),
-            func.sum(case((ActivityLog.status == "completed", 1), else_=0)).label("completed"),
+        select(ActivityLog.created_at, ActivityLog.status).where(
+            ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff
         )
-        .where(ActivityLog.user_id == user.id, ActivityLog.created_at >= cutoff)
-        .group_by(func.date(ActivityLog.created_at))
-        .order_by(func.date(ActivityLog.created_at))
     )
-    rows = {str(r.day): (int(r.completed or 0), int(r.total or 0)) for r in result.all()}
 
     today = local_today()
+    buckets = {today - timedelta(days=days - 1 - i): [0, 0] for i in range(days)}  # [completed, total]
+    for created_at, status in result.all():
+        d = local_date(created_at)
+        if d in buckets:
+            buckets[d][1] += 1
+            if status == "completed":
+                buckets[d][0] += 1
+
     labels = []
     rates = []
     overall_completed = 0
@@ -227,7 +221,7 @@ async def get_completion_rate(
     for i in range(days):
         d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a"))
-        c, t = rows.get(d.isoformat(), (0, 0))
+        c, t = buckets[d]
         rate = round(c / max(t, 1) * 100)
         rates.append(rate)
         overall_completed += c
