@@ -1,3 +1,8 @@
+## 2026-08-13 — Сессия 100 (полный список таблиц в FUNCTIONAL.md §15)
+
+- **FUNCTIONAL.md §15** переписан: полный перечень 54 таблиц `app/models/*` (проверено скриптом: 54/54, без пропусков и лишних). Исправлен typo `user_entity_opt_in`→`user_entity_opt_ins`, раскрыт `diet*` (5 таблиц), добавлены справочные/link-таблицы update2.md (8) и lock_* (14).
+- Тесты не трогались.
+
 ## 2026-08-13 — Сессия 99 (сверка FUNCTIONAL.md / PRODUCT.md с текущим состоянием)
 
 - **FUNCTIONAL.md**: §1 — добавлены Lock Timer + Social; §2 — i18n 403→687 ключей, строки «Время» и «API» (всё под `/api/v2`); §4 — `category_id` FK → `activity_categories` (16 категорий) + `penalty_enabled`; §6 — статус-машина 11 состояний (ADR-040); §15 — добавлены `activity_categories`, `activity_task_history`; §16 — честная терминология «Lock Timer (chastity, ADR-062)»; **новый §19 «Дата и время»** + §20 «Реализованные решения и направление развития» (ADR-035…042 ✅, направление: ADR-063/064/065 + Q13 OCR).

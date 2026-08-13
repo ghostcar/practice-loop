@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 100 — полный список таблиц | FUNCTIONAL.md §15 переписан: 54 таблицы app/models/* (сверено скриптом), typo opt_in→opt_ins, diet*→5 таблиц, +8 справочных +14 lock_* |
 | 2026-08-13 | Session 99 — сверил доки | FUNCTIONAL.md + PRODUCT.md приведены к текущему состоянию: tz устройства (новый §19), статус-машина 11, activity_categories, i18n 687, Lock Timer (ADR-062), направление ADR-063/064/065 |
 | 2026-08-13 | Session 98 — тесты графиков | tests/test_charts_tz.py (5 тестов): device-tz бакетирование 4 chart-эндпоинтов через freeze-фикстуру + client_tz cookie; 618/618 ✅ |
 | 2026-08-13 | Session 97 — tz фонового job | training/scheduler: «сегодня» и время срабатывания через config tg_auto_analysis_tz (resolve_tz, UTC-фолбэк); TTL cleanup остаётся UTC-инстантом; +3 теста resolve_tz; 613/613 ✅ |

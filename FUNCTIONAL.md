@@ -257,12 +257,29 @@ Lock Timer (chastity) и социальная платформа (обезлич
 
 ## 15. Модель данных (таблицы)
 
-users, entities, user_entity_opt_in, activity_categories, activity_sessions, activity_logs,
-activity_task_history, training_days, training_log_entries, diet*, points_transactions,
-points_profiles, penalty_redemptions, achievements, user_achievements, notifications,
-llm_provider_configs, calendar_templates, availability_windows, calendar_overrides,
-schedule_rules, body_measurements, inventory_items, attachments, user_progress
-(справочные таблицы update2.md: body_parts, task_locations, inventory_categories, …).
+Полный перечень таблиц `app/models/*` (54):
+
+- **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
+  `activity_categories`, `llm_provider_configs`.
+- **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
+- **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
+  `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
+- **Геймификация и баллы**: `points_transactions`, `points_profiles`, `penalty_redemptions`,
+  `achievements`, `user_achievements`.
+- **Календарь и расписание**: `calendar_templates`, `availability_windows`, `calendar_overrides`,
+  `schedule_rules`.
+- **Замеры, инвентарь, медиа**: `body_measurements`, `inventory_items`, `inventory_categories`,
+  `attachments`, `media_assets`, `verification_challenges`.
+- **Справочники (update2.md)**: `body_parts`, `task_body_targets`, `task_locations`,
+  `task_location_usages`, `activity_location_requirements`, `task_inventory_usages`,
+  `activity_inventory_requirements`, `activity_body_part_requirements`.
+- **Уведомления**: `notifications`.
+- **Lock Timer** (bounded context, см. §16): `lock_sessions`, `lock_timer_templates`,
+  `lock_session_snapshots`, `lock_inner_periods`, `lock_slot_rules`, `lock_slot_occurrences`,
+  `lock_task_rules`, `lock_task_occurrences`, `lock_penalty_events`, `lock_tag_violations`,
+  `lock_llm_proposals`, `lock_audit_events`, `lock_job_receipts`, `lock_outbox_events`.
+
+Таблицы Social (`app/platform/social/models.py`) перечислены в §17.
 
 ---
 
