@@ -577,6 +577,7 @@ RU = {
     "dashboard_timer_tz": "TZ",
     "dashboard_timer_slots": "Окна",
     "dashboard_timer_tasks": "Задачи",
+    "dashboard_timer_started": "Закрыт",
     "dashboard_timer_ends": "Разблокировка",
     "dashboard_timer_view": "Смотреть",
     "dashboard_timer_start": "▶ Закрыть замок",

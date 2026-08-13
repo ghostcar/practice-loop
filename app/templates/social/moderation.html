@@ -38,7 +38,7 @@
           </div>
           <div class="text-gray-400 text-xs">
             {{ t.social_mod_reporter }}: {{ entry.reporter_alias }}
-            · {{ report.created_at.strftime('%Y-%m-%d %H:%M') }}
+            · {{ localtime(report.created_at, '%Y-%m-%d %H:%M') }}
           </div>
           {% if report.details %}
           <p class="text-gray-600 dark:text-gray-300 max-w-lg">{{ report.details }}</p>
@@ -84,7 +84,7 @@
         <div class="text-xs text-gray-500">
           <span class="font-medium">{{ action.action_type }}</span>
           — {{ action.reason }}
-          · {{ action.created_at.strftime('%H:%M') }}
+          · {{ localtime(action.created_at, '%H:%M') }}
         </div>
         {% endfor %}
       </div>

@@ -128,7 +128,7 @@
   }
 
   const checkDt = document.getElementById('check-dt');
-  if (checkDt) checkDt.value = new Date().toISOString().slice(0, 16);
+  if (checkDt) checkDt.value = window.localNowLocalInput();
   loadData();
 
   // Exposed for inline onclick handlers in the template.

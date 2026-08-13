@@ -400,7 +400,7 @@
   // ── Consumption journal ──
 
   async function loadConsumptions() {
-    const res = await fetch('/diets/api/consumptions?consumed_date=' + new Date().toISOString().slice(0, 10));
+    const res = await fetch('/diets/api/consumptions?consumed_date=' + window.localTodayISO());
     const items = await res.json();
     const wrap = document.getElementById('consumptions');
     wrap.innerHTML = '';
@@ -544,7 +544,7 @@
         quantity: document.getElementById('consume-qty').value === '' ? null : parseFloat(document.getElementById('consume-qty').value),
         unit: document.getElementById('consume-unit').value.trim() || null,
         meal_time: document.getElementById('consume-meal').value.trim() || null,
-        consumed_date: new Date().toISOString().slice(0, 10),
+        consumed_date: window.localTodayISO(),
       });
       ['consume-name', 'consume-qty', 'consume-unit', 'consume-meal'].forEach((id) => (document.getElementById(id).value = ''));
       await loadConsumptions();

@@ -575,6 +575,7 @@ EN = {
     "dashboard_timer_tz": "TZ",
     "dashboard_timer_slots": "Windows",
     "dashboard_timer_tasks": "Tasks",
+    "dashboard_timer_started": "Locked At",
     "dashboard_timer_ends": "Unlock At",
     "dashboard_timer_view": "View",
     "dashboard_timer_start": "▶ Start Lock",

@@ -287,7 +287,7 @@
                             {{ t['status_' ~ status] if t.get('status_' ~ status) else status }}
                         </span>
                         <span class="text-xs text-slate-400 dark:text-slate-500">
-                            {{ log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else '' }}
+                            {{ localtime(log.created_at, '%Y-%m-%d %H:%M') }}
                         </span>
                     </div>
                     <h3 class="font-semibold text-slate-800 dark:text-slate-100">

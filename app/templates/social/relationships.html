@@ -18,7 +18,7 @@
         <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
           {{ item.invite.display_role }}
         </span>
-        <span class="text-xs text-gray-400">{{ item.invite.created_at.strftime('%Y-%m-%d') if item.invite.created_at else '' }}</span>
+        <span class="text-xs text-gray-400">{{ localtime(item.invite.created_at, '%Y-%m-%d') }}</span>
       </div>
       <div class="flex gap-2">
         <form action="/social/invite/{{ item.invite.id }}/accept" method="post" class="inline">
@@ -151,7 +151,7 @@
           {{ notif.notification_type }}
           {% if not notif.is_read %}<span class="ml-1 w-2 h-2 inline-block rounded-full bg-indigo-500"></span>{% endif %}
         </span>
-        <span class="text-xs text-gray-400">{{ notif.created_at.strftime('%m-%d %H:%M') if notif.created_at else '' }}</span>
+        <span class="text-xs text-gray-400">{{ localtime(notif.created_at, '%m-%d %H:%M') }}</span>
       </div>
     {% endfor %}
     </div>

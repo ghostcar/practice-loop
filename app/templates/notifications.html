@@ -20,7 +20,7 @@
                 {% if n.body %}
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ n.body }}</p>
                 {% endif %}
-                <p class="text-xs text-slate-400 mt-1">{{ n.created_at.strftime('%Y-%m-%d %H:%M') if n.created_at else '' }}</p>
+                <p class="text-xs text-slate-400 mt-1">{{ localtime(n.created_at, '%Y-%m-%d %H:%M') }}</p>
             </div>
             {% if not n.is_read %}
             <form action="/notifications/{{ n.id }}/read" method="post">

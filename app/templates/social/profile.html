@@ -41,7 +41,7 @@
       </div>
       <div>
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">@{{ profile.alias }}</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_profile_created }} {{ profile.created_at.strftime('%Y-%m-%d') if profile.created_at else '' }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_profile_created }} {{ localtime(profile.created_at, '%Y-%m-%d') }}</p>
       </div>
     </div>
 

@@ -34,11 +34,55 @@
     return origFetch.call(this, input, init);
   };
 
+  // Device-timezone-aware <time> rendering: the backend emits
+  // <time datetime="...(+00:00)" data-tz-fmt="%Y-%m-%d %H:%M">…</time>
+  // and this rewrites the visible text to the device's local timezone.
+  // Rewrites a backend UTC instant into device-local text. Supported fmt
+  // tokens: %Y %m %d %H %M %S. Weekday/month names (%A/%B/%a/%b) are NOT
+  // handled here — date-only values are rendered server-side by _localtime.
+  function formatLocalTime(iso, fmt) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return fmt.replace(/%([YmdHMS])/g, function (_m, k) {
+      switch (k) {
+        case 'Y': return String(d.getFullYear());
+        case 'm': return pad(d.getMonth() + 1);
+        case 'd': return pad(d.getDate());
+        case 'H': return pad(d.getHours());
+        case 'M': return pad(d.getMinutes());
+        case 'S': return pad(d.getSeconds());
+        default: return _m;
+      }
+    });
+  }
+
+  function applyLocalTimezones(root) {
+    var els = (root || document).querySelectorAll('time[data-tz-fmt]');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      var iso = el.getAttribute('datetime');
+      var fmt = el.getAttribute('data-tz-fmt');
+      if (!iso || !fmt) continue;
+      var text = formatLocalTime(iso, fmt);
+      if (text) {
+        el.textContent = text;
+        el.title = 'UTC ' + iso.replace('T', ' ').slice(0, 16);
+      }
+    }
+  }
+
   // HTMX: auto-include CSRF token in all state-changing requests
   document.addEventListener('DOMContentLoaded', function () {
+    applyLocalTimezones(document);
     document.body.addEventListener('htmx:configRequest', function (evt) {
       var token = document.querySelector('meta[name="csrf-token"]');
       if (token) evt.detail.headers['X-CSRF-Token'] = token.content;
+    });
+
+    // Re-render device-local times after every HTMX swap
+    document.body.addEventListener('htmx:afterSwap', function () {
+      applyLocalTimezones(document);
     });
 
     // HTMX live region: announce after-swap events
@@ -49,6 +93,20 @@
       }
     });
   });
+
+  // Device-local "today" helpers. `toISOString()` yields UTC, which drifts a
+  // day for devices west of UTC near midnight — so default date/datetime
+  // inputs must be derived from local getters, not ISO/UTC.
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  window.localTodayISO = function localTodayISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  };
+  window.localNowLocalInput = function localNowLocalInput() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+      'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  };
 
   // XSS-safe HTML escaping helper (mirrors the old inline helper).
   window.escapeHtml = function escapeHtml(str) {

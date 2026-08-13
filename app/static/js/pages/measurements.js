@@ -104,7 +104,7 @@
     });
     loadMeasurements();
   });
-  document.getElementById('meas-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('meas-date').value = window.localTodayISO();
   loadMeasurements();
   loadChart('weight');
 

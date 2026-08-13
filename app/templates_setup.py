@@ -1,7 +1,12 @@
 """Shared Jinja2 templates instance — import from here, not from app.main."""
 
+from datetime import datetime
+
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
+
+from app.timeutils import as_utc
 
 
 def _csrf_context(request: Request) -> dict:
@@ -30,3 +35,24 @@ templates = Jinja2Templates(
     directory="app/templates",
     context_processors=[_csrf_context, _composition_context],
 )
+
+
+def _localtime(value, fmt: str = "%Y-%m-%d %H:%M") -> Markup:
+    """Render a datetime as a device-timezone-aware ``<time>`` element.
+
+    The backend stores everything in UTC. Templates emit
+    ``<time datetime="...(+00:00)" data-tz-fmt="...">fallback</time>`` and a
+    small helper in app.js rewrites the text to the device's local timezone.
+    Falls back to plain server rendering for ``date`` objects (no timezone)
+    and for clients without JavaScript.
+    """
+    if value is None:
+        return Markup("")
+    if isinstance(value, datetime):
+        iso = as_utc(value).isoformat()
+        fallback = value.strftime(fmt)
+        return Markup(f'<time datetime="{escape(iso)}" data-tz-fmt="{escape(fmt)}">{escape(fallback)}</time>')
+    return Markup(escape(value.strftime(fmt)))
+
+
+templates.env.globals["localtime"] = _localtime

@@ -61,7 +61,7 @@
             {{ item.pub.visibility }}
           </span>
         </div>
-        <span class="text-xs text-gray-400">{{ item.pub.created_at.strftime('%m-%d %H:%M') if item.pub.created_at else '' }}</span>
+        <span class="text-xs text-gray-400">{{ localtime(item.pub.created_at, '%m-%d %H:%M') }}</span>
       </div>
       <div class="text-sm text-gray-600 dark:text-gray-400">
         {% for key, val in item.pub.snapshot.items() %}
@@ -91,7 +91,7 @@
           {% if item.pub.is_active %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300{% else %}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300{% endif %}">
           {{ 'active' if item.pub.is_active else 'withdrawn' }}
         </span>
-        <span class="text-xs text-gray-400">{{ item.pub.created_at.strftime('%m-%d %H:%M') if item.pub.created_at else '' }}</span>
+        <span class="text-xs text-gray-400">{{ localtime(item.pub.created_at, '%m-%d %H:%M') }}</span>
       </div>
       {% if item.pub.is_active %}
       <form action="/social/publish/{{ item.pub.id }}/withdraw" method="post" class="inline">

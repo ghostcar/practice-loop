@@ -34,13 +34,13 @@
                             {% else %}bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400{% endif %}">
                             {{ s.status }}
                         </span>
-                        <span class="text-xs text-slate-400">{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</span>
+                        <span class="text-xs text-slate-400">{{ localtime(s.created_at, '%Y-%m-%d %H:%M') }}</span>
                     </div>
                     {% if s.started_at %}
-                    <p class="text-xs text-slate-400">Started: {{ s.started_at.strftime('%H:%M') }}</p>
+                    <p class="text-xs text-slate-400">Started: {{ localtime(s.started_at, '%H:%M') }}</p>
                     {% endif %}
                     {% if s.ended_at %}
-                    <p class="text-xs text-slate-400">Ended: {{ s.ended_at.strftime('%H:%M') }}
+                    <p class="text-xs text-slate-400">Ended: {{ localtime(s.ended_at, '%H:%M') }}
                         <span class="text-emerald-500 font-mono ml-1 tabular-nums">
                             ({{ ((s.ended_at - s.started_at).total_seconds() / 60)|int if s.started_at else 0 }} min)
                         </span>

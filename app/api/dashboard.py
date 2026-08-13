@@ -157,8 +157,8 @@ async def dashboard(
                     "state": lt_active.state,
                     "duration_type": lt_active.duration_type,
                     "timezone": lt_active.timezone,
-                    "started_at": lt_active.started_at.isoformat() if lt_active.started_at else None,
-                    "effective_end_at": lt_active.effective_end_at.isoformat() if lt_active.effective_end_at else None,
+                    "started_at": lt_active.started_at,
+                    "effective_end_at": lt_active.effective_end_at,
                 }
                 locktimer_slots_count = len(lt_slots)
                 locktimer_tasks_count = len(lt_tasks)
