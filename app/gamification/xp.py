@@ -1,6 +1,8 @@
 """XP calculation engine: formulas, level thresholds, streak/kombo multipliers."""
 
-from datetime import UTC, datetime
+from datetime import datetime
+
+from app.timeutils import local_date, local_today
 
 # Level thresholds (cumulative XP)
 LEVEL_THRESHOLDS = [
@@ -103,6 +105,6 @@ def should_reset_streak(last_activity_date: datetime | None) -> bool:
     """Check if the streak should be reset (no activity yesterday)."""
     if last_activity_date is None:
         return False  # First activity — no reset
-    today = datetime.now(UTC).date()
-    last_date = last_activity_date.date() if hasattr(last_activity_date, "date") else last_activity_date
+    today = local_today()
+    last_date = local_date(last_activity_date)
     return (today - last_date).days > 1

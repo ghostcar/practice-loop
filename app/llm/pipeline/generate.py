@@ -6,7 +6,7 @@ import contextlib
 import json
 import logging
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +28,7 @@ from app.models.body_part import TaskBodyTarget
 from app.models.llm_config import LLMProviderConfig
 from app.models.task_inventory import TaskInventoryUsage
 from app.models.task_location import TaskLocationUsage
+from app.timeutils import local_today
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +265,7 @@ async def generate_weekly_tasks(
 ) -> list[ActivityLog]:
     """Generate tasks for multiple days ahead."""
     days = max(1, min(days, 14))
-    start_date = date.today() + timedelta(days=1)
+    start_date = local_today() + timedelta(days=1)
     target_dates = [start_date + timedelta(days=i) for i in range(days)]
     date_labels = [d.isoformat() for d in target_dates]
 

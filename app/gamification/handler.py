@@ -23,6 +23,7 @@ from app.models.activity_log import ActivityLog
 from app.models.notification import Notification
 from app.models.points import PenaltyRedemption
 from app.models.progress import UserProgress
+from app.timeutils import local_date, local_today
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +59,12 @@ async def on_task_completed(
     is_training = log.training_day_id is not None
 
     # Streak handling — only increment once per calendar day
-    today = datetime.now(UTC).date()
+    today = local_today()
     if not is_training:
         if should_reset_streak(progress.last_activity_date):
             progress.current_streak = 0
 
-        last_date = progress.last_activity_date.date() if progress.last_activity_date else None
+        last_date = local_date(progress.last_activity_date)
         if last_date != today:
             progress.current_streak += 1
             if progress.current_streak > progress.longest_streak:

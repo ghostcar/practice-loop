@@ -1,6 +1,6 @@
 """Tests for app.timeutils — naive→aware UTC normalization + localtime helper."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from app.timeutils import as_utc
 
@@ -43,3 +43,50 @@ def test_localtime_none_is_empty():
     from app.templates_setup import _localtime
 
     assert str(_localtime(None)) == ""
+
+
+def test_local_today_utc_fallback():
+    from app.timeutils import local_today
+
+    assert local_today() == datetime.now(UTC).date()
+
+
+def test_local_today_with_client_tz():
+    from app.timeutils import client_tzinfo, local_today, reset_client_tz, set_client_tz
+
+    token = set_client_tz("America/New_York")
+    try:
+        assert client_tzinfo() is not None
+        assert isinstance(local_today(), date)
+    finally:
+        reset_client_tz(token)
+    assert client_tzinfo() is None  # restored
+
+
+def test_local_date_naive_assumed_utc():
+    from app.timeutils import local_date
+
+    naive = datetime(2026, 8, 13, 23, 30, 0)
+    assert local_date(naive) == date(2026, 8, 13)  # no tz → UTC date
+
+
+def test_local_date_converts_to_client_tz():
+    from app.timeutils import local_date, reset_client_tz, set_client_tz
+
+    token = set_client_tz("Asia/Tokyo")  # UTC+9
+    try:
+        # 2026-08-13 23:30 UTC == 2026-08-14 08:30 Tokyo
+        assert local_date(datetime(2026, 8, 13, 23, 30, 0)) == date(2026, 8, 14)
+    finally:
+        reset_client_tz(token)
+
+
+def test_invalid_tz_falls_back_to_utc():
+    from app.timeutils import client_tzinfo, local_today, reset_client_tz, set_client_tz
+
+    token = set_client_tz("Not/AZone")
+    try:
+        assert client_tzinfo() is None
+        assert local_today() == datetime.now(UTC).date()
+    finally:
+        reset_client_tz(token)

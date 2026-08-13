@@ -117,6 +117,23 @@ async def csrf_middleware(request: Request, call_next):
     return await call_next(request)
 
 
+@app.middleware("http")
+async def client_tz_middleware(request: Request, call_next):
+    """Propagate the client timezone into a request-scoped ContextVar.
+
+    The IANA name comes from the ``client_tz`` cookie (written by app.js via
+    ``Intl``). Day-boundary helpers (``timeutils.local_today``) read this so
+    "today" reflects the device's local calendar day, not UTC.
+    """
+    from app.timeutils import reset_client_tz, set_client_tz
+
+    token = set_client_tz(request.cookies.get("client_tz"))
+    try:
+        return await call_next(request)
+    finally:
+        reset_client_tz(token)
+
+
 # ---------------------------------------------------------------------------
 # Static files & health
 # ---------------------------------------------------------------------------

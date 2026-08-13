@@ -169,6 +169,8 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
+tzdata==2026.3
+    # via practice-loop (pyproject.toml)
 urllib3==2.7.0
     # via requests
 uvicorn[standard]==0.30.6

@@ -29,6 +29,7 @@ from app.llm.repair import JsonRepairError
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.user import User
 from app.templates_setup import templates
+from app.timeutils import local_today
 
 router = APIRouter(prefix="/diets", tags=["diets"])
 
@@ -197,7 +198,7 @@ async def diets_page(
             "diets": diets,
             "active_config": active_config,
             "directions": sorted(DIET_DIRECTIONS),
-            "today": date.today().isoformat(),
+            "today": local_today().isoformat(),
             "active_nav": "diets",
         },
     )
@@ -383,7 +384,7 @@ async def create_consumption(
             raise HTTPException(404, "Diet not found")
     consumption = DietConsumption(
         user_id=user.id,
-        consumed_date=data.consumed_date or date.today(),
+        consumed_date=data.consumed_date or local_today(),
         **data.model_dump(exclude={"consumed_date"}),
     )
     db.add(consumption)

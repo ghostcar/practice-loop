@@ -11,6 +11,23 @@
 (function () {
   'use strict';
 
+  // Detect the device's IANA timezone and persist it in a `client_tz` cookie
+  // so the server can compute day-boundaries ("today") in the user's local
+  // calendar day. Graceful: Intl unavailable → no cookie → UTC fallback.
+  try {
+    var deviceTz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    if (deviceTz) {
+      window.clientTz = deviceTz;
+      var parts = ('; ' + document.cookie).split('; client_tz=');
+      var prev = parts.length === 2 ? parts.pop().split(';')[0] : '';
+      if (prev !== deviceTz) {
+        var expiry = new Date(Date.now() + 365 * 24 * 3600 * 1000).toUTCString();
+        document.cookie = 'client_tz=' + encodeURIComponent(deviceTz) +
+          '; path=/; expires=' + expiry + '; SameSite=Lax';
+      }
+    }
+  } catch (e) { /* ignore */ }
+
   // CSRF: attach the X-CSRF-Token header to every same-origin
   // state-changing fetch() call (JSON API pages use plain fetch, not HTMX).
   var origFetch = window.fetch;

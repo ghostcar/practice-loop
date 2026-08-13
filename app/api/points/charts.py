@@ -1,8 +1,14 @@
-"""Chart data endpoints — activity, points trend, XP, category breakdown, completion rate."""
+"""Chart data endpoints — activity, points trend, XP, category breakdown, completion rate.
+
+Daily bucketing uses SQL ``func.date(created_at)``, which groups by the database's
+UTC date, while the x-axis labels use the device-local day (``local_today()``).
+For users within a few hours of UTC midnight this can mislabel a bar by one day;
+a full fix needs dialect-specific ``created_at AT TIME ZONE <client_tz>`` grouping
+(not available on SQLite)."""
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import case, func, select
@@ -12,6 +18,7 @@ from app.api.auth import get_current_user
 from app.database import get_db
 from app.models.entity import Entity
 from app.models.user import User
+from app.timeutils import local_today
 
 router = APIRouter(tags=["v2"])
 
@@ -40,12 +47,13 @@ async def get_activity_chart(
     rows = result.all()
 
     # Build daily arrays
+    today = local_today()
     labels = []
     completed = []
     stopped = []
     planned = []
     for i in range(days):
-        d = date.today() - timedelta(days=days - 1 - i)
+        d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a %d"))
         match = next((r for r in rows if str(r.day) == d.isoformat()), None)
         c = int(match.completed or 0) if match else 0
@@ -87,11 +95,12 @@ async def get_points_trend(
     rows = {str(r.day): int(r.net or 0) for r in result.all()}
 
     # Build cumulative balance
+    today = local_today()
     labels = []
     balance = []
     cumulative = 0
     for i in range(days):
-        d = date.today() - timedelta(days=days - 1 - i)
+        d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%d %b"))
         cumulative += rows.get(d.isoformat(), 0)
         balance.append(cumulative)
@@ -139,10 +148,11 @@ async def get_xp_history(
     )
     rows = {str(r.day): int(r.points or 0) for r in result.all()}
 
+    today = local_today()
     labels = []
     values = []
     for i in range(days):
-        d = date.today() - timedelta(days=days - 1 - i)
+        d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a"))
         values.append(rows.get(d.isoformat(), 0))
 
@@ -209,12 +219,13 @@ async def get_completion_rate(
     )
     rows = {str(r.day): (int(r.completed or 0), int(r.total or 0)) for r in result.all()}
 
+    today = local_today()
     labels = []
     rates = []
     overall_completed = 0
     overall_total = 0
     for i in range(days):
-        d = date.today() - timedelta(days=days - 1 - i)
+        d = today - timedelta(days=days - 1 - i)
         labels.append(d.strftime("%a"))
         c, t = rows.get(d.isoformat(), (0, 0))
         rate = round(c / max(t, 1) * 100)

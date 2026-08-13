@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -27,6 +27,7 @@ from app.params import normalize_schema, validate_params
 from app.security import complete_once, interrupt_once
 from app.services.scheduler import get_due_practices, set_next_due, set_retry_block
 from app.templates_setup import templates
+from app.timeutils import local_today
 from app.title_gen import generate_title
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ async def tasks_page(
     active_config = await get_active_llm_config(db, user.id)
 
     # Get today's calendar schedule
-    today_schedule = await get_day_schedule(db, user.id, date.today())
+    today_schedule = await get_day_schedule(db, user.id, local_today())
     now_available, now_policy, now_label, _ = await is_available(db, user.id, datetime.now(UTC), 60, "active")
 
     # Get due practices

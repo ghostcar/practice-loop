@@ -5,7 +5,7 @@ Stateless — rebuilt on every request.
 
 import json
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +16,7 @@ from app.models.diet import Diet
 from app.models.entity import Entity
 from app.models.opt_in import UserEntityOptIn
 from app.models.training import TrainingDay
+from app.timeutils import local_today
 
 
 async def build_context(
@@ -39,7 +40,7 @@ async def build_context(
     active_penalties = await _get_active_penalties(db, user_id, session_id)
 
     # 5. Today's calendar schedule
-    calendar_schedule = await get_day_schedule(db, user_id, date.today())
+    calendar_schedule = await get_day_schedule(db, user_id, local_today())
 
     # 6. Active diets — what nutrition plans are currently active
     active_diets = await _get_active_diets(db, user_id)
@@ -215,7 +216,7 @@ async def _get_active_diets(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
 
 async def _get_today_training(db: AsyncSession, user_id: uuid.UUID) -> dict | None:
     """Return today's training summary."""
-    today = date.today()
+    today = local_today()
     day_result = await db.execute(
         select(TrainingDay).where(
             TrainingDay.user_id == user_id,

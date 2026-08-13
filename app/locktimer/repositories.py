@@ -16,6 +16,7 @@ from app.models.locktimer import (
     LockTaskRule,
     LockTimerTemplate,
 )
+from app.timeutils import local_today
 
 # ---------------------------------------------------------------------------
 # LockTimerTemplate
@@ -95,9 +96,9 @@ async def list_sessions_by_date_range(
 
 async def get_weekly_compliance(db: AsyncSession, owner_id: uuid.UUID, weeks: int = 4) -> list[dict]:
     """Return per-week compliance stats: slot close rate and task completion rate."""
-    from datetime import date, timedelta
+    from datetime import timedelta
 
-    today = date.today()
+    today = local_today()
     result = []
     for w in range(weeks - 1, -1, -1):
         week_start = today - timedelta(days=today.weekday() + w * 7)

@@ -3,7 +3,7 @@
 import json
 import re
 import uuid
-from datetime import UTC, date, datetime
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -25,6 +25,7 @@ from app.models.training_log import TrainingLogEntry
 from app.models.user import User
 from app.security import complete_once
 from app.templates_setup import templates
+from app.timeutils import local_today
 
 router = APIRouter(prefix="/training", tags=["training"])
 
@@ -33,7 +34,7 @@ ENTRY_TYPES = {"fluid_intake", "micro_leak", "pressure_check", "general_note"}
 
 
 def _get_today() -> date:
-    return datetime.now(UTC).date()
+    return local_today()
 
 
 # === Page ===

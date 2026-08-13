@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.training import TrainingDay
 from app.models.user import User
+from app.timeutils import local_today
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ async def _import_training_days(rows: list[dict], db: AsyncSession, user: User, 
         try:
             td = TrainingDay(
                 user_id=user.id,
-                target_date=date.fromisoformat(str(row.get("target_date", date.today().isoformat()))),
+                target_date=date.fromisoformat(str(row.get("target_date", local_today().isoformat()))),
                 status=str(row.get("status", "planned")),
                 plan_summary=str(row.get("plan_summary", "")) or None,
                 analysis_summary=str(row.get("analysis_summary", "")) or None,

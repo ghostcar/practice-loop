@@ -24,6 +24,7 @@ from app.schemas.calendar import (
     DaySchedule,
 )
 from app.templates_setup import templates
+from app.timeutils import local_today
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
 
@@ -413,7 +414,7 @@ async def calendar_page(
     t = get_translations(locale)
 
     # Get today's schedule
-    today_schedule = await get_day_schedule(db, user.id, date.today())
+    today_schedule = await get_day_schedule(db, user.id, local_today())
 
     return templates.TemplateResponse(
         request=request,

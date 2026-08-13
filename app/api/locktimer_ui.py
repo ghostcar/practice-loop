@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -44,7 +44,7 @@ from app.models.locktimer import (
 )
 from app.models.user import User
 from app.templates_setup import templates
-from app.timeutils import as_utc
+from app.timeutils import as_utc, local_today
 
 router = APIRouter(prefix="/locktimer", tags=["locktimer-pages"])
 
@@ -362,7 +362,7 @@ async def locktimer_calendar(
     locale = detect_locale(request, current_user.locale)
     t = get_translations(locale)
 
-    today = date.today()
+    today = local_today()
     try:
         ym = datetime.strptime(month or "", "%Y-%m").date().replace(day=1)
     except (ValueError, TypeError):

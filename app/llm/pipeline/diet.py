@@ -20,6 +20,7 @@ from app.models.activity_log import ActivityLog
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.llm_config import LLMProviderConfig
 from app.models.training import TrainingDay
+from app.timeutils import local_today
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ async def evaluate_diet(
     LLM with free-form item ids — matches are resolved by exact name against
     the diet's current items.
     """
-    start = datetime.now(UTC).date() - timedelta(days=max(1, min(days, 30)))
+    start = local_today() - timedelta(days=max(1, min(days, 30)))
     items_result = await db.execute(select(DietItem).where(DietItem.diet_id == diet.id).order_by(DietItem.sort_order))
     plan_items = list(items_result.scalars().all())
     cons_result = await db.execute(
@@ -267,7 +268,7 @@ async def analyze_diet_training_synergy(
     to find concrete correlations and cross-domain adjustments. The result is
     persisted as a DietTrainingReview (history is kept).
     """
-    period_end = datetime.now(UTC).date()
+    period_end = local_today()
     period_start = period_end - timedelta(days=max(1, min(days, 30)) - 1)
 
     # Diet side: consumptions + active diet names

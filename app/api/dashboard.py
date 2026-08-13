@@ -26,6 +26,7 @@ from app.models.training import TrainingDay
 from app.models.user import User
 from app.security import ensure_csrf_cookie
 from app.templates_setup import templates
+from app.timeutils import local_today
 
 router = APIRouter(tags=["dashboard-v2"])
 
@@ -48,7 +49,7 @@ async def dashboard(
     level, xp_current, xp_next = xp_progress(progress.xp)
 
     # Today's scheduled tasks
-    today = datetime.now(UTC).date()
+    today = local_today()
     today_start = datetime(today.year, today.month, today.day, tzinfo=UTC)
     today_end = today_start + timedelta(days=1)
     today_tasks_result = await db.execute(
