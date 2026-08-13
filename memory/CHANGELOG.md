@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 92 — финиш дат/времени | naive datetime.now() → datetime.now(UTC) в 6 файлах; materializer EXACT_DATETIME → as_utc; аудит-вывод gamification/context_builder/charts — tz-безопасно (SQL/.date()); 602/602 ✅ |
 | 2026-08-13 | Session 91 — tz-хелпер | **app/timeutils.py** (as_utc naive→aware UTC); рефакторинг 4 дублей replace(tzinfo=UTC) в verification.py/social; фикс telegram_link_code_expires; аудит locktimer (open_slot + materializer naive/aware); +4 теста; 602/602 ✅ |
 | 2026-08-12 | Session 90 — Ре-экспорт+аудит+utcnow | **Полный ре-экспорт** llm/pipeline (S88 заузил: prompt-константы, модели, repair/tools/validator, call_llm/build_context); **аудит сплитов** восстановил execution-фасад (5 моделей + get_session/get_active_session), import_data (PointsProfile), social/repositories (15 model-классов); references/points_v2/social-api — only router; **utcnow → datetime.now(UTC)** в 8 social-файлах + tz-нормализация cooldown_until/deadline_at; 598/598 ✅ |
 | 2026-08-12 | Session 89 — Фикс LLM-тестов | **17 тестов после S88-сплита**: late-binding call_llm/build_context/get_allowed_ids через source-модули (generate/training/diet), ре-экспорт filter_automation_eligible, репойнт 21 patch-таргета. **598/598 ✅** |

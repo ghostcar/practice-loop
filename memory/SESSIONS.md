@@ -1,3 +1,10 @@
+## 2026-08-13 — Сессия 92 (финиш по датам/времени)
+
+- **naive `datetime.now()` → `datetime.now(UTC)`** (now всегда UTC): importers/activity_logs.py, importers/points.py (default created_at), points/schedule.py (weekday), tasks.py (is_available), import_data.py + cli.py (exported_at).
+- **Materializer EXACT_DATETIME**: `SLOT_RULE_EXACT_DATETIME` + `TASK_SCHED_EXACT_DATETIME` — `datetime.fromisoformat(dt_str)` → `as_utc(...)` (planned_open_at/appears_at/due_at теперь aware, единообразно с остальными типами).
+- **Аудит-вывод (без изменений)**: gamification/xp.py `should_reset_streak` и handler.py сравнивают `.date()` (tz-безопасно); context_builder/charts — SQL-уровень `created_at` (БД сама обрабатывает tz); references/search_tasks date_from/date_to — SQL-binding наивного ISO-midnight.
+- **602/602 ✅, ruff ✅, format ✅**.
+
 ## 2026-08-13 — Сессия 91 (tz-хелпер + аудит сравнений дат)
 
 - **Новый `app/timeutils.py`** — `as_utc(dt)`: aware → passthrough, naive → `replace(tzinfo=UTC)` (приложение UTC-only, naive считается UTC).
