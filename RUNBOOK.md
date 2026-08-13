@@ -16,6 +16,7 @@
 - [ ] `LOCKTIMER_CORE_ENABLED=true` (для Timer-фич).
 - [ ] `CHALLENGE_HMAC_KEY` задан (отдельный от JWT/ENCRYPTION).
 - [ ] `UPLOAD_DIR` том примонтирован, доступен для записи.
+- [ ] `TG_AUTO_ANALYSIS_TZ` задан (опционально; по умолчанию UTC — часовой пояс автоанализа тренировок).
 - [ ] SSL-сертификат валиден (certbot или CF Origin Certificate).
 - [ ] pg_dump сделан и проверен размер/exit code.
 - [ ] `docker compose ps` — все сервисы healthy.

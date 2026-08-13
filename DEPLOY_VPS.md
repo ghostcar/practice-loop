@@ -686,6 +686,8 @@ docker compose exec db pg_isready -U tracker -d tracker
 | `TG_BOT_TOKEN` | `.env` | ⚠️ желателен, опционален для теста |
 | `TG_BOT_USERNAME` | `.env` | для `/start` ссылки в UI |
 | `TG_POLLING` | `.env` | webhook либо polling, не оба |
+| `TG_AUTO_ANALYSIS_TIME` | `.env` | `23:00` — время ежедневного автоанализа (HH:MM) |
+| `TG_AUTO_ANALYSIS_TZ` | `.env` | `UTC` — часовой пояс автоанализа (IANA) |
 
 Production gate (`app/config.py`) валит старт, если хоть один из `JWT_SECRET_KEY` / `CREDENTIALS_ENCRYPTION_KEY`:
 1. содержит `change-me-` (тестовый placeholder);

@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 100 — полный список таблиц FUNCTIONAL.md §15).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 101 — документация TG_AUTO_ANALYSIS_TZ в .env.example/README/RUNBOOK/DEPLOY_VPS).
 
 ## Общий статус: 618/618 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
 
@@ -32,6 +32,7 @@
 - [x] **S88**: REFACTORING.md шаг 7 (pipeline.py → llm/pipeline) + API v1→v2 консолидация (67 замен в 11 файлах); все роуты под /api/v2 — api.py (1011) → social/api/{profile, subjects, relationships, feed, verification, comments, moderation}; prefix="/social", 598/598 ✅ — repositories.py (1070) → social/repositories/{profile, consent, subjects, relationships, notifications, publications, verification, comments, moderation}; явный ре-экспорт 52 имён, 598/598 ✅ — points_v2.py (940) → api/points/{helpers, config, balance, profiles, redemptions, schedule, measurements, inventory, charts, pages}; префикс на агрегаторе, 598/598 ✅ — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
+- [x] **S101**: задокументирован TG_AUTO_ANALYSIS_TZ (.env.example + README + RUNBOOK §1 + DEPLOY_VPS шпаргалка)
 - [x] **S100**: FUNCTIONAL.md §15 — полный список 54 таблиц app/models/* (сверено скриптом)
 - [x] **S99**: сверил FUNCTIONAL.md + PRODUCT.md с текущим состоянием (tz, статус-машина, activity_categories, Lock Timer, направление ADR-063/064/065)
 - [x] **S98**: тесты графиков — tests/test_charts_tz.py (5 тестов) на device-tz бакетирование 4 chart-эндпоинтов (freeze-фикстура + client_tz cookie); 618/618 ✅

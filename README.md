@@ -86,7 +86,8 @@ All settings via environment variables or `.env` file:
 | `TG_BOT_USERNAME` | — | Bot username (e.g. `my_tracker_bot`) |
 | `TG_POLLING` | `false` | Use polling instead of webhook (local dev) |
 | `TG_WEBHOOK_BASE_URL` | `https://localhost:8443` | Public URL for Telegram webhook |
-| `TG_AUTO_ANALYSIS_TIME` | `23:00` | UTC time for daily training analysis |
+| `TG_AUTO_ANALYSIS_TIME` | `23:00` | Daily training analysis time (HH:MM) |
+| `TG_AUTO_ANALYSIS_TZ` | `UTC` | IANA timezone for the analysis time + day boundary |
 
 ## Deployment
 

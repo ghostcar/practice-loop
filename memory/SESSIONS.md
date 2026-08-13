@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 101 (документация TG_AUTO_ANALYSIS_TZ)
+
+- **`.env.example`**: добавлен `TG_AUTO_ANALYSIS_TZ` (IANA, default UTC), убран жёсткий «UTC» из комментария `TG_AUTO_ANALYSIS_TIME`.
+- **`README.md`**: строка `TG_AUTO_ANALYSIS_TZ` в env-таблице; `TG_AUTO_ANALYSIS_TIME` — «HH:MM» без «UTC».
+- **`RUNBOOK.md`**: пункт в §1 pre-deploy checklist.
+- **`DEPLOY_VPS.md`**: строки `TG_AUTO_ANALYSIS_TIME`/`TG_AUTO_ANALYSIS_TZ` в шпаргалке env-ключей.
+- Docs-only, тесты не трогались.
+
 ## 2026-08-13 — Сессия 100 (полный список таблиц в FUNCTIONAL.md §15)
 
 - **FUNCTIONAL.md §15** переписан: полный перечень 54 таблиц `app/models/*` (проверено скриптом: 54/54, без пропусков и лишних). Исправлен typo `user_entity_opt_in`→`user_entity_opt_ins`, раскрыт `diet*` (5 таблиц), добавлены справочные/link-таблицы update2.md (8) и lock_* (14).
