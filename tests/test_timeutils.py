@@ -90,3 +90,21 @@ def test_invalid_tz_falls_back_to_utc():
         assert local_today() == datetime.now(UTC).date()
     finally:
         reset_client_tz(token)
+
+
+def test_resolve_tz_valid():
+    from app.timeutils import resolve_tz
+
+    assert str(resolve_tz("Asia/Tokyo")) == "Asia/Tokyo"
+
+
+def test_resolve_tz_invalid_falls_back_to_utc():
+    from app.timeutils import resolve_tz
+
+    assert resolve_tz("Not/AZone") is UTC
+
+
+def test_resolve_tz_none_is_utc():
+    from app.timeutils import resolve_tz
+
+    assert resolve_tz(None) is UTC

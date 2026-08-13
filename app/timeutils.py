@@ -57,6 +57,20 @@ def client_tzinfo() -> tzinfo | None:
     return None
 
 
+def resolve_tz(name: str | None) -> tzinfo:
+    """Resolve an IANA timezone name to a ``tzinfo``, falling back to UTC.
+
+    Used by background jobs (no request ContextVar) via ``settings`` and by
+    day-boundary helpers. Invalid or missing names degrade to UTC.
+    """
+    if name:
+        try:
+            return ZoneInfo(name)
+        except (ZoneInfoNotFoundError, ValueError):
+            pass
+    return UTC
+
+
 def local_today() -> date:
     """Calendar 'today' in the client's timezone (UTC fallback)."""
     z = client_tzinfo()

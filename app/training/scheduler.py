@@ -1,8 +1,8 @@
 """Background scheduler for end-of-day training analysis.
 
 Runs via asyncio loop — no extra dependencies (no APScheduler needed).
-At the configured time (tg_auto_analysis_time), scans for unanalyzed training
-days and runs analyze_training_day for each.
+At the configured time (tg_auto_analysis_time, interpreted in tg_auto_analysis_tz),
+scans for unanalyzed training days and runs analyze_training_day for each.
 """
 
 import asyncio
@@ -16,6 +16,7 @@ from app.config import settings
 from app.database import async_session_factory
 from app.llm.pipeline import analyze_training_day, get_active_llm_config
 from app.models.training import TrainingDay
+from app.timeutils import resolve_tz
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ _check_interval_seconds = 60  # Check every minute
 
 async def _run_auto_analysis() -> None:
     """Scan for unanalyzed training days and run analysis for each."""
-    today = date.today()
+    today = datetime.now(resolve_tz(settings.tg_auto_analysis_tz)).date()
 
     async with async_session_factory() as db:
         # Find unanalyzed training days for yesterday (or today if it's late)
@@ -99,14 +100,18 @@ async def _purge_expired_raw_payloads() -> None:
 async def _scheduler_loop(stop_event: asyncio.Event) -> None:
     """Loop that checks every minute whether it's time to run analysis."""
     analysis_hour, analysis_minute = _parse_time(settings.tg_auto_analysis_time)
-    logger.info(f"Auto-analysis scheduler started (runs daily at {analysis_hour:02d}:{analysis_minute:02d} UTC)")
+    analysis_tz = resolve_tz(settings.tg_auto_analysis_tz)
+    logger.info(
+        f"Auto-analysis scheduler started (runs daily at {analysis_hour:02d}:{analysis_minute:02d} "
+        f"{settings.tg_auto_analysis_tz})"
+    )
 
     last_run_date: date | None = None
     last_purge: datetime | None = None
 
     while not stop_event.is_set():
         try:
-            now = datetime.now(UTC)
+            now = datetime.now(analysis_tz)
 
             # Run once per day at the configured hour:minute
             if now.hour == analysis_hour and now.minute == analysis_minute and last_run_date != now.date():
