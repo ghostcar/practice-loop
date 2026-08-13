@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 99 — сверил доки | FUNCTIONAL.md + PRODUCT.md приведены к текущему состоянию: tz устройства (новый §19), статус-машина 11, activity_categories, i18n 687, Lock Timer (ADR-062), направление ADR-063/064/065 |
 | 2026-08-13 | Session 98 — тесты графиков | tests/test_charts_tz.py (5 тестов): device-tz бакетирование 4 chart-эндпоинтов через freeze-фикстуру + client_tz cookie; 618/618 ✅ |
 | 2026-08-13 | Session 97 — tz фонового job | training/scheduler: «сегодня» и время срабатывания через config tg_auto_analysis_tz (resolve_tz, UTC-фолбэк); TTL cleanup остаётся UTC-инстантом; +3 теста resolve_tz; 613/613 ✅ |
 | 2026-08-13 | Session 96 — финиш tz (графики) | 4 chart-эндпоинта: SQL func.date() → Python local_date() бакеты (device-день); убран case/group_by; txn_type None-гард; category-breakdown не тронут; 610/610 ✅ |
