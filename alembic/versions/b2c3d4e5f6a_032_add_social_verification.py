@@ -7,6 +7,7 @@ one-vote-per-verifier, plain text comments, lightweight encouragements.
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "b2c3d4e5f6a"
@@ -37,7 +38,12 @@ def upgrade() -> None:
     op.create_table(
         "social_verification_requests",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column("policy_id", sa.Uuid(), sa.ForeignKey("social_verification_policies.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "policy_id",
+            sa.Uuid(),
+            sa.ForeignKey("social_verification_policies.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("subject_id", sa.Uuid(), sa.ForeignKey("social_subjects.id", ondelete="CASCADE"), nullable=False),
         sa.Column("requester_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("state", sa.String(20), nullable=False, server_default=sa.text("'open'")),
@@ -56,7 +62,12 @@ def upgrade() -> None:
     op.create_table(
         "social_verification_votes",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column("request_id", sa.Uuid(), sa.ForeignKey("social_verification_requests.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "request_id",
+            sa.Uuid(),
+            sa.ForeignKey("social_verification_requests.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("voter_id", sa.Uuid(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("value", sa.String(10), nullable=False),
         sa.Column("comment", sa.Text(), nullable=True),

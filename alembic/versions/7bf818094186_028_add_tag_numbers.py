@@ -9,6 +9,7 @@ Adds:
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "7bf818094186"
@@ -35,12 +36,8 @@ def upgrade() -> None:
         sa.Column("provided_tag", sa.String(100), nullable=False),
         sa.Column("reason", sa.String(40), nullable=False, server_default=sa.text("'mismatch'")),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["session_id"], ["lock_sessions.id"], ondelete="CASCADE"
-        ),
-        sa.ForeignKeyConstraint(
-            ["slot_occurrence_id"], ["lock_slot_occurrences.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["session_id"], ["lock_sessions.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["slot_occurrence_id"], ["lock_slot_occurrences.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
 

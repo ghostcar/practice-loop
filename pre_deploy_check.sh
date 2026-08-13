@@ -105,20 +105,20 @@ echo ""
 echo "[8/8] Social privacy audit..."
 SOCIAL_LEAKS=0
 # Check no social route returns email addresses
-if grep -rn 'email' app/platform/social/api.py --include='*.py' \
+if grep -rn 'email' app/platform/social/api/ --include='*.py' \
     | grep -i 'response\|return.*email\|expose' | grep -v '# noqa' | grep -v 'test_' | grep -v 'current_user.email' | grep -v 'email never exposed'; then
     echo "  WARNING: potential email exposure in social API — review above"
     SOCIAL_LEAKS=1
 fi
 # Check no raw_llm_response in social code
 if grep -rn 'raw_llm_response' app/platform/social/ --include='*.py' \
-    | grep -v 'strip' | grep -v 'expose' | grep -v '# noqa' | grep -v 'test_'; then
+    | grep -iv 'strip' | grep -iv 'expose' | grep -v '# noqa' | grep -v 'test_'; then
     echo "  WARNING: raw_llm_response referenced in social code"
     SOCIAL_LEAKS=1
 fi
 # Check no penalty_details in social code
 if grep -rn 'penalty_details' app/platform/social/ --include='*.py' \
-    | grep -v 'strip' | grep -v 'expose' | grep -v '# noqa'; then
+    | grep -iv 'strip' | grep -iv 'expose' | grep -v '# noqa'; then
     echo "  WARNING: penalty_details referenced in social code"
     SOCIAL_LEAKS=1
 fi

@@ -1,3 +1,10 @@
+## 2026-08-13 — Сессия 103 (pre_deploy_check зелёный после tz/рефакторинга)
+
+- **`./pre_deploy_check.sh`** — полный прогон: [1/8] git warning (незакоммиченные правки) → [2/8] 619/619 ✅ → [3/8] ruff check + format чистые (весь репо) ✅ → [4/8] секретов нет ✅ → [5/8] .env OK ✅ → [6/8] docker build ✅ → [7/8] единый alembic head ✅ → [8/8] social privacy audit ✅. Вердикт: **Ready to deploy**.
+- **Найден и устранён долг**: `ruff check .` падал на 10 ошибках в alembic-миграциях (7×I001 импорты, 3×E501 длинные строки в 030/032) + 2 файла не отформатированы (028, locktimer_ui.py). Исправлено: `ruff check --fix alembic/versions/` + ручные wrap 3 строк + `ruff format` 2 файлов — всё косметика, DDL не тронут (проверено diff + alembic single head).
+- **pre_deploy_check.sh**: путь `app/platform/social/api.py` → `app/platform/social/api/` (после рефакторинга S87 файл стал пакетом — grep давал «No such file»); фильтры `strip`/`expose` → case-insensitive `-i` (false-positive на docstring «Strips: raw_llm_response…» в adapters.py).
+- Тесты: 619/619 ✅, ruff ✅, format ✅.
+
 ## 2026-08-13 — Сессия 102 (тест category-breakdown)
 
 - **`tests/test_charts_tz.py`**: +1 тест `test_category_breakdown_groups_by_category` — покрывает 5-й chart-эндпоинт (группировка по Entity.category, не day-bucketed): 2 entities (cardio×2, strength×1), проверка labels/values/total (count desc).

@@ -7,6 +7,7 @@ cross-product blocks, scoped capability grants, notification outbox.
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers
@@ -53,7 +54,12 @@ def upgrade() -> None:
     op.create_table(
         "social_grants",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column("relationship_id", sa.Uuid(), sa.ForeignKey("social_relationships.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "relationship_id",
+            sa.Uuid(),
+            sa.ForeignKey("social_relationships.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("scope_type", sa.String(20), nullable=False, server_default=sa.text("'subject'")),
         sa.Column("scope_namespace", sa.String(80), nullable=True),
         sa.Column("subject_id", sa.Uuid(), sa.ForeignKey("social_subjects.id", ondelete="SET NULL"), nullable=True),

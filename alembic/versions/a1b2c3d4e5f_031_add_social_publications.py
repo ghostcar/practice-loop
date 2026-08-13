@@ -6,6 +6,7 @@ Feed reads ONLY this table — never joins private Tracker/Timer tables.
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "a1b2c3d4e5f"

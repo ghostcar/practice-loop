@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 102 — тест category-breakdown).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 103 — pre_deploy_check зелёный: 8/8 шагов, lint-долг миграций устранён).
 
 ## Общий статус: 619/619 тестов ✅, ruff ✅, format ✅, JS-синтаксис ✅
 
@@ -32,6 +32,7 @@
 - [x] **S88**: REFACTORING.md шаг 7 (pipeline.py → llm/pipeline) + API v1→v2 консолидация (67 замен в 11 файлах); все роуты под /api/v2 — api.py (1011) → social/api/{profile, subjects, relationships, feed, verification, comments, moderation}; prefix="/social", 598/598 ✅ — repositories.py (1070) → social/repositories/{profile, consent, subjects, relationships, notifications, publications, verification, comments, moderation}; явный ре-экспорт 52 имён, 598/598 ✅ — points_v2.py (940) → api/points/{helpers, config, balance, profiles, redemptions, schedule, measurements, inventory, charts, pages}; префикс на агрегаторе, 598/598 ✅ — references.py (817) → api/references/{body_parts, locations, categories, task_targets} + __init__-агрегатор; 23 роута сохранены, 598/598 ✅ — import_data.py (988) → api/importers/{base, 10 импортёров}; dispatch сохранён, +6 HTTP-тестов; 598/598 ✅ — execution.py (1409) → пакет services/{drafts, materializer, session, jobs, tags, execution-фасад}; AST-сплит, __all__-ре-экспорт, 592/592 ✅ — честная терминология EN/RU без смены таблиц: Lock Timer / Lock Session / Unlock Windows / Seal (# пломба), кнопки Unlock/Lock, nav в base.html, ключ locktimer_slot добавлен; ruff format нормализация (19 файлов); REFACTORING.md — план декомпозиции 7 крупных файлов (>800 строк)
 
 
+- [x] **S103**: pre_deploy_check.sh 8/8 ✅ (619/619, ruff+format весь репо, docker build, single head, social audit); устранён lint-долг в alembic-миграциях + починены stale-path/case в скрипте
 - [x] **S102**: +1 тест category-breakdown (5-й chart-эндпоинт, группировка по Entity.category); 619/619 ✅
 - [x] **S101**: задокументирован TG_AUTO_ANALYSIS_TZ (.env.example + README + RUNBOOK §1 + DEPLOY_VPS шпаргалка)
 - [x] **S100**: FUNCTIONAL.md §15 — полный список 54 таблиц app/models/* (сверено скриптом)

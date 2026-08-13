@@ -460,9 +460,7 @@ def _serialize_session(session, t) -> dict | None:
             "safety_stopped": "Safety Stopped",
         }.get(session.state, session.state),
         "remaining_seconds": (
-            max(0, (effective_end - _now()).total_seconds())
-            if effective_end and session.state == "active"
-            else None
+            max(0, (effective_end - _now()).total_seconds()) if effective_end and session.state == "active" else None
         ),
     }
 
