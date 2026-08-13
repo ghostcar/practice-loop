@@ -409,11 +409,12 @@ Lock Timer (chastity) и социальная платформа (обезлич
 - pre_deploy_check.sh §8: social privacy scan (grep-проверка утечек в social коде).
 - DEPLOY_VPS.md §15: Social Ops Runbook (включение, hardening checks, troubleshooting).
 
-### Social таблицы (все с префиксом `social_`)
-social_profiles, social_consents, social_subjects, social_relationships, social_blocks,
-social_grants, social_notifications, social_publications, social_verification_policies,
-social_verification_requests, social_verification_votes, social_comments,
-social_encouragements, moderation_reports, moderation_actions.
+### Social таблицы (в `app/platform/social/models.py`, 15 шт.)
+`social_profiles`, `social_consents`, `social_subjects`, `social_relationships`, `social_blocks`,
+`social_grants`, `social_notifications`, `social_publications`, `social_verification_policies`,
+`social_verification_requests`, `social_verification_votes`, `social_comments`,
+`social_encouragements` (все с префиксом `social_`), плюс модерация без префикса:
+`moderation_reports`, `moderation_actions`.
 
 ---
 

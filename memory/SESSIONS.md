@@ -1,3 +1,8 @@
+## 2026-08-13 — Сессия 104 (сверка §17 social-таблиц)
+
+- **FUNCTIONAL.md §17**: список social-таблиц сверен с `app/platform/social/models.py` — 15/15 совпадает (MISSING none, EXTRA none; единственный «лишний» — слово `social_` из заголовка). Поправлен заголовок: «все с префиксом social_» → «в app/platform/social/models.py, 15 шт.», moderation_* вынесены отдельно (у них нет префикса social_).
+- Docs-only, тесты не трогались.
+
 ## 2026-08-13 — Сессия 103 (pre_deploy_check зелёный после tz/рефакторинга)
 
 - **`./pre_deploy_check.sh`** — полный прогон: [1/8] git warning (незакоммиченные правки) → [2/8] 619/619 ✅ → [3/8] ruff check + format чистые (весь репо) ✅ → [4/8] секретов нет ✅ → [5/8] .env OK ✅ → [6/8] docker build ✅ → [7/8] единый alembic head ✅ → [8/8] social privacy audit ✅. Вердикт: **Ready to deploy**.

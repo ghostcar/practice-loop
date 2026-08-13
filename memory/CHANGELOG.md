@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 104 — сверка §17 | Social-таблицы 15/15 совпадают с app/platform/social/models.py; поправлен заголовок (префикс social_ не у moderation_*) |
 | 2026-08-13 | Session 103 — pre_deploy_check green | Устранён lint-долг в 7 alembic-миграциях + locktimer_ui (I001/E501/format, косметика); pre_deploy_check.sh: путь social/api → social/api/ + case-insensitive strip/expose; все 8 шагов ✅, вердикт Ready to deploy |
 | 2026-08-13 | Session 102 — тест category-breakdown | +1 тест в test_charts_tz.py: группировка по Entity.category (labels/values/total, count desc) |
 | 2026-08-13 | Session 101 — доки env | TG_AUTO_ANALYSIS_TZ задокументирован: .env.example + README + RUNBOOK.md §1 + DEPLOY_VPS.md шпаргалка; убран жёсткий «UTC» из TG_AUTO_ANALYSIS_TIME |
