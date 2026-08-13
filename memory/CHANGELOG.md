@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 114 — Memory v2 M3 base | `tools/memoryctl/bootstrap.py` (stdlib-only): детерминированная классификация + L0/L1 отбор + exact/lexical code search + impact frontier + risks/checks + context pack/sentinel в .agent-runtime; CLI `memoryctl bootstrap`. План на 3 этапа — docs/memory-rfc/STAGE_PLAN.md. 694/694 ✅ (+13 memory-тестов) |
 | 2026-08-13 | Session 113 — аудит P0-1+P0-2 (Gate A) | Закрыты P0-блокеры: P0-1 убран публичный mount /uploads → авторизованный GET /uploads/{path} (owner reverse-lookup + containment); P0-2 убран fallback default-challenge-key, CHALLENGE_HMAC_KEY обязателен в production gate. +13 тестов, 681/681 ✅ |
 | 2026-08-13 | Session 112 — Memory v2 M2 + P2-4 | Полный M2 gate: ADR-компилятор (tools/memoryctl/adr.py, 68 ADR-файлов docs/adr/ + README, bidirectional check); knowledge.md root + 5 domain-local (C-*); docs/questions/ (PQ-005/006, EQ-0013/0014); docs/wiki/ 5 страниц (K-*). P2-4: index/secret denylist разделены + allowlist .env.example, lint 0 warnings. 669/669 ✅, 45 memory-тестов |
 | 2026-08-13 | Session 110 — Memory v2 M0+M1 | Многоуровневая память (ADR-068 accepted): RFC → docs/memory-rfc/ + BENCHMARK_TASKS (12); tools/memoryctl (schemas/facts/inventory/lint/CLI, stdlib-only); tests/memory 37/37; полный suite 661/661 ✅; .gitignore/.codebuffignore/.cbmignore; docs/state/FACTS.json+NOW.md (детерминированные, якорь HEAD вне docs/state); CI memory-lint informational; DECISIONS.md таблица дозаполнена ADR-061…068 |

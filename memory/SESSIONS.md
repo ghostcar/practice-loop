@@ -1,3 +1,17 @@
+## 2026-08-13 — Сессия 114 (Memory v2 M3 base — memoryctl bootstrap + план на 3 этапа)
+
+- **План работ на 3 этапа вперёд** зафиксирован в `docs/memory-rfc/STAGE_PLAN.md` (по запросу владельца — чтобы не прыгать): Этап 1 = M3 base (эта сессия), Этап 2 = M3 benchmark + пилоты (Qdrant/vectors/graph — только с доказательством, решение по embedding/пилотам у владельца), Этап 3 = M4 preflight (SKILL.md + practice-agent launcher + sentinel CI). Параллельно (не в плане) — P1/Gate B–D аудита.
+- **M3 base — `tools/memoryctl/bootstrap.py`** (stdlib-only, детерминированный exact-fallback, MEMORY_ARCHITECTURE.md §7):
+  - `classify_task` — детерминированные эвристики → classes (security/data/ui/deploy/product/fact/code) + scopes (locktimer/social/llm/tracker/platform-*/tests/engineering-memory).
+  - `collect_docs` — L0 always-on (AGENTS.md + knowledge.md root/domain, scope-filtered) + L1 (docs/adr, docs/wiki, docs/questions) по scope + keyword + symbol scoring; exclude superseded/answered/archived/cancelled.
+  - `search_code` — exact/lexical поиск по app/tests/alembic (symbols×3 + terms×1).
+  - `build_impact_frontier` — тесты/миграции/call sites для топ-символов.
+  - `risks`/`required_checks` — по scope/class (safety stop, EQ-0014, moderation gate, no safety bypass, CHALLENGE_HMAC_KEY, single Alembic head…).
+  - `bootstrap`/`write_pack`/`write_sentinel` — context pack + sentinel в `.agent-runtime/` (references only, не копирует тела; pack ~6–8 KiB < лимита 12).
+- **CLI**: `python -m tools.memoryctl bootstrap --task "..." [--runtime-dir DIR] [--session-id ID] [--limit N]`; сводка mode/head/classification/sources/risks/checks.
+- **Тесты**: `tests/memory/test_bootstrap.py` — 13/13 (classification/dedupe/root-always-on/impact-frontier/checks/determinism/pack-size/sentinel). Полный suite **694/694 ✅** (+13), ruff ✅, format ✅.
+- **Фикс ревью**: `_doc_reason` — keyword-reason теперь считает по body, а не только title (раньше `meta.get("body")` = frontmatter → всегда пусто).
+
 ## 2026-08-13 — Сессия 113 (аудит P0-1 + P0-2 — Gate A блокеры)
 
 - **P0-1 (приватный /uploads)**: удалён публичный `StaticFiles` mount `/uploads` в `app/main.py`. Новый авторизованный `GET /uploads/{path:path}` (`app/api/uploads.py`): auth (cookie JWT) + owner reverse-lookup (Attachment.file_path / InventoryItem.image_path / MediaAsset.file_path|thumbnail_path) + hard containment (traversal/absolute/backslash → 404). Аноним → 401, cross-user/несуществующий → 404 (без утечки существования). Universal media по-прежнему дублируется `/api/v2/media/{id}` (уже был авторизован).
