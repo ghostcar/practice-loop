@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 102 — тест category-breakdown | +1 тест в test_charts_tz.py: группировка по Entity.category (labels/values/total, count desc) |
 | 2026-08-13 | Session 101 — доки env | TG_AUTO_ANALYSIS_TZ задокументирован: .env.example + README + RUNBOOK.md §1 + DEPLOY_VPS.md шпаргалка; убран жёсткий «UTC» из TG_AUTO_ANALYSIS_TIME |
 | 2026-08-13 | Session 100 — полный список таблиц | FUNCTIONAL.md §15 переписан: 54 таблицы app/models/* (сверено скриптом), typo opt_in→opt_ins, diet*→5 таблиц, +8 справочных +14 lock_* |
 | 2026-08-13 | Session 99 — сверил доки | FUNCTIONAL.md + PRODUCT.md приведены к текущему состоянию: tz устройства (новый §19), статус-машина 11, activity_categories, i18n 687, Lock Timer (ADR-062), направление ADR-063/064/065 |

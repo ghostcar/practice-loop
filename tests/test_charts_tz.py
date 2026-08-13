@@ -21,6 +21,7 @@ from datetime import UTC, date, datetime
 import pytest
 
 from app.models.activity_log import ActivityLog
+from app.models.entity import Entity
 from app.models.points import PointsTransaction
 
 FROZEN_NOW = datetime(2026, 8, 13, 16, 30, 0, tzinfo=UTC)
@@ -181,3 +182,36 @@ async def test_completion_rate_buckets_by_device_tz(
     assert data["overall_rate"] == 50
     assert data["completed_tasks"] == 1
     assert data["total_tasks"] == 2
+
+
+# ── Category breakdown (not day-bucketed) ──────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_category_breakdown_groups_by_category(async_client, auth_headers, db_session, test_user) -> None:
+    """Category distribution groups by Entity.category (independent of device tz)."""
+    cardio = Entity(real_name="Cardio run", category="cardio")
+    strength = Entity(real_name="Squats", category="strength")
+    db_session.add_all([cardio, strength])
+    await db_session.flush()
+
+    recent = datetime.now(UTC).replace(tzinfo=None)  # naive "now" (SQLite storage)
+    db_session.add_all(
+        [
+            ActivityLog(user_id=test_user.id, entity_id=cardio.id, status="completed", created_at=recent),
+            ActivityLog(user_id=test_user.id, entity_id=cardio.id, status="completed", created_at=recent),
+            ActivityLog(user_id=test_user.id, entity_id=strength.id, status="completed", created_at=recent),
+        ]
+    )
+    await db_session.flush()
+
+    resp = await async_client.get(
+        "/api/v2/charts/category-breakdown?days=30",
+        headers={"Cookie": auth_headers["Cookie"]},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["total"] == 3
+    assert data["labels"] == ["cardio", "strength"]  # ordered by count desc
+    assert data["values"] == [2, 1]

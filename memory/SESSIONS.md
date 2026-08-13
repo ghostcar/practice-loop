@@ -1,3 +1,8 @@
+## 2026-08-13 — Сессия 102 (тест category-breakdown)
+
+- **`tests/test_charts_tz.py`**: +1 тест `test_category_breakdown_groups_by_category` — покрывает 5-й chart-эндпоинт (группировка по Entity.category, не day-bucketed): 2 entities (cardio×2, strength×1), проверка labels/values/total (count desc).
+- Тест-only, ruff ✅, 6/6 в файле.
+
 ## 2026-08-13 — Сессия 101 (документация TG_AUTO_ANALYSIS_TZ)
 
 - **`.env.example`**: добавлен `TG_AUTO_ANALYSIS_TZ` (IANA, default UTC), убран жёсткий «UTC» из комментария `TG_AUTO_ANALYSIS_TIME`.
