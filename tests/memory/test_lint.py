@@ -119,7 +119,18 @@ def test_denied_tracked_file_warning(tmp_path):
     (tmp_path / ".env.prod").write_text("SECRET=1\n", encoding="utf-8")
     subprocess.run(["git", "add", "-A"], cwd=str(tmp_path), capture_output=True, timeout=30)
     result = lint(tmp_path)
-    assert any("denylist" in i.message and i.level == "warning" for i in result.issues)
+    assert any("suspected secret" in i.message and i.level == "warning" for i in result.issues)
+
+
+def test_allowlisted_tracked_files_not_warned(tmp_path):
+    _setup(tmp_path)
+    (tmp_path / ".env.example").write_text("POSTGRES_USER=tracker\n", encoding="utf-8")
+    fonts = tmp_path / "app" / "static" / "fonts"
+    fonts.mkdir(parents=True)
+    (fonts / "Inter.woff2").write_bytes(b"\x00\x01")
+    subprocess.run(["git", "add", "-A"], cwd=str(tmp_path), capture_output=True, timeout=30)
+    result = lint(tmp_path)
+    assert not any("denylist" in i.message for i in result.issues)
 
 
 def test_invalid_sha_in_facts(tmp_path):

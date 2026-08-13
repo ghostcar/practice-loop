@@ -6,6 +6,8 @@ import pytest
 
 from tools.memoryctl.schemas import (
     ParseError,
+    is_denied,
+    is_tracked_secret,
     load_document,
     split_frontmatter,
     validate_document,
@@ -176,6 +178,32 @@ def test_unknown_kind(tmp_path):
     doc = _doc(tmp_path, text, "unknown_kind.md")
     errors = validate_document(doc)
     assert any("unknown kind" in e for e in errors)
+
+
+def test_is_denied_index_policy():
+    # index denylist: secrets + private data + vendored/minified assets
+    assert is_denied(".env.prod")
+    assert is_denied(".env.example")
+    assert is_denied("uploads/secret.jpg")
+    assert is_denied("app/static/fonts/Inter.woff2")
+    assert is_denied("app/static/htmx.min.js")
+    assert is_denied("app/static/tailwindcss.js")
+    assert not is_denied("app/main.py")
+    assert not is_denied("docs/state/FACTS.json")
+
+
+def test_is_tracked_secret_narrower_than_denylist():
+    # genuine secrets: warn/error when tracked
+    assert is_tracked_secret(".env")
+    assert is_tracked_secret(".env.prod")
+    assert is_tracked_secret("uploads/photo.jpg")
+    assert is_tracked_secret("backup.sql.dump")
+    # allowlisted sanitized template
+    assert not is_tracked_secret(".env.example")
+    # vendored assets are index-denied but NOT secrets
+    assert not is_tracked_secret("app/static/fonts/Inter.woff2")
+    assert not is_tracked_secret("app/static/htmx.min.js")
+    assert not is_tracked_secret("app/main.py")
 
 
 def test_unsupported_schema_version(tmp_path):

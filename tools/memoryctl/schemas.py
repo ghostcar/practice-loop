@@ -13,6 +13,7 @@ a clear error instead of silently mis-parsing a document.
 
 from __future__ import annotations
 
+import fnmatch
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -87,10 +88,58 @@ DENYLIST_GLOBS = (
     "**/*backup*",
     "**/raw_llm_response*",
     "app/static/fonts/**",
-    "app/static/**/tailwindcss.js",
-    "app/static/**/chart.umd.min.js",
-    "app/static/**/htmx.min.js",
+    "app/static/tailwindcss.js",
+    "app/static/chart.umd.min.js",
+    "app/static/htmx.min.js",
 )
+
+# Tracked-secret denylist — a git-tracked file matching these indicates a genuine
+# secret/private-data leak (should never be committed). Narrower than DENYLIST_GLOBS:
+# vendored assets (fonts, minified JS) are excluded from the index but are NOT
+# secrets, so they must not trigger the tracked-secret warning (audit P2-4).
+SECRET_DENYLIST_GLOBS = (
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "*.jks",
+    "uploads/**",
+    "*.db",
+    "*.sqlite*",
+    "*.log",
+    "*dump*",
+    "*backup*",
+    "*raw_llm_response*",
+)
+
+# Allowlist — explicit, provenance-backed exceptions to SECRET_DENYLIST_GLOBS.
+# Never weaken the secret denylist without a security ADR; every entry carries a reason.
+ALLOWLIST_GLOBS = (
+    (
+        ".env.example",
+        "sanitized template, no real secrets (pre_deploy_check scans for real ones)",
+    ),
+)
+
+
+def _match_glob(rel_path: str, glob: str) -> bool:
+    rel = rel_path.replace("\\", "/")
+    return fnmatch.fnmatch(rel, glob) or fnmatch.fnmatch(rel.lstrip("./"), glob)
+
+
+def is_denied(rel_path: str) -> bool:
+    """Index policy: True if rel_path must not be embedded/indexed/read by scanners."""
+    return any(_match_glob(rel_path, g) for g in DENYLIST_GLOBS)
+
+
+def is_tracked_secret(rel_path: str) -> bool:
+    """Security lint: True if a *tracked* rel_path is a genuine secret/private leak."""
+    if not any(_match_glob(rel_path, g) for g in SECRET_DENYLIST_GLOBS):
+        return False
+    return not any(_match_glob(rel_path, g) for g, _reason in ALLOWLIST_GLOBS)
+
 
 # High-signal secret patterns (false-positive safe; real scan is pre_deploy_check)
 SECRET_PATTERNS = (

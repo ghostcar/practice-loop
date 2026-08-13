@@ -12,7 +12,6 @@ generated-state freshness. Exit code 0 = no errors, 1 = errors present.
 
 from __future__ import annotations
 
-import fnmatch
 import json
 import subprocess
 import sys
@@ -21,9 +20,10 @@ from pathlib import Path
 
 from .facts import check_facts
 from .schemas import (
-    DENYLIST_GLOBS,
     FULL_SHA,
     SECRET_PATTERNS,
+    is_denied,
+    is_tracked_secret,
     load_document,
     validate_document,
 )
@@ -68,14 +68,6 @@ def _iter_v2_docs(root: Path) -> list[Path]:
             if p.exists():
                 found.append(p)
     return found
-
-
-def _is_denied(rel_path: str) -> bool:
-    rel = rel_path.replace("\\", "/")
-    for pattern in DENYLIST_GLOBS:
-        if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel.lstrip("./"), pattern):
-            return True
-    return False
 
 
 def _scan_secrets(text: str, rel: str, result: LintResult) -> None:
@@ -127,7 +119,7 @@ def lint(root: Path) -> LintResult:
 
     for doc in docs:
         rel = doc.path.relative_to(root).as_posix()
-        if _is_denied(rel):
+        if is_denied(rel):
             result.add("error", f"{rel}: path is on the denylist")
             continue
         if doc.has_frontmatter:
@@ -174,8 +166,8 @@ def lint(root: Path) -> LintResult:
     proc = subprocess.run(["git", "ls-files"], cwd=str(root), capture_output=True, text=True, timeout=30)
     if proc.returncode == 0:
         for rel in proc.stdout.splitlines():
-            if rel.strip() and _is_denied(rel):
-                result.add("warning", f"git-tracked path on denylist: {rel}")
+            if rel.strip() and is_tracked_secret(rel):
+                result.add("warning", f"git-tracked path is a suspected secret: {rel}")
 
     if not frontmatter_docs:
         result.add("info", "no Memory v2 frontmatter documents found yet (M2 will populate docs/wiki|adr|questions)")

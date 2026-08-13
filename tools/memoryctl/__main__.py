@@ -25,6 +25,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("lint", help="validate Memory v2 corpus and generated state")
     facts_p = sub.add_parser("facts", help="generate docs/state/FACTS.json + NOW.md")
     facts_p.add_argument("--check", action="store_true", help="verify freshness without writing")
+    adr = sub.add_parser("adr", help="split legacy DECISIONS.md into docs/adr/")
+    adr_sub = adr.add_subparsers(dest="adr_command", required=True)
+    adr_sub.add_parser("compile", help="generate docs/adr/ADR-NNN.md + README.md")
+    adr_sub.add_parser("check", help="bidirectional verification (no writes)")
 
     args = parser.parse_args(argv)
     root = args.root or find_repo_root(Path.cwd())
@@ -49,6 +53,17 @@ def main(argv: list[str] | None = None) -> int:
         json_path, now_path = facts_mod.write_facts(root, facts)
         print(f"wrote {json_path.relative_to(root)} and {now_path.relative_to(root)}")
         return 0
+    if args.command == "adr":
+        from . import adr as adr_mod
+
+        if args.adr_command == "compile":
+            nums = adr_mod.compile_adrs(root)
+            print(f"wrote {len(nums)} ADR files + docs/adr/README.md")
+            return 0
+        ok, msgs = adr_mod.check_bidirectional(root)
+        for m in msgs:
+            print(m)
+        return 0 if ok else 1
     parser.error(f"unknown command {args.command!r}")
     return 2
 

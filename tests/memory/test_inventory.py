@@ -2,22 +2,22 @@
 
 from __future__ import annotations
 
-from tools.memoryctl.inventory import _is_denied, collect_inventory, render_report
-from tools.memoryctl.schemas import DENYLIST_GLOBS
+from tools.memoryctl.inventory import collect_inventory, render_report
+from tools.memoryctl.schemas import DENYLIST_GLOBS, SECRET_DENYLIST_GLOBS, is_tracked_secret
 
 
-def test_denylist_helper():
-    assert _is_denied(".env")
-    assert _is_denied(".env.prod")
-    assert _is_denied(".agent-runtime/session.json")
-    assert _is_denied(".memory-local/episodes/x.md")
-    assert _is_denied("uploads/photo.jpg")
-    assert _is_denied("app/static/fonts/InterVariable.woff2")
-    assert _is_denied("examples/memory/MEMORY_SCHEMA.md")
-    assert not _is_denied("app/api/tasks.py")
-    assert not _is_denied("docs/state/FACTS.json")
-    assert not _is_denied("memory/STATUS.md")
+def test_tracked_secret_helper():
+    assert is_tracked_secret(".env")
+    assert is_tracked_secret(".env.prod")
+    assert is_tracked_secret("uploads/photo.jpg")
+    assert is_tracked_secret("backup.sql.dump")
+    # P2-4: sanitized template + vendored assets are not secrets
+    assert not is_tracked_secret(".env.example")
+    assert not is_tracked_secret("app/static/fonts/InterVariable.woff2")
+    assert not is_tracked_secret("app/api/tasks.py")
+    assert not is_tracked_secret("docs/state/FACTS.json")
     assert len(DENYLIST_GLOBS) >= 12
+    assert len(SECRET_DENYLIST_GLOBS) >= 8
 
 
 def test_inventory_reports_startup_and_memory(tmp_path):

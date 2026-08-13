@@ -1,3 +1,11 @@
+## 2026-08-13 — Сессия 112 (Memory v2 M2 — полный gate + P2-4)
+
+- **P2-4 (аудит)**: разделил index-denylist и secret-denylist. `DENYLIST_GLOBS` (index, исправлены мёртвые minified-глобы `app/static/**/htmx.min.js` → `app/static/htmx.min.js` на реальные плоские пути); новый `SECRET_DENYLIST_GLOBS` (настоящие секреты/приватные данные) + `ALLOWLIST_GLOBS` (`.env.example` с provenance). `memoryctl lint` сходится к **0 warnings** (было 3: .env.example + 2 Inter-шрифта).
+- **ADR-компилятор** `tools/memoryctl/adr.py`: `adr compile` (split `memory/DECISIONS.md` → 68 файлов `docs/adr/ADR-NNN.md` + `README.md`) и `adr check` (двусторонняя сверка legacy == generated). Исправлен парсер таблицы: pipe внутри решения ADR-048 (`tracker|timer|combined`). decision_type: product/safety/technical (эвристика, human-refine); статусы принято→accepted, отложено→proposed (ADR-012/013/019).
+- **L0**: `knowledge.md` (root, C-PRACTICE-LOOP) + 5 domain-local (`app/locktimer/`, `app/platform/social/`, `app/llm/`, `alembic/`, `tests/` — kind contract, C-*).
+- **L1**: `docs/questions/` PQ-005 (оплата), PQ-006 (рейт-лимиты), EQ-0013 (OCR), EQ-0014 (penalty HTTP); `docs/wiki/` 5 страниц (K-SAFETY-HYBRID-GENERATION, K-LOCKTIMER-SAFETY-STOP, K-DEVICE-TZ-BUCKETS, K-PERSONAL-FIRST, K-TRACKER-STATUS-MACHINE).
+- **Проверка**: 669/669 ✅ (45 memory), ruff ✅, `adr check` 68==68 ✅, `lint` 0 errors/0 warnings (до регенерации facts).
+
 ## 2026-08-13 — Сессия 110 (Memory v2 M0+M1)
 
 - **Встроена Memory v2-архитектура (RFC от владельца, examples/LT/memory)**: принято владельцем M0 + M1 (ADR-068, accepted), без freeze legacy memory/.

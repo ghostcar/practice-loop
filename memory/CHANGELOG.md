@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 112 — Memory v2 M2 + P2-4 | Полный M2 gate: ADR-компилятор (tools/memoryctl/adr.py, 68 ADR-файлов docs/adr/ + README, bidirectional check); knowledge.md root + 5 domain-local (C-*); docs/questions/ (PQ-005/006, EQ-0013/0014); docs/wiki/ 5 страниц (K-*). P2-4: index/secret denylist разделены + allowlist .env.example, lint 0 warnings. 669/669 ✅, 45 memory-тестов |
 | 2026-08-13 | Session 110 — Memory v2 M0+M1 | Многоуровневая память (ADR-068 accepted): RFC → docs/memory-rfc/ + BENCHMARK_TASKS (12); tools/memoryctl (schemas/facts/inventory/lint/CLI, stdlib-only); tests/memory 37/37; полный suite 661/661 ✅; .gitignore/.codebuffignore/.cbmignore; docs/state/FACTS.json+NOW.md (детерминированные, якорь HEAD вне docs/state); CI memory-lint informational; DECISIONS.md таблица дозаполнена ADR-061…068 |
 | 2026-08-13 | Session 108 — prod timer smoke + fix | Активная таймер-сессия на проде: старт/слоты/задачи/tags/safety-stop зелёные; фикс 409 open слота (max_late_seconds в api_add_slot_rule, default 3600 + инпут формы + i18n); долг Q14 — penalty не проброшен в HTTP |
 | 2026-08-13 | Session 107 — prod smoke + fix | 500 на /locktimer и /locktimer/calendar: date-строка против timestamptz в list_sessions_by_date_range → app.timeutils.local_day_bounds() (aware UTC, client-tz); +5 тестов, 624/624 ✅, smoke 0 фейлов |

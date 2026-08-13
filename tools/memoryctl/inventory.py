@@ -12,13 +12,12 @@ Never writes anything. Deterministic output (line order stable).
 
 from __future__ import annotations
 
-import fnmatch
 import json
 import re
 import subprocess
 from pathlib import Path
 
-from .schemas import DENYLIST_GLOBS
+from .schemas import is_tracked_secret
 
 STARTUP_FILES = ("AGENTS.md", "DOCUMENTATION_MAP.md", "knowledge.md")
 MEMORY_GLOBS = ("memory/**/*.md",)
@@ -40,14 +39,6 @@ def _git_tracked(root: Path) -> list[str]:
     if proc.returncode != 0:
         return []
     return [ln for ln in proc.stdout.splitlines() if ln.strip()]
-
-
-def _is_denied(rel_path: str) -> bool:
-    rel = rel_path.replace("\\", "/")
-    for pattern in DENYLIST_GLOBS:
-        if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel.lstrip("./"), pattern):
-            return True
-    return False
 
 
 def _dangling_refs(root: Path) -> list[tuple[str, str]]:
@@ -117,7 +108,7 @@ def collect_inventory(root: Path) -> dict:
         open_questions = list(dict.fromkeys(QUESTION_HEADER_RE.findall(qtext)))
 
     tracked = _git_tracked(root)
-    denied_tracked = sorted(p for p in tracked if _is_denied(p))
+    denied_tracked = sorted(p for p in tracked if is_tracked_secret(p))
     benchmark = root / "docs" / "memory-rfc" / "BENCHMARK_TASKS.md"
     benchmark_count = 0
     if benchmark.exists():

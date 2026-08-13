@@ -1,6 +1,6 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 111 — полный read-only аудит backend/security/LLM/infra/frontend; отчёт `docs/audits/PROJECT_REVIEW_2026-08-13.md`; код не менялся).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 112 — Memory v2 M2 полный gate: 68 ADR + knowledge/ questions/ wiki/ + P2-4 denylist-фикс; 669/669 ✅).
 
 ## Общий статус: 661 тест собран; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅
 
