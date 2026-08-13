@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -24,7 +24,7 @@ async def get_today_schedule(
     user: User = Depends(get_current_user),
 ):
     """Get schedule for today (returns rules for this day of week)."""
-    today = datetime.now()
+    today = datetime.now(UTC)
     dow = today.weekday()  # 0=Mon
     result = await db.execute(
         select(ScheduleRule)

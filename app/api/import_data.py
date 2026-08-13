@@ -9,7 +9,7 @@ import csv
 import io
 import json
 import uuid
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
@@ -380,7 +380,7 @@ async def export_full(
 ):
     """Full backup: export ALL user data as a single JSON."""
     full: dict[str, Any] = {
-        "exported_at": datetime.now().isoformat(),
+        "exported_at": datetime.now(UTC).isoformat(),
         "version": "0.5.0",
         "user": {
             "email": user.email,

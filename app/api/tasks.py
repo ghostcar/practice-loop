@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -96,7 +96,7 @@ async def tasks_page(
 
     # Get today's calendar schedule
     today_schedule = await get_day_schedule(db, user.id, date.today())
-    now_available, now_policy, now_label, _ = await is_available(db, user.id, datetime.now(), 60, "active")
+    now_available, now_policy, now_label, _ = await is_available(db, user.id, datetime.now(UTC), 60, "active")
 
     # Get due practices
     due_practices = await get_due_practices(db, user.id, limit=8)

@@ -89,7 +89,7 @@ def _generate_slot_occurrences(
     elif rule.rule_type == e.SLOT_RULE_EXACT_DATETIME:
         dt_str = schedule.get("datetime")
         if dt_str:
-            dt = datetime.fromisoformat(dt_str)
+            dt = as_utc(datetime.fromisoformat(dt_str))
             occ = _make_slot_occ(session, rule, idx, dt, dt + timedelta(seconds=rule.duration_seconds))
             occurrences.append(occ)
 
@@ -162,7 +162,7 @@ def _generate_task_occurrences(
     elif rule.schedule_type == e.TASK_SCHED_EXACT_DATETIME:
         dt_str = schedule.get("datetime")
         if dt_str:
-            appears = datetime.fromisoformat(dt_str)
+            appears = as_utc(datetime.fromisoformat(dt_str))
             due_at = appears + timedelta(seconds=rule.due_window_seconds)
             occ = _make_task_occ(session, rule, idx, appears, due_at)
             occurrences.append(occ)

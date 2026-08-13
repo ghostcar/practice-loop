@@ -18,7 +18,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Ensure we can import app modules
@@ -158,7 +158,7 @@ async def cmd_export(args: argparse.Namespace) -> None:
             from app.gamification.handler import get_or_create_progress
 
             full: dict = {
-                "exported_at": datetime.now().isoformat(),
+                "exported_at": datetime.now(UTC).isoformat(),
                 "version": "0.5.0",
                 "user": {"email": user.email},
             }

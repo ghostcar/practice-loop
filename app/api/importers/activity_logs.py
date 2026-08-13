@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +34,7 @@ async def _import_activity_logs(rows: list[dict], db: AsyncSession, user: User, 
                 if e_row:
                     entity_id = e_row[0]
 
-            created_at = datetime.now()
+            created_at = datetime.now(UTC)
             if row.get("created_at"):
                 created_at = datetime.fromisoformat(str(row["created_at"]))
 
