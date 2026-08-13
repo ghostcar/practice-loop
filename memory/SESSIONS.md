@@ -1,3 +1,13 @@
+## 2026-08-13 — Сессия 110 (Memory v2 M0+M1)
+
+- **Встроена Memory v2-архитектура (RFC от владельца, examples/LT/memory)**: принято владельцем M0 + M1 (ADR-068, accepted), без freeze legacy memory/.
+- **M0**: RFC-файлы → `docs/memory-rfc/` (5 файлов + BENCHMARK_TASKS.md — 12 benchmark-задач на реальных путях), ADR-068 (принято), строка в DOCUMENTATION_MAP.md, дозаполнена таблица ADR-061…068 в DECISIONS.md (таблица отставала от секций).
+- **M1**: `tools/memoryctl` (stdlib-only): schemas.py (frontmatter-subset парсер + валидация), facts.py (FACTS.json + NOW.md, детерминированные, якорь = последний коммит НЕ трогающий docs/state), inventory.py, lint.py (denylist/секреты/stale-facts/размеры/дубликаты id), __main__.py CLI.
+- **Тесты**: 37/37 в tests/memory/ (schemas/facts/lint/inventory). Полный suite **661/661 ✅**, ruff ✅, format ✅.
+- **Инфраструктура**: .gitignore (+.agent-runtime/, .memory-local/), .codebuffignore/.cbmignore, docs/state/ сгенерирован, CI job `memory-lint` (informational, continue-on-error).
+- **Code review** (deepseek-flash): применены все фиксы — dead code parse_size_limit, типизация frontmatter_raw, int с ведущими нулями, скаляр с ':' в списках, dir-relative резолв ссылок в inventory, порядок validate-then-add в lint, якорная дата generated_at/checked_at.
+- Финальная валидация: 661/661 ✅, 37/37 memory ✅, facts fresh, lint 0 errors/3 warnings (ожидаемые denylist: .env.example + Inter-шрифты), inventory baseline: 68 ADR, 12 benchmark-задач, 0 dangling refs.
+
 ## 2026-08-13 — Сессия 109 (чекпоинт перед перерывом)
 
 - **Чекпоинт зафиксирован**: `memory/CHECKPOINT_S108.md` — сделано / осталось / не делали + с чего продолжить. Краткий перерыв на сервисные задачи.

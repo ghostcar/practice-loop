@@ -56,3 +56,7 @@ uploads/
 
 # Misc
 *.log
+
+# Memory v2 (local-only runtime artifacts — MEMORY_SCHEMA.md §15)
+.agent-runtime/
+.memory-local/

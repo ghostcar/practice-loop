@@ -45,7 +45,10 @@
 ### Память
 
 - `memory/CONTEXT.md`, `memory/STATUS.md`, `memory/DECISIONS.md`, `memory/OPEN_QUESTIONS.md`,
-  `memory/SESSIONS.md`, `memory/CHANGELOG.md`.
+  `memory/SESSIONS.md`, `memory/CHANGELOG.md` — legacy v1 (frozen не ранее M5);
+- `docs/memory-rfc/` — RFC Memory v2 (архитектура, schema, план M0–M6);
+- `docs/state/FACTS.json` + `docs/state/NOW.md` — generated facts текущего HEAD (v2, L2);
+- `tools/memoryctl` — schema/lint/facts/inventory (v2, M1).
 
 ### Исторические и входные материалы
 

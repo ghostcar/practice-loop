@@ -1,0 +1,16 @@
+# Memory v2 hard denylist (MEMORY_SCHEMA.md §15) — can be extended, never relaxed
+.env*
+.agent-runtime/**
+.memory-local/**
+uploads/**
+examples/**
+**/*.db
+**/*.sqlite*
+**/*.log
+**/*dump*
+**/*backup*
+**/raw_llm_response*
+app/static/fonts/**
+app/static/**/tailwindcss.js
+app/static/**/chart.umd.min.js
+app/static/**/htmx.min.js

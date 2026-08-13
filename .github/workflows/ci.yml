@@ -86,6 +86,18 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://tracker:tracker@localhost:5432/tracker_test
 
+  # ── Memory v2 lint (informational — MEMORY_IMPLEMENTATION_PLAN.md M1) ──
+  memory-lint:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m tools.memoryctl lint
+      - run: python -m tools.memoryctl facts --check || echo "FACTS stale for this environment — regenerate locally"
+
   # ── Docker image build (P0: production deps must actually install) ──
   docker:
     runs-on: ubuntu-latest

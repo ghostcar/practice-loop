@@ -1,0 +1,173 @@
+"""Read-only inventory of the memory corpus (M0 baseline).
+
+Reports:
+- startup-context files (AGENTS.md, DOCUMENTATION_MAP.md, memory/*, knowledge.md) with sizes;
+- memory files, roles and line counts;
+- ADR / open-question counts from legacy files;
+- dangling repo-relative markdown references;
+- denylist audit over git-tracked files.
+
+Never writes anything. Deterministic output (line order stable).
+"""
+
+from __future__ import annotations
+
+import fnmatch
+import json
+import re
+import subprocess
+from pathlib import Path
+
+from .schemas import DENYLIST_GLOBS
+
+STARTUP_FILES = ("AGENTS.md", "DOCUMENTATION_MAP.md", "knowledge.md")
+MEMORY_GLOBS = ("memory/**/*.md",)
+
+ADR_RE = re.compile(r"\bADR-\d{3,}\b")
+QUESTION_HEADER_RE = re.compile(r"^##\s+(Q\d{1,3}|PQ-\d{3,}|EQ-\d{4,})\b", re.M)
+MARKDOWN_LINK_RE = re.compile(r"\]\(([^)#]+?)(?:#[^)]*)?\)")
+MARKDOWN_PATH_RE = re.compile(r"^\s*[-*]?\s*`?([A-Za-z0-9_./-]+\.md)`?\s*—", re.M)
+
+
+def _git_tracked(root: Path) -> list[str]:
+    proc = subprocess.run(
+        ["git", "ls-files"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if proc.returncode != 0:
+        return []
+    return [ln for ln in proc.stdout.splitlines() if ln.strip()]
+
+
+def _is_denied(rel_path: str) -> bool:
+    rel = rel_path.replace("\\", "/")
+    for pattern in DENYLIST_GLOBS:
+        if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel.lstrip("./"), pattern):
+            return True
+    return False
+
+
+def _dangling_refs(root: Path) -> list[tuple[str, str]]:
+    """Find markdown links / 'file.md —' mentions that point to missing repo files."""
+    dangling: list[tuple[str, str]] = []
+    md_files = sorted(root.rglob("*.md"))
+    for path in md_files:
+        rel = path.relative_to(root).as_posix()
+        if rel.startswith((".git/", "examples/", ".venv/", "docs/memory-rfc/")):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for m in MARKDOWN_LINK_RE.finditer(text):
+            target = m.group(1).strip()
+            if not target or target.startswith(("http://", "https://", "mailto:", "#")):
+                continue
+            if _resolve_ref(root, path.parent, target) is None:
+                dangling.append((rel, target))
+        for m in MARKDOWN_PATH_RE.finditer(text):
+            target = m.group(1).strip()
+            if target and not target.startswith(("http", "#")) and _resolve_ref(root, path.parent, target) is None:
+                dangling.append((rel, target))
+    return dangling
+
+
+def _resolve_ref(root: Path, base_dir: Path, target: str) -> Path | None:
+    """Resolve a markdown reference: repo-root-relative, then file-relative."""
+    target = target.split("#")[0].strip()
+    if not target:
+        return None
+    for candidate in (root / target, base_dir / target):
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def collect_inventory(root: Path) -> dict:
+    startup: list[dict] = []
+    for name in STARTUP_FILES:
+        p = root / name
+        if p.exists():
+            text = p.read_text(encoding="utf-8")
+            startup.append(
+                {
+                    "path": name,
+                    "bytes": len(text.encode("utf-8")),
+                    "lines": text.count("\n") + 1,
+                }
+            )
+    memory_files: list[dict] = []
+    for p in sorted((root / "memory").rglob("*.md")):
+        rel = p.relative_to(root).as_posix()
+        text = p.read_text(encoding="utf-8")
+        memory_files.append({"path": rel, "bytes": len(text.encode("utf-8")), "lines": text.count("\n") + 1})
+
+    decisions = root / "memory" / "DECISIONS.md"
+    adr_ids: list[str] = []
+    open_questions: list[str] = []
+    if decisions.exists():
+        dtext = decisions.read_text(encoding="utf-8")
+        adr_ids = sorted(set(ADR_RE.findall(dtext)), key=lambda x: int(x.split("-")[1]))
+    questions = root / "memory" / "OPEN_QUESTIONS.md"
+    if questions.exists():
+        qtext = questions.read_text(encoding="utf-8")
+        open_questions = list(dict.fromkeys(QUESTION_HEADER_RE.findall(qtext)))
+
+    tracked = _git_tracked(root)
+    denied_tracked = sorted(p for p in tracked if _is_denied(p))
+    benchmark = root / "docs" / "memory-rfc" / "BENCHMARK_TASKS.md"
+    benchmark_count = 0
+    if benchmark.exists():
+        btext = benchmark.read_text(encoding="utf-8")
+        benchmark_count = len(re.findall(r"^##\s+", btext, re.M)) or len(
+            [ln for ln in btext.splitlines() if ln.startswith("### ")]
+        )
+
+    return {
+        "repository": root.name,
+        "startup_context": startup,
+        "startup_context_bytes": sum(s["bytes"] for s in startup),
+        "memory_files": memory_files,
+        "memory_total_bytes": sum(f["bytes"] for f in memory_files),
+        "adr_ids": adr_ids,
+        "open_questions": open_questions,
+        "dangling_refs": _dangling_refs(root),
+        "denied_tracked": denied_tracked,
+        "benchmark_tasks": benchmark_count,
+    }
+
+
+def render_report(inv: dict) -> str:
+    lines: list[str] = []
+    lines.append("# Inventory — memory corpus (generated by memoryctl inventory)")
+    lines.append("")
+    lines.append(f"- Repository: `{inv['repository']}`")
+    lines.append(f"- Startup context: {inv['startup_context_bytes']} bytes across {len(inv['startup_context'])} files")
+    for s in inv["startup_context"]:
+        lines.append(f"  - {s['path']}: {s['bytes']} B / {s['lines']} lines")
+    lines.append(f"- memory/: {inv['memory_total_bytes']} B in {len(inv['memory_files'])} files")
+    for f in inv["memory_files"]:
+        lines.append(f"  - {f['path']}: {f['bytes']} B / {f['lines']} lines")
+    lines.append(
+        f"- ADRs in DECISIONS.md: {len(inv['adr_ids'])} (last: {inv['adr_ids'][-1] if inv['adr_ids'] else '-'})"
+    )
+    lines.append(f"- Open questions: {len(inv['open_questions'])}")
+    lines.append(f"- Benchmark tasks: {inv['benchmark_tasks']}")
+    lines.append(f"- Dangling refs: {len(inv['dangling_refs'])}")
+    for src, target in inv["dangling_refs"][:50]:
+        lines.append(f"  - {src} -> {target}")
+    lines.append(f"- Denied-but-tracked files: {len(inv['denied_tracked'])}")
+    for p in inv["denied_tracked"][:20]:
+        lines.append(f"  - {p}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def inventory(root: Path, as_json: bool = False) -> str:
+    inv = collect_inventory(root)
+    if as_json:
+        return json.dumps(inv, indent=2, ensure_ascii=False)
+    return render_report(inv)
