@@ -32,8 +32,12 @@ Gate: unit-тесты на классификацию, выбор docs, поис
       stdlib `ast`/regex parser) + `memoryctl search-code` (hybrid dense+lexical, клиентский RRF
       fusion, exact confirmation) + A/B флаг `benchmark --vectors`; graceful degradation без
       optional `memory` dev-group; ~25 новых тестов.
-- [ ] **прогон реального A/B** (нужен `pip install -e '.[memory]'` + скачивание BGE-M3):
-      сравнить recall@5/MRR против baseline 0.26/0.356 при pack ≤12 KiB → admit/shadow/off.
+- [x] **реальный A/B** (Сессия 118, Omniroute): embedding через локальный LLM-прокси
+      Omniroute (`openrouter/openai/text-embedding-3-small`, 1536-dim; ADR-069 amended —
+      BGE-M3 невозможна на VPS: fastembed не поддерживает + OOM локальной fp32-модели).
+      Индекс 2167 units ≈ 4 мин, ~$0.01. **Результат: recall@5 0.24 → 0.37 (+0.13),
+      MRR 0.356 → 0.496 (+0.14), pack ≤12 KiB, 0 forbidden; прирост на RU→EN задачах
+      (T3/T4/T5/T8). Gate пройден → пилот admit (shadow/assist-режим).**
 
 Gate: прирост recall@5/MRR против baseline 0.26/0.356 с pack ≤12 KiB; иначе пилот остаётся off/optional.
 

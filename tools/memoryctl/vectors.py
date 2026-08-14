@@ -1,17 +1,19 @@
-"""memoryctl vectors — M3 vector pilot (ADR-069): Qdrant local + BGE-M3 (shadow).
+"""memoryctl vectors — M3 vector pilot (ADR-069 amended): Qdrant local + Omniroute.
 
-Optional-dependency backend. Imports of ``qdrant_client`` and ``fastembed`` are
-lazy and guarded by :func:`is_available`; every command degrades to a clear
-message (or to the exact/lexical fallback) when the optional ``memory`` dev-group
-is not installed. The index lives in ``.memory-local/code-index/`` (gitignored)
-and is fully reproducible from the current Git HEAD — it is never committed.
+Optional-dependency backend. Imports of ``qdrant_client`` and ``httpx`` are lazy
+and guarded by :func:`is_available`; every command degrades to a clear message
+(or to the exact/lexical fallback) when the optional ``memory`` dev-group is not
+installed or Omniroute config is missing. The index lives in
+``.memory-local/code-index/`` (gitignored) and is fully reproducible from the
+current Git HEAD — it is never committed.
 
-Retrieval contract (CODE_MEMORY_DESIGN.md §8, ADR-069): dense ANN (BGE-M3,
-multilingual RU→EN) fused with the deterministic lexical searcher from
-``bootstrap.search_code`` via client-side reciprocal-rank fusion (RRF), then
-exact-confirmed against the worktree. Vector similarity never raises authority:
-the exact/lexical floor is always preserved, and every result carries a
-``confirmation`` verdict.
+Retrieval contract (CODE_MEMORY_DESIGN.md §8, ADR-069 amended): dense ANN via
+Omniroute's remote /v1/embeddings (``openrouter/openai/text-embedding-3-small``,
+multilingual RU→EN — no local model, VPS-friendly) fused with the deterministic
+lexical searcher from ``bootstrap.search_code`` via client-side reciprocal-rank
+fusion (RRF), then exact-confirmed against the worktree. Vector similarity never
+raises authority: the exact/lexical floor is always preserved, and every result
+carries a ``confirmation`` verdict.
 
 Commands (via __main__.py):
     python -m tools.memoryctl index-code [--mode full|incremental|check|shadow|rebuild]
@@ -36,22 +38,33 @@ INDEX_RELPATH = ".memory-local/code-index"
 MANIFEST_NAME = "manifest.json"
 COLLECTION = "code_units"
 
-# Embedding profile (ADR-069, CODE_MEMORY_DESIGN.md §6). A second named vector
-# (code-specific) is added only if BGE-M3 proves weak on code — see ADR-069.
+# Embedding profile (ADR-069 amended, Сессия 118 — владелец).
+#
+# Местный прогон модели невозможен: это VPS с ограниченными ресурсами, а
+# fp32 BGE-M3/multilingual-e5 (≥2.24 ГБ) почти исчерпал 15 ГБ RAM на единственном
+# batch-прогоне. Владелец указал на Omniroute — локальный LLM-прокси на том же
+# хосте (llm.gorbunovr.ru, ~2800 моделей) — как источник эмбеддингов; эти же
+# параметры (OMNIROUTE_HOST / OMNIROUTE_API_KEY) позже использует портал.
+#
+# Выбрана `openrouter/openai/text-embedding-3-small`: 1536-dim, мультиязычная
+# (RU→EN кросс-языковой), дёшево (~$0.02/1M токенов). Qdrant остаётся локальным
+# (это лёгкое хранилище, не модель).
 EMBEDDING_PROFILE = {
-    "provider": "local",
-    "model": "BGE-M3",
-    "model_id": "BAAI/bge-m3",
-    "dimensions": 1024,
+    "provider": "omniroute",
+    "model": "text-embedding-3-small",
+    "model_id": "openrouter/openai/text-embedding-3-small",
+    "dimensions": 1536,
     "normalization": True,
-    "pooling": "mean",
-    "max_length": 8192,
-    "tokenizer": "xlm-roberta",
+    "pooling": "n/a",
+    "max_length": 8191,
+    "tokenizer": "cl100k_base",
     "languages": ["ru", "en", "python", "jinja2", "javascript"],
-    "quantization": "int8",
-    # BGE-M3 emits dense+sparse in one model; local-mode server fusion is
-    # unstable (ADR-069), so the lexical/sparse side is a deterministic
-    # client-side BM25/lexical searcher fused with RRF on the client.
+    "quantization": "n/a",
+    # remote embedding API — no client-side query/document prefix required.
+    "query_prefix": "",
+    "document_prefix": "",
+    # dense is remote (Omniroute); the lexical side is a deterministic
+    # client-side searcher fused with RRF on the client (no local model).
     "sparse": "client-lexical-fallback",
 }
 
@@ -73,10 +86,32 @@ def point_id(content_hash: str) -> str:
     return str(uuid.UUID(hexdigest[:32]))
 
 
+def omniroute_settings(root: Path) -> dict:
+    """Read OMNIROUTE_HOST / OMNIROUTE_API_KEY from env, then the project .env.
+
+    Stdlib-only; the same variables later drive the portal (ADR-069 amend).
+    """
+    import os
+
+    out: dict = {}
+    env = root / ".env"
+    file_vars: dict = {}
+    if env.is_file():
+        for line in env.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            file_vars[k.strip()] = v.strip().strip('"').strip("'")
+    for key in ("OMNIROUTE_HOST", "OMNIROUTE_API_KEY"):
+        out[key] = os.environ.get(key) or file_vars.get(key, "")
+    return out
+
+
 def is_available() -> tuple[bool, str]:
-    """Whether the optional vector dependencies are importable."""
+    """Whether the vector backend deps + Omniroute config are present."""
     try:
-        import fastembed  # noqa: F401
+        import httpx  # noqa: F401
         import qdrant_client  # noqa: F401
     except ImportError as exc:  # pragma: no cover - env dependent
         return False, f"optional 'memory' deps not installed ({exc.name}); pip install -e '.[memory]'"
@@ -84,17 +119,21 @@ def is_available() -> tuple[bool, str]:
 
 
 # ---------------------------------------------------------------------------
-# Embedder (fastembed, lazy)
+# Embedder (Omniroute /v1/embeddings — remote, OpenAI-compatible)
 # ---------------------------------------------------------------------------
 
 
 class Embedder:
-    """Dense embedding via fastembed (BGE-M3), constructed lazily."""
+    """Dense embedding via Omniroute's OpenAI-compatible /v1/embeddings endpoint."""
 
-    def __init__(self) -> None:
-        from fastembed import TextEmbedding
+    def __init__(self, host: str, api_key: str) -> None:
+        import httpx
 
-        self._model = TextEmbedding(model_name="BGE-M3")
+        self._base = host.rstrip("/")
+        if not self._base.startswith(("http://", "https://")):
+            self._base = "https://" + self._base
+        self._headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        self._client = httpx.Client(timeout=120.0)
 
     @property
     def dimensions(self) -> int:
@@ -103,8 +142,24 @@ class Embedder:
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        vectors = self._model.embed(texts)
-        return [[float(x) for x in vec] for vec in vectors]
+        resp = self._client.post(
+            f"{self._base}/v1/embeddings",
+            headers=self._headers,
+            json={"model": EMBEDDING_PROFILE["model_id"], "input": texts},
+        )
+        resp.raise_for_status()
+        data = resp.json()["data"]
+        # sort back into request order (providers may reorder)
+        data = sorted(data, key=lambda d: d["index"])
+        return [[float(x) for x in d["embedding"]] for d in data]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        prefix = EMBEDDING_PROFILE.get("document_prefix", "")
+        return self.embed([prefix + t for t in texts])
+
+    def embed_query(self, query: str) -> list[float]:
+        prefix = EMBEDDING_PROFILE.get("query_prefix", "")
+        return self.embed([prefix + query])[0]
 
 
 def embed_text(unit: code_units.CodeUnit) -> str:
@@ -251,12 +306,24 @@ def index_code(root: Path, *, mode: str = "full", limit: int | None = None) -> d
     if limit is not None:
         units = units[:limit]
 
-    embedder = Embedder()
-    texts = [embed_text(u) for u in units]
-    vectors = embedder.embed(texts) if texts else []
+    omni = omniroute_settings(root)
+    if not omni["OMNIROUTE_HOST"] or not omni["OMNIROUTE_API_KEY"]:
+        return {
+            "available": True,
+            "status": "blocked",
+            "reason": "OMNIROUTE_HOST / OMNIROUTE_API_KEY not set in .env or environment",
+        }
+    embedder = Embedder(omni["OMNIROUTE_HOST"], omni["OMNIROUTE_API_KEY"])
 
+    # Chunked embed→upsert keeps request sizes bounded (remote API, no local model).
     store = QdrantStore(root)
-    store.upsert(units, vectors)
+    batch = 64
+    for i in range(0, len(units), batch):
+        chunk = units[i : i + batch]
+        texts = [embed_text(u) for u in chunk]
+        vectors = embedder.embed_documents(texts)
+        store.upsert(chunk, vectors)
+        print(f"indexed {min(i + batch, len(units))}/{len(units)} units", flush=True)
 
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -294,8 +361,16 @@ def search_code(root: Path, query: str, *, limit: int = 20, dense_limit: int = 6
             "reason": "index missing or stale for current HEAD — run 'memoryctl index-code'",
         }
 
-    embedder = Embedder()
-    qvec = embedder.embed([query])[0]
+    omni = omniroute_settings(root)
+    if not omni["OMNIROUTE_HOST"] or not omni["OMNIROUTE_API_KEY"]:
+        return {
+            "available": True,
+            "results": [],
+            "stale": True,
+            "reason": "OMNIROUTE_HOST / OMNIROUTE_API_KEY not set in .env or environment",
+        }
+    embedder = Embedder(omni["OMNIROUTE_HOST"], omni["OMNIROUTE_API_KEY"])
+    qvec = embedder.embed_query(query)
 
     store = QdrantStore(root)
     dense = store.search(qvec, limit=dense_limit)

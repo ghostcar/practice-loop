@@ -1,3 +1,12 @@
+## 2026-08-14 — Сессия 118b (реальный A/B вектор-пилота через Omniroute — ADR-069 amended)
+
+- **Решение владельца (в ходе прогона)**: это VPS с ограниченными ресурсами — локальные модели не запускать; для LLM-нужд использовать Omniroute (локальный LLM-прокси на том же хосте, ~2800 моделей, 47 embedding). В .env добавлены `OMNIROUTE_HOST=llm.gorbunovr.ru` и `OMNIROUTE_API_KEY` — эти же параметры позже будут использоваться порталом.
+- **Провал локального подхода**: BGE-M3 не поддерживается fastembed нативно (qdrant/fastembed#348 — патч); multilingual-e5-large (2.24 ГБ fp32) OOM-нула 15 ГБ RAM на единственном batch-прогоне (процесс убит, индекс не записан). Локальные модели на этом VPS невозможны.
+- **Переключение на Omniroute**: `Embedder` переписан на remote `/v1/embeddings` (OpenAI-compatible, httpx); модель `openrouter/openai/text-embedding-3-small` (1536-dim, мультиязычная RU→EN, ~$0.02/1M токенов). Проверено на проде: работает. Qdrant остаётся локальным (лёгкое хранилище, не модель). fastembed/onnxruntime удалены из optional-группы `memory` (pyproject) и деинсталлированы; numpy остался (транзитивная зависимость, не используется кодом).
+- **Реальный A/B** (`index-code --mode full` + `benchmark --vectors`): индекс 2167 units ≈ 4 мин, ~$0.01. **recall@5 0.24 → 0.37 (+0.13), MRR 0.356 → 0.496 (+0.14), pack ≤12 KiB, 0 forbidden.** Прирост именно на RU→EN задачах (T3 границы суток, T4 safety-stop, T5 social/D-s, T8 alembic-head); T6/T10/T11 остались ≈0 (semantic не покрывает: raw_llm_response, OCR, «почему 500 на Postgres»). Ни одного негативного delta. Gate STAGE_PLAN пройден → **пилот admit (shadow/assist)**.
+- **ADR-069 amended**: строка таблицы + секция (embedding через Omniroute вместо BGE-M3), `adr compile` → 69 docs/adr/ + bidirectional check 69==69.
+- **Тесты**: +3 (omniroute_settings из .env, env-override, blocked без конфига); 32/32 memory-таргетных ✅. Полный suite — перегоняю повторно.
+
 ## 2026-08-13 — Сессия 118 (M3 вектор-пилот по ADR-069)
 
 - **Реализация вектор-пилота** (остаток Этапа 2, ADR-069) — код полностью готов, реальный A/B-прогон отложен (нужны optional `memory` deps + скачивание BGE-M3):

@@ -24,8 +24,8 @@
 - [x] **M3 base**: memoryctl bootstrap (детерминированный exact-fallback) + STAGE_PLAN на 3 этапа; tests/memory/test_bootstrap.py 13; итого 58 memory-тестов
 - [x] **M3 benchmark** (Этап 2): harness по 12 задачам + baseline (recall@5 0.26, pack ≤9 KiB, 0 forbidden) → docs/state/BENCHMARK.json
 - [x] **Решение по пилотам (ADR-069)**: BGE-M3 multilingual + единственный пилот Qdrant local vectors (shadow); QMD/graph отложены; зависимости optional dev-group
-- [x] **Реализация пилота** (Сессия 118): `code_units.py` (stdlib структурный парсер) + `vectors.py` (lazy Qdrant-local + fastembed BGE-M3: index-code / search-code с клиентским RRF fusion + exact confirmation) + A/B флаг `benchmark --vectors` (graceful unavailable); optional dev-group `memory`; 734/734 ✅ (+25)
-- [ ] **Реальный A/B-прогон**: требует `pip install -e '.[memory]'` + скачивание BGE-M3 в `.memory-local/` → admit/shadow/off по recall@5/MRR vs baseline 0.26/0.356 (pack ≤12 KiB)
+- [x] **Реализация пилота** (Сессия 118): `code_units.py` (stdlib структурный парсер) + `vectors.py` (lazy Qdrant-local + embedding через Omniroute: index-code / search-code с клиентским RRF fusion + exact confirmation) + A/B флаг `benchmark --vectors` (graceful unavailable); optional dev-group `memory` = qdrant-client; 734/734 ✅ (+25)
+- [x] **Реальный A/B** (Сессия 118b, Omniroute): `text-embedding-3-small` 1536-dim remote /v1/embeddings (ADR-069 amended — BGE-M3 невозможна на VPS: fastembed не поддерживает + OOM). Индекс 2167 units ~4 мин ~$0.01. **recall@5 0.24→0.37 (+0.13), MRR 0.356→0.496 (+0.14), pack ≤12 KiB, 0 forbidden → пилот admit (shadow/assist)**
 
 ## M4 preflight — Этап 3 (Сессия 117)
 

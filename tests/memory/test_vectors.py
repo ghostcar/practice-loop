@@ -73,19 +73,46 @@ def test_is_available_graceful():
 def test_index_code_check_without_deps(tmp_path):
     root = _init_repo(tmp_path)
     info = v.index_code(root, mode="check")
-    # deps may be absent (blocked) or present-with-no-manifest (stale)
-    assert info.get("status") in ("blocked", "stale")
-    # and full indexing degrades gracefully when deps absent
-    info2 = v.index_code(root, mode="full")
-    assert info2.get("available") is False or info2.get("status") == "ready"
-    assert "reason" in info2 or info2.get("status") == "ready"
+    # no manifest written yet
+    assert info.get("status") == "stale"
+
+
+def test_index_code_blocked_without_omniroute_config(tmp_path):
+    root = _init_repo(tmp_path)
+    info = v.index_code(root, mode="full")
+    # tmp repo has no .env → either deps absent (available=False) or
+    # Omniroute keys missing (available=True, status=blocked)
+    assert info.get("available") is False or info.get("status") == "blocked"
+    if info.get("available"):
+        assert "OMNIROUTE" in info.get("reason", "")
+    else:
+        assert "reason" in info
+
+
+def test_omniroute_settings_reads_dotenv(tmp_path):
+    (tmp_path / ".env").write_text("OMNIROUTE_HOST=llm.example.ru\nOMNIROUTE_API_KEY=sk-test-123\n", encoding="utf-8")
+    s = v.omniroute_settings(tmp_path)
+    assert s["OMNIROUTE_HOST"] == "llm.example.ru"
+    assert s["OMNIROUTE_API_KEY"] == "sk-test-123"
+
+
+def test_omniroute_settings_env_overrides_file(tmp_path, monkeypatch):
+    (tmp_path / ".env").write_text("OMNIROUTE_HOST=from-file\n", encoding="utf-8")
+    monkeypatch.setenv("OMNIROUTE_HOST", "from-env")
+    s = v.omniroute_settings(tmp_path)
+    assert s["OMNIROUTE_HOST"] == "from-env"
 
 
 def test_search_code_degrades_without_deps(tmp_path):
     root = _init_repo(tmp_path)
     result = v.search_code(root, "open slot")
-    # Either deps absent (degraded) or index stale (fresh HEAD not yet indexed)
-    assert not result.get("available") or result.get("stale") is True or result.get("results") == []
+    # Either deps absent (degraded), config missing, or index stale
+    assert (
+        not result.get("available")
+        or result.get("stale") is True
+        or result.get("results") == []
+        or "OMNIROUTE" in result.get("reason", "")
+    )
 
 
 def test_cosine():

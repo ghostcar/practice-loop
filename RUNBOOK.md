@@ -210,6 +210,12 @@ docker stats --no-stream
 - **Pre-commit (опционально, локально)**: `git config core.hooksPath .githooks` — блокирует
   commit кода без свежего sentinel (`memoryctl sentinel`). Docs/memory-only commit всегда проходит.
 - **CI**: job `memory-lint` (informational) — `memoryctl lint` + `facts --check`.
+- **Векторный индекс (ADR-069, shadow/assist)**: `pip install -e '.[memory]'` (только
+  `qdrant-client`), затем `python -m tools.memoryctl index-code` (2167 units ≈ 4 мин, ~$0.01) и
+  `python -m tools.memoryctl search-code --query "..."` (hybrid dense+lexical → RRF → exact
+  confirmation). Эмбеддинги — через Omniroute: `OMNIROUTE_HOST` / `OMNIROUTE_API_KEY` в `.env`
+  (модель `openrouter/openai/text-embedding-3-small`, 1536-dim; эти же параметры позже
+  используются порталом). A/B: `python -m tools.memoryctl benchmark --vectors`.
 - **Инварианты**: `docs/state/*` и `docs/adr/*` генерируются (никогда руками); секреты/uploads/
   raw LLM/эпизоды не индексируются и не коммитятся; продуктовые/safety-решения — только владелец.
 

@@ -42,12 +42,11 @@ dev = [
     "pytest>=8.2,<8.3",
     "pytest-asyncio>=0.23,<0.24",
 ]
-# ADR-069 — M3 vector pilot. Dev-only; the FastAPI runtime must never pull
-# onnxruntime/fastembed, so this is a separate optional group, not in `dev`.
+# ADR-069 (amended) — M3 vector pilot. Embeddings go through Omniroute
+# (remote /v1/embeddings, OpenAI-compatible); only the lightweight Qdrant
+# local store is installed. The FastAPI runtime must never pull onnxruntime.
 memory = [
     "qdrant-client>=1.9,<2.0",
-    "fastembed>=0.6,<1.0",
-    "onnxruntime>=1.17,<2.0",
 ]
 
 [tool.setuptools.packages.find]
