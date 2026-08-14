@@ -79,3 +79,4 @@
 | [ADR-073](ADR-073.md) | 2026-08-14 | Шаг 5: икон-пак PracticeLoop + Gate B (async media, transaction boundary, browser smoke) | accepted |
 | [ADR-074](ADR-074.md) | 2026-08-14 | Шаг 6: LLM-инструменты личного контура (prompt library, templates, private KB) | accepted |
 | [ADR-075](ADR-075.md) | 2026-08-14 | Шаг 7: LLM-верификация медиа (vision через Omniroute, ADR-070 Q13) | accepted |
+| [ADR-076](ADR-076.md) | 2026-08-14 | Шаг 8: второй эшелон личного контура (device inventory, честный UI, TG-команды) | accepted |
