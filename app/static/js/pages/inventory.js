@@ -116,7 +116,7 @@
       </div>
       <div class="flex items-center gap-1 flex-shrink-0">
         <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-indigo-500 text-sm px-2" title="Photo" aria-label="Photo"></button>
-        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-red-500 text-sm px-2" title="Remove photo" aria-label="Remove photo">✕</button>` : ''}
+        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-red-500 text-sm px-2" title="Remove photo" aria-label="Remove photo"></button>` : ''}
         <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
       </div>
     </div>

@@ -61,3 +61,37 @@ def test_no_dangling_svg_in_templates() -> None:
         if "<svg" in path.read_text(encoding="utf-8"):
             offenders.append(str(path))
     assert not offenders, f"raw <svg> remaining in templates: {offenders}"
+
+
+# Emoji used as content VALUES (not icons) — stored in DB / select options
+# where SVG icons cannot render. Kept intentionally; see PLAN.md debt list.
+CONTENT_EMOJI_FILES = {"app/templates/social/verification.html"}
+
+# Emoji symbols that are only ever allowed as content values, never as UI icons.
+EMOJI_RE = re.compile("[\U0001f300-\U0001faff\U00002600-\U000027bf\U0001f000-\U0001f0ff]")
+
+
+def test_no_emoji_icons_in_templates() -> None:
+    """After the Step 8 sweep, templates must not use emoji as UI icons.
+
+    Exceptions: files where emoji are content values (reaction buttons stored
+    in DB, select-option markers) — see CONTENT_EMOJI_FILES. New emoji icons
+    anywhere else are a regression against the icon-pack obligation.
+    """
+    offenders = []
+    for path in TEMPLATES_DIR.rglob("*.html"):
+        rel = str(path)
+        if rel in CONTENT_EMOJI_FILES:
+            continue
+        if EMOJI_RE.search(path.read_text(encoding="utf-8")):
+            offenders.append(rel)
+    assert not offenders, f"emoji icons remaining in templates: {offenders}"
+
+
+def test_no_emoji_icons_in_js() -> None:
+    """JS-generated UI must use window.plIcon, not emoji glyphs."""
+    offenders = []
+    for path in (TEMPLATES_DIR.parent / "static" / "js").rglob("*.js"):
+        if EMOJI_RE.search(path.read_text(encoding="utf-8")):
+            offenders.append(str(path))
+    assert not offenders, f"emoji icons remaining in JS: {offenders}"

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 {% block title %}Session {{ session.id[:8] }} — {{ t.locktimer_title }}{% endblock %}
 {% set active_nav = "locktimer" %}
 
@@ -22,6 +23,12 @@
           {{ session.state_label }}
         </span>
         <span class="text-xs text-gray-500">{{ session.duration_type }} · {{ session.timezone }}</span>
+        {% if bound_device %}
+        <span class="inline-flex items-center gap-1 text-xs text-gray-500">·
+          {{ icon('device', 'w-3.5 h-3.5') }}{{ bound_device.name }}
+          {% if bound_device.inventory_status == 'in_use' %}<span class="text-green-600 dark:text-green-400">({{ t.locktimer_device_in_use or 'in use' }})</span>{% endif %}
+        </span>
+        {% endif %}
         {% if session.started_at %}<span class="text-xs text-gray-400">· started {{ localtime(session.started_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
       </div>
     </div>
@@ -30,12 +37,12 @@
     <div class="flex gap-2 flex-shrink-0 flex-wrap">
       {% if session.state == 'draft' %}
       <button onclick="validateSession('{{ session.id }}')" class="px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium transition cursor-pointer">
-        🔍 {{ t.locktimer_validate or "Validate" }}
+        {{ icon('search', 'w-4 h-4') }}{{ t.locktimer_validate or "Validate" }}
       </button>
       <form action="/api/v2/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this lock session? Rules will be frozen.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition cursor-pointer">
-          ▶ {{ t.locktimer_start or "Start" }}
+        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition cursor-pointer inline-flex items-center gap-1.5">
+          {{ icon('play', 'w-4 h-4') }}{{ t.locktimer_start or "Start" }}
         </button>
       </form>
       {% endif %}
@@ -50,8 +57,8 @@
       <form action="/api/v2/locktimer/sessions/{{ session.id }}/safety-stop" method="post" onsubmit="return confirm('Safety stop? Future occurrences will be cancelled. This cannot be undone.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <input type="hidden" name="reason_code" value="user_requested">
-        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition cursor-pointer">
-          ⏹ {{ t.locktimer_safety_stop or "Safety Stop" }}
+        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition cursor-pointer inline-flex items-center gap-1.5">
+          {{ icon('stop', 'w-4 h-4') }}{{ t.locktimer_safety_stop or "Safety Stop" }}
         </button>
       </form>
       {% endif %}
@@ -76,7 +83,7 @@
   {% if session.state == 'draft' %}
   <!-- Draft: save as template -->
   <details class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-    <summary class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer">💾 {{ t.locktimer_save_template or "Save as Template" }}</summary>
+    <summary class="text-sm font-semibold text-gray-700 dark:text-gray-300 cursor-pointer inline-flex items-center gap-1.5">{{ icon('save', 'w-4 h-4') }}{{ t.locktimer_save_template or "Save as Template" }}</summary>
     <form action="/api/v2/locktimer/sessions/{{ session.id }}/save-template" method="post" class="mt-3 flex gap-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <input name="name" placeholder="Template name" required class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
@@ -86,9 +93,9 @@
 
   <!-- Draft: quick metadata edit -->
   <form action="/api/v2/locktimer/sessions/{{ session.id }}/update" method="post" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">⚙️ {{ t.locktimer_settings or "Settings" }}</h3>
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 inline-flex items-center gap-1.5">{{ icon('settings', 'w-4 h-4') }}{{ t.locktimer_settings or "Settings" }}</h3>
     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       <div>
         <label class="text-xs text-gray-500">{{ t.locktimer_duration or "Duration" }}</label>
         <select name="duration_type" class="w-full mt-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
@@ -104,8 +111,18 @@
         <label class="text-xs text-gray-500">{{ t.locktimer_merge_gap or "Merge gap" }} (s)</label>
         <input name="merge_gap_seconds" type="number" value="{{ session.merge_gap_seconds }}" class="w-full mt-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
       </div>
+      <div>
+        <label class="text-xs text-gray-500">{{ t.locktimer_device or "Device" }}</label>
+        <select name="device_id" class="w-full mt-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm px-3 py-2">
+          <option value="__none__" {% if not session.device_id %}selected{% endif %}>— {{ t.locktimer_device_none or "no device" }} —</option>
+          {% for d in devices %}
+          <option value="{{ d.id }}" {% if session.device_id == d.id %}selected{% endif %}>{{ d.name }}{% if d.inventory_status == 'in_use' %} ({{ t.locktimer_device_in_use or 'in use' }}){% endif %}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-gray-400 mt-1">{{ t.locktimer_device_hint or "Bound device is marked in use while the session is active" }}</p>
+      </div>
     </div>
-    <button type="submit" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm transition cursor-pointer">{{ t.locktimer_save or "Save" }}</button>
+    <button type="submit" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm transition cursor-pointer inline-flex items-center gap-1.5">{{ icon('save', 'w-4 h-4') }}{{ t.locktimer_save or "Save" }}</button>
   </form>
 
   <!-- Draft: add slot rule -->
@@ -198,7 +215,7 @@
         {% if session.state == 'draft' %}
         <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">✕</button>
+          <button type="submit" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">{{ icon('close', 'w-3.5 h-3.5') }}</button>
         </form>
         {% endif %}
       </div>
@@ -228,7 +245,7 @@
         {% if session.state == 'draft' %}
         <form action="/api/v2/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">✕</button>
+          <button type="submit" class="text-red-500 hover:text-red-700 text-xs cursor-pointer">{{ icon('close', 'w-3.5 h-3.5') }}</button>
         </form>
         {% endif %}
       </div>
@@ -272,7 +289,7 @@
         {% elif o.state == 'closed' %}
         <div class="flex items-center gap-1 flex-shrink-0">
           {% if o.close_tag_number %}
-          <span class="text-xs text-gray-500 font-mono">🏷️ {{ o.close_tag_number }}</span>
+          <span class="text-xs text-gray-500 font-mono inline-flex items-center gap-1">{{ icon('tag', 'w-3.5 h-3.5') }}{{ o.close_tag_number }}</span>
           {% endif %}
           <button onclick="verifyTag('{{ o.id }}', '{{ o.close_tag_number or '' }}')" class="px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">{{ t.locktimer_verify_tag or "Verify" }}</button>
         </div>
@@ -296,7 +313,7 @@
             {% if o.content_visible and o.occurrence_snapshot and o.occurrence_snapshot.title %}
               {{ o.occurrence_snapshot.title }}
             {% elif not o.content_visible %}
-              <span class="italic text-gray-400">🔒 hidden</span>
+              <span class="italic text-gray-400 inline-flex items-center gap-1">{{ icon('lock', 'w-3.5 h-3.5') }}hidden</span>
             {% else %}
               Task
             {% endif %}
@@ -322,7 +339,7 @@
           {% if o.state in ('visible', 'submitted') %}
           <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/complete" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <button type="submit" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer">✓ Done</button>
+            <button type="submit" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer inline-flex items-center gap-1">{{ icon('check', 'w-3.5 h-3.5') }}Done</button>
           </form>
           {% endif %}
           {% if o.state in ('scheduled', 'visible') %}
@@ -425,10 +442,10 @@ function validateSession(sessionId) {
       banner.className = banner.className.replace(/bg-\S+/g, '') + ' bg-green-50 dark:bg-green-900/40 border border-green-300 text-green-800 dark:text-green-200';
       addLine(banner, (data.slot_count_estimate || 0) + ' slots, ' + (data.task_count_estimate || 0) + ' tasks over ' + (data.horizon_days || 90) + ' days', 'font-semibold');
       if (data.warnings && data.warnings.length) addLine(banner, data.warnings.join('\n'), 'text-xs opacity-80 whitespace-pre-line');
-      addLine(banner, '✅ Ready to start', 'text-xs');
+      addLine(banner, 'Ready to start', 'text-xs');
     } else {
       banner.className = banner.className.replace(/bg-\S+/g, '') + ' bg-red-50 dark:bg-red-900/40 border border-red-300 text-red-800 dark:text-red-200';
-      addLine(banner, '❌ Validation failed', 'font-semibold');
+      addLine(banner, 'Validation failed', 'font-semibold');
       addLine(banner, data.errors.join('\n'), 'text-xs whitespace-pre-line');
       if (data.warnings && data.warnings.length) addLine(banner, data.warnings.join('\n'), 'text-xs opacity-80 mt-1 whitespace-pre-line');
     }
@@ -453,9 +470,9 @@ function verifyTag(occId, expectedTag) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.matched) {
-      alert('✅ Seal matches! Seal #' + data.expected_tag + ' confirmed.');
+      alert('Seal matches! Seal #' + data.expected_tag + ' confirmed.');
     } else {
-      alert('🚨 SEAL MISMATCH! Expected: ' + (data.expected_tag || 'none') + ', Got: ' + data.provided_tag + '. Violation recorded.');
+      alert('SEAL MISMATCH! Expected: ' + (data.expected_tag || 'none') + ', Got: ' + data.provided_tag + '. Violation recorded.');
       location.reload();
     }
   })

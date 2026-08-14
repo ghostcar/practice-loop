@@ -758,6 +758,11 @@ EN = {
     "dashboard_plans_today": "plans today",
     # Rule reordering (drag&drop)
     "locktimer_drag_hint": "drag to reorder",
+    # Device inventory (Step 8, ADR-076)
+    "locktimer_device": "Device",
+    "locktimer_device_none": "no device",
+    "locktimer_device_in_use": "in use",
+    "locktimer_device_hint": "Bound device is marked in use while the session is active",
     # Q14 — honest action results (JS)
     "locktimer_action_locked": "Locked.",
     "locktimer_action_skipped": "Skipped.",

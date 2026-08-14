@@ -146,6 +146,11 @@ async def start_session(
         payload={"config_sha256": config_hash},
     )
 
+    # Device lifecycle: the physical device is now in use (Step 8, ADR-076).
+    from app.locktimer.services.device import set_device_status
+
+    await set_device_status(db, session.device_id, owner_id, "in_use")
+
     # Materialize initial occurrences (C4)
     await _materialize_session(db, session, slot_rules, task_rules, now)
 
@@ -211,6 +216,11 @@ async def safety_stop(
         to_version=session.row_version,
         payload={"reason_code": reason_code},
     )
+
+    # Device lifecycle: the physical device is free again (Step 8, ADR-076).
+    from app.locktimer.services.device import set_device_status
+
+    await set_device_status(db, session.device_id, owner_id, "available")
 
     await db.flush()
     return session

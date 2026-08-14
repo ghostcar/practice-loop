@@ -57,7 +57,7 @@
     const data = await res.json();
     const el = document.getElementById('redemption-list');
     if (!data.length) {
-      el.innerHTML = '<p class="text-xs text-gray-400 py-1">No pending redemptions ✅</p>';
+      el.innerHTML = '<p class="text-xs text-gray-400 py-1">No pending redemptions</p>';
       return;
     }
     el.innerHTML = data
@@ -70,8 +70,8 @@
         ${r.description ? `<div class="text-xs text-slate-500">${escapeHtml(r.description)}</div>` : ''}
       </div>
       <div class="flex gap-1">
-        <button onclick="completeRedemption('${r.id}')" class="text-xs px-2 py-1 rounded bg-emerald-700 hover:bg-emerald-600">✅ +${r.points_value}pts</button>
-        <button onclick="skipRedemption('${r.id}')" class="text-xs px-2 py-1 rounded bg-gray-700 hover:bg-gray-600">⏭</button>
+        <button onclick="completeRedemption('${r.id}')" class="text-xs px-2 py-1 rounded bg-emerald-700 hover:bg-emerald-600">+${r.points_value}pts</button>
+        <button onclick="skipRedemption('${r.id}')" class="text-xs px-2 py-1 rounded bg-gray-700 hover:bg-gray-600">Skip</button>
       </div>
     </div>
   `

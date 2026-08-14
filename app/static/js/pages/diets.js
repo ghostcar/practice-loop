@@ -201,9 +201,11 @@
     name.title = I18N.item_edit;
     const meta = el('span', 'text-xs text-slate-400 flex-shrink-0');
     meta.textContent = [qtyStr(it), it.meal_time].filter(Boolean).join(' · ');
-    const editBtn = el('button', 'text-slate-400 hover:text-indigo-600 text-xs px-1 min-h-[44px]', '✎');
+    const editBtn = el('button', 'text-slate-400 hover:text-indigo-600 text-xs px-1 min-h-[44px]', '');
+    editBtn.appendChild(window.plIcon('edit', 'w-4 h-4'));
     editBtn.title = I18N.item_edit;
-    const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '✕');
+    const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '');
+    del.appendChild(window.plIcon('close', 'w-4 h-4'));
     del.onclick = () => deleteItem(dietId, it.id);
     editBtn.onclick = () => editItemInline(dietId, it);
     name.onclick = () => editItemInline(dietId, it);
@@ -265,7 +267,8 @@
     fNotes.value = it.notes || '';
     const fBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.save_item);
     fBtn.type = 'submit';
-    const fCancel = el('button', 'px-3 py-1.5 text-xs font-medium rounded-lg min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300', '✕');
+    const fCancel = el('button', 'px-3 py-1.5 text-xs font-medium rounded-lg min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300', '');
+    fCancel.appendChild(window.plIcon('close', 'w-4 h-4'));
     fCancel.type = 'button';
     fCancel.onclick = () => {
       row.replaceWith(renderItemRow(dietId, it));
@@ -416,7 +419,8 @@
       const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate', c.name);
       const meta = el('span', 'text-xs text-slate-400 flex-shrink-0');
       meta.textContent = [qtyStr(c), c.meal_time].filter(Boolean).join(' · ');
-      const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '✕');
+      const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '');
+      del.appendChild(window.plIcon('close', 'w-4 h-4'));
       del.onclick = async () => {
         await api('/diets/api/consumptions/' + c.id, 'DELETE');
         await loadConsumptions();
@@ -441,7 +445,8 @@
       const img = el('img', 'w-14 h-14 object-cover rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer');
       img.src = a.file_path;
       img.onclick = () => window.open(a.file_path, '_blank');
-      const delBtn = el('button', 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs leading-none opacity-0 group-hover:opacity-100 transition-opacity', '✕');
+      const delBtn = el('button', 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center', '');
+      delBtn.appendChild(window.plIcon('close', 'w-3 h-3'));
       delBtn.title = I18N.photo_delete;
       delBtn.onclick = async () => {
         await api('/attachments/' + a.id, 'DELETE');
@@ -476,7 +481,9 @@
         body.appendChild(item);
       });
     }
-    const closeBtn = el('button', 'mt-3 text-xs text-slate-400 hover:text-slate-600', '✕ close');
+    const closeBtn = el('button', 'mt-3 text-xs text-slate-400 hover:text-slate-600 inline-flex items-center gap-1', '');
+    closeBtn.appendChild(window.plIcon('close', 'w-3.5 h-3.5'));
+    closeBtn.appendChild(document.createTextNode('close'));
     closeBtn.onclick = () => body.remove();
     body.appendChild(closeBtn);
     if (card) card.appendChild(body);

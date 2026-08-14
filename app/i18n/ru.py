@@ -762,6 +762,11 @@ RU = {
     "dashboard_plans_today": "планов сегодня",
     # Rule reordering (drag&drop)
     "locktimer_drag_hint": "перетащите для порядка",
+    # Device inventory (Step 8, ADR-076)
+    "locktimer_device": "Устройство",
+    "locktimer_device_none": "без устройства",
+    "locktimer_device_in_use": "в использовании",
+    "locktimer_device_hint": "Привязанное устройство отмечается как «в использовании», пока сессия активна",
     # Q14 — honest action results (JS)
     "locktimer_action_locked": "Закрыто.",
     "locktimer_action_skipped": "Пропущено.",

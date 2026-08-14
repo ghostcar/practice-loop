@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from aiogram import Bot, Dispatcher, F, Router, types
 from aiogram.filters import Command
@@ -82,6 +82,9 @@ if TG_BOT_TOKEN:
             "/interrupt — interrupt a task (penalty!)\n"
             "/stats — XP, streak, points\n"
             "/session — session status\n"
+            "/lock — active lock session status\n"
+            "/lock_start — start your latest draft\n"
+            "/lock_stop — safety-stop the active session\n"
             "/settings — preferences",
             parse_mode="Markdown",
         )
@@ -498,8 +501,189 @@ if TG_BOT_TOKEN:
         await callback.message.edit_text(f"⚙️ Language set to: {new_locale.upper()}")
         await callback.answer()
 
+    # ── Lock Timer commands (Personal, Step 8) ───────────────────────
 
-# ── Notification sender (public API for the rest of the app) ──────
+    def _fmt_duration(delta: timedelta) -> str:
+        total = max(0, int(delta.total_seconds()))
+        days, rem = divmod(total, 86400)
+        hours, rem = divmod(rem, 3600)
+        mins = rem // 60
+        if days:
+            return f"{days}d {hours}h {mins}m"
+        if hours:
+            return f"{hours}h {mins}m"
+        return f"{mins}m"
+
+    @main_router.message(Command("lock"))
+    async def cmd_lock(message: types.Message):
+        """Status of the active lock session: since, unlock at, remaining, next windows."""
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        from app.locktimer.repositories import (
+            get_active_session,
+            list_slot_occurrences,
+            list_task_occurrences,
+        )
+
+        async with async_session_factory() as db:
+            session = await get_active_session(db, user.id)
+            if session is None:
+                await message.answer(
+                    "🔓 No active lock session.\n"
+                    "Create a draft in the web app (/locktimer), or send /lock_start to start your latest draft."
+                )
+                return
+            slot_occs = await list_slot_occurrences(db, session.id, limit=5)
+            task_occs = await list_task_occurrences(db, session.id, limit=5)
+
+        lines = ["🔒 *Active Lock Session*"]
+        if session.started_at:
+            started = as_utc(session.started_at)
+            lines.append(f"Locked since: {started.strftime('%Y-%m-%d %H:%M')} UTC")
+        end = session.effective_end_at or session.max_end_at
+        if end:
+            end_utc = as_utc(end)
+            remaining = end_utc - datetime.now(UTC)
+            lines.append(f"Unlock at: {end_utc.strftime('%Y-%m-%d %H:%M')} UTC")
+            lines.append(f"Remaining: {_fmt_duration(remaining)}")
+        lines.append(f"Timezone: {session.timezone}")
+        next_slots = [o for o in slot_occs if o.state == "pending" and o.planned_open_at is not None]
+        if next_slots:
+            nxt = as_utc(next_slots[0].planned_open_at)
+            lines.append(f"Next unlock window: {nxt.strftime('%Y-%m-%d %H:%M')} UTC")
+        open_tasks = [o for o in task_occs if o.state in ("scheduled", "visible", "submitted")]
+        if open_tasks:
+            lines.append(f"Pending tasks: {len(open_tasks)}")
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="🛑 Safety Stop", callback_data=f"lock_stop:{session.id}")]]
+        )
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.message(Command("lock_start"))
+    async def cmd_lock_start(message: types.Message):
+        """Start the latest draft lock session (with confirmation)."""
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        from app.locktimer import enums as e
+        from app.models.locktimer import LockSession
+
+        async with async_session_factory() as db:
+            result = await db.execute(
+                select(LockSession)
+                .where(LockSession.owner_id == user.id, LockSession.state == e.SESSION_DRAFT)
+                .order_by(LockSession.updated_at.desc())
+                .limit(1)
+            )
+            draft = result.scalar_one_or_none()
+
+        if draft is None:
+            await message.answer("📭 No draft lock session. Create one in the web app (/locktimer).")
+            return
+
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🔒 Start", callback_data=f"lock_start_confirm:{draft.id}"),
+                    InlineKeyboardButton(text="Cancel", callback_data="lock_cancel"),
+                ]
+            ]
+        )
+        await message.answer(
+            f"Start lock session `{str(draft.id)[:8]}`? Rules will be frozen.",
+            parse_mode="Markdown",
+            reply_markup=kb,
+        )
+
+    @main_router.message(Command("lock_stop"))
+    async def cmd_lock_stop(message: types.Message):
+        """Safety-stop the active lock session (with confirmation)."""
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        from app.locktimer.repositories import get_active_session
+
+        async with async_session_factory() as db:
+            session = await get_active_session(db, user.id)
+
+        if session is None:
+            await message.answer("🔓 No active lock session.")
+            return
+
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="⚠️ Yes, safety stop", callback_data=f"lock_stop_confirm:{session.id}"),
+                    InlineKeyboardButton(text="Cancel", callback_data="lock_cancel"),
+                ]
+            ]
+        )
+        await message.answer(
+            "⚠️ Safety stop the active session? Future unlock windows will be cancelled. This cannot be undone.",
+            reply_markup=kb,
+        )
+
+    @main_router.callback_query(F.data.startswith("lock_start_confirm:"))
+    async def inline_lock_start(callback: types.CallbackQuery):
+        session_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.session import start_session
+
+        async with async_session_factory() as db:
+            try:
+                await start_session(db, session_id=session_id, owner_id=user.id)
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("🔒 Session started. Send /lock to see status.")
+        await callback.answer("Locked!")
+
+    @main_router.callback_query(F.data.startswith("lock_stop_confirm:"))
+    async def inline_lock_stop(callback: types.CallbackQuery):
+        session_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.session import safety_stop
+
+        async with async_session_factory() as db:
+            try:
+                await safety_stop(db, session_id=session_id, owner_id=user.id, reason_code="user_requested")
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("🔓 Session stopped. The device is available again.")
+        await callback.answer("Stopped")
+
+    @main_router.callback_query(F.data == "lock_cancel")
+    async def inline_lock_cancel(callback: types.CallbackQuery):
+        await callback.message.edit_text("Cancelled.")
+        await callback.answer()
+
+    # ── Notification sender (public API for the rest of the app) ──────
 
 
 async def send_telegram_notification(chat_id: int, text: str, parse_mode: str = "Markdown") -> bool:

@@ -38,14 +38,22 @@ async def create_draft(
     merge_gap_seconds: int = d.DEFAULT_MERGE_GAP_SECONDS,
     can_extend_duration: bool = False,
     template_id: uuid.UUID | None = None,
+    device_id: uuid.UUID | None = None,
 ) -> LockSession:
     """Create a new draft session. One active session per owner enforced at start time."""
     now = _now()
     seed = d.generate_random_seed()
 
+    if device_id is not None:
+        from app.locktimer.services.device import get_device
+
+        if await get_device(db, device_id, owner_id) is None:
+            raise ValueError("Device not found or not owned by you")
+
     session = LockSession(
         owner_id=owner_id,
         template_id=template_id,
+        device_id=device_id,
         state=e.SESSION_DRAFT,
         duration_type=duration_type,
         timezone=timezone_str,
@@ -83,6 +91,16 @@ async def update_draft(
     for key, value in fields.items():
         if key in allowed and value is not None:
             setattr(session, key, value)
+
+    # device_id may be set to None explicitly to unbind the device.
+    if "device_id" in fields:
+        device_id = fields["device_id"]
+        if device_id is not None:
+            from app.locktimer.services.device import get_device
+
+            if await get_device(db, device_id, session.owner_id) is None:
+                raise ValueError("Device not found or not owned by you")
+        session.device_id = device_id
 
     session.updated_at = _now()
     await db.flush()

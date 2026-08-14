@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 {% block title %}{{ t.locktimer_title }} — Practice Loop{% endblock %}
 {% set active_nav = "locktimer" %}
 
@@ -47,6 +48,12 @@
         <span class="text-gray-500 dark:text-gray-400">{{ t.locktimer_ends or "Ends" }}</span>
         <p class="font-medium text-gray-900 dark:text-gray-100">{{ localtime(active_session.effective_end_at or active_session.max_end_at, '%Y-%m-%d %H:%M') or '—' }}</p>
       </div>
+      {% if active_device %}
+      <div>
+        <span class="text-gray-500 dark:text-gray-400">{{ t.locktimer_device or "Device" }}</span>
+        <p class="font-medium text-gray-900 dark:text-gray-100 inline-flex items-center gap-1">{{ icon('device', 'w-4 h-4') }}{{ active_device.name }}</p>
+      </div>
+      {% endif %}
     </div>
 
     {% if active_session.remaining_seconds is not none %}
@@ -62,7 +69,7 @@
         {{ t.locktimer_view_details or "View details" }} →
       </a>
       <a href="/locktimer/calendar" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-500 transition">
-        📅 {{ t.locktimer_calendar or "Calendar" }}
+        {{ icon('calendar', 'w-4 h-4') }}{{ t.locktimer_calendar or "Calendar" }}
       </a>
       <a href="/locktimer/templates" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-indigo-500 transition">
         {{ t.locktimer_templates_title or "Templates" }}
@@ -117,7 +124,7 @@
   {% else %}
   <!-- No active session -->
   <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-    <div class="text-4xl mb-3">⏱️</div>
+    <div class="text-4xl mb-3 flex justify-center">{{ icon('timer', 'w-10 h-10 text-amber-500') }}</div>
     <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">{{ t.locktimer_no_active or "No active timer session" }}</h3>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_no_active_hint or "Create a draft session or start an existing one." }}</p>
   </section>

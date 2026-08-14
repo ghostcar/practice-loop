@@ -127,10 +127,14 @@
           (a) =>
             `<span class="relative group inline-block">` +
             `<img src="${escapeHtml(a.file_path)}" alt="" class="w-10 h-10 rounded object-cover border border-slate-200 dark:border-slate-700" loading="lazy">` +
-            `<button type="button" onclick="delLogPhoto('${escapeHtml(a.id)}')" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] leading-none hidden group-hover:flex items-center justify-center">✕</button>` +
+            `<button type="button" onclick="delLogPhoto('${escapeHtml(a.id)}')" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white hidden group-hover:flex items-center justify-center" aria-label="Remove photo"></button>` +
             `</span>`
         )
         .join('');
+      thumbs.querySelectorAll('button[aria-label="Remove photo"]').forEach((btn) => {
+        btn.textContent = '';
+        btn.appendChild(window.plIcon('close', 'w-3 h-3'));
+      });
     });
   }
   async function delLogPhoto(id) {

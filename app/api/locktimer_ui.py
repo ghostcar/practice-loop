@@ -13,7 +13,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,6 +73,7 @@ def _now() -> datetime:
 @router.post("/new")
 async def locktimer_create_draft(
     request: Request,
+    device_id: str | None = Form(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -90,6 +91,13 @@ async def locktimer_create_draft(
         created_at=now,
         updated_at=now,
     )
+    if device_id and device_id.strip():
+        from app.locktimer.services.device import get_device
+
+        device = await get_device(db, uuid.UUID(device_id.strip()), current_user.id)
+        if device is None:
+            raise HTTPException(400, "Device not found or not owned by you")
+        session.device_id = device.id
     db.add(session)
     await db.flush()
 
@@ -158,6 +166,10 @@ async def locktimer_overview(
             "streak": streak,
         }
 
+    active_device = None
+    if active:
+        active_device, _ = await _load_device_info(db, active)
+
     return templates.TemplateResponse(
         request,
         "locktimer/overview.html",
@@ -166,6 +178,7 @@ async def locktimer_overview(
             "user": current_user,
             "locale": locale,
             "active_session": _serialize_session(active, t) if active else None,
+            "active_device": active_device,
             "active_slots": active_slots,
             "active_tasks": active_tasks,
             "drafts": [_serialize_session(s, t) for s in drafts],
@@ -213,6 +226,8 @@ async def locktimer_session_detail(
     )
     proposals = list(proposals_result.scalars().all())
 
+    bound_device, devices = await _load_device_info(db, session)
+
     return templates.TemplateResponse(
         request,
         "locktimer/session_detail.html",
@@ -221,6 +236,8 @@ async def locktimer_session_detail(
             "user": current_user,
             "locale": locale,
             "session": _serialize_session(session, t),
+            "bound_device": bound_device,
+            "devices": devices,
             "slot_rules": [
                 {
                     "id": str(r.id),
@@ -437,12 +454,47 @@ async def locktimer_calendar(
 # ---------------------------------------------------------------------------
 
 
+async def _load_device_info(db: AsyncSession, session) -> tuple[dict | None, list[dict]]:
+    """Load the bound device + all user devices for the picker (Step 8)."""
+    from sqlalchemy import select
+
+    from app.models.life import InventoryItem
+
+    result = await db.execute(
+        select(InventoryItem)
+        .where(InventoryItem.user_id == session.owner_id, InventoryItem.inventory_status != "archived")
+        .order_by(InventoryItem.name)
+    )
+    items = list(result.scalars().all())
+    by_id = {str(i.id): i for i in items}
+    bound = None
+    if session.device_id and str(session.device_id) in by_id:
+        d = by_id[str(session.device_id)]
+        bound = {
+            "id": str(d.id),
+            "name": d.name,
+            "category": d.category,
+            "inventory_status": d.inventory_status,
+        }
+    devices = [
+        {
+            "id": str(i.id),
+            "name": i.name,
+            "category": i.category,
+            "inventory_status": i.inventory_status,
+        }
+        for i in items
+    ]
+    return bound, devices
+
+
 def _serialize_session(session, t) -> dict | None:
     if session is None:
         return None
     effective_end = as_utc(session.effective_end_at) if session.effective_end_at else None
     return {
         "id": str(session.id),
+        "device_id": str(session.device_id) if session.device_id else None,
         "state": session.state,
         "duration_type": session.duration_type,
         "timezone": session.timezone,

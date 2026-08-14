@@ -27,7 +27,7 @@
 > icon pack (`design/icons/`, AGENTS.md/DESIGN.md).
 
 - [x] **Шаг 7 — LLM-верификация медиа** — Сессия 121. **Vision через Omniroute** (подтверждена `openrouter/openai/gpt-4o-mini`): `call_llm` поддерживает image parts (data URL); движок `app/llm/pipeline/media_verify.py` — два типа проверки: `code_match` (LLM сравнивает код на фото с ожидаемым; при активном VerificationChallenge LLM читает код, сервер сверяет HMAC — сервер авторитет) и `chastity_closed` (оценка закрыт ли замок); verdict/confidence/reasoning, plaintext кода не хранится (только HMAC); таблица `media_verification_results` (миграция 037). API: `POST /api/v2/media/{id}/verify` (JSON, `auto_consume_challenge` — потребление challenge только по явному запросу), `GET .../verification-results`, страница `/llm/verify` (выбор медиа + форма + история). 825/825 ✅ (+25), ruff ✅ (ADR-075).
-- [ ] **Шаг 8 — Дальше по roadmap** — второй эшелон личного контура (device inventory для таймера, честный UI по всем экранам, Personal Telegram-команды) и/или следующий этап ROADMAP.md (Mobile Foundation — JSON-first, bearer-auth, push) — по решению владельца после Шага 7.
+- [x] **Шаг 8 — Второй эшелон личного контура** — Сессия 122. **Device inventory для таймера**: `lock_sessions.device_id` → inventory_items (миграция 038); устройство выбирается в настройках черновика / при создании сессии, показывается чипом в шапке и на овервью; авто-статусы: при старте device → `in_use`, при safety-stop → `available`; чужое/архивное устройство отклоняется; unbind через явный sentinel `__none__` (FastAPI мапит пустую форму в default). **Честный UI**: оставшиеся emoji-иконки заменены на икон-пак по всем шаблонам (dashboard/achievements/diets/notifications/tasks/training/locktimer/login/social) и JS (plIcon DOM API); тест запрещает emoji-иконки в шаблонах и JS (исключение — content-значения social verification). **Personal Telegram-команды**: `/lock` (статус активной сессии: с, до, остаток, следующее окно, задачи), `/lock_start` (старт последнего черновика с подтверждением), `/lock_stop` (safety-stop с подтверждением), inline-кнопки, help обновлён. 847/847 ✅ (+22), ruff ✅ (ADR-076).
 - [ ] **Шаг 9 — Редизайн фронта по DESIGN_V2.md** — «Тёмный архив»: новый UI-контракт (темы, типографика, компоненты, навигация) поверх существующих экранов, с соблюдением обязательства по икон-паку. Запланирован после Шага 8 по решению владельца.
 
 ### Долги (зафиксированы, не удаляются)
@@ -35,7 +35,10 @@
 - **Иконки для social encourage** (thumbs-up/fire/party/muscle) — в пакете нет точных соответствий, а значения хранятся в БД как контент; остались emoji. Добавить иконки в `design/icons/svg/` и заменить, когда понадобится.
 - **Остальные явные db.commit() в legacy-роутерах** (28 файлов в allowlist boundary-теста) — осознанный долг; новые роутеры обязаны коммитить только в сервисах.
 - **OCR-верификация (Q13)** — отложена; медиа-верификация остаётся HMAC (Шаг 7 добавил LLM-оценку фото через vision — `code_match`/`chastity_closed`; OCR как распознавание текста отдельно не реализовано).
-- **Редизайн по DESIGN_V2.md** — запланирован (Шаг 9): целевой UI-контракт «Тёмный архив» уже готов в `DESIGN_V2.md` + прототип в `design/prototype/`; ждёт решения владельца по приоритету относительно Шага 8.
+- **Редизайн по DESIGN_V2.md** — запланирован (Шаг 9): целевой UI-контракт «Тёмный архив» уже готов в `DESIGN_V2.md` + прототип в `design/prototype/`; ждёт решения владельца по приоритету относительно Mobile Foundation.
+- **Иконки flame/target/star для streak/goal** — в пакете нет точных соответствий (🔥/🎯 заменены на history/chart/flag); при доработке икон-пака добавить flame/target/star и заменить.
+- **Reaction-иконки social (thumbs-up/fire/party/muscle)** — остались emoji как content-значения (БД); добавить в икон-пак, когда потребуется.
+- **Mobile Foundation (M4)** — JSON-first API, bearer-auth, push — следующий кандидат после Шага 9 по ROADMAP.md; сейчас API уже JSON-first для ключевых модулей (media, verification, prompt-templates, locktimer commands).
 - **Полная CSP (enforcing)** — сейчас report-only; включение после выноса inline JS в модули и сборки Tailwind.
 
 ---

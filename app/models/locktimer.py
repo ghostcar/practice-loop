@@ -63,6 +63,15 @@ class LockSession(Base):
     template_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("lock_timer_templates.id", ondelete="SET NULL"), nullable=True
     )
+    # Optional physical device (inventory item) used for this session (Step 8,
+    # ADR-076). Inventory status auto-cycles: available → in_use (start) →
+    # available (safety-stop/completion).
+    device_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     state: Mapped[str] = mapped_column(String(24), nullable=False, default="draft")
     duration_type: Mapped[str] = mapped_column(String(24), nullable=False, default="duration_from_start")

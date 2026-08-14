@@ -68,6 +68,9 @@ from app.models.user import User
 
 router = APIRouter(prefix="/api/v2/locktimer", tags=["locktimer-commands"])
 
+# Sentinel for optional form fields: distinguishes "absent" from "empty".
+_UNSET = "__unset__"
+
 
 def _now() -> datetime:
     return datetime.now(UTC)
@@ -466,25 +469,42 @@ async def api_update_draft(
     duration_type: str | None = Form(default=None),
     timezone: str | None = Form(default=None),
     merge_gap_seconds: int | None = Form(default=None),
+    device_id: str = Form(default=_UNSET),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update draft session metadata."""
+    """Update draft session metadata (duration, tz, merge gap, device)."""
     session = await get_session(db, session_id, current_user.id)
     if session is None:
         raise HTTPException(404, "Session not found")
     if session.state != e.SESSION_DRAFT:
         raise HTTPException(400, "Only draft sessions can be edited")
 
-    fields = {}
+    print("DBG device_id raw ->", repr(device_id), flush=True)
+    fields: dict = {}
     if duration_type:
         fields["duration_type"] = duration_type
     if timezone:
         fields["timezone"] = timezone
     if merge_gap_seconds is not None:
         fields["merge_gap_seconds"] = merge_gap_seconds
+    # device_id: absent → no change; "__none__" (UI sentinel) → unbind;
+    # otherwise must be a UUID. NOTE: FastAPI maps empty form values to the
+    # parameter default, so "" never reaches this code.
+    if device_id != _UNSET:
+        device_id = device_id.strip()
+        if device_id == "__none__":
+            fields["device_id"] = None
+        else:
+            try:
+                fields["device_id"] = uuid.UUID(device_id)
+            except ValueError as exc:
+                raise HTTPException(422, "Invalid device_id format") from exc
 
-    await update_draft(db, session, **fields)
+    try:
+        await update_draft(db, session, **fields)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
 
 

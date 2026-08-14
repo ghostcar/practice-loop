@@ -1,24 +1,25 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="animate-fade-in">
-    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">🏆 Achievements</h1>
+    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 inline-flex items-center gap-2">{{ icon('trophy', 'w-7 h-7 text-amber-500') }}Achievements</h1>
     <p class="text-slate-500 dark:text-slate-400 mb-8">Public board (anonymized) + your collection</p>
 
     <!-- Progress stats -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-            <div class="text-3xl mb-1">🏆</div>
+            <div class="text-3xl mb-1 flex justify-center">{{ icon('trophy', 'w-8 h-8 text-amber-500') }}</div>
             <div class="text-2xl font-bold text-amber-500">{{ my_achievements|length }}</div>
             <div class="text-xs text-slate-500">of 13 unlocked</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-            <div class="text-3xl mb-1">🔥</div>
+            <div class="text-3xl mb-1 flex justify-center">{{ icon('chart', 'w-8 h-8 text-indigo-400') }}</div>
             <div class="text-2xl font-bold text-indigo-400">{{ (my_achievements|length / 13 * 100)|int }}%</div>
             <div class="text-xs text-slate-500">completion</div>
         </div>
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-            <div class="text-3xl mb-1">🎯</div>
+            <div class="text-3xl mb-1 flex justify-center">{{ icon('flag', 'w-8 h-8 text-emerald-400') }}</div>
             <div class="text-2xl font-bold text-emerald-400">{{ 13 - my_achievements|length }}</div>
             <div class="text-xs text-slate-500">remaining</div>
         </div>
@@ -43,8 +44,8 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5
                     {% if ach.is_hidden %}opacity-50{% endif %}">
             <div class="flex items-start justify-between mb-2">
-                <div class="w-10 h-10 rounded-xl bg-{{ ach.color }}-100 dark:bg-{{ ach.color }}-900/40 flex items-center justify-center text-lg">
-                    🏆
+                <div class="w-10 h-10 rounded-xl bg-{{ ach.color }}-100 dark:bg-{{ ach.color }}-900/40 flex items-center justify-center">
+                    {{ icon('trophy', 'w-5 h-5') }}
                 </div>
                 <form action="/achievements/{{ ach.id }}/hide" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -71,7 +72,7 @@
     <div class="space-y-2">
         {% for ach in all_achievements %}
         <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center gap-3">
-            <span class="text-lg">🏆</span>
+            <span class="text-lg">{{ icon('trophy', 'w-5 h-5 text-amber-500') }}</span>
             <div class="flex-1 min-w-0">
                 <span class="font-medium text-slate-700 dark:text-slate-200">{{ ach.name }}</span>
                 <span class="text-xs text-slate-400 ml-2">{{ ach.description }}</span>
