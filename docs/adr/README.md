@@ -80,3 +80,7 @@
 | [ADR-074](ADR-074.md) | 2026-08-14 | Шаг 6: LLM-инструменты личного контура (prompt library, templates, private KB) | accepted |
 | [ADR-075](ADR-075.md) | 2026-08-14 | Шаг 7: LLM-верификация медиа (vision через Omniroute, ADR-070 Q13) | accepted |
 | [ADR-076](ADR-076.md) | 2026-08-14 | Шаг 8: второй эшелон личного контура (device inventory, честный UI, TG-команды) | accepted |
+| [ADR-077](ADR-077.md) | 2026-08-14 | Шаг 9a: редизайн «Тёмный архив» — фундамент (токены, шрифты) + app shell | accepted |
+| [ADR-078](ADR-078.md) | 2026-08-14 | Шаг 9b: Active Timer + Tasks по DESIGN_V2 §8/§10 | accepted |
+| [ADR-079](ADR-079.md) | 2026-08-14 | Шаг 9c: Inventory/Media patterns (Media Vault, крупные изображения, verified state) | accepted |
+| [ADR-080](ADR-080.md) | 2026-08-14 | Шаг 9d: токен-пасс Personal-разделов + a11y-контраст (WCAG AA) | accepted |
