@@ -13,7 +13,7 @@
 | Что реально реализовано сейчас | код, migrations и тесты текущего HEAD | `CURRENT_STATE.md`, `FUNCTIONAL.md` |
 | Что делать следующим | `CURRENT_STATE.md` | `ROADMAP.md` |
 | Каков долгосрочный порядок | `ROADMAP.md` | gates в соответствующих спецификациях |
-| Как выглядит UI | `DESIGN.md` | фактические templates/static и visual QA |
+| Как выглядит UI | `DESIGN_V2.md` | `DESIGN.md` как baseline v0.7, prototype и visual QA |
 | Как агент должен работать | `AGENTS.md` | локальные инструкции и CI |
 | Почему принято техническое решение | `memory/DECISIONS.md` | commit и session record |
 | Что происходило по сессиям | `memory/SESSIONS.md`, `memory/CHANGELOG.md` | Git history |
@@ -38,7 +38,8 @@
 ### Инженерные
 
 - `AGENTS.md` — правила работы с репозиторием и архитектурные ограничения;
-- `DESIGN.md` — UI design system и frontend contract;
+- `DESIGN_V2.md` — актуальное визуальное направление «Тёмный архив» и frontend contract;
+- `DESIGN.md` — baseline v0.7: safety, accessibility и progressive enhancement;
 - будущий `TARGET_ARCHITECTURE.md` — целевые bounded contexts после M1;
 - `DEPLOY_VPS.md`, `RUNBOOK.md` — эксплуатация.
 

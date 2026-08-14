@@ -1,5 +1,10 @@
 # PracticeLoop — дизайн-система и UI-контракт
 
+> **Superseded для новой frontend-разработки:** визуальное направление, app shell, токены,
+> плотность экранов, motion, discretion и customization определяет `DESIGN_V2.md` («Тёмный
+> архив»). Этот файл сохраняется как baseline контракта v0.7; его требования безопасности,
+> доступности и progressive enhancement продолжают действовать, если не уточнены в Design v2.
+>
 > Версия: 1.0 для PracticeLoop v0.7.  
 > Статус: обязательный источник требований для frontend.  
 > Связанная спецификация: `REMEDIATION_SPEC.md`.

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PracticeLoop — Design v2 prototype</title>
+  <link rel="icon" href="../icons/favicon/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="prototype.css">
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside class="sidebar">
+    <div class="brand"><img src="../brand/practiceloop-sigil.svg" alt=""><strong>PracticeLoop</strong></div>
+    <nav class="nav" aria-label="Прототип">
+      <div class="group-label">Сейчас</div>
+      <button class="nav-btn active" data-screen="today"><svg class="icon"><use href="../icons/sprite.svg#icon-today"/></svg><span class="nav-label">Сегодня</span></button>
+      <button class="nav-btn" data-screen="timer"><svg class="icon"><use href="../icons/sprite.svg#icon-timer"/></svg><span class="nav-label">Активный таймер</span></button>
+      <button class="nav-btn" data-screen="tasks"><svg class="icon"><use href="../icons/sprite.svg#icon-tasks"/></svg><span class="nav-label">Задачи</span></button>
+      <div class="group-label">Личное пространство</div>
+      <button class="nav-btn" data-screen="inventory"><svg class="icon"><use href="../icons/sprite.svg#icon-inventory"/></svg><span class="nav-label">Инвентарь</span></button>
+      <div class="group-label">Связи</div>
+      <button class="nav-btn" data-screen="social"><svg class="icon"><use href="../icons/sprite.svg#icon-community"/></svg><span class="nav-label">Social</span></button>
+    </nav>
+    <button class="toggle" id="toggle" aria-label="Раскрыть меню"><svg class="icon"><use href="../icons/sprite.svg#icon-menu"/></svg></button>
+  </aside>
+  <main class="main">
+    <header class="utility">
+      <span class="subtle">Личное пространство · защищено</span>
+      <div class="utility-actions">
+        <button title="Discretion"><svg class="icon"><use href="../icons/sprite.svg#icon-discretion"/></svg></button>
+        <button title="Уведомления"><svg class="icon"><use href="../icons/sprite.svg#icon-bell"/></svg></button>
+        <button title="Профиль"><svg class="icon"><use href="../icons/sprite.svg#icon-profile"/></svg></button>
+        <button class="mobile-only" title="Меню"><svg class="icon"><use href="../icons/sprite.svg#icon-menu"/></svg></button>
+      </div>
+    </header>
+    <div class="content">
+      <section class="screen active" id="today">
+        <div class="topline"><div><div class="eyebrow">Пятница · 14 августа</div><h1>Сегодня</h1><div class="subtle">Цикл продолжается. Три действия требуют внимания.</div></div><div class="seal">ДЕНЬ<br>ПРИНЯТ</div></div>
+        <div class="today-grid">
+          <div class="stack">
+            <article class="panel active-panel">
+              <div class="panel-head"><div><span class="status"><span class="dot"></span> Активная сессия</span><h2>Принятый период</h2></div><svg class="icon" style="color:var(--timer);width:30px;height:30px"><use href="../icons/sprite.svg#icon-timer"/></svg></div>
+              <div class="timer-value">18:42:16</div><div class="subtle">до ближайшего разрешённого окна · базовое завершение завтра в 12:00</div>
+              <div class="actions"><button class="btn primary">Открыть центр управления</button><button class="btn danger">Safety stop</button></div>
+            </article>
+            <article class="panel"><div class="panel-head"><h2>Сейчас</h2><span class="muted">3 пункта</span></div>
+              <div class="task-row"><div class="task-status">1</div><div><strong>Вечерний check-in</strong><span class="subtle">Принятое правило · отчёт и состояние</span></div><span class="task-due muted">21:30</span><button class="btn">Открыть</button></div>
+              <div class="task-row"><div class="task-status">2</div><div><strong>Запись фактического результата</strong><span class="subtle">Activity Tracker · просрочено на 40 мин</span></div><span class="task-due" style="color:#d58b72">Сейчас</span><button class="btn">Заполнить</button></div>
+              <div class="task-row"><div class="task-status">3</div><div><strong>Восстановление после тренировки</strong><span class="subtle">Health рекомендует облегчённый режим</span></div><span class="task-due muted">Сегодня</span><button class="btn">Решить</button></div>
+            </article>
+          </div>
+          <aside class="stack">
+            <article class="panel line"><div class="panel-head"><h2>Ближайшее</h2><svg class="icon"><use href="../icons/sprite.svg#icon-calendar"/></svg></div><div class="axis"><div class="event"><span>Check-in</span><strong>21:30</strong></div><div class="event"><span>Личное окно</span><strong>22:00</strong></div><div class="event"><span>Утренний отчёт</span><strong>08:00</strong></div></div></article>
+            <article class="panel mobile-summary"><div class="panel-head"><h2>Активные контуры</h2><span class="muted">настроить</span></div><div class="domain-strip" style="grid-template-columns:1fr"><div class="domain" style="--domain:var(--health)"><svg class="icon"><use href="../icons/sprite.svg#icon-health"/></svg><p>Health · восстановление</p></div><div class="domain" style="--domain:var(--care)"><svg class="icon"><use href="../icons/sprite.svg#icon-routine"/></svg><p>Care · вечерняя рутина</p></div></div></article>
+          </aside>
+        </div>
+        <div class="discipline"><div class="metric"><span class="muted">Серия</span><strong>12 дней</strong></div><div class="metric"><span class="muted">Выполнено</span><strong>84%</strong></div><div class="metric"><span class="muted">Баланс</span><strong>1 840</strong></div><div class="metric"><span class="muted">Принято правил</span><strong>7</strong></div></div>
+      </section>
+
+      <section class="screen" id="timer">
+        <div class="topline"><div><div class="eyebrow" style="color:var(--timer)">Активный таймер</div><h1>Центр управления</h1><div class="subtle">Правила версии 4 приняты и зафиксированы.</div></div><div class="seal" style="color:var(--timer)">ПРИНЯТО<br>21:40</div></div>
+        <article class="panel active-panel"><span class="status"><span class="dot"></span> Сессия активна · 03 дня 08 часов</span><div class="timer-value">18:42:16</div><div class="subtle">до ближайшего окна · effective end: 16 августа, 12:00</div><div class="actions"><button class="btn primary">Внести check-in</button><button class="btn">Посмотреть принятые правила</button><button class="btn danger">Safety stop</button></div></article>
+        <div class="discipline"><div class="metric"><span class="muted">Базовый срок</span><strong>96 ч</strong></div><div class="metric"><span class="muted">Изменение</span><strong>+ 4 ч</strong></div><div class="metric"><span class="muted">Остаток cap</span><strong>8 ч</strong></div><div class="metric"><span class="muted">Check-in</span><strong>6 / 6</strong></div></div>
+        <div class="today-grid"><article class="panel"><div class="panel-head"><h2>Ближайшие события</h2><span class="muted">ось сессии</span></div><div class="axis"><div class="event"><span>Вечерний check-in</span><strong>через 48 мин</strong></div><div class="event"><span>Гигиеническое окно</span><strong>через 1 ч 18 мин</strong></div><div class="event"><span>Медиаотчёт с кодом</span><strong>завтра 08:00</strong></div></div></article><article class="panel line"><h2>Сводка</h2><p class="subtle">Все обязательные проверки выполнены. Конфликтов Health не обнаружено.</p><p class="serif" style="font-size:22px">«Контур устойчив»</p></article></div>
+      </section>
+
+      <section class="screen" id="tasks">
+        <div class="topline"><div><div class="eyebrow">Activity Tracker</div><h1>Задачи</h1><div class="subtle">Плановые значения, факт и причина назначения — в одной строке.</div></div></div>
+        <div class="task-toolbar"><div class="segmented"><button class="selected">Активные 8</button><button>История</button><button>Требуют решения 2</button></div><div class="segmented"><button class="selected">Компактно</button><button>Свободно</button></div></div>
+        <article class="panel">
+          <div class="task-row"><div class="task-status"><svg class="icon" style="width:14px"><use href="../icons/sprite.svg#icon-play"/></svg></div><div><strong>Ежедневная практика · средний вариант</strong><span class="subtle">План: 20 мин · причина: обязательная ротация</span></div><span class="task-due">До 22:00</span><button class="btn primary">Продолжить</button></div>
+          <div class="task-row"><div class="task-status">2</div><div><strong>Запись результата и короткая рефлексия</strong><span class="subtle">Факт не внесён · последний срок превышен</span></div><span class="task-due" style="color:#d58b72">Просрочено</span><button class="btn">Внести факт</button></div>
+          <div class="task-row"><div class="task-status">3</div><div><strong>Вечерняя Care-рутина</strong><span class="subtle">15 мин · связана с Inventory</span></div><span class="task-due muted">Сегодня</span><button class="btn">Начать</button></div>
+          <div class="task-row"><div class="task-status">4</div><div><strong>Тренировка восстановления</strong><span class="subtle">Health-сигнал: снизить сложность</span></div><span class="task-due muted">Завтра</span><button class="btn">Настроить</button></div>
+        </article>
+      </section>
+
+      <section class="screen" id="inventory">
+        <div class="topline"><div><div class="eyebrow" style="color:var(--care)">Личный архив</div><h1>Инвентарь</h1><div class="subtle">Объекты, состояние, обслуживание и подтверждённые изображения.</div></div><button class="btn primary">Добавить объект</button></div>
+        <div class="inventory-grid">
+          <article class="archive-card"><div class="archive-image"><svg class="icon"><use href="../icons/sprite.svg#icon-device"/></svg></div><div class="archive-meta"><strong>Основное устройство</strong><p class="subtle">Доступно · обслуживание через 8 дней</p><div class="meta-line"><span>Фото · 12 августа</span><span>проверено</span></div></div></article>
+          <article class="archive-card"><div class="archive-image" style="background:radial-gradient(circle at 65% 30%,#4e4a40,#201b18 68%)"><svg class="icon"><use href="../icons/sprite.svg#icon-inventory"/></svg></div><div class="archive-meta"><strong>Комплект ухода</strong><p class="subtle">4 предмета · один заканчивается</p><div class="meta-line"><span>Inventory · Care</span><span>личное</span></div></div></article>
+          <article class="archive-card"><div class="archive-image" style="background:radial-gradient(circle at 40% 40%,#3d4b47,#1c211f 68%)"><svg class="icon"><use href="../icons/sprite.svg#icon-media-vault"/></svg></div><div class="archive-meta"><strong>Архив состояния</strong><p class="subtle">8 изображений · оригиналы защищены</p><div class="meta-line"><span>Media Vault</span><span>без публикаций</span></div></div></article>
+        </div>
+      </section>
+
+      <section class="screen social-page" id="social">
+        <div class="topline"><div><div class="eyebrow">Social</div><h1>Пространство связей</h1><div class="subtle">Подготовленные проекции, доверенные связи и подтверждения.</div></div></div>
+        <article class="social-hero"><div><span class="status"><span class="dot" style="background:var(--social)"></span> Профиль видим доверенному кругу</span><h2 style="font-size:34px;margin-top:18px">@private-loop</h2><p class="subtle">Две активные связи · одна публикация ожидает подтверждения.</p><div class="actions"><button class="btn primary">Создать проекцию</button><button class="btn">Настроить видимость</button></div></div><div class="seal" style="width:130px;height:130px;color:var(--social);justify-self:center">TRUSTED<br>CIRCLE</div></article>
+        <article class="panel" style="margin-top:24px;background:#1b2023"><div class="panel-head"><h2>Последние события</h2><span class="muted">только проекции</span></div>
+          <div class="publication"><div class="avatar"><svg class="icon"><use href="../icons/sprite.svg#icon-profile"/></svg></div><div><strong>Запрос подтверждения</strong><p class="subtle">Медиа скрыто · quorum 1 из 2 · до 22:00</p></div><button class="btn">Проверить</button></div>
+          <div class="publication"><div class="avatar"><svg class="icon"><use href="../icons/sprite.svg#icon-activity"/></svg></div><div><strong>Опубликован подтверждённый результат</strong><p class="subtle">Только доверенный круг · 18 минут назад</p></div><button class="btn">Открыть</button></div>
+        </article>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+const shell=document.getElementById('shell');
+document.getElementById('toggle').addEventListener('click',()=>shell.classList.toggle('open'));
+document.querySelectorAll('[data-screen]').forEach(button=>button.addEventListener('click',()=>{
+  document.querySelectorAll('.nav-btn').forEach(item=>item.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(item=>item.classList.remove('active'));
+  button.classList.add('active'); document.getElementById(button.dataset.screen).classList.add('active');
+}));
+</script>
+</body></html>
