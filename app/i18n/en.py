@@ -121,6 +121,7 @@ EN = {
     "training_plan_progress": "progress",
     "training_photo_add": "Add photo",
     # Opt-in desire levels
+    "catalog_desire_label": "Desire level",
     "desire_want_very_much": "Very much want",
     "desire_want": "Want",
     "desire_neutral": "Neutral",

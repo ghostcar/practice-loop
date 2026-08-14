@@ -257,6 +257,8 @@
             --accent-hover: #743a37;
             --accent-soft: #e7cfca;
             --on-accent: #fff9f4;
+            /* Accent as TEXT (WCAG 4.5:1 on surface — accent itself is too dim) */
+            --accent-text: #743a37;
             /* Domain hues (§4.3) */
             --dom-tracker: #8d4945;
             --dom-timer: #a06a3f;
@@ -318,10 +320,12 @@
             --text: #eee7df;
             --text-secondary: #b9aca1;
             --text-muted: #96877b; /* WCAG 4.95:1 on surface, 4.55 on soft */
-            --accent: #a95f58;
+            --accent: #a25a53; /* WCAG 4.76:1 with on-accent (was 4.40 at #a95f58) */
             --accent-hover: #bf7169;
             --accent-soft: #3a2422;
             --on-accent: #fff5ef;
+            /* Accent as TEXT (WCAG 4.5:1 on surface) */
+            --accent-text: #c9897f;
             --dom-tracker: #a95f58;
             --dom-timer: #b98558;
             --dom-care: #9b7b68;
@@ -397,7 +401,7 @@
         .pl-text { color: var(--text); }
         .pl-text-secondary { color: var(--text-secondary); }
         .pl-text-muted { color: var(--text-muted); }
-        .pl-accent-text { color: var(--accent); }
+        .pl-accent-text { color: var(--accent-text); }
         .pl-accent-bg { background-color: var(--accent); color: var(--on-accent); }
         .pl-accent-soft { background-color: var(--accent-soft); color: var(--accent); }
         .pl-border-c { border-color: var(--border); }

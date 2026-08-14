@@ -16,7 +16,7 @@
         #log-list.density-compact .task-row { padding: 0.5rem 0.75rem; }
         #log-list.density-compact .task-row .task-detail, #log-list.density-compact .task-row .task-extra { display: none; }
         #log-list.density-compact .task-row h3 { font-size: 0.875rem; }
-        #density-compact.active, #density-comfortable.active { background: var(--accent-soft); color: var(--accent); }
+        #density-compact.active, #density-comfortable.active { background: var(--accent-soft); color: var(--accent-text); }
     </style>
 
     {# --- i18n block for JS --- #}
@@ -257,7 +257,7 @@
          data-inventory-item-id="{{ inventory_item_id }}">
         <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.tasks_filter_title }}:</span>
 
-        <select id="filter-status" onchange="applyFilter()"
+        <select id="filter-status" onchange="applyFilter()" aria-label="{{ t.tasks_filter_status }}"
             class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--focus)]">
             <option value="all" {% if not status_filter or status_filter == 'all' %}selected{% endif %}>{{ t.tasks_filter_all }}</option>
             <option value="planned" {% if status_filter == 'planned' %}selected{% endif %}>{{ t.status_planned }}</option>
@@ -265,17 +265,17 @@
             <option value="stopped" {% if status_filter == 'stopped' %}selected{% endif %}>{{ t.status_stop }}</option>
         </select>
 
-        <select id="filter-body-part" onchange="applyFilter()"
+        <select id="filter-body-part" onchange="applyFilter()" aria-label="{{ t.tasks_filter_body_part }}"
             class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--focus)]">
             <option value="">{{ t.tasks_filter_body_part }}</option>
         </select>
 
-        <select id="filter-location" onchange="applyFilter()"
+        <select id="filter-location" onchange="applyFilter()" aria-label="{{ t.tasks_filter_location }}"
             class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--focus)]">
             <option value="">{{ t.tasks_filter_location }}</option>
         </select>
 
-        <select id="filter-inventory" onchange="applyFilter()"
+        <select id="filter-inventory" onchange="applyFilter()" aria-label="{{ t.tasks_filter_inventory }}"
             class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)] focus:outline-none focus:ring-1 focus:ring-[color:var(--focus)]">
             <option value="">{{ t.tasks_filter_inventory }}</option>
         </select>

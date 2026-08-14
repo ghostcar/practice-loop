@@ -52,7 +52,7 @@
         <!-- Weekly Activity -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_weekly }}</h2>
+                <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.dashboard_chart_weekly }}</h2>
                 <div class="flex gap-2 text-xs">
                     <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span> {{ t.dashboard_chart_done }}</span>
                     <span class="inline-flex items-center gap-1 text-red-500"><span class="w-2 h-2 rounded-sm bg-red-500"></span> {{ t.dashboard_chart_stop }}</span>
@@ -63,8 +63,8 @@
 
         <!-- Points Trend -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.dashboard_chart_points_trend }}</h2>
-            <p class="text-xs text-slate-400 mb-3">{{ t.dashboard_chart_last_30 }}</p>
+            <h2 class="text-sm font-semibold text-[color:var(--text)] mb-1">{{ t.dashboard_chart_points_trend }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)] mb-3">{{ t.dashboard_chart_last_30 }}</p>
             <div class="h-56"><canvas id="points-trend-chart"></canvas></div>
         </div>
     </div>
@@ -74,27 +74,27 @@
         <!-- Category summary -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_categories_title }}</h2>
-                <a href="/sessions" class="text-xs text-indigo-500 underline">{{ t.dashboard_see_history }}</a>
+                <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.dashboard_chart_categories_title }}</h2>
+                <a href="/sessions" class="text-xs text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 underline">{{ t.dashboard_see_history }}</a>
             </div>
             <div id="category-summary" class="space-y-2.5">
-                <p class="text-sm text-slate-400 dark:text-slate-500">{{ t.dashboard_loading_categories }}</p>
+                <p class="text-sm text-[color:var(--text-muted)]">{{ t.dashboard_loading_categories }}</p>
             </div>
         </div>
 
         <!-- Completion summary -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_completion_title }}</h2>
-                <a href="/achievements" class="text-xs text-indigo-500 underline">{{ t.dashboard_see_history }}</a>
+                <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.dashboard_chart_completion_title }}</h2>
+                <a href="/achievements" class="text-xs text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 underline">{{ t.dashboard_see_history }}</a>
             </div>
             <div id="completion-summary" class="flex items-center gap-4">
                 <div>
-                    <div id="completion-rate-big" class="text-3xl font-bold tabular-nums text-slate-700 dark:text-slate-100">—</div>
-                    <div class="text-xs text-slate-400">{{ t.dashboard_chart_last_7 }}</div>
+                    <div id="completion-rate-big" class="text-3xl font-bold tabular-nums text-[color:var(--text)]">—</div>
+                    <div class="text-xs text-[color:var(--text-muted)]">{{ t.dashboard_chart_last_7 }}</div>
                 </div>
                 <div class="flex-1 space-y-1 text-xs" id="completion-stats">
-                    <p class="text-slate-400">{{ t.dashboard_loading_stats }}</p>
+                    <p class="text-[color:var(--text-muted)]">{{ t.dashboard_loading_stats }}</p>
                 </div>
             </div>
         </div>
@@ -104,9 +104,9 @@
     <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-end justify-between mb-2">
             <div>
-                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_level_label }} {{ level }}</span>
-                <span class="text-xs text-slate-400 ml-2">→ {{ t.dashboard_level_label }} {{ level + 1 }}</span>
-                <span class="text-xs text-slate-400 ml-1">{{ xp_current }} / {{ xp_next }} {{ t.dashboard_xp }}</span>
+                <span class="text-sm font-semibold text-[color:var(--text)]">{{ t.dashboard_level_label }} {{ level }}</span>
+                <span class="text-xs text-[color:var(--text-muted)] ml-2">→ {{ t.dashboard_level_label }} {{ level + 1 }}</span>
+                <span class="text-xs text-[color:var(--text-muted)] ml-1">{{ xp_current }} / {{ xp_next }} {{ t.dashboard_xp }}</span>
             </div>
             <span class="text-xs pl-mono pl-accent-text tabular-nums">{{ xp_percent }}%</span>
         </div>
@@ -119,10 +119,10 @@
     <!-- Quick actions row -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <a href="/tasks/" class="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl p-3 flex items-center gap-2 hover:border-indigo-400 transition-colors group">
-            {{ icon('tasks', 'w-6 h-6 text-indigo-500 group-hover:scale-110 transition-transform') }}
+            {{ icon('tasks', 'w-6 h-6 text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 group-hover:scale-110 transition-transform') }}
             <div>
                 <div class="text-sm font-medium text-indigo-700 dark:text-indigo-300">{{ t.tasks_btn_generate_llm or "Generate Task" }}</div>
-                <div class="text-xs text-indigo-400">{{ t.tasks_section_generate }}</div>
+                <div class="text-xs text-indigo-600 dark:text-indigo-400">{{ t.tasks_section_generate }}</div>
             </div>
         </a>
         <a href="/locktimer" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-center gap-2 hover:border-amber-400 transition-colors group">
@@ -153,27 +153,27 @@
         <!-- Today's tasks -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">{{ icon('tasks', 'w-4 h-4') }}{{ t.dashboard_today_tasks or "Today's Tasks" }}</h2>
-                <a href="/tasks/" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+                <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('tasks', 'w-4 h-4') }}{{ t.dashboard_today_tasks or "Today's Tasks" }}</h2>
+                <a href="/tasks/" class="text-xs text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
             </div>
             {% if today_tasks %}
             <div class="space-y-2">
                 {% for task in today_tasks %}
-                <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <div class="flex items-center justify-between py-1.5 border-b border-[color:var(--border)] last:border-0">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="w-1.5 h-1.5 rounded-full flex-shrink-0
                             {% if task.status == 'in_progress' %}bg-blue-500 animate-pulse
                             {% else %}bg-amber-400{% endif %}"></span>
-                        <span class="text-sm text-slate-700 dark:text-slate-300 truncate">{{ task.title_override or task.selected_entity_name or '(task)' }}</span>
+                        <span class="text-sm text-[color:var(--text)] truncate">{{ task.title_override or task.selected_entity_name or '(task)' }}</span>
                     </div>
-                    <span class="text-xs text-slate-400 flex-shrink-0 ml-2">{{ localtime(task.scheduled_at, '%H:%M') }}</span>
+                    <span class="text-xs text-[color:var(--text-muted)] flex-shrink-0 ml-2">{{ localtime(task.scheduled_at, '%H:%M') }}</span>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-3">{{ t.dashboard_no_tasks or "No tasks scheduled for today" }}</p>
+            <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dashboard_no_tasks or "No tasks scheduled for today" }}</p>
             <div class="text-center mt-1">
-                <a href="/tasks/" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_generate_task or "Generate a task" }}</a>
+                <a href="/tasks/" class="text-xs text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 hover:underline">{{ t.dashboard_generate_task or "Generate a task" }}</a>
             </div>
             {% endif %}
         </div>
@@ -181,15 +181,15 @@
         <!-- Active diets -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">{{ icon('diet', 'w-4 h-4') }}{{ t.nav_diets or "Diets" }}</h2>
-                <a href="/diets" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+                <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('diet', 'w-4 h-4') }}{{ t.nav_diets or "Diets" }}</h2>
+                <a href="/diets" class="text-xs text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
             </div>
             {% if active_diets %}
             <div class="space-y-2">
                 {% for diet in active_diets %}
-                <div class="py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <div class="py-1.5 border-b border-[color:var(--border)] last:border-0">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ diet.name }}</span>
+                        <span class="text-sm font-medium text-[color:var(--text)]">{{ diet.name }}</span>
                         {% if diet.last_evaluation and diet.last_evaluation.score is defined %}
                         <span class="text-xs px-1.5 py-0.5 rounded-full
                             {% if diet.last_evaluation.score >= 80 %}bg-emerald-100 text-emerald-700
@@ -199,29 +199,29 @@
                         </span>
                         {% endif %}
                     </div>
-                    {% if diet.direction %}<p class="text-xs text-slate-400 mt-0.5">{{ diet.direction }}</p>{% endif %}
+                    {% if diet.direction %}<p class="text-xs text-[color:var(--text-muted)] mt-0.5">{{ diet.direction }}</p>{% endif %}
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-3">{{ t.dashboard_no_diets or "No active diets" }}</p>
+            <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dashboard_no_diets or "No active diets" }}</p>
             {% endif %}
-            <div class="text-xs text-slate-400 text-center mt-1">{{ today_meals }} {{ t.dashboard_meals_today or "meals logged today" }}</div>
+            <div class="text-xs text-[color:var(--text-muted)] text-center mt-1">{{ today_meals }} {{ t.dashboard_meals_today or "meals logged today" }}</div>
         </div>
 
         <!-- Today's training -->
         <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">{{ icon('training', 'w-4 h-4') }}{{ t.nav_training or "Training" }}</h2>
-                <a href="/training" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+                <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('training', 'w-4 h-4') }}{{ t.nav_training or "Training" }}</h2>
+                <a href="/training" class="text-xs text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
             </div>
             {% if today_training %}
             <div class="space-y-2">
                 {% for td in today_training[:3] %}
                 {% set tcounts = training_task_counts.get(td.id | string, {}) %}
-                <div class="py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <div class="py-1.5 border-b border-[color:var(--border)] last:border-0">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ td.name or 'Plan ' + (td.id | string)[:8] }}</span>
+                        <span class="text-sm font-medium text-[color:var(--text)]">{{ td.name or 'Plan ' + (td.id | string)[:8] }}</span>
                         <span class="text-xs px-1.5 py-0.5 rounded-full
                             {% if td.status == 'active' %}bg-blue-100 text-blue-700
                             {% elif td.status == 'analyzed' %}bg-purple-100 text-purple-700
@@ -233,17 +233,17 @@
                     </div>
                     {% if tcounts %}
                     <div class="flex items-center gap-1 mt-1">
-                        <div class="flex-1 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div class="flex-1 h-1.5 pl-surface-soft rounded-full overflow-hidden">
                             <div class="h-full bg-emerald-500 rounded-full" style="width: {{ (tcounts.completed / max(tcounts.total, 1) * 100) | int }}%"></div>
                         </div>
-                        <span class="text-[10px] text-slate-400">{{ tcounts.completed }}/{{ tcounts.total }}</span>
+                        <span class="text-[10px] text-[color:var(--text-muted)]">{{ tcounts.completed }}/{{ tcounts.total }}</span>
                     </div>
                     {% endif %}
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-3">{{ t.dashboard_no_training or "No training plans today" }}</p>
+            <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dashboard_no_training or "No training plans today" }}</p>
             {% endif %}
         </div>
     </div>
@@ -304,17 +304,17 @@
     <!-- Active session alert (Tracker) -->
     {% if active_session %}
     <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex items-center gap-3 text-sm">
-        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full pl-accent-bg animate-pulse"></span>
         <span class="text-indigo-700 dark:text-indigo-300 font-medium">{{ t.dashboard_active_session }}: {{ active_session.status }}</span>
-        <a href="/sessions" class="ml-auto text-indigo-500 underline text-xs">{{ t.dashboard_manage }}</a>
+        <a href="/sessions" class="ml-auto text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 underline text-xs">{{ t.dashboard_manage }}</a>
     </div>
     {% endif %}
 
     <!-- Recent activity -->
     <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
-        <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.dashboard_recent_activity }}</h2>
+        <h2 class="text-sm font-semibold text-[color:var(--text)] mb-3">{{ t.dashboard_recent_activity }}</h2>
         {% if recent_logs %}
-        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+        <div class="divide-y divide-[color:var(--border)]">
             {% for log in recent_logs %}
             <div class="flex items-center justify-between py-2 first:pt-0 last:pb-0">
                 <div class="flex items-center gap-2 min-w-0">
@@ -322,7 +322,7 @@
                         {% if log.status == 'completed' %}bg-emerald-500
                         {% elif log.status == 'interrupted' %}bg-red-500
                         {% else %}bg-amber-500{% endif %}"></span>
-                    <span class="text-sm text-slate-700 dark:text-slate-300 truncate">{{ log.selected_entity_name or '(custom)' }}</span>
+                    <span class="text-sm text-[color:var(--text)] truncate">{{ log.selected_entity_name or '(custom)' }}</span>
                     <span class="text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0
                         {% if log.status == 'completed' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
                         {% elif log.status == 'interrupted' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300
@@ -330,12 +330,12 @@
                         {{ log.status }}
                     </span>
                 </div>
-                <span class="text-xs text-slate-400 flex-shrink-0 ml-3">{{ localtime(log.created_at, '%H:%M') }}</span>
+                <span class="text-xs text-[color:var(--text-muted)] flex-shrink-0 ml-3">{{ localtime(log.created_at, '%H:%M') }}</span>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-sm text-slate-400 dark:text-slate-500 text-center py-4">{{ t.dashboard_no_activity }} <a href="/tasks/" class="text-indigo-500 underline">{{ t.dashboard_generate_task }}</a>.</p>
+        <p class="text-sm text-[color:var(--text-muted)] text-center py-4">{{ t.dashboard_no_activity }} <a href="/tasks/" class="text-indigo-600 dark:text-indigo-400 dark:text-indigo-400 underline">{{ t.dashboard_generate_task }}</a>.</p>
         {% endif %}
     </div>
 
@@ -345,32 +345,32 @@
             <div class="flex items-center gap-3 min-w-0">
                 {{ icon('telegram', 'w-5 h-5 flex-shrink-0 text-sky-500') }}
                 <div class="min-w-0">
-                    <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_telegram_link }}</h2>
-                    <p class="text-xs text-slate-400 truncate" id="tg-status-text">{{ t.dashboard_loading }}</p>
+                    <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.dashboard_telegram_link }}</h2>
+                    <p class="text-xs text-[color:var(--text-muted)] truncate" id="tg-status-text">{{ t.dashboard_loading }}</p>
                 </div>
             </div>
             <button onclick="generateLinkCode()" id="tg-link-btn"
-                    class="flex-shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    class="flex-shrink-0 px-4 py-2 pl-accent-bg hover:bg-[color:var(--accent-hover)] rounded-lg text-sm font-medium transition-colors">
                 {{ t.dashboard_link }}
             </button>
         </div>
         <div id="tg-code-display" class="hidden mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-center">
-            <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">{{ t.dashboard_telegram_code_valid }}</p>
-            <code id="tg-code" class="text-2xl font-bold tracking-widest text-indigo-600 dark:text-indigo-400"></code>
-            <p class="text-xs text-slate-400 mt-1">{{ t.dashboard_telegram_code_hint }}</p>
+            <p class="text-sm text-[color:var(--text-secondary)] mb-1">{{ t.dashboard_telegram_code_valid }}</p>
+            <code id="tg-code" class="text-2xl font-bold tracking-widest text-indigo-600 dark:text-indigo-400 dark:text-indigo-400"></code>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.dashboard_telegram_code_hint }}</p>
         </div>
     </div>
 
     <!-- Quick links -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <a href="/training" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_training }}</a>
-        <a href="/tasks/" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_tasks }}</a>
-        <a href="/entities/catalog" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_catalog }}</a>
-        <a href="/sessions" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_sessions }}</a>
-        <a href="/import" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_import }}</a>
-        <a href="/calendar" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_calendar }}</a>
-        <a href="/api/v2/points/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_points }}</a>
-        <a href="/api/v2/inventory/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_inventory }}</a>
+        <a href="/training" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_training }}</a>
+        <a href="/tasks/" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_tasks }}</a>
+        <a href="/entities/catalog" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_catalog }}</a>
+        <a href="/sessions" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_sessions }}</a>
+        <a href="/import" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_import }}</a>
+        <a href="/calendar" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_calendar }}</a>
+        <a href="/api/v2/points/page" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_points }}</a>
+        <a href="/api/v2/inventory/page" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ t.nav_inventory }}</a>
     </div>
 </div>
 {% endblock %}

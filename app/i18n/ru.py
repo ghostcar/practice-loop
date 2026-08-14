@@ -123,6 +123,7 @@ RU = {
     "training_plan_progress": "выполнение",
     "training_photo_add": "Добавить фото",
     # Opt-in desire levels
+    "catalog_desire_label": "Уровень желания",
     "desire_want_very_much": "Очень хочу",
     "desire_want": "Хочу",
     "desire_neutral": "Нейтрально",

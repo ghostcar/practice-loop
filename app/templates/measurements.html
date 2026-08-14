@@ -2,49 +2,49 @@
 {% block title %}{{ t.get('measurements_title', 'Body Measurements') }}{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-5">
-  <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.get('measurements_title', 'Body Measurements') }}</h1>
+ <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.get('measurements_title', 'Body Measurements') }}</h1>
 
-  <!-- Add form -->
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
-    <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4">New Measurement</h2>
-    <form id="meas-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Date</label><input type="date" id="meas-date" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Time</label><select id="meas-tod" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"><option value="morning">Morning</option><option value="evening">Evening</option></select></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Weight (kg)</label><input type="number" step="0.1" id="meas-weight" placeholder="98.5" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Chest (cm)</label><input type="number" step="0.1" id="meas-chest" placeholder="112" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Under Chest</label><input type="number" step="0.1" id="meas-ucherst" placeholder="100" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Waist</label><input type="number" step="0.1" id="meas-waist" placeholder="100" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Hips</label><input type="number" step="0.1" id="meas-hips" placeholder="106" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div><label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">Thigh</label><input type="number" step="0.1" id="meas-thigh" placeholder="61" class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700"></div>
-      <div class="col-span-full"><button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors">Save</button></div>
-    </form>
-  </div>
+ <!-- Add form -->
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-5">
+ <h2 class="text-lg font-semibold text-[color:var(--text)] mb-4">New Measurement</h2>
+ <form id="meas-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Date</label><input type="date" id="meas-date" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Time</label><select id="meas-tod" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"><option value="morning">Morning</option><option value="evening">Evening</option></select></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Weight (kg)</label><input type="number" step="0.1" id="meas-weight" placeholder="98.5" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Chest (cm)</label><input type="number" step="0.1" id="meas-chest" placeholder="112" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Under Chest</label><input type="number" step="0.1" id="meas-ucherst" placeholder="100" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Waist</label><input type="number" step="0.1" id="meas-waist" placeholder="100" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Hips</label><input type="number" step="0.1" id="meas-hips" placeholder="106" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div><label class="block text-xs text-[color:var(--text-secondary)] mb-1">Thigh</label><input type="number" step="0.1" id="meas-thigh" placeholder="61" class="w-full pl-surface-soft rounded-lg px-3 py-2 text-sm text-[color:var(--text)] border border-[color:var(--border)]"></div>
+ <div class="col-span-full"><button type="submit" class="pl-accent-bg hover:bg-[color:var(--accent-hover)] px-6 py-2 rounded-lg text-sm font-medium transition-colors">Save</button></div>
+ </form>
+ </div>
 
-  <!-- Chart -->
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Trend</h3>
-        <span id="trend-indicator" class="text-xs px-2 py-1 rounded-full font-medium"></span>
-    </div>
-    <div class="flex gap-1.5 mb-3 flex-wrap">
-      <button onclick="loadChart('weight')" class="chart-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium transition-colors">Weight</button>
-      <button onclick="loadChart('chest')" class="chart-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium transition-colors">Chest</button>
-      <button onclick="loadChart('waist')" class="chart-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium transition-colors">Waist</button>
-      <button onclick="loadChart('hips')" class="chart-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium transition-colors">Hips</button>
-      <button onclick="loadChart('thigh')" class="chart-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-medium transition-colors">Thigh</button>
-    </div>
-    <div class="h-52"><canvas id="meas-chart"></canvas></div>
-  </div>
+ <!-- Chart -->
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+ <h3 class="text-sm font-semibold text-[color:var(--text)]">Trend</h3>
+ <span id="trend-indicator" class="text-xs px-2 py-1 rounded-full font-medium"></span>
+ </div>
+ <div class="flex gap-1.5 mb-3 flex-wrap">
+ <button onclick="loadChart('weight')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Weight</button>
+ <button onclick="loadChart('chest')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Chest</button>
+ <button onclick="loadChart('waist')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Waist</button>
+ <button onclick="loadChart('hips')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Hips</button>
+ <button onclick="loadChart('thigh')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Thigh</button>
+ </div>
+ <div class="h-52"><canvas id="meas-chart"></canvas></div>
+ </div>
 
-  <!-- History table -->
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-        <tr><th class="px-4 py-2.5 text-left font-medium">Date</th><th class="px-4 py-2.5 text-left font-medium">Time</th><th class="px-4 py-2.5 text-right font-medium">Weight</th><th class="px-4 py-2.5 text-right font-medium">Chest</th><th class="px-4 py-2.5 text-right font-medium">Waist</th><th class="px-4 py-2.5 text-right font-medium">Hips</th><th class="px-4 py-2.5 text-right font-medium">Thigh</th></tr>
-      </thead>
-      <tbody id="meas-table" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
-    </table>
-  </div>
+ <!-- History table -->
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] overflow-hidden">
+ <table class="w-full text-sm">
+ <thead class="pl-surface-soft text-[color:var(--text-secondary)]">
+ <tr><th class="px-4 py-2.5 text-left font-medium">Date</th><th class="px-4 py-2.5 text-left font-medium">Time</th><th class="px-4 py-2.5 text-right font-medium">Weight</th><th class="px-4 py-2.5 text-right font-medium">Chest</th><th class="px-4 py-2.5 text-right font-medium">Waist</th><th class="px-4 py-2.5 text-right font-medium">Hips</th><th class="px-4 py-2.5 text-right font-medium">Thigh</th></tr>
+ </thead>
+ <tbody id="meas-table" class="divide-y divide-[color:var(--border)]"></tbody>
+ </table>
+ </div>
 </div>
 {% endblock %}
 {% block scripts %}

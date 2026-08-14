@@ -3,161 +3,161 @@
 
 {% block content %}
 <div class="animate-fade-in">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.import_title }}</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ t.import_subtitle }}</p>
-        </div>
-        <span class="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-            {{ templates|length }} {{ t.import_data_types }}
-        </span>
-    </div>
+ <div class="flex items-center justify-between mb-6">
+ <div>
+ <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.import_title }}</h1>
+ <p class="text-[color:var(--text-secondary)] mt-1">{{ t.import_subtitle }}</p>
+ </div>
+ <span class="text-xs text-[color:var(--text-muted)] pl-surface-soft px-3 py-1 rounded-full">
+ {{ templates|length }} {{ t.import_data_types }}
+ </span>
+ </div>
 
-    <!-- Templates section -->
-    <div class="mb-8">
-        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-            {{ t.import_section_templates }}
-        </h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            {{ t.import_section_templates_desc }}
-        </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for tkey, tmeta in templates.items() %}
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex flex-col">
-                <h3 class="font-semibold text-slate-800 dark:text-slate-100 text-sm mb-2">{{ tmeta.label }}</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500 mb-2">{{ t.import_fields_hint }}</p>
-                <code class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg px-2 py-1.5 block mb-3 leading-relaxed">{{ tmeta.csv_headers }}</code>
-                <div class="flex gap-2 mt-auto">
-                    <a href="/import/template/{{ tkey }}?format=csv"
-                       class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium"
-                       download>
-                        .CSV
-                    </a>
-                    <a href="/import/template/{{ tkey }}?format=json"
-                       class="text-xs px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors font-medium">
-                        .JSON
-                    </a>
-                    <button onclick="navigator.clipboard.writeText(`{{ app_url }}/import/template/{{ tkey }}?format=json`)"
-                            type="button"
-                            class="text-xs px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                            title="{{ t.import_copy_url }}"
-                            aria-label="{{ t.import_copy_url }}">
-                        {{ icon('copy', 'w-3.5 h-3.5') }}
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+ <!-- Templates section -->
+ <div class="mb-8">
+ <h2 class="text-xl font-bold text-[color:var(--text)] mb-4 flex items-center gap-2">
+ {{ t.import_section_templates }}
+ </h2>
+ <p class="text-sm text-[color:var(--text-secondary)] mb-4">
+ {{ t.import_section_templates_desc }}
+ </p>
+ <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+ {% for tkey, tmeta in templates.items() %}
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-5 flex flex-col">
+ <h3 class="font-semibold text-[color:var(--text)] text-sm mb-2">{{ tmeta.label }}</h3>
+ <p class="text-xs text-[color:var(--text-muted)] mb-2">{{ t.import_fields_hint }}</p>
+ <code class="text-xs text-[color:var(--text-secondary)] pl-surface-soft border border-[color:var(--border)] rounded-lg px-2 py-1.5 block mb-3 leading-relaxed">{{ tmeta.csv_headers }}</code>
+ <div class="flex gap-2 mt-auto">
+ <a href="/import/template/{{ tkey }}?format=csv"
+ class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium"
+ download>
+ .CSV
+ </a>
+ <a href="/import/template/{{ tkey }}?format=json"
+ class="text-xs px-3 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors font-medium">
+ .JSON
+ </a>
+ <button onclick="navigator.clipboard.writeText(`{{ app_url }}/import/template/{{ tkey }}?format=json`)"
+ type="button"
+ class="text-xs px-2 py-1.5 rounded-lg pl-surface-soft text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] transition-colors"
+ title="{{ t.import_copy_url }}"
+ aria-label="{{ t.import_copy_url }}">
+ {{ icon('copy', 'w-3.5 h-3.5') }}
+ </button>
+ </div>
+ </div>
+ {% endfor %}
+ </div>
+ </div>
 
-    <!-- Upload section -->
-    <div class="mb-8">
-        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-            {{ t.import_section_upload }}
-        </h2>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <form id="upload-form"
-                  hx-encoding="multipart/form-data"
-                  hx-post="/import/upload"
-                  hx-target="#upload-result"
-                  hx-swap="innerHTML">
-                <label id="drop-zone"
-                       for="file-input"
-                       class="block p-8 cursor-pointer border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-t-2xl transition-colors">
-                    <div class="text-center">
-                        {{ icon('cloud-upload', 'w-12 h-12 mx-auto mb-4 text-slate-400 dark:text-slate-500') }}
-                        <p id="drop-text" class="text-slate-600 dark:text-slate-300 font-medium mb-2">
-                            {{ t.import_drop_hint }} <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.csv</code>
-                            {{ t.import_or }} <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.json</code> {{ t.import_file_label }}
-                        </p>
-                        <p class="text-sm text-slate-400 dark:text-slate-500 mb-4">
-                            {{ t.import_autodetect_hint }}
-                        </p>
-                        <span id="file-name" class="hidden text-sm font-medium text-indigo-600 dark:text-indigo-400"></span>
-                        <input type="file"
-                               id="file-input"
-                               name="file"
-                               accept=".csv,.json"
-                               class="sr-only"
-                               required>
-                    </div>
-                </label>
-                <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                    <button type="submit"
-                            id="upload-btn"
-                            disabled
-                            class="px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium">
-                        {{ t.import_submit }}
-                    </button>
-                </div>
-            </form>
-            <div id="upload-result" class="px-6 pb-6" aria-live="polite"></div>
-        </div>
-    </div>
+ <!-- Upload section -->
+ <div class="mb-8">
+ <h2 class="text-xl font-bold text-[color:var(--text)] mb-4 flex items-center gap-2">
+ {{ t.import_section_upload }}
+ </h2>
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)]">
+ <form id="upload-form"
+ hx-encoding="multipart/form-data"
+ hx-post="/import/upload"
+ hx-target="#upload-result"
+ hx-swap="innerHTML">
+ <label id="drop-zone"
+ for="file-input"
+ class="block p-8 cursor-pointer border-2 border-dashed border-[color:var(--border)] rounded-t-2xl transition-colors">
+ <div class="text-center">
+ {{ icon('cloud-upload', 'w-12 h-12 mx-auto mb-4 text-[color:var(--text-muted)]') }}
+ <p id="drop-text" class="text-[color:var(--text-secondary)] font-medium mb-2">
+ {{ t.import_drop_hint }} <code class="text-xs pl-surface-soft px-2 py-0.5 rounded">.csv</code>
+ {{ t.import_or }} <code class="text-xs pl-surface-soft px-2 py-0.5 rounded">.json</code> {{ t.import_file_label }}
+ </p>
+ <p class="text-sm text-[color:var(--text-muted)] mb-4">
+ {{ t.import_autodetect_hint }}
+ </p>
+ <span id="file-name" class="hidden text-sm font-medium text-indigo-600 dark:text-indigo-400"></span>
+ <input type="file"
+ id="file-input"
+ name="file"
+ accept=".csv,.json"
+ class="sr-only"
+ required>
+ </div>
+ </label>
+ <div class="p-4 border-t border-[color:var(--border)] flex items-center justify-center">
+ <button type="submit"
+ id="upload-btn"
+ disabled
+ class="px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium">
+ {{ t.import_submit }}
+ </button>
+ </div>
+ </form>
+ <div id="upload-result" class="px-6 pb-6" aria-live="polite"></div>
+ </div>
+ </div>
 
-    <!-- Export section -->
-    <div class="mb-8">
-        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-            {{ t.import_section_export }}
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Per-type exports -->
-            {% for etype in export_types %}
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between">
-                <div>
-                    <span class="font-semibold text-slate-800 dark:text-slate-100 text-sm">{{ etype | replace('_', ' ') | title }}</span>
-                </div>
-                <div class="flex gap-2">
-                    <a href="/import/export/{{ etype }}?format=json&limit=5000"
-                       class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium">
-                        JSON
-                    </a>
-                    <a href="/import/export/{{ etype }}?format=csv&limit=5000"
-                       class="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors font-medium">
-                        CSV
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+ <!-- Export section -->
+ <div class="mb-8">
+ <h2 class="text-xl font-bold text-[color:var(--text)] mb-4 flex items-center gap-2">
+ {{ t.import_section_export }}
+ </h2>
+ <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+ <!-- Per-type exports -->
+ {% for etype in export_types %}
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-5 flex items-center justify-between">
+ <div>
+ <span class="font-semibold text-[color:var(--text)] text-sm">{{ etype | replace('_', ' ') | title }}</span>
+ </div>
+ <div class="flex gap-2">
+ <a href="/import/export/{{ etype }}?format=json&limit=5000"
+ class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium">
+ JSON
+ </a>
+ <a href="/import/export/{{ etype }}?format=csv&limit=5000"
+ class="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors font-medium">
+ CSV
+ </a>
+ </div>
+ </div>
+ {% endfor %}
+ </div>
 
-        <!-- Full backup (solid background, no gradient) -->
-        <div class="mt-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 flex items-center justify-between">
-            <div>
-                <h3 class="font-bold text-slate-800 dark:text-slate-100">{{ t.import_full_backup }}</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.import_full_backup_desc }}</p>
-            </div>
-            <a href="/import/export/full"
-               class="px-5 py-2.5 min-h-[44px] inline-flex items-center rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium whitespace-nowrap">
-                {{ t.import_download_all }}
-            </a>
-        </div>
-    </div>
+ <!-- Full backup (solid background, no gradient) -->
+ <div class="mt-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 flex items-center justify-between">
+ <div>
+ <h3 class="font-bold text-[color:var(--text)]">{{ t.import_full_backup }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)]">{{ t.import_full_backup_desc }}</p>
+ </div>
+ <a href="/import/export/full"
+ class="px-5 py-2.5 min-h-[44px] inline-flex items-center rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] font-medium whitespace-nowrap">
+ {{ t.import_download_all }}
+ </a>
+ </div>
+ </div>
 
-    <!-- API docs -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-            {{ t.import_api_title }}
-        </h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            {{ t.import_api_desc }}
-        </p>
-        <div class="bg-slate-900 rounded-xl p-4 overflow-x-auto">
-            <pre class="text-xs text-green-400"><code># {{ t.import_api_example_title }}
+ <!-- API docs -->
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ <h2 class="text-xl font-bold text-[color:var(--text)] mb-3 flex items-center gap-2">
+ {{ t.import_api_title }}
+ </h2>
+ <p class="text-sm text-[color:var(--text-secondary)] mb-4">
+ {{ t.import_api_desc }}
+ </p>
+ <div class="bg-slate-900 rounded-xl p-4 overflow-x-auto">
+ <pre class="text-xs text-green-400"><code># {{ t.import_api_example_title }}
 curl -X POST {{ app_url }}/import/api \
-  -H "Cookie: access_token=YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "import_type": "measurements",
-    "data": [
-      {"measured_date": "2024-01-15", "time_of_day": "morning", "weight": 98.5}
-    ],
-    "mode": "upsert"
-  }'
+ -H "Cookie: access_token=YOUR_TOKEN" \
+ -H "Content-Type: application/json" \
+ -d '{
+ "import_type": "measurements",
+ "data": [
+ {"measured_date": "2024-01-15", "time_of_day": "morning", "weight": 98.5}
+ ],
+ "mode": "upsert"
+ }'
 
 # {{ t.import_api_types_line }}</code></pre>
-        </div>
-    </div>
+ </div>
+ </div>
 </div>
 {% endblock %}
 

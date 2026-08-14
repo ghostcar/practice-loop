@@ -2,105 +2,105 @@
 
 {% block content %}
 <div class="space-y-5">
-    <div>
-        <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">{{ t.calendar_title }}</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.calendar_subtitle }}</p>
-    </div>
+ <div>
+ <h1 class="text-2xl font-bold text-[color:var(--text)] mb-1">{{ t.calendar_title }}</h1>
+ <p class="text-sm text-[color:var(--text-secondary)]">{{ t.calendar_subtitle }}</p>
+ </div>
 
-    <!-- Today's Schedule -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {{ t.calendar_section_today }} &mdash; <span class="text-indigo-600 dark:text-indigo-400">{{ today_schedule.template_name }}</span>
-            </h2>
-            <span class="text-xs text-slate-400">{{ today_schedule.date }}</span>
-        </div>
-        {% if today_schedule.windows %}
-        <div class="flex items-center h-8 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative">
-            {% for w in today_schedule.windows %}
-            {% set sh = w.start.split(':') %}
-            {% set eh = w.end.split(':') %}
-            {% set start_pct = ((sh[0]|int * 60 + sh[1]|int) / 1440 * 100)|round(1) %}
-            {% set width_pct = (((eh[0]|int * 60 + eh[1]|int) - (sh[0]|int * 60 + sh[1]|int)) / 1440 * 100)|round(1) %}
-            <div class="h-full flex items-center justify-center text-[10px] font-medium text-white truncate px-1
-                {% if w.policy == 'allowed' %}bg-emerald-500/80{% elif w.policy == 'passive_only' %}bg-amber-500/80{% else %}bg-red-500/60{% endif %}"
-                 style="width:{{ width_pct }}%; min-width:6%;"
-                 title="{{ w.label }}: {{ w.start }}-{{ w.end }} ({{ w.policy }})">{{ w.label[:6] }}</div>
-            {% endfor %}
-        </div>
-        <div class="flex gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
-            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>{{ t.calendar_legend_allowed }}</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>{{ t.calendar_legend_passive }}</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span>{{ t.calendar_legend_disallowed }}</span>
-        </div>
-        {% else %}
-        <p class="text-sm text-slate-400 py-3">{{ t.calendar_empty }} <button onclick="showTemplateForm()" class="text-indigo-500 underline">{{ t.calendar_create_default }}</button></p>
-        {% endif %}
-    </div>
+ <!-- Today's Schedule -->
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <div class="flex items-center justify-between mb-3">
+ <h2 class="text-sm font-semibold text-[color:var(--text)]">
+ {{ t.calendar_section_today }} &mdash; <span class="text-indigo-600 dark:text-indigo-400">{{ today_schedule.template_name }}</span>
+ </h2>
+ <span class="text-xs text-[color:var(--text-muted)]">{{ today_schedule.date }}</span>
+ </div>
+ {% if today_schedule.windows %}
+ <div class="flex items-center h-8 pl-surface-soft rounded-full overflow-hidden relative">
+ {% for w in today_schedule.windows %}
+ {% set sh = w.start.split(':') %}
+ {% set eh = w.end.split(':') %}
+ {% set start_pct = ((sh[0]|int * 60 + sh[1]|int) / 1440 * 100)|round(1) %}
+ {% set width_pct = (((eh[0]|int * 60 + eh[1]|int) - (sh[0]|int * 60 + sh[1]|int)) / 1440 * 100)|round(1) %}
+ <div class="h-full flex items-center justify-center text-[10px] font-medium text-white truncate px-1
+ {% if w.policy == 'allowed' %}bg-emerald-500/80{% elif w.policy == 'passive_only' %}bg-amber-500/80{% else %}bg-red-500/60{% endif %}"
+ style="width:{{ width_pct }}%; min-width:6%;"
+ title="{{ w.label }}: {{ w.start }}-{{ w.end }} ({{ w.policy }})">{{ w.label[:6] }}</div>
+ {% endfor %}
+ </div>
+ <div class="flex gap-3 mt-2 text-xs text-[color:var(--text-secondary)]">
+ <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>{{ t.calendar_legend_allowed }}</span>
+ <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span>{{ t.calendar_legend_passive }}</span>
+ <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span>{{ t.calendar_legend_disallowed }}</span>
+ </div>
+ {% else %}
+ <p class="text-sm text-[color:var(--text-muted)] py-3">{{ t.calendar_empty }} <button onclick="showTemplateForm()" class="text-indigo-600 dark:text-indigo-400 underline">{{ t.calendar_create_default }}</button></p>
+ {% endif %}
+ </div>
 
-    <!-- Cards: Templates, Overrides, Check -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{{ t.calendar_card_templates }}</h3>
-            <div id="template-list" class="text-xs space-y-1 mb-3"></div>
-            <button onclick="showTemplateForm()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors">+ {{ t.calendar_btn_new_template }}</button>
-        </div>
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{{ t.calendar_card_overrides }}</h3>
-            <div id="override-list" class="text-xs space-y-1 mb-3"></div>
-            <button onclick="showOverrideForm()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors">+ {{ t.calendar_btn_new_vacation }}</button>
-        </div>
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{{ t.calendar_card_check }}</h3>
-            <form id="check-form" class="space-y-2">
-                <input type="datetime-local" id="check-dt" aria-label="{{ t.calendar_card_check }}" class="w-full text-xs bg-slate-50 dark:bg-slate-800 rounded-lg px-2.5 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-                <select id="check-intensity" aria-label="{{ t.calendar_card_check }}" class="w-full text-xs bg-slate-50 dark:bg-slate-800 rounded-lg px-2.5 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-                    <option value="active">{{ t.calendar_intensity_active }}</option><option value="passive">{{ t.calendar_intensity_passive }}</option><option value="neutral">{{ t.calendar_intensity_neutral }}</option>
-                </select>
-                <button type="submit" class="text-xs px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white w-full transition-colors font-medium">{{ t.calendar_btn_check }}</button>
-            </form>
-            <div id="check-result" class="mt-2 text-xs"></div>
-        </div>
-    </div>
+ <!-- Cards: Templates, Overrides, Check -->
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-2">{{ t.calendar_card_templates }}</h3>
+ <div id="template-list" class="text-xs space-y-1 mb-3"></div>
+ <button onclick="showTemplateForm()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors">+ {{ t.calendar_btn_new_template }}</button>
+ </div>
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-2">{{ t.calendar_card_overrides }}</h3>
+ <div id="override-list" class="text-xs space-y-1 mb-3"></div>
+ <button onclick="showOverrideForm()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors">+ {{ t.calendar_btn_new_vacation }}</button>
+ </div>
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-2">{{ t.calendar_card_check }}</h3>
+ <form id="check-form" class="space-y-2">
+ <input type="datetime-local" id="check-dt" aria-label="{{ t.calendar_card_check }}" class="w-full text-xs pl-surface-soft rounded-lg px-2.5 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
+ <select id="check-intensity" aria-label="{{ t.calendar_card_check }}" class="w-full text-xs pl-surface-soft rounded-lg px-2.5 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
+ <option value="active">{{ t.calendar_intensity_active }}</option><option value="passive">{{ t.calendar_intensity_passive }}</option><option value="neutral">{{ t.calendar_intensity_neutral }}</option>
+ </select>
+ <button type="submit" class="text-xs px-3 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] w-full transition-colors font-medium">{{ t.calendar_btn_check }}</button>
+ </form>
+ <div id="check-result" class="mt-2 text-xs"></div>
+ </div>
+ </div>
 
-    <!-- Template Form (hidden) -->
-    <div id="template-form" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.calendar_new_template }}</h3>
-        <div class="grid grid-cols-2 gap-3 mb-3">
-            <input id="tpl-name" placeholder="{{ t.calendar_form_template_name_ph }}" class="text-sm bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-            <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" id="tpl-default">{{ t.calendar_form_set_default }}</label>
-        </div>
-        <div id="tpl-windows" class="space-y-2 mb-3">
-            <div class="flex gap-2 text-xs items-center window-row flex-wrap">
-                <select class="dow bg-slate-50 dark:bg-slate-800 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-                    <option value="0">{{ t.calendar_dow_mon }}</option><option value="1">{{ t.calendar_dow_tue }}</option><option value="2">{{ t.calendar_dow_wed }}</option><option value="3">{{ t.calendar_dow_thu }}</option><option value="4">{{ t.calendar_dow_fri }}</option><option value="5">{{ t.calendar_dow_sat }}</option><option value="6">{{ t.calendar_dow_sun }}</option><option value="7">{{ t.calendar_dow_every }}</option>
-                </select>
-                <input type="time" value="09:00" class="st bg-slate-50 dark:bg-slate-800 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 w-24">
-                <span class="text-slate-400">–</span>
-                <input type="time" value="18:00" class="et bg-slate-50 dark:bg-slate-800 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 w-24">
-                <input placeholder="{{ t.calendar_form_label_ph }}" value="" class="lb bg-slate-50 dark:bg-slate-800 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 w-16">
-                <select class="pol bg-slate-50 dark:bg-slate-800 rounded px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-                    <option value="allowed">{{ t.calendar_policy_allowed }}</option><option value="passive_only">{{ t.calendar_policy_passive }}</option><option value="disallowed">{{ t.calendar_policy_disallowed }}</option>
-                </select>
-            </div>
-        </div>
-        <div class="flex gap-2">
-            <button onclick="addWindowRow()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">+ {{ t.calendar_form_btn_add_window }}</button>
-            <button onclick="saveTemplate()" class="text-xs px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors">{{ t.calendar_form_btn_save }}</button>
-        </div>
-    </div>
+ <!-- Template Form (hidden) -->
+ <div id="template-form" class="hidden pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-3">{{ t.calendar_new_template }}</h3>
+ <div class="grid grid-cols-2 gap-3 mb-3">
+ <input id="tpl-name" placeholder="{{ t.calendar_form_template_name_ph }}" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
+ <label class="flex items-center gap-2 text-sm text-[color:var(--text)]"><input type="checkbox" id="tpl-default">{{ t.calendar_form_set_default }}</label>
+ </div>
+ <div id="tpl-windows" class="space-y-2 mb-3">
+ <div class="flex gap-2 text-xs items-center window-row flex-wrap">
+ <select class="dow pl-surface-soft rounded px-2 py-1.5 border border-[color:var(--border)] text-[color:var(--text)]">
+ <option value="0">{{ t.calendar_dow_mon }}</option><option value="1">{{ t.calendar_dow_tue }}</option><option value="2">{{ t.calendar_dow_wed }}</option><option value="3">{{ t.calendar_dow_thu }}</option><option value="4">{{ t.calendar_dow_fri }}</option><option value="5">{{ t.calendar_dow_sat }}</option><option value="6">{{ t.calendar_dow_sun }}</option><option value="7">{{ t.calendar_dow_every }}</option>
+ </select>
+ <input type="time" value="09:00" class="st pl-surface-soft rounded px-2 py-1.5 border border-[color:var(--border)] text-[color:var(--text)] w-24">
+ <span class="text-[color:var(--text-muted)]">–</span>
+ <input type="time" value="18:00" class="et pl-surface-soft rounded px-2 py-1.5 border border-[color:var(--border)] text-[color:var(--text)] w-24">
+ <input placeholder="{{ t.calendar_form_label_ph }}" value="" class="lb pl-surface-soft rounded px-2 py-1.5 border border-[color:var(--border)] text-[color:var(--text)] w-16">
+ <select class="pol pl-surface-soft rounded px-2 py-1.5 border border-[color:var(--border)] text-[color:var(--text)]">
+ <option value="allowed">{{ t.calendar_policy_allowed }}</option><option value="passive_only">{{ t.calendar_policy_passive }}</option><option value="disallowed">{{ t.calendar_policy_disallowed }}</option>
+ </select>
+ </div>
+ </div>
+ <div class="flex gap-2">
+ <button onclick="addWindowRow()" class="text-xs px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] transition-colors">+ {{ t.calendar_form_btn_add_window }}</button>
+ <button onclick="saveTemplate()" class="text-xs px-4 py-1.5 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] transition-colors">{{ t.calendar_form_btn_save }}</button>
+ </div>
+ </div>
 
-    <!-- Override Form (hidden) -->
-    <div id="override-form" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.calendar_new_vacation }}</h3>
-        <div class="grid grid-cols-2 gap-3 mb-3">
-            <select id="ovr-tpl" class="text-sm bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100"></select>
-            <input id="ovr-label" placeholder="{{ t.calendar_form_vacation_label_ph }}" class="text-sm bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-            <input type="date" id="ovr-start" class="text-sm bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-            <input type="date" id="ovr-end" class="text-sm bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100">
-        </div>
-        <button onclick="saveOverride()" class="text-xs px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">{{ t.calendar_form_btn_save_override }}</button>
-    </div>
+ <!-- Override Form (hidden) -->
+ <div id="override-form" class="hidden pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-3">{{ t.calendar_new_vacation }}</h3>
+ <div class="grid grid-cols-2 gap-3 mb-3">
+ <select id="ovr-tpl" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]"></select>
+ <input id="ovr-label" placeholder="{{ t.calendar_form_vacation_label_ph }}" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
+ <input type="date" id="ovr-start" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
+ <input type="date" id="ovr-end" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
+ </div>
+ <button onclick="saveOverride()" class="text-xs px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">{{ t.calendar_form_btn_save_override }}</button>
+ </div>
 </div>
 {% endblock %}
 

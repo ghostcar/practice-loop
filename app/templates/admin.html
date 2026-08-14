@@ -3,93 +3,93 @@
 
 {% block content %}
 <div class="animate-fade-in">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ t.admin_title_page }}</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ t.admin_subtitle }}</p>
-        </div>
-    </div>
+ <div class="flex items-center justify-between mb-6">
+ <div>
+ <h1 class="text-3xl font-bold text-[color:var(--text)]">{{ t.admin_title_page }}</h1>
+ <p class="text-[color:var(--text-secondary)] mt-1">{{ t.admin_subtitle }}</p>
+ </div>
+ </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <!-- Catalog management -->
-        <a href="/entities/catalog"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-            {{ icon('catalog', 'w-10 h-10 mb-3 text-indigo-500') }}
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-500 transition-colors">Catalog</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Browse entities, manage opt-ins, filter by category</p>
-        </a>
+ <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+ <!-- Catalog management -->
+ <a href="/entities/catalog"
+ class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('catalog', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Catalog</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1">Browse entities, manage opt-ins, filter by category</p>
+ </a>
 
-        <!-- Personal entities -->
-        <a href="/entities/my"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-            {{ icon('edit', 'w-10 h-10 mb-3 text-indigo-500') }}
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-500 transition-colors">My Entities</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create and manage your personal tasks</p>
-        </a>
+ <!-- Personal entities -->
+ <a href="/entities/my"
+ class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('edit', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">My Entities</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1">Create and manage your personal tasks</p>
+ </a>
 
-        <!-- LLM Configs -->
-        <a href="/llm-configs/"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-            {{ icon('ai', 'w-10 h-10 mb-3 text-indigo-500') }}
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-indigo-500 transition-colors">LLM Providers</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure BYOK providers (Omniroute, Groq, OpenRouter…)</p>
-        </a>
+ <!-- LLM Configs -->
+ <a href="/llm-configs/"
+ class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('ai', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">LLM Providers</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1">Configure BYOK providers (Omniroute, Groq, OpenRouter…)</p>
+ </a>
 
-        <!-- Body Parts reference -->
-        <a href="/api/v2/body-parts/page"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-            {{ icon('body', 'w-10 h-10 mb-3 text-indigo-500') }}
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Body Zones</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Anatomical reference: hierarchy, search, filters</p>
-        </a>
+ <!-- Body Parts reference -->
+ <a href="/api/v2/body-parts/page"
+ class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('body', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)]">Body Zones</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1">Anatomical reference: hierarchy, search, filters</p>
+ </a>
 
-        <!-- Locations reference -->
-        <a href="/api/v2/locations/page"
-           class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-            {{ icon('location', 'w-10 h-10 mb-3 text-indigo-500') }}
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Locations</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">System + personal places, CRUD, filters</p>
-        </a>
+ <!-- Locations reference -->
+ <a href="/api/v2/locations/page"
+ class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('location', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)]">Locations</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1">System + personal places, CRUD, filters</p>
+ </a>
 
-        <!-- Seed data controls -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-            {{ icon('plus', 'w-10 h-10 mb-3 text-indigo-500') }}
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Seed Data</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">Initialize the catalog and provider presets</p>
-            <div class="flex flex-wrap gap-2">
-                <form action="/admin/seed-entities" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
-                        Seed 30+ Entities
-                    </button>
-                </form>
-                <form action="/admin/seed-llm-presets" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium">
-                        Seed LLM Presets
-                    </button>
-                </form>
-                <form action="/admin/seed-references" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium">
-                        Seed References
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
+ <!-- Seed data controls -->
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('plus', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)]">Seed Data</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1 mb-4">Initialize the catalog and provider presets</p>
+ <div class="flex flex-wrap gap-2">
+ <form action="/admin/seed-entities" method="post">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <button type="submit"
+ class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium">
+ Seed 30+ Entities
+ </button>
+ </form>
+ <form action="/admin/seed-llm-presets" method="post">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <button type="submit"
+ class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-medium">
+ Seed LLM Presets
+ </button>
+ </form>
+ <form action="/admin/seed-references" method="post">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <button type="submit"
+ class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium">
+ Seed References
+ </button>
+ </form>
+ </div>
+ </div>
+ </div>
 
-    <!-- System info -->
-    <div class="mt-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">System Info</h3>
-        <div class="text-sm text-slate-500 dark:text-slate-400 space-y-1">
-            <div>Phase 2 — Catalog &amp; Configs</div>
-            <div>Seed: 30+ entities across 6 categories + 3 LLM presets</div>
-            <div>Opt-in: desire levels (want_very_much → unacceptable), rating 1–5</div>
-        </div>
-    </div>
+ <!-- System info -->
+ <div class="mt-8 pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ <h3 class="text-lg font-semibold text-[color:var(--text)] mb-3">System Info</h3>
+ <div class="text-sm text-[color:var(--text-secondary)] space-y-1">
+ <div>Phase 2 — Catalog &amp; Configs</div>
+ <div>Seed: 30+ entities across 6 categories + 3 LLM presets</div>
+ <div>Opt-in: desire levels (want_very_much → unacceptable), rating 1–5</div>
+ </div>
+ </div>
 </div>
 {% endblock %}

@@ -2,41 +2,41 @@
 
 {% block content %}
 <div>
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">
-                {{ t.dashboard_title }}
-            </h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">
-                {{ t.dashboard_welcome }}
-            </p>
-        </div>
-    </div>
+ <div class="flex items-center justify-between mb-8">
+ <div>
+ <h1 class="text-3xl font-bold text-[color:var(--text)]">
+ {{ t.dashboard_title }}
+ </h1>
+ <p class="text-[color:var(--text-secondary)] mt-1">
+ {{ t.dashboard_welcome }}
+ </p>
+ </div>
+ </div>
 
-    <!-- Stats placeholder cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100">0</div>
-            <div class="text-sm text-slate-500 dark:text-slate-400">XP</div>
-        </div>
-        <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100">0</div>
-            <div class="text-sm text-slate-500 dark:text-slate-400">Day streak</div>
-        </div>
-        <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100">0</div>
-            <div class="text-sm text-slate-500 dark:text-slate-400">Tasks completed</div>
-        </div>
-    </div>
+ <!-- Stats placeholder cards -->
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+ <div class="p-6 rounded-2xl pl-surface border border-[color:var(--border)]">
+ <div class="text-2xl font-bold text-[color:var(--text)]">0</div>
+ <div class="text-sm text-[color:var(--text-secondary)]">XP</div>
+ </div>
+ <div class="p-6 rounded-2xl pl-surface border border-[color:var(--border)]">
+ <div class="text-2xl font-bold text-[color:var(--text)]">0</div>
+ <div class="text-sm text-[color:var(--text-secondary)]">Day streak</div>
+ </div>
+ <div class="p-6 rounded-2xl pl-surface border border-[color:var(--border)]">
+ <div class="text-2xl font-bold text-[color:var(--text)]">0</div>
+ <div class="text-sm text-[color:var(--text-secondary)]">Tasks completed</div>
+ </div>
+ </div>
 
-    <!-- Placeholder for future phases -->
-    <div class="p-8 rounded-2xl bg-white/50 dark:bg-slate-800/50 border border-dashed border-slate-300 dark:border-slate-600 text-center">
-        <p class="text-slate-400 dark:text-slate-500 text-lg">
-            {{ t.dashboard_stats }}
-        </p>
-        <p class="text-sm text-slate-400 dark:text-slate-500 mt-2">
-            Sessions, achievements, and activity log — coming in Phase 4
-        </p>
-    </div>
+ <!-- Placeholder for future phases -->
+ <div class="p-8 rounded-2xl pl-surface-soft border border-dashed border-[color:var(--border)] text-center">
+ <p class="text-[color:var(--text-muted)] text-lg">
+ {{ t.dashboard_stats }}
+ </p>
+ <p class="text-sm text-[color:var(--text-muted)] mt-2">
+ Sessions, achievements, and activity log — coming in Phase 4
+ </p>
+ </div>
 </div>
 {% endblock %}

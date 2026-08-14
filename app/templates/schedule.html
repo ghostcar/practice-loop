@@ -2,44 +2,44 @@
 {% block title %}Schedule{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-5">
-  <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">Weekly Schedule</h1>
-    <div class="flex gap-2">
-      <a href="/calendar" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">Calendar</a>
-      <button onclick="showForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">+ Add Rule</button>
-    </div>
-  </div>
+ <div class="flex justify-between items-center">
+ <h1 class="text-2xl font-bold text-[color:var(--text)]">Weekly Schedule</h1>
+ <div class="flex gap-2">
+ <a href="/calendar" class="pl-surface border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">Calendar</a>
+ <button onclick="showForm()" class="pl-accent-bg hover:bg-[color:var(--accent-hover)] px-4 py-2 rounded-lg text-sm font-medium transition-colors">+ Add Rule</button>
+ </div>
+ </div>
 
-  <!-- Add form -->
-  <div id="add-form" class="hidden bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800">
-    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">New Schedule Rule</h3>
-    <form id="sched-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <select id="sched-dow" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-sm">
-        <option value="7">Every Day</option><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
-      </select>
-      <input id="sched-start" type="time" value="06:00" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-sm">
-      <input id="sched-end" type="time" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-sm">
-      <select id="sched-type" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-sm">
-        <option value="mandatory">Mandatory</option><option value="optional_mandatory">Opt-Mandatory</option><option value="optional">Optional</option><option value="penalty_reducing">Penalty Red.</option>
-      </select>
-      <input id="sched-entity" placeholder="Entity name" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-sm col-span-2">
-      <input id="sched-notes" placeholder="Notes" class="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-sm col-span-2">
-      <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" id="sched-recur" checked> Recurring</label>
-      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm col-span-full transition-colors">Save</button>
-    </form>
-  </div>
+ <!-- Add form -->
+ <div id="add-form" class="hidden pl-surface rounded-xl p-4 border border-[color:var(--border)]">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-3">New Schedule Rule</h3>
+ <form id="sched-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+ <select id="sched-dow" class="pl-surface-soft rounded-lg px-3 py-2 text-[color:var(--text)] border border-[color:var(--border)] text-sm">
+ <option value="7">Every Day</option><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
+ </select>
+ <input id="sched-start" type="time" value="06:00" class="pl-surface-soft rounded-lg px-3 py-2 text-[color:var(--text)] border border-[color:var(--border)] text-sm">
+ <input id="sched-end" type="time" class="pl-surface-soft rounded-lg px-3 py-2 text-[color:var(--text)] border border-[color:var(--border)] text-sm">
+ <select id="sched-type" class="pl-surface-soft rounded-lg px-3 py-2 text-[color:var(--text)] border border-[color:var(--border)] text-sm">
+ <option value="mandatory">Mandatory</option><option value="optional_mandatory">Opt-Mandatory</option><option value="optional">Optional</option><option value="penalty_reducing">Penalty Red.</option>
+ </select>
+ <input id="sched-entity" placeholder="Entity name" class="pl-surface-soft rounded-lg px-3 py-2 text-[color:var(--text)] border border-[color:var(--border)] text-sm col-span-2">
+ <input id="sched-notes" placeholder="Notes" class="pl-surface-soft rounded-lg px-3 py-2 text-[color:var(--text)] border border-[color:var(--border)] text-sm col-span-2">
+ <label class="flex items-center gap-2 text-sm text-[color:var(--text)]"><input type="checkbox" id="sched-recur" checked> Recurring</label>
+ <button type="submit" class="pl-accent-bg hover:bg-[color:var(--accent-hover)] px-4 py-2 rounded-lg text-sm col-span-full transition-colors">Save</button>
+ </form>
+ </div>
 
-  <!-- Weekly Timeline Chart -->
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Weekly Timeline</h3>
-    <div class="h-64"><canvas id="week-timeline"></canvas></div>
-  </div>
+ <!-- Weekly Timeline Chart -->
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-3">Weekly Timeline</h3>
+ <div class="h-64"><canvas id="week-timeline"></canvas></div>
+ </div>
 
-  <!-- Today's schedule -->
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-    <div class="bg-slate-100 dark:bg-slate-800 px-4 py-2 font-semibold text-sm text-slate-700 dark:text-slate-200">Today's Schedule</div>
-    <div id="today-sched" class="p-3 space-y-2"></div>
-  </div>
+ <!-- Today's schedule -->
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] overflow-hidden">
+ <div class="pl-surface-soft px-4 py-2 font-semibold text-sm text-[color:var(--text)]">Today's Schedule</div>
+ <div id="today-sched" class="p-3 space-y-2"></div>
+ </div>
 </div>
 {% endblock %}
 {% block scripts %}

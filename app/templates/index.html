@@ -3,48 +3,48 @@
 
 {% block content %}
 <div class="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
-    <h1 class="text-4xl md:text-5xl font-bold mb-4 text-slate-900 dark:text-slate-50">
-        {{ t.app_title }}
-    </h1>
-    <p class="text-lg text-slate-500 dark:text-slate-400 mb-8 max-w-md leading-relaxed">
-        {{ t.app_tagline }}
-    </p>
+ <h1 class="text-4xl md:text-5xl font-bold mb-4 text-[color:var(--text)]">
+ {{ t.app_title }}
+ </h1>
+ <p class="text-lg text-[color:var(--text-secondary)] mb-8 max-w-md leading-relaxed">
+ {{ t.app_tagline }}
+ </p>
 
-    {% if user %}
-        <a href="/dashboard"
-           class="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg">
-            {{ t.nav_dashboard }}
-        </a>
-    {% else %}
-        <div class="flex flex-wrap gap-4 justify-center">
-            <a href="/register"
-               class="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg">
-                {{ t.nav_register }}
-            </a>
-            <a href="/login"
-               class="px-8 py-3 rounded-xl border-2 border-slate-300 dark:border-slate-600 hover:border-indigo-500 dark:hover:border-indigo-400 text-slate-700 dark:text-slate-200 font-semibold text-lg">
-                {{ t.nav_login }}
-            </a>
-        </div>
-    {% endif %}
+ {% if user %}
+ <a href="/dashboard"
+ class="px-8 py-3 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] font-semibold text-lg">
+ {{ t.nav_dashboard }}
+ </a>
+ {% else %}
+ <div class="flex flex-wrap gap-4 justify-center">
+ <a href="/register"
+ class="px-8 py-3 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] font-semibold text-lg">
+ {{ t.nav_register }}
+ </a>
+ <a href="/login"
+ class="px-8 py-3 rounded-xl border-2 border-[color:var(--border)] hover:border-indigo-500 dark:hover:border-indigo-400 text-[color:var(--text)] font-semibold text-lg">
+ {{ t.nav_login }}
+ </a>
+ </div>
+ {% endif %}
 
-    <!-- Features teaser -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 max-w-3xl w-full">
-        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-            {{ icon('catalog', 'w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400') }}
-            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.landing_feature_catalog }}</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.landing_feature_catalog_desc }}</p>
-        </div>
-        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-            {{ icon('ai', 'w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400') }}
-            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.landing_feature_llm }}</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.landing_feature_llm_desc }}</p>
-        </div>
-        <div class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-            {{ icon('trophy', 'w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400') }}
-            <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.landing_feature_gamification }}</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.landing_feature_gamification_desc }}</p>
-        </div>
-    </div>
+ <!-- Features teaser -->
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 max-w-3xl w-full">
+ <div class="p-6 rounded-2xl pl-surface border border-[color:var(--border)]">
+ {{ icon('catalog', 'w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="font-semibold text-[color:var(--text)] mb-1">{{ t.landing_feature_catalog }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)]">{{ t.landing_feature_catalog_desc }}</p>
+ </div>
+ <div class="p-6 rounded-2xl pl-surface border border-[color:var(--border)]">
+ {{ icon('ai', 'w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="font-semibold text-[color:var(--text)] mb-1">{{ t.landing_feature_llm }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)]">{{ t.landing_feature_llm_desc }}</p>
+ </div>
+ <div class="p-6 rounded-2xl pl-surface border border-[color:var(--border)]">
+ {{ icon('trophy', 'w-10 h-10 mx-auto mb-4 text-indigo-600 dark:text-indigo-400') }}
+ <h3 class="font-semibold text-[color:var(--text)] mb-1">{{ t.landing_feature_gamification }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)]">{{ t.landing_feature_gamification_desc }}</p>
+ </div>
+ </div>
 </div>
 {% endblock %}

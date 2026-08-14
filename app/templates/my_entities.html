@@ -3,132 +3,132 @@
 
 {% block content %}
 <div class="animate-fade-in">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ t.my_entities_title }}</h1>
-            <p class="text-slate-500 dark:text-slate-400 mt-1">Your personal tasks and activities</p>
-        </div>
-        <a href="/entities/catalog"
-           class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium transition-colors">
-            ← Back to Catalog
-        </a>
-    </div>
+ <div class="flex items-center justify-between mb-6">
+ <div>
+ <h1 class="text-3xl font-bold text-[color:var(--text)]">{{ t.my_entities_title }}</h1>
+ <p class="text-[color:var(--text-secondary)] mt-1">Your personal tasks and activities</p>
+ </div>
+ <a href="/entities/catalog"
+ class="px-4 py-2 rounded-xl border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] text-sm font-medium transition-colors">
+ ← Back to Catalog
+ </a>
+ </div>
 
-    <!-- Create form -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
-        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Create New Entity</h2>
-        <form action="/entities/" method="post" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
-                    <input name="real_name" required maxlength="500"
-                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                           placeholder="E.g. Massage 10 min">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category *</label>
-                    <input name="category" required
-                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                           placeholder="E.g. Romance">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
-                    <select name="type"
-                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="one_time">One-time</option>
-                        <option value="series">Series</option>
-                        <option value="infinite">Infinite (routine)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tags (comma-separated)</label>
-                    <input name="tags"
-                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                           placeholder="massage, relaxation, 10min">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t.risk_level_label }}</label>
-                    <select name="risk_level"
-                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="not_assessed">{{ t.risk_not_assessed }}</option>
-                        <option value="low">{{ t.risk_low }}</option>
-                        <option value="elevated">{{ t.risk_elevated }}</option>
-                        <option value="high">{{ t.risk_high }}</option>
-                    </select>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ t.risk_automation_hint }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <input type="checkbox" name="is_public" value="true" id="is_public"
-                       class="rounded border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-500">
-                <label for="is_public" class="text-sm text-slate-600 dark:text-slate-400">Publish to public catalog</label>
-            </div>
-            <button type="submit"
-                    class="px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium text-sm">
-                + Create Entity
-            </button>
-        </form>
-    </div>
+ <!-- Create form -->
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 mb-8">
+ <h2 class="text-lg font-semibold text-[color:var(--text)] mb-4">Create New Entity</h2>
+ <form action="/entities/" method="post" class="space-y-4">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">Name *</label>
+ <input name="real_name" required maxlength="500"
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]"
+ placeholder="E.g. Massage 10 min">
+ </div>
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">Category *</label>
+ <input name="category" required
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]"
+ placeholder="E.g. Romance">
+ </div>
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">Type</label>
+ <select name="type"
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ <option value="one_time">One-time</option>
+ <option value="series">Series</option>
+ <option value="infinite">Infinite (routine)</option>
+ </select>
+ </div>
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">Tags (comma-separated)</label>
+ <input name="tags"
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]"
+ placeholder="massage, relaxation, 10min">
+ </div>
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">{{ t.risk_level_label }}</label>
+ <select name="risk_level"
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ <option value="not_assessed">{{ t.risk_not_assessed }}</option>
+ <option value="low">{{ t.risk_low }}</option>
+ <option value="elevated">{{ t.risk_elevated }}</option>
+ <option value="high">{{ t.risk_high }}</option>
+ </select>
+ <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.risk_automation_hint }}</p>
+ </div>
+ </div>
+ <div class="flex items-center gap-2">
+ <input type="checkbox" name="is_public" value="true" id="is_public"
+ class="rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]">
+ <label for="is_public" class="text-sm text-[color:var(--text-secondary)]">Publish to public catalog</label>
+ </div>
+ <button type="submit"
+ class="px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] font-medium text-sm">
+ + Create Entity
+ </button>
+ </form>
+ </div>
 
-    <!-- My entities list -->
-    <div class="space-y-3">
-        {% for entity in entities %}
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex items-center justify-between gap-4">
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                        {% if entity.type == 'one_time' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
-                        {% elif entity.type == 'series' %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
-                        {% else %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300{% endif %}">
-                        {{ entity.type }}
-                    </span>
-                    {% set risk = entity.risk_level or 'not_assessed' %}
-                    <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                        {% if risk == 'low' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
-                        {% elif risk == 'elevated' %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
-                        {% elif risk == 'high' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300
-                        {% else %}bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300{% endif %}">
-                        {% if risk == 'low' %}{{ t.risk_low }}
-                        {% elif risk == 'elevated' %}{{ t.risk_elevated }}
-                        {% elif risk == 'high' %}{{ t.risk_high }}
-                        {% else %}{{ t.risk_not_assessed }}{% endif %}
-                    </span>
-                    <span class="text-xs text-slate-400 dark:text-slate-500">{{ entity.category }}</span>
-                    {% if entity.is_public %}
-                    <span class="text-xs text-emerald-500 inline-flex items-center gap-1">{{ icon('globe', 'w-3.5 h-3.5') }}Public</span>
-                    {% endif %}
-                </div>
-                <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ entity.real_name }}</h3>
-            </div>
-            <div class="flex items-center gap-2">
-                {% if not entity.is_public %}
-                <form action="/entities/{{ entity.id }}/publish" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            class="px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors">
-                        Publish
-                    </button>
-                </form>
-                {% endif %}
-                <form action="/entities/{{ entity.id }}/delete" method="post"
-                      onsubmit="return confirm('Delete this entity?')">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors">
-                        Delete
-                    </button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
+ <!-- My entities list -->
+ <div class="space-y-3">
+ {% for entity in entities %}
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 flex items-center justify-between gap-4">
+ <div class="flex-1 min-w-0">
+ <div class="flex items-center gap-2 mb-1">
+ <span class="text-xs px-2 py-0.5 rounded-full font-medium
+ {% if entity.type == 'one_time' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+ {% elif entity.type == 'series' %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
+ {% else %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300{% endif %}">
+ {{ entity.type }}
+ </span>
+ {% set risk = entity.risk_level or 'not_assessed' %}
+ <span class="text-xs px-2 py-0.5 rounded-full font-medium
+ {% if risk == 'low' %}bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300
+ {% elif risk == 'elevated' %}bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300
+ {% elif risk == 'high' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300
+ {% else %}pl-surface-soft text-[color:var(--text-secondary)]{% endif %}">
+ {% if risk == 'low' %}{{ t.risk_low }}
+ {% elif risk == 'elevated' %}{{ t.risk_elevated }}
+ {% elif risk == 'high' %}{{ t.risk_high }}
+ {% else %}{{ t.risk_not_assessed }}{% endif %}
+ </span>
+ <span class="text-xs text-[color:var(--text-muted)]">{{ entity.category }}</span>
+ {% if entity.is_public %}
+ <span class="text-xs text-emerald-500 inline-flex items-center gap-1">{{ icon('globe', 'w-3.5 h-3.5') }}Public</span>
+ {% endif %}
+ </div>
+ <h3 class="font-semibold text-[color:var(--text)]">{{ entity.real_name }}</h3>
+ </div>
+ <div class="flex items-center gap-2">
+ {% if not entity.is_public %}
+ <form action="/entities/{{ entity.id }}/publish" method="post">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <button type="submit"
+ class="px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors">
+ Publish
+ </button>
+ </form>
+ {% endif %}
+ <form action="/entities/{{ entity.id }}/delete" method="post"
+ onsubmit="return confirm('Delete this entity?')">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <button type="submit"
+ class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors">
+ Delete
+ </button>
+ </form>
+ </div>
+ </div>
+ {% endfor %}
 
-        {% if not entities %}
-        <div class="text-center py-12 text-slate-400 dark:text-slate-500">
-            {{ icon('edit', 'w-10 h-10 mb-3 mx-auto text-slate-300 dark:text-slate-600') }}
-            <p>You haven't created any entities yet.</p>
-        </div>
-        {% endif %}
-    </div>
+ {% if not entities %}
+ <div class="text-center py-12 text-[color:var(--text-muted)]">
+ {{ icon('edit', 'w-10 h-10 mb-3 mx-auto text-[color:var(--text-muted)]') }}
+ <p>You haven't created any entities yet.</p>
+ </div>
+ {% endif %}
+ </div>
 </div>
 {% endblock %}

@@ -3,87 +3,87 @@
 
 {% block content %}
 <div class="animate-fade-in">
-    <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 inline-flex items-center gap-2">{{ icon('trophy', 'w-7 h-7 text-amber-500') }}Achievements</h1>
-    <p class="text-slate-500 dark:text-slate-400 mb-8">Public board (anonymized) + your collection</p>
+ <h1 class="text-2xl font-bold text-[color:var(--text)] mb-2 inline-flex items-center gap-2">{{ icon('trophy', 'w-7 h-7 text-amber-500') }}Achievements</h1>
+ <p class="text-[color:var(--text-secondary)] mb-8">Public board (anonymized) + your collection</p>
 
-    <!-- Progress stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-            <div class="text-3xl mb-1 flex justify-center">{{ icon('trophy', 'w-8 h-8 text-amber-500') }}</div>
-            <div class="text-2xl font-bold text-amber-500">{{ my_achievements|length }}</div>
-            <div class="text-xs text-slate-500">of 13 unlocked</div>
-        </div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-            <div class="text-3xl mb-1 flex justify-center">{{ icon('chart', 'w-8 h-8 text-indigo-400') }}</div>
-            <div class="text-2xl font-bold text-indigo-400">{{ (my_achievements|length / 13 * 100)|int }}%</div>
-            <div class="text-xs text-slate-500">completion</div>
-        </div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-            <div class="text-3xl mb-1 flex justify-center">{{ icon('flag', 'w-8 h-8 text-emerald-400') }}</div>
-            <div class="text-2xl font-bold text-emerald-400">{{ 13 - my_achievements|length }}</div>
-            <div class="text-xs text-slate-500">remaining</div>
-        </div>
-    </div>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 mb-6">
-        <div class="flex items-end justify-between mb-2">
-            <span class="text-sm text-slate-600 dark:text-slate-400">Overall Progress</span>
-            <span class="text-xs font-mono text-indigo-400">{{ (my_achievements|length / 13 * 100)|int }}%</span>
-        </div>
-        <div class="w-full h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
-            <div class="h-full bg-amber-500 rounded-full relative"
-                 style="width: {{ (my_achievements|length / 13 * 100)|int }}%">
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-            </div>
-        </div>
-    </div>
+ <!-- Progress stats -->
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
+ <div class="text-3xl mb-1 flex justify-center">{{ icon('trophy', 'w-8 h-8 text-amber-500') }}</div>
+ <div class="text-2xl font-bold text-amber-500">{{ my_achievements|length }}</div>
+ <div class="text-xs text-[color:var(--text-secondary)]">of 13 unlocked</div>
+ </div>
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
+ <div class="text-3xl mb-1 flex justify-center">{{ icon('chart', 'w-8 h-8 text-indigo-600 dark:text-indigo-400') }}</div>
+ <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ (my_achievements|length / 13 * 100)|int }}%</div>
+ <div class="text-xs text-[color:var(--text-secondary)]">completion</div>
+ </div>
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
+ <div class="text-3xl mb-1 flex justify-center">{{ icon('flag', 'w-8 h-8 text-emerald-400') }}</div>
+ <div class="text-2xl font-bold text-emerald-400">{{ 13 - my_achievements|length }}</div>
+ <div class="text-xs text-[color:var(--text-secondary)]">remaining</div>
+ </div>
+ </div>
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 mb-6">
+ <div class="flex items-end justify-between mb-2">
+ <span class="text-sm text-[color:var(--text-secondary)]">Overall Progress</span>
+ <span class="text-xs font-mono text-indigo-600 dark:text-indigo-400">{{ (my_achievements|length / 13 * 100)|int }}%</span>
+ </div>
+ <div class="w-full h-4 pl-surface-soft rounded-full overflow-hidden shadow-inner">
+ <div class="h-full bg-amber-500 rounded-full relative"
+ style="width: {{ (my_achievements|length / 13 * 100)|int }}%">
+ <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+ </div>
+ </div>
+ </div>
 
-    <!-- My achievements -->
-    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">My Achievements</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {% for ach in my_achievements %}
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5
-                    {% if ach.is_hidden %}opacity-50{% endif %}">
-            <div class="flex items-start justify-between mb-2">
-                <div class="w-10 h-10 rounded-xl bg-{{ ach.color }}-100 dark:bg-{{ ach.color }}-900/40 flex items-center justify-center">
-                    {{ icon('trophy', 'w-5 h-5') }}
-                </div>
-                <form action="/achievements/{{ ach.id }}/hide" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                        {{ 'Show' if ach.is_hidden else 'Hide' }}
-                    </button>
-                </form>
-            </div>
-            <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ ach.name }}</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ ach.description }}</p>
-            {% if ach.context %}
-            <p class="text-xs text-slate-400 mt-1">{{ ach.context }}</p>
-            {% endif %}
-            <p class="text-xs text-slate-400 mt-2">{{ localtime(ach.obtained_at, '%Y-%m-%d') }}</p>
-        </div>
-        {% endfor %}
-        {% if not my_achievements %}
-        <div class="col-span-full text-center py-8 text-slate-400">No achievements yet. Keep going!</div>
-        {% endif %}
-    </div>
+ <!-- My achievements -->
+ <h2 class="text-xl font-semibold text-[color:var(--text)] mb-4">My Achievements</h2>
+ <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+ {% for ach in my_achievements %}
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5
+ {% if ach.is_hidden %}opacity-50{% endif %}">
+ <div class="flex items-start justify-between mb-2">
+ <div class="w-10 h-10 rounded-xl bg-{{ ach.color }}-100 dark:bg-{{ ach.color }}-900/40 flex items-center justify-center">
+ {{ icon('trophy', 'w-5 h-5') }}
+ </div>
+ <form action="/achievements/{{ ach.id }}/hide" method="post">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <button class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]">
+ {{ 'Show' if ach.is_hidden else 'Hide' }}
+ </button>
+ </form>
+ </div>
+ <h3 class="font-semibold text-[color:var(--text)]">{{ ach.name }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)]">{{ ach.description }}</p>
+ {% if ach.context %}
+ <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ ach.context }}</p>
+ {% endif %}
+ <p class="text-xs text-[color:var(--text-muted)] mt-2">{{ localtime(ach.obtained_at, '%Y-%m-%d') }}</p>
+ </div>
+ {% endfor %}
+ {% if not my_achievements %}
+ <div class="col-span-full text-center py-8 text-[color:var(--text-muted)]">No achievements yet. Keep going!</div>
+ {% endif %}
+ </div>
 
-    <!-- Public board -->
-    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">Community Board</h2>
-    <div class="space-y-2">
-        {% for ach in all_achievements %}
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center gap-3">
-            <span class="text-lg">{{ icon('trophy', 'w-5 h-5 text-amber-500') }}</span>
-            <div class="flex-1 min-w-0">
-                <span class="font-medium text-slate-700 dark:text-slate-200">{{ ach.name }}</span>
-                <span class="text-xs text-slate-400 ml-2">{{ ach.description }}</span>
-            </div>
-            <span class="text-xs text-slate-400">{{ ach.display_name }}</span>
-            <span class="text-xs text-slate-400">{{ localtime(ach.obtained_at, '%Y-%m-%d') }}</span>
-        </div>
-        {% endfor %}
-        {% if not all_achievements %}
-        <div class="text-center py-8 text-slate-400">Board is empty. Be the first to earn an achievement!</div>
-        {% endif %}
-    </div>
+ <!-- Public board -->
+ <h2 class="text-xl font-semibold text-[color:var(--text)] mb-4">Community Board</h2>
+ <div class="space-y-2">
+ {% for ach in all_achievements %}
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] px-4 py-3 flex items-center gap-3">
+ <span class="text-lg">{{ icon('trophy', 'w-5 h-5 text-amber-500') }}</span>
+ <div class="flex-1 min-w-0">
+ <span class="font-medium text-[color:var(--text)]">{{ ach.name }}</span>
+ <span class="text-xs text-[color:var(--text-muted)] ml-2">{{ ach.description }}</span>
+ </div>
+ <span class="text-xs text-[color:var(--text-muted)]">{{ ach.display_name }}</span>
+ <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(ach.obtained_at, '%Y-%m-%d') }}</span>
+ </div>
+ {% endfor %}
+ {% if not all_achievements %}
+ <div class="text-center py-8 text-[color:var(--text-muted)]">Board is empty. Be the first to earn an achievement!</div>
+ {% endif %}
+ </div>
 </div>
 {% endblock %}
