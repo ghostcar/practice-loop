@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="animate-fade-in max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ t.mv_title }}</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">{{ t.mv_subtitle }}</p>
+        </div>
+        <a href="/llm/prompts"
+           class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium transition-colors inline-flex items-center gap-1.5">
+            {{ icon('ai', 'w-4 h-4') }}{{ t.pl_title }}
+        </a>
+    </div>
+
+    {% if not has_llm_config %}
+    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-xl text-sm mb-6 flex items-center gap-2">
+        {{ icon('warning', 'w-4 h-4') }}{{ t.pt_no_config }}
+    </div>
+    {% endif %}
+
+    {% if result %}
+    <!-- Last result -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            {{ icon('verification', 'w-5 h-5') }}{{ t.mv_last_result }}
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+                <div class="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">{{ t.mv_verdict }}</div>
+                {% if result.verdict == 'match' %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-sm font-medium">
+                    {{ icon('check', 'w-4 h-4') }}{{ t.mv_verdict_match }}
+                </span>
+                {% elif result.verdict == 'mismatch' %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-sm font-medium">
+                    {{ icon('close', 'w-4 h-4') }}{{ t.mv_verdict_mismatch }}
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-sm font-medium">
+                    {{ icon('warning', 'w-4 h-4') }}{{ t.mv_verdict_unclear }}
+                </span>
+                {% endif %}
+            </div>
+            <div>
+                <div class="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">{{ t.mv_confidence }}</div>
+                <div class="text-lg font-semibold text-slate-800 dark:text-slate-100">{{ result.confidence }}%</div>
+            </div>
+            <div>
+                <div class="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">{{ t.mv_type }}</div>
+                <div class="text-sm text-slate-700 dark:text-slate-200 font-mono">{{ result.verification_type }}</div>
+            </div>
+            <div>
+                <div class="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">{{ t.mv_media }}</div>
+                <div class="text-sm text-slate-700 dark:text-slate-200 font-mono break-all">{{ result.media_label }}</div>
+            </div>
+        </div>
+        {% if result.consumed_challenge %}
+        <div class="mt-4 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-sm flex items-center gap-2">
+            {{ icon('check-circle', 'w-4 h-4') }}{{ t.mv_challenge_consumed }}
+        </div>
+        {% endif %}
+        {% if result.reasoning %}
+        <div class="mt-4 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-sm text-slate-600 dark:text-slate-300">
+            {{ result.reasoning }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Verify form -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 mb-8">
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            {{ icon('camera', 'w-5 h-5') }}{{ t.mv_run }}
+        </h2>
+        {% if not media_list %}
+        <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.mv_no_media }}</p>
+        {% else %}
+        <form action="/llm/verify" method="post" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t.mv_media }} *</label>
+                    <select name="media_id" required
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        {% for m in media_list %}
+                        <option value="{{ m.id }}">{{ m.bind_label }}{% if m.caption %} — {{ m.caption }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t.mv_type }} *</label>
+                    <select name="verification_type"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="code_match">{{ t.mv_type_code }}</option>
+                        <option value="chastity_closed">{{ t.mv_type_chastity }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t.mv_expected_code }}</label>
+                    <input name="expected_code" maxlength="32"
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">{{ t.mv_expected_code_hint }}</p>
+                </div>
+                <div class="flex items-end">
+                    <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-slate-700 dark:text-slate-300">
+                        <input type="checkbox" name="auto_consume" class="rounded border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-500">
+                        {{ t.mv_auto_consume }}
+                    </label>
+                </div>
+            </div>
+            <button type="submit"
+                    class="px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-medium text-sm">
+                {{ icon('verification', 'w-4 h-4') }}{{ t.mv_run }}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- History -->
+    {% if history %}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+            {{ icon('history', 'w-5 h-5') }}{{ t.mv_history }}
+        </h2>
+        <div class="divide-y divide-slate-100 dark:divide-slate-700">
+            {% for h in history %}
+            <div class="py-3 flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <div class="text-sm font-medium text-slate-800 dark:text-slate-100 font-mono break-all">{{ h.media_label }}</div>
+                    <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                        {{ h.verification_type }} · {{ h.confidence }}% · {{ h.llm_model or '—' }}
+                    </div>
+                    {% if h.reasoning %}
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ h.reasoning }}</div>
+                    {% endif %}
+                </div>
+                <div class="flex-shrink-0">
+                    {% if h.verdict == 'match' %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+                        {{ icon('check', 'w-3.5 h-3.5') }}{{ t.mv_verdict_match }}
+                    </span>
+                    {% elif h.verdict == 'mismatch' %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 text-xs font-medium">
+                        {{ icon('close', 'w-3.5 h-3.5') }}{{ t.mv_verdict_mismatch }}
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                        {{ icon('warning', 'w-3.5 h-3.5') }}{{ t.mv_verdict_unclear }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -234,6 +234,8 @@ if composition.tracker_active:
     from app.api.import_data import router as import_router  # noqa: E402
     from app.api.knowledge import router as knowledge_router  # noqa: E402
     from app.api.llm_configs import router as llm_configs_router  # noqa: E402
+    from app.api.media_verify import json_router as media_verify_json_router  # noqa: E402
+    from app.api.media_verify import page_router as media_verify_page_router  # noqa: E402
     from app.api.points import router as points_router  # noqa: E402
     from app.api.prompt_templates import json_router as prompt_templates_json_router  # noqa: E402
     from app.api.prompt_templates import page_router as prompt_templates_page_router  # noqa: E402
@@ -258,6 +260,8 @@ if composition.tracker_active:
         diets_router,
         prompt_templates_page_router,
         prompt_templates_json_router,
+        media_verify_page_router,
+        media_verify_json_router,
         knowledge_router,
     ):
         app.include_router(_router)

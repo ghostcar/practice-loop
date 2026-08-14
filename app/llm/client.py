@@ -7,6 +7,12 @@ from openai import AsyncOpenAI
 from app.encryption import decrypt_api_key
 from app.models.llm_config import LLMProviderConfig
 
+# Vision (image parts) support — Step 7, ADR-075.
+# Omniroute routes image_url parts to vision-capable models (verified with
+# openrouter/openai/gpt-4o-mini, cheap). Images are passed as data URLs; the
+# caller is responsible for loading them from the private upload store.
+MAX_IMAGE_PARTS = 4
+
 # Approximate cost per 1K tokens for common models (USD)
 # Used when the provider doesn't return cost data
 DEFAULT_COST_PER_1K: dict[str, tuple[float, float]] = {
@@ -36,8 +42,13 @@ async def call_llm(
     user_message: str,
     tools: list[dict] | None = None,
     json_mode: bool = True,
+    images: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Call the LLM via OpenAI-compatible API. Returns {'content': ..., 'usage': ...}."""
+    """Call the LLM via OpenAI-compatible API. Returns {'content': ..., 'usage': ...}.
+
+    ``images`` — data URLs (data:image/...;base64,...) appended to the user
+    message as image parts (vision, ADR-075). Max MAX_IMAGE_PARTS images.
+    """
 
     api_key = decrypt_api_key(config.api_key_encrypted) if config.api_key_encrypted else "not-needed"
 
@@ -47,11 +58,18 @@ async def call_llm(
         timeout=60.0,
     )
 
+    user_content: Any = user_message
+    if images:
+        parts: list[dict[str, Any]] = [{"type": "text", "text": user_message}]
+        for url in images[:MAX_IMAGE_PARTS]:
+            parts.append({"type": "image_url", "image_url": {"url": url}})
+        user_content = parts
+
     kwargs: dict[str, Any] = {
         "model": config.model_name,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
+            {"role": "user", "content": user_content},
         ],
         "temperature": 0.7,
         "max_tokens": 2048,

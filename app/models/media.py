@@ -2,7 +2,8 @@
 
 media_assets: staged upload → ready → archived pipeline with SHA-256,
               MIME detection, dimensions, thumbnail generation.
-verification_challenges: one-time codes with HMAC-SHA256, not OCR-dependent.
+verification_challenges: one-time codes with HMAC-SHA256.
+media_verification_results: LLM-based photo evaluation (ADR-075, Step 7).
 """
 
 from __future__ import annotations
@@ -113,4 +114,49 @@ class VerificationChallenge(Base):
         CheckConstraint("code_length >= 4 AND code_length <= 16", name="ck_verification_code_length"),
         CheckConstraint("max_attempts >= 1 AND max_attempts <= 20", name="ck_verification_max_attempts"),
         CheckConstraint("state IN ('active', 'consumed', 'expired', 'failed')", name="ck_verification_state"),
+    )
+
+
+class MediaVerificationResult(Base):
+    """LLM photo-evaluation result (ADR-075, Step 7).
+
+    The LLM looks at a photo and gives a verdict for a verification request:
+    - ``code_match`` — does the code shown in the photo match the expected code?
+    - ``chastity_closed`` — is the chastity device visibly closed/locked?
+
+    The verdict is assisting evidence. The authoritative completion is still
+    the HMAC verification challenge (user types the code); auto-consumption of
+    a challenge happens only when the owner explicitly enables it.
+    """
+
+    __tablename__ = "media_verification_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    media_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("media_assets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    verification_type: Mapped[str] = mapped_column(String(50), nullable=False)  # code_match | chastity_closed
+    # Ожидаемое значение (код) хранится только HMAC-хешем — plaintext не пишется.
+    expected_code_hmac: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    verdict: Mapped[str] = mapped_column(String(20), nullable=False)  # match | mismatch | unclear
+    confidence: Mapped[float] = mapped_column(Integer, nullable=False, default=0)  # 0..100
+    reasoning: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    llm_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+    # Если verdict=match и challenge auto-consumed — ссылка на challenge.
+    consumed_challenge_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "verification_type IN ('code_match', 'chastity_closed')",
+            name="ck_media_verification_type",
+        ),
+        CheckConstraint("verdict IN ('match', 'mismatch', 'unclear')", name="ck_media_verdict"),
+        CheckConstraint("confidence >= 0 AND confidence <= 100", name="ck_media_verification_confidence"),
     )
