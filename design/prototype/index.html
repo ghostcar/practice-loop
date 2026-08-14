@@ -20,7 +20,7 @@
       <div class="group-label">Связи</div>
       <button class="nav-btn" data-screen="social"><svg class="icon"><use href="../icons/sprite.svg#icon-community"/></svg><span class="nav-label">Social</span></button>
     </nav>
-    <button class="toggle" id="toggle" aria-label="Раскрыть меню"><svg class="icon"><use href="../icons/sprite.svg#icon-menu"/></svg></button>
+    <button class="toggle" id="toggle" aria-label="Раскрыть меню" title="Раскрыть меню"><svg class="icon"><use href="../icons/sprite.svg#icon-chevron-left"/></svg></button>
   </aside>
   <main class="main">
     <header class="utility">
@@ -95,8 +95,12 @@
   </main>
 </div>
 <script>
-const shell=document.getElementById('shell');
-document.getElementById('toggle').addEventListener('click',()=>shell.classList.toggle('open'));
+const shell=document.getElementById('shell'); const toggle=document.getElementById('toggle');
+toggle.addEventListener('click',()=>{
+  shell.classList.toggle('open'); const open=shell.classList.contains('open');
+  toggle.setAttribute('aria-label',open?'Свернуть меню':'Раскрыть меню');
+  toggle.setAttribute('title',open?'Свернуть меню':'Раскрыть меню');
+});
 document.querySelectorAll('[data-screen]').forEach(button=>button.addEventListener('click',()=>{
   document.querySelectorAll('.nav-btn').forEach(item=>item.classList.remove('active'));
   document.querySelectorAll('.screen').forEach(item=>item.classList.remove('active'));

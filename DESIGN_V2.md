@@ -131,6 +131,8 @@ Display serif не применяется к кнопкам, input, навига
 
 - collapsed sidebar: `72px`; expanded: `272px`;
 - раскрытие по явному действию, состояние сохраняется;
+- кнопка раскрытия закреплена у верхней внешней кромки sidebar рядом с фирменным знаком; внизу
+  панели управление сворачиванием не размещается;
 - collapsed: иконки из PracticeLoop pack + tooltip;
 - expanded: группы, подписи, вложенность, индикаторы активных состояний;
 - utility bar высотой 64 px: context title, discretion, notifications, profile;
