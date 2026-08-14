@@ -24,7 +24,8 @@
 - [x] **M3 base**: memoryctl bootstrap (детерминированный exact-fallback) + STAGE_PLAN на 3 этапа; tests/memory/test_bootstrap.py 13; итого 58 memory-тестов
 - [x] **M3 benchmark** (Этап 2): harness по 12 задачам + baseline (recall@5 0.26, pack ≤9 KiB, 0 forbidden) → docs/state/BENCHMARK.json
 - [x] **Решение по пилотам (ADR-069)**: BGE-M3 multilingual + единственный пилот Qdrant local vectors (shadow); QMD/graph отложены; зависимости optional dev-group
-- [ ] **Реализация пилота**: `memoryctl index-code` (структурные code units) + `search-code` (hybrid dense+sparse) + A/B против baseline (gate: прирост recall@5/MRR, pack ≤12 KiB)
+- [x] **Реализация пилота** (Сессия 118): `code_units.py` (stdlib структурный парсер) + `vectors.py` (lazy Qdrant-local + fastembed BGE-M3: index-code / search-code с клиентским RRF fusion + exact confirmation) + A/B флаг `benchmark --vectors` (graceful unavailable); optional dev-group `memory`; 734/734 ✅ (+25)
+- [ ] **Реальный A/B-прогон**: требует `pip install -e '.[memory]'` + скачивание BGE-M3 в `.memory-local/` → admit/shadow/off по recall@5/MRR vs baseline 0.26/0.356 (pack ≤12 KiB)
 
 ## M4 preflight — Этап 3 (Сессия 117)
 

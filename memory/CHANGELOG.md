@@ -2,6 +2,7 @@
 
 | Дата | Файл | Изменение |
 | --- | --- | --- |
+| 2026-08-13 | Session 118 — M3 вектор-пилот (ADR-069) | Реализован вектор-пилот: code_units.py (stdlib структурный парсер: Python ast route/model/class/function, Alembic revision, Jinja2 block/macro/form, JS handler, config section), vectors.py (lazy Qdrant-local + fastembed BGE-M3: index-code + search-code с клиентским RRF fusion и exact confirmation), benchmark A/B (--vectors, graceful unavailable), optional dev-group memory. Real A/B отложен до установки deps. 734/734 ✅ (+25) |
 | 2026-08-13 | Session 117 — M4 preflight (Этап 3) | memoryctl sentinel (свежий preflight: status/head-ancestor/pack hash/TTL) + memoryctl impact (advisory coverage); bin/practice-agent launcher; .agents/skills/project-memory/SKILL.md; .githooks/pre-commit (opt-in); RUNBOOK §12. Фикс pack_hash trailing-newline. 709/709 ✅ (+11) |
 | 2026-08-13 | Session 116 — решение по M3 пилотам (ADR-069) | Владелец принял: embedding BGE-M3 (multilingual, fastembed/ONNX, local-only) + единственный пилот Qdrant local vectors (shadow); QMD и code graph отложены; зависимости только optional dev-group. STAGE_PLAN.md обновлён |
 | 2026-08-13 | Session 115 — Memory v2 M3 benchmark | `tools/memoryctl/benchmark.py`: harness по 12 задачам BENCHMARK_TASKS.md (recall@5/MRR/размер pack/extra reads/forbidden), отчёт docs/state/BENCHMARK.json (HEAD-bound, детерминированный), CLI `memoryctl benchmark`. Baseline: recall@5 0.26, pack ≤9 KiB, 0 forbidden; зазор на русских запросах→semantic. 698/698 ✅ (+4) |

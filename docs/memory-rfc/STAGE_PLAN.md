@@ -28,8 +28,12 @@ Gate: unit-тесты на классификацию, выбор docs, поис
       - QMD (docs) и codebase-memory-mcp (graph) — отложены;
       - code-specific второй named-вектор — только если BGE-M3 слаб на коде;
       - зависимости — только в optional dev-group, рантайм продукта не трогается.
-- [ ] реализация пилота: `memoryctl index-code` (структурные code units) + `memoryctl search-code`
-      (hybrid dense+sparse) + A/B против baseline → решение admit/shadow/off по RFC §12.
+- [x] реализация пилота (Сессия 118): `memoryctl index-code` (структурные code units,
+      stdlib `ast`/regex parser) + `memoryctl search-code` (hybrid dense+lexical, клиентский RRF
+      fusion, exact confirmation) + A/B флаг `benchmark --vectors`; graceful degradation без
+      optional `memory` dev-group; ~25 новых тестов.
+- [ ] **прогон реального A/B** (нужен `pip install -e '.[memory]'` + скачивание BGE-M3):
+      сравнить recall@5/MRR против baseline 0.26/0.356 при pack ≤12 KiB → admit/shadow/off.
 
 Gate: прирост recall@5/MRR против baseline 0.26/0.356 с pack ≤12 KiB; иначе пилот остаётся off/optional.
 

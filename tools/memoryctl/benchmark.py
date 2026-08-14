@@ -255,11 +255,29 @@ def evaluate_task(root: Path, task: dict, now: str | None = None) -> dict:
     }
 
 
+def score_ranked(expected_code: list[str], ranked: list[str], top_k: int = 5) -> dict:
+    """Score a ranked path list against expected code patterns (A/B for vector pilot)."""
+    if not expected_code:
+        return {"recall_at_5": 1.0, "recall_code": 1.0, "mrr": 0.0}
+    topk = set(ranked[:top_k])
+    found = _matched(expected_code, set(ranked))
+    mrr = 0.0
+    for rank, path in enumerate(ranked, start=1):
+        if any(fnmatch(path, pat) for pat in expected_code):
+            mrr = 1.0 / rank
+            break
+    return {
+        "recall_at_5": len(_matched(expected_code, topk)) / len(expected_code),
+        "recall_code": len(found) / len(expected_code),
+        "mrr": mrr,
+    }
+
+
 def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
-def run_benchmark(root: Path, now: str | None = None) -> dict:
+def run_benchmark(root: Path, now: str | None = None, *, include_vectors: bool = False) -> dict:
     """Run all tasks and produce the HEAD-bound report dict."""
     results = [evaluate_task(root, task, now=now) for task in BENCHMARK_TASKS]
 
@@ -288,7 +306,7 @@ def run_benchmark(root: Path, now: str | None = None) -> dict:
         and agg["max_pack_size_bytes"] <= THRESHOLDS["pack_size_max_bytes"]
     )
 
-    return {
+    report = {
         "schema_version": SCHEMA_VERSION,
         "kind": "benchmark_report",
         "generated_at": now or git_head_date(root),
@@ -309,6 +327,60 @@ def run_benchmark(root: Path, now: str | None = None) -> dict:
             "retrieval bug. Pack size is measured with a deterministic session id and head-anchored "
             "timestamp."
         ),
+    }
+    if include_vectors:
+        report["vectors"] = run_vectors_ab(root)
+    return report
+
+
+def evaluate_vectors(root: Path, task: dict, *, top_k: int = 5) -> dict:
+    """A/B: score the vector pilot against a task's expected code (ADR-069 shadow)."""
+    from . import vectors
+
+    available, reason = vectors.is_available()
+    expected_code = task.get("expected_code", [])
+    entry: dict = {
+        "id": task["id"],
+        "available": available,
+        "expected_code_count": len(expected_code),
+    }
+    if not available:
+        entry["reason"] = reason
+        entry["recall_at_5"] = 0.0
+        entry["recall_code"] = 0.0
+        entry["mrr"] = 0.0
+        return entry
+
+    result = vectors.search_code(root, task["query"], limit=top_k)
+    entry["stale"] = result.get("stale", False)
+    entry["reason"] = result.get("reason", "")
+    ranked = vectors.ranked_paths(result)
+    entry["ranked"] = ranked
+    entry.update(score_ranked(expected_code, ranked, top_k=top_k))
+    entry["confirmation_ok"] = sum(1 for r in result.get("results", []) if r.get("confirmation") == "exact-read")
+    return entry
+
+
+def run_vectors_ab(root: Path) -> dict:
+    """Vector A/B section (shadow) for the benchmark report; graceful when deps absent."""
+    tasks = [evaluate_vectors(root, task) for task in BENCHMARK_TASKS]
+    available = any(t.get("available") for t in tasks)
+    if not available:
+        return {
+            "available": False,
+            "reason": tasks[0].get("reason", "vector deps not installed"),
+            "tasks": tasks,
+        }
+    recall_at_5 = [t["recall_at_5"] for t in tasks]
+    mrr = [t["mrr"] for t in tasks]
+    return {
+        "available": True,
+        "aggregate": {
+            "mean_recall_at_5": round(_mean(recall_at_5), 4),
+            "mean_mrr": round(_mean(mrr), 4),
+            "tasks_full_code_recall": sum(1 for t in tasks if t.get("recall_code", 0.0) >= 1.0),
+        },
+        "tasks": tasks,
     }
 
 
@@ -337,4 +409,20 @@ def render_summary(report: dict) -> str:
         f"full code recall in {agg['tasks_full_code_recall']}/{report['task_count']} tasks",
         f"meets admission thresholds: {report['meets_admission_thresholds']}",
     ]
+    vec = report.get("vectors")
+    if vec is not None:
+        if vec.get("available"):
+            va = vec["aggregate"]
+            base_r5 = agg["mean_recall_at_5"]
+            vec_r5 = va["mean_recall_at_5"]
+            delta = vec_r5 - base_r5
+            lines += [
+                "",
+                "vectors (ADR-069 shadow A/B):",
+                f"  recall@5  base {base_r5:.2f} -> vector {vec_r5:.2f}  (delta {delta:+.2f})",
+                f"  MRR       base {agg['mean_mrr']:.3f} -> vector {va['mean_mrr']:.3f}",
+                f"  full code recall in {va['tasks_full_code_recall']}/{report['task_count']} tasks",
+            ]
+        else:
+            lines += ["", f"vectors unavailable: {vec.get('reason')}"]
     return "\n".join(lines)

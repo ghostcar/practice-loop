@@ -92,3 +92,34 @@ def test_run_benchmark_structure_and_determinism():
         assert t["pack_size_bytes"] > 0
     # deterministic given fixed now + same tree
     assert json.dumps(r1, sort_keys=True) == json.dumps(r2, sort_keys=True)
+
+
+def test_score_ranked():
+    expected = ["app/svc.py", "tests/test_svc.py"]
+    ranked = ["app/svc.py", "app/other.py", "tests/test_svc.py"]
+    res = b.score_ranked(expected, ranked)
+    assert res["recall_code"] == 1.0
+    assert res["recall_at_5"] == 1.0
+    assert res["mrr"] == 1.0
+
+
+def test_run_benchmark_vectors_flag_graceful():
+    root = b.Path(__file__).resolve().parents[2]
+    report = b.run_benchmark(root, now="2026-08-13T00:00:00Z", include_vectors=True)
+    assert "vectors" in report
+    vec = report["vectors"]
+    # without the optional deps installed, the A/B section must degrade gracefully
+    assert isinstance(vec["available"], bool)
+    assert "tasks" in vec
+    assert len(vec["tasks"]) == len(b.BENCHMARK_TASKS)
+    if vec["available"]:
+        assert "aggregate" in vec
+        assert "mean_recall_at_5" in vec["aggregate"]
+    else:
+        assert "reason" in vec
+
+
+def test_run_benchmark_default_has_no_vectors_section():
+    root = b.Path(__file__).resolve().parents[2]
+    report = b.run_benchmark(root, now="2026-08-13T00:00:00Z")
+    assert "vectors" not in report

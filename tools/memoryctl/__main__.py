@@ -40,6 +40,19 @@ def main(argv: list[str] | None = None) -> int:
 
     bench = sub.add_parser("benchmark", help="run the M3 base retrieval benchmark (writes docs/state/BENCHMARK.json)")
     bench.add_argument("--json", action="store_true", help="print the full report JSON to stdout")
+    bench.add_argument("--vectors", action="store_true", help="include the vector pilot A/B (ADR-069 shadow)")
+
+    idx = sub.add_parser("index-code", help="build the vector code index (ADR-069, optional 'memory' deps)")
+    idx.add_argument(
+        "--mode",
+        default="full",
+        choices=["full", "incremental", "check", "shadow", "rebuild"],
+        help="index mode (default: full)",
+    )
+
+    sc = sub.add_parser("search-code", help="hybrid dense+lexical code search (ADR-069)")
+    sc.add_argument("--query", required=True, help="task/query text")
+    sc.add_argument("--limit", type=int, default=20, help="max results (default: 20)")
 
     sent = sub.add_parser("sentinel", help="verify a fresh preflight sentinel (.agent-runtime/session.json)")
     sent.add_argument("--ttl-hours", type=float, default=None, help="optional max age of the preflight in hours")
@@ -110,13 +123,35 @@ def main(argv: list[str] | None = None) -> int:
 
         from . import benchmark as bench_mod
 
-        report = bench_mod.run_benchmark(root)
+        report = bench_mod.run_benchmark(root, include_vectors=args.vectors)
         out_path = bench_mod.write_report(root, report)
         if args.json:
             print(_json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True))
         else:
             print(bench_mod.render_summary(report))
             print(f"wrote {out_path.relative_to(root)}")
+        return 0
+    if args.command == "index-code":
+        from . import vectors as vec_mod
+
+        info = vec_mod.index_code(root, mode=args.mode)
+        print(vec_mod.render_index_result(info))
+        return 0 if info.get("status") == "ready" else 1
+    if args.command == "search-code":
+        from . import vectors as vec_mod
+
+        result = vec_mod.search_code(root, args.query, limit=args.limit)
+        if not result.get("available"):
+            print(f"vectors unavailable: {result.get('reason')}")
+            return 1
+        if result.get("stale"):
+            print(f"index stale: {result.get('reason')}")
+            return 1
+        for r in result["results"]:
+            print(
+                f"{r['fused_score']:.6f}  {r['path']}  [{r['unit_kind']}] {r['symbol']}  "
+                f"({', '.join(r['matched_by'])}, {r['confirmation']})"
+            )
         return 0
     if args.command == "sentinel":
         from . import sentinel as sentinel_mod

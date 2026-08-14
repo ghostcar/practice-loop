@@ -1,3 +1,14 @@
+## 2026-08-13 — Сессия 118 (M3 вектор-пилот по ADR-069)
+
+- **Реализация вектор-пилота** (остаток Этапа 2, ADR-069) — код полностью готов, реальный A/B-прогон отложен (нужны optional `memory` deps + скачивание BGE-M3):
+  - `tools/memoryctl/code_units.py` — stdlib-only структурный парсер code units (CODE_MEMORY_DESIGN.md §4): Python через `ast` (module/class/function/method/route/FastAPI `@router`/SQLAlchemy `__tablename__`/fixture/test), Alembic revision (`revision`/`down_revision` + upgrade/downgrade span), Jinja2 block/macro/form, JS handler/arrow/fetch, YAML/TOML section. Scope-деривация по префиксу пути; content-addressed `content_hash` (sha256 path+span+retrieval).
+  - `tools/memoryctl/vectors.py` — lazy Qdrant-local + fastembed backend: `EMBEDDING_PROFILE` (BGE-M3, 1024-dim, normalization, RU/EN), `index_code` (extract→embed→upsert→HEAD-bound manifest, режимы full/check), `search_code` (dense ANN + лексический floor → клиентский RRF fusion + exact confirmation по content_hash), `is_available` graceful degradation.
+  - `benchmark.py` — A/B: `score_ranked`, `evaluate_vectors`, `run_vectors_ab`; флаг `benchmark --vectors`; graceful «vectors unavailable»; `render_summary` показывает delta vs baseline.
+  - `__main__.py` — subcommands `index-code` / `search-code` (lazy import, чёткий exit при недоступных deps).
+  - `pyproject.toml` — optional dev-group `memory` (qdrant-client, fastembed, onnxruntime) изолирован от рантайма FastAPI (ADR-069).
+- **Тесты**: `test_code_units.py` (13) + `test_vectors.py` (11) + A/B shape в `test_benchmark.py` (2). Полный suite **734/734 ✅** (+25), ruff ✅, format ✅.
+- **Gate (открыт)**: реальный A/B (recall@5/MRR vs baseline 0.26/0.356, pack ≤12 KiB) требует `pip install -e '.[memory]'` + скачивание BGE-M3 в `.memory-local/` — решение admit/shadow/off после прогона (STAGE_PLAN Этап 2).
+
 ## 2026-08-13 — Сессия 117 (M4 preflight — Этап 3)
 
 - **Этап 3 (M4 preflight)** выполнен — сделать preflight обязательным для поддерживаемого workflow:
