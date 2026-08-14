@@ -1,8 +1,8 @@
-\"\"\"038 — LockTimer device inventory (Step 8, ADR-076).
+"""038 — LockTimer device inventory (Step 8, ADR-076).
 
 lock_sessions.device_id — optional physical device (inventory item) bound to
 a lock session. Nullable, SET NULL on inventory item delete, indexed.
-\"\"\"
+"""
 
 from __future__ import annotations
 
