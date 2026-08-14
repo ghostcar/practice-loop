@@ -33,6 +33,7 @@ from app.models.locktimer import (  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
+from app.models.prompt_template import PromptTemplate  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
 from app.models.task_history import ActivityTaskHistory  # noqa: F401
 from app.models.task_inventory import ActivityInventoryRequirement, TaskInventoryUsage  # noqa: F401

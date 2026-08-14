@@ -48,6 +48,18 @@ async def build_context(
     # 7. Today's training status — what's planned/completed today
     today_training = await _get_today_training(db, user_id)
 
+    # 8. Private knowledge base (служебная, ADR-070 Step 6) — релевантные
+    # фрагменты собственных данных пользователя. Деградирует в None, если
+    # векторный backend недоступен или ничего не найдено.
+    kb_context = None
+    try:
+        from app.knowledge.service import build_kb_context
+
+        kb_query = _kb_query_context(recent_logs, active_diets, today_training, locale)
+        kb_context = await build_kb_context(db, user_id, kb_query, limit=5)
+    except Exception:  # KB никогда не должен ломать генерацию
+        kb_context = None
+
     return {
         "allowed_entities": allowed_entities,
         "recent_history": recent_logs,
@@ -56,6 +68,7 @@ async def build_context(
         "calendar_schedule": calendar_schedule,
         "active_diets": active_diets,
         "today_training": today_training,
+        "kb_context": kb_context,
         "locale": locale,
     }
 
@@ -198,6 +211,28 @@ async def _get_active_penalties(db: AsyncSession, user_id: uuid.UUID, session_id
     ]
 
 
+def _kb_query_context(
+    recent_logs: list[dict],
+    active_diets: list[dict],
+    today_training: dict | None,
+    locale: str,
+) -> str:
+    """Запрос для KB retrieval: собственные данные пользователя → релевантные фрагменты."""
+    parts: list[str] = []
+    entity_names = [h.get("entity_name") or "" for h in recent_logs if h.get("entity_name")]
+    if entity_names:
+        parts.append("recent activities: " + ", ".join(entity_names[:6]))
+    diet_names = [d.get("name") or "" for d in active_diets if d.get("name")]
+    if diet_names:
+        parts.append("active diets: " + ", ".join(diet_names))
+    if today_training and today_training.get("plan_count"):
+        parts.append(f"training day with {today_training.get('plan_count')} plans")
+    if not parts:
+        parts.append("activity planning")
+    parts.append(f"language: {locale}")
+    return " | ".join(parts)
+
+
 async def _get_active_diets(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
     """Return the user's active diet plans."""
     result = await db.execute(
@@ -272,6 +307,13 @@ def format_context_abstract(context: dict) -> str:
             line += f" | actual: {json.dumps(actual, ensure_ascii=False)}"
         parts.append(line)
     parts.append("")
+
+    # Private knowledge base — собственные данные пользователя (служебная).
+    # В abstract-режиме это НЕ раскрывает реальные имена извне: фрагменты
+    # принадлежат самому пользователю и не уходят провайдеру дольше запроса.
+    kb = context.get("kb_context")
+    if kb:
+        parts.append(kb)
 
     return "\n".join(parts)
 
@@ -350,5 +392,10 @@ def format_context_for_prompt(context: dict) -> str:
             parts.append(f"- {p['type']}: {p['count']}")
     else:
         parts.append("- None")
+
+    # Private knowledge base — собственные данные пользователя (ADR-070).
+    kb = context.get("kb_context")
+    if kb:
+        parts.append(kb)
 
     return "\n".join(parts)

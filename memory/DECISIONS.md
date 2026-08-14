@@ -78,6 +78,7 @@
 | ADR-071 | 2026-08-14 | M5: freeze legacy memory v1 (Memory v2 milestone) | Legacy `memory/` (кроме `DECISIONS.md`) **заморожен** (frozen headers): `SESSIONS.md`, `STATUS.md`, `CHANGELOG.md`, `OPEN_QUESTIONS.md`, `CONTEXT.md` больше не дописываются — архив; история сессий — Git. Активная память — Memory v2 (ADR-068): решения `DECISIONS.md` (единственный активный legacy, компилируется в `docs/adr/`), знания `docs/wiki/`, вопросы `docs/questions/`, факты `docs/state/`. `memoryctl lint` + `facts --check` — **required** в CI (был informational). В benchmark добавлена метрика **impact-recall** (ground truth по символам → полнота нахождения всех затронутых файлов/тестов/миграций; задел под graph-пилот). AGENTS.md/README.md/DOCUMENTATION_MAP обновлены. 758/758 ✅ | принято |
 | ADR-072 | 2026-08-14 | Q14: penalty честно в HTTP + Omniroute в портал (Шаг 4) | 1) **Штрафы применяются по политикам правил**: `skip_task` применяет `rule.penalty_policy` (points/add_time), `close_slot` при позднем закрытии (now > close_due_at) применяет `rule.late_close_policy`; идемпотентно по occurrence (`skip:{id}` / `late_close:{id}`); неизвестный тип политики логируется и пропускается. API skip/close возвращают JSON (ADR-065) с `penalty`-блоком (`serialize_penalty_event`); UI показывает реальный результат («Штраф применён: -5 points») вместо «Penalty may apply»; формы переведены на fetch + i18n-ключи (6 новых EN/RU). 2) **Omniroute в портале**: `Settings.omniroute_host/api_key/embedding_model`; seed-пресет Omniroute строится из settings (host → /v1, key шифруется), активен по умолчанию; .env.example обновлён. 767/767 ✅ | принято |
 | ADR-073 | 2026-08-14 | Шаг 5: икон-пак PracticeLoop + Gate B (async media, transaction boundary, browser smoke) | 1) **Икон-пак интегрирован (design/icons → runtime)**: sprite.svg + favicon скопированы в app/static/; макрос `components/icon.html` (`{{ icon('name', cls) }}`); все emoji/inline-SVG заменены в base.html (nav desktop/mobile, theme sun/moon, logout, flash), index, dashboard, training, import_data, llm_configs, admin, privacy, my_entities; JS-хелпер `window.plIcon` (DOM API, без innerHTML — §6.7) для diets/inventory. Иконки будущих модулей зарезервированы, не используются. Обязательство в AGENTS.md/DESIGN.md: иконки только из пакета, при нехватке — сообщать. Недостающие (thumbs-up/fire для social encourage — значения контента) оставлены как emoji, зафиксировано. 2) **P2-2 async media**: `save_media` → Pillow/диск в thread pool (`asyncio.to_thread`), decompression bomb guard (`PILLOW_MAX_IMAGE_PIXELS` + escalate warning→error), тест. 3) **P1-5 transaction boundary**: `tests/test_transaction_boundary.py` — allowlist legacy (28 файлов), новые роутеры без db.commit() (locktimer/social уже чистые); media upload/finalize переведены на auto-commit get_db (delete оставлен явным — файл удаляется после фиксации БД). 4) **P1-4 browser smoke**: optional `e2e` dev-group (playwright), `tests/e2e/test_browser_smoke.py` (register→dashboard→tasks→timer→no console errors), CI job e2e (postgres + alembic + chromium). 776/776 ✅ (+9), ruff ✅ | принято |
+| ADR-074 | 2026-08-14 | Шаг 6: LLM-инструменты личного контура (prompt library, templates, private KB) | 1) **Библиотека промптов** (`app/llm/prompt_library.py`): единый реестр 8 типовых системных промптов (task.single/weekly, training.plan/analyze/suggest, diet.generate/evaluate/synergy) — переиспользует существующие константы (единый источник), i18n-заголовки/описания EN/RU, страница `/llm/prompts` с «создать шаблон из этого». 2) **Промпт-шаблоны** (таблица `prompt_templates`, миграция 036): тип `text` (свободный ответ) и `task` (выбор задачи из opt-in набора, как generate_task с кастомным системным промптом); переменные `{{var}}` + `params_schema` в формате ADR-041 (валидация без eval через `app.params.validate_params`); CRUD-страницы `/llm/templates`, `/llm/templates/{id}`, JSON API `/api/v2/prompt-templates`; usage-трекинг (usage_count/last_used_at, токены/стоимость в provider config). 3) **Приватная база знаний — служебная** (решение владельца: пользователю НЕ доступна, без ручного ввода): `app/knowledge/` автоиндексирует существующие данные (ActivityLog, Diet, TrainingDay) в Qdrant (коллекция `personal_kb`, фильтр по user_id) через Omniroute-эмбеддинги (text-embedding-3-small); retrieval dense+lexical-fallback (никогда не ломает генерацию); интеграция в `build_context` (секция `kb_context` в промпт); read-only JSON API `/api/v2/knowledge/{status,search,reindex}`. Опциональные deps `memory` — без них KB деградирует. 800/800 ✅ (+24), ruff ✅ | принято |
 
 
 ### ADR-061 — Social S4+S6 (Verification + Tracker Adapter)
@@ -231,3 +232,36 @@ startup-чтение до целевого ≤10 KiB.
 (Media Vault, Care, Health, Cycle, Insights, Chastity, D/s), заменяя emoji/Lucide; audit Gate B
 (P1-4/P1-5/P2-2) закрывает блокеры перед следующим шагом.
 **Status:** ✅ реализовано в Сессии 120 (776/776 ✅, ruff ✅, lint 0/0, facts fresh).
+
+### ADR-074 — Шаг 6: LLM-инструменты личного контура (prompt library, templates, private KB)
+**Date:** 2026-08-14
+**Decision:**
+1. **Библиотека промптов — единый реестр.** `app/llm/prompt_library.py` собирает 8 типовых
+   системных промптов (task.single, task.weekly, training.plan_day/analyze_day/suggest_next,
+   diet.generate/evaluate/synergy) из существующих констант (единый источник истины, без
+   дублирования). Каждый — с i18n-заголовком/описанием (EN/RU) и метаданными. Страница
+   `/llm/prompts` показывает промпты и позволяет создать приватный шаблон «из библиотеки».
+2. **Промпт-шаблоны — параметрическая генерация (ADR-070).** Новая таблица `prompt_templates`
+   (миграция 036): name, description, template_type (`text` | `task`), system_prompt с
+   переменными `{{var}}`, params_schema (формат ADR-041, валидация через `app.params` — без
+   eval), usage_count, last_used_at. Движок `app/llm/pipeline/templates.py`: `text` — свободный
+   ответ по шаблону с подставленными переменными; `task` — как generate_task, но с кастомным
+   системным промптом (allowed set + schema validation + ActivityLog + TaskBodyTarget и т.д.).
+   UI: `/llm/templates` (список + create), `/llm/templates/{id}` (edit + generate + результат);
+   JSON API `/api/v2/prompt-templates` (+ generate). Usage-метрики пишутся в provider config
+   (ADR-034), шаблон — usage_count/last_used_at.
+3. **Приватная база знаний — служебная система (решение владельца).** Пользователю НЕ
+   доступна: без ручного ввода. `app/knowledge/` автоматически индексирует существующие
+   данные пользователя (ActivityLog — название/params/actual/note, Diet — name/direction/goal,
+   TrainingDay — plan_summary) в Qdrant (коллекция `personal_kb`, payload user_id — доступ
+   только владельцу) через Omniroute-эмбеддинги (text-embedding-3-small, переиспользован
+   подход memoryctl/vectors.py). Retrieval: dense + детерминированный lexical fallback (работает
+   всегда, даже без backend'а — генерация не падает). Интеграция: `build_context` добавляет
+   секцию `kb_context` (свои данные → релевантный контекст для LLM). Read-only JSON API
+   `/api/v2/knowledge/{status,search,reindex}`. Зависимости — optional `memory` group; без них
+   KB деградирует в пустой результат.
+**Rationale:** ADR-070 (границы LLM) обещал эти инструменты; KB — служебная, потому что
+«база не доступна пользователю» — это слой обогащения промптов своими данными, а не UI-модуль;
+гибридная генерация сохранена (LLM по-прежнему выбирает из каталога, шаблоны — осознанный
+пользовательский контроль промпта).
+**Status:** ✅ реализовано в Сессии 120 (800/800 ✅, ruff ✅, lint 0/0).

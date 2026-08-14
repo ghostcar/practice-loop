@@ -149,6 +149,7 @@
                     <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'points' %} aria-current="page"{% endif %}>{{ icon('points', 'w-4 h-4') }}{{ t.nav_points }}</a>
                     <a href="/import" class="{{ nav_class }}{{ nav_active if active_nav == 'import' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'import' %} aria-current="page"{% endif %}>{{ icon('import', 'w-4 h-4') }}{{ t.nav_import }}</a>
                     <a href="/diets" class="{{ nav_class }}{{ nav_active if active_nav == 'diets' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'diets' %} aria-current="page"{% endif %}>{{ icon('diet', 'w-4 h-4') }}{{ t.nav_diets }}</a>
+                    <a href="/llm/templates" class="{{ nav_class }}{{ nav_active if active_nav == 'llm' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'llm' %} aria-current="page"{% endif %}>{{ icon('ai', 'w-4 h-4') }}{{ t.pl_title }}</a>
                     <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ icon('admin', 'w-4 h-4') }}{{ t.admin_title_page }}</a>
                     {% endif %}
                     {% if composition and composition.social_operational %}
