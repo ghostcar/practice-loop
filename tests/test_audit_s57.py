@@ -132,22 +132,24 @@ def test_dsl_quoted_string_comparison():
 
 @pytest.mark.asyncio
 async def test_mobile_bottom_nav_renders(auth_client: AsyncClient):
+    """DESIGN v2 §7: global bottom nav replaced by top bar + full-screen sheet."""
     resp = await auth_client.get("/dashboard")
     assert resp.status_code == 200
     html = resp.text
-    assert 'aria-label="Mobile"' in html  # bottom nav present
-    assert "safe-area-inset-bottom" in html
-    # Bottom-nav items: Dashboard / Tasks / Training / Catalog / Timer
-    bottom = html.split('aria-label="Mobile"')[1].split("</nav>")[0]
-    assert bottom.count("<a ") == 5
+    # Mobile top bar with the menu button + full-screen nav sheet
+    assert 'id="pl-mobile-menu"' in html  # menu button present
+    assert 'id="pl-mobile-sheet"' in html  # sheet present
+    # Legacy global bottom nav must be gone
+    assert 'aria-label="Mobile"' not in html
+    assert "safe-area-inset-bottom" not in html
 
 
 @pytest.mark.asyncio
 async def test_mobile_bottom_nav_hidden_for_anon(async_client: AsyncClient):
-    # Anonymous request → login page (no bottom nav; it only renders for user).
+    # Anonymous request → login page (no shell; it only renders for user).
     resp = await async_client.get("/login")
     assert resp.status_code == 200
-    assert 'aria-label="Mobile"' not in resp.text
+    assert 'id="pl-mobile-sheet"' not in resp.text
 
 
 # ── Self-hosted Inter font (DESIGN §7.1) ──

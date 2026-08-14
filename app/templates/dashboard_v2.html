@@ -5,20 +5,20 @@
 
 {% block content %}
 <div class="space-y-5">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <!-- Header (DESIGN v2 §9: date, ritual formula, day status) -->
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ t.dashboard_title }}</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">{{ t.dashboard_welcome }}</p>
+            <div class="pl-display text-3xl font-semibold">{{ today_label or t.dashboard_title }}</div>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.dashboard_ritual }}</p>
         </div>
         <div class="flex gap-2">
-            <a href="/notifications" class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="{{ t.notifications_title }}">
+            <a href="/notifications" class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[color:var(--border)] text-sm text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] transition-colors" aria-label="{{ t.notifications_title }}">
                 {{ icon('bell', 'w-4 h-4') }}
-                {% if unread_notifs > 0 %}
-                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">{{ unread_notifs }}</span>
+                {% if unread_notifs is defined and unread_notifs > 0 %}
+                <span class="absolute -top-1 -right-1 bg-[color:var(--danger)] text-[color:var(--on-accent)] text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">{{ unread_notifs }}</span>
                 {% endif %}
             </a>
-            <a href="/achievements" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="{{ t.achievements_title }}">
+            <a href="/achievements" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[color:var(--border)] text-sm text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] transition-colors" aria-label="{{ t.achievements_title }}">
                 {{ icon('trophy', 'w-4 h-4') }}
             </a>
         </div>
@@ -26,28 +26,28 @@
 
     <!-- Stats row: compact, no hover, no emoji -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_points }}</div>
-            <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums" id="stat-points">{{ progress.points_balance }}</div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+            <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider mb-1">{{ t.dashboard_points }}</div>
+            <div class="text-2xl font-bold pl-accent-text tabular-nums" id="stat-points">{{ progress.points_balance }}</div>
         </div>
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_xp }}</div>
-            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums" id="stat-xp">{{ progress.xp }}</div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+            <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider mb-1">{{ t.dashboard_xp }}</div>
+            <div class="text-2xl font-bold text-[color:var(--text)] tabular-nums" id="stat-xp">{{ progress.xp }}</div>
         </div>
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_streak }}</div>
-            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums">{{ progress.current_streak }}<span class="text-sm font-normal text-slate-400">{{ t.dashboard_days_suffix }}</span></div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+            <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider mb-1">{{ t.dashboard_streak }}</div>
+            <div class="text-2xl font-bold text-[color:var(--text)] tabular-nums">{{ progress.current_streak }}<span class="text-sm font-normal text-[color:var(--text-muted)]">{{ t.dashboard_days_suffix }}</span></div>
         </div>
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <div class="text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{{ t.dashboard_done }}</div>
-            <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{{ progress.total_completed }}</div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+            <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider mb-1">{{ t.dashboard_done }}</div>
+            <div class="text-2xl font-bold text-[color:var(--success)] tabular-nums">{{ progress.total_completed }}</div>
         </div>
     </div>
 
     <!-- Charts: at most 2 per viewport, side-by-side on lg+ -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Weekly Activity -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_weekly }}</h2>
                 <div class="flex gap-2 text-xs">
@@ -59,7 +59,7 @@
         </div>
 
         <!-- Points Trend -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">{{ t.dashboard_chart_points_trend }}</h2>
             <p class="text-xs text-slate-400 mb-3">{{ t.dashboard_chart_last_30 }}</p>
             <div class="h-56"><canvas id="points-trend-chart"></canvas></div>
@@ -69,7 +69,7 @@
     <!-- Compact stats summaries -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Category summary -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_categories_title }}</h2>
                 <a href="/sessions" class="text-xs text-indigo-500 underline">{{ t.dashboard_see_history }}</a>
@@ -80,7 +80,7 @@
         </div>
 
         <!-- Completion summary -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_chart_completion_title }}</h2>
                 <a href="/achievements" class="text-xs text-indigo-500 underline">{{ t.dashboard_see_history }}</a>
@@ -98,17 +98,17 @@
     </div>
 
     <!-- XP Level bar -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+    <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-end justify-between mb-2">
             <div>
                 <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ t.dashboard_level_label }} {{ level }}</span>
                 <span class="text-xs text-slate-400 ml-2">→ {{ t.dashboard_level_label }} {{ level + 1 }}</span>
                 <span class="text-xs text-slate-400 ml-1">{{ xp_current }} / {{ xp_next }} {{ t.dashboard_xp }}</span>
             </div>
-            <span class="text-xs font-mono text-indigo-500 tabular-nums">{{ xp_percent }}%</span>
+            <span class="text-xs pl-mono pl-accent-text tabular-nums">{{ xp_percent }}%</span>
         </div>
-        <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div class="h-full bg-indigo-500 rounded-full transition-all duration-700 ease-out" style="width: {{ xp_percent }}%"></div>
+        <div class="w-full h-3 bg-[color:var(--surface-soft)] rounded-full overflow-hidden">
+            <div class="h-full bg-[color:var(--accent)] rounded-full transition-all duration-700 ease-out" style="width: {{ xp_percent }}%"></div>
         </div>
         <div class="mt-3 h-8"><canvas id="xp-sparkline"></canvas></div>
     </div>
@@ -148,7 +148,7 @@
     <!-- Today: schedule + diets + training combined -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Today's tasks -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">{{ icon('tasks', 'w-4 h-4') }}{{ t.dashboard_today_tasks or "Today's Tasks" }}</h2>
                 <a href="/tasks/" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
@@ -176,7 +176,7 @@
         </div>
 
         <!-- Active diets -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">{{ icon('diet', 'w-4 h-4') }}{{ t.nav_diets or "Diets" }}</h2>
                 <a href="/diets" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
@@ -207,7 +207,7 @@
         </div>
 
         <!-- Today's training -->
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5">{{ icon('training', 'w-4 h-4') }}{{ t.nav_training or "Training" }}</h2>
                 <a href="/training" class="text-xs text-indigo-500 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
@@ -223,7 +223,7 @@
                             {% if td.status == 'active' %}bg-blue-100 text-blue-700
                             {% elif td.status == 'analyzed' %}bg-purple-100 text-purple-700
                             {% else %}bg-gray-100 text-gray-600{% endif %}">
-                            {% if td.status == 'active' %}⏳ Active
+                            {% if td.status == 'active' %}{{ icon('clock', 'w-4 h-4') }} Active
                             {% elif td.status == 'analyzed' %}{{ icon('check', 'w-4 h-4') }} Done
                             {% else %}{{ td.status }}{% endif %}
                         </span>
@@ -308,7 +308,7 @@
     {% endif %}
 
     <!-- Recent activity -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+    <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{{ t.dashboard_recent_activity }}</h2>
         {% if recent_logs %}
         <div class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -337,7 +337,7 @@
     </div>
 
     <!-- Telegram linking -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+    <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3 min-w-0">
                 {{ icon('telegram', 'w-5 h-5 flex-shrink-0 text-sky-500') }}

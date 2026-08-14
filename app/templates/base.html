@@ -1,21 +1,125 @@
 <!DOCTYPE html>
-<html lang="{{ locale }}" class="{{ theme or 'dark' }}">
+<html lang="{{ locale }}" data-theme="{{ theme or 'dark' }}" class="{{ theme or 'dark' }}">
 {% from "components/icon.html" import icon %}
+{% set _path = request.url.path if request is defined else '' %}
+{% set nav_key = active_nav or (
+    (_path.startswith('/dashboard') and 'dashboard')
+    or (_path.startswith('/tasks') and 'tasks')
+    or (_path.startswith('/sessions') and 'sessions')
+    or (_path.startswith('/entities') and 'catalog')
+    or (_path.startswith('/training') and 'training')
+    or (_path.startswith('/diets') and 'diets')
+    or (_path.startswith('/locktimer') and 'locktimer')
+    or (_path.startswith('/inventory') and 'inventory')
+    or (_path.startswith('/measurements') and 'measurements')
+    or (_path.startswith('/schedule') and 'schedule')
+    or (_path.startswith('/body-parts') and 'body_parts')
+    or (_path.startswith('/locations') and 'locations')
+    or (_path.startswith('/calendar') and 'calendar')
+    or (_path.startswith('/api/v2/points') and 'points')
+    or (_path.startswith('/achievements') and 'achievements')
+    or (_path.startswith('/api/v2/media') and 'media')
+    or (_path.startswith('/media') and 'media')
+    or (_path.startswith('/import') and 'import')
+    or (_path.startswith('/notifications') and 'notifications')
+    or (_path.startswith('/llm') and 'llm')
+    or (_path.startswith('/privacy') and 'privacy')
+    or (_path.startswith('/admin') and 'admin')
+    or (_path.startswith('/social') and 'social')
+    or ''
+) %}
+{% set context_titles = {
+    'dashboard': t.dashboard_title,
+    'tasks': t.nav_tasks,
+    'sessions': t.nav_sessions,
+    'catalog': t.catalog_title,
+    'training': t.training_title,
+    'diets': t.nav_diets,
+    'locktimer': t.nav_timer,
+    'inventory': t.nav_inventory,
+    'measurements': t.nav_measurements,
+    'schedule': t.nav_schedule,
+    'body_parts': t.nav_body_parts,
+    'locations': t.nav_locations,
+    'calendar': t.calendar_title,
+    'points': t.nav_points,
+    'achievements': t.achievements_title,
+    'media': t.nav_media,
+    'import': t.nav_import,
+    'notifications': t.notifications_title,
+    'llm': t.nav_llm,
+    'privacy': t.privacy_title,
+    'admin': t.admin_title_page,
+    'social': t.nav_social,
+} %}
+{% macro nav_item(key, href, icon_name, label) -%}
+<a href="{{ href }}" class="pl-nav-item {{ 'pl-nav-active' if nav_key == key else '' }}"{% if nav_key == key %} aria-current="page"{% endif %} title="{{ label }}">
+  {{ icon(icon_name, 'w-5 h-5 pl-nav-icon') }}
+  <span class="pl-nav-label">{{ label }}</span>
+</a>
+{%- endmacro %}
+{% macro nav_groups() -%}
+  {% if composition and composition.tracker_active %}
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_now }}</div>
+    {{ nav_item('dashboard', '/dashboard', 'today', t.nav_today) }}
+    {{ nav_item('tasks', '/tasks/', 'tasks', t.nav_tasks) }}
+    {{ nav_item('sessions', '/sessions', 'session', t.nav_sessions) }}
+  </div>
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_personal }}</div>
+    {{ nav_item('catalog', '/entities/catalog', 'catalog', t.catalog_title) }}
+    {{ nav_item('training', '/training', 'training', t.training_title) }}
+    {{ nav_item('diets', '/diets', 'diet', t.nav_diets) }}
+  </div>
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_data }}</div>
+    {{ nav_item('inventory', '/inventory/page', 'inventory', t.nav_inventory) }}
+    {{ nav_item('measurements', '/measurements/page', 'measurement', t.nav_measurements) }}
+    {{ nav_item('schedule', '/schedule/page', 'schedule', t.nav_schedule) }}
+    {{ nav_item('body_parts', '/body-parts', 'body', t.nav_body_parts) }}
+    {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}
+    {{ nav_item('points', '/api/v2/points/page', 'insights', t.nav_points) }}
+    {{ nav_item('achievements', '/achievements', 'trophy', t.achievements_title) }}
+    {{ nav_item('media', '/api/v2/media', 'media-vault', t.nav_media) }}
+    {{ nav_item('import', '/import', 'import', t.nav_import) }}
+  </div>
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_system }}</div>
+    {{ nav_item('notifications', '/notifications', 'bell', t.notifications_title) }}
+    {{ nav_item('llm', '/llm/templates', 'ai', t.nav_llm) }}
+    {{ nav_item('privacy', '/privacy', 'privacy', t.privacy_title) }}
+    {{ nav_item('admin', '/admin', 'admin', t.admin_title_page) }}
+  </div>
+  {% endif %}
+  {% if composition and composition.timer_operational %}
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_personal }}</div>
+    {{ nav_item('locktimer', '/locktimer', 'timer', t.nav_timer) }}
+  </div>
+  {% endif %}
+  {% if composition and composition.social_operational %}
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_social }}</div>
+    {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
+  </div>
+  {% endif %}
+{%- endmacro %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ t.app_title }}</title>
+    <title>{{ t.app_title }}{% if context_titles.get(nav_key) and nav_key not in ('dashboard',) %} · {{ context_titles.get(nav_key) }}{% endif %}</title>
     <!-- PracticeLoop icon pack favicons (design/icons/INTEGRATION_AGENT.md §3) -->
     <link rel="icon" href="/static/favicon/favicon.ico" sizes="any">
     <link rel="icon" href="/static/favicon/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/static/favicon/site.webmanifest">
-    <link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#6B57A5">
-    <meta name="theme-color" content="#6B57A5">
+    <link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#a95f58">
+    <meta name="theme-color" content="#171311">
     <!-- Local assets — no external CDN dependencies -->
     <script src="/static/tailwindcss.js"></script>
     <style>
-        /* Self-hosted Inter Variable (DESIGN.md 7.1) — no font CDN */
+        /* === Self-hosted fonts (DESIGN v2 §5 — no font CDN) === */
         @font-face {
             font-family: 'Inter';
             src: url('/static/fonts/InterVariable.woff2') format('woff2-variations');
@@ -30,88 +134,372 @@
             font-style: italic;
             font-display: swap;
         }
+        /* Source Serif 4 Variable — display serif (cyrillic + latin subsets) */
+        @font-face {
+            font-family: 'Source Serif 4';
+            src: url('/static/fonts/source-serif-4-400700-cyrillic-ext.woff2') format('woff2');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+        }
+        @font-face {
+            font-family: 'Source Serif 4';
+            src: url('/static/fonts/source-serif-4-400700-cyrillic.woff2') format('woff2');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+        }
+        @font-face {
+            font-family: 'Source Serif 4';
+            src: url('/static/fonts/source-serif-4-400700-latin-ext.woff2') format('woff2');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        @font-face {
+            font-family: 'Source Serif 4';
+            src: url('/static/fonts/source-serif-4-400700-latin.woff2') format('woff2');
+            font-weight: 400 700;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+        /* IBM Plex Mono — codes, durations, immutable IDs (400/500/600) */
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-400-cyrillic-ext.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-400-cyrillic.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-400-latin-ext.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-400-latin.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-600-cyrillic-ext.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-600-cyrillic.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-600-latin-ext.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        @font-face {
+            font-family: 'IBM Plex Mono';
+            src: url('/static/fonts/ibm-plex-mono-600-latin.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
         html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; }
-        /* Metrics (DESIGN.md 7.1): tabular numbers in charts/stats */
+        /* Metrics (DESIGN v2 §5): tabular numbers in charts/stats */
         .tabular-nums, .chart-nums { font-variant-numeric: tabular-nums; }
-        /* === Design system semantic tokens (DESIGN.md 6.2) === */
+
+        /* === DESIGN v2 semantic tokens («Тёмный архив», DESIGN_V2.md §4) === */
         :root,
         html[data-theme="light"] {
-            --color-canvas: #F7F7FA;
-            --color-surface: #FFFFFF;
-            --color-surface-soft: #F0EFF4;
-            --color-surface-raised: #FFFFFF;
-            --color-border: #E1DFE7;
-            --color-border-strong: #C9C6D1;
-            --color-text: #1C1B22;
-            --color-text-secondary: #656472;
-            --color-text-disabled: #92909B;
-            --color-accent: #6B57A5;
-            --color-accent-hover: #59458F;
-            --color-accent-soft: #EEE9F8;
-            --color-on-accent: #FFFFFF;
-            --color-success: #2F7657;
-            --color-success-soft: #E4F2EA;
-            --color-warning: #9A6415;
-            --color-warning-soft: #F8EEDC;
-            --color-danger: #A83B4A;
-            --color-danger-soft: #F8E4E7;
-            --color-info: #356A9A;
-            --color-info-soft: #E3EEF7;
-            --color-focus: #8065C5;
-            --color-overlay: rgb(18 17 22 / 48%);
-            /* Motion easing (DESIGN.md 12) */
-            --motion-easing: cubic-bezier(0.2, 0, 0, 1);
+            --canvas: #e9e2da;
+            --canvas-deep: #ded5cb;
+            --surface: #f2ece5;
+            --surface-soft: #e4dbd2;
+            --surface-raised: #f7f1eb;
+            --border: #cbbdb1;
+            --border-strong: #aa9788;
+            --text: #302722;
+            --text-secondary: #65584f;
+            --text-muted: #8b7b70;
+            --accent: #8d4945;
+            --accent-hover: #743a37;
+            --accent-soft: #e7cfca;
+            --on-accent: #fff9f4;
+            /* Domain hues (§4.3) */
+            --dom-tracker: #8d4945;
+            --dom-timer: #a06a3f;
+            --dom-care: #8a6c5c;
+            --dom-health: #64806b;
+            --dom-insights: #7a6a97;
+            --dom-social: #56707f;
+            --dom-dynamics: #85586b;
+            /* Semantic status tokens */
+            --success: #6d8f74;
+            --warning: #b3864f;
+            --danger: #a94c4c;
+            --info: #5d7f95;
+            --success-soft: #dfe9e1;
+            --warning-soft: #f0e5d3;
+            --danger-soft: #f3dddd;
+            --info-soft: #dde8ee;
+            --focus: #8d4945;
+            --overlay: rgb(48 39 34 / 48%);
+            /* Legacy aliases (kept so pre-v2 templates keep working) */
+            --color-canvas: var(--canvas);
+            --color-surface: var(--surface);
+            --color-surface-soft: var(--surface-soft);
+            --color-surface-raised: var(--surface-raised);
+            --color-border: var(--border);
+            --color-border-strong: var(--border-strong);
+            --color-text: var(--text);
+            --color-text-secondary: var(--text-secondary);
+            --color-text-disabled: var(--text-muted);
+            --color-accent: var(--accent);
+            --color-accent-hover: var(--accent-hover);
+            --color-accent-soft: var(--accent-soft);
+            --color-on-accent: var(--on-accent);
+            --color-success: var(--success);
+            --color-success-soft: var(--success-soft);
+            --color-warning: var(--warning);
+            --color-warning-soft: var(--warning-soft);
+            --color-danger: var(--danger);
+            --color-danger-soft: var(--danger-soft);
+            --color-info: var(--info);
+            --color-info-soft: var(--info-soft);
+            --color-focus: var(--focus);
+            --color-overlay: var(--overlay);
+            /* Motion (DESIGN v2 §14) */
+            --motion-easing: cubic-bezier(0.22, 0.75, 0.25, 1);
             --motion-fast: 120ms;
             --motion-base: 180ms;
             --motion-slow: 240ms;
         }
 
         html[data-theme="dark"] {
-            --color-canvas: #121116;
-            --color-surface: #1A191F;
-            --color-surface-soft: #232129;
-            --color-surface-raised: #292731;
-            --color-border: #34313B;
-            --color-border-strong: #4A4653;
-            --color-text: #F3F0F7;
-            --color-text-secondary: #AAA6B2;
-            --color-text-disabled: #77727F;
-            --color-accent: #B8A3EE;
-            --color-accent-hover: #C8B7F3;
-            --color-accent-soft: #2C2540;
-            --color-on-accent: #1C1629;
-            --color-success: #71C89D;
-            --color-success-soft: #183629;
-            --color-warning: #E4B064;
-            --color-warning-soft: #3A2D1C;
-            --color-danger: #FF9AA4;
-            --color-danger-soft: #402228;
-            --color-info: #8DB9E6;
-            --color-info-soft: #1D3042;
-            --color-focus: #B8A3EE;
-            --color-overlay: rgb(0 0 0 / 64%);
+            --canvas: #171311;
+            --canvas-deep: #100d0c;
+            --surface: #201a17;
+            --surface-soft: #29211d;
+            --surface-raised: #312722;
+            --border: #44372f;
+            --border-strong: #665044;
+            --text: #eee7df;
+            --text-secondary: #b9aca1;
+            --text-muted: #897a70;
+            --accent: #a95f58;
+            --accent-hover: #bf7169;
+            --accent-soft: #3a2422;
+            --on-accent: #fff5ef;
+            --dom-tracker: #a95f58;
+            --dom-timer: #b98558;
+            --dom-care: #9b7b68;
+            --dom-health: #718f7a;
+            --dom-insights: #8977a6;
+            --dom-social: #617f94;
+            --dom-dynamics: #956779;
+            --success: #73977d;
+            --warning: #c19358;
+            --danger: #b75555;
+            --info: #668aa1;
+            --success-soft: #22302a;
+            --warning-soft: #33291c;
+            --danger-soft: #3a2222;
+            --info-soft: #1d2d38;
+            --focus: #a95f58;
+            --overlay: rgb(0 0 0 / 64%);
+            --color-canvas: var(--canvas);
+            --color-surface: var(--surface);
+            --color-surface-soft: var(--surface-soft);
+            --color-surface-raised: var(--surface-raised);
+            --color-border: var(--border);
+            --color-border-strong: var(--border-strong);
+            --color-text: var(--text);
+            --color-text-secondary: var(--text-secondary);
+            --color-text-disabled: var(--text-muted);
+            --color-accent: var(--accent);
+            --color-accent-hover: var(--accent-hover);
+            --color-accent-soft: var(--accent-soft);
+            --color-on-accent: var(--on-accent);
+            --color-success: var(--success);
+            --color-success-soft: var(--success-soft);
+            --color-warning: var(--warning);
+            --color-warning-soft: var(--warning-soft);
+            --color-danger: var(--danger);
+            --color-danger-soft: var(--danger-soft);
+            --color-info: var(--info);
+            --color-info-soft: var(--info-soft);
+            --color-focus: var(--focus);
+            --color-overlay: var(--overlay);
+            --motion-easing: cubic-bezier(0.22, 0.75, 0.25, 1);
+            --motion-fast: 120ms;
+            --motion-base: 180ms;
+            --motion-slow: 240ms;
         }
         *, *::before, *::after { box-sizing: border-box; }
         html { transition: background-color 300ms, color 300ms; }
-        /* Reusable transitions honoring DESIGN.md 12 easing */
+        /* Reusable transitions honoring DESIGN v2 §14 easing */
         .transition-colors, .transition-all { transition-timing-function: var(--motion-easing); transition-duration: var(--motion-base); }
-        /* Focus ring (DESIGN.md 14): 2px ring + 2px offset */
-        *:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: 4px; }
-        /* Skip-link: visible on focus, hidden otherwise (DESIGN.md 14) */
+        /* Focus ring (§17): 2px ring + 2px offset */
+        *:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+        /* Skip-link: visible on focus, hidden otherwise */
         .skip-link {
             position: absolute; top: -100px; left: 8px;
-            padding: 8px 16px; background: var(--color-accent); color: var(--color-on-accent);
+            padding: 8px 16px; background: var(--accent); color: var(--on-accent);
             font-weight: 600; border-radius: 12px; z-index: 100;
         }
         .skip-link:focus { top: 8px; }
-        /* Touch target minimum (DESIGN.md 9.1) */
+        /* Touch target minimum (§17) */
         button, [role="button"], a.btn-min-h { min-height: 44px; min-width: 44px; }
-        /* Reduced motion override */
+        /* Reduced motion override (§14) */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
         /* HTMX live region announcements */
         #htmx-live-region { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+        /* === DESIGN v2 shell («Тёмный архив» §7) === */
+        .pl-canvas { background-color: var(--canvas); }
+        .pl-surface { background-color: var(--surface); }
+        .pl-surface-soft { background-color: var(--surface-soft); }
+        .pl-surface-raised { background-color: var(--surface-raised); }
+        .pl-text { color: var(--text); }
+        .pl-text-secondary { color: var(--text-secondary); }
+        .pl-text-muted { color: var(--text-muted); }
+        .pl-accent-text { color: var(--accent); }
+        .pl-accent-bg { background-color: var(--accent); color: var(--on-accent); }
+        .pl-accent-soft { background-color: var(--accent-soft); color: var(--accent); }
+        .pl-border-c { border-color: var(--border); }
+        .pl-border-strong-c { border-color: var(--border-strong); }
+        .pl-display { font-family: 'Source Serif 4', Georgia, serif; }
+        .pl-mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; }
+
+        /* Sidebar: collapsed 72px → expanded 272px (desktop only) */
+        .pl-sidebar {
+            position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+            display: none; flex-direction: column; width: 72px;
+            background: var(--canvas-deep); border-right: 1px solid var(--border);
+            overflow: hidden;
+            transition: width var(--motion-slow) var(--motion-easing);
+        }
+        .pl-shell { min-height: 100vh; display: flex; flex-direction: column; }
+        @media (min-width: 768px) {
+            .pl-sidebar { display: flex; }
+            .pl-shell { margin-left: 72px; transition: margin-left var(--motion-slow) var(--motion-easing); }
+            body.pl-sidebar-open .pl-sidebar { width: 272px; }
+            body.pl-sidebar-open .pl-shell { margin-left: 272px; }
+        }
+        .pl-sidebar-head {
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px; padding: 0 14px; flex-shrink: 0;
+        }
+        body:not(.pl-sidebar-open) .pl-sidebar-head { justify-content: center; padding: 0; }
+        .pl-sigil { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pl-sigil img { width: 36px; height: 36px; display: block; }
+        .pl-sidebar-toggle {
+            display: none; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 8px; color: var(--text-muted);
+            cursor: pointer; flex-shrink: 0;
+        }
+        .pl-sidebar-toggle:hover { color: var(--text); background: var(--surface); }
+        body.pl-sidebar-open .pl-sidebar-toggle { display: inline-flex; }
+        .pl-sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 0 16px; }
+        .pl-nav-group { padding: 2px 8px; }
+        .pl-nav-group-title {
+            font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--text-muted); padding: 12px 10px 4px;
+            white-space: nowrap; overflow: hidden; opacity: 0; height: 0;
+            transition: opacity var(--motion-fast) var(--motion-easing);
+        }
+        body.pl-sidebar-open .pl-nav-group-title { opacity: 1; height: auto; }
+        .pl-nav-item {
+            display: flex; align-items: center; gap: 10px; height: 40px;
+            padding: 0 10px; border-radius: 8px;
+            color: var(--text-secondary); font-size: 14px; font-weight: 500;
+            white-space: nowrap; min-height: 40px;
+        }
+        .pl-nav-item:hover { color: var(--text); background: var(--surface); }
+        .pl-nav-item.pl-nav-active { color: var(--accent); background: var(--accent-soft); }
+        body:not(.pl-sidebar-open) .pl-nav-item { justify-content: center; padding: 0; }
+        .pl-nav-icon { flex-shrink: 0; }
+        .pl-nav-label { opacity: 0; transition: opacity var(--motion-fast) var(--motion-easing); }
+        body.pl-sidebar-open .pl-nav-label { opacity: 1; }
+
+        /* Utility bar (desktop) + mobile top bar (§7) */
+        .pl-utility {
+            height: 64px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; border-bottom: 1px solid var(--border);
+            background: var(--surface); position: sticky; top: 0; z-index: 30;
+        }
+        .pl-utility-title { font-size: 16px; font-weight: 600; }
+        .pl-mobile-top {
+            height: 56px; display: flex; align-items: center; gap: 8px;
+            padding: 0 12px; border-bottom: 1px solid var(--border);
+            background: var(--surface); position: sticky; top: 0; z-index: 40;
+        }
+        @media (min-width: 768px) { .pl-mobile-top { display: none; } }
+        .pl-icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 44px; height: 44px; border-radius: 10px; color: var(--text-secondary);
+            cursor: pointer; position: relative;
+        }
+        .pl-icon-btn:hover { color: var(--text); background: var(--surface-soft); }
+        .pl-icon-btn .pl-badge {
+            position: absolute; top: 6px; right: 6px; min-width: 16px; height: 16px;
+            padding: 0 4px; border-radius: 9999px; background: var(--danger); color: var(--on-accent);
+            font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Mobile sheet overrides — labels always visible inside the sheet */
+        .pl-sheet .pl-nav-label { opacity: 1; }
+        .pl-sheet .pl-nav-group-title { opacity: 1; height: auto; }
+        .pl-sheet .pl-nav-item { justify-content: flex-start; padding: 0 10px; }
+
+        /* Mobile full-screen navigation sheet (§7) */
+        .pl-sheet {
+            position: fixed; inset: 0; z-index: 60;
+            background: var(--canvas); display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+        .pl-sheet[hidden] { display: none; }
+        .pl-sheet-header {
+            height: 56px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .pl-sheet-footer {
+            padding: 16px; border-top: 1px solid var(--border); margin-top: auto;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        }
+        /* Legacy top-bar colors kept for anonymous pages */
+        .pl-legacy-nav a { color: var(--text-secondary); }
+        .pl-legacy-nav a:hover { color: var(--text); }
     </style>
     <meta name="csrf-token" content="{{ csrf_token or '' }}">
     <script src="/static/htmx.min.js"></script>
@@ -119,167 +507,150 @@
     <script src="/static/js/app.js"></script>
     {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
-    <!-- Skip-link (DESIGN.md 14): first focusable element -->
+<body class="pl-canvas pl-text min-h-screen flex flex-col transition-colors">
+    <!-- Skip-link (§17): first focusable element -->
     <a href="#main-content" class="skip-link">{{ t.locale_label }} / Skip to content</a>
     <!-- Live region for HTMX swap announcements -->
     <div id="htmx-live-region" aria-live="polite" aria-atomic="true"></div>
-    <!-- Navbar (desktop) -->
-    <nav class="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 sticky top-0 z-50" aria-label="Main">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-            <!-- Logo -->
-            <a href="/" class="flex items-center gap-2">
-                <span class="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                    {{ t.app_title }}
-                </span>
-                <span class="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">{{ t.app_tagline }}</span>
-            </a>
 
-            <!-- Navigation (hidden on mobile — bottom nav takes over, DESIGN.md 4.4) -->
-            <div class="hidden md:flex items-center gap-3">
-                {% if user %}
-                    {% set nav_class = "text-sm font-medium transition-colors " %}
-                    {% set nav_active = "text-indigo-500 dark:text-indigo-400 font-semibold " %}
-                    {% set nav_inactive = "text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
-                    {% if composition and composition.tracker_active %}
-                    <a href="/dashboard" class="{{ nav_class }}{{ nav_active if active_nav == 'dashboard' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>{{ icon('dashboard', 'w-4 h-4') }}{{ t.nav_dashboard }}</a>
-                    <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>{{ icon('tasks', 'w-4 h-4') }}{{ t.nav_tasks }}</a>
-                    <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'training' %} aria-current="page"{% endif %}>{{ icon('training', 'w-4 h-4') }}{{ t.training_title }}</a>
-                    <a href="/entities/catalog" class="{{ nav_class }}{{ nav_active if active_nav == 'catalog' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>{{ icon('catalog', 'w-4 h-4') }}{{ t.catalog_title }}</a>
-                    <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'points' %} aria-current="page"{% endif %}>{{ icon('points', 'w-4 h-4') }}{{ t.nav_points }}</a>
-                    <a href="/import" class="{{ nav_class }}{{ nav_active if active_nav == 'import' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'import' %} aria-current="page"{% endif %}>{{ icon('import', 'w-4 h-4') }}{{ t.nav_import }}</a>
-                    <a href="/diets" class="{{ nav_class }}{{ nav_active if active_nav == 'diets' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'diets' %} aria-current="page"{% endif %}>{{ icon('diet', 'w-4 h-4') }}{{ t.nav_diets }}</a>
-                    <a href="/llm/templates" class="{{ nav_class }}{{ nav_active if active_nav == 'llm' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'llm' %} aria-current="page"{% endif %}>{{ icon('ai', 'w-4 h-4') }}{{ t.pl_title }}</a>
-                    <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ icon('admin', 'w-4 h-4') }}{{ t.admin_title_page }}</a>
-                    {% endif %}
-                    {% if composition and composition.social_operational %}
-                    <a href="/social/profile" class="{{ nav_class }}{{ nav_active if active_nav == 'social' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'social' %} aria-current="page"{% endif %}>{{ icon('users', 'w-4 h-4') }}{{ t.nav_social }}</a>
-                    {% endif %}
-                    {% if composition and composition.timer_operational %}
-                    <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>{{ icon('timer', 'w-4 h-4') }}{{ t.nav_timer or "Lock Timer" }}</a>
-                    {% endif %}
-                    <form action="/auth/logout" method="post" class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 cursor-pointer min-h-[44px]">{{ icon('logout', 'w-4 h-4') }}{{ t.nav_logout }}</button>
-                    </form>
-                {% else %}
-                    <a href="/login"
-                       class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400">
-                        {{ t.nav_login }}
-                    </a>
-                    <a href="/register"
-                       class="text-sm font-medium px-4 py-2 min-h-[44px] rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white inline-flex items-center">
-                        {{ t.nav_register }}
-                    </a>
-                {% endif %}
-            </div>
+    {% if user %}
+    <!-- ================= App shell (DESIGN v2 §7) ================= -->
+    <!-- Desktop sidebar -->
+    <aside id="pl-sidebar" class="pl-sidebar" aria-label="{{ t.nav_group_now }}">
+        <div class="pl-sidebar-head">
+            <a href="/" class="pl-sigil" aria-label="{{ t.app_title }}"><img src="/static/brand/practiceloop-sigil.svg" alt=""></a>
+            <button id="pl-sidebar-toggle" type="button" class="pl-sidebar-toggle" aria-label="{{ t.shell_collapse }}" aria-expanded="false">
+                {{ icon('chevron-left', 'w-4 h-4') }}
+            </button>
+        </div>
+        <nav class="pl-sidebar-nav">
+            {{ nav_groups() }}
+        </nav>
+    </aside>
 
-            {% if user %}
-            <form action="/auth/logout" method="post" class="md:hidden inline" title="{{ t.nav_logout }}" aria-label="{{ t.nav_logout }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                <button type="submit" class="text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-2 min-h-[44px] min-w-[44px]">
-                    {{ icon('logout', 'w-5 h-5') }}
-                </button>
-            </form>
-            {% endif %}
-
-            <!-- Locale + theme toggles (visible on all viewports) -->
-            <div class="flex items-center gap-3">
-                <!-- Locale toggle -->
+    <div class="pl-shell">
+        <!-- Utility bar (desktop) -->
+        <header class="pl-utility hidden md:flex" aria-label="{{ t.nav_group_now }}">
+            <div class="pl-utility-title">{{ context_titles.get(nav_key, t.app_title) }}</div>
+            <div class="flex items-center gap-1">
                 <form action="/settings/locale" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            name="locale"
-                            value="{{ 'ru' if locale == 'en' else 'en' }}"
-                            title="{{ t.locale_label }}"
-                            aria-label="{{ t.locale_label }}"
-                            class="text-sm px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                        {{ t.locale_toggle }}
-                    </button>
+                    <button type="submit" name="locale" value="{{ 'ru' if locale == 'en' else 'en' }}"
+                            title="{{ t.locale_label }}" aria-label="{{ t.locale_label }}"
+                            class="pl-icon-btn text-sm font-medium">{{ t.locale_toggle }}</button>
                 </form>
-
-                <!-- Theme toggle -->
                 <form action="/settings/theme" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit"
-                            name="theme"
-                            value="{{ 'light' if theme == 'dark' else 'dark' }}"
-                            title="{{ t.theme_toggle }}"
-                            aria-label="{{ t.theme_toggle }}"
-                            class="text-lg px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer min-h-[44px] min-w-[44px]">
-                        {% if theme == 'dark' %}
-                        {{ icon('sun', 'w-4 h-4') }}
-                        {% else %}
-                        {{ icon('moon', 'w-4 h-4') }}
-                        {% endif %}
+                    <button type="submit" name="theme" value="{{ 'light' if theme == 'dark' else 'dark' }}"
+                            title="{{ t.theme_toggle }}" aria-label="{{ t.theme_toggle }}" class="pl-icon-btn">
+                        {% if theme == 'dark' %}{{ icon('sun', 'w-5 h-5') }}{% else %}{{ icon('moon', 'w-5 h-5') }}{% endif %}
+                    </button>
+                </form>
+                <a href="/notifications" class="pl-icon-btn" aria-label="{{ t.notifications_title }}" title="{{ t.notifications_title }}">
+                    {{ icon('bell', 'w-5 h-5') }}
+                    {% if unread_notifs is defined and unread_notifs > 0 %}<span class="pl-badge">{{ unread_notifs }}</span>{% endif %}
+                </a>
+                <form action="/auth/logout" method="post" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="pl-icon-btn" aria-label="{{ t.nav_logout }}" title="{{ t.nav_logout }}">
+                        {{ icon('logout', 'w-5 h-5') }}
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Mobile top bar -->
+        <header class="pl-mobile-top md:hidden" aria-label="{{ t.nav_group_now }}">
+            <button id="pl-mobile-menu" type="button" class="pl-icon-btn" aria-label="{{ t.shell_menu }}" aria-expanded="false">
+                {{ icon('menu', 'w-6 h-6') }}
+            </button>
+            <a href="/" class="pl-sigil" aria-label="{{ t.app_title }}"><img src="/static/brand/practiceloop-sigil.svg" alt=""></a>
+            <div class="pl-utility-title truncate flex-1">{{ context_titles.get(nav_key, t.app_title) }}</div>
+            <a href="/notifications" class="pl-icon-btn" aria-label="{{ t.notifications_title }}" title="{{ t.notifications_title }}">
+                {{ icon('bell', 'w-5 h-5') }}
+                {% if unread_notifs is defined and unread_notifs > 0 %}<span class="pl-badge">{{ unread_notifs }}</span>{% endif %}
+            </a>
+        </header>
+
+        <!-- Mobile full-screen nav sheet -->
+        <div id="pl-mobile-sheet" class="pl-sheet" hidden aria-hidden="true">
+            <div class="pl-sheet-header">
+                <div class="flex items-center gap-2">
+                    <span class="pl-sigil"><img src="/static/brand/practiceloop-sigil.svg" alt=""></span>
+                    <span class="font-semibold">{{ t.app_title }}</span>
+                </div>
+                <button id="pl-mobile-sheet-close" type="button" class="pl-icon-btn" aria-label="{{ t.shell_close }}">
+                    {{ icon('close', 'w-5 h-5') }}
+                </button>
+            </div>
+            <nav class="py-3" aria-label="{{ t.nav_group_now }}">
+                {{ nav_groups() }}
+            </nav>
+            <div class="pl-sheet-footer">
+                <div class="flex items-center gap-1">
+                    <form action="/settings/locale" method="post" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" name="locale" value="{{ 'ru' if locale == 'en' else 'en' }}"
+                                title="{{ t.locale_label }}" aria-label="{{ t.locale_label }}" class="pl-icon-btn text-sm font-medium">{{ t.locale_toggle }}</button>
+                    </form>
+                    <form action="/settings/theme" method="post" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" name="theme" value="{{ 'light' if theme == 'dark' else 'dark' }}"
+                                title="{{ t.theme_toggle }}" aria-label="{{ t.theme_toggle }}" class="pl-icon-btn">
+                            {% if theme == 'dark' %}{{ icon('sun', 'w-5 h-5') }}{% else %}{{ icon('moon', 'w-5 h-5') }}{% endif %}
+                        </button>
+                    </form>
+                </div>
+                <form action="/auth/logout" method="post" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="pl-icon-btn" aria-label="{{ t.nav_logout }}" title="{{ t.nav_logout }}">
+                        {{ icon('logout', 'w-5 h-5') }}
                     </button>
                 </form>
             </div>
         </div>
-    </nav>
 
-    <!-- Mobile bottom nav (DESIGN.md 4.4): 64px + safe-area, exactly 4 items -->
-    {% if user %}
-    <nav class="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700"
-         style="height: 64px; padding-bottom: env(safe-area-inset-bottom);" aria-label="Mobile">
-        {% set bn_class = "flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors flex-1 min-h-[44px] " %}
-        {% set bn_active = "text-indigo-600 dark:text-indigo-400 " %}
-        {% set bn_inactive = "text-slate-500 dark:text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
-        <div class="flex h-full max-w-5xl mx-auto">
-            {% if composition and composition.tracker_active %}
-            <a href="/dashboard" class="{{ bn_class }}{{ bn_active if active_nav == 'dashboard' else bn_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>
-                {{ icon('dashboard', 'w-5 h-5') }}
-                {{ t.nav_dashboard }}
+        <!-- Flash messages -->
+        {% if error %}
+        <div class="max-w-[1440px] mx-auto px-4 mt-4" role="alert">
+            <div class="pl-accent-soft border border-[color:var(--danger)] text-[color:var(--danger)] px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                {{ icon('error', 'w-4 h-4') }}
+                {{ error }}
+            </div>
+        </div>
+        {% endif %}
+        {% if success %}
+        <div class="max-w-[1440px] mx-auto px-4 mt-4" role="status">
+            <div class="bg-[color:var(--success-soft)] border border-[color:var(--success)] text-[color:var(--success)] px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                {{ icon('check-circle', 'w-4 h-4') }}
+                {{ success }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Anonymous header -->
+    <nav class="pl-surface border-b border-[color:var(--border)] sticky top-0 z-50" aria-label="{{ t.nav_group_now }}">
+        <div class="max-w-[1440px] mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2">
+                <span class="pl-sigil"><img src="/static/brand/practiceloop-sigil.svg" alt=""></span>
+                <span class="text-xl font-bold pl-accent-text">{{ t.app_title }}</span>
+                <span class="text-xs pl-text-muted hidden sm:inline">{{ t.app_tagline }}</span>
             </a>
-            <a href="/tasks/" class="{{ bn_class }}{{ bn_active if active_nav == 'tasks' else bn_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>
-                {{ icon('tasks', 'w-5 h-5') }}
-                {{ t.nav_tasks }}
-            </a>
-            <a href="/training" class="{{ bn_class }}{{ bn_active if active_nav == 'training' else bn_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>
-                {{ icon('training', 'w-5 h-5') }}
-                {{ t.training_title }}
-            </a>
-            <a href="/entities/catalog" class="{{ bn_class }}{{ bn_active if active_nav == 'catalog' else bn_inactive }}"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>
-                {{ icon('catalog', 'w-5 h-5') }}
-                {{ t.catalog_title }}
-            </a>
-            {% endif %}
-            {% if composition and composition.timer_operational %}
-            <a href="/locktimer" class="{{ bn_class }}{{ bn_active if active_nav == 'locktimer' else bn_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>
-                {{ icon('timer', 'w-5 h-5') }}
-                {{ t.nav_timer or "Lock Timer" }}
-            </a>
-            {% endif %}
+            <div class="flex items-center gap-3">
+                <a href="/login" class="pl-text-secondary hover:text-[color:var(--text)] text-sm font-medium">{{ t.nav_login }}</a>
+                <a href="/register" class="pl-accent-bg px-4 py-2 rounded-xl text-sm font-medium inline-flex items-center">{{ t.nav_register }}</a>
+            </div>
         </div>
     </nav>
-    <!-- Spacer so sticky CTAs never hide behind the bottom nav (DESIGN.md 4.4) -->
-    <div class="md:hidden h-16" aria-hidden="true"></div>
-    {% endif %}
-
-    <!-- Flash messages -->
-    {% if error %}
-    <div class="max-w-5xl mx-auto px-4 mt-4" role="alert">
-        <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            {{ icon('error', 'w-4 h-4') }}
-            {{ error }}
-        </div>
-    </div>
-    {% endif %}
-    {% if success %}
-    <div class="max-w-5xl mx-auto px-4 mt-4" role="status">
-        <div class="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            {{ icon('check-circle', 'w-4 h-4') }}
-            {{ success }}
-        </div>
-    </div>
     {% endif %}
 
     <!-- Main content -->
-    <main id="main-content" tabindex="-1" class="max-w-5xl mx-auto px-4 py-6" aria-live="polite">
+    <main id="main-content" tabindex="-1" class="max-w-[1440px] mx-auto px-4 md:px-8 py-6 w-full flex-1" aria-live="polite">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-slate-200 dark:border-slate-800 mt-auto py-6 text-center text-xs text-slate-400 dark:text-slate-500">
+    <footer class="border-t border-[color:var(--border)] mt-auto py-6 text-center text-xs text-[color:var(--text-muted)]">
         {{ t.app_title }} &middot; private &amp; personal use only
     </footer>
     {% block scripts %}{% endblock %}

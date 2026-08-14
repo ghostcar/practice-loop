@@ -158,4 +158,65 @@
     svg.appendChild(use);
     return svg;
   };
+
+  // App shell (DESIGN v2 §7): sidebar collapse/expand + mobile nav sheet.
+  // Sidebar state persists in localStorage; default collapsed (explicit expand).
+  function initShell() {
+    var body = document.body;
+    var sidebar = document.getElementById('pl-sidebar');
+    var toggle = document.getElementById('pl-sidebar-toggle');
+    var sheet = document.getElementById('pl-mobile-sheet');
+    var menuBtn = document.getElementById('pl-mobile-menu');
+    var sheetClose = document.getElementById('pl-mobile-sheet-close');
+    var lastFocus = null;
+
+    if (sidebar && toggle) {
+      var saved = null;
+      try { saved = localStorage.getItem('pl_sidebar'); } catch (e) { /* ignore */ }
+      var open = saved === 'expanded';
+      var applyState = function () {
+        body.classList.toggle('pl-sidebar-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.setAttribute('aria-label', open ? 'collapse' : 'expand');
+        try { localStorage.setItem('pl_sidebar', open ? 'expanded' : 'collapsed'); } catch (e) { /* ignore */ }
+      };
+      toggle.addEventListener('click', function () { open = !open; applyState(); });
+      applyState();
+    }
+
+    if (sheet && menuBtn) {
+      var openSheet = function () {
+        lastFocus = document.activeElement;
+        sheet.hidden = false;
+        sheet.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+        body.style.overflow = 'hidden';
+        var closeBtn = sheetClose || sheet.querySelector('button');
+        if (closeBtn) closeBtn.focus();
+      };
+      var closeSheet = function () {
+        sheet.hidden = true;
+        sheet.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        body.style.overflow = '';
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      };
+      menuBtn.addEventListener('click', function () {
+        if (sheet.hidden) { openSheet(); } else { closeSheet(); }
+      });
+      if (sheetClose) sheetClose.addEventListener('click', closeSheet);
+      sheet.addEventListener('click', function (e) {
+        if (e.target === sheet) closeSheet(); // backdrop
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !sheet.hidden) closeSheet();
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initShell);
+  } else {
+    initShell();
+  }
 })();

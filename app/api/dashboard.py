@@ -28,6 +28,50 @@ from app.security import ensure_csrf_cookie
 from app.templates_setup import templates
 from app.timeutils import local_today
 
+# Locale-aware date label for the dashboard header (DESIGN v2 §9).
+_DASH_WEEKDAYS = {
+    "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "ru": ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"],
+}
+_DASH_MONTHS = {
+    "en": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ],
+    "ru": [
+        "января",
+        "февраля",
+        "марта",
+        "апреля",
+        "мая",
+        "июня",
+        "июля",
+        "августа",
+        "сентября",
+        "октября",
+        "ноября",
+        "декабря",
+    ],
+}
+
+
+def _today_label(day: datetime.date, locale: str) -> str:
+    """Human date in the user's locale, e.g. "Tuesday, 14 August 2026"."""
+    wd = _DASH_WEEKDAYS.get(locale, _DASH_WEEKDAYS["en"])[day.weekday()]
+    mo = _DASH_MONTHS.get(locale, _DASH_MONTHS["en"])[day.month - 1]
+    return f"{wd}, {day.day} {mo} {day.year}"
+
+
 router = APIRouter(tags=["dashboard-v2"])
 
 
@@ -194,6 +238,7 @@ async def dashboard(
             "training_task_counts": training_task_counts,
             "today_schedule": today_schedule,
             "today_meals": today_meals,
+            "today_label": _today_label(today, locale),
         },
     )
     # Set CSRF cookie ONLY if absent — re-issuing it here after render used to
