@@ -114,9 +114,31 @@ class TestShellLayoutRegression:
         # the old broken rule must be gone
         assert ".pl-shell { margin-left: 72px" not in css
 
-    def test_shell_min_height_still_present(self):
+    def test_shell_is_plain_block_not_full_viewport(self):
+        """The shell wraps only the bars; <main>/<footer> are siblings. If the shell
+        kept min-height: 100vh it would fill the viewport and push the dashboard
+        below the fold (the 'pl-shell takes a whole screen' regression)."""
         css = self._base_css()
-        assert ".pl-shell { min-height: 100vh; display: flex; flex-direction: column; }" in css
+        assert ".pl-shell { min-height: 100vh" not in css
+        assert ".pl-shell { min-height: 100vh; display: flex; flex-direction: column; }" not in css
+
+    def test_sidebar_toggle_always_visible(self):
+        """The expand button must be reachable in the collapsed state (it was
+        display:none until open — a dead 72px icon rail with no way to expand)."""
+        css = self._base_css()
+        # no rule hiding it in the collapsed state
+        assert "body:not(.pl-sidebar-open) .pl-sidebar-toggle { display: none" not in css
+        # always inline-flex, with the chevron flipping outward when collapsed
+        assert "display: inline-flex; align-items: center; justify-content: center;" in css
+        assert "body:not(.pl-sidebar-open) .pl-sidebar-toggle svg { transform: rotate(180deg); }" in css
+
+    def test_sidebar_nav_scrollbar_hidden_when_collapsed(self):
+        """No visible scrollbar on the collapsed 72px rail; thin styled scrollbar
+        only when expanded."""
+        css = self._base_css()
+        assert "scrollbar-width: none; /* collapsed: clean icon rail, no scrollbar */" in css
+        assert "body.pl-sidebar-open .pl-sidebar-nav { scrollbar-width: thin" in css
+        assert ".pl-sidebar-nav::-webkit-scrollbar { display: none; }" in css
 
 
 class TestShellAssets:

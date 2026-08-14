@@ -177,7 +177,10 @@
       var applyState = function () {
         body.classList.toggle('pl-sidebar-open', open);
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        toggle.setAttribute('aria-label', open ? 'collapse' : 'expand');
+        var label = open
+          ? toggle.getAttribute('data-label-collapse')
+          : toggle.getAttribute('data-label-expand');
+        if (label) toggle.setAttribute('aria-label', label);
         try { localStorage.setItem('pl_sidebar', open ? 'expanded' : 'collapsed'); } catch (e) { /* ignore */ }
       };
       toggle.addEventListener('click', function () { open = !open; applyState(); });

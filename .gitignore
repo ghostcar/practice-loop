@@ -60,3 +60,8 @@ uploads/
 # Memory v2 (local-only runtime artifacts — MEMORY_SCHEMA.md §15)
 .agent-runtime/
 .memory-local/
+
+# Local browser-testing reports
+test-results/
+playwright-report/
+blob-report/

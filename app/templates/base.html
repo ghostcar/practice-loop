@@ -413,7 +413,10 @@
             overflow: hidden;
             transition: width var(--motion-slow) var(--motion-easing);
         }
-        .pl-shell { min-height: 100vh; display: flex; flex-direction: column; }
+        /* .pl-shell wraps the utility/mobile bars + sheet only; <main>/<footer> are
+           siblings (block content can only appear once). The shell must stay a plain
+           block — no min-height/flex — otherwise it fills the viewport and pushes
+           the dashboard below the fold. Footer anchoring lives on body (flex column). */
         @media (min-width: 768px) {
             .pl-sidebar { display: flex; }
             /* Offset the whole page (shell, main, footer) past the fixed sidebar */
@@ -423,19 +426,29 @@
         }
         .pl-sidebar-head {
             display: flex; align-items: center; justify-content: space-between;
-            height: 64px; padding: 0 14px; flex-shrink: 0;
+            height: 64px; padding: 0 4px; gap: 2px; flex-shrink: 0;
         }
-        body:not(.pl-sidebar-open) .pl-sidebar-head { justify-content: center; padding: 0; }
         .pl-sigil { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .pl-sigil img { width: 36px; height: 36px; display: block; }
+        .pl-sigil img { width: 30px; height: 30px; display: block; transition: width var(--motion-fast) var(--motion-easing), height var(--motion-fast) var(--motion-easing); }
+        body.pl-sidebar-open .pl-sigil img { width: 36px; height: 36px; }
         .pl-sidebar-toggle {
-            display: none; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border-radius: 8px; color: var(--text-muted);
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; min-width: 0; min-height: 0;
+            border-radius: 8px; color: var(--text-muted);
             cursor: pointer; flex-shrink: 0;
         }
         .pl-sidebar-toggle:hover { color: var(--text); background: var(--surface); }
-        body.pl-sidebar-open .pl-sidebar-toggle { display: inline-flex; }
-        .pl-sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 0 16px; }
+        /* Always-visible expand control (§7: top outer edge next to the sigil);
+           chevron points outward when collapsed */
+        body:not(.pl-sidebar-open) .pl-sidebar-toggle svg { transform: rotate(180deg); }
+        .pl-sidebar-nav {
+            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 0 16px;
+            scrollbar-width: none; /* collapsed: clean icon rail, no scrollbar */
+        }
+        .pl-sidebar-nav::-webkit-scrollbar { display: none; }
+        body.pl-sidebar-open .pl-sidebar-nav { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+        body.pl-sidebar-open .pl-sidebar-nav::-webkit-scrollbar { display: block; width: 6px; }
+        body.pl-sidebar-open .pl-sidebar-nav::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 9999px; }
         .pl-nav-group { padding: 2px 8px; }
         .pl-nav-group-title {
             font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
@@ -524,7 +537,7 @@
     <aside id="pl-sidebar" class="pl-sidebar" aria-label="{{ t.nav_group_now }}">
         <div class="pl-sidebar-head">
             <a href="/" class="pl-sigil" aria-label="{{ t.app_title }}"><img src="/static/brand/practiceloop-sigil.svg" alt=""></a>
-            <button id="pl-sidebar-toggle" type="button" class="pl-sidebar-toggle" aria-label="{{ t.shell_collapse }}" aria-expanded="false">
+            <button id="pl-sidebar-toggle" type="button" class="pl-sidebar-toggle" aria-label="{{ t.shell_collapse }}" aria-expanded="false" data-label-collapse="{{ t.shell_collapse }}" data-label-expand="{{ t.shell_expand }}">
                 {{ icon('chevron-left', 'w-4 h-4') }}
             </button>
         </div>
