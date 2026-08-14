@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('media-vault', 'w-6 h-6') }}{{ t.mvt_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.mvt_subtitle }}</p>
+        </div>
+        <!-- Upload (staged → bound from domain pages) -->
+        <form action="/media/upload" method="post" enctype="multipart/form-data" class="flex items-center gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input type="file" name="file" accept="image/*" required
+                   class="text-xs text-[color:var(--text-secondary)] file:mr-2 file:px-3 file:py-2 file:rounded-lg file:border file:border-[color:var(--border)] file:bg-[color:var(--surface-soft)] file:text-[color:var(--text)] file:cursor-pointer file:min-h-[44px]">
+            <button type="submit" class="pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 cursor-pointer min-h-[44px]">
+                {{ icon('upload', 'w-4 h-4') }}{{ t.mvt_upload }}
+            </button>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for item in items %}
+        <article class="pl-surface border border-[color:var(--border)] rounded-xl overflow-hidden flex flex-col">
+            <!-- Image: min 160×120, object-cover in the feed (§11) -->
+            <a href="/api/v2/media/{{ item.id }}" class="block h-32 md:h-40 bg-[color:var(--surface-soft)] overflow-hidden relative" aria-label="{{ item.caption or item.original_filename or item.id[:8] }}">
+                {% if item.is_image %}
+                <img src="{{ '/api/v2/media/' + item.id + '/thumbnail' if item.has_thumbnail else '/api/v2/media/' + item.id }}"
+                     alt="{{ item.caption or '' }}" loading="lazy"
+                     class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-[color:var(--text-muted)]">
+                    {{ icon('image', 'w-10 h-10') }}
+                </div>
+                {% endif %}
+                <!-- State chip over the image -->
+                <span class="absolute top-2 right-2 px-2 py-0.5 text-[10px] font-semibold rounded-full uppercase tracking-wide
+                    {% if item.state == 'staged' %}bg-[color:var(--warning-soft)] text-[color:var(--warning)]
+                    {% elif item.state == 'ready' %}bg-[color:var(--info-soft)] text-[color:var(--info)]
+                    {% else %}bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]{% endif %}">
+                    {{ t['mvt_state_' + item.state] if t.get('mvt_state_' + item.state) else item.state }}
+                </span>
+            </a>
+
+            <div class="p-3 flex-1 flex flex-col gap-1.5">
+                <h3 class="text-sm font-medium text-[color:var(--text)] truncate" title="{{ item.caption or item.original_filename or '' }}">
+                    {{ item.caption or item.original_filename or item.id[:8] }}
+                </h3>
+
+                <!-- Verified state (§10) -->
+                {% set v = item.verification %}
+                {% if v %}
+                <span class="inline-flex items-center gap-1 text-xs
+                    {% if v.verdict == 'match' %}text-[color:var(--success)]
+                    {% elif v.verdict == 'mismatch' %}text-[color:var(--danger)]
+                    {% else %}text-[color:var(--warning)]{% endif %}">
+                    {% if v.verdict == 'match' %}{{ icon('check-circle', 'w-3.5 h-3.5') }}
+                    {% elif v.verdict == 'mismatch' %}{{ icon('error', 'w-3.5 h-3.5') }}
+                    {% else %}{{ icon('warning', 'w-3.5 h-3.5') }}{% endif %}
+                    {{ t['mvt_verdict_' + v.verdict] if t.get('mvt_verdict_' + v.verdict) else v.verdict }}
+                    · {{ t['mvt_type_' + v.verification_type] if t.get('mvt_type_' + v.verification_type) else v.verification_type }}
+                    {% if v.confidence %}<span class="pl-text-muted">({{ v.confidence }}%)</span>{% endif %}
+                </span>
+                {% else %}
+                <span class="inline-flex items-center gap-1 text-xs pl-text-muted">{{ icon('verification', 'w-3.5 h-3.5') }}{{ t.mvt_not_verified }}</span>
+                {% endif %}
+
+                <!-- Meta: date · type · provenance (§11) -->
+                <div class="text-xs pl-text-muted space-y-0.5 mt-auto pt-1">
+                    <div class="inline-flex items-center gap-1">{{ icon('calendar', 'w-3 h-3') }}{{ localtime(item.created_at, '%Y-%m-%d %H:%M') }}</div>
+                    <div class="inline-flex items-center gap-1">{{ icon('tag', 'w-3 h-3') }}{{ item.owner_type }}{% if item.provenance %} · {{ item.provenance }}{% endif %}</div>
+                    <div class="inline-flex items-center gap-1">
+                        {{ icon('shield', 'w-3 h-3') }}
+                        {% if item.state == 'archived' %}{{ t.mvt_retention_archived }}{% else %}{{ t.mvt_retention_private }}{% endif %}
+                    </div>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-12 text-center">
+        <div class="flex justify-center mb-3">{{ icon('media-vault', 'w-12 h-12 text-[color:var(--text-muted)]') }}</div>
+        <p class="pl-text-secondary">{{ t.mvt_empty }}</p>
+        <p class="pl-text-muted text-sm mt-1">{{ t.mvt_empty_hint }}</p>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

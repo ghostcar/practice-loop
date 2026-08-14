@@ -101,23 +101,23 @@
       invItems
         .map(
           (i) => `
-    <div class="bg-white dark:bg-slate-900 rounded-lg p-4 flex items-center gap-3 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-grab" draggable="true" data-id="${escapeHtml(String(i.id))}">
-      <span class="text-slate-300 dark:text-slate-600 select-none">⠿</span>
-      ${i.image_path ? `<img src="${escapeHtml(i.image_path)}" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-slate-200 dark:border-slate-700" loading="lazy">` : ''}
+    <div class="pl-surface rounded-lg p-3 flex items-center gap-3 border border-[color:var(--border)] hover:border-[color:var(--border-strong)] transition-colors cursor-grab" draggable="true" data-id="${escapeHtml(String(i.id))}">
+      <span class="text-[color:var(--text-muted)] select-none flex items-center">⠿</span>
+      ${i.image_path ? `<img src="${escapeHtml(i.image_path)}" alt="" class="w-40 aspect-[4/3] rounded-lg object-cover flex-shrink-0 border border-[color:var(--border)]" loading="lazy">` : `<span class="inv-img-placeholder w-40 aspect-[4/3] rounded-lg bg-[color:var(--surface-soft)] flex items-center justify-center text-[color:var(--text-muted)] flex-shrink-0"></span>`}
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>
-          <span class="font-medium text-slate-800 dark:text-slate-100">${escapeHtml(i.name)}</span>
+          <span class="font-medium text-[color:var(--text)]">${escapeHtml(i.name)}</span>
           <span class="text-xs font-medium ${statusBadge(escapeHtml(i.status))}">${escapeHtml(STATUS_LABEL[i.status] || i.status)}</span>
           ${i.inventory_status && i.inventory_status !== 'available' ? `<span class="text-[10px] px-1.5 py-0.5 rounded ${invStatusBadge(i.inventory_status)}">${escapeHtml(INV_STATUS_LABEL[i.inventory_status] || i.inventory_status)}</span>` : ''}
-          ${i.is_shopping_list ? `<span class="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-medium">${escapeHtml(I18N.inv_mark_shopping)}</span>` : ''}
+          ${i.is_shopping_list ? `<span class="text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)] px-1.5 py-0.5 rounded font-medium">${escapeHtml(I18N.inv_mark_shopping)}</span>` : ''}
         </div>
-        <div class="text-xs text-slate-400 mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
+        <div class="text-xs text-[color:var(--text-muted)] mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
       </div>
       <div class="flex items-center gap-1 flex-shrink-0">
-        <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-indigo-500 text-sm px-2" title="Photo" aria-label="Photo"></button>
-        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-red-500 text-sm px-2" title="Remove photo" aria-label="Remove photo"></button>` : ''}
-        <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
+        <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-[color:var(--text-muted)] hover:text-[color:var(--accent)] text-sm px-2" title="Photo" aria-label="Photo"></button>
+        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-[color:var(--text-muted)] hover:text-[color:var(--danger)] text-sm px-2" title="Remove photo" aria-label="Remove photo"></button>` : ''}
+        <button onclick="del('${escapeHtml(String(i.id))}')" class="text-[color:var(--danger)] hover:opacity-80 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
       </div>
     </div>
   `
@@ -135,11 +135,15 @@
         delImgBtn.textContent = '';
         delImgBtn.appendChild(window.plIcon('close', 'w-4 h-4'));
       }
+      const placeholder = row.querySelector('.inv-img-placeholder');
+      if (placeholder && !placeholder.querySelector('svg')) {
+        placeholder.appendChild(window.plIcon('image', 'w-6 h-6'));
+      }
       const dragHandle = row.querySelector('span.select-none');
       if (dragHandle) {
         dragHandle.textContent = '';
         dragHandle.appendChild(window.plIcon('more', 'w-4 h-4'));
-        dragHandle.className = 'text-slate-300 dark:text-slate-600 select-none flex items-center';
+        dragHandle.className = 'text-[color:var(--text-muted)] select-none flex items-center';
       }
     });
   }
@@ -207,31 +211,31 @@
   }
   function catBadge(c) {
     const m = {
-      clothing: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
-      equipment: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-      cosmetics: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-      other: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+      clothing: 'pl-accent-soft',
+      equipment: 'bg-[color:var(--info-soft)] text-[color:var(--info)]',
+      cosmetics: 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]',
+      other: 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]',
     };
-    return m[c] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+    return m[c] || 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]';
   }
   function statusBadge(s) {
     const m = {
-      need: 'text-red-600 dark:text-red-400',
-      ordered: 'text-amber-600 dark:text-amber-400',
-      bought: 'text-emerald-600 dark:text-emerald-400',
-      built: 'text-emerald-600 dark:text-emerald-400',
+      need: 'text-[color:var(--danger)]',
+      ordered: 'text-[color:var(--warning)]',
+      bought: 'text-[color:var(--success)]',
+      built: 'text-[color:var(--success)]',
     };
-    return m[s] || 'text-slate-400';
+    return m[s] || 'text-[color:var(--text-muted)]';
   }
   function invStatusBadge(s) {
     const m = {
-      available: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-      in_use: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-      cleaning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-      charging: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-      maintenance: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-      archived: 'bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400',
-      unavailable: 'bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400',
+      available: 'bg-[color:var(--success-soft)] text-[color:var(--success)]',
+      in_use: 'bg-[color:var(--accent-soft)] text-[color:var(--accent)]',
+      cleaning: 'bg-[color:var(--warning-soft)] text-[color:var(--warning)]',
+      charging: 'bg-[color:var(--warning-soft)] text-[color:var(--warning)]',
+      maintenance: 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]',
+      archived: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
+      unavailable: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
     };
     return m[s] || 'text-slate-400';
   }
