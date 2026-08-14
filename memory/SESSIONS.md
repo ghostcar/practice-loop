@@ -1,3 +1,21 @@
+## 2026-08-14 — Сессия 119 (границы LLM для личного контура — ADR-070; Шаг 1 Gate A)
+
+- **Стратегия владельца**: личный контур — первая очередь; социальные/общедоступные функции — вторая очередь (зафиксировано в STAGE_PLAN.md). LLM в личном контуре — полностью: Omniroute первым источником, подбор моделей, harness, инструменты.
+- **Интервью по границам LLM → ADR-070** (расширение ADR-030/034):
+  1. Гибрид сохраняется (каталог + opt-in), режим названий per-provider через llm_mode (full/abstract — уже реализован);
+  2. Параметрическая генерация через промпт-шаблоны (пользователь создаёт шаблон с параметрами, сохраняет, LLM генерирует по нему);
+  3. LLM-верификация медиа — истина в последней инстанции для соло-игр (подтверждение кодов, закрытие пояса верности; Q13 без OCR);
+  4. Приватная база знаний LLM для промптов (векторный индекс + Omniroute-эмбеддинги);
+  5. Библиотека типовых промптов по функциональным блокам.
+  Комплаенс-красная линия не снимается: никакого обхода safety-фильтров провайдеров и маскирования контента (ToS + блокировка ключа Omniroute/upstream). Реализация — шаги 6–7 STAGE_PLAN.
+- **STAGE_PLAN.md**: добавлены шаги 6 (LLM harness: типовые промпты, промпт-шаблоны, приватная KB) и 7 (LLM-верификация медиа) + секция решения ADR-070.
+- **Шаг 1 — Gate A остаток (безопасность, малые)**:
+  - P1-1: innerHTML убран из locktimer/session_detail.html (validate-баннер строится через textContent/createElement) + XSS regression тесты (шаблон без innerHTML; validate возвращает payload как plain strings);
+  - P2-3: /healthz/readiness больше не раскрывает str(exc) — клиенту «not ready», детали в server log (logger.warning exc_info);
+  - P1-6: security headers middleware — nosniff, X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy (camera/mic/geolocation off), HSTS на https, CSP report-only (enforcing — на Gate C);
+  - tests/test_audit_gatea.py — 6 тестов.
+- **Проверки**: 743/743 ✅ (+6), ruff ✅, format ✅.
+
 ## 2026-08-14 — Сессия 118b (реальный A/B вектор-пилота через Omniroute — ADR-069 amended)
 
 - **Решение владельца (в ходе прогона)**: это VPS с ограниченными ресурсами — локальные модели не запускать; для LLM-нужд использовать Omniroute (локальный LLM-прокси на том же хосте, ~2800 моделей, 47 embedding). В .env добавлены `OMNIROUTE_HOST=llm.gorbunovr.ru` и `OMNIROUTE_API_KEY` — эти же параметры позже будут использоваться порталом.

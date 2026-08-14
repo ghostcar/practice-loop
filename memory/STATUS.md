@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-13 (сессия 117 — M4 preflight: sentinel/impact/launcher/SKILL/pre-commit; 709/709 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-14 (сессия 119 — ADR-070 границы LLM личного контура + Шаг 1 Gate A: P1-1/P2-3/P1-6; 743/743 ✅).
 
-## Общий статус: 709 тестов ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 69==69
+## Общий статус: 743 теста ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 70==70
 
 ## Аудит проекта — Session 111
 
@@ -15,6 +15,12 @@
   E2E/axe gates, неоднородные tokens/i18n/components.
 - [x] В этой сессии полный pytest summary не получен; подтверждены collection 661 tests и точечный
   memory test. Предыдущее evidence 661/661 относится к Session 110.
+
+## Сессия 119 — ADR-070 (границы LLM личного контура) + Шаг 1 Gate A остаток
+
+- [x] **Стратегия**: личный контур — первая очередь; Social/public — вторая (STAGE_PLAN).
+- [x] **ADR-070**: границы LLM расширены — гибрид + llm_mode per-provider (full/abstract), параметрические промпт-шаблоны, LLM-верификация медиа как истина (соло-игры), приватная база знаний для промптов, библиотека типовых промптов; Omniroute — первый источник; комплаенс-красная линия не снимается. STAGE_PLAN шаги 6–7.
+- [x] **Шаг 1 — Gate A**: P1-1 innerHTML→textContent (session_detail validate) + XSS тесты; P2-3 readiness без утечки исключения; P1-6 security headers (nosniff/DENY/Referrer/Permissions-Policy/HSTS-https/CSP report-only). tests/test_audit_gatea.py — 6 тестов. **743/743 ✅**.
 
 ## Memory v2 — M0/M1/M2/M3 (Сессии 110–116)
 

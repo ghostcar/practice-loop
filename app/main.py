@@ -117,6 +117,32 @@ async def csrf_middleware(request: Request, call_next):
 
 
 @app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Add baseline security headers to every response (audit P1-6).
+
+    HSTS, nosniff, Referrer-Policy, X-Frame-Options and Permissions-Policy are
+    safe to send on all responses. CSP is report-only for now: templates still
+    contain inline <script>/handlers and runtime Tailwind, so an enforcing CSP
+    would break the UI (Gate C — collect first, then enforce).
+    """
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    if request.url.scheme == "https":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    response.headers.setdefault(
+        "Content-Security-Policy-Report-Only",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; "
+        "base-uri 'self'; form-action 'self'",
+    )
+    return response
+
+
+@app.middleware("http")
 async def client_tz_middleware(request: Request, call_next):
     """Propagate the client timezone into a request-scoped ContextVar.
 
@@ -159,9 +185,12 @@ async def readiness():
             await db.execute(text("SELECT 1"))
             return "ready"
     except Exception as exc:
+        # Audit P2-3: never leak exception internals (hostname, DB name, etc.)
+        # to the client — log details server-side only.
         from fastapi.responses import PlainTextResponse
 
-        return PlainTextResponse(f"not ready: {exc}", status_code=503)
+        logger.warning("Readiness check failed", exc_info=exc)
+        return PlainTextResponse("not ready", status_code=503)
     return "ready"
 
 
