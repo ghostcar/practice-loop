@@ -75,3 +75,4 @@
 | [ADR-069](ADR-069.md) | 2026-08-13 | M3 pilot: Qdrant local + embedding через Omniroute, только vectors | accepted |
 | [ADR-070](ADR-070.md) | 2026-08-14 | Границы LLM для личного контура (расширение ADR-030/034) | accepted |
 | [ADR-071](ADR-071.md) | 2026-08-14 | M5: freeze legacy memory v1 (Memory v2 milestone) | accepted |
+| [ADR-072](ADR-072.md) | 2026-08-14 | Q14: penalty честно в HTTP + Omniroute в портал (Шаг 4) | accepted |
