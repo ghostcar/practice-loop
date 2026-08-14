@@ -1,3 +1,12 @@
+## 2026-08-14 — Сессия 119b (Шаг 2 — LLM/media границы, весь личный контур)
+
+- **Контекст**: личный контур = вся платформа (задачи, тренировки, диеты, точки, медиа, LLM-пайплайн, Telegram), не только Tracker+Timer. Шаг 2 из STAGE_PLAN закрывает три пункта аудита 2026-08-13:
+- **P1-2 — weekly planner усилен** (`generate_weekly_tasks`): exact dates (только из запрошенного target-множества), уникальность (ровно одна задача на день), полнота (все requested days покрыты), entity ∈ allowed-набор + params валидны; **атомарный save** — при любом невалидном item весь план отклоняется (ValueError → UI redirect generation_failed), ничего не пишется (раньше невалидные молча skip'ались → частичный план). Промпт явно указывает допустимые даты.
+- **P1-3 — media finalize owner-target check**: новый `app/services/media_registry.py` — registry owner-типов с `authorize_bind(db, owner_type, ref_id, user_id)` для всех 10 owner_type (activity_log, training_day, training_log_entry, inventory_item, diet, measurement, lock_session, lock_slot_occurrence, lock_task_occurrence, social_publication). `finalize_media` проверяет существование + принадлежность target (404 при чужом/отсутствующем), а не только владельца asset.
+- **P1-7 — единый источник версии**: `app/version.py` (__version__ = 0.8.0) → FastAPI metadata + export full header (было 0.9.0 / 0.5.0 / 0.8.0 в трёх местах). pyproject/README уже 0.8.0 — синхронизированы.
+- **Тесты**: `tests/test_audit_gateb.py` — 12 тестов (weekly: happy path, date outside, duplicate, incomplete, non-allowed entity, invalid params; media: own-ok, foreign-404, missing-404; version: pyproject match, FastAPI match, export match).
+- **Проверки**: 755/755 ✅ (+12), ruff ✅, format ✅.
+
 ## 2026-08-14 — Сессия 119 (границы LLM для личного контура — ADR-070; Шаг 1 Gate A)
 
 - **Стратегия владельца**: личный контур — первая очередь; социальные/общедоступные функции — вторая очередь (зафиксировано в STAGE_PLAN.md). LLM в личном контуре — полностью: Omniroute первым источником, подбор моделей, harness, инструменты.

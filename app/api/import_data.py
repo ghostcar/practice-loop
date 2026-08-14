@@ -34,6 +34,7 @@ from app.models.training import TrainingDay
 from app.models.user import User
 from app.schemas.points_v2 import ImportPayload
 from app.templates_setup import templates
+from app.version import __version__
 
 router = APIRouter(prefix="/import", tags=["import"])
 
@@ -381,7 +382,7 @@ async def export_full(
     """Full backup: export ALL user data as a single JSON."""
     full: dict[str, Any] = {
         "exported_at": datetime.now(UTC).isoformat(),
-        "version": "0.5.0",
+        "version": __version__,
         "user": {
             "email": user.email,
             "locale": user.locale,

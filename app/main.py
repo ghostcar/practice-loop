@@ -25,6 +25,7 @@ from app.i18n.helpers import detect_locale, detect_theme
 from app.platform.composition import build_product_composition
 from app.security import ensure_csrf_cookie, verify_csrf
 from app.templates_setup import templates
+from app.version import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ async def lifespan(app: FastAPI):
 # Application
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="Practice Loop", version="0.9.0", lifespan=lifespan)
+app = FastAPI(title="Practice Loop", version=__version__, lifespan=lifespan)
 
 
 # ---------------------------------------------------------------------------

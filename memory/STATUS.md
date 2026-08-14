@@ -1,8 +1,8 @@
 # Текущий статус
 
-Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-14 (сессия 119 — ADR-070 границы LLM личного контура + Шаг 1 Gate A: P1-1/P2-3/P1-6; 743/743 ✅).
+Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-14 (сессия 119b — Шаг 2 LLM/media границы: P1-2 weekly planner, P1-3 media finalize, P1-7 version; 755/755 ✅).
 
-## Общий статус: 743 теста ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 70==70
+## Общий статус: 755 тестов ✅; ruff ✅, format ✅, compileall ✅, Alembic single-head ✅; memoryctl lint 0/0, facts fresh, adr 70==70
 
 ## Аудит проекта — Session 111
 
@@ -15,6 +15,13 @@
   E2E/axe gates, неоднородные tokens/i18n/components.
 - [x] В этой сессии полный pytest summary не получен; подтверждены collection 661 tests и точечный
   memory test. Предыдущее evidence 661/661 относится к Session 110.
+
+## Сессия 119b — Шаг 2: LLM/media границы (весь личный контур)
+
+- [x] **P1-2**: weekly planner — exact dates (только target-множество), уникальность, полнота, атомарный save (невалидный item → весь план отклонён). 6 тестов.
+- [x] **P1-3**: media finalize — registry `authorize_bind` для 10 owner-типов (чужой/отсутствующий target → 404). 3 теста.
+- [x] **P1-7**: единая версия из `app/version.py` (FastAPI + export full). 3 теста.
+- [x] tests/test_audit_gateb.py +12; **755/755 ✅**.
 
 ## Сессия 119 — ADR-070 (границы LLM личного контура) + Шаг 1 Gate A остаток
 

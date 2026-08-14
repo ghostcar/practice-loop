@@ -121,6 +121,14 @@ async def finalize_media(
     if asset.state != "staged":
         raise HTTPException(409, f"Cannot finalize asset in state '{asset.state}'")
 
+    # Audit P1-3: the target domain object must exist and belong to this user.
+    # Never trust an arbitrary owner_ref_id — a cross-user or non-existent
+    # target would break integrity and future grant/publication rules.
+    from app.services.media_registry import authorize_bind
+
+    if not await authorize_bind(db, owner_type, owner_ref_id, user.id):
+        raise HTTPException(404, "Target object not found or not owned by you")
+
     asset.state = "ready"
     asset.owner_type = owner_type
     asset.owner_ref_id = owner_ref_id

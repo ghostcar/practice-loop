@@ -263,10 +263,19 @@ async def generate_weekly_tasks(
     locale: str = "en",
     days: int = 7,
 ) -> list[ActivityLog]:
-    """Generate tasks for multiple days ahead."""
+    """Generate tasks for multiple days ahead (audit P1-2 hardened).
+
+    Validation contract (audit PROJECT_REVIEW 2026-08-13, P1-2):
+      - dates must belong to the requested target set (exact dates);
+      - each requested day covered exactly once (uniqueness + completeness);
+      - entity must be in the allowed (opt-in) set, params valid against schema;
+      - on any invalid item the whole plan is rejected atomically — nothing is
+        written (no silent partial plan).
+    """
     days = max(1, min(days, 14))
     start_date = local_today() + timedelta(days=1)
     target_dates = [start_date + timedelta(days=i) for i in range(days)]
+    target_set = set(target_dates)
     date_labels = [d.isoformat() for d in target_dates]
 
     context = await context_builder.build_context(db, user_id, locale=locale)
@@ -283,6 +292,8 @@ async def generate_weekly_tasks(
         f"Output in {locale}.\n\n"
         'Response format (JSON): {"plan": [{"date": "YYYY-MM-DD", "entity_id": "<uuid>",'
         '"entity_name": "<name>", "params": {...}, "reasoning": "..."}]}'
+        f"\nThe dates MUST be exactly one of: {', '.join(date_labels)}. "
+        "Exactly one task per date, every date covered, no duplicates."
     )
 
     user_message = (
@@ -302,30 +313,54 @@ async def generate_weekly_tasks(
     if not plan:
         raise ValueError("LLM returned empty weekly plan")
 
-    logs: list[ActivityLog] = []
-    raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
+    # ── Validate the whole plan BEFORE writing anything (P1-2) ──
+    seen_dates: set[datetime.date] = set()
+    validated: list[tuple[datetime.date, str, dict, dict, str]] = []  # date, entity_id, params, canonical, reasoning
 
-    for item in plan[:days]:
+    for idx, item in enumerate(plan[: days * 2]):  # cap scan; still require exact coverage below
         entity_id_str = str(item.get("entity_id") or "").strip()
         entity_name = item.get("entity_name", "Unknown")
         params = item.get("params", {})
         reasoning = item.get("reasoning", "")
         date_str = str(item.get("date") or "").strip()
 
-        if entity_id_str not in allowed_ids:
-            continue
-        canonical = entities_by_id.get(entity_id_str, {})
-        entity_name = canonical.get("name") or entity_name
-
         try:
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except (ValueError, TypeError):
-            target_date = target_dates[len(logs)] if logs else start_date
+        except (ValueError, TypeError) as exc:
+            raise ValueError(f"Weekly plan item {idx}: invalid date {date_str!r}") from exc
 
+        if target_date not in target_set:
+            raise ValueError(
+                f"Weekly plan item {idx}: date {date_str} is outside the requested range "
+                f"({date_labels[0]}..{date_labels[-1]})"
+            )
+        if target_date in seen_dates:
+            raise ValueError(f"Weekly plan item {idx}: duplicate date {date_str} — exactly one task per day")
+        seen_dates.add(target_date)
+
+        if entity_id_str not in allowed_ids:
+            raise ValueError(f"Weekly plan item {idx}: entity {entity_id_str!r} is not in the allowed set")
+        canonical = entities_by_id.get(entity_id_str, {})
+        if not canonical:
+            raise ValueError(f"Weekly plan item {idx}: entity {entity_id_str!r} not found")
+        if validate_params_against_schema(params, canonical.get("params_schema")):
+            raise ValueError(f"Weekly plan item {idx}: params invalid for entity schema")
+
+        validated.append((target_date, entity_id_str, params, canonical, reasoning or entity_name))
+
+    if len(validated) != days or seen_dates != target_set:
+        missing = sorted(target_set - seen_dates)
+        raise ValueError(
+            f"Weekly plan must cover exactly {days} days ({len(validated)} provided; missing: "
+            f"{[d.isoformat() for d in missing]})"
+        )
+
+    # ── All valid — write atomically ──
+    raw_to_store, raw_expires = _resolve_raw_response(llm_config, raw_response)
+    logs: list[ActivityLog] = []
+    for target_date, entity_id_str, params, canonical, reasoning in validated:
+        entity_name = canonical.get("name") or "Unknown"
         schema = canonical.get("params_schema")
-        if validate_params_against_schema(params, schema):
-            continue
-
         auto_title = _generate_task_title(entity_name, params, schema, canonical.get("task_template"), locale)
         log = ActivityLog(
             user_id=user_id,
@@ -333,13 +368,13 @@ async def generate_weekly_tasks(
             status="planned",
             scheduled_at=datetime(target_date.year, target_date.month, target_date.day, tzinfo=UTC),
             title_override=auto_title if auto_title != entity_name else None,
-            user_prompt=f"Weekly plan: {reasoning[:200]}",
+            user_prompt=f"Weekly plan: {str(reasoning)[:200]}",
             raw_llm_response=raw_to_store,
             raw_response_expires_at=raw_expires,
             cleaned_response=parsed,
             selected_entity_name=entity_name,
             selected_params=params,
-            planned_comment=reasoning[:500] if reasoning else None,
+            planned_comment=str(reasoning)[:500] if reasoning else None,
             prompt_tokens=0,
             completion_tokens=0,
             total_tokens=0,
@@ -347,9 +382,6 @@ async def generate_weekly_tasks(
         )
         db.add(log)
         logs.append(log)
-
-    if not logs:
-        raise ValueError("LLM weekly plan contained no valid tasks")
 
     per_tok = usage["total_tokens"] // max(len(logs), 1)
     per_cost = usage["cost"] / max(len(logs), 1)
