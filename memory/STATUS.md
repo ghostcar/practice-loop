@@ -1,3 +1,6 @@
+> **⚠️ FROZEN v1 (M5, Сессия 120)** — файл заморожен, больше не дописывается.
+> Активная память — Memory v2: `docs/adr/`, `docs/wiki/`, `docs/questions/`, `docs/state/` (см. `memory/README.md`).
+
 # Текущий статус
 
 Обновляется **в конце каждой сессии**. Последнее обновление: 2026-08-14 (сессия 119b — Шаг 2 LLM/media границы: P1-2 weekly planner, P1-3 media finalize, P1-7 version; 755/755 ✅).

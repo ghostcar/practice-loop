@@ -207,15 +207,19 @@ Telegram Bot v2 (10), Auto-Analysis Scheduler (11).
 - **НИКОГДА** не реализовывать обход safety-фильтров провайдеров и кодирование контента
   для сокрытия от LLM.
 - При изменении экспортируемых символов — обновлять все использования.
-- **Память проекта (обязательно, без напоминаний):** в начале каждой сессии прочитай
-  `REMEDIATION_SPEC.md`, `memory/README.md`, `memory/STATUS.md`, `memory/DECISIONS.md`,
-  `memory/OPEN_QUESTIONS.md` (плюс `memory/CONTEXT.md` при работе с новой областью). **В конце каждой сессии ОБЯЗАТЕЛЬНО обнови все файлы памяти БЕЗ
-  дополнительных запросов и напоминаний от пользователя** — это твоя прямая обязанность, а не опция.
-  Обновляй: `memory/SESSIONS.md` (запись о сессии), `memory/STATUS.md`, `memory/CHANGELOG.md`,
-  `memory/DECISIONS.md` (новые ADR). Если изменений в DECISIONS/OPEN_QUESTIONS нет — пропусти их.
-  Решения фиксируй в `DECISIONS.md` сразу, в момент принятия. Не дублируй содержимое этого файла
-  и `tracker-spec.md` в memory-файлах — ссылайся на них. **Делай коммит memory-файлов сразу после
-  обновления.**
+- **Память проекта (обязательно, без напоминаний) — Memory v2 (ADR-068, M5 с Сессии 120):**
+  в начале каждой сессии прочитай L0: `REMEDIATION_SPEC.md`, `AGENTS.md`, `knowledge.md`; по scope —
+  `docs/adr/`, `docs/wiki/`, `docs/questions/`, `docs/state/NOW.md`; как архив —
+  `memory/DECISIONS.md` (активный legacy-реестр ADR) и замороженные `memory/README.md`,
+  `memory/OPEN_QUESTIONS.md` (v1 FROZEN — не дописывать). **В конце каждой сессии ОБЯЗАТЕЛЬНО
+  обнови активную память БЕЗ дополнительных запросов** — это твоя прямая обязанность, а не опция:
+  решения — в `memory/DECISIONS.md` сразу (компиляция `memoryctl adr compile` в `docs/adr/`),
+  новые знания — в `docs/wiki/`, вопросы — в `docs/questions/`, факты — `memoryctl facts`,
+  рабочий preflight — `memoryctl bootstrap`/`sentinel`/`impact`, запуск агента — `bin/practice-agent`,
+  workflow — `.agents/skills/project-memory/SKILL.md`. История сессий — Git history
+  (legacy `memory/SESSIONS.md` / `STATUS.md` / `CHANGELOG.md` **FROZEN, не дописываются**).
+  Не дублируй содержимое `AGENTS.md` и `tracker-spec.md` в memory-файлах — ссылайся на них.
+  **Делай коммит memory-файлов сразу после обновления.**
 
 ## 8. Чек-лист настройки VPS (Docker)
 

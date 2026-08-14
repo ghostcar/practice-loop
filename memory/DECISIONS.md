@@ -75,6 +75,7 @@
 | ADR-068 | 2026-08-13 | Memory v2 | Многоуровневая память L0–L4 (контракт, wiki/ADR, generated facts, hybrid code retrieval, local-only эпизоды); milestones M0–M6; M0+M1 реализованы | принято |
 | ADR-069 | 2026-08-13 | M3 pilot: Qdrant local + embedding через Omniroute, только vectors | Qdrant local (shadow) — единственный пилот; embedding через Omniroute (text-embedding-3-small, 1536-dim, remote /v1/embeddings) — аmended 2026-08-14 (Сессия 118): BGE-M3 заменена, т.к. fastembed её не поддерживает + VPS без локальных моделей; QMD и code graph отложены; зависимости только optional dev-group (qdrant-client), рантайм не трогается | принято |
 | ADR-070 | 2026-08-14 | Границы LLM для личного контура (расширение ADR-030/034) | Личный контур — первая очередь: LLM подключается полностью через Omniroute (первый источник, подбор моделей, harness, инструменты). 1) **Гибрид сохраняется**: LLM выбирает из каталога + opt-in, но режим названий (полные / обезличенные) регулируется per-provider через `llm_mode` (full/abstract, уже есть). 2) **Параметрическая генерация через промпт-шаблоны**: пользователь осознанно создаёт шаблон промпта с параметрами, сохраняет как переиспользуемый шаблон; LLM генерирует по шаблону. 3) **LLM-верификация медиа как истина в последней инстанции**: для соло-игр подтверждение кодов и закрытия пояса верности через LLM-анализ фото (развитие Q13; OCR не требуется — LLM понимает изображения). 4) **Приватная база знаний LLM** для обогащения промптов (на базе существующего векторного индекса + Omniroute-эмбеддингов). 5) **Библиотека типовых промптов** по функциональным блокам. Комплаенс-красная линия остаётся: никакого обхода safety-фильтров провайдеров и маскирования контента (ToS + риск блокировки ключа Omniroute/upstream). Статус: решено владельцем 2026-08-14 (Сессия 119), реализация — этапами в STAGE_PLAN | принято |
+| ADR-071 | 2026-08-14 | M5: freeze legacy memory v1 (Memory v2 milestone) | Legacy `memory/` (кроме `DECISIONS.md`) **заморожен** (frozen headers): `SESSIONS.md`, `STATUS.md`, `CHANGELOG.md`, `OPEN_QUESTIONS.md`, `CONTEXT.md` больше не дописываются — архив; история сессий — Git. Активная память — Memory v2 (ADR-068): решения `DECISIONS.md` (единственный активный legacy, компилируется в `docs/adr/`), знания `docs/wiki/`, вопросы `docs/questions/`, факты `docs/state/`. `memoryctl lint` + `facts --check` — **required** в CI (был informational). В benchmark добавлена метрика **impact-recall** (ground truth по символам → полнота нахождения всех затронутых файлов/тестов/миграций; задел под graph-пилот). AGENTS.md/README.md/DOCUMENTATION_MAP обновлены. 758/758 ✅ | принято |
 
 
 ### ADR-061 — Social S4+S6 (Verification + Tracker Adapter)
@@ -162,3 +163,20 @@
 **Комплаенс-красная линия (не «консерватизм», а ToS + блокировка ключа):** генерация откровенного контента напрямую LLM или обход/маскирование фильтров провайдеров запрещены. Omniroute-модели (OpenRouter и др.) режут такой контент на upstream — обход = потеря ключа. Это ограничение не снимается.
 **Rationale:** владелец считает текущие ограничения слишком консервативными для личного контура и готов расширить границы; приватность/локальность сохраняется (данные не покидают хост-прокси, кроме upstream-маршрутизации Omniroute).
 **Status:** ✅ решено владельцем 2026-08-14 (Сессия 119); реализация — отдельными этапами (см. STAGE_PLAN, шаги 6–7).
+
+### ADR-071 — M5: freeze legacy memory v1 (Memory v2 milestone)
+**Date:** 2026-08-14
+**Decision:** Legacy-память `memory/` (кроме `DECISIONS.md`) заморожена: `SESSIONS.md`, `STATUS.md`,
+`CHANGELOG.md`, `OPEN_QUESTIONS.md`, `CONTEXT.md` получают frozen headers и больше не дописываются
+(архив; история сессий — Git history). Активная память — Memory v2 (ADR-068): решения — в
+`DECISIONS.md` (единственный активный legacy-реестр, компилируется в `docs/adr/`), новые знания —
+`docs/wiki/`, открытые вопросы — `docs/questions/`, generated facts — `docs/state/` (FACTS.json + NOW.md).
+Рабочий preflight — `memoryctl bootstrap`/`sentinel`/`impact`, launcher — `bin/practice-agent`.
+CI: `memory-lint` job стал **required** (убраны `continue-on-error` и `|| echo` fallback для facts).
+В `benchmark` добавлена метрика **impact-recall**: для задач с `impact_symbols` ground truth строится
+механически (все scan-файлы с символом — consumers/tests/migrations), recall считается против retrieved
+pack. Это метрика, с которой будущий code-graph пилот будет сравниваться (RFC §7/§12).
+**Rationale:** период наблюдения Memory v2 (114–118, 5 сессий) пройден; параллельное ведение четырёх
+копий одного события (SESSIONS/STATUS/CHANGELOG/NOW) дорого и дублирует факты; freeze снижает
+startup-чтение до целевого ≤10 KiB.
+**Status:** ✅ реализовано в Сессии 120 (758/758 ✅, lint 0/0, facts fresh).

@@ -44,11 +44,14 @@
 
 ### Память
 
-- `memory/CONTEXT.md`, `memory/STATUS.md`, `memory/DECISIONS.md`, `memory/OPEN_QUESTIONS.md`,
-  `memory/SESSIONS.md`, `memory/CHANGELOG.md` — legacy v1 (frozen не ранее M5);
+- `memory/DECISIONS.md` — legacy v1 **ACTIVE** (компилируется в `docs/adr/`);
+- `memory/CONTEXT.md`, `memory/STATUS.md`, `memory/OPEN_QUESTIONS.md`, `memory/SESSIONS.md`,
+  `memory/CHANGELOG.md` — legacy v1 **FROZEN** (M5, Сессия 120) — архив, не дописываются;
 - `docs/memory-rfc/` — RFC Memory v2 (архитектура, schema, план M0–M6);
+- `docs/adr/` — компилированные ADR (70, bidirectional с DECISIONS.md);
+- `docs/wiki/`, `docs/questions/` — canonical знания и открытые вопросы (v2, L1);
 - `docs/state/FACTS.json` + `docs/state/NOW.md` — generated facts текущего HEAD (v2, L2);
-- `tools/memoryctl` — schema/lint/facts/inventory (v2, M1).
+- `tools/memoryctl` — schema/lint/facts/adr/bootstrap/benchmark/sentinel/impact (v2).
 
 ### Исторические и входные материалы
 

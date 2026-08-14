@@ -83,8 +83,13 @@ def test_run_benchmark_structure_and_determinism():
         "total_extra_reads",
         "forbidden_hits",
         "tasks_full_code_recall",
+        "mean_impact_recall",
+        "tasks_with_impact",
     ):
         assert key in agg, key
+    # at least 3 of the 12 tasks carry impact_symbols (metric must be exercised)
+    assert agg["tasks_with_impact"] >= 3
+    assert agg["mean_impact_recall"] is not None and 0.0 <= agg["mean_impact_recall"] <= 1.0
     # every task has the metric fields
     for t in r1["tasks"]:
         assert 0.0 <= t["recall_at_5"] <= 1.0
@@ -92,6 +97,48 @@ def test_run_benchmark_structure_and_determinism():
         assert t["pack_size_bytes"] > 0
     # deterministic given fixed now + same tree
     assert json.dumps(r1, sort_keys=True) == json.dumps(r2, sort_keys=True)
+
+
+def test_impact_recall_ground_truth(tmp_path):
+    root = _tmp_repo(tmp_path)
+    ground = b.build_impact_ground_truth(root, ["list_sessions_by_date_range"])
+    # definition site + the test consumer
+    assert ground == {"app/services.py", "tests/test_services.py"}
+    # symbol absent → empty set
+    assert b.build_impact_ground_truth(root, ["never_used_symbol_xyz"]) == set()
+
+
+def test_evaluate_task_reports_impact_recall(tmp_path):
+    root = _tmp_repo(tmp_path)
+    task = {
+        "id": 1,
+        "query": "list_sessions_by_date_range consumers",
+        "expected_code": ["app/services.py"],
+        "expected_docs": [],
+        "forbidden": [],
+        "impact_symbols": ["list_sessions_by_date_range"],
+    }
+    res = b.evaluate_task(root, task, now="2026-08-13T00:00:00Z")
+    # ground truth = {app/services.py, tests/test_services.py}; the lexical
+    # search retrieves both (definition + import), so full impact recall.
+    assert res["impact_symbols"] == ["list_sessions_by_date_range"]
+    assert res["impact_ground_truth_count"] == 2
+    assert res["impact_recall"] == 1.0
+
+
+def test_evaluate_task_impact_recall_zero_when_missing(tmp_path):
+    root = _tmp_repo(tmp_path)
+    task = {
+        "id": 2,
+        "query": "completely unrelated query words",
+        "expected_code": [],
+        "expected_docs": [],
+        "forbidden": [],
+        "impact_symbols": ["list_sessions_by_date_range"],
+    }
+    res = b.evaluate_task(root, task, now="2026-08-13T00:00:00Z")
+    assert res["impact_ground_truth_count"] == 2
+    assert res["impact_recall"] == 0.0
 
 
 def test_score_ranked():

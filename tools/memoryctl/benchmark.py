@@ -79,6 +79,7 @@ BENCHMARK_TASKS: list[dict] = [
             "The 3 literal consumers (repositories.py, locktimer_ui.py, test_locktimer_services.py) "
             "were all retrieved."
         ),
+        "impact_symbols": ["list_sessions_by_date_range"],
     },
     {
         "id": 3,
@@ -106,6 +107,7 @@ BENCHMARK_TASKS: list[dict] = [
         ],
         "expected_docs": ["PRODUCT_DECISIONS.md", "DOCUMENTATION_MAP.md"],
         "forbidden": [],
+        "impact_symbols": ["safety_stop"],
     },
     {
         "id": 5,
@@ -177,6 +179,7 @@ BENCHMARK_TASKS: list[dict] = [
         ],
         "expected_docs": [],
         "forbidden": [],
+        "impact_symbols": ["local_day_bounds"],
     },
     {
         "id": 12,
@@ -203,6 +206,28 @@ def _pattern_hit(pattern: str, paths: set[str]) -> bool:
 
 def _matched(patterns: list[str], paths: set[str]) -> list[str]:
     return [pat for pat in patterns if _pattern_hit(pat, paths)]
+
+
+def build_impact_ground_truth(root: Path, symbols: list[str]) -> set[str]:
+    """All scan-scope files (app/tests/alembic) containing any of ``symbols``.
+
+    This is the *mechanically derived* impact set for a symbol (consumers +
+    tests + migrations) — the ground truth an impact-aware retriever (e.g. a
+    future code-graph pilot) must find. Independent of the pack contents.
+    """
+    from .bootstrap import _iter_scan_files
+
+    if not symbols:
+        return set()
+    ground: set[str] = set()
+    for p, rel in _iter_scan_files(root):
+        try:
+            text = p.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if any(s in text for s in symbols):
+            ground.add(rel)
+    return ground
 
 
 def evaluate_task(root: Path, task: dict, now: str | None = None) -> dict:
@@ -236,6 +261,21 @@ def evaluate_task(root: Path, task: dict, now: str | None = None) -> dict:
     forbidden_hits = sorted(p for p in retrieved if any(fnmatch(p, pat) for pat in forbidden))
     missing = [pat for pat in expected_code + expected_docs if not _pattern_hit(pat, retrieved)]
 
+    # Impact recall (STAGE_PLAN Шаг 3): for tasks with impact_symbols, the
+    # mechanically derived impact set (all files containing the symbol) is the
+    # ground truth — consumers + tests + migrations an impact-aware retriever
+    # must find. This is the metric a future code-graph pilot gets compared
+    # against (RFC §7/§12 incremental evidence).
+    impact_symbols = task.get("impact_symbols", [])
+    if impact_symbols:
+        ground = build_impact_ground_truth(root, impact_symbols)
+        impact_found = ground & retrieved
+        impact_recall = len(impact_found) / len(ground) if ground else 1.0
+    else:
+        ground = set()
+        impact_found = set()
+        impact_recall = None
+
     return {
         "id": task["id"],
         "query": query,
@@ -252,6 +292,9 @@ def evaluate_task(root: Path, task: dict, now: str | None = None) -> dict:
         "extra_reads": extra_reads,
         "forbidden_hits": forbidden_hits,
         "missing": missing,
+        "impact_symbols": impact_symbols,
+        "impact_ground_truth_count": len(ground),
+        "impact_recall": impact_recall,
     }
 
 
@@ -287,6 +330,7 @@ def run_benchmark(root: Path, now: str | None = None, *, include_vectors: bool =
     recall_all = [r["recall_all"] for r in results]
     mrr = [r["mrr"] for r in results]
     pack_sizes = [r["pack_size_bytes"] for r in results]
+    impact_results = [r for r in results if r.get("impact_recall") is not None]
 
     agg = {
         "mean_recall_at_5": round(_mean(recall_at_5), 4),
@@ -299,6 +343,8 @@ def run_benchmark(root: Path, now: str | None = None, *, include_vectors: bool =
         "total_extra_reads": sum(r["extra_reads_count"] for r in results),
         "forbidden_hits": sum(len(r["forbidden_hits"]) for r in results),
         "tasks_full_code_recall": sum(1 for r in results if r["recall_code"] >= 1.0),
+        "mean_impact_recall": round(_mean([r["impact_recall"] for r in impact_results]), 4) if impact_results else None,
+        "tasks_with_impact": len(impact_results),
     }
 
     meets = (
@@ -407,6 +453,8 @@ def render_summary(report: dict) -> str:
         f"extra reads (total)  : {agg['total_extra_reads']}",
         f"forbidden hits       : {agg['forbidden_hits']}",
         f"full code recall in {agg['tasks_full_code_recall']}/{report['task_count']} tasks",
+        f"impact recall ({agg['tasks_with_impact']} impact tasks): "
+        f"{agg['mean_impact_recall'] if agg['mean_impact_recall'] is not None else 'n/a'}",
         f"meets admission thresholds: {report['meets_admission_thresholds']}",
     ]
     vec = report.get("vectors")
