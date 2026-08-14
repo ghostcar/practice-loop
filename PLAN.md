@@ -4,6 +4,8 @@
 > Новые шаги добавляются в конец списка. Читаемый для владельца, кратко, без тех. деталей.
 > Технические детали — в `docs/memory-rfc/STAGE_PLAN.md`; продукты — в `ROADMAP.md` и `PRODUCT.md`.
 
+> **Правило проверок (сессия 131):** полный `pytest tests/` (~9 мин) — только перед деплоем/релизом. При правке фронта/шаблонов — таргетный набор: `test_shell_v2 test_design_v2_9b test_design_v2_9c test_icon_pack test_audit_s57 test_phase3_task_ui test_locktimer_device test_media_verification test_dnd_diets_uploads` (~2 мин, 127 тестов). При правке конкретного модуля — его тест-файлы.
+
 ---
 
 ## Актуальный план (Сессия 131)
