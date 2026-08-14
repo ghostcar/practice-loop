@@ -76,6 +76,7 @@
 | ADR-069 | 2026-08-13 | M3 pilot: Qdrant local + embedding через Omniroute, только vectors | Qdrant local (shadow) — единственный пилот; embedding через Omniroute (text-embedding-3-small, 1536-dim, remote /v1/embeddings) — аmended 2026-08-14 (Сессия 118): BGE-M3 заменена, т.к. fastembed её не поддерживает + VPS без локальных моделей; QMD и code graph отложены; зависимости только optional dev-group (qdrant-client), рантайм не трогается | принято |
 | ADR-070 | 2026-08-14 | Границы LLM для личного контура (расширение ADR-030/034) | Личный контур — первая очередь: LLM подключается полностью через Omniroute (первый источник, подбор моделей, harness, инструменты). 1) **Гибрид сохраняется**: LLM выбирает из каталога + opt-in, но режим названий (полные / обезличенные) регулируется per-provider через `llm_mode` (full/abstract, уже есть). 2) **Параметрическая генерация через промпт-шаблоны**: пользователь осознанно создаёт шаблон промпта с параметрами, сохраняет как переиспользуемый шаблон; LLM генерирует по шаблону. 3) **LLM-верификация медиа как истина в последней инстанции**: для соло-игр подтверждение кодов и закрытия пояса верности через LLM-анализ фото (развитие Q13; OCR не требуется — LLM понимает изображения). 4) **Приватная база знаний LLM** для обогащения промптов (на базе существующего векторного индекса + Omniroute-эмбеддингов). 5) **Библиотека типовых промптов** по функциональным блокам. Комплаенс-красная линия остаётся: никакого обхода safety-фильтров провайдеров и маскирования контента (ToS + риск блокировки ключа Omniroute/upstream). Статус: решено владельцем 2026-08-14 (Сессия 119), реализация — этапами в STAGE_PLAN | принято |
 | ADR-071 | 2026-08-14 | M5: freeze legacy memory v1 (Memory v2 milestone) | Legacy `memory/` (кроме `DECISIONS.md`) **заморожен** (frozen headers): `SESSIONS.md`, `STATUS.md`, `CHANGELOG.md`, `OPEN_QUESTIONS.md`, `CONTEXT.md` больше не дописываются — архив; история сессий — Git. Активная память — Memory v2 (ADR-068): решения `DECISIONS.md` (единственный активный legacy, компилируется в `docs/adr/`), знания `docs/wiki/`, вопросы `docs/questions/`, факты `docs/state/`. `memoryctl lint` + `facts --check` — **required** в CI (был informational). В benchmark добавлена метрика **impact-recall** (ground truth по символам → полнота нахождения всех затронутых файлов/тестов/миграций; задел под graph-пилот). AGENTS.md/README.md/DOCUMENTATION_MAP обновлены. 758/758 ✅ | принято |
+| ADR-072 | 2026-08-14 | Q14: penalty честно в HTTP + Omniroute в портал (Шаг 4) | 1) **Штрафы применяются по политикам правил**: `skip_task` применяет `rule.penalty_policy` (points/add_time), `close_slot` при позднем закрытии (now > close_due_at) применяет `rule.late_close_policy`; идемпотентно по occurrence (`skip:{id}` / `late_close:{id}`); неизвестный тип политики логируется и пропускается. API skip/close возвращают JSON (ADR-065) с `penalty`-блоком (`serialize_penalty_event`); UI показывает реальный результат («Штраф применён: -5 points») вместо «Penalty may apply»; формы переведены на fetch + i18n-ключи (6 новых EN/RU). 2) **Omniroute в портале**: `Settings.omniroute_host/api_key/embedding_model`; seed-пресет Omniroute строится из settings (host → /v1, key шифруется), активен по умолчанию; .env.example обновлён. 767/767 ✅ | принято |
 
 
 ### ADR-061 — Social S4+S6 (Verification + Tracker Adapter)
@@ -180,3 +181,23 @@ pack. Это метрика, с которой будущий code-graph пил�
 копий одного события (SESSIONS/STATUS/CHANGELOG/NOW) дорого и дублирует факты; freeze снижает
 startup-чтение до целевого ≤10 KiB.
 **Status:** ✅ реализовано в Сессии 120 (758/758 ✅, lint 0/0, facts fresh).
+
+### ADR-072 — Q14: penalty честно в HTTP + Omniroute в портал (Шаг 4)
+**Date:** 2026-08-14
+**Decision:**
+1. **Штрафы LockTimer применяются фактически и возвращаются в HTTP (Q14).** Раньше UI писал
+   «Skip this task? Penalty may apply.», но `apply_penalty` не вызывался из `skip_task`/`close_slot` —
+   штраф не применялся. Теперь: `skip_task` применяет `rule.penalty_policy` (тип points/add_time,
+   value N), `close_slot` при позднем закрытии (`now > close_due_at`) применяет `rule.late_close_policy`;
+   идемпотентность — ключ `skip:{occurrence_id}` / `late_close:{occurrence_id}`; неизвестный тип
+   политики логируется и пропускается (без краша и без неверного штрафа). API `POST .../skip` и
+   `.../close` возвращают JSON (ADR-065) с блоком `penalty` (serialize_penalty_event); UI-кнопки
+   переведены на fetch и показывают реальный результат («Штраф применён: -5 points») через
+   data-атрибуты + 6 новых i18n-ключей EN/RU.
+2. **Omniroute внедрён в портал (ADR-070).** `Settings` получил `omniroute_host`,
+   `omniroute_api_key`, `omniroute_embedding_model` (те же переменные, что использует memoryctl).
+   Seed-пресет Omniroute строится из settings (host нормализуется к `/v1`, API-ключ шифруется
+   `encrypt_api_key`), активен по умолчанию. `.env.example` обновлён (портал + vector pilot).
+**Rationale:** UI должен быть честным (Q14); переменные Omniroute лежали в .env без потребителя —
+теперь пресет по умолчанию реально работает из .env, без ручного ввода.
+**Status:** ✅ реализовано в Сессии 120 (767/767 ✅, ruff ✅).

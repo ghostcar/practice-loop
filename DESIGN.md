@@ -471,12 +471,21 @@ Emoji-иллюстрации запрещены. Допустима проста
 
 ## 10. Иконки и графика
 
-- единый набор: Lucide или эквивалентный open-source outline set, поставляемый локально;
-- базовый размер `20 px`, компактный `16 px`, empty state `32 px`;
-- stroke `1.75–2 px`;
+- **единый набор — собственный PracticeLoop icon pack** (`design/icons/`, 127 иконок + sprite +
+  favicon; генератор `tools/generate_icon_pack.py`). Внешний icon package и CDN не добавлять.
+  Интеграция — по `design/icons/INTEGRATION_AGENT.md`: runtime `app/static/icons/sprite.svg`,
+  макрос `components/icon.html`, `aria`-правила, карты навигации/действий;
+- **при работе с фронтом иконка берётся только из этого пакета**; если нужной иконки нет —
+  сообщить владельцу/в plan, не подставлять произвольный SVG или emoji;
+- базовый размер `20 px`, компактный `16 px`, empty state `32 px` (Tailwind: `w-5`/`w-4`/`w-8`);
+- stroke `1.75 px`, round caps/joins, `currentColor`;
 - декоративная иконка получает `aria-hidden="true"`;
 - icon-only button имеет `aria-label` и tooltip;
 - нельзя смешивать emoji, filled icons и outline icons;
+- пакет покрывает весь личный контур (текущий v0.8 + будущие модули из `examples/New_doc`: Media
+  Vault, Care, Medication/Health/Cycle, Insights, Chastity device, Social verification, D/s
+  capability grants) — иконки будущих модулей зарезервированы, их наличие не означает реализацию
+  модуля (см. §5.1 INTEGRATION_AGENT.md);
 - логотип не должен определять цветовую систему интерфейса; до отдельного брендинга используется
   wordmark `PracticeLoop` без градиента.
 

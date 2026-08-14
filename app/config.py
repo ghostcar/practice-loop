@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     # Comma-separated email list; empty = no restriction.
     locktimer_owner_allowlist: str = ""
 
+    # Omniroute — local LLM proxy (BYOK default provider, ADR-002/ADR-070).
+    # Same vars are used by the memory vector pilot (tools/memoryctl, ADR-069).
+    omniroute_host: str | None = None
+    omniroute_api_key: str | None = None
+    omniroute_embedding_model: str = "openrouter/openai/text-embedding-3-small"
+
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = _PLACEHOLDER_TG_SECRET

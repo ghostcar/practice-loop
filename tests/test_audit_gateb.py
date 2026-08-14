@@ -252,6 +252,57 @@ class TestMediaFinalizeOwnerTarget:
 
 
 # ---------------------------------------------------------------------------
+# Шаг 4 — Omniroute preset wired to settings (Q14 part 2)
+# ---------------------------------------------------------------------------
+
+
+class TestOmniroutePreset:
+    async def test_preset_uses_settings_host_and_key(self, monkeypatch) -> None:
+        """The seeded Omniroute preset must read host/key from settings (ADR-070)."""
+        from app.config import settings as _settings
+
+        monkeypatch.setattr(_settings, "omniroute_host", "https://llm.example.com")
+        monkeypatch.setattr(_settings, "omniroute_api_key", "secret-key-123")
+
+        from app.seed import get_seed_llm_presets
+
+        presets = get_seed_llm_presets()
+        omniroute = next(p for p in presets if p["provider_name"] == "Omniroute")
+        assert omniroute["api_base_url"] == "https://llm.example.com/v1"
+        assert omniroute["api_key"] == "secret-key-123"
+        assert omniroute["is_active"] is True
+        assert omniroute["model_name"] == "auto"
+
+    async def test_preset_normalizes_host_without_v1(self, monkeypatch) -> None:
+        from app.config import settings as _settings
+
+        monkeypatch.setattr(_settings, "omniroute_host", "https://llm.example.com/v1")
+        monkeypatch.setattr(_settings, "omniroute_api_key", "k")
+
+        from app.seed import get_seed_llm_presets
+
+        presets = get_seed_llm_presets()
+        omniroute = next(p for p in presets if p["provider_name"] == "Omniroute")
+        # No double /v1/v1.
+        assert omniroute["api_base_url"] == "https://llm.example.com/v1"
+
+    async def test_seed_encrypts_omniroute_key(self, db_session: AsyncSession, test_user: User, monkeypatch) -> None:
+        from app.config import settings as _settings
+
+        monkeypatch.setattr(_settings, "omniroute_host", "https://llm.example.com")
+        monkeypatch.setattr(_settings, "omniroute_api_key", "secret-key-123")
+
+        from app.encryption import mask_api_key
+        from app.seed import seed_llm_presets
+
+        created = await seed_llm_presets(db_session, test_user.id)
+        omni = next(c for c in created if c.provider_name == "Omniroute")
+        # Key is encrypted (masked output is a mask, not the plaintext).
+        assert omni.api_key_encrypted is not None
+        assert "secret-key-123" not in (mask_api_key(omni.api_key_encrypted) or "")
+
+
+# ---------------------------------------------------------------------------
 # P1-7 — single version source
 # ---------------------------------------------------------------------------
 

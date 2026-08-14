@@ -398,14 +398,29 @@ SEED_ENTITIES: list[dict] = [
 # Seed LLM Presets (Omniroute, Groq, OpenRouter)
 # ---------------------------------------------------------------------------
 
-SEED_LLM_PRESETS: list[dict] = [
-    {
+
+def _omniroute_preset() -> dict:
+    """Build the Omniroute preset from settings (ADR-070, Session 120).
+
+    Host/key come from .env (OMNIROUTE_HOST / OMNIROUTE_API_KEY) — the same
+    vars the memory vector pilot uses. Falls back to the old local-gateway URL
+    with no key for legacy dev setups.
+    """
+    from app.config import settings
+
+    host = (settings.omniroute_host or "http://host.docker.internal:20128").rstrip("/")
+    if not host.endswith("/v1"):
+        host = f"{host}/v1"
+    return {
         "provider_name": "Omniroute",
-        "api_base_url": "http://host.docker.internal:20128/v1",
-        "api_key": "",  # Omniroute doesn't need a key
+        "api_base_url": host,
+        "api_key": settings.omniroute_api_key or "",
         "model_name": "auto",
         "is_active": True,
-    },
+    }
+
+
+SEED_LLM_PRESETS: list[dict] = [
     {
         "provider_name": "Groq",
         "api_base_url": "https://api.groq.com/openai/v1",
@@ -421,6 +436,11 @@ SEED_LLM_PRESETS: list[dict] = [
         "is_active": False,
     },
 ]
+
+
+def get_seed_llm_presets() -> list[dict]:
+    """Seed presets with the Omniroute preset injected from settings first."""
+    return [_omniroute_preset(), *SEED_LLM_PRESETS]
 
 
 # ---------------------------------------------------------------------------
@@ -464,7 +484,7 @@ async def seed_llm_presets(db: AsyncSession, user_id: uuid.UUID) -> list[LLMProv
         return []  # Already seeded
 
     configs = []
-    for data in SEED_LLM_PRESETS:
+    for data in get_seed_llm_presets():
         encrypted = encrypt_api_key(data["api_key"]) if data["api_key"] else None
         config = LLMProviderConfig(
             user_id=user_id,

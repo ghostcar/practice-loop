@@ -758,4 +758,12 @@ EN = {
     "dashboard_plans_today": "plans today",
     # Rule reordering (drag&drop)
     "locktimer_drag_hint": "drag to reorder",
+    # Q14 — honest action results (JS)
+    "locktimer_action_locked": "Locked.",
+    "locktimer_action_skipped": "Skipped.",
+    "locktimer_action_failed": "Action failed.",
+    "locktimer_action_request_failed": "Request failed.",
+    "locktimer_penalty_applied": "Penalty applied: {detail}.",
+    "locktimer_penalty_add_time": "+{value}s added",
+    "locktimer_penalty_points": "-{value} points",
 }

@@ -11,6 +11,7 @@ symbol so all historical import paths keep working.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -58,6 +59,9 @@ from app.models.locktimer import (
 )
 from app.timeutils import as_utc
 
+logger = logging.getLogger(__name__)
+
+
 __all__ = [
     # drafts
     "_next_rule_sort_order",
@@ -98,6 +102,8 @@ __all__ = [
     "complete_task",
     "skip_task",
     "apply_penalty",
+    "get_penalty_for_source",
+    "serialize_penalty_event",
     # re-exported models + repository queries (historical import paths)
     "LockJobReceipt",
     "LockOutboxEvent",
@@ -263,6 +269,22 @@ async def close_slot(
         to_version=occ.row_version,
         payload={"closed_at": now.isoformat()},
     )
+
+    # Q14: apply the rule's late-close penalty policy only when the slot is
+    # closed after its due time. Idempotent per occurrence; no policy or an
+    # on-time close → no penalty.
+    if rule and rule.late_close_policy:
+        close_due = as_utc(occ.close_due_at) if occ.close_due_at else None
+        if close_due is not None and now > close_due:
+            await _apply_rule_penalty(
+                db,
+                session_id=occ.session_id,
+                policy=rule.late_close_policy,
+                source_kind="slot_occurrence",
+                source_id=occ.id,
+                idempotency_key=f"late_close:{occ.id}",
+                now=now,
+            )
 
     await db.flush()
     return occ
@@ -455,6 +477,20 @@ async def skip_task(
         to_version=occ.row_version,
     )
 
+    # Q14: apply the rule's penalty policy on skip. Idempotent per occurrence;
+    # no policy → no penalty.
+    rule = await db.get(LockTaskRule, occurrence.rule_id)
+    if rule and rule.penalty_policy:
+        await _apply_rule_penalty(
+            db,
+            session_id=occ.session_id,
+            policy=rule.penalty_policy,
+            source_kind="task_occurrence",
+            source_id=occ.id,
+            idempotency_key=f"skip:{occ.id}",
+            now=now,
+        )
+
     await db.flush()
     return occ
 
@@ -462,6 +498,76 @@ async def skip_task(
 # ============================================================================
 # C5 — Penalty service
 # ============================================================================
+
+
+async def _apply_rule_penalty(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    policy: dict,
+    source_kind: str,
+    source_id: uuid.UUID,
+    idempotency_key: str,
+    now: datetime | None = None,
+) -> LockPenaltyEvent | None:
+    """Apply a rule penalty policy (Q14): {"type": add_time|points, "value": N}.
+
+    Unknown/malformed policy types are logged and skipped (no crash, no silent
+    wrong penalty). Idempotent per occurrence via the provided key.
+    """
+    ptype = str(policy.get("type") or "").strip()
+    value = policy.get("value")
+    if ptype not in e.PENALTY_TYPES:
+        logger.warning("Ignoring unknown penalty policy type %r on %s %s", ptype, source_kind, source_id)
+        return None
+    try:
+        requested = int(value) if value is not None else None
+    except (TypeError, ValueError):
+        logger.warning("Ignoring malformed penalty value %r on %s %s", value, source_kind, source_id)
+        return None
+    return await apply_penalty(
+        db,
+        session_id=session_id,
+        penalty_type=ptype,
+        source_kind=source_kind,
+        source_id=source_id,
+        requested_value=requested,
+        reason_code="normal_breach",
+        idempotency_key=idempotency_key,
+        now=now,
+    )
+
+
+async def get_penalty_for_source(
+    db: AsyncSession,
+    *,
+    source_kind: str,
+    source_id: uuid.UUID,
+) -> LockPenaltyEvent | None:
+    """Return the most recent penalty event for a source (Q14 — HTTP result)."""
+    result = await db.execute(
+        select(LockPenaltyEvent)
+        .where(
+            LockPenaltyEvent.source_kind == source_kind,
+            LockPenaltyEvent.source_id == source_id,
+        )
+        .order_by(LockPenaltyEvent.created_at.desc(), LockPenaltyEvent.id.desc())
+        .limit(1)
+    )
+    return result.scalars().first()
+
+
+def serialize_penalty_event(event: LockPenaltyEvent | None) -> dict | None:
+    """Serialize a penalty event for JSON responses (Q14)."""
+    if event is None:
+        return None
+    return {
+        "penalty_type": event.penalty_type,
+        "requested_value": event.requested_value,
+        "applied_value": event.applied_value,
+        "state": event.state,
+        "reason_code": event.reason_code,
+    }
 
 
 async def apply_penalty(

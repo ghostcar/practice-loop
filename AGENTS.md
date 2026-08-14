@@ -203,6 +203,13 @@ Telegram Bot v2 (10), Auto-Analysis Scheduler (11).
 - Pydantic v2 для схем. Всегда `async/await` для БД и LLM.
 - Семантический HTML + TailwindCSS; интерактивность только через HTMX.
 - Все строки UI — через локализацию (EN/RU).
+- **Иконки — только из собственного PracticeLoop icon pack** (`design/icons/`, интеграция по
+  `design/icons/INTEGRATION_AGENT.md`): макрос `components/icon.html` + sprite
+  `app/static/icons/sprite.svg`. Emoji как UI-иконки и произвольные inline-SVG запрещены.
+  Если нужной иконки нет в пакете (127 имён в `design/icons/svg/`) — **сообщить об этом**
+  (владельцу/в PLAN.md), не подставлять сторонний SVG/emoji. Иконки будущих модулей
+  (Media Vault, Care, Health, Cycle, Insights, D/s и др.) зарезервированы в пакете — использовать
+  их только при реализации соответствующего модуля по roadmap.
 - Секреты — только в `.env`, не в коде и не в git.
 - **НИКОГДА** не реализовывать обход safety-фильтров провайдеров и кодирование контента
   для сокрытия от LLM.

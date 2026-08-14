@@ -25,7 +25,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
@@ -163,7 +163,21 @@ async def api_close_slot(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{occ.session_id}", status_code=303)
+    # Q14: report the actual penalty result (JSON-first, ADR-065).
+    from app.locktimer.services.execution import get_penalty_for_source, serialize_penalty_event
+
+    penalty = await get_penalty_for_source(
+        db,
+        source_kind="slot_occurrence",
+        source_id=occ.id,
+    )
+    return JSONResponse(
+        {
+            "status": "closed",
+            "session_id": str(occ.session_id),
+            "penalty": serialize_penalty_event(penalty),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +259,21 @@ async def api_skip_task(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{occ.session_id}", status_code=303)
+    # Q14: report the actual penalty result (JSON-first, ADR-065).
+    from app.locktimer.services.execution import get_penalty_for_source, serialize_penalty_event
+
+    penalty = await get_penalty_for_source(
+        db,
+        source_kind="task_occurrence",
+        source_id=occ.id,
+    )
+    return JSONResponse(
+        {
+            "status": "skipped",
+            "session_id": str(occ.session_id),
+            "penalty": serialize_penalty_event(penalty),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

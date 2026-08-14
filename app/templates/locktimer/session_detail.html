@@ -264,11 +264,10 @@
         </form>
         {% elif session.state == 'active' and o.state == 'open' %}
         <div class="flex items-center gap-1 flex-shrink-0">
-          <form action="/api/v2/locktimer/slot-occurrences/{{ o.id }}/close" method="post" class="flex items-center gap-1">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <input type="text" name="tag_number" placeholder="{{ t.locktimer_tag_number or 'Seal #' }}" maxlength="100" class="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
-            <button type="submit" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">Lock</button>
-          </form>
+          <div class="flex items-center gap-1">
+            <input type="text" id="tag-input-{{ o.id }}" placeholder="{{ t.locktimer_tag_number or 'Seal #' }}" maxlength="100" class="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs px-2 py-1">
+            <button type="button" data-lock-action="close" data-occ-id="{{ o.id }}" data-locked-msg="{{ t.locktimer_action_locked or 'Locked.' }}" data-penalty-msg="{{ t.locktimer_penalty_applied or 'Penalty applied: {detail}.' }}" data-failed-msg="{{ t.locktimer_action_failed or 'Action failed.' }}" data-req-failed-msg="{{ t.locktimer_action_request_failed or 'Request failed.' }}" class="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition cursor-pointer">{{ t.locktimer_unlock_label or 'Lock' }}</button>
+          </div>
         </div>
         {% elif o.state == 'closed' %}
         <div class="flex items-center gap-1 flex-shrink-0">
@@ -327,10 +326,7 @@
           </form>
           {% endif %}
           {% if o.state in ('scheduled', 'visible') %}
-          <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/skip" method="post" onsubmit="return confirm('Skip this task? Penalty may apply.')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition cursor-pointer">Skip</button>
-          </form>
+          <button type="button" data-lock-action="skip" data-occ-id="{{ o.id }}" data-locked-msg="{{ t.locktimer_action_skipped or 'Skipped.' }}" data-penalty-msg="{{ t.locktimer_penalty_applied or 'Penalty applied: {detail}.' }}" data-failed-msg="{{ t.locktimer_action_failed or 'Action failed.' }}" data-req-failed-msg="{{ t.locktimer_action_request_failed or 'Request failed.' }}" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition cursor-pointer">{{ t.locktimer_skip or 'Skip' }}</button>
           {% endif %}
         </div>
         {% endif %}
@@ -548,6 +544,71 @@ function verifyTag(occId, expectedTag) {
 
   enableList('slot-rules-list', 'slot');
   enableList('task-rules-list', 'task');
+})();
+
+// Q14 — skip/close via JSON with honest penalty result
+(function() {
+  var csrf = document.querySelector('meta[name="csrf-token"]');
+  var csrfValue = csrf ? csrf.getAttribute('content') : '';
+
+  function showActionResult(text, isError) {
+    var el = document.createElement('div');
+    el.className = 'fixed top-4 right-4 z-50 max-w-sm rounded-xl p-4 shadow-lg text-sm ' +
+      (isError
+        ? 'bg-red-50 dark:bg-red-900/40 border border-red-300 text-red-800 dark:text-red-200'
+        : 'bg-green-50 dark:bg-green-900/40 border border-green-300 text-green-800 dark:text-green-200');
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(function() { el.remove(); }, 6000);
+  }
+
+  function penaltyText(p, penaltyMsg) {
+    if (!p) return '';
+    var detail = p.penalty_type === 'add_time' ? '+ ' + (p.applied_value || 0) + 's added' :
+      p.penalty_type === 'points' ? '-' + (p.applied_value || 0) + ' points' : p.penalty_type;
+    return ' ' + (penaltyMsg || 'Penalty applied: {detail}.').replace('{detail}', detail);
+  }
+
+  document.querySelectorAll('[data-lock-action]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var action = btn.getAttribute('data-lock-action');
+      var occId = btn.getAttribute('data-occ-id');
+      var lockedMsg = btn.getAttribute('data-locked-msg') || (action === 'close' ? 'Locked.' : 'Skipped.');
+      var penaltyMsg = btn.getAttribute('data-penalty-msg') || '';
+      var failedMsg = btn.getAttribute('data-failed-msg') || 'Action failed.';
+      var reqFailedMsg = btn.getAttribute('data-req-failed-msg') || 'Request failed.';
+      var url = action === 'close'
+        ? '/api/v2/locktimer/slot-occurrences/' + occId + '/close'
+        : '/api/v2/locktimer/task-occurrences/' + occId + '/skip';
+      var tagInput = document.getElementById('tag-input-' + occId);
+      var body = new URLSearchParams();
+      body.append('csrf_token', csrfValue);
+      if (action === 'close' && tagInput && tagInput.value) {
+        body.append('tag_number', tagInput.value);
+      }
+      btn.disabled = true;
+      fetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrfValue, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+      })
+      .then(function(r) {
+        return r.json().catch(function() { return null; }).then(function(data) {
+          if (r.ok) {
+            showActionResult(lockedMsg + penaltyText(data && data.penalty, penaltyMsg));
+            setTimeout(function() { location.reload(); }, 700);
+          } else {
+            showActionResult((data && data.detail) || failedMsg, true);
+            btn.disabled = false;
+          }
+        });
+      })
+      .catch(function() {
+        showActionResult(reqFailedMsg, true);
+        btn.disabled = false;
+      });
+    });
+  });
 })();
 </script>
 {% endblock %}

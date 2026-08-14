@@ -709,3 +709,159 @@ class TestDateRangeQueries:
         finally:
             reset_client_tz(token)
         assert session.id in {s.id for s in found_tokyo}
+
+
+# ---------------------------------------------------------------------------
+# Q14 — penalties wired into skip / late close (Session 120)
+# ---------------------------------------------------------------------------
+
+
+class TestQ14PenaltyWiring:
+    async def test_skip_applies_rule_penalty_policy(self, db_session: AsyncSession, test_user: User) -> None:
+        """Skipping a task whose rule has penalty_policy applies the penalty."""
+        session = await create_draft(db_session, owner_id=test_user.id)
+        await add_task_rule(
+            db_session,
+            session_id=session.id,
+            title="Penalised report",
+            schedule_type=e.TASK_SCHED_DAILY,
+            schedule={"time_of_day": "10:00"},
+            due_window_seconds=3600,
+            penalty_policy={"type": e.PENALTY_POINTS, "value": 5},
+        )
+        await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        result = await db_session.execute(select(LockTaskOccurrence).where(LockTaskOccurrence.session_id == session.id))
+        occ = result.scalars().first()
+
+        await skip_task(db_session, occurrence=occ, owner_id=test_user.id)
+
+        from app.locktimer.services.execution import get_penalty_for_source
+
+        penalty = await get_penalty_for_source(
+            db_session,
+            source_kind="task_occurrence",
+            source_id=occ.id,
+        )
+        assert penalty is not None
+        assert penalty.penalty_type == e.PENALTY_POINTS
+        assert penalty.requested_value == 5
+        assert penalty.state == e.PENALTY_APPLIED
+
+    async def test_skip_without_policy_no_penalty(self, db_session: AsyncSession, test_user: User) -> None:
+        session = await create_draft(db_session, owner_id=test_user.id)
+        await add_task_rule(
+            db_session,
+            session_id=session.id,
+            title="No penalty",
+            schedule_type=e.TASK_SCHED_DAILY,
+            schedule={"time_of_day": "10:00"},
+            due_window_seconds=3600,
+        )
+        await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        result = await db_session.execute(select(LockTaskOccurrence).where(LockTaskOccurrence.session_id == session.id))
+        occ = result.scalars().first()
+
+        await skip_task(db_session, occurrence=occ, owner_id=test_user.id)
+
+        from app.locktimer.services.execution import get_penalty_for_source
+
+        assert (await get_penalty_for_source(db_session, source_kind="task_occurrence", source_id=occ.id)) is None
+
+    async def test_skip_penalty_idempotent_per_occurrence(self, db_session: AsyncSession, test_user: User) -> None:
+        session = await create_draft(db_session, owner_id=test_user.id)
+        await add_task_rule(
+            db_session,
+            session_id=session.id,
+            title="Idempotent",
+            schedule_type=e.TASK_SCHED_DAILY,
+            schedule={"time_of_day": "10:00"},
+            due_window_seconds=3600,
+            penalty_policy={"type": e.PENALTY_POINTS, "value": 5},
+        )
+        await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        result = await db_session.execute(select(LockTaskOccurrence).where(LockTaskOccurrence.session_id == session.id))
+        occ = result.scalars().first()
+
+        await skip_task(db_session, occurrence=occ, owner_id=test_user.id)
+        with pytest.raises(ValueError):
+            await skip_task(db_session, occurrence=occ, owner_id=test_user.id)
+
+        from app.locktimer.services.execution import get_penalty_for_source
+
+        penalty = await get_penalty_for_source(db_session, source_kind="task_occurrence", source_id=occ.id)
+        assert penalty is not None  # exactly one event (idempotency key skip:{id})
+
+    async def test_late_close_applies_late_close_policy(self, db_session: AsyncSession, test_user: User) -> None:
+        """Closing a slot after close_due_at applies the rule's late_close_policy."""
+        session = await create_draft(db_session, owner_id=test_user.id)
+        await add_slot_rule(
+            db_session,
+            session_id=session.id,
+            name="Late window",
+            rule_type=e.SLOT_RULE_EVERY_N_DAYS,
+            schedule={"n": 1, "time_of_day": "12:00", "start_date": "2026-08-01T00:00:00+00:00"},
+            duration_seconds=1800,
+            late_close_policy={"type": e.PENALTY_ADD_TIME, "value": 600},
+        )
+        await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        result = await db_session.execute(select(LockSlotOccurrence).where(LockSlotOccurrence.session_id == session.id))
+        occ = result.scalars().first()
+
+        opened = await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=occ.planned_open_at)
+        # Close well after close_due_at.
+        late_close = as_utc(opened.close_due_at) + timedelta(seconds=900)
+        closed = await close_slot(db_session, occurrence=opened, owner_id=test_user.id, now=late_close)
+        assert closed.state == e.SLOT_CLOSED
+
+        from app.locktimer.services.execution import get_penalty_for_source
+
+        penalty = await get_penalty_for_source(
+            db_session,
+            source_kind="slot_occurrence",
+            source_id=opened.id,
+        )
+        assert penalty is not None
+        assert penalty.penalty_type == e.PENALTY_ADD_TIME
+        assert penalty.requested_value == 600
+
+    async def test_on_time_close_no_penalty(self, db_session: AsyncSession, test_user: User) -> None:
+        session = await create_draft(db_session, owner_id=test_user.id)
+        await add_slot_rule(
+            db_session,
+            session_id=session.id,
+            name="On time",
+            rule_type=e.SLOT_RULE_EVERY_N_DAYS,
+            schedule={"n": 1, "time_of_day": "12:00", "start_date": "2026-08-01T00:00:00+00:00"},
+            duration_seconds=1800,
+            late_close_policy={"type": e.PENALTY_ADD_TIME, "value": 600},
+        )
+        await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        result = await db_session.execute(select(LockSlotOccurrence).where(LockSlotOccurrence.session_id == session.id))
+        occ = result.scalars().first()
+
+        opened = await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=occ.planned_open_at)
+        # Close within due time.
+        await close_slot(db_session, occurrence=opened, owner_id=test_user.id, now=opened.close_due_at)
+
+        from app.locktimer.services.execution import get_penalty_for_source
+
+        assert (await get_penalty_for_source(db_session, source_kind="slot_occurrence", source_id=opened.id)) is None
+
+    async def test_unknown_policy_type_no_crash(self, db_session: AsyncSession, test_user: User) -> None:
+        session = await create_draft(db_session, owner_id=test_user.id)
+        await add_task_rule(
+            db_session,
+            session_id=session.id,
+            title="Bad policy",
+            schedule_type=e.TASK_SCHED_DAILY,
+            schedule={"time_of_day": "10:00"},
+            due_window_seconds=3600,
+            penalty_policy={"type": "unknown_kind", "value": 5},
+        )
+        await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
+        result = await db_session.execute(select(LockTaskOccurrence).where(LockTaskOccurrence.session_id == session.id))
+        occ = result.scalars().first()
+
+        # Must not raise — just skip the malformed policy.
+        skipped = await skip_task(db_session, occurrence=occ, owner_id=test_user.id)
+        assert skipped.state == e.TASK_SKIPPED

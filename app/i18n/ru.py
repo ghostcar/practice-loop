@@ -762,4 +762,12 @@ RU = {
     "dashboard_plans_today": "планов сегодня",
     # Rule reordering (drag&drop)
     "locktimer_drag_hint": "перетащите для порядка",
+    # Q14 — honest action results (JS)
+    "locktimer_action_locked": "Закрыто.",
+    "locktimer_action_skipped": "Пропущено.",
+    "locktimer_action_failed": "Действие не выполнено.",
+    "locktimer_action_request_failed": "Ошибка запроса.",
+    "locktimer_penalty_applied": "Штраф применён: {detail}.",
+    "locktimer_penalty_add_time": "+{value} с добавлено",
+    "locktimer_penalty_points": "-{value} баллов",
 }
