@@ -1,0 +1,28 @@
+{
+  "name": "practiceloop-browser-tests",
+  "private": true,
+  "version": "0.8.0",
+  "description": "Agent-driven browser, accessibility and usability tests for PracticeLoop",
+  "scripts": {
+    "browser:install": "playwright install chromium firefox webkit",
+    "browser:install:chromium": "playwright install chromium",
+    "browser:doctor": "node tools/browser/doctor.mjs",
+    "test:browser": "playwright test",
+    "test:browser:smoke": "playwright test --grep @smoke",
+    "test:a11y": "playwright test --grep @a11y",
+    "test:usability": "playwright test --grep @usability",
+    "test:browser:headed": "playwright test --headed --project=desktop-chromium",
+    "test:browser:ui": "playwright test --ui",
+    "test:browser:debug": "playwright test --debug --project=desktop-chromium",
+    "test:browser:report": "playwright show-report",
+    "agent:browser": "playwright-mcp --isolated --browser firefox --headless"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/mcp": "0.0.79",
+    "@playwright/test": "1.62.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

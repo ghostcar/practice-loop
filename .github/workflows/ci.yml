@@ -120,8 +120,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
       - run: pip install --upgrade pip setuptools wheel
       - run: pip install ".[dev,e2e]"
+      - run: npm ci
       - run: python -m playwright install --with-deps chromium
       - name: Boot app (PostgreSQL) and run E2E smoke
         run: |
@@ -141,6 +146,7 @@ jobs:
             sleep 1
           done
           E2E_BASE_URL=http://127.0.0.1:8000 python -m pytest tests/e2e/test_browser_smoke.py -q --tb=short
+          E2E_BASE_URL=http://127.0.0.1:8000 npm run test:browser:smoke -- --project=desktop-chromium
           kill $APP_PID || true
 
   # ── Docker image build (P0: production deps must actually install) ──

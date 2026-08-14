@@ -60,11 +60,11 @@ PracticeLoop — не SaaS-dashboard и не wellness-приложение. Эт
   --border-strong: #665044;
   --text: #eee7df;
   --text-secondary: #b9aca1;
-  --text-muted: #897a70;
-  --accent: #a95f58;
-  --accent-hover: #bf7169;
+  --text-muted: #97877c;
+  --accent: #b86f68;
+  --accent-hover: #c9827a;
   --accent-soft: #3a2422;
-  --on-accent: #fff5ef;
+  --on-accent: #171311;
 }
 ```
 

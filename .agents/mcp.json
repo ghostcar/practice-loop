@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source /home/roman/.nvm/nvm.sh && nvm use 22 >/dev/null && cd /home/roman/tracker && exec ./node_modules/.bin/playwright-mcp --isolated --browser firefox --headless"
+      ]
+    }
+  }
+}

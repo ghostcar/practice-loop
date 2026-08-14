@@ -51,7 +51,7 @@ memory = [
 # Audit P1-4 — browser E2E smoke (login → dashboard → timer). Heavy, opt-in:
 # never installed in prod or the default dev env.
 e2e = [
-    "playwright>=1.44,<1.45",
+    "playwright>=1.62,<1.63",
 ]
 
 [tool.setuptools.packages.find]
