@@ -88,6 +88,37 @@ class TestShellI18n:
             assert RU[key].strip(), f"empty RU value: {key}"
 
 
+class TestShellLayoutRegression:
+    """Regression guards for the 9a layout bugs (fixed in the frontend check)."""
+
+    def _base_css(self) -> str:
+        with open("app/templates/base.html", encoding="utf-8") as f:
+            return f.read()
+
+    def test_dark_variant_follows_theme_class(self):
+        """dark: utilities must follow the .dark class on <html>, not the OS scheme."""
+        css = self._base_css()
+        assert 'type="text/tailwindcss"' in css
+        assert "@custom-variant dark" in css
+        assert "&:where(.dark, .dark *)" in css
+
+    def test_main_content_offset_past_sidebar(self):
+        """The whole page (shell + main + footer) must clear the fixed sidebar.
+
+        The broken 9a layout gave only .pl-shell a margin-left, so <main>/<footer>
+        slid underneath the 72px sidebar. The fix offsets the body itself.
+        """
+        css = self._base_css()
+        assert "body:has(.pl-sidebar) { padding-left: 72px" in css
+        assert "body.pl-sidebar-open:has(.pl-sidebar) { padding-left: 272px" in css
+        # the old broken rule must be gone
+        assert ".pl-shell { margin-left: 72px" not in css
+
+    def test_shell_min_height_still_present(self):
+        css = self._base_css()
+        assert ".pl-shell { min-height: 100vh; display: flex; flex-direction: column; }" in css
+
+
 class TestShellAssets:
     def test_self_hosted_fonts_present(self):
         fonts = os.listdir("app/static/fonts")

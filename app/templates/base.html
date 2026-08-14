@@ -118,6 +118,10 @@
     <meta name="theme-color" content="#171311">
     <!-- Local assets — no external CDN dependencies -->
     <script src="/static/tailwindcss.js"></script>
+    <style type="text/tailwindcss">
+        /* dark: utilities follow the app theme class (.dark on <html>), not the OS scheme */
+        @custom-variant dark (&:where(.dark, .dark *));
+    </style>
     <style>
         /* === Self-hosted fonts (DESIGN v2 §5 — no font CDN) === */
         @font-face {
@@ -412,9 +416,10 @@
         .pl-shell { min-height: 100vh; display: flex; flex-direction: column; }
         @media (min-width: 768px) {
             .pl-sidebar { display: flex; }
-            .pl-shell { margin-left: 72px; transition: margin-left var(--motion-slow) var(--motion-easing); }
+            /* Offset the whole page (shell, main, footer) past the fixed sidebar */
+            body:has(.pl-sidebar) { padding-left: 72px; transition: padding-left var(--motion-slow) var(--motion-easing); }
             body.pl-sidebar-open .pl-sidebar { width: 272px; }
-            body.pl-sidebar-open .pl-shell { margin-left: 272px; }
+            body.pl-sidebar-open:has(.pl-sidebar) { padding-left: 272px; }
         }
         .pl-sidebar-head {
             display: flex; align-items: center; justify-content: space-between;
