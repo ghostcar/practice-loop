@@ -3,16 +3,22 @@
 Handles: MIME detection via magic bytes, size limits, SHA-256 hashing,
 thumbnail generation (Pillow), safe file naming.
 
+CPU/disk work (Pillow decode, thumbnails, file writes) runs in a thread pool
+so the event loop is never blocked (audit P2-2). Pillow's decompression-bomb
+guard is enabled so huge images fail closed instead of exhausting memory.
+
 OCR support deferred — verification remains HMAC-based only for now.
 """
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import hashlib
 import hmac
 import secrets
 import uuid
+import warnings
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
@@ -40,6 +46,24 @@ _MAGIC: dict[str, bytes] = {
 
 MAX_IMAGE_DIMENSION = 12000
 THUMBNAIL_MAX_SIZE = (400, 400)
+
+# Pillow decompression-bomb guard (audit P2-2): fail closed on absurd pixel
+# counts instead of letting a crafted image exhaust memory. 100 MP is far
+# beyond any legitimate photo for this app.
+PILLOW_MAX_IMAGE_PIXELS = 100_000_000
+
+
+def _enable_pillow_guard() -> None:
+    try:
+        from PIL import Image
+
+        Image.MAX_IMAGE_PIXELS = PILLOW_MAX_IMAGE_PIXELS
+        # Pillow emits a *warning* on oversized pixel counts; escalate it to an
+        # exception so oversized images fail closed instead of exhausting memory.
+        warnings.simplefilter("error", Image.DecompressionBombWarning)
+    except Exception:
+        pass
+
 
 # Alphabet for verification codes — no ambiguous chars (0/O, 1/I/l).
 _CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -95,22 +119,28 @@ async def save_media(file: UploadFile) -> dict:
     # SHA-256
     sha256 = hashlib.sha256(data).hexdigest()
 
-    # Save original
+    # Disk write + Pillow work is CPU/blocking — run in the thread pool so the
+    # event loop stays responsive under concurrent uploads (audit P2-2).
     name = f"{uuid.uuid4().hex}{ext}"
+    info = await asyncio.to_thread(_persist_media, data, content_type, name, sha256, file)
+    return info
+
+
+def _persist_media(data: bytes, mime: str, name: str, sha256: str, file: UploadFile) -> dict:
+    """Synchronous disk+Pillow pipeline, executed inside a thread pool."""
     file_path = _media_subdir() / name
     file_path.write_bytes(data)
 
-    # Dimensions + thumbnail
-    width, height = _get_dimensions(data, content_type)
+    width, height = _get_dimensions(data, mime)
     thumb_name = None
     if width and height:
-        thumb_name = _make_thumbnail(data, name, content_type)
+        thumb_name = _make_thumbnail(data, name, mime)
 
     return {
         "file_path": f"/uploads/media/{name}",
         "thumbnail_path": f"/uploads/thumbnails/{thumb_name}" if thumb_name else None,
         "original_filename": (file.filename or "")[:500] or None,
-        "mime_type": content_type,
+        "mime_type": mime,
         "file_size_bytes": len(data),
         "sha256_hex": sha256,
         "width": width,
@@ -120,6 +150,7 @@ async def save_media(file: UploadFile) -> dict:
 
 def _get_dimensions(data: bytes, mime: str) -> tuple[int | None, int | None]:
     """Extract dimensions from image bytes using Pillow (best-effort)."""
+    _enable_pillow_guard()
     try:
         from io import BytesIO
 
@@ -132,12 +163,15 @@ def _get_dimensions(data: bytes, mime: str) -> tuple[int | None, int | None]:
             return w, h
     except HTTPException:
         raise
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):  # type: ignore[attr-defined]
+        raise HTTPException(400, "Image is too large (decompression bomb guard)") from None
     except Exception:
         return None, None
 
 
 def _make_thumbnail(data: bytes, original_name: str, mime: str) -> str | None:
     """Create a thumbnail and return its relative URL path, or None on failure."""
+    _enable_pillow_guard()
     try:
         from io import BytesIO
 
@@ -153,6 +187,8 @@ def _make_thumbnail(data: bytes, original_name: str, mime: str) -> str | None:
                 img = img.convert("RGB")
             img.save(thumb_path, "JPEG", quality=80)
             return f"/uploads/thumbnails/{thumb_name}"
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):  # type: ignore[attr-defined]
+        return None
     except Exception:
         return None
 

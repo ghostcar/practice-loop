@@ -140,4 +140,22 @@
     div.textContent = String(str);
     return div.innerHTML;
   };
+
+  // PracticeLoop icon pack helper (design/icons/INTEGRATION_AGENT.md §6).
+  // Creates an <svg><use> icon via DOM APIs — never via innerHTML — with
+  // currentColor stroke. `name` must come from a static allowlist.
+  window.plIcon = function plIcon(name, className) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', className || 'w-4 h-4');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.75');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '/static/icons/sprite.svg#icon-' + name);
+    svg.appendChild(use);
+    return svg;
+  };
 })();

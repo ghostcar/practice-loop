@@ -48,6 +48,11 @@ dev = [
 memory = [
     "qdrant-client>=1.9,<2.0",
 ]
+# Audit P1-4 — browser E2E smoke (login → dashboard → timer). Heavy, opt-in:
+# never installed in prod or the default dev env.
+e2e = [
+    "playwright>=1.44,<1.45",
+]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

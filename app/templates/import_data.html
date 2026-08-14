@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="animate-fade-in">
@@ -41,7 +42,7 @@
                             class="text-xs px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                             title="{{ t.import_copy_url }}"
                             aria-label="{{ t.import_copy_url }}">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14l-2-2m0 0l-2-2m2 2l2-2m-2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ icon('copy', 'w-3.5 h-3.5') }}
                     </button>
                 </div>
             </div>
@@ -64,9 +65,7 @@
                        for="file-input"
                        class="block p-8 cursor-pointer border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-t-2xl transition-colors">
                     <div class="text-center">
-                        <svg class="w-12 h-12 mx-auto mb-4 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 7.5m0 0L7.5 12M12 7.5v9"/>
-                        </svg>
+                        {{ icon('cloud-upload', 'w-12 h-12 mx-auto mb-4 text-slate-400 dark:text-slate-500') }}
                         <p id="drop-text" class="text-slate-600 dark:text-slate-300 font-medium mb-2">
                             {{ t.import_drop_hint }} <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.csv</code>
                             {{ t.import_or }} <code class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">.json</code> {{ t.import_file_label }}

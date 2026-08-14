@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+# ruff: noqa: E501 -- compact SVG path literals are intentionally kept on one line.
+"""Generate the local PracticeLoop SVG icon and browser icon packs."""
+
+from __future__ import annotations
+
+import html
+from pathlib import Path
+
+from PIL import Image, ImageDraw
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "design" / "icons"
+SVG_OUT = OUT / "svg"
+FAV_OUT = OUT / "favicon"
+
+# All artwork is original project-owned geometry on a 24 px grid. Values contain
+# SVG primitives only; the shared renderer supplies sizing and stroke semantics.
+ICONS: dict[str, str] = {
+    "aftercare": '<path d="M12 21S4 16.5 4 10.5A4.5 4.5 0 0112 7a4.5 4.5 0 018 3.5C20 16.5 12 21 12 21z"/><path d="M9 11.5h6M12 8.5v6"/>',
+    "agreement": '<path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h4"/><path d="M14 17l2 2 4-5"/>',
+    "activity": '<path d="M4 13h3l2-6 4 12 2-6h5"/>',
+    "admin": '<path d="M4 5h16v14H4z"/><path d="M4 9h16M9 9v10"/><circle cx="6.5" cy="7" r=".5" fill="currentColor" stroke="none"/>',
+    "ai": '<path d="M12 3l1.4 4.2L18 8.5l-4.6 1.3L12 14l-1.4-4.2L6 8.5l4.6-1.3L12 3z"/><path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z"/>',
+    "archive": '<path d="M4 7h16v13H4zM3 4h18v3H3zM9 11h6"/>',
+    "audit": '<path d="M6 3h12v18H6zM9 7h6M9 11h6M9 15h3"/><circle cx="17" cy="16" r="3"/><path d="M19 18l2 2"/>',
+    "arrow-down": '<path d="M12 4v15m-6-6 6 6 6-6"/>',
+    "arrow-left": '<path d="M20 12H5m6-6-6 6 6 6"/>',
+    "arrow-right": '<path d="M4 12h15m-6-6 6 6-6 6"/>',
+    "arrow-up": '<path d="M12 20V5m-6 6 6-6 6 6"/>',
+    "bell": '<path d="M18 9a6 6 0 00-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9zM14.5 20h-5"/>',
+    "block": '<circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/>',
+    "body": '<circle cx="12" cy="4.5" r="2"/><path d="M8 21l1-7-2-3 2-3h6l2 3-2 3 1 7M9 8l3 5 3-5"/>',
+    "calendar": '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>',
+    "capability": '<path d="M12 3l7 4v5c0 4.5-2.7 7.5-7 9-4.3-1.5-7-4.5-7-9V7z"/><path d="M9 12h6M12 9v6"/>',
+    "camera": '<path d="M4 8h4l1.5-2h5L16 8h4v11H4z"/><circle cx="12" cy="13.5" r="3.5"/>',
+    "catalog": '<path d="M4 5.5A2.5 2.5 0 016.5 3H11v17H6.5A2.5 2.5 0 004 22zM20 5.5A2.5 2.5 0 0017.5 3H13v17h4.5A2.5 2.5 0 0120 22z"/>',
+    "chart": '<path d="M4 20V10h4v10M10 20V4h4v16M16 20v-7h4v7M3 20h18"/>',
+    "check-in": '<path d="M5 4h14v16H5zM8 8h8M8 12h4"/><path d="M13 16l2 2 4-5"/>',
+    "check": '<path d="M4.5 12.5l5 5 10-11"/>',
+    "check-circle": '<circle cx="12" cy="12" r="9"/><path d="M7.5 12.5l3 3 6-7"/>',
+    "chevron-down": '<path d="M5 9l7 7 7-7"/>',
+    "chevron-left": '<path d="M15 5l-7 7 7 7"/>',
+    "chevron-right": '<path d="M9 5l7 7-7 7"/>',
+    "chevron-up": '<path d="M5 15l7-7 7 7"/>',
+    "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    "community": '<circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="10" r="2.5"/><circle cx="18.5" cy="10" r="2.5"/><path d="M6 21a6 6 0 0112 0M1 19a4.5 4.5 0 016-4.3M23 19a4.5 4.5 0 00-6-4.3"/>',
+    "comfort": '<path d="M4 14c2-4 4-6 8-6s6 2 8 6c-2 4-4 6-8 6s-6-2-8-6z"/><path d="M8 5c1.3-1.3 2.7-2 4-2s2.7.7 4 2"/><circle cx="12" cy="14" r="2"/>',
+    "comment": '<path d="M4 5h16v12H9l-5 4z"/><path d="M8 9h8M8 13h5"/>',
+    "confirm": '<path d="M5 4h14v16H5zM8 9l3 3 5-6M8 16h8"/>',
+    "consent": '<path d="M12 3l8 4v5c0 4.5-3 7.5-8 9-5-1.5-8-4.5-8-9V7z"/><path d="M8.5 12.5l2.5 2.5 5-6"/>',
+    "correlation": '<circle cx="7" cy="16" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="17" cy="6" r="2"/><path d="M8.5 14.5l2-2m3-3 2-2M4 20h16"/>',
+    "cycle": '<path d="M18 7a8 8 0 00-13 4M6 17a8 8 0 0013-4"/><path d="M18 3v4h-4M6 21v-4h4"/>',
+    "close": '<path d="M5 5l14 14M19 5L5 19"/>',
+    "cloud-download": '<path d="M7 18H6a4 4 0 010-8 6 6 0 0111.5-1.5A4.5 4.5 0 0118 17h-1"/><path d="M12 11v10m-4-4 4 4 4-4"/>',
+    "cloud-upload": '<path d="M7 18H6a4 4 0 010-8 6 6 0 0111.5-1.5A4.5 4.5 0 0118 17h-1"/><path d="M12 21V11m-4 4 4-4 4 4"/>',
+    "copy": '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+    "dashboard": '<rect x="3" y="3" width="7" height="8" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="3" y="15" width="7" height="6" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/>',
+    "database": '<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+    "device": '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 7h6M9 17h6M12 11v2"/>',
+    "discretion": '<path d="M3 12s3.5-6 9-6c2 0 3.7.7 5.1 1.6M21 12s-3.5 6-9 6c-2 0-3.7-.7-5.1-1.6M4 4l16 16"/>',
+    "delete": '<path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6"/>',
+    "diet": '<path d="M5 13c0-5 3-8 7-8s7 3 7 8v6H5zM3 19h18"/><path d="M12 5c0-2 1-3 3-3"/>',
+    "download": '<path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/>',
+    "dynamics": '<circle cx="8" cy="7" r="3"/><circle cx="16" cy="17" r="3"/><path d="M10.5 9.5l3 5M16 5v5m-2.5-2.5h5M8 14v5"/>',
+    "edit": '<path d="M4 20l1-5L16 4l4 4L9 19zM14 6l4 4"/>',
+    "error": '<circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 4h.01"/>',
+    "export": '<path d="M13 4H5v16h14v-8M12 12l8-8m-5 0h5v5"/>',
+    "extension": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M17 4l3 1-1 3"/>',
+    "eye": '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/>',
+    "eye-off": '<path d="M4 4l16 16M9.5 6.4A10.7 10.7 0 0112 6c6 0 9.5 6 9.5 6a16 16 0 01-2.2 2.8M6.1 7.2A16 16 0 002.5 12s3.5 6 9.5 6a10 10 0 003-.5"/>',
+    "filter": '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+    "flag": '<path d="M5 21V4m0 1h12l-2 4 2 4H5"/>',
+    "folder": '<path d="M3 6h7l2 2h9v12H3z"/>',
+    "grant": '<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8m-3 3 2 2M13 10l2 2"/><path d="M6.5 15h3"/>',
+    "globe": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+    "heart": '<path d="M12 20S4 15.5 4 9.5A4.5 4.5 0 0112 6a4.5 4.5 0 018 3.5c0 6-8 10.5-8 10.5z"/>',
+    "help": '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 115 1.5c-.8 1-2.5 1.3-2.5 3M12 17h.01"/>',
+    "health": '<path d="M4 8h5V3h6v5h5v6h-5v7H9v-7H4z"/>',
+    "hidden": '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/><path d="M18 4h3v3"/>',
+    "history": '<path d="M4 7v5h5M5 11a8 8 0 101.8-5"/><path d="M12 7v5l3 2"/>',
+    "home": '<path d="M3 11l9-8 9 8M5 9.5V21h5v-6h4v6h5V9.5"/>',
+    "image": '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="M4 18l5-5 3 3 2-2 6 5"/>',
+    "import": '<path d="M11 4H5v16h14v-6M13 11h8m-4-4 4 4-4 4"/>',
+    "info": '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/>',
+    "insights": '<path d="M5 20h14M7 16l3-4 3 2 4-7"/><path d="M14 7h3v3"/>',
+    "inventory": '<path d="M4 8h16v13H4zM3 4h18v4H3zM9 12h6"/>',
+    "key": '<circle cx="8" cy="15" r="4"/><path d="M11 12l8-8m-3 3 2 2m-5 1 2 2"/>',
+    "lab": '<path d="M9 3h6M10 3v6l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3M8 15h8"/>',
+    "language": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+    "link": '<path d="M9.5 14.5l5-5M7 17H5a4 4 0 010-8h4M17 7h2a4 4 0 010 8h-4"/>',
+    "list": '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+    "location": '<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1116 0z"/><circle cx="12" cy="10" r="2.5"/>',
+    "lock": '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3M12 14v3"/>',
+    "logout": '<path d="M10 4H5v16h5M14 8l4 4-4 4m4-4H9"/>',
+    "mail": '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/>',
+    "measurement": '<path d="M4 7h16v10H4zM7 7v4m3-4v2m4-2v2m3-2v4"/>',
+    "media-vault": '<rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V5a4 4 0 018 0v2M12 11v5"/><circle cx="12" cy="14" r="1"/>',
+    "medication": '<path d="M7 5a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L7 10.7A4 4 0 017 5z"/><path d="M9.8 13.5l5.7-5.7"/>',
+    "menu": '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    "minus": '<path d="M5 12h14"/>',
+    "moon": '<path d="M20 15.5A8 8 0 018.5 4 8.5 8.5 0 1020 15.5z"/>',
+    "nail-care": '<path d="M8 20c-2 0-3-1.5-3-3.5V9a2 2 0 014 0V5a2 2 0 014 0v3a2 2 0 014 0v3a2 2 0 014 0v4c0 4-2.5 6-6 6z"/><path d="M9 9v4m4-5v5m4-2v3"/>',
+    "more": '<circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/>',
+    "pause": '<path d="M8 5v14M16 5v14"/>',
+    "play": '<path d="M8 4l12 8-12 8z"/>',
+    "plus": '<path d="M12 5v14M5 12h14"/>',
+    "points": '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5c-.8-.7-2-1-3.5-1-2 0-3.5 1-3.5 2.5 0 4 7 1.5 7 5 0 1.5-1.5 2.5-3.5 2.5-1.5 0-2.8-.4-3.7-1.2M12 5v14"/>',
+    "policy": '<path d="M5 3h14v18H5zM8 7h8M8 11h5M8 15h3"/><path d="M14 15l2 2 4-5"/>',
+    "prescription": '<path d="M5 3h14v18H5zM8 7h5a2 2 0 010 4H8V7zm4 4 4 5m0-4-4 4"/>',
+    "privacy": '<path d="M12 3l8 3v5c0 5-3.2 8.5-8 10-4.8-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-5"/>',
+    "profile": '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+    "redo": '<path d="M18 8l3 3-3 3M20 11h-7a6 6 0 00-6 6v2"/>',
+    "refresh": '<path d="M20 7v5h-5M4 17v-5h5M18.5 12A7 7 0 006.3 7.3L4 12m2 0a7 7 0 0011.7 4.7L20 12"/>',
+    "report": '<path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/><path d="M16 15h.01"/>',
+    "restore": '<path d="M4 8v5h5M5 12a8 8 0 101.8-5"/><path d="M12 7v5"/>',
+    "routine": '<circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9M18 5v4h-4"/>',
+    "relationship": '<circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2.5 20a5.5 5.5 0 0111 0M10.5 20a5.5 5.5 0 0111 0"/>',
+    "save": '<path d="M4 4h14l2 2v14H4zM8 4v6h8V4M8 20v-6h8v6"/>',
+    "schedule": '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M8 15h4"/>',
+    "search": '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/>',
+    "send": '<path d="M3 11.5L21 3l-7 18-3-7zM11 14L21 3"/>',
+    "sleep": '<path d="M20 15.5A8 8 0 018.5 4 8.5 8.5 0 1020 15.5z"/><path d="M15 5h4l-4 4h4"/>',
+    "session": '<path d="M7 4h10v4H7zM5 6H3v15h18V6h-2M8 13h8m-8 4h5"/>',
+    "settings": '<circle cx="12" cy="12" r="3"/><path d="M19 13.5l2-1.5-2-1.5-.6-1.5.4-2.4-2.4-.4L15 4l-3 1-3-1-1.4 2.2-2.4.4L5.6 9 3 10.5 5 12l-.6 1.5.8 2.3 2.4.4L9 20l3-1 3 1 1.4-2.2 2.4-.4-.4-2.4z"/>',
+    "shield": '<path d="M12 3l8 3v5c0 5-3.2 8.5-8 10-4.8-1.5-8-5-8-10V6z"/>',
+    "skip": '<path d="M5 5l10 7L5 19zM19 5v14"/>',
+    "stop": '<circle cx="12" cy="12" r="9"/><rect x="8" y="8" width="8" height="8" rx="1"/>',
+    "sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+    "symptoms": '<path d="M4 13h4l2-5 3 9 2-4h5"/><circle cx="12" cy="12" r="10"/>',
+    "tag": '<path d="M3 12V4h8l10 10-7 7z"/><circle cx="7.5" cy="8.5" r="1"/>',
+    "tasks": '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l1.5 1.5L12 7M14 8h3M8 14l1.5 1.5L12 13M14 14h3"/>',
+    "telegram": '<path d="M3 11l18-7-5 17-5-6-4 3 1-5zM8 13L21 4"/>',
+    "timer": '<circle cx="12" cy="13" r="8"/><path d="M12 9v5l3 2M9 3h6M16.5 6.5L19 4"/>',
+    "today": '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/><circle cx="12" cy="15" r="2"/>',
+    "transport": '<path d="M3 7h18v10H3zM3 8l9 6 9-6"/><path d="M7 20h10"/>',
+    "training": '<path d="M3 10v4m3-6v8m12-8v8m3-6v4M6 12h12"/>',
+    "trophy": '<path d="M8 4h8v5a4 4 0 01-8 0zM8 6H4v2a4 4 0 004 4m8-6h4v2a4 4 0 01-4 4M12 13v5m-4 2h8"/>',
+    "undo": '<path d="M6 8l-3 3 3 3M4 11h7a6 6 0 016 6v2"/>',
+    "unlock": '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 017-2.5M12 14v3"/>',
+    "upload": '<path d="M12 21V9m-5 5 5-5 5 5M4 4h16"/>',
+    "user-add": '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0114 0M18 8v6m-3-3h6"/>',
+    "users": '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20a6 6 0 0112 0M14 16a5 5 0 018 4"/>',
+    "verification": '<path d="M12 3l8 4v5c0 4.5-3 7.5-8 9-5-1.5-8-4.5-8-9V7z"/><path d="M8 12l2.5 2.5L16 9"/>',
+    "vote": '<path d="M5 10h14v11H5zM8 10l4-7 4 7M8 15h8"/>',
+    "warning": '<path d="M12 3L2.5 20h19z"/><path d="M12 9v5m0 3h.01"/>',
+}
+
+
+def svg_document(body: str) -> str:
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="1.75" '
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        f"{body}</svg>\n"
+    )
+
+
+def write_svg_pack() -> None:
+    SVG_OUT.mkdir(parents=True, exist_ok=True)
+    for name, body in ICONS.items():
+        (SVG_OUT / f"{name}.svg").write_text(svg_document(body), encoding="utf-8")
+
+    symbols = "\n".join(
+        f'  <symbol id="icon-{name}" viewBox="0 0 24 24">{body}</symbol>' for name, body in sorted(ICONS.items())
+    )
+    sprite = (
+        '<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" '
+        'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">\n'
+        f"{symbols}\n</svg>\n"
+    )
+    (OUT / "sprite.svg").write_text(sprite, encoding="utf-8")
+
+
+def write_preview() -> None:
+    cards = "\n".join(
+        f'<article><svg aria-hidden="true"><use href="sprite.svg#icon-{name}"/></svg>'
+        f"<code>{html.escape(name)}</code></article>"
+        for name in sorted(ICONS)
+    )
+    page = f"""<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>PracticeLoop icon pack</title>
+<style>
+:root {{ color-scheme: light dark; font: 14px Inter,system-ui,sans-serif; }}
+body {{ margin: 0; padding: 32px; background: #121116; color: #f3f0f7; }}
+h1 {{ font-size: 24px; }} p {{ color: #aaa6b2; }}
+main {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(132px,1fr)); gap:12px; }}
+article {{ display:grid; place-items:center; gap:12px; min-height:112px; padding:12px;
+  background:#1a191f; border:1px solid #34313b; border-radius:12px; }}
+svg {{ width:32px; height:32px; fill:none; stroke:currentColor; stroke-width:1.75;
+  stroke-linecap:round; stroke-linejoin:round; color:#b8a3ee; }}
+code {{ color:#aaa6b2; text-align:center; overflow-wrap:anywhere; }}
+</style><body><h1>PracticeLoop icons</h1><p>{len(ICONS)} original outline icons · 24 px grid · 1.75 px stroke</p>
+<main>{cards}</main></body></html>\n"""
+    (OUT / "preview.html").write_text(page, encoding="utf-8")
+
+
+def brand_svg() -> str:
+    return """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="15" fill="#6B57A5"/>
+<path d="M46 24a17 17 0 10.5 15" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+<path d="M35 20h12v12" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22 33l7 7 14-16" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>\n"""
+
+
+def draw_brand(size: int) -> Image.Image:
+    scale = size / 64
+    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    radius = round(15 * scale)
+    draw.rounded_rectangle((0, 0, size - 1, size - 1), radius=radius, fill="#6B57A5")
+    width = max(2, round(6 * scale))
+    draw.arc(tuple(round(v * scale) for v in (15, 15, 49, 49)), 42, 318, fill="white", width=width)
+    draw.line(
+        [(35 * scale, 20 * scale), (47 * scale, 20 * scale), (47 * scale, 32 * scale)],
+        fill="white",
+        width=width,
+        joint="curve",
+    )
+    check_width = max(2, round(5 * scale))
+    draw.line(
+        [(22 * scale, 33 * scale), (29 * scale, 40 * scale), (43 * scale, 24 * scale)],
+        fill="white",
+        width=check_width,
+        joint="curve",
+    )
+    return image
+
+
+def write_browser_icons() -> None:
+    FAV_OUT.mkdir(parents=True, exist_ok=True)
+    (FAV_OUT / "favicon.svg").write_text(brand_svg(), encoding="utf-8")
+    for size, filename in (
+        (16, "favicon-16x16.png"),
+        (32, "favicon-32x32.png"),
+        (180, "apple-touch-icon.png"),
+        (192, "android-chrome-192x192.png"),
+        (512, "android-chrome-512x512.png"),
+    ):
+        draw_brand(size).save(FAV_OUT / filename, optimize=True)
+    draw_brand(64).save(FAV_OUT / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64)])
+    (FAV_OUT / "site.webmanifest").write_text(
+        """{
+  "name": "PracticeLoop",
+  "short_name": "PracticeLoop",
+  "icons": [
+    {"src": "android-chrome-192x192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "android-chrome-512x512.png", "sizes": "512x512", "type": "image/png"}
+  ],
+  "theme_color": "#6B57A5",
+  "background_color": "#121116",
+  "display": "standalone"
+}\n""",
+        encoding="utf-8",
+    )
+    (FAV_OUT / "safari-pinned-tab.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M32 3a29 29 0 1021 49l-7-7A19 19 0 1132 13h9l-6 6 7 7 16-16L48 0l-7 7h-9z"/><path d="M18 33l9 9 20-23-7-6-14 17-2-3z"/></svg>\n""",
+        encoding="utf-8",
+    )
+
+
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    write_svg_pack()
+    write_preview()
+    write_browser_icons()
+    print(f"Generated {len(ICONS)} icons in {OUT.relative_to(ROOT)}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,10 @@
+{# PracticeLoop icon pack macro (design/icons/INTEGRATION_AGENT.md §2).
+   Usage: {% from "components/icon.html" import icon %} {{ icon('tasks', 'w-5 h-5') }}
+   Never pass user-controlled data as `name` — server-side allowlist only. #}
+{% macro icon(name, class_name='w-5 h-5', label=None) -%}
+<svg class="{{ class_name }}" fill="none" stroke="currentColor" stroke-width="1.75"
+     stroke-linecap="round" stroke-linejoin="round"
+     {% if label %}role="img" aria-label="{{ label }}"{% else %}aria-hidden="true"{% endif %}>
+  <use href="/static/icons/sprite.svg#icon-{{ name }}"></use>
+</svg>
+{%- endmacro %}

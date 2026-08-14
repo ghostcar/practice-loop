@@ -115,14 +115,33 @@
         <div class="text-xs text-slate-400 mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
       </div>
       <div class="flex items-center gap-1 flex-shrink-0">
-        <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-indigo-500 text-sm px-2" title="Photo">📷</button>
-        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-red-500 text-sm px-2" title="Remove photo">✕</button>` : ''}
+        <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-indigo-500 text-sm px-2" title="Photo" aria-label="Photo"></button>
+        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-slate-400 hover:text-red-500 text-sm px-2" title="Remove photo" aria-label="Remove photo">✕</button>` : ''}
         <button onclick="del('${escapeHtml(String(i.id))}')" class="text-red-400 hover:text-red-500 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
       </div>
     </div>
   `
         )
         .join('') || '<p class="text-slate-400 dark:text-slate-500 text-center py-8">' + escapeHtml(I18N.inv_empty) + '</p>';
+    // Icon pack pass: inject <svg><use> icons via DOM (never innerHTML — §6.7)
+    const rows = el.querySelectorAll('[data-id]');
+    rows.forEach((row) => {
+      const photoBtn = row.querySelector('button[aria-label="Photo"]');
+      if (photoBtn && !photoBtn.querySelector('svg')) {
+        photoBtn.appendChild(window.plIcon('camera', 'w-4 h-4'));
+      }
+      const delImgBtn = row.querySelector('button[aria-label="Remove photo"]');
+      if (delImgBtn && !delImgBtn.querySelector('svg')) {
+        delImgBtn.textContent = '';
+        delImgBtn.appendChild(window.plIcon('close', 'w-4 h-4'));
+      }
+      const dragHandle = row.querySelector('span.select-none');
+      if (dragHandle) {
+        dragHandle.textContent = '';
+        dragHandle.appendChild(window.plIcon('more', 'w-4 h-4'));
+        dragHandle.className = 'text-slate-300 dark:text-slate-600 select-none flex items-center';
+      }
+    });
   }
 
   // Drag&drop reorder

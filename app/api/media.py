@@ -92,7 +92,9 @@ async def upload_media(
         caption=(caption or "").strip()[:500] or None,
     )
     db.add(asset)
-    await db.commit()
+    # get_db() auto-commits after the endpoint (audit P1-5) — flush only to
+    # materialize defaults/ids for the response.
+    await db.flush()
     await db.refresh(asset)
     return _serialize(asset)
 
@@ -132,7 +134,8 @@ async def finalize_media(
     asset.state = "ready"
     asset.owner_type = owner_type
     asset.owner_ref_id = owner_ref_id
-    await db.commit()
+    # Auto-commit via get_db() after the endpoint (audit P1-5).
+    await db.flush()
     await db.refresh(asset)
     return _serialize(asset)
 
@@ -218,6 +221,8 @@ async def delete_media(
     file_path = asset.file_path
     thumb_path = asset.thumbnail_path
     await db.delete(asset)
+    # Explicit commit here is intentional: the DB row must be durably removed
+    # BEFORE the file is deleted from disk, so a failed commit keeps the file.
     await db.commit()
     delete_media_file(file_path, thumb_path)
     return {"status": "deleted"}

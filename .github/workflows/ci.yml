@@ -97,6 +97,52 @@ jobs:
       - run: python -m tools.memoryctl lint
       - run: python -m tools.memoryctl facts --check
 
+  # ── Browser E2E smoke (audit P1-4; opt-in heavy dependency) ─────────
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: tracker
+          POSTGRES_PASSWORD: tracker
+          POSTGRES_DB: tracker_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tracker -d tracker_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --upgrade pip setuptools wheel
+      - run: pip install ".[dev,e2e]"
+      - run: python -m playwright install --with-deps chromium
+      - name: Boot app (PostgreSQL) and run E2E smoke
+        run: |
+          export JWT_SECRET_KEY=ci-test-secret-at-least-32-chars-long
+          export CREDENTIALS_ENCRYPTION_KEY=ci-encryption-key-at-least-32-ch
+          export CHALLENGE_HMAC_KEY=ci-challenge-key-at-least-32-chars-long
+          export DATABASE_URL=postgresql+asyncpg://tracker:tracker@localhost:5432/tracker_test
+          for i in $(seq 1 15); do
+            if pg_isready -h localhost -U tracker -d tracker_test 2>/dev/null; then break; fi
+            sleep 2
+          done
+          alembic upgrade head
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          APP_PID=$!
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/healthz >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          E2E_BASE_URL=http://127.0.0.1:8000 python -m pytest tests/e2e/test_browser_smoke.py -q --tb=short
+          kill $APP_PID || true
+
   # ── Docker image build (P0: production deps must actually install) ──
   docker:
     runs-on: ubuntu-latest

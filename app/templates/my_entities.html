@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="animate-fade-in">
@@ -95,7 +96,7 @@
                     </span>
                     <span class="text-xs text-slate-400 dark:text-slate-500">{{ entity.category }}</span>
                     {% if entity.is_public %}
-                    <span class="text-xs text-emerald-500">🌐 Public</span>
+                    <span class="text-xs text-emerald-500 inline-flex items-center gap-1">{{ icon('globe', 'w-3.5 h-3.5') }}Public</span>
                     {% endif %}
                 </div>
                 <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ entity.real_name }}</h3>
@@ -124,7 +125,7 @@
 
         {% if not entities %}
         <div class="text-center py-12 text-slate-400 dark:text-slate-500">
-            <div class="text-4xl mb-3">📝</div>
+            {{ icon('edit', 'w-10 h-10 mb-3 mx-auto text-slate-300 dark:text-slate-600') }}
             <p>You haven't created any entities yet.</p>
         </div>
         {% endif %}

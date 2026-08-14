@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html lang="{{ locale }}" class="{{ theme or 'dark' }}">
+{% from "components/icon.html" import icon %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ t.app_title }}</title>
+    <!-- PracticeLoop icon pack favicons (design/icons/INTEGRATION_AGENT.md §3) -->
+    <link rel="icon" href="/static/favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="/static/favicon/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="/static/favicon/site.webmanifest">
+    <link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#6B57A5">
+    <meta name="theme-color" content="#6B57A5">
     <!-- Local assets — no external CDN dependencies -->
     <script src="/static/tailwindcss.js"></script>
     <style>
@@ -134,24 +142,24 @@
                     {% set nav_active = "text-indigo-500 dark:text-indigo-400 font-semibold " %}
                     {% set nav_inactive = "text-slate-600 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 " %}
                     {% if composition and composition.tracker_active %}
-                    <a href="/dashboard" class="{{ nav_class }}{{ nav_active if active_nav == 'dashboard' else nav_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>{{ t.nav_dashboard }}</a>
-                    <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>{{ t.nav_tasks }}</a>
-                    <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>{{ t.training_title }}</a>
-                    <a href="/entities/catalog" class="{{ nav_class }}{{ nav_active if active_nav == 'catalog' else nav_inactive }}"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>{{ t.catalog_title }}</a>
-                    <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }}"{% if active_nav == 'points' %} aria-current="page"{% endif %}>{{ t.nav_points }}</a>
-                    <a href="/import" class="{{ nav_class }}{{ nav_active if active_nav == 'import' else nav_inactive }}"{% if active_nav == 'import' %} aria-current="page"{% endif %}>{{ t.nav_import }}</a>
-                    <a href="/diets" class="{{ nav_class }}{{ nav_active if active_nav == 'diets' else nav_inactive }}"{% if active_nav == 'diets' %} aria-current="page"{% endif %}>{{ t.nav_diets }}</a>
-                    <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }}"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ t.admin_title_page }}</a>
+                    <a href="/dashboard" class="{{ nav_class }}{{ nav_active if active_nav == 'dashboard' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>{{ icon('dashboard', 'w-4 h-4') }}{{ t.nav_dashboard }}</a>
+                    <a href="/tasks/" class="{{ nav_class }}{{ nav_active if active_nav == 'tasks' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>{{ icon('tasks', 'w-4 h-4') }}{{ t.nav_tasks }}</a>
+                    <a href="/training" class="{{ nav_class }}{{ nav_active if active_nav == 'training' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'training' %} aria-current="page"{% endif %}>{{ icon('training', 'w-4 h-4') }}{{ t.training_title }}</a>
+                    <a href="/entities/catalog" class="{{ nav_class }}{{ nav_active if active_nav == 'catalog' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>{{ icon('catalog', 'w-4 h-4') }}{{ t.catalog_title }}</a>
+                    <a href="/api/v2/points/page" class="{{ nav_class }}{{ nav_active if active_nav == 'points' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'points' %} aria-current="page"{% endif %}>{{ icon('points', 'w-4 h-4') }}{{ t.nav_points }}</a>
+                    <a href="/import" class="{{ nav_class }}{{ nav_active if active_nav == 'import' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'import' %} aria-current="page"{% endif %}>{{ icon('import', 'w-4 h-4') }}{{ t.nav_import }}</a>
+                    <a href="/diets" class="{{ nav_class }}{{ nav_active if active_nav == 'diets' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'diets' %} aria-current="page"{% endif %}>{{ icon('diet', 'w-4 h-4') }}{{ t.nav_diets }}</a>
+                    <a href="/admin" class="{{ nav_class }}{{ nav_active if active_nav == 'admin' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'admin' %} aria-current="page"{% endif %}>{{ icon('admin', 'w-4 h-4') }}{{ t.admin_title_page }}</a>
                     {% endif %}
                     {% if composition and composition.social_operational %}
-                    <a href="/social/profile" class="{{ nav_class }}{{ nav_active if active_nav == 'social' else nav_inactive }}"{% if active_nav == 'social' %} aria-current="page"{% endif %}>{{ t.nav_social }}</a>
+                    <a href="/social/profile" class="{{ nav_class }}{{ nav_active if active_nav == 'social' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'social' %} aria-current="page"{% endif %}>{{ icon('users', 'w-4 h-4') }}{{ t.nav_social }}</a>
                     {% endif %}
                     {% if composition and composition.timer_operational %}
-                    <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>{{ t.nav_timer or "Lock Timer" }}</a>
+                    <a href="/locktimer" class="{{ nav_class }}{{ nav_active if active_nav == 'locktimer' else nav_inactive }} inline-flex items-center gap-1.5"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>{{ icon('timer', 'w-4 h-4') }}{{ t.nav_timer or "Lock Timer" }}</a>
                     {% endif %}
                     <form action="/auth/logout" method="post" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 cursor-pointer min-h-[44px]">{{ t.nav_logout }}</button>
+                        <button type="submit" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 cursor-pointer min-h-[44px]">{{ icon('logout', 'w-4 h-4') }}{{ t.nav_logout }}</button>
                     </form>
                 {% else %}
                     <a href="/login"
@@ -169,7 +177,7 @@
             <form action="/auth/logout" method="post" class="md:hidden inline" title="{{ t.nav_logout }}" aria-label="{{ t.nav_logout }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                 <button type="submit" class="text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-2 min-h-[44px] min-w-[44px]">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/></svg>
+                    {{ icon('logout', 'w-5 h-5') }}
                 </button>
             </form>
             {% endif %}
@@ -199,9 +207,9 @@
                             aria-label="{{ t.theme_toggle }}"
                             class="text-lg px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer min-h-[44px] min-w-[44px]">
                         {% if theme == 'dark' %}
-                        <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                        {{ icon('sun', 'w-4 h-4') }}
                         {% else %}
-                        <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        {{ icon('moon', 'w-4 h-4') }}
                         {% endif %}
                     </button>
                 </form>
@@ -219,25 +227,25 @@
         <div class="flex h-full max-w-5xl mx-auto">
             {% if composition and composition.tracker_active %}
             <a href="/dashboard" class="{{ bn_class }}{{ bn_active if active_nav == 'dashboard' else bn_inactive }}"{% if active_nav == 'dashboard' %} aria-current="page"{% endif %}>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10"/></svg>
+                {{ icon('dashboard', 'w-5 h-5') }}
                 {{ t.nav_dashboard }}
             </a>
             <a href="/tasks/" class="{{ bn_class }}{{ bn_active if active_nav == 'tasks' else bn_inactive }}"{% if active_nav == 'tasks' %} aria-current="page"{% endif %}>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                {{ icon('tasks', 'w-5 h-5') }}
                 {{ t.nav_tasks }}
             </a>
             <a href="/training" class="{{ bn_class }}{{ bn_active if active_nav == 'training' else bn_inactive }}"{% if active_nav == 'training' %} aria-current="page"{% endif %}>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                {{ icon('training', 'w-5 h-5') }}
                 {{ t.training_title }}
             </a>
             <a href="/entities/catalog" class="{{ bn_class }}{{ bn_active if active_nav == 'catalog' else bn_inactive }}"{% if active_nav == 'catalog' %} aria-current="page"{% endif %}>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                {{ icon('catalog', 'w-5 h-5') }}
                 {{ t.catalog_title }}
             </a>
             {% endif %}
             {% if composition and composition.timer_operational %}
             <a href="/locktimer" class="{{ bn_class }}{{ bn_active if active_nav == 'locktimer' else bn_inactive }}"{% if active_nav == 'locktimer' %} aria-current="page"{% endif %}>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v6m0 8v6M4 12H2m4.3-5.7l1.4 1.4M18.3 5.7l-1.4 1.4M2 12h2m1.7 5.7l1.4-1.4M22 12h-6"/><circle cx="12" cy="12" r="2"/></svg>
+                {{ icon('timer', 'w-5 h-5') }}
                 {{ t.nav_timer or "Lock Timer" }}
             </a>
             {% endif %}
@@ -251,7 +259,7 @@
     {% if error %}
     <div class="max-w-5xl mx-auto px-4 mt-4" role="alert">
         <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 0 0-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
+            {{ icon('error', 'w-4 h-4') }}
             {{ error }}
         </div>
     </div>
@@ -259,7 +267,7 @@
     {% if success %}
     <div class="max-w-5xl mx-auto px-4 mt-4" role="status">
         <div class="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+            {{ icon('check-circle', 'w-4 h-4') }}
             {{ success }}
         </div>
     </div>

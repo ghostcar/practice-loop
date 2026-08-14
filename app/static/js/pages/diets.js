@@ -76,8 +76,9 @@
     histBtn.onclick = () => showHistory(d.id, card);
     actions.appendChild(histBtn);
     if (HAS_LLM) {
-      const evalBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white');
-      evalBtn.textContent = '🤖';
+      const evalBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white inline-flex items-center gap-1');
+      evalBtn.appendChild(window.plIcon('ai', 'w-4 h-4'));
+      evalBtn.appendChild(document.createTextNode(I18N.evaluate_btn));
       evalBtn.title = I18N.evaluate_btn;
       evalBtn.onclick = () => evaluateDiet(d.id);
       actions.appendChild(evalBtn);
@@ -103,7 +104,8 @@
     const photosWrap = el('div', 'flex flex-wrap items-center gap-2 mb-3');
     photosWrap.dataset.dietPhotos = d.id;
     const photoBtn = el('label', 'px-3 py-1.5 rounded-lg text-xs font-medium min-h-[44px] cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-400 inline-flex items-center gap-1');
-    photoBtn.textContent = '📷 ' + I18N.photo_add;
+    photoBtn.appendChild(window.plIcon('camera', 'w-4 h-4'));
+    photoBtn.appendChild(document.createTextNode(I18N.photo_add));
     const photoInput = el('input', 'hidden');
     photoInput.type = 'file';
     photoInput.accept = 'image/*';

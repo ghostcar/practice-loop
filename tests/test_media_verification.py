@@ -213,6 +213,44 @@ class TestMediaApi:
         assert response.status_code == 200
         assert response.json()["status"] == "deleted"
 
+    async def test_upload_runs_in_thread_pool(self, auth_client, monkeypatch) -> None:
+        """Pillow/disk work must not block the event loop (audit P2-2)."""
+        import asyncio
+
+        called = asyncio.Event()
+        original = asyncio.to_thread
+
+        async def spy(fn, *args, **kwargs):
+            called.set()
+            return await original(fn, *args, **kwargs)
+
+        monkeypatch.setattr(asyncio, "to_thread", spy)
+        data = io.BytesIO(b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xff\xd9")
+        files = {"file": ("test.jpg", data, "image/jpeg")}
+        response = await auth_client.post("/api/v2/media?owner_type=general", files=files)
+        assert response.status_code == 200
+        assert called.is_set()  # persisted via thread pool, not inline
+
+    async def test_decompression_bomb_guard(self, auth_client, monkeypatch) -> None:
+        """An image exceeding the pixel guard must fail closed (audit P2-2)."""
+        from app.services import media as media_mod
+
+        # Override the guard threshold so a modest 64x64 PNG trips it.
+        monkeypatch.setattr(media_mod, "PILLOW_MAX_IMAGE_PIXELS", 100)
+
+        from io import BytesIO
+
+        from PIL import Image as PILImage
+
+        buf = BytesIO()
+        PILImage.new("RGB", (64, 64), (200, 30, 30)).save(buf, format="PNG")
+        png = buf.getvalue()
+
+        files = {"file": ("bomb.png", io.BytesIO(png), "image/png")}
+        response = await auth_client.post("/api/v2/media?owner_type=general", files=files)
+        # Pixel guard (or, at worst, dimension rule) rejects it.
+        assert response.status_code == 400
+
 
 # ── Verification API integration tests ──
 

@@ -77,6 +77,7 @@
 | ADR-070 | 2026-08-14 | Границы LLM для личного контура (расширение ADR-030/034) | Личный контур — первая очередь: LLM подключается полностью через Omniroute (первый источник, подбор моделей, harness, инструменты). 1) **Гибрид сохраняется**: LLM выбирает из каталога + opt-in, но режим названий (полные / обезличенные) регулируется per-provider через `llm_mode` (full/abstract, уже есть). 2) **Параметрическая генерация через промпт-шаблоны**: пользователь осознанно создаёт шаблон промпта с параметрами, сохраняет как переиспользуемый шаблон; LLM генерирует по шаблону. 3) **LLM-верификация медиа как истина в последней инстанции**: для соло-игр подтверждение кодов и закрытия пояса верности через LLM-анализ фото (развитие Q13; OCR не требуется — LLM понимает изображения). 4) **Приватная база знаний LLM** для обогащения промптов (на базе существующего векторного индекса + Omniroute-эмбеддингов). 5) **Библиотека типовых промптов** по функциональным блокам. Комплаенс-красная линия остаётся: никакого обхода safety-фильтров провайдеров и маскирования контента (ToS + риск блокировки ключа Omniroute/upstream). Статус: решено владельцем 2026-08-14 (Сессия 119), реализация — этапами в STAGE_PLAN | принято |
 | ADR-071 | 2026-08-14 | M5: freeze legacy memory v1 (Memory v2 milestone) | Legacy `memory/` (кроме `DECISIONS.md`) **заморожен** (frozen headers): `SESSIONS.md`, `STATUS.md`, `CHANGELOG.md`, `OPEN_QUESTIONS.md`, `CONTEXT.md` больше не дописываются — архив; история сессий — Git. Активная память — Memory v2 (ADR-068): решения `DECISIONS.md` (единственный активный legacy, компилируется в `docs/adr/`), знания `docs/wiki/`, вопросы `docs/questions/`, факты `docs/state/`. `memoryctl lint` + `facts --check` — **required** в CI (был informational). В benchmark добавлена метрика **impact-recall** (ground truth по символам → полнота нахождения всех затронутых файлов/тестов/миграций; задел под graph-пилот). AGENTS.md/README.md/DOCUMENTATION_MAP обновлены. 758/758 ✅ | принято |
 | ADR-072 | 2026-08-14 | Q14: penalty честно в HTTP + Omniroute в портал (Шаг 4) | 1) **Штрафы применяются по политикам правил**: `skip_task` применяет `rule.penalty_policy` (points/add_time), `close_slot` при позднем закрытии (now > close_due_at) применяет `rule.late_close_policy`; идемпотентно по occurrence (`skip:{id}` / `late_close:{id}`); неизвестный тип политики логируется и пропускается. API skip/close возвращают JSON (ADR-065) с `penalty`-блоком (`serialize_penalty_event`); UI показывает реальный результат («Штраф применён: -5 points») вместо «Penalty may apply»; формы переведены на fetch + i18n-ключи (6 новых EN/RU). 2) **Omniroute в портале**: `Settings.omniroute_host/api_key/embedding_model`; seed-пресет Omniroute строится из settings (host → /v1, key шифруется), активен по умолчанию; .env.example обновлён. 767/767 ✅ | принято |
+| ADR-073 | 2026-08-14 | Шаг 5: икон-пак PracticeLoop + Gate B (async media, transaction boundary, browser smoke) | 1) **Икон-пак интегрирован (design/icons → runtime)**: sprite.svg + favicon скопированы в app/static/; макрос `components/icon.html` (`{{ icon('name', cls) }}`); все emoji/inline-SVG заменены в base.html (nav desktop/mobile, theme sun/moon, logout, flash), index, dashboard, training, import_data, llm_configs, admin, privacy, my_entities; JS-хелпер `window.plIcon` (DOM API, без innerHTML — §6.7) для diets/inventory. Иконки будущих модулей зарезервированы, не используются. Обязательство в AGENTS.md/DESIGN.md: иконки только из пакета, при нехватке — сообщать. Недостающие (thumbs-up/fire для social encourage — значения контента) оставлены как emoji, зафиксировано. 2) **P2-2 async media**: `save_media` → Pillow/диск в thread pool (`asyncio.to_thread`), decompression bomb guard (`PILLOW_MAX_IMAGE_PIXELS` + escalate warning→error), тест. 3) **P1-5 transaction boundary**: `tests/test_transaction_boundary.py` — allowlist legacy (28 файлов), новые роутеры без db.commit() (locktimer/social уже чистые); media upload/finalize переведены на auto-commit get_db (delete оставлен явным — файл удаляется после фиксации БД). 4) **P1-4 browser smoke**: optional `e2e` dev-group (playwright), `tests/e2e/test_browser_smoke.py` (register→dashboard→tasks→timer→no console errors), CI job e2e (postgres + alembic + chromium). 776/776 ✅ (+9), ruff ✅ | принято |
 
 
 ### ADR-061 — Social S4+S6 (Verification + Tracker Adapter)
@@ -201,3 +202,32 @@ startup-чтение до целевого ≤10 KiB.
 **Rationale:** UI должен быть честным (Q14); переменные Omniroute лежали в .env без потребителя —
 теперь пресет по умолчанию реально работает из .env, без ручного ввода.
 **Status:** ✅ реализовано в Сессии 120 (767/767 ✅, ruff ✅).
+
+### ADR-073 — Шаг 5: икон-пак PracticeLoop + Gate B (async media, transaction boundary, browser smoke)
+**Date:** 2026-08-14
+**Decision:**
+1. **Икон-пак PracticeLoop интегрирован как единый источник иконок (ADR-070/шаг 5).**
+   `design/icons` → runtime: `sprite.svg` и favicon в `app/static/`, макрос
+   `app/templates/components/icon.html` (`icon(name, class_name, label)`), серверный allowlist
+   имён. Все emoji/inline-SVG в UI заменены (base.html desktop+mobile nav, theme sun/moon,
+   logout, flash; index, dashboard, training, import_data, llm_configs, admin, privacy,
+   my_entities). JS: `window.plIcon` через DOM API (без innerHTML — §6.7), используется в
+   diets.js/inventory.js. Обязательство в AGENTS.md/DESIGN.md: иконки только из пакета,
+   нехватка — сообщать. Недостающие (thumbs-up/fire для social encourage — это значения
+   контента, хранятся в БД) оставлены emoji и зафиксированы как долг.
+2. **P2-2 — media без блокировки event loop.** `save_media` переносит Pillow-декод/миниатюру
+   и запись на диск в thread pool (`asyncio.to_thread`); decompression bomb guard:
+   `PILLOW_MAX_IMAGE_PIXELS=100MP` + эскалация warning→error, оба класса
+   (DecompressionBombError/Warning) ловятся fail-closed.
+3. **P1-5 — единый владелец транзакций.** `tests/test_transaction_boundary.py`: legacy
+   allowlist (28 файлов, где commit остаётся осознанно), новые роутеры без `db.commit()`,
+   locktimer/social — уже чистые (0 commit). `media.py` upload/finalize переведены на
+   auto-commit `get_db()`; delete оставлен явным (файл удаляется только после фиксации БД).
+4. **P1-4 — browser smoke.** Optional `e2e` dev-group (playwright), тест
+   `tests/e2e/test_browser_smoke.py` (register → dashboard → tasks → timer → отсутствие
+   console errors), CI job `e2e` (postgres + alembic + chromium). В default-окружении тест
+   скипается (importorskip).
+**Rationale:** личный контур — единственный приоритет; икон-пак покрывает и будущие модули
+(Media Vault, Care, Health, Cycle, Insights, Chastity, D/s), заменяя emoji/Lucide; audit Gate B
+(P1-4/P1-5/P2-2) закрывает блокеры перед следующим шагом.
+**Status:** ✅ реализовано в Сессии 120 (776/776 ✅, ruff ✅, lint 0/0, facts fresh).
