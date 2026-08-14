@@ -75,9 +75,10 @@ def test_full_personal_loop(page) -> None:
     assert "/dashboard" in page.url, f"expected dashboard, got {page.url}"
     page.screenshot(path="/tmp/smoke_dashboard.png")
 
-    # Desktop nav must render and the icon sprite must load (no broken <use>).
-    nav = page.locator("nav[aria-label='Main']")
-    assert nav.is_visible(), "desktop nav missing"
+    # Desktop shell must render (DESIGN v2 sidebar) and the icon sprite must
+    # load (no broken <use>).
+    nav = page.locator("#pl-sidebar")
+    assert nav.is_visible(), "desktop sidebar missing"
 
     # ── Tasks page ──────────────────────────────────────────────────────
     page.goto(f"{BASE_URL}/tasks/")

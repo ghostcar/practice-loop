@@ -5,6 +5,7 @@
 > Технические детали — в `docs/memory-rfc/STAGE_PLAN.md`; продукты — в `ROADMAP.md` и `PRODUCT.md`.
 
 > **Правило проверок (сессия 131):** полный `pytest tests/` (~9 мин) — только перед деплоем/релизом. При правке фронта/шаблонов — таргетный набор: `test_shell_v2 test_design_v2_9b test_design_v2_9c test_icon_pack test_audit_s57 test_phase3_task_ui test_locktimer_device test_media_verification test_dnd_diets_uploads` (~2 мин, 127 тестов). При правке конкретного модуля — его тест-файлы.
+> **Browser-тесты НЕ скипать (сессия 131, решение владельца):** playwright установлен (node `@playwright/test` 1.62 + браузеры chromium/firefox/webkit в `~/.cache/ms-playwright`; python-пакет — по требованию). Полноценный набор — `npx playwright test` (5 проектов: desktop/tablet/mobile chromium, firefox, webkit; smoke/a11y/usability против `E2E_BASE_URL`, default `http://127.0.0.1:8000` — живой прод). Старый pytest-e2e `tests/e2e/test_browser_smoke.py` — тоже не скипать (python playwright; `pip install playwright`). Файлы настроек (package.json, playwright.config.ts, tests/browser/, tools/browser/, docs/BROWSER_TESTING.md) — часть проекта, node_modules/ в git не заносится.
 
 ---
 
