@@ -140,6 +140,13 @@ class TestShellLayoutRegression:
         assert "body.pl-sidebar-open .pl-sidebar-nav { scrollbar-width: thin" in css
         assert ".pl-sidebar-nav::-webkit-scrollbar { display: none; }" in css
 
+    def test_collapsed_nav_label_removed_from_layout(self):
+        """Collapsed rail must drop nav labels from layout entirely. opacity:0
+        alone keeps them in the flex row, overflowing 72px and shoving the icon
+        past the left edge (icons 'уехали налево' regression)."""
+        css = self._base_css()
+        assert "body:not(.pl-sidebar-open) .pl-nav-label { display: none; }" in css
+
 
 class TestShellAssets:
     def test_self_hosted_fonts_present(self):

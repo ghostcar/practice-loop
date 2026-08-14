@@ -469,6 +469,10 @@
         .pl-nav-icon { flex-shrink: 0; }
         .pl-nav-label { opacity: 0; transition: opacity var(--motion-fast) var(--motion-easing); }
         body.pl-sidebar-open .pl-nav-label { opacity: 1; }
+        /* Collapsed: labels must leave the layout entirely (opacity:0 alone would
+           keep them in the flex row, overflowing the 72px rail and pushing the
+           icon past the left edge — clipped by overflow:hidden) */
+        body:not(.pl-sidebar-open) .pl-nav-label { display: none; }
 
         /* Utility bar (desktop) + mobile top bar (§7) */
         .pl-utility {

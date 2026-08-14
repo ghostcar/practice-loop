@@ -65,3 +65,6 @@ uploads/
 test-results/
 playwright-report/
 blob-report/
+
+# Node/browser-test tooling (playwright etc. — never commit)
+node_modules/
