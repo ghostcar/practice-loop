@@ -252,4 +252,23 @@
     var qs = params.toString();
     window.location.href = '/tasks/' + (qs ? '?' + qs : '');
   };
+
+  // --- Row density toggle (DESIGN v2 §10: compact / comfortable) ---
+  var logList = document.getElementById('log-list');
+  var compactBtn = document.getElementById('density-compact');
+  var comfortableBtn = document.getElementById('density-comfortable');
+  if (logList && compactBtn && comfortableBtn) {
+    var density = 'comfortable';
+    try { density = localStorage.getItem('pl_tasks_density') || 'comfortable'; } catch (e) { /* ignore */ }
+    function applyDensity(d) {
+      var compact = d === 'compact';
+      logList.classList.toggle('density-compact', compact);
+      compactBtn.classList.toggle('active', compact);
+      comfortableBtn.classList.toggle('active', !compact);
+      try { localStorage.setItem('pl_tasks_density', d); } catch (e) { /* ignore */ }
+    }
+    compactBtn.addEventListener('click', function () { applyDensity('compact'); });
+    comfortableBtn.addEventListener('click', function () { applyDensity('comfortable'); });
+    applyDensity(density);
+  }
 })();

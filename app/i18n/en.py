@@ -865,4 +865,12 @@ EN = {
     "shell_menu": "Open navigation",
     "shell_close": "Close navigation",
     "dashboard_ritual": "Commitments first. Everything else can wait.",
+    # Step 9b — Active Timer + Tasks (DESIGN_V2 §8/§10)
+    "locktimer_mode_duration": "Duration from start",
+    "locktimer_mode_infinite": "Infinite — until safety stop",
+    "locktimer_cap": "cap",
+    "tasks_density_label": "Row density",
+    "tasks_density_compact": "Compact",
+    "tasks_density_comfortable": "Comfortable",
+    "tasks_row_due": "due",
 }

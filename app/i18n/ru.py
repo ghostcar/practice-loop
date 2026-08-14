@@ -869,4 +869,12 @@ RU = {
     "shell_menu": "Открыть навигацию",
     "shell_close": "Закрыть навигацию",
     "dashboard_ritual": "Сначала — обязательства. Остальное подождёт.",
+    # Step 9b — Active Timer + Tasks (DESIGN_V2 §8/§10)
+    "locktimer_mode_duration": "По длительности от старта",
+    "locktimer_mode_infinite": "Бессрочно — до safety stop",
+    "locktimer_cap": "потолок",
+    "tasks_density_label": "Плотность строк",
+    "tasks_density_compact": "Компактно",
+    "tasks_density_comfortable": "Свободно",
+    "tasks_row_due": "срок",
 }
