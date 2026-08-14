@@ -2,6 +2,7 @@
   "aggregate": {
     "forbidden_hits": 0,
     "max_pack_size_bytes": 9079,
+    "mean_impact_recall": 0.6852,
     "mean_mrr": 0.3558,
     "mean_recall_all": 0.3845,
     "mean_recall_at_5": 0.2431,
@@ -9,13 +10,14 @@
     "mean_recall_docs": 0.5833,
     "median_pack_size_bytes": 7718,
     "tasks_full_code_recall": 3,
+    "tasks_with_impact": 3,
     "total_extra_reads": 174
   },
   "branch": "main",
   "dirty": true,
-  "generated_at": "2026-08-14T04:05:11Z",
+  "generated_at": "2026-08-14T04:21:28Z",
   "generator_version": "0.1.0",
-  "head": "ba81124c29147d4def4fa73ee5c2220c2ef562aa",
+  "head": "8b9e9a6a62c059151da88a69cb8223c051db9bdf",
   "kind": "benchmark_report",
   "limitations": "expected_docs includes legacy docs (PRODUCT_DECISIONS.md, memory/DECISIONS.md, memory/OPEN_QUESTIONS.md, CURRENT_STATE.md, alembic.ini) that are outside the current L0/L1 corpus (knowledge.md + docs/{adr,wiki,questions}) and outside search_code scope (app|tests|alembic). Doc-recall misses for these reflect the M5 split boundary, not a retrieval bug. Pack size is measured with a deterministic session id and head-anchored timestamp.",
   "meets_admission_thresholds": false,
@@ -45,6 +47,9 @@
       "extra_reads_count": 15,
       "forbidden_hits": [],
       "id": 1,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [],
       "mrr": 1.0,
       "notes": "",
@@ -66,6 +71,11 @@
       "extra_reads_count": 3,
       "forbidden_hits": [],
       "id": 2,
+      "impact_ground_truth_count": 5,
+      "impact_recall": 1.0,
+      "impact_symbols": [
+        "list_sessions_by_date_range"
+      ],
       "missing": [
         "app/timeutils.py",
         "tests/test_timeutils.py"
@@ -94,6 +104,9 @@
       "extra_reads_count": 7,
       "forbidden_hits": [],
       "id": 3,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "app/timeutils.py",
         "app/main.py",
@@ -104,7 +117,7 @@
       ],
       "mrr": 0.0,
       "notes": "",
-      "pack_size_bytes": 3627,
+      "pack_size_bytes": 3807,
       "query": "Границы суток «сегодня» в tz устройства — где считается и как рендерится?",
       "recall_all": 0.0,
       "recall_at_5": 0.0,
@@ -134,6 +147,11 @@
       "extra_reads_count": 15,
       "forbidden_hits": [],
       "id": 4,
+      "impact_ground_truth_count": 18,
+      "impact_recall": 0.7222222222222222,
+      "impact_symbols": [
+        "safety_stop"
+      ],
       "missing": [
         "PRODUCT_DECISIONS.md",
         "DOCUMENTATION_MAP.md"
@@ -174,6 +192,9 @@
       "extra_reads_count": 19,
       "forbidden_hits": [],
       "id": 5,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "app/platform/social/models.py",
         "PRODUCT_DECISIONS.md",
@@ -212,6 +233,9 @@
       "extra_reads_count": 16,
       "forbidden_hits": [],
       "id": 6,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "app/security.py"
       ],
@@ -234,6 +258,9 @@
       "extra_reads_count": 2,
       "forbidden_hits": [],
       "id": 7,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "app/templates/locktimer/session_detail.html",
         "app/i18n/en.py",
@@ -276,6 +303,9 @@
       "extra_reads_count": 20,
       "forbidden_hits": [],
       "id": 8,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "alembic/env.py",
         "alembic/versions/*.py",
@@ -284,7 +314,7 @@
       ],
       "mrr": 0.0,
       "notes": "",
-      "pack_size_bytes": 6228,
+      "pack_size_bytes": 6408,
       "query": "Сколько сейчас миграций и какая последняя? Есть ли расхождение head?",
       "recall_all": 0.0,
       "recall_at_5": 0.0,
@@ -319,6 +349,9 @@
       "extra_reads_count": 20,
       "forbidden_hits": [],
       "id": 9,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "DOCUMENTATION_MAP.md",
         "memory/DECISIONS.md"
@@ -360,6 +393,9 @@
       "extra_reads_count": 20,
       "forbidden_hits": [],
       "id": 10,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "app/models/media.py",
         "app/services/media.py",
@@ -403,6 +439,11 @@
       "extra_reads_count": 19,
       "forbidden_hits": [],
       "id": 11,
+      "impact_ground_truth_count": 3,
+      "impact_recall": 0.3333333333333333,
+      "impact_symbols": [
+        "local_day_bounds"
+      ],
       "missing": [
         "app/timeutils.py",
         "tests/test_locktimer_services.py"
@@ -442,6 +483,9 @@
       "extra_reads_count": 18,
       "forbidden_hits": [],
       "id": 12,
+      "impact_ground_truth_count": 0,
+      "impact_recall": null,
+      "impact_symbols": [],
       "missing": [
         "tests/test_locktimer_services.py"
       ],
