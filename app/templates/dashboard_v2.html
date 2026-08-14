@@ -1,7 +1,10 @@
-<script type="application/json" id="page-i18n">{{ {"t": t, "tg_bot_username": tg_bot_username} | tojson }}</script>
-<script src="/static/js/pages/dashboard.js"></script>
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
+
+{% block head %}
+<script type="application/json" id="page-i18n">{{ {"t": t, "tg_bot_username": tg_bot_username} | tojson }}</script>
+<script src="/static/js/pages/dashboard.js"></script>
+{% endblock %}
 
 {% block content %}
 <div class="space-y-5">
@@ -370,7 +373,4 @@
         <a href="/api/v2/inventory/page" class="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-center text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-500 transition-colors">{{ t.nav_inventory }}</a>
     </div>
 </div>
-{% endblock %}
-
-{% block head %}
 {% endblock %}
