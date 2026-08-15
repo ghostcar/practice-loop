@@ -305,20 +305,40 @@ sidebar (иконки + подписи).
 в `app/models/locktimer.py`). Включается флагом
 `LOCKTIMER_CORE_ENABLED=true`. Доступен на странице `/locktimer`.
 
-### Модель
-- **LockSession**: draft → active → completed / safety_stopped. duration_type, timezone,
-  effective_end_at, merge_gap, random_seed (детерминированная генерация).
+### Модель (14 таблиц `lock_*`)
+- **LockTimerTemplate**: сохранённый шаблон сессии (name, description, config JSON,
+  sort_order, archived_at).
+- **LockSession**: draft → active → completed / safety_stopped (реализованный
+  жизненный цикл; константы validating / cancelled_by_system зарезервированы, пока не
+  задействованы). duration_type (fixed_dates / duration_from_start / infinite),
+  timezone, requested_start_at / started_at / original_end_at / effective_end_at /
+  max_end_at, can_extend_duration, merge_gap_seconds, random_seed (encrypted +
+  commitment, детерминированная генерация), privacy_mode, row_version.
+- **LockSessionSnapshot**: canonical_config JSON на момент старта.
+- **LockInnerPeriod**: именованный под-период (rule_type + rule_data).
 - **LockSlotRule**: 5 типов расписания (every_n_days, exact_datetime, recurring_from_date,
-  flexible_window_once, after_previous_close). duration, grace, extend_on_late_open,
-  require_tag.
+  flexible_window_once, after_previous_close). duration_seconds, allow_late_open,
+  max_late_seconds, extend_on_late_open, require_close_media, close_grace_seconds,
+  late_close_policy, require_tag.
+- **LockSlotOccurrence**: pending → eligible → open → closed (+ overdue_open расчётный,
+  missed, blocked, cancelled). planned_open/close_at, eligible_from/until, close_due_at,
+  actual_opened/closed_at, extension_applied_seconds, close_tag_number.
 - **LockTaskRule**: 6 типов расписания (daily, every_n_days, recurring_from_date,
   exact_datetime, anytime_before_end, deterministic_random). source_entity FK,
-  media/verification/penalty/availability policies.
-- **LockSlotOccurrence**: состояние pending→eligible→open→closed, planned_open/close,
-  extension, close_tag_number.
-- **LockTaskOccurrence**: состояние scheduled→visible→submitted→completed/review/failed/skipped.
-- **LockTagViolation**: запись расхождения номерной бирки при verify.
-- **LockLlmProposal**: AI-предложения правил (kind, items JSON, apply/reject).
+  due_window_seconds, hide_until_due, requires_report, media/verification/penalty/
+  availability policies.
+- **LockTaskOccurrence**: scheduled → visible → submitted → verifying → completed /
+  review_required / failed / skipped / expired / safety_cancelled. appears_at, due_at,
+  content_visible, occurrence_snapshot, revealed_at, finalized_at.
+- **LockPenaltyEvent**: penalty_type (add_time / block_next_slot / mark_task_failed /
+  points), state (applied / capped_noop / rejected / superseded), idempotency_key.
+- **LockAuditEvent**: append-only аудит (actor, event_type, object, from/to_version, payload).
+- **LockJobReceipt**: durable фоновые job (state pending/running/done/failed/dead, lease).
+- **LockOutboxEvent**: транзакционные domain-события (state pending/published/failed).
+- **LockLlmProposal**: AI-предложения правил (kind: pre_start_plan / hidden_reveal /
+  anchor_fill; status pending/partial/applied/rejected; items JSON; usage-метрики).
+- **LockTagViolation**: запись расхождения номерной бирки при verify (reason mismatch /
+  missing_required).
 
 ### Действия
 - **Создание**: POST /locktimer/new → draft с правилами слотов/задач (JSON-расписания)
