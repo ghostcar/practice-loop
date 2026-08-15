@@ -7,7 +7,10 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
   const errors = captureBrowserErrors(page);
   await registerFreshUser(page);
 
-  const routes = ["/dashboard", "/tasks/", "/entities/catalog", "/training", "/locktimer"];
+  const routes = [
+    "/dashboard", "/tasks/", "/entities/catalog", "/training", "/locktimer",
+    "/settings", "/media", "/api/v2/points/page",
+  ];
   for (const route of routes) {
     const response = await page.goto(route);
     expect(response?.status(), `${route} response`).toBeLessThan(400);
@@ -16,19 +19,23 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
   expect(errors).toEqual([]);
 });
 
-test("@a11y authenticated shell has no serious axe violations", async ({ page }) => {
+test("@a11y authenticated shell has no serious axe violations (dark + light)", async ({ page }) => {
   await registerFreshUser(page);
-  const routes = ["/dashboard", "/tasks/", "/entities/catalog", "/locktimer"];
+  const routes = ["/dashboard", "/tasks/", "/entities/catalog", "/locktimer", "/settings"];
 
-  for (const route of routes) {
-    await page.goto(route);
-    const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    const blocking = results.violations.filter((violation) =>
-      ["serious", "critical"].includes(violation.impact ?? ""),
-    );
-    expect(blocking, `${route}: ${JSON.stringify(blocking, null, 2)}`).toEqual([]);
+  // DoD §20: dark/light одинаково приглушены — axe гоняется в обеих схемах.
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const route of routes) {
+      await page.goto(route);
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      const blocking = results.violations.filter((violation) =>
+        ["serious", "critical"].includes(violation.impact ?? ""),
+      );
+      expect(blocking, `${route} (${scheme}): ${JSON.stringify(blocking, null, 2)}`).toEqual([]);
+    }
   }
 });
 
@@ -46,10 +53,22 @@ test("@usability keyboard focus is visible and page has one primary landmark", a
 
 test("@usability no horizontal overflow at the target viewport", async ({ page }) => {
   await registerFreshUser(page);
-  for (const route of ["/dashboard", "/tasks/", "/locktimer"] ) {
+  for (const route of ["/dashboard", "/tasks/", "/locktimer", "/settings"] ) {
     await page.goto(route);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, `${route} horizontal overflow`).toBeLessThanOrEqual(1);
+  }
+});
+
+test("@usability reduced-motion keeps the shell usable", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await registerFreshUser(page);
+  await page.goto("/dashboard");
+  await expect(page.locator("main")).toBeVisible();
+  const toggle = page.locator("#pl-sidebar-toggle");
+  if (await toggle.count()) {
+    await toggle.click();
+    await expect(page.locator("main")).toBeVisible();
   }
 });
 
