@@ -84,3 +84,5 @@
 | [ADR-078](ADR-078.md) | 2026-08-14 | Шаг 9b: Active Timer + Tasks по DESIGN_V2 §8/§10 | accepted |
 | [ADR-079](ADR-079.md) | 2026-08-14 | Шаг 9c: Inventory/Media patterns (Media Vault, крупные изображения, verified state) | accepted |
 | [ADR-080](ADR-080.md) | 2026-08-14 | Шаг 9d: токен-пасс Personal-разделов + a11y-контраст (WCAG AA) | accepted |
+| [ADR-081](ADR-081.md) | 2026-08-14 | Шаг 9e: Social tone + customization/discretion (DESIGN_V2 §13/§16) | accepted |
+| [ADR-082](ADR-082.md) | 2026-08-14 | Шаг 9f: Visual QA, light-тема контрасты, browser-матрица (DESIGN_V2 §20) | accepted |

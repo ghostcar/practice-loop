@@ -105,8 +105,8 @@
  <form action="/entities/{{ entity.id }}/opt-in" method="post" class="flex items-center gap-2">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
  <select name="desire_level" aria-label="{{ entity.real_name }}: {{ t.catalog_desire_label }}" class="text-xs rounded-lg border border-[color:var(--border)] pl-surface-soft px-2 py-1.5
- {% if oi and oi.desire_level == 'want_very_much' %}text-emerald-600 border-emerald-400{% endif %}
- {% if oi and oi.desire_level == 'strong_aversion' %}text-red-500 border-red-400{% endif %}">
+ {% if oi and oi.desire_level == 'want_very_much' %}text-emerald-700 dark:text-emerald-400 border-emerald-400 dark:border-emerald-800{% endif %}
+ {% if oi and oi.desire_level == 'strong_aversion' %}text-red-700 dark:text-red-400 border-red-400 dark:border-red-800{% endif %}">
  <option value="want_very_much" {% if oi and oi.desire_level == 'want_very_much' %}selected{% endif %}>{{ t.desire_want_very_much }}</option>
  <option value="want" {% if oi and oi.desire_level == 'want' %}selected{% endif %}>{{ t.desire_want }}</option>
  <option value="neutral" {% if oi and oi.desire_level == 'neutral' or not oi %}selected{% endif %}>{{ t.desire_neutral }}</option>

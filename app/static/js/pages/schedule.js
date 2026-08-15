@@ -10,13 +10,13 @@
     const todayRules = await todayRes.json();
     const el = document.getElementById('today-sched');
     if (!todayRules.length) {
-      el.innerHTML = '<p class="text-slate-400 dark:text-slate-500 text-center py-4 text-sm">No rules for today.</p>';
+      el.innerHTML = '<p class="text-[color:var(--text-muted)] text-center py-4 text-sm">No rules for today.</p>';
     } else {
       el.innerHTML = todayRules
         .map(
           (r) => `
       <div class="flex items-center gap-3 p-2 rounded-lg border-l-4" style="border-left-color:${TYPE_COLORS[r.task_type] || '#94a3b8'}">
-        <span class="text-xs font-mono text-slate-400 w-24 tabular-nums">${r.start_time}${r.end_time ? ' – ' + r.end_time : ''}</span>
+        <span class="text-xs font-mono text-[color:var(--text-muted)] w-24 tabular-nums">${r.start_time}${r.end_time ? ' – ' + r.end_time : ''}</span>
         <span class="flex-1 text-sm text-slate-700 dark:text-slate-300">${escapeHtml(String(r.entity_name || r.notes || '—'))}</span>
         <span class="text-xs px-2 py-0.5 rounded font-medium" style="background:${TYPE_COLORS[r.task_type]}18;color:${TYPE_COLORS[r.task_type]}">${escapeHtml(r.task_type)}</span>
       </div>

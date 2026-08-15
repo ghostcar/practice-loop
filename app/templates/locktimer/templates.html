@@ -7,25 +7,25 @@
 
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ t.locktimer_templates_title or "Templates" }}</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_templates_subtitle or "Reusable session templates" }}</p>
+      <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.locktimer_templates_title or "Templates" }}</h1>
+      <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.locktimer_templates_subtitle or "Reusable session templates" }}</p>
     </div>
     <a href="/locktimer" class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">← {{ t.locktimer_title or "Timer" }}</a>
   </div>
 
   {% if templates %}
-  <p class="text-xs text-gray-400 -mb-2">({{ t.locktimer_drag_hint or "drag to reorder" }})</p>
+  <p class="text-xs text-[color:var(--text-muted)] -mb-2">({{ t.locktimer_drag_hint or "drag to reorder" }})</p>
   <div id="templates-list" class="grid gap-3">
     {% for tmpl in templates %}
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 cursor-grab active:cursor-grabbing"
       data-template-id="{{ tmpl.id }}" draggable="true">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3 min-w-0">
-          <span class="text-gray-300 dark:text-gray-600 select-none" aria-hidden="true">⠿</span>
+          <span class="text-[color:var(--text-muted)] dark:text-[color:var(--text-secondary)] select-none" aria-hidden="true">⠿</span>
           <div class="min-w-0">
-            <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ tmpl.name }}</h3>
-            {% if tmpl.description %}<p class="text-xs text-gray-500 mt-0.5">{{ tmpl.description }}</p>{% endif %}
-            <div class="flex gap-3 mt-1 text-xs text-gray-400">
+            <h3 class="font-semibold text-[color:var(--text)]">{{ tmpl.name }}</h3>
+            {% if tmpl.description %}<p class="text-xs text-[color:var(--text-secondary)] mt-0.5">{{ tmpl.description }}</p>{% endif %}
+            <div class="flex gap-3 mt-1 text-xs text-[color:var(--text-muted)]">
               <span>{{ tmpl.slot_count }} slot rule(s)</span>
               <span>{{ tmpl.task_count }} task rule(s)</span>
               {% if tmpl.updated_at %}<span>updated {{ localtime(tmpl.updated_at, '%Y-%m-%d') }}</span>{% endif %}
@@ -48,8 +48,8 @@
   </div>
   {% else %}
   <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-    <p class="text-gray-500 dark:text-gray-400">{{ t.locktimer_no_templates or "No saved templates yet." }}</p>
-    <p class="text-sm text-gray-400 mt-1">{{ t.locktimer_no_templates_hint or "Create a draft session with rules, then save it as a template." }}</p>
+    <p class="text-[color:var(--text-secondary)]">{{ t.locktimer_no_templates or "No saved templates yet." }}</p>
+    <p class="text-sm text-[color:var(--text-muted)] mt-1">{{ t.locktimer_no_templates_hint or "Create a draft session with rules, then save it as a template." }}</p>
   </section>
   {% endif %}
 

@@ -142,16 +142,21 @@ async def login(
 
     token = create_access_token(user.id)
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    # Secure is meaningful only over HTTPS. On plain-http loopback (local dev,
+    # browser E2E) strict engines (WebKit) drop a Secure cookie entirely; the
+    # flag there is both useless and harmful. Real deployments (non-loopback)
+    # keep Secure in production.
+    loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=settings.app_env == "production",  # HTTPS-only in production
+        secure=settings.app_env == "production" and not loopback,
         samesite="lax",
         max_age=86400,  # 24 hours
         path="/",
     )
-    set_csrf_cookie(response)
+    set_csrf_cookie(response, request)
     return response
 
 

@@ -8,7 +8,9 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // 2 workers: the VPS is small; 6+ parallel browsers under full parallelism
+  // starve the app container and cause Firefox font-download timeouts.
+  workers: process.env.CI ? 1 : 2,
   timeout: 30_000,
   expect: { timeout: 7_500 },
   reporter: process.env.CI

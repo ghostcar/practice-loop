@@ -82,7 +82,7 @@
     <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_consent_desc }}</p>
     <form action="/social/consent/accept" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+      <button type="submit" class="px-6 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition">
         {{ t.social_consent_accept_btn }}
       </button>
     </form>

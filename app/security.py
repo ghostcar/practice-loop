@@ -31,15 +31,24 @@ def _hmac_csrf(token: str) -> str:
     return hmac.new(key, token.encode(), hashlib.sha256).hexdigest()
 
 
-def set_csrf_cookie(response: Response) -> str:
-    """Generate a CSRF token and set it as a cookie. Returns the raw token."""
+def set_csrf_cookie(response: Response, request: Request | None = None) -> str:
+    """Generate a CSRF token and set it as a cookie. Returns the raw token.
+
+    Secure is meaningful only over HTTPS. On plain-http loopback (local dev,
+    browser E2E) strict engines (WebKit) drop a Secure cookie entirely, so the
+    flag is omitted there — mirroring the access_token cookie in auth.py.
+    """
     raw = _generate_csrf_token()
+    loopback = bool(
+        request is not None
+        and request.url.hostname in ("127.0.0.1", "localhost", "::1")
+    )
     response.set_cookie(
         key=CSRF_COOKIE_NAME,
         value=raw,
         httponly=False,  # JS must be able to read it for HTMX headers
         samesite="lax",
-        secure=settings.app_env == "production",  # HTTPS-only in production
+        secure=settings.app_env == "production" and not loopback,
         max_age=86400,
     )
     return raw
@@ -56,7 +65,7 @@ def ensure_csrf_cookie(request: Request, response: Response) -> str:
     existing = request.cookies.get(CSRF_COOKIE_NAME)
     if existing:
         return existing
-    return set_csrf_cookie(response)
+    return set_csrf_cookie(response, request)
 
 
 async def verify_csrf(request: Request) -> None:

@@ -122,7 +122,7 @@
     </div>
   `
         )
-        .join('') || '<p class="text-slate-400 dark:text-slate-500 text-center py-8">' + escapeHtml(I18N.inv_empty) + '</p>';
+        .join('') || '<p class="text-[color:var(--text-muted)] text-center py-8">' + escapeHtml(I18N.inv_empty) + '</p>';
     // Icon pack pass: inject <svg><use> icons via DOM (never innerHTML — §6.7)
     const rows = el.querySelectorAll('[data-id]');
     rows.forEach((row) => {
@@ -237,7 +237,7 @@
       archived: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
       unavailable: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
     };
-    return m[s] || 'text-slate-400';
+    return m[s] || 'text-[color:var(--text-muted)]';
   }
   function filter(c) {
     currentFilter = c;

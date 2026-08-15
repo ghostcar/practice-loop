@@ -135,7 +135,7 @@
  {% if all_done.value %}
  <form method="POST" action="/training/tasks/{{ log.id }}/complete">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
- <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg min-h-[44px]">{{ t.training_complete }}</button>
+ <button type="submit" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium rounded-lg min-h-[44px]">{{ t.training_complete }}</button>
  </form>
  {% endif %}
  {% endif %}
@@ -239,7 +239,7 @@
  <input type="text" name="notes" placeholder="{{ t.training_log_add_field_notes }}" aria-label="{{ t.training_log_add_field_notes }}"
  class="flex-1 px-1.5 py-1 text-xs border border-[color:var(--border)] rounded pl-surface text-[color:var(--text)]">
  </div>
- <button type="submit" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded min-h-[44px]">{{ t.training_log_add }}</button>
+ <button type="submit" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium rounded min-h-[44px]">{{ t.training_log_add }}</button>
  </form>
  </details>
  </div>

@@ -24,7 +24,7 @@
       <div class="flex gap-2">
         <form action="/social/invite/{{ item.invite.id }}/accept" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">{{ t.social_rel_accept }}</button>
+          <button type="submit" class="px-4 py-1.5 bg-green-700 text-white text-sm rounded-lg hover:bg-green-800">{{ t.social_rel_accept }}</button>
         </form>
         <form action="/social/invite/{{ item.invite.id }}/decline" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -76,7 +76,7 @@
         </div>
         <form action="/social/invite/{{ item.rel.id }}/revoke" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="text-xs text-red-500 hover:text-red-700">{{ t.social_rel_revoke }}</button>
+          <button type="submit" class="text-xs text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">{{ t.social_rel_revoke }}</button>
         </form>
       </div>
       <!-- Grants -->
@@ -102,7 +102,7 @@
             {% endif %}
             <form action="/social/grant/{{ grant.id }}/revoke" method="post" class="inline">
               <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-              <button class="text-red-500 hover:text-red-700">{{ t.social_rel_revoke }}</button>
+              <button class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">{{ t.social_rel_revoke }}</button>
             </form>
           </div>
         </div>

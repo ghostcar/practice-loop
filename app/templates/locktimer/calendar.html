@@ -8,11 +8,11 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ t.locktimer_calendar or "Lock Timer Calendar" }}</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t.locktimer_calendar_subtitle or "Session history and weekly compliance" }}</p>
+      <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.locktimer_calendar or "Lock Timer Calendar" }}</h1>
+      <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.locktimer_calendar_subtitle or "Session history and weekly compliance" }}</p>
     </div>
     <a href="/locktimer"
-       class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+       class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-[color:var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-gray-800 transition">
       ← {{ t.locktimer_back or "Back" }}
     </a>
   </div>
@@ -20,12 +20,12 @@
   <!-- Month navigation -->
   <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
     <a href="/locktimer/calendar?month={{ prev_month }}"
-       class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+       class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-[color:var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       ← {{ prev_month[-2:] }}
     </a>
-    <span class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ month_label }}</span>
+    <span class="text-lg font-semibold text-[color:var(--text)]">{{ month_label }}</span>
     <a href="/locktimer/calendar?month={{ next_month }}"
-       class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+       class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-[color:var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-gray-700 transition">
       {{ next_month[-2:] }} →
     </a>
   </div>
@@ -35,7 +35,7 @@
     <!-- Day headers -->
     <div class="grid grid-cols-7 gap-1 mb-2">
       {% for name in day_names %}
-      <div class="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 py-1">{{ name }}</div>
+      <div class="text-center text-xs font-semibold text-[color:var(--text-secondary)] py-1">{{ name }}</div>
       {% endfor %}
     </div>
 
@@ -48,7 +48,7 @@
       <div class="aspect-square rounded-lg border text-center relative
           {% if cell.is_today %}border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20{% else %}border-gray-100 dark:border-gray-750{% endif %}">
         <span class="text-xs font-medium mt-1 inline-block
-            {% if cell.is_today %}text-indigo-700 dark:text-indigo-300{% else %}text-gray-700 dark:text-gray-300{% endif %}">
+            {% if cell.is_today %}text-indigo-700 dark:text-indigo-300{% else %}text-[color:var(--text)]{% endif %}">
           {{ cell.day }}
         </span>
         {% if cell.sessions %}
@@ -64,7 +64,7 @@
           </a>
           {% endfor %}
           {% if cell.sessions | length > 3 %}
-          <span class="text-[8px] text-gray-400 leading-3">+{{ cell.sessions | length - 3 }}</span>
+          <span class="text-[8px] text-[color:var(--text-muted)] leading-3">+{{ cell.sessions | length - 3 }}</span>
           {% endif %}
         </div>
         {% endif %}
@@ -73,7 +73,7 @@
       {% endfor %}
     </div>
 
-    <div class="flex gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-750">
+    <div class="flex gap-4 mt-3 text-xs text-[color:var(--text-secondary)] pt-2 border-t border-gray-100 dark:border-gray-750">
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Active</span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Completed</span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Safety Stop</span>
@@ -83,20 +83,20 @@
 
   <!-- Weekly compliance -->
   <section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t.locktimer_weekly_compliance or "Weekly Compliance" }}</h2>
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.locktimer_weekly_compliance or "Weekly Compliance" }}</h2>
     {% if compliance %}
     <div class="space-y-3">
       {% for week in compliance %}
       <div class="border border-gray-100 dark:border-gray-750 rounded-lg p-3">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ week.week }} → {{ week.week_end }}</span>
-          <span class="text-xs text-gray-400">{{ week.sessions }} sessions</span>
+          <span class="text-sm font-medium text-[color:var(--text)]">{{ week.week }} → {{ week.week_end }}</span>
+          <span class="text-xs text-[color:var(--text-muted)]">{{ week.sessions }} sessions</span>
         </div>
 
         {% if week.slots_total > 0 %}
         {% set slot_pct = (week.slots_closed / week.slots_total * 100) | int %}
         <div class="flex items-center gap-2 text-xs mb-1">
-          <span class="w-16 text-gray-500 dark:text-gray-400">Windows:</span>
+          <span class="w-16 text-[color:var(--text-secondary)]">Windows:</span>
           <div class="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div class="h-full rounded-full transition-all
                 {% if slot_pct >= 80 %}bg-green-500
@@ -104,14 +104,14 @@
                 {% else %}bg-red-500{% endif %}"
                  style="width: {{ slot_pct }}%"></div>
           </div>
-          <span class="w-16 text-right text-gray-500 dark:text-gray-400">{{ week.slots_closed }}/{{ week.slots_total }}</span>
+          <span class="w-16 text-right text-[color:var(--text-secondary)]">{{ week.slots_closed }}/{{ week.slots_total }}</span>
         </div>
         {% endif %}
 
         {% if week.tasks_total > 0 %}
         {% set task_pct = (week.tasks_completed / week.tasks_total * 100) | int %}
         <div class="flex items-center gap-2 text-xs">
-          <span class="w-16 text-gray-500 dark:text-gray-400">Tasks:</span>
+          <span class="w-16 text-[color:var(--text-secondary)]">Tasks:</span>
           <div class="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div class="h-full rounded-full transition-all
                 {% if task_pct >= 80 %}bg-green-500
@@ -119,18 +119,18 @@
                 {% else %}bg-red-500{% endif %}"
                  style="width: {{ task_pct }}%"></div>
           </div>
-          <span class="w-16 text-right text-gray-500 dark:text-gray-400">{{ week.tasks_completed }}/{{ week.tasks_total }}</span>
+          <span class="w-16 text-right text-[color:var(--text-secondary)]">{{ week.tasks_completed }}/{{ week.tasks_total }}</span>
         </div>
         {% endif %}
 
         {% if week.slots_total == 0 and week.tasks_total == 0 %}
-        <span class="text-xs text-gray-400">{{ t.locktimer_no_data or "No data" }}</span>
+        <span class="text-xs text-[color:var(--text-muted)]">{{ t.locktimer_no_data or "No data" }}</span>
         {% endif %}
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-sm text-gray-400">{{ t.locktimer_no_compliance or "Not enough data for compliance stats." }}</p>
+    <p class="text-sm text-[color:var(--text-muted)]">{{ t.locktimer_no_compliance or "Not enough data for compliance stats." }}</p>
     {% endif %}
   </section>
 

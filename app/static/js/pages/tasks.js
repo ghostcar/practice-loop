@@ -85,7 +85,7 @@
     manualSelect.addEventListener('change', async function () {
       var eid = manualSelect.value;
       manualParams.classList.remove('hidden');
-      manualParams.innerHTML = '<div class="flex items-center gap-2 text-sm text-slate-400">' +
+      manualParams.innerHTML = '<div class="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">' +
         '<span class="animate-pulse">●</span> ' + (T.tasks_manual_loading || 'Loading…') + '</div>';
       var errBox = document.getElementById('manual-params-error');
       if (errBox) errBox.classList.add('hidden');
@@ -100,7 +100,7 @@
           '<input type="hidden" name="entity_id" value="' + eid + '">' +
           '<div class="max-h-72 overflow-y-auto pr-1">' + html + '</div>' +
           '<div>' +
-          '  <label for="manual-comment" class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">' +
+          '  <label for="manual-comment" class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">' +
           (T.tasks_manual_comment || 'Planned comment') + '</label>' +
           '  <input id="manual-comment" name="planned_comment" placeholder="' + (T.tasks_manual_comment_ph || '') + '"' +
           '    class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">' +
@@ -218,7 +218,7 @@
           initSelectorFields(fieldsBox);
         })
         .catch(function () {
-          fieldsBox.innerHTML = '<div class="text-sm text-slate-400">' + (T.tasks_complete_actual_empty || 'No parameters') + '</div>';
+          fieldsBox.innerHTML = '<div class="text-sm text-[color:var(--text-muted)]">' + (T.tasks_complete_actual_empty || 'No parameters') + '</div>';
         });
     }
   }

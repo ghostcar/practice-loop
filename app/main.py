@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import mimetypes
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -164,6 +165,15 @@ async def client_tz_middleware(request: Request, call_next):
 # ---------------------------------------------------------------------------
 # Static files & health
 # ---------------------------------------------------------------------------
+
+# Self-hosted fonts (Step 9a): Python's mimetypes (3.11 container) does not know
+# .woff2/.woff → Starlette would serve them as text/plain and Firefox/WebKit
+# reject the download (console error, fallback fonts). Register the types so
+# StaticFiles returns the correct Content-Type.
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("font/woff", ".woff")
+mimetypes.add_type("font/ttf", ".ttf")
+mimetypes.add_type("font/otf", ".otf")
 
 with contextlib.suppress(RuntimeError):
     app.mount("/static", StaticFiles(directory="app/static"), name="static")

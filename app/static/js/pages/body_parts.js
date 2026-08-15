@@ -14,7 +14,7 @@
       window._bpFlat = flattenTree(tree);
       renderTree(tree);
     } catch (e) {
-      treeEl.innerHTML = '<div class="p-4 text-sm text-red-400">Failed to load body parts</div>';
+      treeEl.innerHTML = '<div class="p-4 text-sm text-red-700 dark:text-red-400">Failed to load body parts</div>';
     }
   })();
 
@@ -57,13 +57,13 @@
     var html = '<div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors' +
       (highlighted ? '' : ' opacity-30') + '" style="padding-left:' + (indent + 16) + 'px">';
     if (hasChildren) {
-      html += '<button onclick="window._bpToggle(\'' + id + '\')\" class="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs transition-transform\" id=\"' + id + '-btn\">\u25b8</button>';
+      html += '<button onclick="window._bpToggle(\'' + id + '\')\" class="w-5 h-5 flex items-center justify-center text-[color:var(--text-muted)] hover:text-slate-600 dark:hover:text-slate-300 text-xs transition-transform\" id=\"' + id + '-btn\">\u25b8</button>';
     } else {
       html += '<span class="w-5"></span>';
     }
     html += '<span class="w-2 h-2 rounded-full ' + dotColor + ' flex-shrink-0"></span>';
     html += '<span class="text-sm text-slate-700 dark:text-slate-200">' + escHtml(node.title) + '</span>';
-    html += '<span class="text-xs text-slate-400 ml-auto">' + escHtml(node.slug || '') + '</span>';
+    html += '<span class="text-xs text-[color:var(--text-muted)] ml-auto">' + escHtml(node.slug || '') + '</span>';
     html += '</div>';
     if (hasChildren) {
       html += '<div id="' + id + '" class="' + (expandAll ? '' : 'hidden') + '">';

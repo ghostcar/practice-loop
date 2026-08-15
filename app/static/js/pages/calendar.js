@@ -36,9 +36,9 @@
       templates
         .map(
           (t) =>
-            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-slate-400">${escapeHtml(t.name)}${t.is_default ? defaultSuffix : ''} &mdash; ${t.windows.length}${winSuffix}</span><button onclick="delTpl('${escapeHtml(String(t.id))}')" class="text-red-400 hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
+            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-[color:var(--text-muted)]">${escapeHtml(t.name)}${t.is_default ? defaultSuffix : ''} &mdash; ${t.windows.length}${winSuffix}</span><button onclick="delTpl('${escapeHtml(String(t.id))}')" class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
         )
-        .join('') || '<span class="text-slate-400">' + escapeHtml(I18N.calendar_no_templates) + '</span>';
+        .join('') || '<span class="text-[color:var(--text-muted)]">' + escapeHtml(I18N.calendar_no_templates) + '</span>';
 
     const sel = document.getElementById('ovr-tpl');
     sel.innerHTML = templates.map((t) => `<option value="${escapeHtml(String(t.id))}">${escapeHtml(t.name)}</option>`).join('');
@@ -49,9 +49,9 @@
       overrides
         .map(
           (o) =>
-            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-slate-400">${escapeHtml(String(o.label || o.template_name))}: ${o.start_date} &rarr; ${o.end_date}</span><button onclick="delOvr('${escapeHtml(String(o.id))}')" class="text-red-400 hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
+            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-[color:var(--text-muted)]">${escapeHtml(String(o.label || o.template_name))}: ${o.start_date} &rarr; ${o.end_date}</span><button onclick="delOvr('${escapeHtml(String(o.id))}')" class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
         )
-        .join('') || '<span class="text-slate-400">' + escapeHtml(I18N.calendar_no_overrides) + '</span>';
+        .join('') || '<span class="text-[color:var(--text-muted)]">' + escapeHtml(I18N.calendar_no_overrides) + '</span>';
   }
 
   async function saveTemplate() {
@@ -122,8 +122,8 @@
       const el = document.getElementById('check-result');
       const policyLabel = POLICY_LABEL[data.policy] || data.policy;
       el.innerHTML = data.available
-        ? `<span class="text-emerald-600 dark:text-emerald-400 font-medium">${escapeHtml(I18N.calendar_check_available)}</span> <span class="text-slate-500">(${escapeHtml(policyLabel)}${data.window_label ? ', ' + escapeHtml(data.window_label) : ''})</span>`
-        : `<span class="text-red-500 font-medium">${escapeHtml(I18N.calendar_check_unavailable)}</span> <span class="text-slate-500">(${escapeHtml(policyLabel)}${data.window_label ? ', ' + escapeHtml(data.window_label) : ''}${data.reason ? ' — ' + escapeHtml(data.reason) : ''})</span>`;
+        ? `<span class="text-emerald-700 dark:text-emerald-400 font-medium">${escapeHtml(I18N.calendar_check_available)}</span> <span class="text-[color:var(--text-secondary)]">(${escapeHtml(policyLabel)}${data.window_label ? ', ' + escapeHtml(data.window_label) : ''})</span>`
+        : `<span class="text-red-700 dark:text-red-400 font-medium">${escapeHtml(I18N.calendar_check_unavailable)}</span> <span class="text-[color:var(--text-secondary)]">(${escapeHtml(policyLabel)}${data.window_label ? ', ' + escapeHtml(data.window_label) : ''}${data.reason ? ' — ' + escapeHtml(data.reason) : ''})</span>`;
     });
   }
 

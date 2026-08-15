@@ -4,13 +4,13 @@
 <div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.locktimer_tag_audit_title }}</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.locktimer_tag_audit_title }}</h1>
+      <p class="text-sm text-[color:var(--text-secondary)] mt-1">
         {{ t.locktimer_tag_audit_subtitle }}: {{ session.id[:8] }}…
       </p>
     </div>
     <a href="/locktimer/sessions/{{ session.id }}"
-       class="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+       class="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-[color:var(--text-secondary)] hover:bg-gray-50 dark:border-gray-700 dark:text-[color:var(--text-secondary)] dark:hover:bg-gray-800">
       ← {{ t.locktimer_view_details }}
     </a>
   </div>
@@ -29,20 +29,20 @@
             {% else %}
             <span class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ t.locktimer_tag_missing }}</span>
             {% endif %}
-            <span class="text-gray-400 text-xs">{{ localtime(v.created_at, '%Y-%m-%d %H:%M') }}</span>
+            <span class="text-[color:var(--text-muted)] text-xs">{{ localtime(v.created_at, '%Y-%m-%d %H:%M') }}</span>
           </div>
-          <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
+          <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-[color:var(--text-secondary)]">
             <div>
-              <span class="text-gray-400">{{ t.locktimer_tag_expected }}:</span>
+              <span class="text-[color:var(--text-muted)]">{{ t.locktimer_tag_expected }}:</span>
               <span class="font-mono">{{ v.expected_tag }}</span>
             </div>
             <div>
-              <span class="text-gray-400">{{ t.locktimer_tag_provided }}:</span>
+              <span class="text-[color:var(--text-muted)]">{{ t.locktimer_tag_provided }}:</span>
               <span class="font-mono {% if v.reason == 'mismatch' %}text-red-600 dark:text-red-400{% endif %}">{{ v.provided_tag }}</span>
             </div>
           </div>
         </div>
-        <div class="text-xs text-gray-400">
+        <div class="text-xs text-[color:var(--text-muted)]">
           {{ t.locktimer_slot }}{{ v.slot_occurrence_id[:8] }}
         </div>
       </div>
@@ -50,7 +50,7 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="border border-dashed rounded-xl p-8 text-center text-gray-400 dark:border-gray-700">
+  <div class="border border-dashed rounded-xl p-8 text-center text-[color:var(--text-muted)] border-[color:var(--border)]">
     {{ t.locktimer_tag_audit_empty }}
   </div>
   {% endif %}

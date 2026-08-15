@@ -3,14 +3,14 @@
 
 {% block content %}
 <div class="animate-fade-in">
- <h1 class="text-2xl font-bold text-[color:var(--text)] mb-2 inline-flex items-center gap-2">{{ icon('trophy', 'w-7 h-7 text-amber-500') }}Achievements</h1>
+ <h1 class="text-2xl font-bold text-[color:var(--text)] mb-2 inline-flex items-center gap-2">{{ icon('trophy', 'w-7 h-7 text-amber-700 dark:text-amber-500') }}Achievements</h1>
  <p class="text-[color:var(--text-secondary)] mb-8">Public board (anonymized) + your collection</p>
 
  <!-- Progress stats -->
  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
  <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
- <div class="text-3xl mb-1 flex justify-center">{{ icon('trophy', 'w-8 h-8 text-amber-500') }}</div>
- <div class="text-2xl font-bold text-amber-500">{{ my_achievements|length }}</div>
+ <div class="text-3xl mb-1 flex justify-center">{{ icon('trophy', 'w-8 h-8 text-amber-700 dark:text-amber-500') }}</div>
+ <div class="text-2xl font-bold text-amber-700 dark:text-amber-500">{{ my_achievements|length }}</div>
  <div class="text-xs text-[color:var(--text-secondary)]">of 13 unlocked</div>
  </div>
  <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
@@ -19,8 +19,8 @@
  <div class="text-xs text-[color:var(--text-secondary)]">completion</div>
  </div>
  <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
- <div class="text-3xl mb-1 flex justify-center">{{ icon('flag', 'w-8 h-8 text-emerald-400') }}</div>
- <div class="text-2xl font-bold text-emerald-400">{{ 13 - my_achievements|length }}</div>
+ <div class="text-3xl mb-1 flex justify-center">{{ icon('flag', 'w-8 h-8 text-emerald-700 dark:text-emerald-400') }}</div>
+ <div class="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{{ 13 - my_achievements|length }}</div>
  <div class="text-xs text-[color:var(--text-secondary)]">remaining</div>
  </div>
  </div>
@@ -72,7 +72,7 @@
  <div class="space-y-2">
  {% for ach in all_achievements %}
  <div class="pl-surface rounded-xl border border-[color:var(--border)] px-4 py-3 flex items-center gap-3">
- <span class="text-lg">{{ icon('trophy', 'w-5 h-5 text-amber-500') }}</span>
+ <span class="text-lg">{{ icon('trophy', 'w-5 h-5 text-amber-700 dark:text-amber-500') }}</span>
  <div class="flex-1 min-w-0">
  <span class="font-medium text-[color:var(--text)]">{{ ach.name }}</span>
  <span class="text-xs text-[color:var(--text-muted)] ml-2">{{ ach.description }}</span>

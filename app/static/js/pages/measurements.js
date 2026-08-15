@@ -19,7 +19,7 @@
           (m) =>
             `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       <td class="px-4 py-2 text-slate-700 dark:text-slate-300">${escapeHtml(String(m.measured_date))}</td>
-      <td class="px-4 py-2 text-slate-500 dark:text-slate-400">${escapeHtml(m.time_of_day)}</td>
+      <td class="px-4 py-2 text-[color:var(--text-secondary)]">${escapeHtml(m.time_of_day)}</td>
       <td class="px-4 py-2 text-right text-slate-700 dark:text-slate-300 tabular-nums">${m.weight ?? '—'}</td>
       <td class="px-4 py-2 text-right text-slate-700 dark:text-slate-300 tabular-nums">${m.chest ?? '—'}</td>
       <td class="px-4 py-2 text-right text-slate-700 dark:text-slate-300 tabular-nums">${m.waist ?? '—'}</td>
@@ -28,7 +28,7 @@
     </tr>`
         )
         .join('') ||
-      '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">No measurements yet</td></tr>';
+      '<tr><td colspan="7" class="px-4 py-8 text-center text-[color:var(--text-muted)]">No measurements yet</td></tr>';
   }
 
   async function loadChart(metric) {
@@ -74,7 +74,7 @@
       const indicator = document.getElementById('trend-indicator');
       if (Math.abs(delta) < 0.5) {
         indicator.textContent = 'stable';
-        indicator.className = 'text-xs px-2 py-1 rounded-full font-medium bg-slate-100 dark:bg-slate-800 text-slate-500';
+        indicator.className = 'text-xs px-2 py-1 rounded-full font-medium bg-slate-100 dark:bg-slate-800 text-[color:var(--text-secondary)]';
       } else if ((metric === 'weight' && delta < 0) || (metric !== 'weight' && delta > 0)) {
         indicator.textContent = 'improving';
         indicator.className = 'text-xs px-2 py-1 rounded-full font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300';

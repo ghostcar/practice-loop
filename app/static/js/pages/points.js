@@ -14,13 +14,13 @@
     if (d.thresholds) {
       document.getElementById('thresholds').innerHTML = `
       <div class="px-4 py-2 rounded-lg ${d.points_balance < d.thresholds.negative ? 'bg-red-900 ring-2 ring-red-500' : 'bg-gray-700'}">
-        <span class="text-xs text-gray-400">Negative</span><br>&lt; ${d.thresholds.negative}
+        <span class="text-xs text-[color:var(--text-muted)]">Negative</span><br>&lt; ${d.thresholds.negative}
       </div>
       <div class="px-4 py-2 rounded-lg ${d.points_balance < d.thresholds.warning ? 'bg-yellow-900 ring-2 ring-yellow-500' : 'bg-gray-700'}">
-        <span class="text-xs text-gray-400">Warning</span><br>&lt; ${d.thresholds.warning}
+        <span class="text-xs text-[color:var(--text-muted)]">Warning</span><br>&lt; ${d.thresholds.warning}
       </div>
       <div class="px-4 py-2 rounded-lg ${d.points_balance >= d.thresholds.good ? 'bg-green-900 ring-2 ring-green-500' : 'bg-gray-700'}">
-        <span class="text-xs text-gray-400">Good</span><br>≥ ${d.thresholds.good}
+        <span class="text-xs text-[color:var(--text-muted)]">Good</span><br>≥ ${d.thresholds.good}
       </div>
     `;
     }
@@ -31,14 +31,14 @@
         .map(
           (t) => `
     <tr class="border-t border-slate-100 dark:border-slate-800">
-      <td class="px-4 py-2 text-slate-400 text-xs">${window.localDateISO(t.created_at)}</td>
+      <td class="px-4 py-2 text-[color:var(--text-muted)] text-xs">${window.localDateISO(t.created_at)}</td>
       <td class="px-4 py-2 ${t.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${t.amount >= 0 ? '+' : ''}${t.amount}</td>
       <td class="px-4 py-2"><span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">${escapeHtml(t.transaction_type)}</span></td>
       <td class="px-4 py-2 text-slate-600 dark:text-slate-300">${escapeHtml(t.reason || '')}</td>
     </tr>
   `
         )
-        .join('') || '<tr><td class="px-4 py-4 text-slate-400 text-center" colspan="4">No transactions yet</td></tr>';
+        .join('') || '<tr><td class="px-4 py-4 text-[color:var(--text-muted)] text-center" colspan="4">No transactions yet</td></tr>';
   }
 
   const spendForm = document.getElementById('spend-form');
@@ -57,7 +57,7 @@
     const data = await res.json();
     const el = document.getElementById('redemption-list');
     if (!data.length) {
-      el.innerHTML = '<p class="text-xs text-gray-400 py-1">No pending redemptions</p>';
+      el.innerHTML = '<p class="text-xs text-[color:var(--text-muted)] py-1">No pending redemptions</p>';
       return;
     }
     el.innerHTML = data
@@ -66,7 +66,7 @@
     <div class="flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-slate-800">
       <div class="flex-1">
         <span class="text-sm font-medium text-slate-800 dark:text-slate-200">${escapeHtml(r.redemption_type.replace(/_/g, ' '))}</span>
-        <span class="text-xs text-slate-400 ml-2">${r.duration_min}m ×${r.escalation_level}</span>
+        <span class="text-xs text-[color:var(--text-muted)] ml-2">${r.duration_min}m ×${r.escalation_level}</span>
         ${r.description ? `<div class="text-xs text-slate-500">${escapeHtml(r.description)}</div>` : ''}
       </div>
       <div class="flex gap-1">
@@ -94,9 +94,9 @@
       profiles
         .map(
           (p) =>
-            `<div class="flex justify-between items-center"><span>${escapeHtml(p.name)} ${p.is_default ? '(default)' : ''}</span><button onclick="delProfile('${escapeHtml(String(p.id))}')" class="text-red-400 hover:text-red-500">Del</button></div>`
+            `<div class="flex justify-between items-center"><span>${escapeHtml(p.name)} ${p.is_default ? '(default)' : ''}</span><button onclick="delProfile('${escapeHtml(String(p.id))}')" class="text-red-700 dark:text-red-400 hover:text-red-500">Del</button></div>`
         )
-        .join('') || '<span class="text-slate-400">No profiles</span>';
+        .join('') || '<span class="text-[color:var(--text-muted)]">No profiles</span>';
     const sel = document.getElementById('assign-profile');
     sel.innerHTML = profiles.map((p) => `<option value="${escapeHtml(String(p.id))}">${escapeHtml(p.name)}</option>`).join('');
   }

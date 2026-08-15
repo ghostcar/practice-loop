@@ -111,7 +111,7 @@
       const el = document.getElementById('category-summary');
       if (total === 0) {
         el.innerHTML =
-          '<p class="text-sm text-slate-400 dark:text-slate-500">' +
+          '<p class="text-sm text-[color:var(--text-muted)]">' +
           escapeHtml(T.dashboard_no_categories || '') +
           ' <a href="/entities/catalog" class="text-indigo-500 underline">' +
           escapeHtml(T.dashboard_browse_catalog || '') +
@@ -131,10 +131,10 @@
                 <div class="flex items-center gap-3">
                     <span class="w-2.5 h-2.5 rounded-sm flex-shrink-0" style="background:${e.color}" aria-hidden="true"></span>
                     <span class="text-sm text-slate-600 dark:text-slate-300 truncate flex-1 min-w-0">${escapeHtml(e.label)}</span>
-                    <span class="text-xs text-slate-400 tabular-nums">${e.value}  ·  ${pct}%</span>
+                    <span class="text-xs text-[color:var(--text-muted)] tabular-nums">${e.value}  ·  ${pct}%</span>
                 </div>`;
             })
-            .join('') + (rest > 0 ? `<div class="text-xs text-slate-400 pt-1">+ ${rest} ${escapeHtml(T.dashboard_others || '')}</div>` : '');
+            .join('') + (rest > 0 ? `<div class="text-xs text-[color:var(--text-muted)] pt-1">+ ${rest} ${escapeHtml(T.dashboard_others || '')}</div>` : '');
       }
     } catch (e) {
       console.warn('Category summary:', e);

@@ -64,9 +64,9 @@
     titleRow.appendChild(el('h3', 'font-semibold text-slate-800 dark:text-slate-100', d.name));
     if (d.is_active) titleRow.appendChild(el('span', 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', I18N.active));
     left.appendChild(titleRow);
-    if (d.goal) left.appendChild(el('p', 'text-xs text-slate-500 dark:text-slate-400 mt-1', I18N.goal + ': ' + d.goal));
+    if (d.goal) left.appendChild(el('p', 'text-xs text-[color:var(--text-secondary)] mt-1', I18N.goal + ': ' + d.goal));
     if (d.direction) left.appendChild(el('span', 'text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 mt-1 inline-block', d.direction));
-    if (d.description) left.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500 mt-0.5', d.description));
+    if (d.description) left.appendChild(el('p', 'text-xs text-[color:var(--text-muted)] mt-0.5', d.description));
     head.appendChild(left);
 
     const actions = el('div', 'flex items-center gap-2 flex-shrink-0 flex-wrap');
@@ -128,7 +128,7 @@
     if (d.items && d.items.length) {
       d.items.forEach((it) => itemsWrap.appendChild(renderItemRow(d.id, it)));
     } else {
-      itemsWrap.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500 py-2', I18N.no_items));
+      itemsWrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)] py-2', I18N.no_items));
     }
     body.appendChild(itemsWrap);
 
@@ -138,13 +138,13 @@
       const evBlock = el('div', 'mt-3 p-3 rounded-lg bg-fuchsia-50 dark:bg-fuchsia-950/20 border border-fuchsia-200 dark:border-fuchsia-800/50');
       const evHead = el('div', 'flex items-center gap-3 mb-1');
       evHead.appendChild(el('span', 'text-xs font-semibold text-fuchsia-700 dark:text-fuchsia-300', I18N.eval_title));
-      const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+      const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-700 dark:text-red-400';
       evHead.appendChild(el('span', 'text-sm font-bold ' + scoreColor, I18N.eval_score + ': ' + Math.round(ev.score) + '/100'));
       evBlock.appendChild(evHead);
       evBlock.appendChild(el('p', 'text-xs text-slate-600 dark:text-slate-300', ev.summary || ''));
       if (ev.findings && ev.findings.length) {
-        evBlock.appendChild(el('p', 'text-xs font-semibold text-slate-500 dark:text-slate-400 mt-2', I18N.eval_findings + ':'));
-        ev.findings.forEach((f) => evBlock.appendChild(el('li', 'text-xs text-slate-500 dark:text-slate-400 ml-4 list-disc', f)));
+        evBlock.appendChild(el('p', 'text-xs font-semibold text-[color:var(--text-secondary)] mt-2', I18N.eval_findings + ':'));
+        ev.findings.forEach((f) => evBlock.appendChild(el('li', 'text-xs text-[color:var(--text-secondary)] ml-4 list-disc', f)));
       }
       if (ev.applied && ev.applied.length) {
         evBlock.appendChild(el('p', 'text-xs text-emerald-600 dark:text-emerald-400 mt-2', I18N.eval_applied + ' (' + ev.applied.length + ')'));
@@ -199,12 +199,12 @@
     const grip = el('span', 'text-slate-300 dark:text-slate-600 select-none', '⠿');
     const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400', it.name);
     name.title = I18N.item_edit;
-    const meta = el('span', 'text-xs text-slate-400 flex-shrink-0');
+    const meta = el('span', 'text-xs text-[color:var(--text-muted)] flex-shrink-0');
     meta.textContent = [qtyStr(it), it.meal_time].filter(Boolean).join(' · ');
-    const editBtn = el('button', 'text-slate-400 hover:text-indigo-600 text-xs px-1 min-h-[44px]', '');
+    const editBtn = el('button', 'text-[color:var(--text-muted)] hover:text-indigo-600 text-xs px-1 min-h-[44px]', '');
     editBtn.appendChild(window.plIcon('edit', 'w-4 h-4'));
     editBtn.title = I18N.item_edit;
-    const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '');
+    const del = el('button', 'text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs px-1 min-h-[44px]', '');
     del.appendChild(window.plIcon('close', 'w-4 h-4'));
     del.onclick = () => deleteItem(dietId, it.id);
     editBtn.onclick = () => editItemInline(dietId, it);
@@ -410,16 +410,16 @@
     const wrap = document.getElementById('consumptions');
     wrap.innerHTML = '';
     if (!items.length) {
-      wrap.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500', I18N.consumed + ': —'));
+      wrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.consumed + ': —'));
       return;
     }
-    wrap.appendChild(el('p', 'text-xs font-semibold text-slate-500 dark:text-slate-400', I18N.consumed + ' (' + items.length + '):'));
+    wrap.appendChild(el('p', 'text-xs font-semibold text-[color:var(--text-secondary)]', I18N.consumed + ' (' + items.length + '):'));
     items.forEach((c) => {
       const row = el('div', 'flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40');
       const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate', c.name);
-      const meta = el('span', 'text-xs text-slate-400 flex-shrink-0');
+      const meta = el('span', 'text-xs text-[color:var(--text-muted)] flex-shrink-0');
       meta.textContent = [qtyStr(c), c.meal_time].filter(Boolean).join(' · ');
-      const del = el('button', 'text-red-400 hover:text-red-600 text-xs px-1 min-h-[44px]', '');
+      const del = el('button', 'text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs px-1 min-h-[44px]', '');
       del.appendChild(window.plIcon('close', 'w-4 h-4'));
       del.onclick = async () => {
         await api('/diets/api/consumptions/' + c.id, 'DELETE');
@@ -468,20 +468,20 @@
     const body = el('div', 'mt-3 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700');
     body.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2', I18N.eval_history + ' — ' + d.name));
     if (!evals.length) {
-      body.appendChild(el('p', 'text-xs text-slate-400', I18N.eval_history_empty));
+      body.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.eval_history_empty));
     } else {
       evals.forEach((ev) => {
         const item = el('div', 'border-t border-slate-100 dark:border-slate-700 pt-2 mt-2 first:border-t-0 first:pt-0 first:mt-0');
         const headRow = el('div', 'flex items-center gap-2');
-        const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+        const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-700 dark:text-red-400';
         headRow.appendChild(el('span', 'text-sm font-bold ' + scoreColor, Math.round(ev.score) + '/100'));
-        if (ev.created_at) headRow.appendChild(el('span', 'text-xs text-slate-400', window.localDateISO(ev.created_at)));
+        if (ev.created_at) headRow.appendChild(el('span', 'text-xs text-[color:var(--text-muted)]', window.localDateISO(ev.created_at)));
         item.appendChild(headRow);
-        item.appendChild(el('p', 'text-xs text-slate-500 dark:text-slate-400 mt-1', ev.summary || ''));
+        item.appendChild(el('p', 'text-xs text-[color:var(--text-secondary)] mt-1', ev.summary || ''));
         body.appendChild(item);
       });
     }
-    const closeBtn = el('button', 'mt-3 text-xs text-slate-400 hover:text-slate-600 inline-flex items-center gap-1', '');
+    const closeBtn = el('button', 'mt-3 text-xs text-[color:var(--text-muted)] hover:text-slate-600 inline-flex items-center gap-1', '');
     closeBtn.appendChild(window.plIcon('close', 'w-3.5 h-3.5'));
     closeBtn.appendChild(document.createTextNode('close'));
     closeBtn.onclick = () => body.remove();
@@ -497,7 +497,7 @@
     const reviews = await res.json();
     wrap.innerHTML = '';
     if (!reviews.length) {
-      wrap.appendChild(el('p', 'text-xs text-slate-400 dark:text-slate-500', I18N.synergy_empty));
+      wrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.synergy_empty));
       return;
     }
     reviews.forEach((r) => renderSynergyReview(wrap, r));
@@ -508,7 +508,7 @@
     const block = el('div', 'p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60');
     const head = el('div', 'flex items-center gap-2 mb-1 flex-wrap');
     head.appendChild(el('span', 'text-xs font-semibold text-amber-700 dark:text-amber-300', I18N.synergy_period + ': ' + r.period_start + ' — ' + r.period_end));
-    if (r.created_at) head.appendChild(el('span', 'text-xs text-slate-400', window.localDateISO(r.created_at)));
+    if (r.created_at) head.appendChild(el('span', 'text-xs text-[color:var(--text-muted)]', window.localDateISO(r.created_at)));
     block.appendChild(head);
     block.appendChild(el('p', 'text-sm text-slate-700 dark:text-slate-200', a.summary || ''));
     if (a.correlations && a.correlations.length) {
