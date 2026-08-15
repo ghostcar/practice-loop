@@ -178,6 +178,26 @@ def prefs_from_dict(raw: dict | None) -> UserPrefs:
     return UserPrefs(**sanitize_prefs(raw))
 
 
+def neutral_notification(
+    prefs: UserPrefs | None,
+    title: str,
+    body: str | None,
+    locale: str = "en",
+) -> tuple[str, str | None]:
+    """Neutralize a notification title/body when discretion is active (DESIGN_V2 §12).
+
+    Discretion changes notification texts to a neutral localized variant so lock
+    screen / Telegram previews do not reveal the subject context. Data, rules,
+    safety actions and audit are never touched — only the presentation text.
+    """
+    if prefs is None or not prefs.discretion_active_at():
+        return title, body
+    from app.i18n import get_translations
+
+    t = get_translations(locale)
+    return t.get("dscr_notif_title", title), t.get("dscr_notif_body", body)
+
+
 # ---------------------------------------------------------------------------
 # Request-scoped ContextVar (mirrors app.timeutils client_tz pattern)
 # ---------------------------------------------------------------------------

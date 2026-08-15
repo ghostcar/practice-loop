@@ -23,6 +23,8 @@ from app.models.activity_log import ActivityLog
 from app.models.notification import Notification
 from app.models.points import PenaltyRedemption
 from app.models.progress import UserProgress
+from app.models.user import User
+from app.prefs import UserPrefs, neutral_notification, prefs_from_dict
 from app.timeutils import local_date, local_today
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,15 @@ async def get_or_create_progress(db: AsyncSession, user_id: uuid.UUID) -> UserPr
     return progress
 
 
+async def _user_prefs(db: AsyncSession, user_id: uuid.UUID) -> tuple:
+    """Load (UserPrefs, locale) for notification masking (DESIGN_V2 §12)."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        return UserPrefs(), "en"
+    return prefs_from_dict(user.prefs), user.locale or "en"
+
+
 async def on_task_completed(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -46,6 +57,7 @@ async def on_task_completed(
 ) -> dict:
     """Process task completion: award XP, update streaks, check achievements."""
     progress = await get_or_create_progress(db, user_id)
+    prefs, locale = await _user_prefs(db, user_id)
 
     # Extract intensity from ACTUAL params first (what was really done),
     # falling back to planned params (ADR-041 planned/actual split).
@@ -130,11 +142,14 @@ async def on_task_completed(
 
     # Level up notification
     if progress.level > old_level:
+        title, body = neutral_notification(
+            prefs, "Level Up! 🎉", f"You reached level {progress.level}!", locale
+        )
         n = Notification(
             user_id=user_id,
             type="level_up",
-            title="Level Up! 🎉",
-            body=f"You reached level {progress.level}!",
+            title=title,
+            body=body,
             link="/dashboard",
         )
         db.add(n)
@@ -142,11 +157,17 @@ async def on_task_completed(
 
     # Achievement notifications
     for ua in new_achievements:
+        title, body = neutral_notification(
+            prefs,
+            f"Achievement: {ua.achievement.name} 🏆",
+            ua.achievement.description,
+            locale,
+        )
         n = Notification(
             user_id=user_id,
             type="achievement",
-            title=f"Achievement: {ua.achievement.name} 🏆",
-            body=ua.achievement.description,
+            title=title,
+            body=body,
             link="/achievements",
         )
         db.add(n)
@@ -154,11 +175,17 @@ async def on_task_completed(
 
     # Streak milestone
     if progress.current_streak in (3, 7, 14, 30, 100):
+        title, body = neutral_notification(
+            prefs,
+            f"🔥 {progress.current_streak}-day streak!",
+            f"You've been active for {progress.current_streak} days in a row.",
+            locale,
+        )
         n = Notification(
             user_id=user_id,
             type="streak",
-            title=f"🔥 {progress.current_streak}-day streak!",
-            body=f"You've been active for {progress.current_streak} days in a row.",
+            title=title,
+            body=body,
             link="/dashboard",
         )
         db.add(n)
@@ -173,31 +200,49 @@ async def on_task_completed(
             good = thresholds.get("good", 100)
             new_balance = progress.points_balance
             if new_balance < neg:
+                title, body = neutral_notification(
+                    prefs,
+                    "🔴 Critical points!",
+                    f"Balance ({new_balance}) below negative threshold ({neg}). Restrictions active.",
+                    locale,
+                )
                 n = Notification(
                     user_id=user_id,
                     type="threshold",
-                    title="🔴 Critical points!",
-                    body=f"Balance ({new_balance}) below negative threshold ({neg}). Restrictions active.",
+                    title=title,
+                    body=body,
                     link="/api/v2/points/page",
                 )
                 db.add(n)
                 notifications.append(n)
             elif new_balance < warn:
+                title, body = neutral_notification(
+                    prefs,
+                    "⚠️ Low points",
+                    f"Balance ({new_balance}) below warning threshold ({warn}).",
+                    locale,
+                )
                 n = Notification(
                     user_id=user_id,
                     type="threshold",
-                    title="⚠️ Low points",
-                    body=f"Balance ({new_balance}) below warning threshold ({warn}).",
+                    title=title,
+                    body=body,
                     link="/api/v2/points/page",
                 )
                 db.add(n)
                 notifications.append(n)
             elif new_balance >= good:
+                title, body = neutral_notification(
+                    prefs,
+                    "🎉 Points milestone!",
+                    f"Balance ({new_balance}) reached good threshold ({good})!",
+                    locale,
+                )
                 n = Notification(
                     user_id=user_id,
                     type="threshold",
-                    title="🎉 Points milestone!",
-                    body=f"Balance ({new_balance}) reached good threshold ({good})!",
+                    title=title,
+                    body=body,
                     link="/api/v2/points/page",
                 )
                 db.add(n)
@@ -247,6 +292,7 @@ async def on_task_interrupted(
 ) -> dict:
     """Process task interruption: apply XP penalty, reset combo, escalate."""
     progress = await get_or_create_progress(db, user_id)
+    prefs, locale = await _user_prefs(db, user_id)
 
     # Escalation: count consecutive interruptions
     escalation = await _get_escalation(db, user_id)
@@ -305,11 +351,17 @@ async def on_task_interrupted(
     db.add(log)
 
     # Penalty notification
+    title, body = neutral_notification(
+        prefs,
+        "Task Interrupted ⚠️",
+        f"-{penalty_xp} XP (escalation ×{escalation}). Combo reset.",
+        locale,
+    )
     n = Notification(
         user_id=user_id,
         type="penalty",
-        title="Task Interrupted ⚠️",
-        body=f"-{penalty_xp} XP (escalation ×{escalation}). Combo reset.",
+        title=title,
+        body=body,
         link="/tasks/",
     )
     db.add(n)

@@ -957,6 +957,8 @@ RU = {
     "dscr_llm": "Помощник",
     "dscr_privacy": "Данные",
     "dscr_admin": "Система",
+    "dscr_notif_title": "Обновление",
+    "dscr_notif_body": "Откройте приложение, чтобы посмотреть детали.",
     "dscr_task_item": "Пункт",
     "dscr_today_tasks": "Сегодня",
     "dscr_today_diets": "Сегодня",

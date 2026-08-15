@@ -952,6 +952,9 @@ EN = {
     "dscr_llm": "Assistant",
     "dscr_privacy": "Data",
     "dscr_admin": "System",
+    # Step 9e — Discretion notification texts (§12)
+    "dscr_notif_title": "Update",
+    "dscr_notif_body": "Open the app to view details.",
     "dscr_task_item": "Item",
     "dscr_today_tasks": "Today",
     "dscr_today_diets": "Today",
