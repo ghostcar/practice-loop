@@ -29,7 +29,7 @@ Lock Timer (chastity) и социальная платформа (обезлич
 | DB | PostgreSQL 15 (prod), SQLite (dev/tests), SQLAlchemy 2.0 async, Alembic |
 | Auth | JWT-cookie + CSRF double-submit (native-формы и JS-fetch покрыты) |
 | Frontend | SSR Jinja2 + HTMX + TailwindCSS, Chart.js; JS вынесен в ES-модули |
-| i18n | EN/RU (687 ключей), темы dark/light с сохранением |
+| i18n | EN/RU (876 ключей), темы dark/light/system + 3 акцентных набора (ember/sage/slate) |
 | LLM | OpenAI-совместимые endpoints, BYOK: Omniroute (по умолчанию), Groq, OpenRouter |
 | Telegram | aiogram 3.x (вебхук + исходящие уведомления) |
 | Инфра | Docker Compose (app, PostgreSQL, Nginx+SSL), загрузки в volume `uploads` |
@@ -40,9 +40,18 @@ Lock Timer (chastity) и социальная платформа (обезлич
 
 ## 3. Страницы и навигация
 
-Главная навигация (6 пунктов): **Дашборд · Задачи · Тренировка · Каталог · Баллы · Админ**.
-Дополнительно: Измерения, Инвентарь, Расписание, Импорт, Календарь, Диеты,
-Уведомления, Приватность, LLM-конфиги. Мобильная версия — нижняя навигация (4 пункта).
+Боковая панель (sidebar) с группировкой, сворачивается/разворачивается и отражает
+feature flags (composition):
+- **Сейчас**: Сегодня (дашборд) · Задачи · Сессии
+- **Личное**: Каталог · Тренировка · Диеты
+- **Данные**: Инвентарь · Замеры · Расписание · Зоны тела · Календарь · Баллы ·
+  Достижения · Медиа · Импорт
+- **Система**: Уведомления · LLM · Приватность · Админ · Настройки
+- (при `timer_operational`) **Личное**: Таймер замка; (при `social_operational`)
+  **Связи**: Социалка.
+
+Мобильная версия — нижняя навигация; desktop — свёрнутый рейл (иконки) / развёрнутый
+sidebar (иконки + подписи).
 
 | Страница | Что делает |
 |---|---|
@@ -65,6 +74,9 @@ Lock Timer (chastity) и социальная платформа (обезлич
 | `/notifications` | In-app уведомления, отметка прочитанным |
 | `/achievements` | Доска достижений (обезличенная), скрытие |
 | `/privacy` | Экспорт данных, удаление аккаунта, статус Telegram-привязки |
+| `/settings` | Кастомизация: тема (dark/light/system), акцент, плотность, блоки дашборда, discretion (ADR-081) |
+| `/locktimer` | Lock Timer: обзор, детали сессии, шаблоны (§16) |
+| `/social/*` | Социальная подсистема: профиль, связи, лента, верификация, модерация (§17) |
 
 ---
 
@@ -444,7 +456,37 @@ Platform-level (`app/api/media.py`, `app/api/verification.py`), общая дл�
 - **Фоновые задачи** (автоанализ тренировок): часовой пояс — конфиг `TG_AUTO_ANALYSIS_TZ`
   (по умолчанию UTC), т.к. у фонового job нет request-контекста.
 
-## 20. Реализованные решения и направление развития
+## 20. Кастомизация и discretion (DESIGN_V2 §12/§16, ADR-081/082)
+
+- **Хранилище**: `users.prefs` JSONB (миграция 039) + `app/prefs.py` — типизированный
+  `UserPrefs` (валидация, дефолты, ContextVar). Инъекция в шаблоны через auth-зависимости
+  + контекст-процессор (хендлеры не тронуты).
+- **Ключи** (все опциональны, fallback на дефолты): `accent` (ember/sage/slate),
+  `density` (comfortable/compact), `dash_blocks` (order + hidden; блоки header/stats/
+  charts/summaries/xp/quick/today/timer), `discretion` (mode off/always/schedule +
+  start/end-окно), `blur` (0/1/2), `theme_choice` (dark/light/system).
+- **Тема system**: JS-резолв через `matchMedia` (`data-theme-choice`), серверный
+  SSR-fallback `detect_theme`; `users.theme` синхронизируется с резолвнутым dark/light.
+- **Акценты**: `html[data-accent]` переопределяет токены accent/on-accent/accent-text;
+  контраст верифицирован (accent↔on-accent ≥4.5, accent-text↔surface ≥4.5).
+- **Дашборд**: рендер по `prefs.dash_visible` (порядок + скрытие), id `dash-block-*`.
+- **Светлая тема = первый класс (ADR-082)**: `--text-muted` light #6b5e53; цветные
+  тексты `-700 dark:-400`; белый текст на `bg-emerald/green-500/600` → фон -700;
+  JS-инжект шаблонов тоже токенизирован. Axe dark+light на 8 маршрутах зелёный;
+  browser-матрица 36 passed / 6 skip (prototype) / 0 fail.
+- **Discretion v1 (§12)**: нейтральные nav-лейблы (`dscr_*` EN/RU, макрос `dscr_label`
+  в `components/labels.html` с `with context`), маскировка имён (Item #N), нейтральный
+  favicon (`favicon-neutral.svg`), blur изображений (media vault SSR + inventory JS
+  `data-blur`), quick-toggle в utility bar (POST + мгновенно, сервер — источник истины
+  для следующего SSR). Данные/правила/safety не трогаются. Долг: тексты уведомлений
+  не нейтрализованы (v1).
+- **Social tone (§13)**: токен-пасс social-шаблонов (bg-white→pl-surface, gray→токены,
+  indigo→`--dom-social*`); токены `--dom-social-text` / `--dom-social-btn` с проверкой
+  контраста.
+
+---
+
+## 21. Реализованные решения и направление развития
 
 ### Реализовано (ADR-035…042, сессии 58–62)
 1. **ActivityCategory** — таблица категорий (16 категорий с подкатегориями), `entities.category_id` FK (legacy `category` строка сохранена).
