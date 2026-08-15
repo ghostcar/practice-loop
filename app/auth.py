@@ -16,6 +16,22 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
+
+def _load_prefs_context(user: User) -> None:
+    """Populate the request-scoped prefs ContextVar (Step 9e).
+
+    Runs in the auth dependencies (which every authenticated page uses) so
+    templates read customization/discretion state via the sync context
+    processor without per-page handler changes. The legacy ``theme`` column
+    seeds ``theme_choice`` for existing users.
+    """
+    from app.prefs import prefs_from_dict, raw_dict, set_prefs
+
+    raw = raw_dict(user.prefs)
+    if "theme_choice" not in raw:
+        raw["theme_choice"] = user.theme or "dark"
+    set_prefs(prefs_from_dict(raw))
+
 # --- Password helpers ---
 
 
@@ -83,6 +99,7 @@ async def get_current_user(
             detail="User not found",
         )
 
+    _load_prefs_context(user)
     return user
 
 
@@ -128,7 +145,13 @@ async def get_optional_user(
 
         async with async_session_factory() as session:
             result = await session.execute(select(User).where(User.id == user_id))
-            return result.scalar_one_or_none()
+            user = result.scalar_one_or_none()
+            if user is not None:
+                _load_prefs_context(user)
+            return user
 
     result = await db.execute(select(User).where(User.id == user_id))
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    if user is not None:
+        _load_prefs_context(user)
+    return user

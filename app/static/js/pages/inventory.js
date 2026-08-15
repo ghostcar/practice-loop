@@ -103,7 +103,7 @@
           (i) => `
     <div class="pl-surface rounded-lg p-3 flex items-center gap-3 border border-[color:var(--border)] hover:border-[color:var(--border-strong)] transition-colors cursor-grab" draggable="true" data-id="${escapeHtml(String(i.id))}">
       <span class="text-[color:var(--text-muted)] select-none flex items-center">⠿</span>
-      ${i.image_path ? `<img src="${escapeHtml(i.image_path)}" alt="" class="w-40 aspect-[4/3] rounded-lg object-cover flex-shrink-0 border border-[color:var(--border)]" loading="lazy">` : `<span class="inv-img-placeholder w-40 aspect-[4/3] rounded-lg bg-[color:var(--surface-soft)] flex items-center justify-center text-[color:var(--text-muted)] flex-shrink-0"></span>`}
+      ${i.image_path ? `<img src="${escapeHtml(i.image_path)}" alt="" class="w-40 aspect-[4/3] rounded-lg object-cover flex-shrink-0 border border-[color:var(--border)]${window.__dscrBlurCls || ''}" loading="lazy">` : `<span class="inv-img-placeholder w-40 aspect-[4/3] rounded-lg bg-[color:var(--surface-soft)] flex items-center justify-center text-[color:var(--text-muted)] flex-shrink-0"></span>`}
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>

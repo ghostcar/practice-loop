@@ -1,10 +1,8 @@
 {
   "alembic": {
-    "checked_at": "2026-08-14T10:10:47Z",
+    "checked_at": null,
     "command": "alembic heads",
-    "heads": [
-      "1a2b3c4d5e6f"
-    ]
+    "heads": []
   },
   "artifacts": [],
   "ci": [],
@@ -12,8 +10,8 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
-    "dirty": false,
+    "diff_hash": "sha256:bab9e5984ed36080712544d297b6384bc76f864c7717f048596b12dbb647fdce",
+    "dirty": true,
     "head": "e7a17b949948987598042ee3cde58e7fcb9186d6"
   },
   "kind": "fact_manifest",

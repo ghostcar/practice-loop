@@ -77,6 +77,12 @@ def local_today() -> date:
     return datetime.now(z or UTC).date()
 
 
+def local_now() -> datetime:
+    """Current aware datetime in the client's timezone (UTC fallback)."""
+    z = client_tzinfo()
+    return datetime.now(z or UTC)
+
+
 def local_date(dt: datetime | None) -> date | None:
     """Convert a stored (UTC) datetime to the client-tz calendar date."""
     if dt is None:

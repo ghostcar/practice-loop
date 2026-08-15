@@ -79,6 +79,7 @@
 | ADR-072 | 2026-08-14 | Q14: penalty честно в HTTP + Omniroute в портал (Шаг 4) | 1) **Штрафы применяются по политикам правил**: `skip_task` применяет `rule.penalty_policy` (points/add_time), `close_slot` при позднем закрытии (now > close_due_at) применяет `rule.late_close_policy`; идемпотентно по occurrence (`skip:{id}` / `late_close:{id}`); неизвестный тип политики логируется и пропускается. API skip/close возвращают JSON (ADR-065) с `penalty`-блоком (`serialize_penalty_event`); UI показывает реальный результат («Штраф применён: -5 points») вместо «Penalty may apply»; формы переведены на fetch + i18n-ключи (6 новых EN/RU). 2) **Omniroute в портале**: `Settings.omniroute_host/api_key/embedding_model`; seed-пресет Omniroute строится из settings (host → /v1, key шифруется), активен по умолчанию; .env.example обновлён. 767/767 ✅ | принято |
 | ADR-073 | 2026-08-14 | Шаг 5: икон-пак PracticeLoop + Gate B (async media, transaction boundary, browser smoke) | 1) **Икон-пак интегрирован (design/icons → runtime)**: sprite.svg + favicon скопированы в app/static/; макрос `components/icon.html` (`{{ icon('name', cls) }}`); все emoji/inline-SVG заменены в base.html (nav desktop/mobile, theme sun/moon, logout, flash), index, dashboard, training, import_data, llm_configs, admin, privacy, my_entities; JS-хелпер `window.plIcon` (DOM API, без innerHTML — §6.7) для diets/inventory. Иконки будущих модулей зарезервированы, не используются. Обязательство в AGENTS.md/DESIGN.md: иконки только из пакета, при нехватке — сообщать. Недостающие (thumbs-up/fire для social encourage — значения контента) оставлены как emoji, зафиксировано. 2) **P2-2 async media**: `save_media` → Pillow/диск в thread pool (`asyncio.to_thread`), decompression bomb guard (`PILLOW_MAX_IMAGE_PIXELS` + escalate warning→error), тест. 3) **P1-5 transaction boundary**: `tests/test_transaction_boundary.py` — allowlist legacy (28 файлов), новые роутеры без db.commit() (locktimer/social уже чистые); media upload/finalize переведены на auto-commit get_db (delete оставлен явным — файл удаляется после фиксации БД). 4) **P1-4 browser smoke**: optional `e2e` dev-group (playwright), `tests/e2e/test_browser_smoke.py` (register→dashboard→tasks→timer→no console errors), CI job e2e (postgres + alembic + chromium). 776/776 ✅ (+9), ruff ✅ | принято |
 | ADR-079 | 2026-08-14 | Шаг 9c: Inventory/Media patterns (Media Vault, крупные изображения, verified state) | 1) **Media Vault `/media`** (новая SSR-страница): плитки с изображением ≥160×120 (thumbnail или приватный стрим, object-cover), подпись «дата · тип · provenance» (inventory_item → name, activity_log → title; остальные тип+id), verified-бейдж (последний `media_verification_results`: verdict + тип + confidence), retention «Приватно · только вы»/«В архиве», state-чип staged/ready/archived; upload-форма (staged, owner_type=general); nav sidebar → `/media` (заменён JSON-эндпоинт). 2) **Inventory**: изображение 160×120 (`w-40 aspect-[4/3]`) + placeholder-иконка, бейджи → токены, оболочка → pl-surface. 3) **i18n `mvt_*`** (избегаем коллизии: `mv_*` — страница `/llm/verify`). 869/869 ✅ (+6 test_design_v2_9c), ruff ✅ | принято |
+| ADR-081 | 2026-08-14 | Шаг 9e: Social tone + customization/discretion (DESIGN_V2 §13/§16) | 1) **Prefs-инфраструктура**: `users.prefs` JSONB (миграция 037, generic JSON в модели для SQLite-тестов) + `app/prefs.py` (UserPrefs dataclass, sanitize с дефолтами и доводкой dash_blocks, ContextVar); инъекция в шаблоны через `_load_prefs_context` в auth-зависимостях (get_current_user/get_optional_user) + контекст-процессор `_prefs_context` — ноль правок хендлеров. 2) **Тема system**: выбор dark/light/system; `data-theme-choice` + JS-резолв matchMedia в app.js; SSR-fallback `detect_theme`; set_theme принимает system и синхронизирует users.theme. 3) **Accent-наборы**: ember/sage/slate `html[data-accent]` — контраст-верифицировано (accent↔on-accent ≥4.5, accent-text↔surface ≥4.5). 4) **/settings**: appearance + блоки дашборда (порядок/скрытие, стрелки + drag&drop, hidden inputs) + discretion (off/always/schedule-окно, blur 0/1/2); POST /settings + quick-toggle /settings/discretion/toggle (JSON). 5) **Блоки дашборда**: рендер по `prefs.dash_visible` (id `dash-block-*`). 6) **Social tone §13**: токен-пасс 7 social-шаблонов (bg-white→pl-surface, gray→токены, indigo→`--dom-social*`); новые `--dom-social-text` (6.21/6.48:1) и `--dom-social-btn` (5.76/5.10:1). 7) **Discretion v1 §12**: нейтральные nav-лейблы (`dscr_*` EN/RU, макрос dscr_label в components/labels.html, импорт `with context` — иначе макрос не видит контекст), маскировка имён на дашборде (Item #N), favicon-neutral.svg, blur (media vault SSR + inventory JS `data-blur`), quick-toggle мгновенно без перезагрузки (сервер — источник истины для следующего SSR). Долг: уведомления не нейтрализованы (v1). 141/141 таргетных ✅ (+11 test_design_v2_9e), ruff ✅, node --check ✅ | принято |
 | ADR-080 | 2026-08-14 | Шаг 9d: токен-пасс Personal-разделов + a11y-контраст (WCAG AA) | 1) **Токен-пасс 25 шаблонов**: legacy `bg-white/slate-*`, `text-slate-*`, `border/divide-slate-*`, индиго-кнопки → `pl-surface/-soft`, токены текста/границ, `pl-accent-bg`, `focus-ring → --focus`; осиротевшие `dark:*` удалены; намеренно оставлены тёмный код-блок import_data, семантические цветные чипы, градиенты. 2) **Контрастная политика (WCAG 2.2 AA)**: новый токен `--accent-text` (#743a37 light / #c9897f dark) — accent как цвет текста; `.pl-accent-text`/`.pl-accent-soft` используют его; тёмный `--accent` `#a95f58 → #a25a53` (кнопки accent-bg 4.40 → 4.76); индиго-ссылки `text-indigo-600 dark:text-indigo-400`. 3) **Форм-контролы**: aria-label фильтр-селектам /tasks и desire_level /entities/catalog (axe select-name, critical). Browser desktop-chromium: 5/5 ✅ (smoke/a11y/usability) + 1 осознанный skip; 113/113 таргетных pytest ✅ | принято |
 
 | ADR-078 | 2026-08-14 | Шаг 9b: Active Timer + Tasks по DESIGN_V2 §8/§10 | 1) **Active Timer hero** (session_detail, state=active): крупный serif-таймер `pl-display` 6xl/7xl с tabular-цифрами (тот же `#countdown-display`, live-countdown сохранён); честная строка: локализованный режим (`locktimer_mode_duration`/`locktimer_mode_infinite`), устройство (chip), tz; диапазон `started → effective_end` + `cap` (max_end_at, показывается при отличии) + merge gap; **safety stop — первый и самый крупный CTA** (danger-токен), из header-действий убран (остался extend-horizon). Draft-сессии hero не получают — настройки/правила остаются. 2) **Токен-рестайл** session_detail (96 замен) и overview (70): gray/slate → `pl-surface` + токены (text/border/secondary/muted), indigo-кнопки → accent, статусы → success/warning/danger/info, timer-иконки → `--dom-timer`. 3) **Tasks §10**: переключатель плотности **compact/comfortable** (localStorage `pl_tasks_density`, класс `density-compact` на `#log-list` скрывает детали/комментарии, JS — в `tasks.js`, без inline-скриптов — audit `test_no_inline_scripts`); строка-строка с статусом/именем/параметрами/due/reason/действиями сохранена; добавлена due-строка (`scheduled_at`). 4) i18n: locktimer_mode_*, locktimer_cap, tasks_density_*, tasks_row_due (EN/RU). 863/863 ✅ (+8 test_design_v2_9b), ruff ✅, node --check ✅ | принято |
@@ -425,3 +426,53 @@ dashboard → Timer/Tasks → Inventory/Media → остальные разде�
 + 1 осознанный skip (prototype — нужен DESIGN_PROTOTYPE_URL); 113/113 таргетных pytest ✅;
 задеплоено на прод. Долги a11y: light-theme контрасты (axe гоняется только в dark colorScheme),
 прочие проекты матрицы (tablet/mobile/firefox/webkit) — на 9f visual QA.
+
+### ADR-081 — Шаг 9e: Social tone + customization/discretion (DESIGN_V2 §13/§16)
+
+**Контекст:** после 9a–9d (shell, токены, a11y) остались два блока DESIGN_V2: §13 (Social —
+холодный сине-серый тон, отдельная группа sidebar, приватность через точные visibility-лейблы)
+и §16 (пользовательская кастомизация: тема system, accent-наборы, плотность, блоки дашборда,
+discretion с расписанием, blur чувствительных изображений). В коде не было никакого механизма
+пользовательских настроек кроме theme/locale колонок.
+
+**Решение:**
+1. **Prefs-инфраструктура.** `users.prefs` JSONB (миграция 037; в модели generic `JSON` — иначе
+   SQLite-тесты ломаются на postgresql.JSONB). `app/prefs.py`: `UserPrefs` dataclass,
+   `sanitize_prefs` (валидация + дефолты, доводит недостающие dash_blocks), `raw_dict`
+   (коэрция dict/строка/None), ContextVar. Инъекция — в `_load_prefs_context()` внутри
+   `get_current_user`/`get_optional_user` (каждая авторизованная страница их вызывает) +
+   контекст-процессор `_prefs_context` (templates_setup.py) → `prefs`/`discretion_active` во
+   всех шаблонах. Первая реализация была middleware'ом — отклонена: middleware открывал свою
+   сессию на общем SQLite-соединении тестов и при close() откатывал транзакцию тестовой
+   сессии (юзер «терялся», 401). Auth-зависимости используют ту же сессию через DI — безопасно.
+2. **Тема system.** Выбор dark/light/system; SSR рендерит резолв (system→dark fallback) в
+   `data-theme`, сырой выбор — в `data-theme-choice`; app.js резолвит matchMedia и следит за
+   изменениями ОС. `set_theme` принимает system и пишет выбор в users.theme + prefs.theme_choice.
+3. **Accent-наборы.** ember/sage/slate через `html[data-accent]`; значения контраст-верифицированы
+   скриптом (accent↔on-accent ≥4.5:1, accent-text↔surface ≥4.5:1): sage dark #5b7452/light #57734f,
+   slate dark #56758a/light #4f6675; `--focus` синхронизирован.
+4. **Страница /settings.** Appearance (тема, акцент, плотность), Dashboard (блоки: чекбоксы +
+   стрелки + HTML5 drag&drop, hidden inputs block_order/block_hidden), Discretion (off/always/
+   schedule с окном start/end, blur 0/1/2). `POST /settings` (санутизация на сервере) +
+   `POST /settings/discretion/toggle` (JSON, quick-switch). Nav: Settings в System-группе (+
+   автономная группа для timer/social-only вариантов, где System-группа не рендерится).
+5. **Блоки дашборда.** dashboard_v2.html рендерит 8 блоков по `prefs.dash_visible` (порядок +
+   скрытие), секции получили `id="dash-block-*"` (структурные якоря для тестов).
+6. **Social tone §13.** Токен-пасс 7 social-шаблонов: bg-white→pl-surface, gray-*→токены,
+   indigo-*→`--dom-social*`; добавлены `--dom-social-text` (контраст 6.21 light / 6.48 dark) и
+   `--dom-social-btn` (5.76/5.10 — сам `--dom-social` как фон кнопки даёт 3.93 dark — не проходит
+   AA). Sidebar-группа «Связи» уже была (9a).
+7. **Discretion v1 §12.** Активен при mode=always или schedule-окне (время — локальное устройство
+   через client_tz). Меняет: nav-лейблы (dscr_* EN/RU, макрос `dscr_label` в
+   `components/labels.html`; импорт макроса требует `with context` — иначе контекст недоступен и
+   лейблы не нейтрализуются — поймано тестом), заголовки дашборда, имена задач/диет/планов
+   (Item #N), favicon (favicon-neutral.svg), blur изображений (media vault SSR + inventory JS
+   через `data-blur` + `window.__dscrBlurCls`). Quick-toggle применяет состояние мгновенно
+   (favicon, html[data-discretion], nav-лейблы из data-dscr/data-label), сервер — источник
+   истины для следующего SSR. Режим не трогает данные/правила/safety (соответствует §12).
+   Долг: тексты уведомлений не нейтрализованы (v1).
+
+**Status:** ✅ реализовано в Сессии 132. 141/141 таргетных pytest ✅ (+11 test_design_v2_9e:
+settings render/persist/sanitize, blocks order/hidden, discretion always+schedule+toggle,
+accent+system, media blur, social tone без legacy-классов), ruff ✅, node --check ✅, i18n
+EN/RU паритет 876/876. Прод не тронут — деплой по команде владельца.

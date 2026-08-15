@@ -6,20 +6,20 @@
 
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-8 space-y-8">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.social_rel_title }}</h1>
+  <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.social_rel_title }}</h1>
 
   <!-- Pending invitations -->
   {% if pending_invites %}
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_pending }}</h2>
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_rel_pending }}</h2>
     {% for item in pending_invites %}
-    <div class="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex items-center justify-between">
+    <div class="pl-surface border border-[color:var(--dom-social)]/40 rounded-xl p-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <span class="text-sm font-semibold text-gray-900 dark:text-white">@{{ item.requester_alias }}</span>
-        <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+        <span class="text-sm font-semibold text-[color:var(--text)]">@{{ item.requester_alias }}</span>
+        <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--dom-social)]/15 text-[color:var(--dom-social-text)]">
           {{ item.invite.display_role }}
         </span>
-        <span class="text-xs text-gray-400">{{ localtime(item.invite.created_at, '%Y-%m-%d') }}</span>
+        <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(item.invite.created_at, '%Y-%m-%d') }}</span>
       </div>
       <div class="flex gap-2">
         <form action="/social/invite/{{ item.invite.id }}/accept" method="post" class="inline">
@@ -37,42 +37,42 @@
   {% endif %}
 
   <!-- Send invitation -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_invite }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_rel_invite }}</h2>
     <form action="/social/invite" method="post" class="space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="flex gap-3 flex-wrap">
         <input type="text" name="alias" required minlength="3" maxlength="80"
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-white"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-sm text-[color:var(--text)]"
                placeholder="@alias">
         <select name="display_role"
-                class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+                class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
           <option value="viewer">Viewer</option>
           <option value="coach">Coach</option>
           <option value="mentor">Mentor</option>
           <option value="curator">Curator</option>
         </select>
-        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">{{ t.social_rel_send }}</button>
+        <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_rel_send }}</button>
       </div>
     </form>
   </section>
 
   <!-- Active relationships -->
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_active }}</h2>
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_rel_active }}</h2>
     {% if relationships %}
     {% for item in relationships %}
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+    <div class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold text-gray-900 dark:text-white">@{{ item.other_alias }}</span>
+          <span class="text-sm font-semibold text-[color:var(--text)]">@{{ item.other_alias }}</span>
           <span class="text-xs px-2 py-0.5 rounded
             {% if item.rel.status == 'accepted' %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300
             {% elif item.rel.status == 'pending' %}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300
-            {% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400{% endif %}">
+            {% else %}pl-surface-soft text-[color:var(--text-secondary)]{% endif %}">
             {{ item.rel.status }}
           </span>
-          <span class="text-xs text-gray-400">{{ item.rel.display_role }}</span>
+          <span class="text-xs text-[color:var(--text-muted)]">{{ item.rel.display_role }}</span>
         </div>
         <form action="/social/invite/{{ item.rel.id }}/revoke" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -81,15 +81,15 @@
       </div>
       <!-- Grants -->
       {% if item.grants %}
-      <div class="ml-4 space-y-1 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+      <div class="ml-4 space-y-1 border-l-2 border-[color:var(--border)] pl-3">
         {% for grant in item.grants %}
         <div class="flex items-center justify-between text-xs">
           <div class="flex items-center gap-2">
-            <span class="text-gray-600 dark:text-gray-400">{{ grant.scope_type }}{% if grant.scope_namespace %}/{{ grant.scope_namespace }}{% endif %}</span>
+            <span class="text-[color:var(--text-secondary)]">{{ grant.scope_type }}{% if grant.scope_namespace %}/{{ grant.scope_namespace }}{% endif %}</span>
             <span class="px-1.5 py-0.5 rounded
               {% if grant.status == 'accepted' %}bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400
               {% elif grant.status == 'proposed' %}bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400
-              {% else %}bg-gray-100 dark:bg-gray-700 text-gray-500{% endif %}">
+              {% else %}pl-surface-soft text-[color:var(--text-secondary)]{% endif %}">
               {{ grant.status }}
             </span>
           </div>
@@ -112,21 +112,21 @@
     </div>
     {% endfor %}
     {% else %}
-    <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_rel_empty }}</p>
+    <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_rel_empty }}</p>
     {% endif %}
   </section>
 
   <!-- Block section -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_block }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_rel_block }}</h2>
     {% if blocks %}
     <div class="space-y-1 mb-3">
     {% for item in blocks %}
       <div class="flex items-center justify-between text-sm">
-        <span class="text-gray-700 dark:text-gray-300 inline-flex items-center gap-1.5">{{ icon('block', 'w-4 h-4') }}@{{ item.blocked_alias }}</span>
+        <span class="text-[color:var(--text-secondary)] inline-flex items-center gap-1.5">{{ icon('block', 'w-4 h-4') }}@{{ item.blocked_alias }}</span>
         <form action="/social/block/{{ item.block.blocked_id }}/remove" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="text-xs text-indigo-500 hover:text-indigo-700">{{ t.social_rel_unblock }}</button>
+          <button type="submit" class="text-xs text-[color:var(--dom-social-text)] hover:text-[color:var(--dom-social)]">{{ t.social_rel_unblock }}</button>
         </form>
       </div>
     {% endfor %}
@@ -135,7 +135,7 @@
     <form action="/social/block" method="post" class="flex gap-2 flex-wrap">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <input type="text" name="alias" required minlength="3" maxlength="80"
-             class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-white flex-1"
+             class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-sm text-[color:var(--text)] flex-1"
              placeholder="@alias">
       <button type="submit" class="px-6 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700">{{ t.social_rel_block_btn }}</button>
     </form>
@@ -144,15 +144,15 @@
   <!-- Notifications -->
   {% if notifications %}
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_rel_notif }}</h2>
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_rel_notif }}</h2>
     <div class="space-y-1">
     {% for notif in notifications %}
       <div class="flex items-center justify-between text-sm py-1 {% if not notif.is_read %}font-semibold{% endif %}">
-        <span class="text-gray-700 dark:text-gray-300">
+        <span class="text-[color:var(--text-secondary)]">
           {{ notif.notification_type }}
-          {% if not notif.is_read %}<span class="ml-1 w-2 h-2 inline-block rounded-full bg-indigo-500"></span>{% endif %}
+          {% if not notif.is_read %}<span class="ml-1 w-2 h-2 inline-block rounded-full bg-[color:var(--dom-social)]"></span>{% endif %}
         </span>
-        <span class="text-xs text-gray-400">{{ localtime(notif.created_at, '%m-%d %H:%M') }}</span>
+        <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(notif.created_at, '%m-%d %H:%M') }}</span>
       </div>
     {% endfor %}
     </div>

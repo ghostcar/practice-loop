@@ -6,52 +6,52 @@
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-8 space-y-6">
   <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.social_feed_title }}</h1>
+    <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.social_feed_title }}</h1>
     <!-- Namespace filter -->
     <div class="flex gap-1">
-      <a href="/social/feed" class="px-3 py-1 text-xs rounded-lg border {% if current_namespace == 'all' %}bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300{% else %}border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800{% endif %}">
+      <a href="/social/feed" class="px-3 py-1 text-xs rounded-lg border {% if current_namespace == 'all' %}bg-[color:var(--dom-social)]/15 border-[color:var(--dom-social)] text-[color:var(--dom-social-text)]{% else %}border-[color:var(--border-strong)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]{% endif %}">
         {{ t.social_feed_all }}
       </a>
-      <a href="/social/feed?namespace=tracker" class="px-3 py-1 text-xs rounded-lg border {% if current_namespace == 'tracker' %}bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300{% else %}border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800{% endif %}">
+      <a href="/social/feed?namespace=tracker" class="px-3 py-1 text-xs rounded-lg border {% if current_namespace == 'tracker' %}bg-[color:var(--dom-social)]/15 border-[color:var(--dom-social)] text-[color:var(--dom-social-text)]{% else %}border-[color:var(--border-strong)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]{% endif %}">
         Tracker
       </a>
-      <a href="/social/feed?namespace=timer" class="px-3 py-1 text-xs rounded-lg border {% if current_namespace == 'timer' %}bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300{% else %}border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800{% endif %}">
+      <a href="/social/feed?namespace=timer" class="px-3 py-1 text-xs rounded-lg border {% if current_namespace == 'timer' %}bg-[color:var(--dom-social)]/15 border-[color:var(--dom-social)] text-[color:var(--dom-social-text)]{% else %}border-[color:var(--border-strong)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]{% endif %}">
         Timer
       </a>
     </div>
   </div>
 
   <!-- Publish form -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_feed_publish }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_feed_publish }}</h2>
     <form action="/social/publish" method="post" class="space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="flex gap-3 flex-wrap">
         <input type="text" name="subject_id" required
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-white flex-1"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-sm text-[color:var(--text)] flex-1"
                placeholder="Subject UUID">
         <select name="visibility"
-                class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+                class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
           <option value="relationship_only">{{ t.social_feed_rel_only }}</option>
           <option value="unlisted">{{ t.social_feed_unlisted }}</option>
           <option value="public">{{ t.social_feed_public }}</option>
         </select>
         <input type="hidden" name="snapshot_json" value='{"title":"Manual publish","summary":"No adapter"}'>
-        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">{{ t.social_feed_publish_btn }}</button>
+        <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_feed_publish_btn }}</button>
       </div>
     </form>
   </section>
 
   <!-- Feed -->
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_feed_recent }}</h2>
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_feed_recent }}</h2>
     {% if publications %}
     {% for item in publications %}
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+    <div class="pl-surface border border-[color:var(--border)] rounded-xl p-4">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold text-gray-900 dark:text-white">@{{ item.owner_alias }}</span>
-          <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+          <span class="text-sm font-semibold text-[color:var(--text)]">@{{ item.owner_alias }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded pl-surface-soft text-[color:var(--text-secondary)]">
             {{ item.subject_type }}
           </span>
           <span class="text-xs px-1.5 py-0.5 rounded
@@ -61,37 +61,37 @@
             {{ item.pub.visibility }}
           </span>
         </div>
-        <span class="text-xs text-gray-400">{{ localtime(item.pub.created_at, '%m-%d %H:%M') }}</span>
+        <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(item.pub.created_at, '%m-%d %H:%M') }}</span>
       </div>
-      <div class="text-sm text-gray-600 dark:text-gray-400">
+      <div class="text-sm text-[color:var(--text-secondary)]">
         {% for key, val in item.pub.snapshot.items() %}
         <div class="flex gap-2">
-          <span class="text-gray-400">{{ key }}:</span>
+          <span class="text-[color:var(--text-muted)]">{{ key }}:</span>
           <span>{{ val }}</span>
         </div>
         {% endfor %}
       </div>
-      <div class="mt-1 text-xs text-gray-400 font-mono">sha256:{{ item.pub.snapshot_hash[:16] }}…</div>
+      <div class="mt-1 text-xs text-[color:var(--text-muted)] font-mono">sha256:{{ item.pub.snapshot_hash[:16] }}…</div>
     </div>
     {% endfor %}
     {% else %}
-    <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_feed_empty }}</p>
+    <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_feed_empty }}</p>
     {% endif %}
   </section>
 
   <!-- Own publications -->
   <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_feed_my }}</h2>
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_feed_my }}</h2>
     {% if own_publications %}
     {% for item in own_data %}
-    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 flex items-center justify-between">
+    <div class="pl-surface border border-[color:var(--border)] rounded-xl p-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300">{{ item.subject_type }}</span>
+        <span class="text-xs font-mono pl-surface-soft px-2 py-0.5 rounded text-[color:var(--text-secondary)]">{{ item.subject_type }}</span>
         <span class="text-xs px-1.5 py-0.5 rounded
           {% if item.pub.is_active %}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300{% else %}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300{% endif %}">
           {{ 'active' if item.pub.is_active else 'withdrawn' }}
         </span>
-        <span class="text-xs text-gray-400">{{ localtime(item.pub.created_at, '%m-%d %H:%M') }}</span>
+        <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(item.pub.created_at, '%m-%d %H:%M') }}</span>
       </div>
       {% if item.pub.is_active %}
       <form action="/social/publish/{{ item.pub.id }}/withdraw" method="post" class="inline">
@@ -102,7 +102,7 @@
     </div>
     {% endfor %}
     {% else %}
-    <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_feed_my_empty }}</p>
+    <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_feed_my_empty }}</p>
     {% endif %}
   </section>
 </div>

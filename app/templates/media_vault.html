@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
+{% set _dscr = discretion_active if discretion_active is defined else false %}
+{% set _blur = prefs.blur if (prefs is defined and prefs) else 0 %}
 
 {% block content %}
 <div class="space-y-6">
@@ -29,7 +31,7 @@
                 {% if item.is_image %}
                 <img src="{{ '/api/v2/media/' + item.id + '/thumbnail' if item.has_thumbnail else '/api/v2/media/' + item.id }}"
                      alt="{{ item.caption or '' }}" loading="lazy"
-                     class="w-full h-full object-cover">
+                     class="w-full h-full object-cover{{ ' pl-blur-' + (_blur | string) if (_dscr and _blur > 0) else '' }}">
                 {% else %}
                 <div class="w-full h-full flex items-center justify-center text-[color:var(--text-muted)]">
                     {{ icon('image', 'w-10 h-10') }}

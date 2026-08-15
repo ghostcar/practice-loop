@@ -28,6 +28,35 @@
     }
   } catch (e) { /* ignore */ }
 
+  // Theme choice (Step 9e, DESIGN_V2 §16): 'system' resolves to the OS
+  // preference. The server renders data-theme with a fallback resolution and
+  // keeps the raw choice in data-theme-choice; this reconciles the two and
+  // follows live OS changes. 'dark'/'light' are applied as-is.
+  var htmlEl = document.documentElement;
+  function applyThemeChoice() {
+    var choice = htmlEl.getAttribute('data-theme-choice') || 'dark';
+    var resolved = choice;
+    if (choice === 'system') {
+      resolved = (window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    }
+    if (resolved !== 'dark' && resolved !== 'light') resolved = 'dark';
+    htmlEl.setAttribute('data-theme', resolved);
+    htmlEl.classList.toggle('dark', resolved === 'dark');
+    htmlEl.classList.toggle('light', resolved === 'light');
+  }
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+  if (mq && mq.addEventListener) {
+    mq.addEventListener('change', function () {
+      if ((htmlEl.getAttribute('data-theme-choice') || 'dark') === 'system') applyThemeChoice();
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyThemeChoice);
+  } else {
+    applyThemeChoice();
+  }
+
   // CSRF: attach the X-CSRF-Token header to every same-origin
   // state-changing fetch() call (JSON API pages use plain fetch, not HTMX).
   var origFetch = window.fetch;
@@ -185,6 +214,53 @@
       };
       toggle.addEventListener('click', function () { open = !open; applyState(); });
       applyState();
+    }
+
+    // Discretion quick toggle (Step 9e, DESIGN_V2 §12): POST to the server
+    // (source of truth for the next SSR) and apply the visual state instantly
+    // — favicon, html[data-discretion] (blur), nav labels, toggle icons.
+    var dscrBtns = document.querySelectorAll('#pl-discretion-toggle, #pl-discretion-toggle-m');
+    var faviconLink = document.getElementById('pl-favicon');
+    // Sensitive-image blur level for client-rendered images (e.g. inventory rows)
+    var dscrBlur = parseInt(htmlEl.getAttribute('data-blur') || '0', 10);
+    function refreshBlurCls() {
+      window.__dscrBlurCls = (htmlEl.getAttribute('data-discretion') === 'on' && dscrBlur > 0)
+        ? ' pl-blur-' + dscrBlur : '';
+    }
+    refreshBlurCls();
+    function setDiscretionVisual(on) {
+      if (on) htmlEl.setAttribute('data-discretion', 'on');
+      else htmlEl.removeAttribute('data-discretion');
+      if (faviconLink) {
+        faviconLink.href = on ? '/static/favicon/favicon-neutral.svg' : '/static/favicon/favicon.svg';
+      }
+      var items = document.querySelectorAll('.pl-nav-item[data-dscr]');
+      for (var i = 0; i < items.length; i++) {
+        var lbl = items[i].querySelector('.pl-nav-label');
+        if (lbl) lbl.textContent = on ? items[i].getAttribute('data-dscr') : (items[i].getAttribute('data-label') || lbl.textContent);
+      }
+    }
+    function updateDscrButtonIcons(on) {
+      for (var i = 0; i < dscrBtns.length; i++) {
+        dscrBtns[i].innerHTML = on
+          ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="/static/icons/sprite.svg#icon-eye-off"></use></svg>'
+          : '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="/static/icons/sprite.svg#icon-eye"></use></svg>';
+      }
+    }
+    for (var bi = 0; bi < dscrBtns.length; bi++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          fetch('/settings/discretion/toggle', { method: 'POST' })
+            .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('toggle failed')); })
+            .then(function (data) {
+              var on = data.mode === 'always';
+              setDiscretionVisual(on);
+              refreshBlurCls();
+              updateDscrButtonIcons(on);
+            })
+            .catch(function () { /* keep current state */ });
+        });
+      })(dscrBtns[bi]);
     }
 
     if (sheet && menuBtn) {

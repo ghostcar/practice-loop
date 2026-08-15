@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import JSON, DateTime, String, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,6 +25,9 @@ class User(Base):
     locale: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     theme: Mapped[str] = mapped_column(String(10), default="dark", nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), default="UTC", nullable=False)
+    # Step 9e (DESIGN_V2 §16): customization + discretion prefs (see app/prefs.py).
+    # Generic JSON keeps SQLite-based tests green; the migration uses PG JSONB.
+    prefs: Mapped[dict] = mapped_column(JSON, default=dict, server_default=text("'{}'"), nullable=False)
     timezone_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

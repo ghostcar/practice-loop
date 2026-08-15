@@ -5,46 +5,46 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-8 space-y-6">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.social_verify_title }}</h1>
-  <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_verify_subtitle }}</p>
+  <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.social_verify_title }}</h1>
+  <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_verify_subtitle }}</p>
 
   <!-- Create verification request -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_verify_create }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_create }}</h2>
     <form action="/social/verify/create" method="post" class="space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="flex gap-3 flex-wrap">
         <input type="text" name="subject_id" required
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
                placeholder="Subject UUID">
         <input type="number" name="min_approvals" value="1" min="1" max="20"
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm w-20 text-gray-900 dark:text-white"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm w-20 text-[color:var(--text)]"
                title="Min approvals">
         <input type="number" name="deadline_hours" value="72" min="1" max="720"
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm w-20 text-gray-900 dark:text-white"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm w-20 text-[color:var(--text)]"
                title="Deadline hours">
-        <button type="submit" class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">{{ t.social_verify_create_btn }}</button>
+        <button type="submit" class="px-5 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_verify_create_btn }}</button>
       </div>
     </form>
   </section>
 
   <!-- Cast vote -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_verify_vote }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_vote }}</h2>
     <form action="/social/verify/PLACEHOLDER/vote" method="post" class="space-y-2"
           onsubmit="this.action = this.action.replace('PLACEHOLDER', document.getElementById('vote_req_id').value)">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="flex gap-2 flex-wrap items-center">
         <input type="text" id="vote_req_id" required
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
                placeholder="Request UUID">
-        <select name="value" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+        <select name="value" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
           <option value="approve">✅ {{ t.social_verify_approve }}</option>
           <option value="reject">❌ {{ t.social_verify_reject }}</option>
           <option value="abstain">⏸ {{ t.social_verify_abstain }}</option>
         </select>
         <input type="text" name="comment" maxlength="500"
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white flex-1"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)] flex-1"
                placeholder="Comment (optional)">
         <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">{{ t.social_verify_vote_btn }}</button>
       </div>
@@ -52,46 +52,46 @@
   </section>
 
   <!-- Comment on feed -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_verify_comment }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_comment }}</h2>
     <form action="/social/comment" method="post" class="space-y-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div class="flex gap-2 flex-wrap">
-        <select name="target_type" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+        <select name="target_type" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
           <option value="publication">Publication</option>
           <option value="verification_request">Verification</option>
         </select>
         <input type="text" name="target_id" required
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
                placeholder="Target UUID">
         <input type="text" name="body" required maxlength="2000"
-               class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white flex-1"
+               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)] flex-1"
                placeholder="Your comment...">
-        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">{{ t.social_verify_send }}</button>
+        <button type="submit" class="px-4 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_verify_send }}</button>
       </div>
     </form>
   </section>
 
   <!-- Encouragement -->
-  <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_verify_encourage }}</h2>
+  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_encourage }}</h2>
     <form action="/social/encourage" method="post" class="flex gap-2 flex-wrap items-center">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <select name="target_type" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+      <select name="target_type" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
         <option value="publication">Publication</option>
         <option value="verification_request">Verification</option>
       </select>
       <input type="text" name="target_id" required
-             class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white"
+             class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
              placeholder="Target UUID">
       <button type="submit" name="encouragement_type" value="thumbs_up"
-              class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">👍</button>
+              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">👍</button>
       <button type="submit" name="encouragement_type" value="support"
-              class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">💪</button>
+              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">💪</button>
       <button type="submit" name="encouragement_type" value="celebrate"
-              class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">🎉</button>
+              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">🎉</button>
       <button type="submit" name="encouragement_type" value="motivate"
-              class="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">🔥</button>
+              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">🔥</button>
     </form>
   </section>
 </div>

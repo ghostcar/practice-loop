@@ -6,43 +6,43 @@
 
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-8 space-y-6">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t.social_profile_title }}</h1>
-  <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_profile_subtitle }}</p>
+  <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.social_profile_title }}</h1>
+  <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_profile_subtitle }}</p>
 
   {% if profile is none %}
   <!-- Create profile -->
-  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_create_profile }}</h2>
+  <div class="pl-surface border border-[color:var(--border)] rounded-xl p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_create_profile }}</h2>
     <form action="/social/profile/create" method="post" class="space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.social_alias_label }}</label>
+        <label class="block text-sm font-medium text-[color:var(--text-secondary)] mb-1">{{ t.social_alias_label }}</label>
         <input type="text" name="alias" minlength="3" maxlength="80" required
-               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white"
+               class="w-full rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-[color:var(--text)]"
                placeholder="your_alias">
-        <p class="text-xs text-gray-400 mt-1">{{ t.social_alias_hint }}</p>
+        <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.social_alias_hint }}</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.social_bio_label }}</label>
+        <label class="block text-sm font-medium text-[color:var(--text-secondary)] mb-1">{{ t.social_bio_label }}</label>
         <textarea name="bio" maxlength="500" rows="2"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white"
+                  class="w-full rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-[color:var(--text)]"
                   placeholder="{{ t.social_bio_placeholder }}"></textarea>
       </div>
-      <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+      <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white rounded-lg hover:bg-[color:var(--dom-social)] transition">
         {{ t.social_create_btn }}
       </button>
     </form>
   </div>
   {% else %}
   <!-- Existing profile -->
-  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
+  <div class="pl-surface border border-[color:var(--border)] rounded-xl p-6 space-y-4">
     <div class="flex items-center gap-3">
-      <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
-        <span class="text-xl font-bold text-indigo-600 dark:text-indigo-300">{{ profile.alias[0] | upper }}</span>
+      <div class="w-12 h-12 bg-[color:var(--dom-social)]/15 rounded-full flex items-center justify-center">
+        <span class="text-xl font-bold text-[color:var(--dom-social-text)]">{{ profile.alias[0] | upper }}</span>
       </div>
       <div>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">@{{ profile.alias }}</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.social_profile_created }} {{ localtime(profile.created_at, '%Y-%m-%d') }}</p>
+        <h2 class="text-lg font-semibold text-[color:var(--text)]">@{{ profile.alias }}</h2>
+        <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_profile_created }} {{ localtime(profile.created_at, '%Y-%m-%d') }}</p>
       </div>
     </div>
 
@@ -50,36 +50,36 @@
     <form action="/social/profile/update" method="post" class="space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.social_bio_label }}</label>
+        <label class="block text-sm font-medium text-[color:var(--text-secondary)] mb-1">{{ t.social_bio_label }}</label>
         <textarea name="bio" maxlength="500" rows="2"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-white">{{ profile.bio or '' }}</textarea>
+                  class="w-full rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-[color:var(--text)]">{{ profile.bio or '' }}</textarea>
       </div>
       <div class="flex gap-6">
-        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
           <input type="checkbox" name="discoverable" value="true" {% if profile.discoverable %}checked{% endif %}>
           {{ t.social_discoverable }}
         </label>
-        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
           <input type="checkbox" name="show_in_feed" value="true" {% if profile.show_in_feed %}checked{% endif %}>
           {{ t.social_show_in_feed }}
         </label>
       </div>
-      <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+      <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white rounded-lg hover:bg-[color:var(--dom-social)] transition">
         {{ t.social_save_btn }}
       </button>
     </form>
   </div>
 
   <!-- Consent section -->
-  <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.social_consent_title }}</h2>
+  <div class="pl-surface border border-[color:var(--border)] rounded-xl p-6 space-y-4">
+    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_consent_title }}</h2>
     {% if consent_accepted %}
     <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
       <span>{{ icon('check-circle', 'w-4 h-4') }}</span>
       <span class="text-sm">{{ t.social_consent_accepted }}</span>
     </div>
     {% else %}
-    <p class="text-sm text-gray-600 dark:text-gray-400">{{ t.social_consent_desc }}</p>
+    <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_consent_desc }}</p>
     <form action="/social/consent/accept" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
@@ -91,7 +91,7 @@
 
   <!-- Link to privacy policy -->
   <div class="text-sm text-center">
-    <a href="/social/privacy" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ t.social_privacy_link }}</a>
+    <a href="/social/privacy" class="text-[color:var(--dom-social-text)] hover:underline">{{ t.social_privacy_link }}</a>
   </div>
   {% endif %}
 </div>

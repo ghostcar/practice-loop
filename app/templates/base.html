@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ locale }}" data-theme="{{ theme or 'dark' }}" class="{{ theme or 'dark' }}">
+{% set _prefs = prefs if prefs is defined else none %}
+{% set _discretion = discretion_active if discretion_active is defined else false %}
+<html lang="{{ locale }}" data-theme="{{ theme or 'dark' }}" data-theme-choice="{{ _prefs.theme_choice if _prefs else (theme or 'dark') }}" data-accent="{{ _prefs.accent if _prefs else 'ember' }}" data-blur="{{ _prefs.blur if _prefs else 0 }}" data-density="{{ _prefs.density if _prefs else 'comfortable' }}" class="{{ theme or 'dark' }}"{% if _discretion %} data-discretion="on"{% endif %}>
 {% from "components/icon.html" import icon %}
+{% from "components/labels.html" import dscr_label with context %}
 {% set _path = request.url.path if request is defined else '' %}
 {% set nav_key = active_nav or (
     (_path.startswith('/dashboard') and 'dashboard')
@@ -26,6 +29,7 @@
     or (_path.startswith('/privacy') and 'privacy')
     or (_path.startswith('/admin') and 'admin')
     or (_path.startswith('/social') and 'social')
+    or (_path.startswith('/settings') and 'settings')
     or ''
 ) %}
 {% set context_titles = {
@@ -51,11 +55,12 @@
     'privacy': t.privacy_title,
     'admin': t.admin_title_page,
     'social': t.nav_social,
+    'settings': t.nav_settings,
 } %}
 {% macro nav_item(key, href, icon_name, label) -%}
-<a href="{{ href }}" class="pl-nav-item {{ 'pl-nav-active' if nav_key == key else '' }}"{% if nav_key == key %} aria-current="page"{% endif %} title="{{ label }}">
+<a href="{{ href }}" class="pl-nav-item {{ 'pl-nav-active' if nav_key == key else '' }}"{% if nav_key == key %} aria-current="page"{% endif %} title="{{ dscr_label(key, label) }}" data-dscr="{{ t.get('dscr_' + key, label) }}" data-label="{{ label }}">
   {{ icon(icon_name, 'w-5 h-5 pl-nav-icon') }}
-  <span class="pl-nav-label">{{ label }}</span>
+  <span class="pl-nav-label">{{ dscr_label(key, label) }}</span>
 </a>
 {%- endmacro %}
 {% macro nav_groups() -%}
@@ -90,6 +95,7 @@
     {{ nav_item('llm', '/llm/templates', 'ai', t.nav_llm) }}
     {{ nav_item('privacy', '/privacy', 'privacy', t.privacy_title) }}
     {{ nav_item('admin', '/admin', 'admin', t.admin_title_page) }}
+    {{ nav_item('settings', '/settings', 'settings', t.nav_settings) }}
   </div>
   {% endif %}
   {% if composition and composition.timer_operational %}
@@ -104,14 +110,21 @@
     {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
   </div>
   {% endif %}
+  {% if user and not (composition and composition.tracker_active) %}
+  {# Settings stays reachable in timer-only / social-only variants #}
+  <div class="pl-nav-group">
+    <div class="pl-nav-group-title">{{ t.nav_group_system }}</div>
+    {{ nav_item('settings', '/settings', 'settings', t.nav_settings) }}
+  </div>
+  {% endif %}
 {%- endmacro %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ t.app_title }}{% if context_titles.get(nav_key) and nav_key not in ('dashboard',) %} · {{ context_titles.get(nav_key) }}{% endif %}</title>
-    <!-- PracticeLoop icon pack favicons (design/icons/INTEGRATION_AGENT.md §3) -->
+    <title>{{ t.app_title }}{% if context_titles.get(nav_key) and nav_key not in ('dashboard',) %} · {{ dscr_label(nav_key, context_titles.get(nav_key)) }}{% endif %}</title>
+    <!-- PracticeLoop icon pack favicons (design/icons/INTEGRATION_AGENT.md §3); neutral variant under discretion (§12) -->
     <link rel="icon" href="/static/favicon/favicon.ico" sizes="any">
-    <link rel="icon" href="/static/favicon/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/static/favicon/{{ 'favicon-neutral.svg' if _discretion else 'favicon.svg' }}" type="image/svg+xml" id="pl-favicon">
     <link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/static/favicon/site.webmanifest">
     <link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#a95f58">
@@ -266,6 +279,8 @@
             --dom-health: #64806b;
             --dom-insights: #7a6a97;
             --dom-social: #56707f;
+            --dom-social-text: #3f5a6a; /* WCAG 6.21:1 on light surface */
+            --dom-social-btn: #4f6675; /* WCAG 5.76:1 with on-accent (button bg) */
             --dom-dynamics: #85586b;
             /* Semantic status tokens */
             --success: #6d8f74;
@@ -332,6 +347,8 @@
             --dom-health: #718f7a;
             --dom-insights: #8977a6;
             --dom-social: #617f94;
+            --dom-social-text: #86a3b5; /* WCAG 6.48:1 on dark surface */
+            --dom-social-btn: #4f6d80; /* WCAG 5.10:1 with on-accent (button bg) */
             --dom-dynamics: #956779;
             --success: #73977d;
             --warning: #c19358;
@@ -371,6 +388,15 @@
             --motion-base: 180ms;
             --motion-slow: 240ms;
         }
+        /* Approved muted accent sets (DESIGN_V2 §16) — html[data-accent="..."].
+           Contrast-verified: accent vs on-accent >= 4.5:1, accent-text vs surface >= 4.5:1. */
+        html[data-theme="dark"][data-accent="sage"] { --accent:#5b7452; --accent-hover:#7a9470; --accent-soft:#26301f; --accent-text:#93ab8e; --focus:#7a9470; }
+        html[data-theme="light"][data-accent="sage"] { --accent:#57734f; --accent-hover:#4a6341; --accent-soft:#dde5d8; --accent-text:#46603f; --focus:#4a6341; }
+        html[data-theme="dark"][data-accent="slate"] { --accent:#56758a; --accent-hover:#6f8fa3; --accent-soft:#1e2a33; --accent-text:#8fa9b8; --focus:#6f8fa3; }
+        html[data-theme="light"][data-accent="slate"] { --accent:#4f6675; --accent-hover:#40545f; --accent-soft:#dbe3e8; --accent-text:#3f5a6a; --focus:#40545f; }
+        /* Discretion (DESIGN_V2 §12): sensitive-image blur levels */
+        html[data-discretion="on"] .pl-blur-1 { filter: blur(6px); }
+        html[data-discretion="on"] .pl-blur-2 { filter: blur(14px); }
         *, *::before, *::after { box-sizing: border-box; }
         html { transition: background-color 300ms, color 300ms; }
         /* Reusable transitions honoring DESIGN v2 §14 easing */
@@ -557,8 +583,13 @@
     <div class="pl-shell">
         <!-- Utility bar (desktop) -->
         <header class="pl-utility hidden md:flex" aria-label="{{ t.nav_group_now }}">
-            <div class="pl-utility-title">{{ context_titles.get(nav_key, t.app_title) }}</div>
+            <div class="pl-utility-title">{{ dscr_label(nav_key, context_titles.get(nav_key, t.app_title)) }}</div>
             <div class="flex items-center gap-1">
+                <button type="button" id="pl-discretion-toggle" class="pl-icon-btn"
+                        aria-label="{{ t.dscr_discretion_on if _discretion else t.dscr_discretion_off }}"
+                        title="{{ t.dscr_discretion_on if _discretion else t.dscr_discretion_off }}">
+                    {{ icon('eye-off' if _discretion else 'eye', 'w-5 h-5') }}
+                </button>
                 <form action="/settings/locale" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" name="locale" value="{{ 'ru' if locale == 'en' else 'en' }}"
@@ -591,7 +622,12 @@
                 {{ icon('menu', 'w-6 h-6') }}
             </button>
             <a href="/" class="pl-sigil" aria-label="{{ t.app_title }}"><img src="/static/brand/practiceloop-sigil.svg" alt=""></a>
-            <div class="pl-utility-title truncate flex-1">{{ context_titles.get(nav_key, t.app_title) }}</div>
+            <div class="pl-utility-title truncate flex-1">{{ dscr_label(nav_key, context_titles.get(nav_key, t.app_title)) }}</div>
+            <button type="button" id="pl-discretion-toggle-m" class="pl-icon-btn"
+                    aria-label="{{ t.dscr_discretion_on if _discretion else t.dscr_discretion_off }}"
+                    title="{{ t.dscr_discretion_on if _discretion else t.dscr_discretion_off }}">
+                {{ icon('eye-off' if _discretion else 'eye', 'w-5 h-5') }}
+            </button>
             <a href="/notifications" class="pl-icon-btn" aria-label="{{ t.notifications_title }}" title="{{ t.notifications_title }}">
                 {{ icon('bell', 'w-5 h-5') }}
                 {% if unread_notifs is defined and unread_notifs > 0 %}<span class="pl-badge">{{ unread_notifs }}</span>{% endif %}

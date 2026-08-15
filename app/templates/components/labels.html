@@ -1,0 +1,3 @@
+{# Shared label helpers (Step 9e, DESIGN_V2 §12 discretion).
+   Usage: {% from "components/labels.html" import dscr_label %} {{ dscr_label('tasks', t.nav_tasks) }} #}
+{% macro dscr_label(key, label) -%}{{ t.get('dscr_' + key, label) if (discretion_active is defined and discretion_active) else label }}{%- endmacro %}

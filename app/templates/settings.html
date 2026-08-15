@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block head %}
+<script type="application/json" id="page-i18n">{{ {"t": t} | tojson }}</script>
+<script src="/static/js/pages/settings.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-5">
+    <div>
+        <h1 class="pl-display text-2xl font-semibold">{{ t.settings_title }}</h1>
+        <p class="pl-text-secondary text-sm mt-1">{{ t.settings_subtitle }}</p>
+    </div>
+
+    <form method="post" action="/settings" id="settings-form" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+        <!-- Appearance -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="appearance-h">
+            <h2 id="appearance-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_appearance }}</h2>
+
+            <div class="space-y-2">
+                <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_theme }}</div>
+                <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_theme }}">
+                    {% for key, label in [('dark', t.settings_theme_dark), ('light', t.settings_theme_light), ('system', t.settings_theme_system)] %}
+                    <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors
+                        {{ 'ring-1 ring-[color:var(--accent)]' if prefs.theme_choice == key else '' }}">
+                        <input type="radio" name="theme_choice" value="{{ key }}" class="accent-[color:var(--accent)]"
+                               {{ 'checked' if prefs.theme_choice == key else '' }}>
+                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_theme_system_hint }}</p>
+            </div>
+
+            <div class="space-y-2">
+                <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_accent }}</div>
+                <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_accent }}">
+                    {% for key, label, swatch in [('ember', t.settings_accent_ember, '#a25a53'), ('sage', t.settings_accent_sage, '#5b7452'), ('slate', t.settings_accent_slate, '#56758a')] %}
+                    <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors"
+                           data-accent-card="{{ key }}">
+                        <span class="w-4 h-4 rounded-full border border-[color:var(--border-strong)] inline-block flex-shrink-0" style="background: {{ swatch }}"></span>
+                        <input type="radio" name="accent" value="{{ key }}" class="accent-[color:var(--accent)]"
+                               {{ 'checked' if prefs.accent == key else '' }}>
+                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_density }}</div>
+                <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="{{ t.settings_density }}">
+                    {% for key, label in [('comfortable', t.settings_density_comfortable), ('compact', t.settings_density_compact)] %}
+                    <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                        <input type="radio" name="density" value="{{ key }}" class="accent-[color:var(--accent)]"
+                               {{ 'checked' if prefs.density == key else '' }}>
+                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard blocks -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="dash-h">
+            <h2 id="dash-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_dashboard }}</h2>
+            <div class="text-xs text-[color:var(--text-muted)]">{{ t.settings_dashboard_blocks }} — {{ t.settings_dashboard_hint }}</div>
+            <input type="hidden" name="block_order" id="block-order" value="{{ prefs.dash_blocks.order | join(',') }}">
+            <input type="hidden" name="block_hidden" id="block-hidden" value="{{ prefs.dash_blocks.hidden | join(',') }}">
+            <ul id="dash-blocks" class="space-y-2">
+                {% for block in prefs.dash_blocks.order %}
+                {% set label = t['settings_block_' + block] if ('settings_block_' + block) in t else block %}
+                <li data-block="{{ block }}" draggable="true"
+                    class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-2.5 flex items-center gap-3 cursor-grab">
+                    <span class="text-[color:var(--text-muted)]" aria-hidden="true">{{ icon('menu', 'w-4 h-4') }}</span>
+                    <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                        <input type="checkbox" data-visible class="accent-[color:var(--accent)]" {{ '' if block in (prefs.dash_blocks.hidden or []) else 'checked' }}>
+                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                    </label>
+                    <div class="flex items-center gap-1">
+                        <button type="button" data-move="-1" class="pl-icon-btn" aria-label="↑">
+                            {{ icon('chevron-up', 'w-4 h-4') }}
+                        </button>
+                        <button type="button" data-move="1" class="pl-icon-btn" aria-label="↓">
+                            {{ icon('chevron-down', 'w-4 h-4') }}
+                        </button>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Discretion -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="discr-h">
+            <h2 id="discr-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_discretion }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_discretion_hint }}</p>
+
+            <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_section_discretion }}">
+                {% for key, label in [('off', t.settings_discretion_off), ('always', t.settings_discretion_always), ('schedule', t.settings_discretion_schedule)] %}
+                <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                    <input type="radio" name="discretion_mode" value="{{ key }}" class="accent-[color:var(--accent)]"
+                           {{ 'checked' if prefs.discretion_mode == key else '' }}>
+                    <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="flex items-center gap-4">
+                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_discretion_start }}
+                    <input type="time" name="discretion_start" value="{{ prefs.discretion.start }}"
+                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
+                </label>
+                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_discretion_end }}
+                    <input type="time" name="discretion_end" value="{{ prefs.discretion.end }}"
+                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
+                </label>
+            </div>
+
+            <div class="space-y-2">
+                <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_blur }}</div>
+                <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_blur }}">
+                    {% for key, label in [(0, t.settings_blur_0), (1, t.settings_blur_1), (2, t.settings_blur_2)] %}
+                    <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                        <input type="radio" name="blur" value="{{ key }}" class="accent-[color:var(--accent)]"
+                               {{ 'checked' if prefs.blur == key else '' }}>
+                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <div class="flex justify-end">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                {{ t.settings_save }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

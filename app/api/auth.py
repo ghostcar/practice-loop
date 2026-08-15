@@ -199,11 +199,17 @@ async def set_theme(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update user theme preference."""
-    if theme not in ("dark", "light"):
+    """Update user theme preference (dark/light/system, Step 9e)."""
+    if theme not in ("dark", "light", "system"):
         theme = "dark"
 
     user.theme = theme
+    # keep the raw choice in prefs so the shell can re-resolve 'system' on the client
+    from app.prefs import raw_dict, sanitize_prefs
+
+    raw = sanitize_prefs(raw_dict(user.prefs))
+    raw["theme_choice"] = theme
+    user.prefs = raw
     db.add(user)
 
     referer = request.headers.get("referer", "/dashboard")

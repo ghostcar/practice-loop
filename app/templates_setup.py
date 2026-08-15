@@ -31,9 +31,25 @@ def _composition_context(request: Request) -> dict:
     return {"composition": composition}
 
 
+def _prefs_context(request: Request) -> dict:
+    """Inject customization/discretion state (Step 9e, DESIGN_V2 §16).
+
+    Reads the request-scoped prefs ContextVar populated by ``prefs_middleware``
+    (app/main.py) — no per-page handler changes needed. `discretion_active` is
+    resolved at render time so the schedule window follows the client timezone.
+    """
+    from app.prefs import get_prefs
+
+    prefs = get_prefs()
+    return {
+        "prefs": prefs,
+        "discretion_active": prefs.discretion_active_at(),
+    }
+
+
 templates = Jinja2Templates(
     directory="app/templates",
-    context_processors=[_csrf_context, _composition_context],
+    context_processors=[_csrf_context, _composition_context, _prefs_context],
 )
 
 

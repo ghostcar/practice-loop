@@ -19,7 +19,12 @@ def detect_locale(request: Request, user_locale: str | None = None) -> str:
 
 
 def detect_theme(user_theme: str | None = None) -> str:
-    """Detect theme: user preference → default dark."""
+    """Resolve theme for SSR: user preference → default dark.
+
+    ``system`` (Step 9e) is resolved to a concrete value for the server render;
+    the raw choice is kept in ``prefs.theme_choice`` so app.js can re-resolve
+    it against the OS ``prefers-color-scheme`` on the client.
+    """
     if user_theme in ("dark", "light"):
         return user_theme
     return "dark"

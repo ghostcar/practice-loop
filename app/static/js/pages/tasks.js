@@ -258,8 +258,9 @@
   var compactBtn = document.getElementById('density-compact');
   var comfortableBtn = document.getElementById('density-comfortable');
   if (logList && compactBtn && comfortableBtn) {
-    var density = 'comfortable';
-    try { density = localStorage.getItem('pl_tasks_density') || 'comfortable'; } catch (e) { /* ignore */ }
+    // Global default from Settings (Step 9e §16) unless the user picked a local one
+    var density = document.documentElement.getAttribute('data-density') || 'comfortable';
+    try { density = localStorage.getItem('pl_tasks_density') || density; } catch (e) { /* ignore */ }
     function applyDensity(d) {
       var compact = d === 'compact';
       logList.classList.toggle('density-compact', compact);
