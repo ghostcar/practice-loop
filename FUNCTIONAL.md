@@ -126,6 +126,10 @@ sidebar (иконки + подписи).
 (анализ тренировки), `generate_diet` / `evaluate_diet` (диеты), `analyze_diet_training_synergy`
 (синергия диеты ↔ тренировки).
 
+**Промпт-шаблоны** (ADR-070, Шаг 6): пользовательские приватные `prompt_templates`
+(typical prompts / parameterized templates) — библиотека переиспользуемых промптов
+по функциональным блокам, доступна через `/llm/templates`.
+
 ---
 
 ## 6. Задачи (ActivityLog)
@@ -269,10 +273,10 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (54):
+Полный перечень таблиц `app/models/*` (56):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
-  `activity_categories`, `llm_provider_configs`.
+  `activity_categories`, `llm_provider_configs`, `prompt_templates`.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -281,7 +285,7 @@ sidebar (иконки + подписи).
 - **Календарь и расписание**: `calendar_templates`, `availability_windows`, `calendar_overrides`,
   `schedule_rules`.
 - **Замеры, инвентарь, медиа**: `body_measurements`, `inventory_items`, `inventory_categories`,
-  `attachments`, `media_assets`, `verification_challenges`.
+  `attachments`, `media_assets`, `media_verification_results`, `verification_challenges`.
 - **Справочники (update2.md)**: `body_parts`, `task_body_targets`, `task_locations`,
   `task_location_usages`, `activity_location_requirements`, `task_inventory_usages`,
   `activity_inventory_requirements`, `activity_body_part_requirements`.
@@ -297,7 +301,8 @@ sidebar (иконки + подписи).
 
 ## 16. Lock Timer — персональный таймер закрытия (chastity, ADR-062)
 
-Отдельный bounded context (`app/locktimer/`) с таблицами `lock_*`. Включается флагом
+Отдельный bounded context (`app/locktimer/` — domain/services; таблицы `lock_*`
+в `app/models/locktimer.py`). Включается флагом
 `LOCKTIMER_CORE_ENABLED=true`. Доступен на странице `/locktimer`.
 
 ### Модель
@@ -438,6 +443,10 @@ Platform-level (`app/api/media.py`, `app/api/verification.py`), общая дл�
   MIME+magic-bytes validation, SHA-256, thumbnail (Pillow LANCZOS 400x400).
 - **verification_challenges**: одноразовые коды, HMAC-SHA256 (plaintext не хранится),
   constant-time сравнение, TTL, max_attempts, алфавит без O0I1l.
+- **media_verification_results**: результат LLM-оценки фото (ADR-075, Шаг 7) —
+  вердикты code_match / chastity_closed; это вспомогательное доказательство,
+  авторитетное завершение по-прежнему HMAC-челлендж (автозавершение — только при
+  явном включении владельцем).
 - API: upload (multipart 15MB), finalize, serve (nosniff+no-store), thumbnail, delete;
   create/verify/status challenge.
 
