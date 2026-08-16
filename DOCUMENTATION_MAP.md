@@ -40,7 +40,8 @@
 - `AGENTS.md` — правила работы с репозиторием и архитектурные ограничения;
 - `DESIGN_V2.md` — актуальное визуальное направление «Тёмный архив» и frontend contract;
 - `DESIGN.md` — baseline v0.7: safety, accessibility и progressive enhancement;
-- будущий `TARGET_ARCHITECTURE.md` — целевые bounded contexts после M1;
+- `TARGET_ARCHITECTURE.md` — целевые bounded contexts, события, транспорты, rollout (создан, сессия 135);
+- `DATA_LIFECYCLE.md` — классификация/retention/export/delete/derivatives (создан, закрывает PQ-006);
 - `DEPLOY_VPS.md`, `RUNBOOK.md` — эксплуатация.
 
 ### Память
@@ -121,6 +122,6 @@
 
 | Документ | Когда создавать |
 |---|---|
-| `TARGET_ARCHITECTURE.md` | после M1, до Personal Foundation |
-| `DATA_LIFECYCLE.md` | до Media Vault, Health и Social (закрывает PQ-006) |
+| ~~`TARGET_ARCHITECTURE.md`~~ | ✅ создан (сессия 135, шаг 11a) |
+| ~~`DATA_LIFECYCLE.md`~~ | ✅ создан (сессия 135, закрывает PQ-006) |
 | `DOMAIN_GLOSSARY.md` | перед стабилизацией честного UI Timer |
