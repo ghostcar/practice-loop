@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 1440  # 24 hours
 
+    # Mobile Foundation (M4): opaque refresh tokens (sliding window).
+    refresh_token_expire_days: int = 30
+
+    # Push notifications (M4). none = disabled; logging = log-only (dev).
+    # fcm/apns become real senders once provider credentials exist.
+    push_provider: str = "none"
+
     # Encryption (separate from JWT)
     credentials_encryption_key: str = _PLACEHOLDER_ENCRYPTION
 

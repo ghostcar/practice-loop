@@ -19,6 +19,7 @@ from app.main import app
 from app.models import Base
 from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401 — ensure table registry
+from app.models.api_token import ApiToken  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
 from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate  # noqa: F401
 from app.models.category import ActivityCategory  # noqa: F401
@@ -47,6 +48,7 @@ from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.points import PenaltyRedemption, PointsProfile, PointsTransaction  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
+from app.models.push_device import PushDevice  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
 from app.models.task_history import ActivityTaskHistory  # noqa: F401
 from app.models.task_inventory import ActivityInventoryRequirement, TaskInventoryUsage  # noqa: F401

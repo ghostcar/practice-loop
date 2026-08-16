@@ -142,9 +142,7 @@ async def on_task_completed(
 
     # Level up notification
     if progress.level > old_level:
-        title, body = neutral_notification(
-            prefs, "Level Up! 🎉", f"You reached level {progress.level}!", locale
-        )
+        title, body = neutral_notification(prefs, "Level Up! 🎉", f"You reached level {progress.level}!", locale)
         n = Notification(
             user_id=user_id,
             type="level_up",
@@ -252,6 +250,8 @@ async def on_task_completed(
 
     # Send Telegram notifications if user has linked account
     await _send_tg_notifications(db, user_id, notifications)
+    # Push notifications (best-effort) — Mobile Foundation M4.
+    await _send_push_notifications(db, user_id, notifications)
 
     return {
         "xp_earned": earned_xp,
@@ -283,6 +283,28 @@ async def _send_tg_notifications(db: AsyncSession, user_id: uuid.UUID, notificat
                 await send_telegram_notification(user.telegram_chat_id, f"*{n.title}*\n{n.body or ''}")
     except Exception:
         logger.debug("TG notification send failed", exc_info=True)
+
+
+async def _send_push_notifications(db: AsyncSession, user_id: uuid.UUID, notifications: list):
+    """Best-effort push delivery for new notifications (Mobile Foundation, M4).
+
+    Never raises: push delivery must not break the underlying domain operation.
+    """
+    if not notifications:
+        return
+    try:
+        from app.push import dispatch_push
+
+        for n in notifications[:3]:  # Limit to 3, mirroring Telegram
+            await dispatch_push(
+                db,
+                user_id,
+                n.title,
+                n.body,
+                data={"type": n.type, "link": n.link},
+            )
+    except Exception:
+        logger.debug("Push notification dispatch failed", exc_info=True)
 
 
 async def on_task_interrupted(
@@ -370,6 +392,8 @@ async def on_task_interrupted(
 
     # Send Telegram notification
     await _send_tg_notifications(db, user_id, [n])
+    # Push notification (best-effort) — Mobile Foundation M4.
+    await _send_push_notifications(db, user_id, [n])
 
     return {
         "xp_penalty": penalty_xp,

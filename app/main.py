@@ -161,7 +161,6 @@ async def client_tz_middleware(request: Request, call_next):
         reset_client_tz(token)
 
 
-
 # ---------------------------------------------------------------------------
 # Static files & health
 # ---------------------------------------------------------------------------
@@ -224,10 +223,14 @@ app.include_router(uploads_router)
 app.include_router(verification_router)
 
 from app.api.auth import router as auth_router  # noqa: E402
+from app.api.push import router as push_router  # noqa: E402
 from app.api.settings import router as settings_router  # noqa: E402
+from app.api.tokens import router as tokens_router  # noqa: E402
 
 app.include_router(auth_router)
 app.include_router(settings_router)
+app.include_router(push_router)
+app.include_router(tokens_router)
 
 from app.telegram.bot import tg_router  # noqa: E402
 

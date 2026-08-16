@@ -32,6 +32,7 @@ def _load_prefs_context(user: User) -> None:
         raw["theme_choice"] = user.theme or "dark"
     set_prefs(prefs_from_dict(raw))
 
+
 # --- Password helpers ---
 
 
@@ -52,6 +53,9 @@ def create_access_token(user_id: uuid.UUID) -> str:
         "sub": str(user_id),
         "exp": expire,
         "iat": datetime.now(UTC),
+        # token_type distinguishes access JWTs from any future JWT token kind.
+        # Legacy tokens (issued before M4) carry no "type" and are treated as access.
+        "type": "access",
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
@@ -62,9 +66,33 @@ def decode_access_token(token: str) -> uuid.UUID | None:
         user_id: str | None = payload.get("sub")
         if user_id is None:
             return None
+        # Reject JWTs minted for a different purpose (e.g. a refresh JWT).
+        token_type = payload.get("type")
+        if token_type is not None and token_type != "access":
+            return None
         return uuid.UUID(user_id)
     except (JWTError, ValueError):
         return None
+
+
+# --- Refresh token helpers (M4 Mobile Foundation) ---
+
+
+def generate_refresh_token() -> str:
+    """Return a cryptographically random opaque refresh token (raw value).
+
+    Only its SHA-256 hash is persisted (see app.api.tokens).
+    """
+    import secrets
+
+    return secrets.token_urlsafe(48)
+
+
+def hash_refresh_token(raw_token: str) -> str:
+    """SHA-256 hex digest of a raw refresh token (constant-time-safe lookup key)."""
+    import hashlib
+
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
 # --- Auth dependency ---

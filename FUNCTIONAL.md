@@ -264,6 +264,13 @@ sidebar (иконки + подписи).
 - Регистрация email+пароль (без подтверждения), JWT-cookie, CSRF double-submit
   (все native-формы с hidden token, JS-fetch с X-CSRF-Token; /uploads — CSRF-bypass).
 - Cookies Secure в production; logout только POST; пароли в .env, шифрование API-ключей.
+- **Bearer-auth для API-клиентов (Mobile Foundation, M4)**: JSON-эндпоинты
+  `POST /api/v2/auth/token` (email+пароль → access+refresh), `/refresh` (ротация),
+  `/revoke`, `GET /tokens` + `POST /tokens/{id}/revoke` (список/отзыв по устройству),
+  `GET /me`. Access — короткоживущий JWT с claim `type=access` (header
+  `Authorization: Bearer`); refresh — непрозрачный, хранится только SHA-256-хэш,
+  ротируется при каждом использовании, revocable (`api_tokens`). CSRF для
+  bearer-запросов не требуется (нет cookie-сессии).
 - **Приватность**: экспорт данных (JSON), полное удаление аккаунта или с сохранением
   обезличенных данных; обезличенная доска достижений.
 - Cross-user изоляция: чужие private entities/thresholds не видны; импорт ищет Entity
@@ -273,10 +280,11 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (56):
+Полный перечень таблиц `app/models/*` (58):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
+- **Мобильный фундамент (M4)**: `api_tokens` (refresh-токены), `push_devices`.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -529,5 +537,6 @@ Platform-level (`app/api/media.py`, `app/api/verification.py`), общая дл�
 ### Направление развития
 - **Мобильный клиент** (ADR-063): кроссплатформенное приложение после запуска портала.
 - **Масштабирование** (ADR-064): по трём осям (пользователи / объём данных / инфраструктура), без преждевременного over-engineering.
-- **JSON-first контракт** (ADR-065): action-эндпоинты возвращают JSON — фундамент для мобильного клиента.
+- **JSON-first контракт** (ADR-065): action-эндпоинты возвращают JSON — фундамент для мобильного клиента. **Реализовано в M4**: locktimer-действия (start/safety-stop/open/reveal/complete/правила/шаблоны) отдают JSON при `Authorization: Bearer` и redirect для HTMX-форм (dual-mode).
+- **Mobile Foundation (M4)** — bearer-auth (access+refresh, ротация+отзыв), push-устройства (`/api/v2/push/devices`) и абстракция отправки (`app/push`, `PUSH_PROVIDER=none|logging|fcm|apns`); медиа URL-контракт — `GET /api/v2/media/{id}` работает по bearer.
 - **OCR/LLM верификация кодов** (Q13 в OPEN_QUESTIONS.md): отложено.

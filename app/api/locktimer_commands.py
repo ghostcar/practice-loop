@@ -25,10 +25,11 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
+from app.api.responses import action_response
 from app.database import get_db
 from app.locktimer import enums as e
 from app.locktimer.repositories import get_session
@@ -94,7 +95,11 @@ async def api_start_session(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "started", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/safety-stop")
@@ -111,7 +116,11 @@ async def api_safety_stop(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "safety_stopped", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +150,11 @@ async def api_open_slot(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{occ.session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "opened", "occurrence_id": str(occurrence_id), "session_id": str(occ.session_id)},
+        redirect_url=f"/locktimer/sessions/{occ.session_id}",
+    )
 
 
 @router.post("/slot-occurrences/{occurrence_id}/close")
@@ -209,7 +222,11 @@ async def api_reveal_task(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{occ.session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "revealed", "occurrence_id": str(occurrence_id), "session_id": str(occ.session_id)},
+        redirect_url=f"/locktimer/sessions/{occ.session_id}",
+    )
 
 
 @router.post("/task-occurrences/{occurrence_id}/complete")
@@ -238,7 +255,11 @@ async def api_complete_task(
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{occ.session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "completed", "occurrence_id": str(occurrence_id), "session_id": str(occ.session_id)},
+        redirect_url=f"/locktimer/sessions/{occ.session_id}",
+    )
 
 
 @router.post("/task-occurrences/{occurrence_id}/skip")
@@ -328,7 +349,11 @@ async def api_add_slot_rule(
         max_late_seconds=max_late_seconds,
     )
 
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "created", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/task-rules")
@@ -367,7 +392,11 @@ async def api_add_task_rule(
         requires_report=requires_report,
     )
 
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "created", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/slot-rules/{rule_id}/delete")
@@ -390,7 +419,11 @@ async def api_delete_slot_rule(
         raise HTTPException(404, "Slot rule not found")
 
     await delete_slot_rule(db, rule)
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "deleted", "rule_id": str(rule_id), "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/task-rules/{rule_id}/delete")
@@ -413,7 +446,11 @@ async def api_delete_task_rule(
         raise HTTPException(404, "Task rule not found")
 
     await delete_task_rule(db, rule)
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "deleted", "rule_id": str(rule_id), "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/slot-rules/reorder")
@@ -436,7 +473,11 @@ async def api_reorder_slot_rules(
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "reordered", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/task-rules/reorder")
@@ -459,7 +500,11 @@ async def api_reorder_task_rules(
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "reordered", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 @router.post("/sessions/{session_id}/update")
@@ -505,7 +550,11 @@ async def api_update_draft(
         await update_draft(db, session, **fields)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    return RedirectResponse(f"/locktimer/sessions/{session_id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "updated", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -568,12 +617,17 @@ async def api_save_template(
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
-    return RedirectResponse("/locktimer/templates", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "saved", "session_id": str(session_id)},
+        redirect_url="/locktimer/templates",
+    )
 
 
 @router.post("/templates/{template_id}/instantiate")
 async def api_instantiate_template(
     template_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -583,7 +637,11 @@ async def api_instantiate_template(
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
-    return RedirectResponse(f"/locktimer/sessions/{session.id}", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "instantiated", "session_id": str(session.id)},
+        redirect_url=f"/locktimer/sessions/{session.id}",
+    )
 
 
 @router.post("/slot-occurrences/{occurrence_id}/verify-tag")
@@ -662,6 +720,7 @@ async def api_tag_lookup(
 @router.post("/templates/{template_id}/archive")
 async def api_archive_template(
     template_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -671,7 +730,11 @@ async def api_archive_template(
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
-    return RedirectResponse("/locktimer/templates", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "archived", "template_id": str(template_id)},
+        redirect_url="/locktimer/templates",
+    )
 
 
 @router.post("/templates/reorder")
@@ -687,4 +750,8 @@ async def api_reorder_templates(
         await reorder_templates(db, owner_id=current_user.id, template_ids=parsed)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    return RedirectResponse("/locktimer/templates", status_code=303)
+    return action_response(
+        request,
+        json_body={"status": "reordered"},
+        redirect_url="/locktimer/templates",
+    )
