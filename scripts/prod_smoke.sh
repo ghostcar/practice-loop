@@ -44,8 +44,24 @@ LOC=$(curl -s -o /dev/null -w '%{redirect_url}' "${HDR[@]}" \
   --data-urlencode "csrf_token=$CSRF" --data-urlencode "device_id=$DEV_ID" "$BASE/locktimer/new")
 SID=$(basename "$LOC")
 echo "session: $SID"
-PAGE=$(curl -s "${HDR[@]}" "$LOC")
-echo "$PAGE" | grep -q "SMOKE CAGE" && echo "detail: device chip OK" || { echo "detail: NO device chip"; exit 1; }
+
+# The session-detail GET can miss the chip right after a deploy (app/db warm-up,
+# first-request latency); retry with a short pause before failing.
+chip_ok=0
+for _attempt in 1 2 3 4 5 6; do
+  PAGE="$(curl -s "${HDR[@]}" "$LOC" || true)"
+  if echo "$PAGE" | grep -q "SMOKE CAGE"; then
+    chip_ok=1
+    break
+  fi
+  sleep 1
+done
+if [ "$chip_ok" -eq 1 ]; then
+  echo "detail: device chip OK"
+else
+  echo "detail: NO device chip"
+  exit 1
+fi
 
 echo "== start session -> device in_use =="
 curl -s -o /dev/null -w 'start: %{http_code}\n' "${HDR[@]}" \
