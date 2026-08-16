@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('medication', 'w-6 h-6') }}{{ t.med_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.med_subtitle }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/medications/export" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
+                {{ icon('download', 'w-4 h-4') }}{{ t.med_export }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Due today -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('today', 'w-4 h-4') }}{{ t.med_today }}</h2>
+        {% if summary.due %}
+        <ul class="divide-y divide-[color:var(--border)]">
+            {% for d in summary.due %}
+            <li class="py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="min-w-0">
+                    <span class="font-medium text-[color:var(--text)]">{{ d.medication_name }}</span>
+                    <span class="pl-text-muted text-sm"> · {{ d.dose }}{% if d.times_of_day %} · {{ d.times_of_day | join(', ') }}{% endif %}</span>
+                    <span class="text-xs pl-text-muted"> · {{ d.pending }} {{ t.med_doses_due }}</span>
+                </div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <form action="/med-intakes" method="post" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                        <input type="hidden" name="schedule_id" value="{{ d.id }}">
+                        <input type="hidden" name="status" value="taken">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
+                    </form>
+                    <form action="/med-intakes" method="post" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                        <input type="hidden" name="schedule_id" value="{{ d.id }}">
+                        <input type="hidden" name="status" value="missed">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--danger-soft)] text-[color:var(--danger)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('error', 'w-3.5 h-3.5') }}{{ t.med_status_missed }}</button>
+                    </form>
+                    <form action="/med-intakes" method="post" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                        <input type="hidden" name="schedule_id" value="{{ d.id }}">
+                        <input type="hidden" name="status" value="skipped">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('skip', 'w-3.5 h-3.5') }}{{ t.med_status_skipped }}</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('check-circle', 'w-4 h-4') }}{{ t.med_no_due }}</p>
+        {% endif %}
+    </section>
+
+    <!-- Expiring / low stock -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('warning', 'w-4 h-4') }}{{ t.med_expiring }}</h2>
+        {% if summary.expiring or summary.low_stock %}
+        <ul class="divide-y divide-[color:var(--border)]">
+            {% for e in summary.expiring %}
+            <li class="py-2 flex items-center justify-between gap-2">
+                <span class="font-medium text-[color:var(--text)]">{{ e.medication_name }}</span>
+                <span class="text-xs {% if e.days < 0 %}text-[color:var(--danger)]{% else %}text-[color:var(--warning)]{% endif %}">
+                    {{ icon('calendar', 'w-3.5 h-3.5') }}{{ e.expiry_date }}
+                    {% if e.days < 0 %}({{ t.med_expired }}){% else %}({{ e.days }} {{ t.med_days_left }}){% endif %}
+                </span>
+            </li>
+            {% endfor %}
+            {% for l in summary.low_stock %}
+            <li class="py-2 flex items-center justify-between gap-2">
+                <span class="font-medium text-[color:var(--text)]">{{ l.medication_name }}</span>
+                <span class="text-xs text-[color:var(--warning)]">{{ icon('inventory', 'w-3.5 h-3.5') }}{{ l.quantity }} / {{ l.threshold }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('check-circle', 'w-4 h-4') }}{{ t.med_no_expiring }}</p>
+        {% endif %}
+    </section>
+
+    <!-- Add medication + add kit -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <details class="pl-surface border border-[color:var(--border)] rounded-xl p-4 group">
+            <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add }}</summary>
+            <form action="/medications" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary">* {{ t.med_name }}
+                    <input type="text" name="name" required class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.med_kind }}
+                    <select name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for k in kinds %}<option value="{{ k }}">{{ t['med_kind_' + k] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.med_active_ingredient }}
+                    <input type="text" name="active_ingredient" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.med_form }}
+                    <input type="text" name="form" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.med_strength }}
+                    <input type="text" name="strength" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.med_unit }}
+                    <input type="text" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_instructions }}
+                    <input type="text" name="instructions" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="submit" class="sm:col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
+            </form>
+        </details>
+        <details class="pl-surface border border-[color:var(--border)] rounded-xl p-4 group">
+            <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add_kit }}</summary>
+            <form action="/med-kits" method="post" class="mt-3 grid grid-cols-1 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary">* {{ t.med_kit_name }}
+                    <input type="text" name="name" required class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.med_kit_location }}
+                    <input type="text" name="location" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="submit" class="pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
+            </form>
+            {% if kits %}
+            <ul class="mt-3 divide-y divide-[color:var(--border)]">
+                {% for k in kits %}
+                <li class="py-2 flex items-center justify-between gap-2">
+                    <span class="text-sm text-[color:var(--text)]">{{ k.name }}{% if k.location %} <span class="pl-text-muted text-xs">· {{ k.location }}</span>{% endif %}</span>
+                    <form action="/med-kits/{{ k.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </details>
+    </section>
+
+    <!-- Medications list -->
+    <section class="space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted">{{ t.nav_medication }}</h2>
+        {% if meds %}
+        <div class="grid grid-cols-1 gap-4">
+            {% for m in meds %}
+            <article class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-2">
+                            {{ m.name }}
+                            {% if not m.is_active %}<span class="text-xs pl-text-muted">({{ t.med_archive if t.get('med_archive') else 'inactive' }})</span>{% endif %}
+                        </h3>
+                        <p class="text-xs pl-text-muted">
+                            {{ t['med_kind_' + m.kind] if t.get('med_kind_' + m.kind) else m.kind }}
+                            {% if m.strength %} · {{ m.strength }}{% endif %}
+                            {% if m.active_ingredient %} · {{ m.active_ingredient }}{% endif %}
+                            {% if m.form %} · {{ m.form }}{% endif %}
+                        </p>
+                        {% if m.instructions %}<p class="text-sm pl-text-secondary mt-1">{{ m.instructions }}</p>{% endif %}
+                    </div>
+                    <form action="/medications/{{ m.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.med_delete }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    </form>
+                </div>
+
+                <!-- Stocks -->
+                {% if m.stocks %}
+                <ul class="divide-y divide-[color:var(--border)] text-sm">
+                    {% for st in m.stocks %}
+                    <li class="py-1.5 flex items-center justify-between gap-2">
+                        <span class="text-[color:var(--text)]">
+                            {{ st.quantity }} {{ st.unit or '' }}
+                            {% if st.kit_name %} <span class="pl-text-muted text-xs">· {{ st.kit_name }}</span>{% endif %}
+                            {% if st.lot_number %} <span class="pl-text-muted text-xs">· #{{ st.lot_number }}</span>{% endif %}
+                        </span>
+                        <span class="flex items-center gap-2">
+                            {% if st.expiry_date %}<span class="text-xs {% if st.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ st.expiry_date }}</span>{% endif %}
+                            <form action="/med-stocks/{{ st.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
+                            </form>
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Schedules -->
+                {% if m.schedules %}
+                <ul class="text-sm space-y-1">
+                    {% for s in m.schedules %}
+                    <li class="flex items-center justify-between gap-2 pl-text-secondary">
+                        <span>
+                            {{ s.dose }}
+                            {% if s.frequency_type == 'daily' %}{% if s.times_per_day %} · ×{{ s.times_per_day }}{% elif s.times_of_day %} · {{ s.times_of_day | join(', ') }}{% endif %}
+                            {% elif s.frequency_type == 'interval' %} · {{ s.interval_hours }}h
+                            {% elif s.frequency_type == 'weekly' %} · {{ t.med_frequency_weekly }}
+                            {% endif %}
+                            {% if not s.is_active %}<span class="text-xs pl-text-muted">(inactive)</span>{% endif %}
+                        </span>
+                        <form action="/med-schedules/{{ s.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Add stock + schedule (collapsible) -->
+                <details class="text-sm">
+                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('plus', 'w-3.5 h-3.5') }}{{ t.med_add_stock }} / {{ t.med_add_schedule }}</summary>
+                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <form action="/medications/{{ m.id }}/stock" method="post" class="grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <label class="text-xs pl-text-secondary">{{ t.med_quantity }}
+                                <input type="number" step="any" name="quantity" value="1" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_expiry_date }}
+                                <input type="date" name="expiry_date" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_kit_name }}
+                                <select name="kit_id" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                    <option value="__none__">—</option>
+                                    {% for k in kits %}<option value="{{ k.id }}">{{ k.name }}</option>{% endfor %}
+                                </select>
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_low_stock_threshold }}
+                                <input type="number" step="any" name="low_stock_threshold" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <button type="submit" class="col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.med_add_stock }}</button>
+                        </form>
+                        <form action="/medications/{{ m.id }}/schedule" method="post" class="grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <label class="text-xs pl-text-secondary">{{ t.med_dose }}
+                                <input type="number" step="any" name="dose_quantity" value="1" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_unit }}
+                                <input type="text" name="dose_unit" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary col-span-2">{{ t.med_frequency }}
+                                <select name="frequency_type" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                    {% for f in frequency_types %}<option value="{{ f }}">{{ t['med_frequency_' + f] }}</option>{% endfor %}
+                                </select>
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_times_per_day }}
+                                <input type="number" name="times_per_day" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_times_of_day }}
+                                <input type="text" name="times_of_day" placeholder="08:00, 20:00" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_start_date }}
+                                <input type="date" name="start_date" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_end_date }}
+                                <input type="date" name="end_date" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <button type="submit" class="col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.med_add_schedule }}</button>
+                        </form>
+                    </div>
+                </details>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-12 text-center">
+            <div class="flex justify-center mb-3">{{ icon('medication', 'w-12 h-12 text-[color:var(--text-muted)]') }}</div>
+            <p class="pl-text-secondary">{{ t.med_add }}</p>
+            <p class="pl-text-muted text-sm mt-1">{{ t.med_subtitle }}</p>
+        </section>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

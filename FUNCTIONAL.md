@@ -44,7 +44,7 @@ Lock Timer (chastity) и социальная платформа (обезлич
 feature flags (composition):
 - **Сейчас**: Сегодня (дашборд) · Задачи · Сессии
 - **Личное**: Каталог · Тренировка · Диеты
-- **Данные**: Инвентарь · Замеры · Расписание · Зоны тела · Календарь · Баллы ·
+- **Данные**: Инвентарь · Замеры · Лекарства · Расписание · Зоны тела · Календарь · Баллы ·
   Достижения · Медиа · Импорт
 - **Система**: Уведомления · LLM · Приватность · Админ · Настройки
 - (при `timer_operational`) **Личное**: Таймер замка; (при `social_operational`)
@@ -65,6 +65,7 @@ sidebar (иконки + подписи).
 | `/admin` | Админка: seed каталога и LLM-пресетов |
 | `/llm-configs` | BYOK-конфиги провайдеров, активный конфиг, режимы full/abstract, хранение raw |
 | `/measurements` | Замеры тела (утро/вечер), графики |
+| `/medications` | Medication Organizer: лекарства/аптечки/остатки/расписание/факт приёма, экспорт для врача (§22) |
 | `/inventory` | Инвентарь: предметы, фото, сортировка drag&drop, shopping list |
 | `/schedule` | Правила расписания дня (day_of_week + время + тип задачи + recurring) |
 | `/import` | Импорт/экспорт данных: CSV/JSON шаблоны, upload, API-push, полный экспорт |
@@ -280,11 +281,13 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (58):
+Полный перечень таблиц `app/models/*` (63):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
 - **Мобильный фундамент (M4)**: `api_tokens` (refresh-токены), `push_devices`.
+- **Medication Organizer (M3, §22)**: `medications`, `med_kits`, `med_stocks`,
+  `med_schedules`, `med_intakes` (relief-only, без игровой интеграции — PD-013).
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -539,4 +542,28 @@ Platform-level (`app/api/media.py`, `app/api/verification.py`), общая дл�
 - **Масштабирование** (ADR-064): по трём осям (пользователи / объём данных / инфраструктура), без преждевременного over-engineering.
 - **JSON-first контракт** (ADR-065): action-эндпоинты возвращают JSON — фундамент для мобильного клиента. **Реализовано в M4**: locktimer-действия (start/safety-stop/open/reveal/complete/правила/шаблоны) отдают JSON при `Authorization: Bearer` и redirect для HTMX-форм (dual-mode).
 - **Mobile Foundation (M4)** — bearer-auth (access+refresh, ротация+отзыв), push-устройства (`/api/v2/push/devices`) и абстракция отправки (`app/push`, `PUSH_PROVIDER=none|logging|fcm|apns`); медиа URL-контракт — `GET /api/v2/media/{id}` работает по bearer.
+
+---
+
+## 22. Medication Organizer (M3 Personal Suite, Шаг 11b, ADR-084)
+
+Первый Health-модуль личного контура (ROADMAP §7 4C, PRODUCT_VISION §9.1).
+**Relief-only** (PD-013): никакой игровой интеграции (XP/баллы/штрафы не применяются);
+все записи — Private Record (DATA_LIFECYCLE.md); экспорт для врача — явный
+Shared Artifact. Feature flag `medication_enabled` (default true).
+
+- **Модель (5 таблиц, миграция 041)**: `medications` (каталог лекарств/БАД/расходников:
+  name, kind, active_ingredient, form, strength, unit, instructions), `med_kits` (аптечки/
+  места хранения), `med_stocks` (партия: quantity + expiry_date + lot + low_stock_threshold),
+  `med_schedules` (доза + частота: daily/interval/weekly), `med_intakes` (факт приёма:
+  taken/missed/skipped/rescheduled/unknown).
+- **Страница `/medications`**: «на сегодня» (невыполненные приёмы, быстрые действия
+  принято/пропущено/осознанный пропуск), истекающие/низкий остаток (30 дней порог),
+  каталог с остатками и расписаниями, аптечки, инлайн-формы добавления.
+- **JSON API** (`/api/v2/medications`, bearer): список, `/today` (due + expiring +
+  low_stock по локальному дню устройства), `POST /{id}/intake`, `/export` (JSON).
+- **Экспорт**: `GET /medications/export` — CSV (список + история приёма) для врача;
+  `Content-Disposition: attachment`.
+- **Границы дня**: «сегодня» и подсчёт принятого — через `timeutils.local_date()`
+  (client-tz), а не жёсткий UTC.
 - **OCR/LLM верификация кодов** (Q13 в OPEN_QUESTIONS.md): отложено.

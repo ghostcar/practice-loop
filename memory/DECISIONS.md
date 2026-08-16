@@ -81,6 +81,7 @@
 | ADR-079 | 2026-08-14 | Шаг 9c: Inventory/Media patterns (Media Vault, крупные изображения, verified state) | 1) **Media Vault `/media`** (новая SSR-страница): плитки с изображением ≥160×120 (thumbnail или приватный стрим, object-cover), подпись «дата · тип · provenance» (inventory_item → name, activity_log → title; остальные тип+id), verified-бейдж (последний `media_verification_results`: verdict + тип + confidence), retention «Приватно · только вы»/«В архиве», state-чип staged/ready/archived; upload-форма (staged, owner_type=general); nav sidebar → `/media` (заменён JSON-эндпоинт). 2) **Inventory**: изображение 160×120 (`w-40 aspect-[4/3]`) + placeholder-иконка, бейджи → токены, оболочка → pl-surface. 3) **i18n `mvt_*`** (избегаем коллизии: `mv_*` — страница `/llm/verify`). 869/869 ✅ (+6 test_design_v2_9c), ruff ✅ | принято |
 | ADR-082 | 2026-08-14 | Шаг 9f: Visual QA, light-тема контрасты, browser-матрица (DESIGN_V2 §20) | Светлая тема = первый класс: `--text-muted` #6b5e53; цветные тексты `-700 dark:-400`; белый текст на `bg-emerald/green-500/600` → фон -700; JS-шаблоны (points/dashboard/calendar/diets/measurements/locations/body_parts) в токен-пассе (text-slate/gray→токены); axe-маршруты 8×2 темы; CSRF-кука loopback-aware (WebKit); playwright `workers: 2` (Firefox font-flake). 36 passed/6 skip/0 fail, ruff ✅, i18n 876/876 | принято |
 | ADR-083 | 2026-08-16 | Шаг 10: Mobile Foundation (M4) — bearer-auth + JSON-first + push-устройства | 1) **Bearer-auth**: `POST /api/v2/auth/token` (email+пароль → access JWT + refresh), `/refresh` (ротация), `/revoke`, `GET /tokens` + `POST /tokens/{id}/revoke`, `GET /me`; access JWT с claim `type=access` (refresh/не-access JWT отвергаются), refresh — непрозрачный `secrets.token_urlsafe`, в БД только SHA-256 (`api_tokens`), ротация + revocable, sliding 30 дней (`refresh_token_expire_days`). 2) **JSON-first dual-mode (ADR-065)**: locktimer action-эндпоинты (start/safety-stop/open/reveal/complete/правила/шаблоны) отдают JSON при `Authorization: Bearer`, redirect для HTMX-форм — helper `app/api/responses.action_response`; skip/close/validate уже JSON. 3) **Push-устройства**: `push_devices` (register upsert/list/deactivate/delete, cross-user) + `app/push` (PushSender protocol + registry + `dispatch_push`, `PUSH_PROVIDER=none|logging|fcm|apns`, default none) + hook в gamification (best-effort). 4) **Медиа URL-контракт**: `GET /api/v2/media/{id}` + `/thumbnail` работают по bearer. Миграция 040, +14 тестов test_mobile_foundation. ruff ✅ | принято |
+| ADR-084 | 2026-08-16 | Шаг 11: M3 Personal Suite — TARGET_ARCHITECTURE + DATA_LIFECYCLE + Medication Organizer | 11a: созданы `TARGET_ARCHITECTURE.md` (bounded contexts, события, мобильный API-контракт) и `DATA_LIFECYCLE.md` (закрывает PQ-006). 11b: **Medication Organizer** (relief-only, PD-013) — 5 таблиц (`medications`/`med_kits`/`med_stocks`/`med_schedules`/`med_intakes`), миграция 041, `/medications` (due today / expiring / low-stock + инлайн-CRUD), JSON API `/api/v2/medications` (bearer), CSV-экспорт для врача, feature flag `medication_enabled`. 10/10 тестов ✅ | принято |
 | ADR-081 | 2026-08-14 | Шаг 9e: Social tone + customization/discretion (DESIGN_V2 §13/§16) | 1) **Prefs-инфраструктура**: `users.prefs` JSONB (миграция 037, generic JSON в модели для SQLite-тестов) + `app/prefs.py` (UserPrefs dataclass, sanitize с дефолтами и доводкой dash_blocks, ContextVar); инъекция в шаблоны через `_load_prefs_context` в auth-зависимостях (get_current_user/get_optional_user) + контекст-процессор `_prefs_context` — ноль правок хендлеров. 2) **Тема system**: выбор dark/light/system; `data-theme-choice` + JS-резолв matchMedia в app.js; SSR-fallback `detect_theme`; set_theme принимает system и синхронизирует users.theme. 3) **Accent-наборы**: ember/sage/slate `html[data-accent]` — контраст-верифицировано (accent↔on-accent ≥4.5, accent-text↔surface ≥4.5). 4) **/settings**: appearance + блоки дашборда (порядок/скрытие, стрелки + drag&drop, hidden inputs) + discretion (off/always/schedule-окно, blur 0/1/2); POST /settings + quick-toggle /settings/discretion/toggle (JSON). 5) **Блоки дашборда**: рендер по `prefs.dash_visible` (id `dash-block-*`). 6) **Social tone §13**: токен-пасс 7 social-шаблонов (bg-white→pl-surface, gray→токены, indigo→`--dom-social*`); новые `--dom-social-text` (6.21/6.48:1) и `--dom-social-btn` (5.76/5.10:1). 7) **Discretion v1 §12**: нейтральные nav-лейблы (`dscr_*` EN/RU, макрос dscr_label в components/labels.html, импорт `with context` — иначе макрос не видит контекст), маскировка имён на дашборде (Item #N), favicon-neutral.svg, blur (media vault SSR + inventory JS `data-blur`), quick-toggle мгновенно без перезагрузки (сервер — источник истины для следующего SSR). Долг: уведомления не нейтрализованы (v1) → закрыт в сессии 134 (см. ADR-081 Status). 141/141 таргетных ✅ (+11 test_design_v2_9e), ruff ✅, node --check ✅ | принято |
 | ADR-080 | 2026-08-14 | Шаг 9d: токен-пасс Personal-разделов + a11y-контраст (WCAG AA) | 1) **Токен-пасс 25 шаблонов**: legacy `bg-white/slate-*`, `text-slate-*`, `border/divide-slate-*`, индиго-кнопки → `pl-surface/-soft`, токены текста/границ, `pl-accent-bg`, `focus-ring → --focus`; осиротевшие `dark:*` удалены; намеренно оставлены тёмный код-блок import_data, семантические цветные чипы, градиенты. 2) **Контрастная политика (WCAG 2.2 AA)**: новый токен `--accent-text` (#743a37 light / #c9897f dark) — accent как цвет текста; `.pl-accent-text`/`.pl-accent-soft` используют его; тёмный `--accent` `#a95f58 → #a25a53` (кнопки accent-bg 4.40 → 4.76); индиго-ссылки `text-indigo-600 dark:text-indigo-400`. 3) **Форм-контролы**: aria-label фильтр-селектам /tasks и desire_level /entities/catalog (axe select-name, critical). Browser desktop-chromium: 5/5 ✅ (smoke/a11y/usability) + 1 осознанный skip; 113/113 таргетных pytest ✅ | принято |
 
@@ -545,3 +546,35 @@ ruff ✅.
 **Rationale:** мобильный клиент — первый внешний потребитель внутреннего API; bearer + refresh +
 rotation + revocation — стандарт безопасности для токенов; dual-mode по bearer сохраняет HTMX-фронт
 без переписывания; push-абстракция без реальных кредов дёшева сейчас и дорога в перестройке потом.
+
+### ADR-084 — Шаг 11: M3 Personal Suite — архитектура + Medication Organizer
+
+**Контекст.** ROADMAP §5 требует `TARGET_ARCHITECTURE.md` до Personal Foundation и
+`DATA_LIFECYCLE.md` (закрывает PQ-006) до Media Vault/Health. Шаг 11 (M3 Personal Suite) охватывает
+журналы, Care и Health foundation. Владелец выбрал «оба документа сначала» (11a) + первый модуль —
+Medication Organizer (11b).
+
+**Решения.**
+1. **11a — архитектура.** `TARGET_ARCHITECTURE.md` (bounded contexts: Platform/Tracker/Chastity
+   Timer/Journals/Care/Health/Media Vault/Insights/Social/D/s; межмодульные контракты только через
+   ID+проекция+adapter; события/outbox/adapters; транспорты; мобильный API-контракт
+   `api/v2`+bearer+dual-mode; feature flags и rollout/не-регрессия). `DATA_LIFECYCLE.md`
+   (классификация 4 слоёв PD-012, retention, export/delete, derivatives/Shared Artifact, Health
+   relief-only) — закрывает PQ-006. `DOCUMENTATION_MAP.md` §2/§7 и `PRODUCT_DECISIONS.md`
+   (PQ-002 первый модуль, PQ-006 закрыт) синхронизированы.
+2. **11b — Medication Organizer (relief-only, PD-013).** 5 таблиц + миграция 041 (single head):
+   `medications` (name/kind/active_ingredient/form/strength/unit/instructions), `med_kits` (аптечки),
+   `med_stocks` (quantity+expiry_date+lot+low_stock_threshold), `med_schedules` (доза + frequency
+   daily/interval/weekly), `med_intakes` (taken/missed/skipped/rescheduled/unknown). Без игровой
+   интеграции (gamification/xp/penalty не импортируются). Feature flag `medication_enabled` (default true).
+3. **Страница `/medications`**: «на сегодня» (due по локальному дню устройства через
+   `timeutils.local_date`), истекающие (30 дней) / низкий остаток, каталог + аптечки + инлайн-CRUD.
+4. **JSON API** `/api/v2/medications` (bearer): list, `/today`, `POST /{id}/intake`, `/export`.
+5. **Экспорт**: `GET /medications/export` — CSV (список + история приёма) для врача (Shared Artifact).
+
+**Status:** ✅ реализовано (Шаг 11a+11b). 10/10 test_medication ✅, 45/45 регрессионных
+(shell/icon/mobile/design-9e) ✅, ruff ✅, i18n 935/935, alembic single head ✅.
+
+**Rationale:** Health — строго Private Record и relief-only (никогда не в штрафах); архитектурные
+доки фиксируют границы до роста модулей; Medication Organizer — самодостаточный первый Health-срез
+с явным экспортом врачу и без игровой интеграции.

@@ -15,6 +15,7 @@
     or (_path.startswith('/locktimer') and 'locktimer')
     or (_path.startswith('/inventory') and 'inventory')
     or (_path.startswith('/measurements') and 'measurements')
+    or (_path.startswith('/medications') and 'medication')
     or (_path.startswith('/schedule') and 'schedule')
     or (_path.startswith('/body-parts') and 'body_parts')
     or (_path.startswith('/locations') and 'locations')
@@ -42,6 +43,7 @@
     'locktimer': t.nav_timer,
     'inventory': t.nav_inventory,
     'measurements': t.nav_measurements,
+    'medication': t.nav_medication,
     'schedule': t.nav_schedule,
     'body_parts': t.nav_body_parts,
     'locations': t.nav_locations,
@@ -81,6 +83,7 @@
     <div class="pl-nav-group-title">{{ t.nav_group_data }}</div>
     {{ nav_item('inventory', '/inventory/page', 'inventory', t.nav_inventory) }}
     {{ nav_item('measurements', '/measurements/page', 'measurement', t.nav_measurements) }}
+    {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
     {{ nav_item('schedule', '/schedule/page', 'schedule', t.nav_schedule) }}
     {{ nav_item('body_parts', '/body-parts', 'body', t.nav_body_parts) }}
     {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}

@@ -87,3 +87,4 @@
 | [ADR-081](ADR-081.md) | 2026-08-14 | Шаг 9e: Social tone + customization/discretion (DESIGN_V2 §13/§16) | accepted |
 | [ADR-082](ADR-082.md) | 2026-08-14 | Шаг 9f: Visual QA, light-тема контрасты, browser-матрица (DESIGN_V2 §20) | accepted |
 | [ADR-083](ADR-083.md) | 2026-08-16 | Шаг 10: Mobile Foundation (M4) — bearer-auth + JSON-first + push-устройства | accepted |
+| [ADR-084](ADR-084.md) | 2026-08-16 | Шаг 11: M3 Personal Suite — TARGET_ARCHITECTURE + DATA_LIFECYCLE + Medication Organizer | accepted |

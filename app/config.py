@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     locktimer_keyholder_enabled: bool = False
     locktimer_cloud_media_enabled: bool = False
 
+    # M3 Personal Suite (Шаг 11b) — Medication Organizer. Health-модуль, relief-only.
+    medication_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+asyncpg://tracker:tracker@localhost:5432/tracker"
 
