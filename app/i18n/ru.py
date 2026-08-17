@@ -573,6 +573,10 @@ RU = {
     "locktimer_no_templates_hint": "Создайте черновик с правилами, затем сохраните его как шаблон сессии замка.",
     "locktimer_verify_tag": "Проверить пломбу",
     "locktimer_tag_number": "Пломба #",
+    # Шаг 14b — окно таймера → авто-запись Sexual Journal
+    "locktimer_journal_auto": "Авто-запись в журнал",
+    "locktimer_journal_auto_hint": "Открытие окна создаёт черновик записи Sexual Journal; детали обязательны при закрытии окна.",
+    "locktimer_journal_pending": "Заполнить детали журнала",
     # Dashboard timer card
     "dashboard_timer_active": "Активный замок",
     "dashboard_timer_duration": "Длительность замка",
@@ -1169,4 +1173,12 @@ RU = {
     "dash_journal_empty": "Записей пока нет",
     "dash_journal_entries_30d": "записей за 30д",
     "dash_journal_avg_satisfaction": "ср. удовлетворённость",
+    # Шаг 14b — связи, медиа, детали
+    "journal_link_activity": "Связать с активностью (необязательно)",
+    "journal_no_activity": "— без активности —",
+    "journal_source_timer": "окно таймера",
+    "journal_pending_title": "Требуются детали",
+    "journal_pending_hint": "Эти записи созданы автоматически из окон таймера. Заполните детали, чтобы завершить их.",
+    "journal_status_draft": "нет деталей",
+    "journal_add_photo": "Добавить фото",
 }

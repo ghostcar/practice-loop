@@ -21,6 +21,7 @@ POST .../sessions/{id}/update           — update draft metadata
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -69,6 +70,8 @@ from app.models.locktimer import (
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v2/locktimer", tags=["locktimer-commands"])
+
+logger = logging.getLogger(__name__)
 
 # Sentinel for optional form fields: distinguishes "absent" from "empty".
 _UNSET = "__unset__"
@@ -188,11 +191,30 @@ async def api_close_slot(
         source_kind="slot_occurrence",
         source_id=occ.id,
     )
+    # Шаг 14b: если окно было для плановой активности (journal_auto), draft-запись
+    # журнала ждёт заполнения деталей при закрытии — сообщаем клиенту.
+    journal_pending = None
+    try:
+        from app.api.journal import get_pending_slot_entry
+
+        pending = await get_pending_slot_entry(
+            db,
+            user_id=current_user.id,
+            slot_occurrence_id=occ.id,
+        )
+        if pending is not None:
+            journal_pending = {
+                "entry_id": str(pending.id),
+                "url": "/journal",
+            }
+    except Exception as exc:  # journal not deployed — не блокируем закрытие
+        logger.warning("journal pending lookup skipped for slot %s: %s", occ.id, exc)
     return JSONResponse(
         {
             "status": "closed",
             "session_id": str(occ.session_id),
             "penalty": serialize_penalty_event(penalty),
+            "journal_pending": journal_pending,
         }
     )
 
@@ -316,6 +338,7 @@ async def api_add_slot_rule(
     duration_seconds: int = Form(default=3600),
     allow_late_open: bool = Form(default=False),
     max_late_seconds: int = Form(default=3600),
+    journal_auto: bool = Form(default=False),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -325,6 +348,10 @@ async def api_add_slot_rule(
     only). Default 3600s keeps the UI ``allow_late_open`` checkbox usable —
     without it the eligible window collapses to [planned_open, planned_open]
     and no real-time request can ever open the slot.
+
+    ``journal_auto`` (Шаг 14b): окно для плановой сексуальной активности —
+    при открытии авто-создаётся draft-запись Sexual Journal, детали пользователь
+    обязан внести при закрытии.
     """
     import json
 
@@ -348,6 +375,7 @@ async def api_add_slot_rule(
         duration_seconds=duration_seconds,
         allow_late_open=allow_late_open,
         max_late_seconds=max_late_seconds,
+        journal_auto=journal_auto,
     )
 
     return action_response(

@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.activity_log import ActivityLog
 from app.models.diet import Diet
+from app.models.journal import JournalEntry
 from app.models.life import BodyMeasurement, InventoryItem
 from app.models.locktimer import LockSession, LockSlotOccurrence, LockTaskOccurrence
 from app.models.training import TrainingDay
@@ -77,6 +78,10 @@ async def _authorize_social_publication(db: AsyncSession, ref_id: uuid.UUID, use
     return await _model_exists(db, SocialPublication, SocialPublication.owner_id, ref_id, user_id)
 
 
+async def _authorize_journal_entry(db: AsyncSession, ref_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    return await _model_exists(db, JournalEntry, JournalEntry.user_id, ref_id, user_id)
+
+
 # owner_type → async authorize_bind(db, ref_id, user_id) -> bool
 BIND_AUTHORIZERS: dict[str, object] = {
     "activity_log": _authorize_activity_log,
@@ -89,6 +94,7 @@ BIND_AUTHORIZERS: dict[str, object] = {
     "lock_slot_occurrence": _authorize_lock_slot_occurrence,
     "lock_task_occurrence": _authorize_lock_task_occurrence,
     "social_publication": _authorize_social_publication,
+    "journal_entry": _authorize_journal_entry,
 }
 
 

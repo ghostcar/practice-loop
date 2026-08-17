@@ -571,6 +571,10 @@ EN = {
     "locktimer_no_templates_hint": "Create a draft lock session with rules, then save it as a template.",
     "locktimer_verify_tag": "Verify Seal",
     "locktimer_tag_number": "Seal #",
+    # Шаг 14b — Timer window → Sexual Journal auto-entry
+    "locktimer_journal_auto": "Journal auto-entry",
+    "locktimer_journal_auto_hint": "Opens a draft Sexual Journal entry; details are required when the window closes.",
+    "locktimer_journal_pending": "Complete journal details",
     # Dashboard timer card
     "dashboard_timer_active": "Active Lock Timer",
     "dashboard_timer_duration": "Lock Duration",
@@ -1165,4 +1169,12 @@ EN = {
     "dash_journal_empty": "No entries yet",
     "dash_journal_entries_30d": "entries in 30d",
     "dash_journal_avg_satisfaction": "avg satisfaction",
+    # Шаг 14b — links, media, pending details
+    "journal_link_activity": "Link to activity (optional)",
+    "journal_no_activity": "— no activity —",
+    "journal_source_timer": "timer window",
+    "journal_pending_title": "Details required",
+    "journal_pending_hint": "These entries were created automatically from timer windows. Fill in the details to complete them.",
+    "journal_status_draft": "pending details",
+    "journal_add_photo": "Add photo",
 }

@@ -3,11 +3,21 @@
 Приватная запись фактической сексуальной жизни (PRODUCT_OVERVIEW §7) —
 **relief-only** (PD-013): никакой игровой интеграции, никаких штрафов.
 Все записи — Private Record (DATA_LIFECYCLE.md): отдельное удаление,
-связи с Timer/Health — по ID без раскрытия (мягкие ссылки, без FK).
+связи с Tracker/Timer/Health — по ID без раскрытия (мягкие ссылки, без FK).
+
+Связи (Шаг 14b):
+- **Tracker**: ``activity_log_id`` — запись может быть результатом задачи;
+- **Timer**: ``slot_occurrence_id`` — окно таймера для плановой активности
+  авто-создаёт draft-запись (``source=timer_slot``, ``status=draft``), детали
+  пользователь обязан внести при закрытии (``POST .../complete``);
+- **Media**: фото привязывается через ``POST /journal/entries/{id}/media``
+  (owner_type=journal_entry, owner-scoped).
 
 Страницы:
-- GET  /journal                     — записи журнала + псевдонимы партнёров
+- GET  /journal                     — записи + псевдонимы + pending-детали + медиа
 - POST /journal/entries             — создать запись (снимок фазы Cycle)
+- POST /journal/entries/{id}/complete — заполнить детали draft-записи (при закрытии)
+- POST /journal/entries/{id}/media  — привязать фото к записи
 - POST /journal/entries/{id}/delete — удалить запись
 - POST /journal/partners            — создать псевдоним партнёра
 - POST /journal/partners/{id}/delete — удалить псевдоним
@@ -15,6 +25,7 @@
 JSON API (мобильный/bearer):
 - GET  /api/v2/journal              — сводка + записи + партнёры
 - POST /api/v2/journal/entries      — создать запись
+- POST /api/v2/journal/entries/{id}/complete — заполнить детали draft
 - POST /api/v2/journal/partners     — создать псевдоним
 """
 
@@ -24,7 +35,7 @@ import logging
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -34,8 +45,19 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.journal import PROTECTION_TYPES, REACTION_CHOICES, SCALE_1_5, JournalEntry, JournalPartner
+from app.models.activity_log import ActivityLog
+from app.models.journal import (
+    JOURNAL_SOURCES,
+    JOURNAL_STATUSES,
+    PROTECTION_TYPES,
+    REACTION_CHOICES,
+    SCALE_1_5,
+    JournalEntry,
+    JournalPartner,
+)
+from app.models.media import MediaAsset
 from app.models.user import User
+from app.services.media import save_media
 from app.templates_setup import templates
 from app.timeutils import local_today
 
@@ -75,6 +97,69 @@ async def _cycle_snapshot(db: AsyncSession, user_id: uuid.UUID, entry_date: date
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Timer slot → auto journal entry (Шаг 14b)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def ensure_timer_slot_entry(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    session_id: uuid.UUID,
+    slot_occurrence_id: uuid.UUID,
+    entry_date: date,
+) -> JournalEntry | None:
+    """Idempotently create a draft journal entry for an opened timer slot.
+
+    Called from the Timer open flow (window opened for planned sexual activity).
+    Returns the existing draft if already created. Journal may not be deployed —
+    in that case returns None without failing the Timer action.
+    """
+    existing = (
+        await db.execute(
+            select(JournalEntry).where(
+                JournalEntry.user_id == user_id,
+                JournalEntry.slot_occurrence_id == slot_occurrence_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    cycle_phase, cycle_day = await _cycle_snapshot(db, user_id, entry_date)
+    entry = JournalEntry(
+        user_id=user_id,
+        entry_date=entry_date,
+        status="draft",
+        source="timer_slot",
+        timer_session_id=session_id,
+        slot_occurrence_id=slot_occurrence_id,
+        cycle_phase=cycle_phase,
+        cycle_day=cycle_day,
+    )
+    db.add(entry)
+    await db.flush()
+    return entry
+
+
+async def get_pending_slot_entry(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    slot_occurrence_id: uuid.UUID,
+) -> JournalEntry | None:
+    """Return the draft (pending details) journal entry for a closed slot, if any."""
+    return (
+        await db.execute(
+            select(JournalEntry).where(
+                JournalEntry.user_id == user_id,
+                JournalEntry.slot_occurrence_id == slot_occurrence_id,
+                JournalEntry.status == "draft",
+            )
+        )
+    ).scalar_one_or_none()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Dashboard summary (relief-only, informational)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -99,11 +184,19 @@ async def _journal_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     total = (
         await db.execute(select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id))
     ).scalar() or 0
+    pending = (
+        await db.execute(
+            select(func.count(JournalEntry.id)).where(
+                JournalEntry.user_id == user_id, JournalEntry.status == "draft"
+            )
+        )
+    ).scalar() or 0
     satisfactions = [r.satisfaction for r in rows if r.satisfaction is not None]
     last = rows[0] if rows else None
     return {
         "count_30d": len(rows),
         "total": total,
+        "pending": pending,
         "last_date": last.entry_date.isoformat() if last else None,
         "last_type": last.activity_type if last else None,
         "avg_satisfaction": round(sum(satisfactions) / len(satisfactions), 1) if satisfactions else None,
@@ -113,6 +206,54 @@ async def _journal_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 # Page
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+async def _media_map(db: AsyncSession, user_id: uuid.UUID) -> dict[str, list[dict]]:
+    """entry_id → [media assets] for journal photos (owner_type=journal_entry)."""
+    rows = (
+        (
+            await db.execute(
+                select(MediaAsset)
+                .where(MediaAsset.owner_id == user_id, MediaAsset.owner_type == "journal_entry")
+                .order_by(MediaAsset.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    out: dict[str, list[dict]] = {}
+    for a in rows:
+        key = str(a.owner_ref_id) if a.owner_ref_id else ""
+        if not key:
+            continue
+        out.setdefault(key, []).append(
+            {
+                "id": str(a.id),
+                "has_thumbnail": a.thumbnail_path is not None,
+                "is_image": (a.mime_type or "").startswith("image/"),
+                "caption": a.caption,
+            }
+        )
+    return out
+
+
+async def _activity_title_map(db: AsyncSession, user_id: uuid.UUID) -> dict[str, str]:
+    """activity_log_id → human title for linked Tracker tasks."""
+    ids = (
+        (
+            await db.execute(
+                select(JournalEntry.activity_log_id)
+                .where(JournalEntry.user_id == user_id, JournalEntry.activity_log_id.is_not(None))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    ids = {i for i in ids if i is not None}
+    if not ids:
+        return {}
+    rows = (await db.execute(select(ActivityLog).where(ActivityLog.id.in_(ids)))).scalars().all()
+    return {str(r.id): (r.title_override or r.selected_entity_name or str(r.id)[:8]) for r in rows}
 
 
 @router.get("/journal", response_class=HTMLResponse)
@@ -145,6 +286,29 @@ async def journal_page(
         .all()
     )
     partner_names = {str(p.id): p.name for p in partners}
+    media = await _media_map(db, user.id)
+    activity_titles = await _activity_title_map(db, user.id)
+
+    # Recent completed Tracker tasks for the "link to activity" select.
+    recent_activities = (
+        (
+            await db.execute(
+                select(ActivityLog)
+                .where(ActivityLog.user_id == user.id)
+                .order_by(ActivityLog.created_at.desc())
+                .limit(30)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    recent_activity_options = [
+        {"id": str(a.id), "label": (a.title_override or a.selected_entity_name or str(a.id)[:8])[:60]}
+        for a in recent_activities
+    ]
+
+    pending_entries = [e for e in entries if e.status == "draft"]
+    done_entries = [e for e in entries if e.status != "draft"]
 
     return templates.TemplateResponse(
         request=request,
@@ -156,31 +320,8 @@ async def journal_page(
             "locale": locale,
             "theme": theme,
             "today": today,
-            "entries": [
-                {
-                    "id": str(e.id),
-                    "entry_date": e.entry_date.isoformat(),
-                    "partner_id": str(e.partner_id) if e.partner_id else None,
-                    "partner_name": partner_names.get(str(e.partner_id)) if e.partner_id else None,
-                    "activity_type": e.activity_type,
-                    "duration_minutes": e.duration_minutes,
-                    "desire_before": e.desire_before,
-                    "arousal_before": e.arousal_before,
-                    "protection": e.protection,
-                    "orgasms": e.orgasms,
-                    "intensity": e.intensity,
-                    "satisfaction": e.satisfaction,
-                    "pleasure": e.pleasure,
-                    "reactions": e.reactions or [],
-                    "emotional_state": e.emotional_state or [],
-                    "aftercare": e.aftercare,
-                    "recovery": e.recovery,
-                    "notes": e.notes,
-                    "cycle_phase": e.cycle_phase,
-                    "cycle_day": e.cycle_day,
-                }
-                for e in entries
-            ],
+            "pending_entries": [_entry_view(e, partner_names) for e in pending_entries],
+            "entries": [_entry_view(e, partner_names) for e in done_entries],
             "partners": [
                 {
                     "id": str(p.id),
@@ -190,11 +331,45 @@ async def journal_page(
                 }
                 for p in partners
             ],
+            "media": media,
+            "activity_titles": activity_titles,
+            "recent_activities": recent_activity_options,
             "scales": list(SCALE_1_5),
             "protection_types": list(PROTECTION_TYPES),
             "reaction_choices": list(REACTION_CHOICES),
+            "journal_statuses": list(JOURNAL_STATUSES),
+            "journal_sources": list(JOURNAL_SOURCES),
         },
     )
+
+
+def _entry_view(e: JournalEntry, partner_names: dict[str, str]) -> dict:
+    return {
+        "id": str(e.id),
+        "entry_date": e.entry_date.isoformat(),
+        "partner_id": str(e.partner_id) if e.partner_id else None,
+        "partner_name": partner_names.get(str(e.partner_id)) if e.partner_id else None,
+        "activity_type": e.activity_type,
+        "duration_minutes": e.duration_minutes,
+        "desire_before": e.desire_before,
+        "arousal_before": e.arousal_before,
+        "protection": e.protection,
+        "orgasms": e.orgasms,
+        "intensity": e.intensity,
+        "satisfaction": e.satisfaction,
+        "pleasure": e.pleasure,
+        "reactions": e.reactions or [],
+        "emotional_state": e.emotional_state or [],
+        "aftercare": e.aftercare,
+        "recovery": e.recovery,
+        "notes": e.notes,
+        "status": e.status,
+        "source": e.source,
+        "activity_log_id": str(e.activity_log_id) if e.activity_log_id else None,
+        "slot_occurrence_id": str(e.slot_occurrence_id) if e.slot_occurrence_id else None,
+        "cycle_phase": e.cycle_phase,
+        "cycle_day": e.cycle_day,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -226,6 +401,75 @@ def _parse_int(raw: str, field_name: str, minimum: int = 0, maximum: int = 10000
     return v
 
 
+def _validate_partner(db: AsyncSession, partner_id: str, user_id: uuid.UUID) -> uuid.UUID | None:
+    if not partner_id.strip():
+        return None
+    try:
+        pid = uuid.UUID(partner_id.strip())
+    except ValueError:
+        raise HTTPException(400, "Invalid partner_id") from None
+    return pid
+
+
+async def _validate_activity_log(
+    db: AsyncSession, activity_log_id: str | uuid.UUID | None, user_id: uuid.UUID
+) -> uuid.UUID | None:
+    """Validate that the linked Tracker task belongs to the user (мягкая ссылка по ID)."""
+    if not activity_log_id:
+        return None
+    try:
+        aid = uuid.UUID(str(activity_log_id))
+    except ValueError:
+        raise HTTPException(400, "Invalid activity_log_id") from None
+    task = (
+        await db.execute(select(ActivityLog).where(ActivityLog.id == aid, ActivityLog.user_id == user_id))
+    ).scalar_one_or_none()
+    if task is None:
+        raise HTTPException(400, "Activity not found")
+    return aid
+
+
+async def _apply_entry_fields(
+    entry: JournalEntry,
+    *,
+    entry_date: date,
+    partner_id: uuid.UUID | None,
+    activity_type: str,
+    duration_minutes: int | None,
+    desire_before: int | None,
+    arousal_before: int | None,
+    protection: str,
+    orgasms: int | None,
+    intensity: int | None,
+    satisfaction: int | None,
+    pleasure: int | None,
+    reactions: list[str] | None,
+    emotional_state: list[str] | None,
+    aftercare: str,
+    recovery: int | None,
+    notes: str,
+    activity_log_id: uuid.UUID | None,
+) -> None:
+    entry.entry_date = entry_date
+    entry.partner_id = partner_id
+    entry.activity_type = (activity_type or "").strip()[:100] or None
+    entry.duration_minutes = duration_minutes
+    entry.desire_before = desire_before
+    entry.arousal_before = arousal_before
+    entry.protection = protection
+    entry.orgasms = orgasms
+    entry.intensity = intensity
+    entry.satisfaction = satisfaction
+    entry.pleasure = pleasure
+    entry.reactions = reactions
+    entry.emotional_state = emotional_state
+    entry.aftercare = (aftercare or "").strip() or None
+    entry.recovery = recovery
+    entry.notes = (notes or "").strip() or None
+    entry.activity_log_id = activity_log_id
+    entry.status = "completed"
+
+
 @router.post("/journal/entries")
 async def add_entry(
     request: Request,
@@ -245,6 +489,7 @@ async def add_entry(
     aftercare: str = Form(default=""),
     recovery: str = Form(default=""),
     notes: str = Form(default=""),
+    activity_log_id: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -253,13 +498,8 @@ async def add_entry(
     except ValueError:
         raise HTTPException(400, "Invalid entry_date (ISO 8601)") from None
 
-    partner_uuid = None
-    if partner_id.strip():
-        try:
-            partner_uuid = uuid.UUID(partner_id.strip())
-        except ValueError:
-            raise HTTPException(400, "Invalid partner_id") from None
-        # псевдоним должен принадлежать пользователю (object-level auth)
+    partner_uuid = _validate_partner(db, partner_id, user.id)
+    if partner_uuid is not None:
         partner = (
             await db.execute(
                 select(JournalPartner).where(JournalPartner.id == partner_uuid, JournalPartner.user_id == user.id)
@@ -272,14 +512,23 @@ async def add_entry(
         protection = "none"
     reaction_list = [x.strip() for x in reactions.split(",") if x.strip()] if reactions.strip() else None
     emotion_list = [x.strip() for x in emotional_state.split(",") if x.strip()] if emotional_state.strip() else None
+    aid = await _validate_activity_log(db, activity_log_id, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, d)
 
     entry = JournalEntry(
         user_id=user.id,
         entry_date=d,
+        status="completed",
+        source="activity" if aid else "manual",
+        cycle_phase=cycle_phase,
+        cycle_day=cycle_day,
+    )
+    await _apply_entry_fields(
+        entry,
+        entry_date=d,
         partner_id=partner_uuid,
-        activity_type=(activity_type or "").strip()[:100] or None,
+        activity_type=activity_type,
         duration_minutes=_parse_int(duration_minutes, "duration_minutes"),
         desire_before=_parse_scale(desire_before, "desire_before"),
         arousal_before=_parse_scale(arousal_before, "arousal_before"),
@@ -290,13 +539,108 @@ async def add_entry(
         pleasure=_parse_scale(pleasure, "pleasure"),
         reactions=reaction_list,
         emotional_state=emotion_list,
-        aftercare=(aftercare or "").strip() or None,
+        aftercare=aftercare,
         recovery=_parse_scale(recovery, "recovery"),
-        notes=(notes or "").strip() or None,
-        cycle_phase=cycle_phase,
-        cycle_day=cycle_day,
+        notes=notes,
+        activity_log_id=aid,
     )
     db.add(entry)
+    await db.flush()
+    return RedirectResponse(url="/journal", status_code=303)
+
+
+@router.post("/journal/entries/{entry_id}/complete")
+async def complete_entry(
+    request: Request,
+    entry_id: uuid.UUID,
+    activity_type: str = Form(default=""),
+    duration_minutes: str = Form(default=""),
+    desire_before: str = Form(default=""),
+    arousal_before: str = Form(default=""),
+    protection: str = Form(default="none"),
+    orgasms: str = Form(default=""),
+    intensity: str = Form(default=""),
+    satisfaction: str = Form(default=""),
+    pleasure: str = Form(default=""),
+    reactions: str = Form(default=""),
+    emotional_state: str = Form(default=""),
+    aftercare: str = Form(default=""),
+    recovery: str = Form(default=""),
+    notes: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Заполнить детали draft-записи (обязательно при закрытии окна таймера)."""
+    entry = (
+        await db.execute(select(JournalEntry).where(JournalEntry.id == entry_id, JournalEntry.user_id == user.id))
+    ).scalar_one_or_none()
+    if entry is None:
+        raise HTTPException(404, "Journal entry not found")
+    if entry.status != "draft":
+        raise HTTPException(400, "Only draft entries can be completed")
+
+    if protection not in PROTECTION_TYPES:
+        protection = "none"
+    reaction_list = [x.strip() for x in reactions.split(",") if x.strip()] if reactions.strip() else None
+    emotion_list = [x.strip() for x in emotional_state.split(",") if x.strip()] if emotional_state.strip() else None
+
+    await _apply_entry_fields(
+        entry,
+        entry_date=entry.entry_date,
+        partner_id=entry.partner_id,
+        activity_type=activity_type,
+        duration_minutes=_parse_int(duration_minutes, "duration_minutes"),
+        desire_before=_parse_scale(desire_before, "desire_before"),
+        arousal_before=_parse_scale(arousal_before, "arousal_before"),
+        protection=protection,
+        orgasms=_parse_int(orgasms, "orgasms", maximum=100),
+        intensity=_parse_scale(intensity, "intensity"),
+        satisfaction=_parse_scale(satisfaction, "satisfaction"),
+        pleasure=_parse_scale(pleasure, "pleasure"),
+        reactions=reaction_list,
+        emotional_state=emotion_list,
+        aftercare=aftercare,
+        recovery=_parse_scale(recovery, "recovery"),
+        notes=notes,
+        activity_log_id=entry.activity_log_id,
+    )
+    await db.flush()
+    return RedirectResponse(url="/journal", status_code=303)
+
+
+@router.post("/journal/entries/{entry_id}/media")
+async def add_entry_media(
+    request: Request,
+    entry_id: uuid.UUID,
+    file: UploadFile = File(...),
+    caption: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Привязать фото к записи журнала (owner_type=journal_entry, owner-scoped)."""
+    entry = (
+        await db.execute(select(JournalEntry).where(JournalEntry.id == entry_id, JournalEntry.user_id == user.id))
+    ).scalar_one_or_none()
+    if entry is None:
+        raise HTTPException(404, "Journal entry not found")
+
+    info = await save_media(file)
+    asset = MediaAsset(
+        owner_id=user.id,
+        owner_type="journal_entry",
+        owner_ref_id=entry.id,
+        state="ready",
+        file_path=info["file_path"],
+        thumbnail_path=info["thumbnail_path"],
+        original_filename=info["original_filename"],
+        mime_type=info["mime_type"],
+        file_size_bytes=info["file_size_bytes"],
+        sha256_hex=info["sha256_hex"],
+        width=info["width"],
+        height=info["height"],
+        caption=(caption or "").strip()[:500] or None,
+    )
+    db.add(asset)
     await db.flush()
     return RedirectResponse(url="/journal", status_code=303)
 
@@ -399,6 +743,7 @@ async def json_summary(
     )
     return {
         "total": len(entries),
+        "pending": sum(1 for e in entries if e.status == "draft"),
         "entries": [_entry_json(e) for e in entries[:50]],
         "partners": [
             {
@@ -430,6 +775,10 @@ def _entry_json(e: JournalEntry) -> dict:
         "aftercare": e.aftercare,
         "recovery": e.recovery,
         "notes": e.notes,
+        "status": e.status,
+        "source": e.source,
+        "activity_log_id": str(e.activity_log_id) if e.activity_log_id else None,
+        "slot_occurrence_id": str(e.slot_occurrence_id) if e.slot_occurrence_id else None,
         "cycle_phase": e.cycle_phase,
         "cycle_day": e.cycle_day,
     }
@@ -452,6 +801,7 @@ class EntryBody(BaseModel):
     aftercare: str | None = None
     recovery: int | None = Field(default=None, ge=1, le=5)
     notes: str | None = None
+    activity_log_id: uuid.UUID | None = None
 
 
 @json_router.post("/entries", status_code=201)
@@ -471,14 +821,23 @@ async def json_add_entry(
         if partner is None:
             raise HTTPException(400, "Partner not found")
     protection = body.protection if body.protection in PROTECTION_TYPES else "none"
+    aid = await _validate_activity_log(db, body.activity_log_id, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, body.entry_date)
 
     entry = JournalEntry(
         user_id=user.id,
         entry_date=body.entry_date,
+        status="completed",
+        source="activity" if aid else "manual",
+        cycle_phase=cycle_phase,
+        cycle_day=cycle_day,
+    )
+    await _apply_entry_fields(
+        entry,
+        entry_date=body.entry_date,
         partner_id=body.partner_id,
-        activity_type=(body.activity_type or "").strip()[:100] or None,
+        activity_type=body.activity_type or "",
         duration_minutes=body.duration_minutes,
         desire_before=body.desire_before,
         arousal_before=body.arousal_before,
@@ -489,13 +848,70 @@ async def json_add_entry(
         pleasure=body.pleasure,
         reactions=body.reactions,
         emotional_state=body.emotional_state,
-        aftercare=(body.aftercare or "").strip() or None,
+        aftercare=body.aftercare or "",
         recovery=body.recovery,
-        notes=(body.notes or "").strip() or None,
-        cycle_phase=cycle_phase,
-        cycle_day=cycle_day,
+        notes=body.notes or "",
+        activity_log_id=aid,
     )
     db.add(entry)
+    await db.flush()
+    return _entry_json(entry)
+
+
+class CompleteBody(BaseModel):
+    activity_type: str | None = None
+    duration_minutes: int | None = Field(default=None, ge=0, le=10000)
+    desire_before: int | None = Field(default=None, ge=1, le=5)
+    arousal_before: int | None = Field(default=None, ge=1, le=5)
+    protection: str = "none"
+    orgasms: int | None = Field(default=None, ge=0, le=100)
+    intensity: int | None = Field(default=None, ge=1, le=5)
+    satisfaction: int | None = Field(default=None, ge=1, le=5)
+    pleasure: int | None = Field(default=None, ge=1, le=5)
+    reactions: list[str] | None = None
+    emotional_state: list[str] | None = None
+    aftercare: str | None = None
+    recovery: int | None = Field(default=None, ge=1, le=5)
+    notes: str | None = None
+
+
+@json_router.post("/entries/{entry_id}/complete")
+async def json_complete_entry(
+    entry_id: uuid.UUID,
+    body: CompleteBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Заполнить детали draft-записи (JSON, для мобильного)."""
+    entry = (
+        await db.execute(select(JournalEntry).where(JournalEntry.id == entry_id, JournalEntry.user_id == user.id))
+    ).scalar_one_or_none()
+    if entry is None:
+        raise HTTPException(404, "Journal entry not found")
+    if entry.status != "draft":
+        raise HTTPException(400, "Only draft entries can be completed")
+
+    protection = body.protection if body.protection in PROTECTION_TYPES else "none"
+    await _apply_entry_fields(
+        entry,
+        entry_date=entry.entry_date,
+        partner_id=entry.partner_id,
+        activity_type=body.activity_type or "",
+        duration_minutes=body.duration_minutes,
+        desire_before=body.desire_before,
+        arousal_before=body.arousal_before,
+        protection=protection,
+        orgasms=body.orgasms,
+        intensity=body.intensity,
+        satisfaction=body.satisfaction,
+        pleasure=body.pleasure,
+        reactions=body.reactions,
+        emotional_state=body.emotional_state,
+        aftercare=body.aftercare or "",
+        recovery=body.recovery,
+        notes=body.notes or "",
+        activity_log_id=entry.activity_log_id,
+    )
     await db.flush()
     return _entry_json(entry)
 

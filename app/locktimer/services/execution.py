@@ -198,6 +198,23 @@ async def open_slot(
         payload={"extension_applied_seconds": extension_seconds},
     )
 
+    # Шаг 14b: окно для плановой сексуальной активности (journal_auto) —
+    # авто-создаём draft-запись Sexual Journal (idempotent). Журнал может быть
+    # недоступен — тогда действие таймера не прерывается.
+    if rule and rule.journal_auto:
+        try:
+            from app.api.journal import ensure_timer_slot_entry
+
+            await ensure_timer_slot_entry(
+                db,
+                user_id=owner_id,
+                session_id=occ.session_id,
+                slot_occurrence_id=occ.id,
+                entry_date=as_utc(now).date(),
+            )
+        except Exception as exc:  # journal not deployed / DB error — не блокируем открытие
+            logger.warning("journal auto-entry skipped for slot %s: %s", occ.id, exc)
+
     await db.flush()
     return occ
 

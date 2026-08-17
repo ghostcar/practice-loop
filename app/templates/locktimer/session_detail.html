@@ -169,7 +169,11 @@
           <span>{{ t.locktimer_max_late_seconds or "Late window (sec)" }}</span>
           <input name="max_late_seconds" type="number" min="0" step="60" value="3600" class="w-24 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-2 py-1">
         </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="journal_auto" value="true"> {{ t.locktimer_journal_auto or "Journal auto-entry" }}
+        </label>
       </div>
+      <p class="text-[11px] text-[color:var(--text-muted)]">{{ t.locktimer_journal_auto_hint or "Opens a draft Sexual Journal entry; details are required when the window closes." }}</p>
       <button type="submit" class="px-4 py-1.5 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 text-sm transition cursor-pointer">{{ t.locktimer_add or "Add" }}</button>
     </form>
   </details>
@@ -327,6 +331,9 @@
           <span class="text-xs text-[color:var(--text-secondary)] font-mono inline-flex items-center gap-1">{{ icon('tag', 'w-3.5 h-3.5') }}{{ o.close_tag_number }}</span>
           {% endif %}
           <button onclick="verifyTag('{{ o.id }}', '{{ o.close_tag_number or '' }}')" class="px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">{{ t.locktimer_verify_tag or "Verify" }}</button>
+          {% if slot_journal_pending and slot_journal_pending[o.id] %}
+          <a href="/journal" class="px-2 py-1 text-xs text-[color:var(--warning)] hover:bg-[color:var(--warning-soft)] rounded cursor-pointer inline-flex items-center gap-1">{{ icon('aftercare', 'w-3.5 h-3.5') }}{{ t.locktimer_journal_pending or "Complete journal details" }}</a>
+          {% endif %}
         </div>
         {% endif %}
       </div>

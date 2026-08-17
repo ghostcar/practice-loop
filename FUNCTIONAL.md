@@ -615,32 +615,46 @@ Private Record (DATA_LIFECYCLE.md). Расчётная фаза Cycle никог
   pipeline-функций (None → из prefs); Telegram `/next` и фоновый scheduler передают
   режим явно из `user.prefs`.
 
-## 24. Sexual Journal (M3 Personal Suite, Шаг 14, ADR-088)
+## 24. Sexual Journal (M3 Personal Suite, Шаг 14 + 14b, ADR-088/089)
 
 Первый срез журналов личного контура (ROADMAP §7 4A, PRODUCT_VISION §7).
 **Relief-only** (PD-013): никакой игровой интеграции, никаких штрафов; все записи —
 Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true).
 
-- **Модель (2 таблицы, миграция 045)**:
+- **Модель (2 таблицы, миграции 045 + 046)**:
   - `sj_partners` — локальные псевдонимы партнёров (user-scoped, name/notes; никогда
     не раскрываются наружу);
   - `sj_entries` — записи журнала: entry_date, partner_id (FK SET NULL), activity_type,
     duration_minutes, desire_before/arousal_before (1–5), protection
     (none/condom/birth_control/withdrawal/other), orgasms, intensity/satisfaction/pleasure
     (1–5), reactions (JSON), emotional_state (JSON), aftercare, recovery (1–5), notes,
-    мягкие ссылки timer_session_id/health_state_id (UUID без FK) и снимок cycle_phase/cycle_day.
+    мягкие ссылки timer_session_id/health_state_id (UUID без FK), снимок cycle_phase/cycle_day,
+    **status** (draft/completed), **source** (manual/activity/timer_slot),
+    **activity_log_id** и **slot_occurrence_id** (мягкие ссылки на Tracker-задачу и окно таймера).
 - **Страница `/journal`**: форма записи (дата, партнёр, вид активности, длительность,
   желание/возбуждение до начала, защита/контрацепция, оргазмы, интенсивность,
   удовлетворённость, удовольствие, реакции, эмоциональное состояние, aftercare,
-  восстановление, заметки), история записей, псевдонимы партнёров (CRUD).
+  восстановление, заметки, селект недавних активностей Tracker), история записей
+  (с фото-плитками и названием связанной задачи), псевдонимы партнёров (CRUD),
+  секция **«Требуются детали»** (draft-записи от окон таймера — форма заполнения при закрытии).
+- **Медиа**: `owner_type=journal_entry` в media registry; `POST /journal/entries/{id}/media`
+  (загрузка фото → MediaAsset, owner-scoped, чужой entry → 404); фото отображаются в записях.
 - **Связь с Cycle (§16)**: при создании записи сохраняется снимок расчётной фазы цикла
   (`cycle_phase`/`cycle_day`) — помечен как оценка, не факт (§9.4). Если Cycle недоступен —
   (None, None).
+- **Связь с Tracker**: `activity_log_id` (мягкая ссылка по ID, валидация владельца —
+  чужой task → 400); при привязке `source=activity`; название задачи показывается в записи.
+- **Timer-автозапись (Шаг 14b)**: флаг `journal_auto` на слоте (`lock_slot_rules`, миграция 046) —
+  открытие окна для плановой активности авто-создаёт **draft**-запись (`source=timer_slot`,
+  idempotent); при закрытии окна API возвращает `journal_pending` (entry_id + url) и в
+  session_detail появляется CTA «Заполнить детали журнала»; детали обязательны при закрытии
+  (форма или `POST /api/v2/journal/entries/{id}/complete`).
 - **Связи с Timer/Health — по ID без раскрытия** (DATA_LIFECYCLE.md): мягкие UUID-ссылки
   без FK; отдельное удаление; общая проекция не открывает журналы друг друга (§7).
 - **JSON API** (`/api/v2/journal`, bearer): сводка (`/` — записи + партнёры),
-  `POST /entries`, `POST /partners`. Object-level auth: чужой partner_id отклоняется;
-  удаление псевдонима обнуляет ссылки в записях (SET NULL на уровне приложения).
+  `POST /entries`, `POST /partners`, `POST /entries/{id}/complete`. Object-level auth:
+  чужой partner_id отклоняется; удаление псевдонима обнуляет ссылки в записях
+  (SET NULL на уровне приложения).
 - **Дашборд**: блок `dash-block-journal` (записи за 30д / последняя запись /
   ср. удовлетворённость), управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **Навигация**: пункт «Журнал» (иконка aftercare.svg из пакета) в группе «Данные».

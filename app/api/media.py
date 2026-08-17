@@ -37,6 +37,7 @@ ALLOWED_OWNER_TYPES = {
     "lock_slot_occurrence",
     "lock_task_occurrence",
     "social_publication",
+    "journal_entry",
 }
 
 

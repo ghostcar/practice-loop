@@ -29,6 +29,12 @@
                 <label class="text-xs pl-text-secondary">{{ t.journal_activity_type }}
                     <input type="text" name="activity_type" placeholder="{{ t.journal_activity_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_link_activity }}
+                    <select name="activity_log_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">{{ t.journal_no_activity }}</option>
+                        {% for a in recent_activities %}<option value="{{ a.id }}">{{ a.label }}</option>{% endfor %}
+                    </select>
+                </label>
                 <label class="text-xs pl-text-secondary">{{ t.journal_duration }}
                     <input type="number" name="duration_minutes" min="0" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
@@ -112,6 +118,71 @@
         </section>
     </div>
 
+    <!-- Pending details (auto-created from timer windows — must be completed) -->
+    {% if pending_entries %}
+    <section class="pl-surface border border-[color:var(--warning)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-[color:var(--warning)] inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.journal_pending_title }}</h2>
+        <p class="text-xs pl-text-muted">{{ t.journal_pending_hint }}</p>
+        {% for e in pending_entries %}
+        <details class="text-sm" open>
+            <summary class="cursor-pointer pl-text-secondary inline-flex items-center gap-2 list-none">
+                <span class="font-mono text-xs">{{ e.entry_date }}</span>
+                {% if e.activity_type %}<span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ e.activity_type }}</span>{% endif %}
+                <span class="px-2 py-0.5 rounded-md text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)]">{{ t.journal_status_draft }}</span>
+            </summary>
+            <form action="/journal/entries/{{ e.id }}/complete" method="post" class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary">{{ t.journal_activity_type }}
+                    <input type="text" name="activity_type" value="{{ e.activity_type or '' }}" placeholder="{{ t.journal_activity_ph }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_duration }}
+                    <input type="number" name="duration_minutes" min="0" value="{{ e.duration_minutes or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_desire_before }} (1-5)
+                    <input type="number" name="desire_before" min="1" max="5" value="{{ e.desire_before or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_arousal_before }} (1-5)
+                    <input type="number" name="arousal_before" min="1" max="5" value="{{ e.arousal_before or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_protection }}
+                    <select name="protection" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        {% for p in protection_types %}<option value="{{ p }}" {% if e.protection == p %}selected{% endif %}>{{ t['journal_protection_' + p] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_orgasms }}
+                    <input type="number" name="orgasms" min="0" max="100" value="{{ e.orgasms or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_intensity }} (1-5)
+                    <input type="number" name="intensity" min="1" max="5" value="{{ e.intensity or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_satisfaction }} (1-5)
+                    <input type="number" name="satisfaction" min="1" max="5" value="{{ e.satisfaction or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_pleasure }} (1-5)
+                    <input type="number" name="pleasure" min="1" max="5" value="{{ e.pleasure or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_recovery }} (1-5)
+                    <input type="number" name="recovery" min="1" max="5" value="{{ e.recovery or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_reactions }}
+                    <input type="text" name="reactions" value="{{ e.reactions | join(', ') }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_emotional_state }}
+                    <input type="text" name="emotional_state" value="{{ e.emotional_state | join(', ') }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_aftercare }}
+                    <input type="text" name="aftercare" value="{{ e.aftercare or '' }}" placeholder="{{ t.journal_aftercare_ph }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_notes }}
+                    <input type="text" name="notes" value="{{ e.notes or '' }}" placeholder="{{ t.journal_notes_ph }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                </label>
+                <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.journal_save }}</button>
+            </form>
+        </details>
+        {% endfor %}
+    </section>
+    {% endif %}
+
     <!-- History -->
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
         <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.journal_history }}</h2>
@@ -124,6 +195,8 @@
                         <span class="font-medium text-[color:var(--text)]">{{ e.entry_date }}</span>
                         {% if e.activity_type %}<span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ e.activity_type }}</span>{% endif %}
                         {% if e.partner_name %}<span class="pl-text-secondary text-xs">{{ e.partner_name }}</span>{% endif %}
+                        {% if e.source == 'timer_slot' %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('timer', 'w-3.5 h-3.5') }}{{ t.journal_source_timer }}</span>{% endif %}
+                        {% if e.activity_log_id and activity_titles[e.activity_log_id] %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('tasks', 'w-3.5 h-3.5') }}{{ activity_titles[e.activity_log_id] }}</span>{% endif %}
                         {% if e.cycle_phase %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('cycle', 'w-3.5 h-3.5') }}{{ t['health_phase_' + e.cycle_phase] }} {{ t.journal_cycle_phase }}</span>{% endif %}
                     </div>
                     <div class="pl-text-secondary text-xs flex items-center gap-3 flex-wrap">
@@ -141,6 +214,21 @@
                     {% if e.emotional_state %}<div class="text-xs flex gap-1 flex-wrap"><span class="pl-text-muted">{{ t.journal_emotional_state }}:</span>{% for s in e.emotional_state %}<span class="pl-accent-soft px-1.5 py-0.5 rounded">{{ s }}</span>{% endfor %}</div>{% endif %}
                     {% if e.aftercare %}<div class="text-xs pl-text-muted">{{ t.journal_aftercare }}: {{ e.aftercare }}</div>{% endif %}
                     {% if e.notes %}<div class="text-xs pl-text-muted">{{ e.notes }}</div>{% endif %}
+                    {% set photos = media[e.id] if media and media[e.id] else [] %}
+                    {% if photos %}
+                    <div class="flex gap-2 pt-1 flex-wrap">
+                        {% for ph in photos %}
+                        <a href="/api/v2/media/{{ ph.id }}" class="block w-20 h-16 rounded-lg overflow-hidden bg-[color:var(--surface-soft)]" aria-label="{{ ph.caption or '' }}">
+                            {% if ph.is_image and ph.has_thumbnail %}<img src="/api/v2/media/{{ ph.id }}/thumbnail" alt="{{ ph.caption or '' }}" loading="lazy" class="w-full h-full object-cover">{% else %}<div class="w-full h-full flex items-center justify-center text-[color:var(--text-muted)]">{{ icon('image', 'w-6 h-6') }}</div>{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <form action="/journal/entries/{{ e.id }}/media" method="post" enctype="multipart/form-data" class="flex items-center gap-2 pt-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="file" name="file" accept="image/*" aria-label="{{ t.journal_add_photo }}" class="text-xs text-[color:var(--text-secondary)] file:mr-2 file:px-2 file:py-1.5 file:rounded-lg file:border file:border-[color:var(--border)] file:bg-[color:var(--surface-soft)] file:text-[color:var(--text)] file:cursor-pointer file:min-h-[40px]">
+                        <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[40px]">{{ icon('upload', 'w-3.5 h-3.5') }}{{ t.journal_add_photo }}</button>
+                    </form>
                 </div>
                 <form action="/journal/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.journal_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">

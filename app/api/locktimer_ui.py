@@ -214,6 +214,26 @@ async def locktimer_session_detail(
     slot_occs = await list_slot_occurrences(db, session_id, limit=100)
     task_occs = await list_task_occurrences(db, session_id, limit=100)
 
+    # Шаг 14b: pending (draft) journal entries per slot occurrence — окна,
+    # открытые для плановой активности, ждут заполнения деталей при закрытии.
+    slot_journal_pending: dict[str, str] = {}
+    try:
+        from app.models.journal import JournalEntry
+
+        slot_ids = [o.id for o in slot_occs]
+        if slot_ids:
+            jr = await db.execute(
+                select(JournalEntry.id, JournalEntry.slot_occurrence_id).where(
+                    JournalEntry.user_id == current_user.id,
+                    JournalEntry.slot_occurrence_id.in_(slot_ids),
+                    JournalEntry.status == "draft",
+                )
+            )
+            for jid, soid in jr.all():
+                slot_journal_pending[str(soid)] = str(jid)
+    except Exception:
+        pass  # journal module may not be deployed yet
+
     # Fetch proposals for this session
     proposals_result = await db.execute(
         select(LockLlmProposal)
@@ -287,6 +307,7 @@ async def locktimer_session_detail(
                 for r in task_rules
             ],
             "slot_occurrences": [_serialize_slot_occ(o, t) for o in slot_occs],
+            "slot_journal_pending": slot_journal_pending,
             "task_occurrences": [_serialize_task_occ(o, t) for o in task_occs],
             "proposals": [
                 {

@@ -37,6 +37,10 @@ SCALE_1_5 = (1, 2, 3, 4, 5)
 PROTECTION_TYPES = ("none", "condom", "birth_control", "withdrawal", "other")
 # типичные реакции (подсказки в форме, свободный набор)
 REACTION_CHOICES = ("pleasure", "pain", "irritation", "discomfort", "other")
+# статус записи: draft — авто-создана (детали не заполнены), completed — заполнена
+JOURNAL_STATUSES = ("draft", "completed")
+# источник записи: manual | activity (из задачи Tracker) | timer_slot (из окна таймера)
+JOURNAL_SOURCES = ("manual", "activity", "timer_slot")
 
 
 class JournalPartner(Base):
@@ -96,6 +100,13 @@ class JournalEntry(Base):
     # связи по ID без раскрытия (DATA_LIFECYCLE.md) — мягкие ссылки, без FK
     timer_session_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     health_state_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    # связь с задачей Tracker (ActivityLog) и окном таймера (LockSlotOccurrence)
+    activity_log_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    slot_occurrence_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    # draft — авто-создана (детали обязан внести при закрытии), completed — заполнена
+    status: Mapped[str] = mapped_column(String(20), default="completed", nullable=False, index=True)
+    # manual | activity | timer_slot
+    source: Mapped[str] = mapped_column(String(20), default="manual", nullable=False)
     # снимок расчётной фазы Cycle на момент записи (не выдаётся за факт, §9.4)
     cycle_phase: Mapped[str | None] = mapped_column(String(20), nullable=True)
     cycle_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
