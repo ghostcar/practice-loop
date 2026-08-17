@@ -991,6 +991,59 @@ async def json_add_entry(
     return _entry_json(entry, {str(entry.id): [str(p) for p in resolved_products]})
 
 
+@json_router.delete("/routines/{routine_id}", status_code=204)
+async def json_delete_routine(
+    routine_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить процедуру (JSON) — записи сохраняются, ссылка обнуляется."""
+    routine = (
+        await db.execute(
+            select(CareRoutine).where(CareRoutine.id == routine_id, CareRoutine.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if routine is None:
+        raise HTTPException(404, "Routine not found")
+    entries = (
+        (
+            await db.execute(
+                select(CareEntry).where(CareEntry.user_id == user.id, CareEntry.routine_id == routine_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for e in entries:
+        e.routine_id = None
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine_id))
+    await db.delete(routine)
+    await db.flush()
+    return None
+
+
+@json_router.delete("/entries/{entry_id}", status_code=204)
+async def json_delete_entry(
+    entry_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить запись ухода (JSON) — join-строки средств чистятся явно."""
+    entry = (
+        await db.execute(select(CareEntry).where(CareEntry.id == entry_id, CareEntry.user_id == user.id))
+    ).scalar_one_or_none()
+    if entry is None:
+        raise HTTPException(404, "Care entry not found")
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareEntryProduct).where(CareEntryProduct.entry_id == entry_id))
+    await db.delete(entry)
+    await db.flush()
+    return None
+
+
 @json_router.get("/products")
 async def json_list_products(
     db: AsyncSession = Depends(get_db),

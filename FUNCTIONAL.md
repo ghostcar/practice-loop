@@ -728,7 +728,8 @@ Feature flag `care_enabled` (default true).
   чистит join-строки на уровне приложения + CASCADE в БД.
 - **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи + средства),
   `GET /products`, `GET /courses`, `POST /routines`, `POST /entries`, `POST /products`,
-  `DELETE /products/{id}`, `POST /courses`. Object-level
+  `DELETE /products/{id}`, `DELETE /routines/{id}`, `DELETE /entries/{id}`, `POST /courses`.
+  Object-level
   auth: чужой routine_id отклоняется; удаление процедуры обнуляет ссылки в записях
   (SET NULL на уровне приложения).
 - **Дашборд**: блок `dash-block-care` (процедуры за 30д / последняя / число рутин),

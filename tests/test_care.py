@@ -249,6 +249,62 @@ async def test_json_foreign_routine_rejected(auth_client, test_user, db_session)
     assert resp.status_code == 400
 
 
+@pytest.mark.asyncio
+async def test_json_delete_entry_and_routine(auth_client, test_user, db_session):
+    """DELETE /api/v2/care/{entries,routines}/{id} — 204 and removed from summary."""
+    routine = (await auth_client.post("/api/v2/care/routines", json={"name": "Manicure", "area": "hands"})).json()
+    entry = (
+        await auth_client.post(
+            "/api/v2/care/entries",
+            json={"entry_date": TODAY.isoformat(), "routine_id": routine["id"]},
+        )
+    ).json()
+
+    resp = await auth_client.delete(f"/api/v2/care/entries/{entry['id']}")
+    assert resp.status_code == 204, resp.text
+    summary = (await auth_client.get("/api/v2/care")).json()
+    assert summary["total_entries"] == 0
+
+    resp = await auth_client.delete(f"/api/v2/care/routines/{routine['id']}")
+    assert resp.status_code == 204, resp.text
+    summary = (await auth_client.get("/api/v2/care")).json()
+    assert len(summary["routines"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_json_delete_routine_preserves_entries(auth_client, test_user, db_session):
+    """Deleting a routine keeps its entries (routine_id → None)."""
+    routine = (await auth_client.post("/api/v2/care/routines", json={"name": "Mask", "area": "face"})).json()
+    await auth_client.post(
+        "/api/v2/care/entries",
+        json={"entry_date": TODAY.isoformat(), "routine_id": routine["id"]},
+    )
+
+    resp = await auth_client.delete(f"/api/v2/care/routines/{routine['id']}")
+    assert resp.status_code == 204
+
+    summary = (await auth_client.get("/api/v2/care")).json()
+    assert len(summary["routines"]) == 0
+    assert summary["total_entries"] == 1
+    entries = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalars().all()
+    assert len(entries) == 1
+    assert entries[0].routine_id is None
+
+
+@pytest.mark.asyncio
+async def test_json_delete_foreign_rejected(auth_client, test_user, db_session):
+    """DELETE of another user's routine → 404 (owner-scoped)."""
+    other = User(email="other-del@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    other_routine = CareRoutine(user_id=other.id, name="X")
+    db_session.add(other_routine)
+    await db_session.flush()
+
+    resp = await auth_client.delete(f"/api/v2/care/routines/{other_routine.id}")
+    assert resp.status_code == 404
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Cross-user isolation
 # ─────────────────────────────────────────────────────────────────────────────
