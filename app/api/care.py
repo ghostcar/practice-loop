@@ -37,8 +37,18 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.care import CARE_AREAS, CARE_KINDS, SCALE_1_5, CareEntry, CareRoutine
+from app.models.care import (
+    CARE_AREAS,
+    CARE_KINDS,
+    CARE_PRODUCT_CATEGORIES,
+    SCALE_1_5,
+    CareEntry,
+    CareEntryProduct,
+    CareProduct,
+    CareRoutine,
+)
 from app.models.catalog import ActivityCatalogItem
+from app.models.life import InventoryItem
 from app.models.media import MediaAsset
 from app.models.user import User
 from app.services.media import save_media
@@ -184,6 +194,33 @@ async def care_page(
     # Сквозной каталог (ADR-091): пикер видов процедур (домен care).
     catalog_items = await catalog_options(db, user.id, domain="care")
 
+    # Каталог средств/косметики (Шаг 16b): позиции + счётчик использований.
+    products = (
+        (
+            await db.execute(
+                select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    product_usage = (
+        (
+            await db.execute(
+                select(CareEntryProduct.product_id, func.count(CareEntryProduct.id))
+                .join(CareEntry, CareEntry.id == CareEntryProduct.entry_id)
+                .where(CareEntry.user_id == user.id)
+                .group_by(CareEntryProduct.product_id)
+            )
+        )
+        .all()
+    )
+    usage_by_product = {str(pid): cnt for pid, cnt in product_usage}
+    inventory_options = await _inventory_options(db, user.id)
+    inventory_names = {i["id"]: i for i in inventory_options}
+    product_names = {str(p.id): p.name for p in products}
+    product_ids_by_entry = await _entry_product_map(db, user.id)
+
     return templates.TemplateResponse(
         request=request,
         name="care.html",
@@ -206,17 +243,61 @@ async def care_page(
                 }
                 for r in routines
             ],
-            "entries": [_entry_view(e, routine_names) for e in entries],
+            "entries": [_entry_view(e, routine_names, product_ids_by_entry) for e in entries],
             "media": media,
             "catalog_items": catalog_items,
+            "products": [_product_view(p, usage_by_product, inventory_names) for p in products],
+            "product_names": product_names,
+            "inventory_options": inventory_options,
             "care_areas": list(CARE_AREAS),
             "care_kinds": list(CARE_KINDS),
+            "care_product_categories": list(CARE_PRODUCT_CATEGORIES),
             "scales": list(SCALE_1_5),
         },
     )
 
 
-def _entry_view(e: CareEntry, routine_names: dict[str, str]) -> dict:
+def _product_view(
+    p: CareProduct, usage_by_product: dict[str, int], inventory_names: dict[str, dict]
+) -> dict:
+    inv = inventory_names.get(str(p.inventory_item_id)) if p.inventory_item_id else None
+    return {
+        "id": str(p.id),
+        "name": p.name,
+        "category": p.category,
+        "brand": p.brand,
+        "notes": p.notes,
+        "inventory_item_id": str(p.inventory_item_id) if p.inventory_item_id else None,
+        "inventory_name": inv["name"] if inv else None,
+        "inventory_status": inv["status"] if inv else None,
+        "usage_count": usage_by_product.get(str(p.id), 0),
+    }
+
+
+async def _entry_product_map(db: AsyncSession, user_id: uuid.UUID) -> dict[str, list[str]]:
+    """entry_id → [product_ids] for the care log (all entries of the user)."""
+    rows = (
+        (
+            await db.execute(
+                select(CareEntryProduct.entry_id, CareEntryProduct.product_id)
+                .join(CareEntry, CareEntry.id == CareEntryProduct.entry_id)
+                .where(CareEntry.user_id == user_id)
+            )
+        )
+        .all()
+    )
+    out: dict[str, list[str]] = {}
+    for entry_id, product_id in rows:
+        out.setdefault(str(entry_id), []).append(str(product_id))
+    return out
+
+
+def _entry_view(
+    e: CareEntry,
+    routine_names: dict[str, str],
+    product_ids_by_entry: dict[str, list[str]] | None = None,
+) -> dict:
+    product_ids = (product_ids_by_entry or {}).get(str(e.id), [])
     return {
         "id": str(e.id),
         "entry_date": e.entry_date.isoformat(),
@@ -227,6 +308,7 @@ def _entry_view(e: CareEntry, routine_names: dict[str, str]) -> dict:
         "notes": e.notes,
         "cycle_phase": e.cycle_phase,
         "cycle_day": e.cycle_day,
+        "product_ids": product_ids,
     }
 
 
@@ -283,6 +365,98 @@ async def _resolve_catalog_item(
     if item is None:
         raise HTTPException(400, "Catalog item not found")
     return item
+
+
+async def _resolve_inventory_item(
+    db: AsyncSession, inventory_item_id: str | uuid.UUID | None, user_id: uuid.UUID
+) -> InventoryItem | None:
+    """Validate inventory reference (must belong to the user)."""
+    if not inventory_item_id:
+        return None
+    try:
+        iid = uuid.UUID(str(inventory_item_id))
+    except ValueError:
+        raise HTTPException(400, "Invalid inventory_item_id") from None
+    item = (
+        await db.execute(
+            select(InventoryItem).where(InventoryItem.id == iid, InventoryItem.user_id == user_id)
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(400, "Inventory item not found")
+    return item
+
+
+async def _resolve_products(
+    db: AsyncSession, product_ids: list[str | uuid.UUID] | None, user_id: uuid.UUID
+) -> list[uuid.UUID]:
+    """Validate product references (must belong to the user); dedupe preserving order."""
+    if not product_ids:
+        return []
+    out: list[uuid.UUID] = []
+    seen: set[uuid.UUID] = set()
+    for raw in product_ids:
+        if not raw:
+            continue
+        try:
+            pid = uuid.UUID(str(raw))
+        except ValueError:
+            raise HTTPException(400, "Invalid product_id") from None
+        if pid in seen:
+            continue
+        product = (
+            await db.execute(select(CareProduct).where(CareProduct.id == pid, CareProduct.user_id == user_id))
+        ).scalar_one_or_none()
+        if product is None:
+            raise HTTPException(400, "Product not found")
+        seen.add(pid)
+        out.append(pid)
+    return out
+
+
+async def _inventory_options(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
+    """Инвентарь для пикера средств (активные позиции, без мигрированных в лекарства)."""
+    rows = (
+        (
+            await db.execute(
+                select(InventoryItem)
+                .where(
+                    InventoryItem.user_id == user_id,
+                    InventoryItem.migrated_to_medication.is_(False),
+                    InventoryItem.inventory_status != "archived",
+                )
+                .order_by(InventoryItem.sort_order.asc(), InventoryItem.name.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {"id": str(i.id), "name": i.name, "status": i.inventory_status, "category": i.category} for i in rows
+    ]
+
+
+async def _entry_product_ids(db: AsyncSession, entry_id: uuid.UUID) -> list[str]:
+    """Product ids bound to a care entry (for view/JSON)."""
+    rows = (
+        (
+            await db.execute(
+                select(CareEntryProduct.product_id).where(CareEntryProduct.entry_id == entry_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [str(r) for r in rows]
+
+
+async def _set_entry_products(db: AsyncSession, entry_id: uuid.UUID, product_ids: list[uuid.UUID]) -> None:
+    """Replace the product set bound to a care entry (join rows, CASCADE)."""
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareEntryProduct).where(CareEntryProduct.entry_id == entry_id))
+    for pid in product_ids:
+        db.add(CareEntryProduct(entry_id=entry_id, product_id=pid))
 
 
 @router.post("/care/routines")
@@ -348,6 +522,57 @@ async def delete_routine(
     return RedirectResponse(url="/care", status_code=303)
 
 
+@router.post("/care/products")
+async def add_product(
+    request: Request,
+    name: str = Form(...),
+    category: str = Form(default="other"),
+    brand: str = Form(default=""),
+    notes: str = Form(default=""),
+    inventory_item_id: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    name = name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    if category not in CARE_PRODUCT_CATEGORIES:
+        category = "other"
+    inventory_item = await _resolve_inventory_item(db, inventory_item_id, user.id)
+    product = CareProduct(
+        user_id=user.id,
+        name=name,
+        category=category,
+        brand=(brand or "").strip()[:120] or None,
+        notes=(notes or "").strip() or None,
+        inventory_item_id=inventory_item.id if inventory_item else None,
+    )
+    db.add(product)
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
+@router.post("/care/products/{product_id}/delete")
+async def delete_product(
+    request: Request,
+    product_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    product = (
+        await db.execute(select(CareProduct).where(CareProduct.id == product_id, CareProduct.user_id == user.id))
+    ).scalar_one_or_none()
+    if product is None:
+        raise HTTPException(404, "Product not found")
+    # join-строки care_entry_products удаляются на уровне приложения (и CASCADE в БД)
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareEntryProduct).where(CareEntryProduct.product_id == product_id))
+    await db.delete(product)
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
 @router.post("/care/entries")
 async def add_entry(
     request: Request,
@@ -356,6 +581,7 @@ async def add_entry(
     duration_minutes: str = Form(default=""),
     skin_reaction: str = Form(default=""),
     notes: str = Form(default=""),
+    product_ids: list[str] = Form(default=[]),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -366,6 +592,7 @@ async def add_entry(
 
     rid = await _validate_routine(db, routine_id, user.id)
     reaction = _parse_scale(skin_reaction, "skin_reaction") if skin_reaction.strip() else None
+    resolved_products = await _resolve_products(db, product_ids, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, d)
 
@@ -380,6 +607,8 @@ async def add_entry(
         cycle_day=cycle_day,
     )
     db.add(entry)
+    await db.flush()
+    await _set_entry_products(db, entry.id, resolved_products)
     await db.flush()
     return RedirectResponse(url="/care", status_code=303)
 
@@ -478,10 +707,21 @@ async def json_summary(
         .scalars()
         .all()
     )
+    products = (
+        (
+            await db.execute(
+                select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    product_ids_by_entry = await _entry_product_map(db, user.id)
     return {
         "total_entries": len(entries),
         "routines": [_routine_json(r) for r in routines],
-        "entries": [_entry_json(e) for e in entries[:50]],
+        "entries": [_entry_json(e, product_ids_by_entry) for e in entries[:50]],
+        "products": [_product_json(p) for p in products],
     }
 
 
@@ -497,7 +737,18 @@ def _routine_json(r: CareRoutine) -> dict:
     }
 
 
-def _entry_json(e: CareEntry) -> dict:
+def _product_json(p: CareProduct) -> dict:
+    return {
+        "id": str(p.id),
+        "name": p.name,
+        "category": p.category,
+        "brand": p.brand,
+        "notes": p.notes,
+        "inventory_item_id": str(p.inventory_item_id) if p.inventory_item_id else None,
+    }
+
+
+def _entry_json(e: CareEntry, product_ids_by_entry: dict[str, list[str]] | None = None) -> dict:
     return {
         "id": str(e.id),
         "entry_date": e.entry_date.isoformat(),
@@ -507,6 +758,7 @@ def _entry_json(e: CareEntry) -> dict:
         "notes": e.notes,
         "cycle_phase": e.cycle_phase,
         "cycle_day": e.cycle_day,
+        "product_ids": (product_ids_by_entry or {}).get(str(e.id), []),
     }
 
 
@@ -551,6 +803,7 @@ class EntryBody(BaseModel):
     duration_minutes: int | None = Field(default=None, ge=0, le=10000)
     skin_reaction: int | None = Field(default=None, ge=1, le=5)
     notes: str | None = None
+    product_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 @json_router.post("/entries", status_code=201)
@@ -570,6 +823,8 @@ async def json_add_entry(
             raise HTTPException(400, "Routine not found")
         rid = body.routine_id
 
+    resolved_products = await _resolve_products(db, body.product_ids, user.id)
+
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, body.entry_date)
 
     entry = CareEntry(
@@ -584,4 +839,57 @@ async def json_add_entry(
     )
     db.add(entry)
     await db.flush()
-    return _entry_json(entry)
+    await _set_entry_products(db, entry.id, resolved_products)
+    await db.flush()
+    return _entry_json(entry, {str(entry.id): [str(p) for p in resolved_products]})
+
+
+class ProductBody(BaseModel):
+    name: str
+    category: str = "other"
+    brand: str | None = None
+    notes: str | None = None
+    inventory_item_id: uuid.UUID | None = None
+
+
+@json_router.post("/products", status_code=201)
+async def json_add_product(
+    body: ProductBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    name = body.name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    category = body.category if body.category in CARE_PRODUCT_CATEGORIES else "other"
+    inventory_item = await _resolve_inventory_item(db, body.inventory_item_id, user.id)
+    product = CareProduct(
+        user_id=user.id,
+        name=name,
+        category=category,
+        brand=(body.brand or "").strip()[:120] or None,
+        notes=(body.notes or "").strip() or None,
+        inventory_item_id=inventory_item.id if inventory_item else None,
+    )
+    db.add(product)
+    await db.flush()
+    return _product_json(product)
+
+
+@json_router.delete("/products/{product_id}", status_code=204)
+async def json_delete_product(
+    product_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    product = (
+        await db.execute(select(CareProduct).where(CareProduct.id == product_id, CareProduct.user_id == user.id))
+    ).scalar_one_or_none()
+    if product is None:
+        raise HTTPException(404, "Product not found")
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareEntryProduct).where(CareEntryProduct.product_id == product_id))
+    await db.delete(product)
+    await db.flush()
+    return None

@@ -74,6 +74,19 @@
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_notes }}
                     <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
+                {% if products %}
+                <fieldset class="col-span-2 sm:col-span-3">
+                    <legend class="text-xs pl-text-secondary mb-1.5">{{ t.care_products_used }}</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {% for p in products %}
+                        <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] min-h-[36px]">
+                            <input type="checkbox" name="product_ids" value="{{ p.id }}" class="accent-[color:var(--accent)]">
+                            <span class="truncate">{{ p.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+                {% endif %}
                 <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.care_save }}</button>
             </form>
         </section>
@@ -105,6 +118,60 @@
         </ul>
         {% else %}
         <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.care_no_routines }}</p>
+        {% endif %}
+    </section>
+
+    <!-- Care products (средства/косметика) -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('comfort', 'w-4 h-4') }}{{ t.care_products_title }}</h2>
+        <p class="text-xs pl-text-muted">{{ t.care_products_hint }}</p>
+        <form action="/care/products" method="post" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <label class="text-xs pl-text-secondary col-span-2 sm:col-span-1">{{ t.care_product_name }}
+                <input type="text" name="name" required placeholder="e.g. Cleansing gel" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.care_product_category }}
+                <select name="category" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    {% for c in care_product_categories %}<option value="{{ c }}" {% if c == 'other' %}selected{% endif %}>{{ t['care_product_cat_' + c] }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.care_product_brand }}
+                <input type="text" name="brand" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.care_product_inventory }}
+                <select name="inventory_item_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <option value="">{{ t.catalog_select_none }}</option>
+                    {% for i in inventory_options %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="text-xs pl-text-secondary col-span-2 sm:col-span-4">{{ t.care_notes }}
+                <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <button type="submit" class="col-span-2 sm:col-span-4 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.care_save }}</button>
+        </form>
+        {% if products %}
+        <ul class="divide-y divide-[color:var(--border)] text-sm">
+            {% for p in products %}
+            <li class="py-2 flex items-center justify-between gap-2">
+                <div class="min-w-0 space-y-0.5">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-[color:var(--text)]">{{ p.name }}</span>
+                        <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ t['care_product_cat_' + p.category] }}</span>
+                        {% if p.brand %}<span class="pl-text-muted text-xs">{{ p.brand }}</span>{% endif %}
+                        {% if p.inventory_name %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('inventory', 'w-3.5 h-3.5') }}{{ p.inventory_name }}</span>{% endif %}
+                        <span class="pl-text-muted text-xs">{{ p.usage_count }} {{ t.care_product_used }}</span>
+                    </div>
+                    {% if p.notes %}<div class="text-xs pl-text-muted">{{ p.notes }}</div>{% endif %}
+                </div>
+                <form action="/care/products/{{ p.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('comfort', 'w-4 h-4') }}{{ t.care_no_products }}</p>
         {% endif %}
     </section>
 

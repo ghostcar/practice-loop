@@ -11,7 +11,11 @@
   и салонные), частота, заметки;
 - ``care_entries``  — факты выполнения процедуры: дата, длительность,
   реакция кожи, заметки, снимок расчётной фазы Cycle и мягкая связь с
-  медиа (фото динамики) через owner_type=care_entry.
+  медиа (фото динамики) через owner_type=care_entry;
+- ``care_products`` — каталог средств/косметики (очищение/сыворотки/уход),
+  с привязкой к инвентарю (inventory_item_id);
+- ``care_entry_products`` — какие средства использованы в записи ухода
+  (many-to-many care_entries ↔ care_products).
 
 Расчётная фаза Cycle никогда не выдаётся за факт (§9.4).
 """
@@ -29,6 +33,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models import Base
 
 if TYPE_CHECKING:
+    from app.models.life import InventoryItem
     from app.models.user import User
 
 # зоны ухода
@@ -37,6 +42,19 @@ CARE_AREAS = ("face", "body", "hair", "hands", "feet", "other")
 CARE_KINDS = ("home", "salon")
 # реакция кожи — 1..5 (лучше/хуже)
 SCALE_1_5 = (1, 2, 3, 4, 5)
+# категории средств/косметики
+CARE_PRODUCT_CATEGORIES = (
+    "cleanser",
+    "toner",
+    "serum",
+    "moisturizer",
+    "mask",
+    "exfoliant",
+    "sun",
+    "body",
+    "hair",
+    "other",
+)
 
 
 class CareRoutine(Base):
@@ -105,6 +123,67 @@ class CareEntry(Base):
 
     user: Mapped[User] = relationship("User", lazy="selectin")
     routine: Mapped[CareRoutine | None] = relationship("CareRoutine", lazy="selectin")
+    products: Mapped[list[CareProduct]] = relationship(
+        "CareProduct", secondary="care_entry_products", lazy="selectin", viewonly=True
+    )
 
     def __repr__(self) -> str:
         return f"<CareEntry(id={self.id}, date={self.entry_date})>"
+
+
+class CareProduct(Base):
+    """Каталог средств/косметики для ухода (PRODUCT_OVERVIEW §8).
+
+    Каждая позиция может ссылаться на предмет инвентаря (inventory_item_id) —
+    чтобы вести остатки/список покупок в одном месте. Категории — из
+    CARE_PRODUCT_CATEGORIES. Средства используются в записях ухода
+    (care_entry_products). Relief-only (PD-013): справочник без игровой
+    интеграции.
+    """
+
+    __tablename__ = "care_products"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # cleanser | toner | serum | moisturizer | mask | exfoliant | sun | body | hair | other
+    category: Mapped[str] = mapped_column(String(30), default="other", nullable=False)
+    brand: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # привязка к инвентарю: остаток/список покупок ведётся в inventory_items
+    inventory_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    user: Mapped[User] = relationship("User", lazy="selectin")
+    inventory_item: Mapped[InventoryItem | None] = relationship("InventoryItem", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<CareProduct(id={self.id}, name={self.name!r})>"
+
+
+class CareEntryProduct(Base):
+    """Many-to-many: какие средства использованы в записи ухода."""
+
+    __tablename__ = "care_entry_products"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entry_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("care_entries.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("care_products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<CareEntryProduct(entry={self.entry_id}, product={self.product_id})>"

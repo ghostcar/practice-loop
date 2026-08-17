@@ -282,7 +282,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (72):
+Полный перечень таблиц `app/models/*` (74):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -297,7 +297,9 @@ sidebar (иконки + подписи).
   мягкие связи с Timer/Health по ID) — relief-only, PD-013, Private Record.
 - **Personal Care (M3, §25)**: `care_routines` (каталог процедур/рутин: зона, тип,
   частота, заметки), `care_entries` (факты выполнения: дата, длительность, реакция
-  кожи, снимок фазы Cycle) — relief-only, PD-013, Private Record.
+  кожи, снимок фазы Cycle), `care_products` (каталог средств/косметики с привязкой
+  к инвентарю), `care_entry_products` (средства, использованные в записи ухода) —
+  relief-only, PD-013, Private Record.
 - **Универсальный каталог активностей (§26)**: `activity_catalog` — сквозной
   справочник видов активностей (как Entity: категория/теги/описание/domains),
   на который ссылаются журнал, уход, окна таймера и трекер-задачи — нейтрален,
@@ -673,11 +675,16 @@ Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true
 никаких штрафов; все записи Private Record (DATA_LIFECYCLE.md).
 Feature flag `care_enabled` (default true).
 
-- **Модель (2 таблицы, миграция 047)**:
+- **Модель (4 таблицы, миграции 047 + 049)**:
   - `care_routines` — каталог процедур/рутин: name, area (face/body/hair/hands/feet/other),
     kind (home/salon), frequency_days (частота в днях, необязательно), notes;
   - `care_entries` — факты выполнения процедуры: routine_id (FK SET NULL), entry_date,
-    duration_minutes, skin_reaction (1–5), notes, снимок cycle_phase/cycle_day.
+    duration_minutes, skin_reaction (1–5), notes, снимок cycle_phase/cycle_day;
+  - `care_products` — каталог средств/косметики (Шаг 16b, ADR-092): name, category
+    (cleanser/toner/serum/moisturizer/mask/exfoliant/sun/body/hair/other), brand, notes,
+    inventory_item_id (FK inventory_items, SET NULL — остаток/список покупок в инвентаре);
+  - `care_entry_products` — какие средства использованы в записи ухода (many-to-many
+    care_entries ↔ care_products, CASCADE).
 - **Страница `/care`**: форма процедуры (название, зона, тип, частота, заметки) +
   журнал ухода (дата, процедура, длительность, реакция кожи, заметки) + каталог рутин
   (с числом выполнений) + история записей с фото-плитками.
@@ -687,9 +694,15 @@ Feature flag `care_enabled` (default true).
 - **Связь с Cycle (§9.4)**: при создании записи сохраняется снимок расчётной фазы цикла
   (`cycle_phase`/`cycle_day`) — помечен как оценка, не факт. Если Cycle недоступен —
   (None, None).
-- **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи),
-  `POST /routines`, `POST /entries`. Object-level auth: чужой routine_id отклоняется;
-  удаление процедуры обнуляет ссылки в записях (SET NULL на уровне приложения).
+- **Средства/косметика (Шаг 16b, ADR-092)**: секция на /care — форма (название,
+  категория, бренд, связанный предмет инвентаря) + список с инвентарным бейджем и
+  счётчиком использований; форма записи ухода — мультиселект средств. Валидация
+  владельца: чужой inventory_item_id/product_id → 400; удаление продукта чистит
+  join-строки на уровне приложения + CASCADE в БД.
+- **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи + средства),
+  `POST /routines`, `POST /entries`, `POST /products`, `DELETE /products/{id}`. Object-level
+  auth: чужой routine_id отклоняется; удаление процедуры обнуляет ссылки в записях
+  (SET NULL на уровне приложения).
 - **Дашборд**: блок `dash-block-care` (процедуры за 30д / последняя / число рутин),
   управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **Навигация**: пункт «Уход» (иконка routine.svg из пакета) в группе «Данные».
