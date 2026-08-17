@@ -54,7 +54,7 @@
                     {% if e.notes %}<span class="pl-text-secondary w-full">{{ e.notes }}</span>{% endif %}
                     <form action="/aftercare/entries/{{ e.id }}/delete" method="post" class="ml-auto">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="text-xs pl-text-muted hover:text-[color:var(--text)] inline-flex items-center gap-1" title="{{ t.aftercare_delete }}">{{ icon('trash', 'w-4 h-4') }}</button>
+                        <button type="submit" class="text-xs pl-text-muted hover:text-[color:var(--text)] inline-flex items-center gap-1" title="{{ t.aftercare_delete }}">{{ icon('delete', 'w-4 h-4') }}</button>
                     </form>
                 </li>
                 {% endfor %}

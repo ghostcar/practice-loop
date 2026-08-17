@@ -335,6 +335,13 @@ if composition.tracker_active:
         app.include_router(aftercare_router)
         app.include_router(aftercare_json_router)
 
+    if composition.consent_enabled:
+        from app.api.consent import json_router as consent_json_router  # noqa: E402
+        from app.api.consent import router as consent_router  # noqa: E402
+
+        app.include_router(consent_router)
+        app.include_router(consent_json_router)
+
 # ---------------------------------------------------------------------------
 # Timer routes (C1-C8 — registered when LOCKTIMER_CORE_ENABLED)
 # ---------------------------------------------------------------------------

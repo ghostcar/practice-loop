@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('shield', 'w-6 h-6') }}{{ t.consent_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.consent_subtitle }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Grant / revoke -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.consent_add }}</h2>
+            <p class="text-xs pl-text-muted">{{ t.consent_add_hint }}</p>
+            <form action="/consent" method="post" class="grid grid-cols-2 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.consent_type }}
+                    <select name="consent_type" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for c in consent_types %}<option value="{{ c }}">{{ t['consent_type_' + c] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.consent_state }}
+                    <select name="state" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="granted">{{ t.consent_state_granted }}</option>
+                        <option value="revoked">{{ t.consent_state_revoked }}</option>
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.consent_scope }}
+                    <input type="text" name="scope" placeholder="{{ t.consent_scope_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.consent_notes }}
+                    <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="submit" class="col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.consent_save }}</button>
+            </form>
+        </section>
+
+        <!-- History -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.consent_history }}</h2>
+            {% if records %}
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for r in records %}
+                <li class="py-2 flex items-start gap-2 flex-wrap">
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] pl-text-secondary">{{ t['consent_type_' + r.consent_type] }} · v{{ r.version }}</span>
+                    <span class="px-2 py-0.5 text-xs rounded-full {% if r.state == 'granted' %}bg-emerald-500/15 text-emerald-600 dark:text-emerald-400{% else %}bg-amber-500/15 text-amber-600 dark:text-amber-400{% endif %}">{{ t['consent_state_' + r.state] }}</span>
+                    <span class="text-xs pl-text-muted">{{ r.granted_at[:10] if r.granted_at else '' }}</span>
+                    {% if r.scope %}<span class="pl-text-secondary w-full">{{ r.scope }}</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs pl-text-muted">{{ t.consent_empty }}</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

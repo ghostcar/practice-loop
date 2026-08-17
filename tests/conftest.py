@@ -36,6 +36,7 @@ from app.models.category import ActivityCategory  # noqa: F401
 from app.models.chastity import ChastityCheckIn  # noqa: F401
 from app.models.device import ChastityDeviceEvent  # noqa: F401
 from app.models.aftercare import AftercareEntry  # noqa: F401
+from app.models.consent import ConsentRecord  # noqa: F401
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
 from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
