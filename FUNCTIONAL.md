@@ -724,8 +724,8 @@ Feature flag `care_enabled` (default true).
   Валидация владельца: чужой inventory_item_id/product_id → 400; удаление продукта
   чистит join-строки на уровне приложения + CASCADE в БД.
 - **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи + средства),
-  `GET /courses`, `POST /routines`, `POST /entries`, `POST /products`, `DELETE /products/{id}`,
-  `POST /courses`. Object-level
+  `GET /products`, `GET /courses`, `POST /routines`, `POST /entries`, `POST /products`,
+  `DELETE /products/{id}`, `POST /courses`. Object-level
   auth: чужой routine_id отклоняется; удаление процедуры обнуляет ссылки в записях
   (SET NULL на уровне приложения).
 - **Дашборд**: блок `dash-block-care` (процедуры за 30д / последняя / число рутин),

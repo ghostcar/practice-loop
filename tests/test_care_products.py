@@ -185,6 +185,34 @@ async def test_json_add_product_and_summary(auth_client, test_user, db_session):
 
 
 @pytest.mark.asyncio
+async def test_json_list_products(auth_client, test_user, db_session):
+    """GET /api/v2/care/products returns the user's products (mobile listing)."""
+    await auth_client.post("/api/v2/care/products", json={"name": "SPF50", "category": "sun"})
+    db_session.add(CareProduct(user_id=test_user.id, name="Cleanser", category="cleanser", quantity=3))
+    await db_session.flush()
+
+    resp = await auth_client.get("/api/v2/care/products")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert isinstance(data, list)
+    assert {p["name"] for p in data} == {"SPF50", "Cleanser"}
+
+
+@pytest.mark.asyncio
+async def test_json_list_products_cross_user_isolation(auth_client, test_user, db_session):
+    """GET /api/v2/care/products never leaks another user's products."""
+    other = User(email="other-products@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    db_session.add(CareProduct(user_id=other.id, name="Other serum", category="serum"))
+    await db_session.flush()
+
+    resp = await auth_client.get("/api/v2/care/products")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+@pytest.mark.asyncio
 async def test_json_entry_with_products(auth_client, test_user, db_session):
     await auth_client.post("/api/v2/care/products", json={"name": "Cleanser", "category": "cleanser"})
     product = (await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))).scalar_one()

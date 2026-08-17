@@ -991,6 +991,24 @@ async def json_add_entry(
     return _entry_json(entry, {str(entry.id): [str(p) for p in resolved_products]})
 
 
+@json_router.get("/products")
+async def json_list_products(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Список средств/косметики — для мобильного клиента (owner-scoped)."""
+    products = (
+        (
+            await db.execute(
+                select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [_product_json(p) for p in products]
+
+
 class ProductBody(BaseModel):
     name: str
     category: str = "other"
