@@ -1197,6 +1197,24 @@ async def mark_session_skipped(
     return RedirectResponse(url="/care", status_code=303)
 
 
+@json_router.get("/courses")
+async def json_list_courses(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Список курсов процедур (серии сеансов) — для мобильного клиента."""
+    courses = (
+        (
+            await db.execute(
+                select(CareCourse).where(CareCourse.user_id == user.id).order_by(CareCourse.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [_course_json(c) for c in courses]
+
+
 class CourseBody(BaseModel):
     name: str
     area: str = "other"

@@ -704,7 +704,8 @@ Feature flag `care_enabled` (default true).
 - **Курсы процедур (Шаг 17c, ADR-095)**: секция на /care — создание курса (название,
   зона, число сеансов, интервал, дата старта) генерирует сеансы; прогресс-чипы,
   отметка сеанса «done» по клику; напоминание о следующем сеансе (reminder engine).
-  JSON `/api/v2/care/courses` (POST 201).
+  JSON `/api/v2/care/courses` — `GET` (список курсов со сеансами, для мобильного
+  клиента) + `POST` (201, создание).
 - **Страница `/care`**: форма процедуры (название, зона, тип, частота, заметки) +
   журнал ухода (дата, процедура, длительность, реакция кожи, заметки) + каталог рутин
   (с числом выполнений) + история записей с фото-плитками.
@@ -723,7 +724,8 @@ Feature flag `care_enabled` (default true).
   Валидация владельца: чужой inventory_item_id/product_id → 400; удаление продукта
   чистит join-строки на уровне приложения + CASCADE в БД.
 - **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи + средства),
-  `POST /routines`, `POST /entries`, `POST /products`, `DELETE /products/{id}`. Object-level
+  `GET /courses`, `POST /routines`, `POST /entries`, `POST /products`, `DELETE /products/{id}`,
+  `POST /courses`. Object-level
   auth: чужой routine_id отклоняется; удаление процедуры обнуляет ссылки в записях
   (SET NULL на уровне приложения).
 - **Дашборд**: блок `dash-block-care` (процедуры за 30д / последняя / число рутин),

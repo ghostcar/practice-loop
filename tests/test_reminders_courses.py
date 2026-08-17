@@ -228,6 +228,43 @@ async def test_json_add_course(auth_client, test_user, db_session):
 
 
 @pytest.mark.asyncio
+async def test_json_list_courses(auth_client, test_user, db_session):
+    """GET /api/v2/care/courses returns the user's courses (mobile listing)."""
+    # Create one course via JSON, another directly.
+    await auth_client.post(
+        "/api/v2/care/courses",
+        json={"name": "Laser", "area": "body", "total_sessions": 2, "interval_days": 30},
+    )
+    course2 = CareCourse(user_id=test_user.id, name="Massage", area="body", total_sessions=1)
+    db_session.add(course2)
+    await db_session.flush()
+
+    resp = await auth_client.get("/api/v2/care/courses")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert isinstance(data, list)
+    names = {c["name"] for c in data}
+    assert names == {"Laser", "Massage"}
+    # each course carries its sessions
+    laser = next(c for c in data if c["name"] == "Laser")
+    assert len(laser["sessions"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_json_list_courses_cross_user_isolation(auth_client, test_user, db_session):
+    """GET /api/v2/care/courses never leaks another user's courses."""
+    other = User(email="other-courses@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    db_session.add(CareCourse(user_id=other.id, name="Other course", area="face"))
+    await db_session.flush()
+
+    resp = await auth_client.get("/api/v2/care/courses")
+    assert resp.status_code == 200
+    assert [c["name"] for c in resp.json()] == []
+
+
+@pytest.mark.asyncio
 async def test_course_cross_user_isolation(auth_client, test_user, db_session):
     other = User(email="other2@example.com", password_hash="x", locale="en", theme="dark")
     db_session.add(other)
