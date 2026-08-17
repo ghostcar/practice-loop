@@ -256,7 +256,8 @@ sidebar (иконки + подписи).
 
 Вебхук + исходящие уведомления. Команды: `/start`, `/link` (привязка по 6-значному коду,
 сессия 30 мин), `/next`, `/tasks`, `/done`, `/interrupt` (с подтверждением), `/stats`,
-`/session`, `/settings` (EN/RU). Inline-кнопки ✅ Done / ⏹ Interrupt. Бот вызывает
+`/session`, `/settings` (EN/RU), таймер `/lock*` (§30) и личный контур `/med`,
+`/health`, `/cycle`, `/care` (§31). Inline-кнопки ✅ Done / ⏹ Interrupt. Бот вызывает
 внутренние сервисы напрямую (не HTTP); уведомления — хук после каждого db.flush().
 
 ---
@@ -842,3 +843,20 @@ Feature flag `insights_enabled` (default true).
   `/lock_tasks` (reveal/complete/skip), `/lock_close <номер бирки>` (закрытие с биркой,
   `require_tag`), `/lock_tag <номер>` (проверка номерной бирки); все inline-действия
   вызывают сервисы `app/locktimer/services/execution.py` с проверкой владельца сессии.
+
+---
+
+## 31. Команды бота для личного контура (Шаг 17e, ADR-097)
+
+Дополнение к Telegram-боту (§13, §30). **Relief-only** (PD-013); без миграций, бот EN-hardcoded.
+
+- **`/med`** — приёмы на сегодня (`_schedule_summary`: due + expiring + low stock);
+  инлайн «Taken» записывает `MedIntake(status=taken)` + `on_medication_taken`
+  (adherence XP + достижения, positive-only, ADR-085).
+- **`/health`** — чек-ин: настроение/энергия/сон на сегодня, инлайн-кнопки mood/energy 1–5
+  (upsert `HealthState` на сегодня).
+- **`/cycle`** — расчётная фаза, день цикла, длина и оценка даты следующих месячных
+  (`_get_cycle_context`; фаза всегда «estimated», §9.4).
+- **`/care`** — due-рутины по `frequency_days` + ближайшие сеансы курсов; инлайн «Done»
+  создаёт `CareEntry` на сегодня (со снимком фазы Cycle) или помечает сеанс `done`.
+- `/start` help дополнен этими командами.

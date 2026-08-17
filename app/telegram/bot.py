@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from aiogram import Bot, Dispatcher, F, Router, types
 from aiogram.filters import Command
@@ -83,6 +83,10 @@ if TG_BOT_TOKEN:
             "/interrupt — interrupt a task (penalty!)\n"
             "/stats — XP, streak, points\n"
             "/session — session status\n"
+            "/med — today's medication doses\n"
+            "/health — daily check-in (mood/energy)\n"
+            "/cycle — cycle phase & next period\n"
+            "/care — due routines & course sessions\n"
             "/lock — active lock session status\n"
             "/lock_start — start your latest draft\n"
             "/lock_stop — safety-stop the active session\n"
@@ -1099,6 +1103,337 @@ if TG_BOT_TOKEN:
 
         await callback.message.edit_text("⏭ Task skipped.")
         await callback.answer("Skipped")
+
+    # ── Personal contour: medication / health / cycle / care (ADR-097) ──
+
+    @main_router.message(Command("med"))
+    async def cmd_med(message: types.Message):
+        """Today's medication doses with inline 'Taken' buttons (records intake + adherence XP)."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.api.medication import _schedule_summary
+
+        async with async_session_factory() as db:
+            summary = await _schedule_summary(db, user.id)
+
+        due = summary.get("due", [])
+        if not due:
+            await message.answer("💊 No medication doses due today. All caught up!")
+            return
+
+        lines = ["💊 *Medication Today*"]
+        kb_rows = []
+        for d in due[:8]:
+            lines.append(f"• {d['medication_name']} — {d['dose']} ({d['pending']} left)")
+            kb_rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=f"✅ Taken: {d['medication_name'][:22]}",
+                        callback_data=f"med_take:{d['id']}",
+                    )
+                ]
+            )
+        if summary.get("expiring"):
+            lines.append("\n⚠️ *Expiring soon:*")
+            for e in summary["expiring"][:3]:
+                lines.append(f"• {e['medication_name']} ({e['days']}d)")
+        if summary.get("low_stock"):
+            lines.append("\n📉 *Low stock:*")
+            for item in summary["low_stock"][:3]:
+                lines.append(f"• {item['medication_name']} ({item['quantity']:g})")
+        kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.callback_query(F.data.startswith("med_take:"))
+    async def inline_med_take(callback: types.CallbackQuery):
+        schedule_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.gamification.medication import on_medication_taken
+        from app.models.medication import MedIntake, MedSchedule
+
+        async with async_session_factory() as db:
+            sched = (
+                await db.execute(
+                    select(MedSchedule).where(MedSchedule.id == schedule_id, MedSchedule.user_id == user.id)
+                )
+            ).scalar_one_or_none()
+            if sched is None:
+                await callback.answer("Schedule not found.", show_alert=True)
+                return
+            name = sched.medication.name if sched.medication else "Medication"
+            db.add(
+                MedIntake(
+                    user_id=user.id,
+                    medication_id=sched.medication_id,
+                    schedule_id=sched.id,
+                    scheduled_at=datetime.now(UTC),
+                    taken_at=datetime.now(UTC),
+                    status="taken",
+                    quantity_taken=sched.dose_quantity,
+                )
+            )
+            await db.flush()
+            result = await on_medication_taken(db, user.id, name, on_time=True)
+            await db.commit()
+
+        text = f"✅ {name} taken."
+        if result.get("xp_earned"):
+            text += f"\n⭐ +{result['xp_earned']} XP"
+        if result.get("new_achievements"):
+            text += f"\n🏆 {result['new_achievements']} new achievement(s)!"
+        await callback.message.edit_text(text, parse_mode="Markdown")
+        await callback.answer("Taken! 💊")
+
+    def _health_view(state, cycle: dict) -> tuple[str, InlineKeyboardMarkup]:
+        """Build the health check-in text + inline mood/energy keyboard."""
+        lines = ["🩺 *Health Check-in*"]
+        if state is not None:
+            lines.append(f"Mood: {'⭐' * state.mood if state.mood else '—'}")
+            lines.append(f"Energy: {'⚡' * state.energy if state.energy else '—'}")
+            lines.append(f"Sleep: {state.sleep_hours if state.sleep_hours is not None else '—'} h")
+        else:
+            lines.append("No check-in yet today.")
+        if cycle.get("phase"):
+            lines.append(f"Cycle: {cycle['phase']} (day {cycle['day_of_cycle']})")
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text=f"Mood {i}", callback_data=f"health_mood:{i}")
+                    for i in range(1, 6)
+                ],
+                [
+                    InlineKeyboardButton(text=f"Energy {i}", callback_data=f"health_energy:{i}")
+                    for i in range(1, 6)
+                ],
+            ]
+        )
+        return "\n".join(lines), kb
+
+    @main_router.message(Command("health"))
+    async def cmd_health(message: types.Message):
+        """Today's health check-in status with inline mood/energy buttons."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.api.health import _get_cycle_context
+        from app.models.health import HealthState
+
+        today = datetime.now(UTC).date()
+        async with async_session_factory() as db:
+            state = (
+                await db.execute(
+                    select(HealthState).where(HealthState.user_id == user.id, HealthState.event_date == today)
+                )
+            ).scalar_one_or_none()
+            cycle = await _get_cycle_context(db, user.id)
+
+        text, kb = _health_view(state, cycle)
+        await message.answer(text, parse_mode="Markdown", reply_markup=kb)
+
+    async def _set_health_scale(callback: types.CallbackQuery, field: str) -> None:
+        value = int(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.models.health import HealthState
+
+        today = datetime.now(UTC).date()
+        async with async_session_factory() as db:
+            row = (
+                await db.execute(
+                    select(HealthState).where(HealthState.user_id == user.id, HealthState.event_date == today)
+                )
+            ).scalar_one_or_none()
+            if row is None:
+                row = HealthState(user_id=user.id, event_date=today)
+                db.add(row)
+            setattr(row, field, value)
+            await db.commit()
+
+        label = "Mood" if field == "mood" else "Energy"
+        await callback.answer(f"{label} set to {value}")
+
+    @main_router.callback_query(F.data.startswith("health_mood:"))
+    async def inline_health_mood(callback: types.CallbackQuery):
+        await _set_health_scale(callback, "mood")
+
+    @main_router.callback_query(F.data.startswith("health_energy:"))
+    async def inline_health_energy(callback: types.CallbackQuery):
+        await _set_health_scale(callback, "energy")
+
+    @main_router.message(Command("cycle"))
+    async def cmd_cycle(message: types.Message):
+        """Estimated cycle phase, day of cycle, and next period date."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.api.health import _get_cycle_context
+
+        async with async_session_factory() as db:
+            cycle = await _get_cycle_context(db, user.id)
+
+        if not cycle.get("phase"):
+            await message.answer("🌸 No cycle data yet. Add a bleeding event in the web app (/health) to start.")
+            return
+
+        settings = cycle.get("settings") or {}
+        cl = settings.get("cycle_length", 28) or 28
+        day = cycle["day_of_cycle"]
+        today = datetime.now(UTC).date()
+        next_period = today + timedelta(days=cl - day + 1)
+
+        lines = [
+            "🌸 *Cycle*",
+            f"Phase: {cycle['phase']} (estimated)",
+            f"Day {day} of {cl}",
+            f"Next period (est.): {next_period.strftime('%Y-%m-%d')}",
+        ]
+        await message.answer("\n".join(lines), parse_mode="Markdown")
+
+    @main_router.message(Command("care"))
+    async def cmd_care(message: types.Message):
+        """Care routines due today + course sessions, with inline 'Done' buttons."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.models.care import CareCourse, CareEntry, CareRoutine
+
+        today = datetime.now(UTC).date()
+        async with async_session_factory() as db:
+            routines = (
+                (await db.execute(select(CareRoutine).where(CareRoutine.user_id == user.id))).scalars().all()
+            )
+            entries = (await db.execute(select(CareEntry).where(CareEntry.user_id == user.id))).scalars().all()
+            courses = (
+                (
+                    await db.execute(
+                        select(CareCourse).where(CareCourse.user_id == user.id, CareCourse.status == "active")
+                    )
+                )
+                .scalars()
+                .all()
+            )
+
+        last_entry: dict[str, date] = {}
+        for e in entries:
+            if e.routine_id is None:
+                continue
+            key = str(e.routine_id)
+            if key not in last_entry or e.entry_date > last_entry[key]:
+                last_entry[key] = e.entry_date
+
+        lines = ["🧴 *Care*"]
+        kb_rows: list[list[InlineKeyboardButton]] = []
+        due = [
+            r
+            for r in routines
+            if r.frequency_days
+            and (last_entry.get(str(r.id)) is None or (today - last_entry[str(r.id)]).days >= r.frequency_days)
+        ]
+        if due:
+            lines.append("\n*Due routines:*")
+            for r in due[:6]:
+                lines.append(f"• {r.name} (every {r.frequency_days}d)")
+                kb_rows.append(
+                    [InlineKeyboardButton(text=f"✅ Done: {r.name[:22]}", callback_data=f"care_done:{r.id}")]
+                )
+        else:
+            lines.append("\nNo routines due today.")
+
+        for c in courses:
+            pending = sorted((s for s in c.sessions if s.status == "pending"), key=lambda s: s.scheduled_date)
+            if not pending:
+                continue
+            nxt = pending[0]
+            lines.append(
+                f"📅 {c.name}: session {nxt.session_number}/{c.total_sessions} on {nxt.scheduled_date}"
+            )
+            if nxt.scheduled_date <= today + timedelta(days=2):
+                kb_rows.append(
+                    [
+                        InlineKeyboardButton(
+                            text=f"✅ Session: {c.name[:22]}",
+                            callback_data=f"care_course_done:{nxt.id}",
+                        )
+                    ]
+                )
+
+        kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.callback_query(F.data.startswith("care_done:"))
+    async def inline_care_done(callback: types.CallbackQuery):
+        routine_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.api.care import _cycle_snapshot
+        from app.models.care import CareEntry, CareRoutine
+
+        today = datetime.now(UTC).date()
+        async with async_session_factory() as db:
+            routine = (
+                await db.execute(
+                    select(CareRoutine).where(CareRoutine.id == routine_id, CareRoutine.user_id == user.id)
+                )
+            ).scalar_one_or_none()
+            if routine is None:
+                await callback.answer("Routine not found.", show_alert=True)
+                return
+            cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, today)
+            db.add(
+                CareEntry(
+                    user_id=user.id,
+                    routine_id=routine.id,
+                    entry_date=today,
+                    cycle_phase=cycle_phase,
+                    cycle_day=cycle_day,
+                )
+            )
+            await db.commit()
+
+        await callback.message.edit_text(f"✅ {routine.name} logged for today.")
+        await callback.answer("Done! 🧴")
+
+    @main_router.callback_query(F.data.startswith("care_course_done:"))
+    async def inline_care_course_done(callback: types.CallbackQuery):
+        session_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.models.care import CareCourse, CareCourseSession
+
+        async with async_session_factory() as db:
+            sess = await db.get(CareCourseSession, session_id)
+            if sess is None:
+                await callback.answer("Session not found.", show_alert=True)
+                return
+            course = await db.get(CareCourse, sess.course_id)
+            if course is None or course.user_id != user.id:
+                await callback.answer("Session not found.", show_alert=True)
+                return
+            sess.status = "done"
+            sess.completed_at = datetime.now(UTC)
+            db.add(sess)
+            await db.commit()
+
+        await callback.message.edit_text(f"✅ Session {sess.session_number} of {course.name} done.")
+        await callback.answer("Done! 📅")
 
     # ── Notification sender (public API for the rest of the app) ──────
 
