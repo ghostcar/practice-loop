@@ -808,6 +808,86 @@ async def json_today(
     return await _schedule_summary(db, user.id)
 
 
+@json_router.get("/stocks")
+async def json_list_stocks(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Список партий/остатков — для мобильного клиента (owner-scoped)."""
+    stocks = (
+        (
+            await db.execute(
+                select(MedStock).where(MedStock.user_id == user.id).order_by(MedStock.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "id": str(st.id),
+            "medication_id": str(st.medication_id),
+            "medication_name": st.medication.name if st.medication else "",
+            "kit_id": str(st.kit_id) if st.kit_id else None,
+            "kit_name": st.kit.name if st.kit else None,
+            "quantity": st.quantity,
+            "unit": st.unit,
+            "lot_number": st.lot_number,
+            "expiry_date": st.expiry_date.isoformat() if st.expiry_date else None,
+            "low_stock_threshold": st.low_stock_threshold,
+        }
+        for st in stocks
+    ]
+
+
+@json_router.get("/schedules")
+async def json_list_schedules(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Список расписаний приёма — для мобильного клиента (owner-scoped)."""
+    schedules = (
+        (
+            await db.execute(
+                select(MedSchedule).where(MedSchedule.user_id == user.id).order_by(MedSchedule.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "id": str(s.id),
+            "medication_id": str(s.medication_id),
+            "medication_name": s.medication.name if s.medication else "",
+            "dose_quantity": s.dose_quantity,
+            "dose_unit": s.dose_unit,
+            "frequency_type": s.frequency_type,
+            "times_per_day": s.times_per_day,
+            "times_of_day": s.times_of_day,
+            "interval_hours": s.interval_hours,
+            "days_of_week": s.days_of_week,
+            "start_date": s.start_date.isoformat() if s.start_date else None,
+            "end_date": s.end_date.isoformat() if s.end_date else None,
+            "instructions": s.instructions,
+            "is_active": s.is_active,
+        }
+        for s in schedules
+    ]
+
+
+@json_router.get("/kits")
+async def json_list_kits(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Список аптечек — для мобильного клиента (owner-scoped)."""
+    kits = (
+        (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
+    )
+    return [{"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes} for k in kits]
+
+
 class IntakeBody(BaseModel):
     schedule_id: uuid.UUID | None = None
     status: str = "taken"

@@ -167,6 +167,49 @@ async def test_json_api_list_and_record_intake(auth_client, test_user, db_sessio
     assert body["medication_id"] == str(med_id)
 
 
+@pytest.mark.asyncio
+async def test_json_list_stocks_schedules_kits(auth_client, test_user, db_session):
+    """GET /api/v2/medications/{stocks,schedules,kits} — flat lists for mobile."""
+    await _create_medication(auth_client, "Ibuprofen")
+    med_id = await _get_med_id(db_session, test_user.id, "Ibuprofen")
+    await auth_client.post(f"/medications/{med_id}/stock", data={"quantity": "20"})
+    await auth_client.post(
+        f"/medications/{med_id}/schedule",
+        data={"dose_quantity": "1", "frequency_type": "daily", "times_per_day": "2"},
+    )
+    await auth_client.post("/med-kits", data={"name": "Home kit", "location": "Bathroom"})
+
+    stocks = (await auth_client.get("/api/v2/medications/stocks")).json()
+    assert len(stocks) == 1
+    assert stocks[0]["medication_name"] == "Ibuprofen"
+    assert stocks[0]["quantity"] == 20.0
+
+    schedules = (await auth_client.get("/api/v2/medications/schedules")).json()
+    assert len(schedules) == 1
+    assert schedules[0]["medication_name"] == "Ibuprofen"
+    assert schedules[0]["frequency_type"] == "daily"
+
+    kits = (await auth_client.get("/api/v2/medications/kits")).json()
+    assert len(kits) == 1
+    assert kits[0]["name"] == "Home kit"
+
+
+@pytest.mark.asyncio
+async def test_json_lists_cross_user_isolation(auth_client, test_user, db_session):
+    """Flat medication lists never leak another user's stocks/schedules/kits."""
+    other = User(email="other-stocks@example.com", password_hash=hash_password("x"), locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    db_session.add(Medication(user_id=other.id, name="Other med", kind="medication"))
+    db_session.add(MedKit(user_id=other.id, name="Other kit"))
+    await db_session.flush()
+
+    for path in ("/api/v2/medications/stocks", "/api/v2/medications/schedules", "/api/v2/medications/kits"):
+        resp = await auth_client.get(path)
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Dashboard block (Step 11b)
 # ─────────────────────────────────────────────────────────────────────────────
