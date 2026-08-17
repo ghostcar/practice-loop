@@ -947,6 +947,12 @@ RU = {
     "settings_blur_0": "Без размытия",
     "settings_blur_1": "Мягкое",
     "settings_blur_2": "Сильное",
+    # Шаг 13 — LLM режим (ADR-087)
+    "settings_section_llm": "LLM-режим",
+    "settings_llm_hint": "Управляет свободой интерпретации данных ассистентом. Безопасный — по умолчанию, только факты; Расширенный — рекомендации и советы во всех LLM-функциях.",
+    "settings_llm_safe": "Безопасный",
+    "settings_llm_expanded": "Расширенный",
+    "settings_llm_expanded_warning": "Расширенный режим: ассистент может давать рекомендации и советы. Он не врач — важное проверяйте с врачом.",
     # Step 9e — Discretion neutral labels (§12)
     "dscr_today": "Обзор",
     "dscr_tasks": "Пункты",
@@ -1102,4 +1108,13 @@ RU = {
     "health_event_note": "Заметка",
     "health_delete": "Удалить",
     "dscr_health": "Здоровье",
+    # LLM-разбор анализов (ADR-087)
+    "health_analyze": "Разобрать с ИИ",
+    "health_analysis_title": "ИИ-разбор анализов",
+    "health_analysis_assumptions": "Предположения",
+    "health_analysis_recommendations": "Рекомендации",
+    "health_analysis_questions": "Вопросы врачу",
+    "health_analysis_disclaimer": "Это сводка от ИИ и не является медицинской рекомендацией. Важное проверяйте с врачом.",
+    "health_analyze_no_config": "Нет активного LLM-провайдера — сначала настройте его в настройках LLM.",
+    "health_analyze_failed": "Разбор не удался. Повторите попытку.",
 }

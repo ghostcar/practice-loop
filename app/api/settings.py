@@ -65,6 +65,7 @@ async def save_settings(
     discretion_start: str = Form("22:00"),
     discretion_end: str = Form("07:00"),
     blur: int = Form(0),
+    llm_mode: str = Form("safe"),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
     raw = sanitize_prefs(
@@ -82,6 +83,7 @@ async def save_settings(
                 "end": discretion_end,
             },
             "blur": blur,
+            "llm_mode": llm_mode,
         }
     )
 

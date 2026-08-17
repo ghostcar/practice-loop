@@ -599,5 +599,9 @@ Private Record (DATA_LIFECYCLE.md). Расчётная фаза Cycle никог
   `POST /state`, `POST /labs`, `POST /cycle/events`.
 - **Дашборд**: блок `dash-block-health` (check-in сегодня / число анализов / фаза цикла),
   управляется в /settings (DASH_BLOCKS), discretion-aware.
-- **Ограниченный LLM-разбор** (§9.3): отложен — анализы хранят исходный диапазон,
-  LLM-пересказ/вопросы врачу — будущий срез (см. PLAN.md).
+- **LLM-разбор анализов** (§9.3, ADR-087): `POST /health/analyze` (form) и
+  `POST /api/v2/health/analyze` (JSON). Режим из `prefs.llm_mode` (safe/expanded,
+  настройка в /settings → «LLM mode»): safe — нейтральный пересказ + вопросы врачу;
+  expanded — дополнительно рекомендации/советы (в т.ч. по схеме приёма — активные
+  med_schedules в контексте), всегда с дисклеймером. Usage-трекинг на активном
+  LLMProviderConfig. Результат stateless (не сохраняется в БД).

@@ -133,6 +133,24 @@
             </div>
         </section>
 
+        <!-- LLM mode (ADR-087) -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="llm-h">
+            <h2 id="llm-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_llm }}</h2>
+            <div class="text-xs text-[color:var(--text-muted)]">{{ t.settings_llm_hint }}</div>
+            <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="{{ t.settings_section_llm }}">
+                {% for key, label in [('safe', t.settings_llm_safe), ('expanded', t.settings_llm_expanded)] %}
+                <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                    <input type="radio" name="llm_mode" value="{{ key }}" class="accent-[color:var(--accent)]"
+                           {{ 'checked' if prefs.llm_mode == key else '' }}>
+                    <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if prefs.llm_mode == 'expanded' %}
+            <p class="text-xs text-[color:var(--warning)]">{{ t.settings_llm_expanded_warning }}</p>
+            {% endif %}
+        </section>
+
         <div class="flex justify-end">
             <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
                 {{ t.settings_save }}

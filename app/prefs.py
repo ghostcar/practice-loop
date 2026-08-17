@@ -41,6 +41,9 @@ DENSITIES = ("comfortable", "compact")
 THEME_CHOICES = ("dark", "light", "system")
 DISCRETION_MODES = ("off", "always", "schedule")
 BLUR_LEVELS = (0, 1, 2)
+# LLM режимы (ADR-087): safe — нейтральный пересказ фактов (default);
+# expanded — рекомендации/советы/интерпретация (влияет на все LLM-блоки).
+LLM_MODES = ("safe", "expanded")
 
 # Dashboard blocks in default order. Keys must match the `data-dash-block`
 # markers in dashboard_v2.html.
@@ -53,6 +56,7 @@ DEFAULT_PREFS: dict[str, Any] = {
     "discretion": {"mode": "off", "start": "22:00", "end": "07:00"},
     "blur": 0,
     "theme_choice": "dark",
+    "llm_mode": "safe",
 }
 
 DISCRETION_LABELS = (
@@ -72,6 +76,7 @@ class UserPrefs:
     discretion: dict = field(default_factory=lambda: {"mode": "off", "start": "22:00", "end": "07:00"})
     blur: int = 0
     theme_choice: str = "dark"
+    llm_mode: str = "safe"
 
     # --- convenience ------------------------------------------------------
 
@@ -144,6 +149,7 @@ def sanitize_prefs(raw: dict | None) -> dict:
     out["density"] = raw.get("density") if raw.get("density") in DENSITIES else "comfortable"
     out["theme_choice"] = raw.get("theme_choice") if raw.get("theme_choice") in THEME_CHOICES else "dark"
     out["blur"] = raw.get("blur") if raw.get("blur") in BLUR_LEVELS else 0
+    out["llm_mode"] = raw.get("llm_mode") if raw.get("llm_mode") in LLM_MODES else "safe"
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

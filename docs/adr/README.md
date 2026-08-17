@@ -90,3 +90,4 @@
 | [ADR-084](ADR-084.md) | 2026-08-16 | Шаг 11: M3 Personal Suite — TARGET_ARCHITECTURE + DATA_LIFECYCLE + Medication Organizer | accepted |
 | [ADR-085](ADR-085.md) | 2026-08-17 | Шаг 12: Медицина × игра — смягчение PD-013 (adherence) | accepted |
 | [ADR-086](ADR-086.md) | 2026-08-17 | Шаг 13: Health + Cycle foundation (ROADMAP §7 4D) | accepted |
+| [ADR-087](ADR-087.md) | 2026-08-17 | LLM-режим пользователя (safe/expanded) + LLM-разбор анализов | accepted |

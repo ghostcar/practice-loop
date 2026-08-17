@@ -13,6 +13,7 @@ Health-модуль — **relief-only** (PD-013): никакой игровой 
 - POST /health/cycle/settings     — обновить настройки Cycle
 - POST /health/cycle/events       — добавить событие Cycle
 - POST /health/cycle/events/{id}/delete — удалить событие
+- POST /health/analyze            — LLM-разбор анализов (ADR-087, режим из prefs)
 
 JSON API (мобильный/bearer):
 - GET  /api/v2/health             — сводка: последний check-in + cycle + labs
@@ -22,10 +23,13 @@ JSON API (мобильный/bearer):
 - POST /api/v2/health/state       — записать check-in
 - POST /api/v2/health/labs        — добавить лабораторную запись
 - POST /api/v2/health/cycle/events — добавить событие Cycle
+- POST /api/v2/health/analyze     — LLM-разбор анализов (JSON, режим из prefs)
 """
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import date
 
@@ -39,6 +43,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.llm.pipeline import analyze_labs, get_active_llm_config
 from app.models.health import (
     CONTRACEPTION_TYPES,
     CYCLE_EVENT_TYPES,
@@ -49,8 +54,11 @@ from app.models.health import (
     LabRecord,
 )
 from app.models.user import User
+from app.prefs import get_prefs
 from app.templates_setup import templates
 from app.timeutils import local_today
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["health"])
 
@@ -103,6 +111,33 @@ def _day_of_cycle(events: list[CycleEvent], settings: CycleSettings | None, toda
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# LLM analysis param parsing (ADR-087)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _parse_analysis_param(raw: str) -> dict | None:
+    """Parse the ``?analysis=...`` JSON query param into a safe dict."""
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    return {
+        "summary": str(parsed.get("summary") or "")[:2000],
+        "observations": [str(i)[:500] for i in parsed.get("observations", []) if isinstance(i, str)][:20],
+        "assumptions": [str(i)[:500] for i in parsed.get("assumptions", []) if isinstance(i, str)][:20],
+        "questions_for_doctor": [
+            str(i)[:500] for i in parsed.get("questions_for_doctor", []) if isinstance(i, str)
+        ][:20],
+        "recommendations": [str(i)[:500] for i in parsed.get("recommendations", []) if isinstance(i, str)][:20],
+        "mode": str(parsed.get("_mode") or "safe"),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Dashboard summary (relief-only, informational)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -138,6 +173,8 @@ async def _health_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 @router.get("/health", response_class=HTMLResponse)
 async def health_page(
     request: Request,
+    analysis: str = "",
+    error: str = "",
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -254,6 +291,11 @@ async def health_page(
             "scales": list(SCALE_1_5),
             "contraception_types": list(CONTRACEPTION_TYPES),
             "cycle_event_types": list(CYCLE_EVENT_TYPES),
+            # LLM lab analysis result (ADR-087) — passed via query param from
+            # the POST /health/analyze redirect (stateless, not persisted).
+            "analysis": _parse_analysis_param(analysis),
+            "analysis_error": error,
+            "llm_mode": get_prefs().llm_mode,
         },
     )
 
@@ -315,6 +357,35 @@ async def save_state(
     row.notes = (notes or "").strip() or None
     await db.flush()
     return RedirectResponse(url="/health", status_code=303)
+
+
+@router.post("/health/analyze")
+async def analyze_labs_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Run LLM analysis of lab results (ADR-087). Form POST → redirect with result.
+
+    Mode comes from the user preference ``llm_mode`` (safe | expanded); without
+    an active LLM config we redirect with an error flash instead of failing.
+    """
+    llm_config = await get_active_llm_config(db, user.id)
+    if llm_config is None:
+        return RedirectResponse(url="/health?error=no_llm_config", status_code=303)
+    locale = detect_locale(request, user.locale)
+    mode = get_prefs().llm_mode
+    try:
+        result = await analyze_labs(
+            db, user.id, llm_config, locale=locale, llm_mode=mode
+        )
+    except Exception as exc:  # LLM/parse failures — surface a retry, don't crash
+        logger.warning("health analyze failed: %s", exc)
+        return RedirectResponse(url="/health?error=analyze_failed", status_code=303)
+    import json as _json
+
+    encoded = _json.dumps(result, ensure_ascii=False)
+    return RedirectResponse(url=f"/health?analysis={encoded}", status_code=303)
 
 
 @router.post("/health/labs")
@@ -756,4 +827,32 @@ async def json_add_cycle_event(
         "event_type": ev.event_type,
         "value": ev.value,
         "notes": ev.notes,
+    }
+
+
+@json_router.post("/analyze")
+async def json_analyze_labs(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Run LLM analysis of lab results (ADR-087). Mode from prefs.llm_mode."""
+    llm_config = await get_active_llm_config(db, user.id)
+    if llm_config is None:
+        raise HTTPException(400, "No active LLM config — configure one in /llm-configs")
+    locale = detect_locale(request, user.locale)
+    mode = get_prefs().llm_mode
+    try:
+        result = await analyze_labs(db, user.id, llm_config, locale=locale, llm_mode=mode)
+    except Exception as exc:
+        logger.warning("health analyze (json) failed: %s", exc)
+        raise HTTPException(502, "LLM analysis failed — retry") from exc
+    # strip internal usage/mode, keep it clean for mobile clients
+    return {
+        "summary": result.get("summary", ""),
+        "observations": result.get("observations", []),
+        "assumptions": result.get("assumptions", []),
+        "questions_for_doctor": result.get("questions_for_doctor", []),
+        "recommendations": result.get("recommendations", []),
+        "mode": result.get("_mode", mode),
     }

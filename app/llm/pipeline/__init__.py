@@ -54,6 +54,7 @@ from app.llm.pipeline.generate import (  # noqa: F401
     generate_weekly_tasks,
     get_active_llm_config,
 )
+from app.llm.pipeline.health import analyze_labs  # noqa: F401
 from app.llm.pipeline.training import (  # noqa: F401
     SUBTASK_LIMIT,
     SUBTASK_MAX_LENGTH,

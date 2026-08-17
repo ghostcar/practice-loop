@@ -9,7 +9,59 @@
             <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('health', 'w-6 h-6') }}{{ t.health_title }}</h1>
             <p class="pl-text-secondary text-sm mt-1">{{ t.health_subtitle }}</p>
         </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <form action="/health/analyze" method="post" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <button type="submit" class="pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
+                    {{ icon('ai', 'w-4 h-4') }}{{ t.health_analyze }}
+                </button>
+            </form>
+        </div>
     </div>
+
+    {% if analysis_error == 'no_llm_config' %}
+    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
+        {{ icon('warning', 'w-4 h-4') }}{{ t.health_analyze_no_config }}
+    </div>
+    {% elif analysis_error == 'analyze_failed' %}
+    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
+        {{ icon('warning', 'w-4 h-4') }}{{ t.health_analyze_failed }}
+    </div>
+    {% endif %}
+
+    {% if analysis %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">
+            {{ icon('ai', 'w-4 h-4') }}{{ t.health_analysis_title }}
+            {% if analysis.mode == 'expanded' %}<span class="px-2 py-0.5 rounded-md text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)]">{{ t.settings_llm_expanded }}</span>{% endif %}
+        </h2>
+        {% if analysis.summary %}<p class="text-sm text-[color:var(--text)]">{{ analysis.summary }}</p>{% endif %}
+        {% if analysis.observations %}
+        <ul class="text-sm space-y-1">
+            {% for o in analysis.observations %}<li class="pl-text-secondary flex gap-2"><span class="text-[color:var(--accent-text)]">•</span>{{ o }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        {% if analysis.assumptions %}
+        <div class="text-xs pl-text-muted space-y-1">
+            <div class="font-medium uppercase tracking-wide">{{ t.health_analysis_assumptions }}</div>
+            {% for a in analysis.assumptions %}<div>· {{ a }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        {% if analysis.recommendations %}
+        <div class="text-sm space-y-1">
+            <div class="text-xs font-medium uppercase tracking-wide pl-text-muted">{{ t.health_analysis_recommendations }}</div>
+            {% for r in analysis.recommendations %}<div class="pl-text-secondary flex gap-2"><span class="text-[color:var(--accent-text)]">→</span>{{ r }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        {% if analysis.questions_for_doctor %}
+        <div class="text-sm space-y-1">
+            <div class="text-xs font-medium uppercase tracking-wide pl-text-muted">{{ t.health_analysis_questions }}</div>
+            {% for q in analysis.questions_for_doctor %}<div class="pl-text-secondary flex gap-2"><span class="text-[color:var(--accent-text)]">?</span>{{ q }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        <p class="text-xs pl-text-muted">{{ t.health_analysis_disclaimer }}</p>
+    </section>
+    {% endif %}
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Today's check-in -->

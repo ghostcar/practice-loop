@@ -314,13 +314,191 @@ async def test_dashboard_health_block_no_checkin(auth_client, test_user, db_sess
 
 
 def test_health_module_no_gamification():
-    """PD-013: Health-модуль не импортирует и не применяет игровую механику."""
+    """PD-013: Health-модуль не применяет игровую механику.
+
+    Проверяем по импортам и вызовам игровых модулей/функций, а не по подстрокам
+    (слово "expanded" из ADR-087 содержит "xp").
+    """
     import inspect
 
     import app.api.health as mod
 
     source = inspect.getsource(mod)
-    assert "gamification" not in source
-    assert "xp" not in source.lower()
-    assert "penalty" not in source.lower()
-    assert "points" not in source.lower()
+    # no imports from gamification / points / progress domains
+    assert "app.gamification" not in source
+    assert "app.models.points" not in source
+    assert "app.models.progress" not in source
+    # no reward/penalty calls
+    assert "award_points" not in source
+    assert "on_medication_taken" not in source
+    assert "apply_penalty" not in source
+    assert "calculate_entity_penalty" not in source
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM mode pref (ADR-087)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_prefs_llm_mode_default_safe():
+    from app.prefs import UserPrefs, sanitize_prefs
+
+    assert UserPrefs().llm_mode == "safe"
+    assert sanitize_prefs({})["llm_mode"] == "safe"
+    assert sanitize_prefs({"llm_mode": "expanded"})["llm_mode"] == "expanded"
+    assert sanitize_prefs({"llm_mode": "bogus"})["llm_mode"] == "safe"
+
+
+@pytest.mark.asyncio
+async def test_settings_save_llm_mode(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/settings",
+        data={"llm_mode": "expanded", "theme_choice": "dark", "accent": "ember", "density": "comfortable"},
+    )
+    assert resp.status_code == 303, resp.text
+    from app.prefs import prefs_from_dict
+
+    # same session/identity map — the handler mutated user.prefs in place
+    assert prefs_from_dict(test_user.prefs).llm_mode == "expanded"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM lab analysis (ADR-087)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _fake_llm(payload: dict):
+    import json as _json
+
+    async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+        return {
+            "content": _json.dumps(payload),
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cost": 0.001},
+            "tool_calls": [],
+        }
+
+    return fake_call_llm
+
+
+async def _setup_llm_config(db_session, user_id):
+    from app.models.llm_config import LLMProviderConfig
+
+    cfg = LLMProviderConfig(
+        user_id=user_id,
+        provider_name="test",
+        api_base_url="http://x/v1",
+        model_name="m",
+        is_active=True,
+    )
+    db_session.add(cfg)
+    await db_session.flush()
+    return cfg
+
+
+@pytest.mark.asyncio
+async def test_analyze_labs_json_safe(auth_client, test_user, db_session, monkeypatch):
+    from app.llm import client
+
+    await auth_client.post(
+        "/health/labs",
+        data={
+            "name": "Hemoglobin",
+            "measured_at": TODAY.isoformat(),
+            "value": "150",
+            "unit": "g/L",
+            "ref_range": "120-160",
+        },
+    )
+    await _setup_llm_config(db_session, test_user.id)
+    monkeypatch.setattr(
+        client,
+        "call_llm",
+        _fake_llm(
+            {
+                "summary": "Hemoglobin 150 in range.",
+                "observations": ["Hemoglobin 150 (ref 120-160)"],
+                "assumptions": [],
+                "questions_for_doctor": ["Ask about iron."],
+            }
+        ),
+    )
+    resp = await auth_client.post("/api/v2/health/analyze")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["mode"] == "safe"  # default prefs
+    assert data["summary"] == "Hemoglobin 150 in range."
+    assert data["questions_for_doctor"] == ["Ask about iron."]
+    assert "recommendations" in data
+    assert data["recommendations"] == []
+
+
+@pytest.mark.asyncio
+async def test_analyze_labs_json_expanded_includes_recommendations(
+    auth_client, test_user, db_session, monkeypatch
+):
+    from app.llm import client
+
+    # enable expanded mode + a medication schedule for dosing context
+    await auth_client.post(
+        "/settings",
+        data={"llm_mode": "expanded", "theme_choice": "dark", "accent": "ember", "density": "comfortable"},
+    )
+    await auth_client.post(
+        "/health/labs",
+        data={"name": "Iron", "measured_at": TODAY.isoformat(), "value": "9", "unit": "µmol/L", "ref_range": "10-30"},
+    )
+    await _setup_llm_config(db_session, test_user.id)
+    monkeypatch.setattr(
+        client,
+        "call_llm",
+        _fake_llm(
+            {
+                "summary": "Iron slightly below range.",
+                "observations": ["Iron 9 (ref 10-30)"],
+                "assumptions": ["Single reading"],
+                "questions_for_doctor": ["Ask about supplementation"],
+                "recommendations": ["Discuss iron with your doctor"],
+            }
+        ),
+    )
+    resp = await auth_client.post("/api/v2/health/analyze")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["mode"] == "expanded"
+    assert data["recommendations"] == ["Discuss iron with your doctor"]
+
+
+@pytest.mark.asyncio
+async def test_analyze_labs_form_redirect(auth_client, test_user, db_session, monkeypatch):
+    """Form POST /health/analyze redirects to /health with the result in query."""
+    from app.llm import client
+
+    await auth_client.post(
+        "/health/labs",
+        data={"name": "TSH", "measured_at": TODAY.isoformat(), "value": "2.4", "unit": "mIU/L"},
+    )
+    await _setup_llm_config(db_session, test_user.id)
+    monkeypatch.setattr(
+        client,
+        "call_llm",
+        _fake_llm(
+            {
+                "summary": "TSH 2.4.",
+                "observations": ["TSH 2.4"],
+                "assumptions": [],
+                "questions_for_doctor": [],
+            }
+        ),
+    )
+    resp = await auth_client.post("/health/analyze")
+    assert resp.status_code == 303, resp.text
+    assert resp.headers["location"].startswith("/health?analysis=")
+
+
+@pytest.mark.asyncio
+async def test_analyze_no_llm_config(auth_client, test_user, db_session):
+    resp = await auth_client.post("/api/v2/health/analyze")
+    assert resp.status_code == 400
+    resp = await auth_client.post("/health/analyze")
+    assert resp.status_code == 303
+    assert "no_llm_config" in resp.headers["location"]
