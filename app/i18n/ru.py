@@ -924,7 +924,11 @@ RU = {
     "settings_block_xp": "Уровень и XP",
     "settings_block_quick": "Быстрые действия",
     "settings_block_today": "Сегодня",
+    "settings_block_medication": "Лекарства",
     "settings_block_timer": "Активный таймер",
+    # Блок лекарств на дашборде (Шаг 11b)
+    "dash_med_expiring": "Истекает",
+    "dash_med_low": "Заканчивается",
     "settings_section_discretion": "Незаметность",
     "settings_discretion_hint": "Нейтральные названия, размытие изображений, нейтральный favicon — "
     "данные и правила не меняются",
@@ -1023,4 +1027,14 @@ RU = {
     "med_days_left": "дней осталось",
     "med_save": "Сохранить",
     "med_delete": "Удалить",
+    # Одноразовая миграция инвентаря → лекарства (Шаг 12)
+    "med_migrate": "Импорт из инвентаря",
+    "med_migrate_confirm": "Создать лекарства из медицинских позиций инвентаря? Перенесённые позиции будут скрыты из списка инвентаря.",
+    "med_migrate_done": "Лекарства созданы из инвентаря",
+    "med_migrate_skipped": "пропущено (дубликаты)",
+    "med_migrate_none": "Новых лекарств нет",
+    # LockTimer relief-задача по лекарствам (ADR-085)
+    "locktimer_add_med_task": "Добавить relief-задачу по лекарству",
+    "locktimer_med_task_hint": "Приёмы лекарств появляются как relief-задачи — их пропуск никогда не даёт штраф.",
+    "locktimer_med_schedule": "Расписание приёма",
 }

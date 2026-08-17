@@ -177,6 +177,8 @@ async def _schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 @router.get("/medications", response_class=HTMLResponse)
 async def medications_page(
     request: Request,
+    migrated: int = 0,
+    skipped: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -233,6 +235,18 @@ async def medications_page(
         d["schedules"] = schedules_by_med.get(str(m.id), [])
         meds_data.append(d)
 
+    # Count migrated inventory items for the migration banner/button.
+    from sqlalchemy import func
+
+    from app.models.life import InventoryItem
+
+    migrated_count_result = await db.execute(
+        select(func.count(InventoryItem.id)).where(
+            InventoryItem.user_id == user.id, InventoryItem.migrated_to_medication.is_(True)
+        )
+    )
+    migrated_count = migrated_count_result.scalar() or 0
+
     return templates.TemplateResponse(
         request=request,
         name="medication.html",
@@ -248,6 +262,9 @@ async def medications_page(
             "kinds": list(MED_KINDS),
             "intake_statuses": list(INTAKE_STATUSES),
             "frequency_types": list(FREQUENCY_TYPES),
+            "migrated": migrated,
+            "skipped": skipped,
+            "migrated_count": migrated_count,
         },
     )
 
@@ -525,6 +542,11 @@ async def record_intake_form(
     )
     db.add(it)
     await db.flush()
+    # ADR-085: on-time intake may earn XP/achievements (positive-only, never penalizes).
+    if status == "taken":
+        from app.gamification.medication import on_medication_taken
+
+        await on_medication_taken(db, user.id, m.name, on_time=True)
     return RedirectResponse(url="/medications", status_code=303)
 
 
@@ -621,6 +643,88 @@ async def export_medications(
         content=content,
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# One-time inventory→medicine migration (Шаг 12)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Inventory category slugs that logically belong to the medicine domain.
+_MEDICAL_INVENTORY_CATEGORIES = {"hygiene_supply", "consumable", "recovery_item", "other"}
+# Keyword hints in item name/description that suggest a medical item regardless of category.
+_MEDICAL_KEYWORDS = (
+    "мазь", "крем", "таблетк", "лекарств", "витамин", "бинт", "пластыр",
+    "йод", "зеленк", "спрей", "капл", "гель", "раствор", "аптечк",
+    "ointment", "cream", "tablet", "pill", "medicine", "medication",
+    "vitamin", "bandage", "plaster", "iodine", "spray", "drops", "gel",
+)
+
+
+@router.post("/medications/migrate-inventory")
+async def migrate_inventory_to_medications(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """One-time migration: create Medication records from medical inventory items.
+
+    Idempotent: items already migrated (``migrated_to_medication = True``) or
+    whose name already exists as a medication are skipped. Migrated inventory
+    items are marked (not deleted) so the user can review and clean up.
+    """
+
+    from app.models.life import InventoryItem
+
+    items = (
+        (await db.execute(
+            select(InventoryItem)
+            .where(InventoryItem.user_id == user.id, InventoryItem.migrated_to_medication.is_(False))
+            .order_by(InventoryItem.name)
+        ))
+        .scalars()
+        .all()
+    )
+
+    existing_names = set(
+        (await db.execute(select(Medication.name).where(Medication.user_id == user.id))).scalars().all()
+    )
+
+    created = 0
+    skipped_duplicate = 0
+    migrated_items: list[dict] = []
+    for item in items:
+        name = (item.name or "").strip()
+        if not name:
+            continue
+        category = (item.category or "").strip().lower()
+        haystack = f"{name} {item.description or ''}".lower()
+        is_medical = category in _MEDICAL_INVENTORY_CATEGORIES or any(k in haystack for k in _MEDICAL_KEYWORDS)
+        if not is_medical:
+            continue
+        if name.lower() in {n.lower() for n in existing_names}:
+            skipped_duplicate += 1
+            continue
+        med = Medication(
+            user_id=user.id,
+            name=name[:200],
+            kind="medication",
+            notes=(item.description or "")[:2000] or None,
+            source_inventory_id=item.id,
+        )
+        db.add(med)
+        existing_names.add(name)
+        item.migrated_to_medication = True
+        db.add(item)
+        created += 1
+        migrated_items.append({"name": name, "inventory_id": str(item.id)})
+
+    if created:
+        await db.flush()
+
+    return RedirectResponse(
+        url=f"/medications?migrated={created}&skipped={skipped_duplicate}",
+        status_code=303,
     )
 
 
@@ -750,6 +854,11 @@ async def json_record_intake(
     )
     db.add(it)
     await db.flush()
+    # ADR-085: on-time intake may earn XP/achievements (positive-only, never penalizes).
+    if status == "taken":
+        from app.gamification.medication import on_medication_taken
+
+        await on_medication_taken(db, user.id, m.name, on_time=True)
     return {
         "id": str(it.id),
         "medication_id": str(m.id),

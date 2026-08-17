@@ -113,7 +113,9 @@ async def get_inventory(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    query = select(InventoryItem).where(InventoryItem.user_id == user.id)
+    query = select(InventoryItem).where(
+        InventoryItem.user_id == user.id, InventoryItem.migrated_to_medication.is_(False)
+    )
     if category:
         query = query.where(InventoryItem.category == category)
     if status:
@@ -132,7 +134,11 @@ async def get_shopping_list(
 ):
     result = await db.execute(
         select(InventoryItem)
-        .where(InventoryItem.user_id == user.id, InventoryItem.is_shopping_list.is_(True))
+        .where(
+            InventoryItem.user_id == user.id,
+            InventoryItem.is_shopping_list.is_(True),
+            InventoryItem.migrated_to_medication.is_(False),
+        )
         .order_by(InventoryItem.priority.desc())
     )
     return [InventoryItemOut.model_validate(i) for i in result.scalars().all()]

@@ -65,6 +65,10 @@ _DASH_MONTHS = {
 }
 
 
+# Sentinel for sorting items without a scheduled time to the end of the day list.
+_FAR_FUTURE = datetime(9999, 1, 1, tzinfo=UTC)
+
+
 def _today_label(day: datetime.date, locale: str) -> str:
     """Human date in the user's locale, e.g. "Tuesday, 14 August 2026"."""
     wd = _DASH_WEEKDAYS.get(locale, _DASH_WEEKDAYS["en"])[day.weekday()]
@@ -210,6 +214,49 @@ async def dashboard(
     except Exception:
         pass  # LockTimer may not be deployed yet
 
+    # Medication summary (due today / expiring / low stock) — relief-only, informational.
+    med_summary = None
+    try:
+        from app.platform.composition import composition
+
+        if composition.medication_enabled:
+            from app.api.medication import _schedule_summary
+
+            med_summary = await _schedule_summary(db, user.id)
+    except Exception:
+        pass  # medication may not be deployed yet
+
+    # Tracker 'today' merge (view-level): combine scheduled tasks with due meds
+    # so the user sees everything due today in one place. No ActivityLog rows are
+    # created — medication stays a separate Health domain (ADR-085, relief-only).
+    today_items: list[dict] = [
+        {
+            "kind": "task",
+            "id": str(t.id),
+            "title": t.title_override or t.selected_entity_name or "(task)",
+            "status": t.status,
+            "at": t.scheduled_at,
+            "medication_id": None,
+        }
+        for t in today_tasks
+    ]
+    if med_summary and med_summary.get("due"):
+        for d in med_summary["due"]:
+            today_items.append(
+                {
+                    "kind": "med",
+                    "id": d["id"],
+                    "title": d["medication_name"],
+                    "status": "med",
+                    "at": None,
+                    "medication_id": d["medication_id"],
+                    "dose": d.get("dose"),
+                    "pending": d.get("pending", 1),
+                }
+            )
+    today_items.sort(key=lambda x: x["at"] or _FAR_FUTURE)
+    today_items = today_items[:10]
+
     response = templates.TemplateResponse(
         request=request,
         name="dashboard_v2.html",
@@ -233,12 +280,14 @@ async def dashboard(
             "locktimer_slots_count": locktimer_slots_count,
             "locktimer_tasks_count": locktimer_tasks_count,
             "today_tasks": today_tasks,
+            "today_items": today_items,
             "active_diets": active_diets,
             "today_training": today_training,
             "training_task_counts": training_task_counts,
             "today_schedule": today_schedule,
             "today_meals": today_meals,
             "today_label": _today_label(today, locale),
+            "med_summary": med_summary,
         },
     )
     # Set CSRF cookie ONLY if absent — re-issuing it here after render used to

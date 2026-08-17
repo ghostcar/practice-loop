@@ -9,12 +9,28 @@
             <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('medication', 'w-6 h-6') }}{{ t.med_title }}</h1>
             <p class="pl-text-secondary text-sm mt-1">{{ t.med_subtitle }}</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
             <a href="/medications/export" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
                 {{ icon('download', 'w-4 h-4') }}{{ t.med_export }}
             </a>
+            <form action="/medications/migrate-inventory" method="post" class="inline" onsubmit="return confirm('{{ t.med_migrate_confirm }}')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <button type="submit" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
+                    {{ icon('inventory', 'w-4 h-4') }}{{ t.med_migrate }}
+                </button>
+            </form>
         </div>
     </div>
+
+    {% if migrated is defined and migrated > 0 %}
+    <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200 inline-flex items-center gap-2">
+        {{ icon('check-circle', 'w-4 h-4') }}{{ t.med_migrate_done }}: {{ migrated }}{% if skipped is defined and skipped > 0 %} · {{ t.med_migrate_skipped }}: {{ skipped }}{% endif %}
+    </div>
+    {% elif migrated is defined and migrated == 0 and skipped is defined and skipped > 0 %}
+    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
+        {{ icon('info', 'w-4 h-4') }}{{ t.med_migrate_none }}: {{ skipped }} {{ t.med_migrate_skipped }}
+    </div>
+    {% endif %}
 
     <!-- Due today -->
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">

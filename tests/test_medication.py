@@ -168,6 +168,37 @@ async def test_json_api_list_and_record_intake(auth_client, test_user, db_sessio
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Dashboard block (Step 11b)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_dashboard_medication_block_due_today(auth_client, test_user, db_session):
+    """Dashboard renders the medication block with a due item when a schedule is pending."""
+    await _create_medication(auth_client, "Vitamin D")
+    med_id = await _get_med_id(db_session, test_user.id, "Vitamin D")
+    await auth_client.post(
+        f"/medications/{med_id}/schedule",
+        data={"dose_quantity": "1", "frequency_type": "daily", "times_per_day": "1"},
+    )
+    resp = await auth_client.get("/dashboard")
+    assert resp.status_code == 200
+    html = resp.text
+    assert 'id="dash-block-medication"' in html
+    assert "Vitamin D" in html
+
+
+@pytest.mark.asyncio
+async def test_dashboard_medication_block_no_due(auth_client, test_user, db_session):
+    """Dashboard medication block shows the empty state when nothing is due."""
+    resp = await auth_client.get("/dashboard")
+    assert resp.status_code == 200
+    html = resp.text
+    assert 'id="dash-block-medication"' in html
+    assert "med_no_due" in html or "Nothing due today" in html
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Cross-user isolation
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -199,17 +230,31 @@ async def test_cross_user_isolation(auth_client, test_user, db_session):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Relief-only: no gamification integration in the medication module
+# ADR-085: positive-only gamification (softened PD-013)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_medication_module_has_no_gamification_import():
-    """PD-013: Health-модуль не должен импортировать gamification."""
+def test_medication_module_positive_only_no_penalties():
+    """ADR-085: Health-модуль может давать XP/достижения за adherence, но не штрафовать.
+
+    Пропуск/мисс никогда не отнимает баллы — негативная геймификация запрещена.
+    """
     import inspect
 
     import app.api.medication as mod
 
     source = inspect.getsource(mod)
-    assert "gamification" not in source
-    assert "xp" not in source.lower().split()  # no XP wiring
+    # positive hook present
+    assert "on_medication_taken" in source
+    # no negative gamification wiring in this module
+    assert "on_task_interrupted" not in source
+    assert "calculate_entity_penalty" not in source
     assert "penalty" not in source.lower()
+    # the gamification module itself never deducts points
+    import app.gamification.medication as gmod
+
+    gsource = inspect.getsource(gmod)
+    assert "xp_earned" in gsource
+    assert "-=" not in gsource.replace(" #", " #").split("-")[0]  # no deduction of xp
+    assert "deduct" not in gsource.lower()
+    assert "penalty" not in gsource.lower()

@@ -103,6 +103,9 @@ class InventoryItem(Base):
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)  # /uploads/inventory/<uuid>.jpg
+    # One-time inventory→medicine migration marker (Шаг 12). Migrated items are
+    # hidden from the active inventory list but kept for provenance.
+    migrated_to_medication: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

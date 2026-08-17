@@ -182,6 +182,54 @@ async def add_task_rule(
     return rule
 
 
+async def add_medication_task_rule(
+    db: AsyncSession,
+    *,
+    session_id: uuid.UUID,
+    med_schedule_id: uuid.UUID,
+    owner_id: uuid.UUID,
+) -> LockTaskRule:
+    """Create a relief task rule from a medication schedule (ADR-085).
+
+    A medication relief task is a LockTimer task that represents an on-time
+    medication dose. It is **relief-only**: ``penalty_policy`` stays None so
+    skipping it never triggers a penalty (Health must not be gamified
+    negatively). The rule is marked in ``availability_policy`` with
+    ``{"relief": "medication", "med_schedule_id": ...}`` for honest UI.
+    """
+    from app.models.medication import MedSchedule
+
+    sched = (
+        await db.execute(
+            select(MedSchedule).where(MedSchedule.id == med_schedule_id, MedSchedule.user_id == owner_id)
+        )
+    ).scalar_one_or_none()
+    if sched is None:
+        raise ValueError("Medication schedule not found")
+
+    med = sched.medication
+    dose = f"{sched.dose_quantity:g} {sched.dose_unit or ''}".strip()
+    title = f"{med.name}" + (f" ({dose})" if dose else "")
+
+    schedule = (
+        {"time_of_day": sched.times_of_day[0]} if sched.times_of_day else {"time_of_day": "09:00"}
+    )
+
+    return await add_task_rule(
+        db,
+        session_id=session_id,
+        title=title,
+        schedule_type="daily",
+        schedule=schedule,
+        due_window_seconds=3600,
+        category="medication",
+        description=f"Medication relief — {sched.frequency_type} schedule",
+        penalty_policy=None,  # relief-only: never penalize a skipped dose
+        availability_policy={"relief": "medication", "med_schedule_id": str(sched.id)},
+        llm_flags={"relief": "medication"},
+    )
+
+
 async def delete_slot_rule(db: AsyncSession, rule: LockSlotRule) -> None:
     await db.delete(rule)
     await db.flush()

@@ -125,6 +125,39 @@ SEED_ACHIEVEMENTS = [
         "condition_value": 10,
         "color": "violet",
     },
+    # Medication adherence (ADR-085 — positive-only, softened PD-013)
+    {
+        "code": "med_first",
+        "name": "First Dose",
+        "description": "First on-time medication dose",
+        "condition_type": "med_adherence",
+        "condition_value": 0,
+        "color": "emerald",
+    },
+    {
+        "code": "med_adherence_3",
+        "name": "Medication Routine",
+        "description": "3-day medication adherence streak",
+        "condition_type": "med_adherence",
+        "condition_value": 3,
+        "color": "teal",
+    },
+    {
+        "code": "med_adherence_7",
+        "name": "Consistent Care",
+        "description": "7-day medication adherence streak",
+        "condition_type": "med_adherence",
+        "condition_value": 7,
+        "color": "emerald",
+    },
+    {
+        "code": "med_adherence_30",
+        "name": "Health Guardian",
+        "description": "30-day medication adherence streak",
+        "condition_type": "med_adherence",
+        "condition_value": 30,
+        "color": "green",
+    },
 ]
 
 

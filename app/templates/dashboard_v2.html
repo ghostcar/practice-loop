@@ -163,18 +163,28 @@
                 <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('tasks', 'w-4 h-4') }}{{ t.dscr_today_tasks if _dscr else (t.dashboard_today_tasks or "Today's Tasks") }}</h2>
                 <a href="/tasks/" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
             </div>
-            {% if today_tasks %}
+            {% if today_items %}
             <div class="space-y-2">
-                {% for task in today_tasks %}
+                {% for item in today_items %}
+                {% if item.kind == 'med' %}
+                <div class="flex items-center justify-between py-1.5 border-b border-[color:var(--border)] last:border-0">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-emerald-400"></span>
+                        <a href="/medications" class="text-sm text-[color:var(--text)] truncate hover:underline inline-flex items-center gap-1">{{ icon('medication', 'w-3.5 h-3.5 text-emerald-500 flex-shrink-0') }}{% if _dscr %}{{ t.dscr_task_item }} #{{ loop.index }}{% else %}{{ item.title }}{% endif %}</a>
+                    </div>
+                    <span class="text-xs text-[color:var(--text-muted)] flex-shrink-0 ml-2">{% if not _dscr %}{{ item.dose }}{% if item.pending > 1 %} · {{ item.pending }} {{ t.med_doses_due }}{% endif %}{% endif %}</span>
+                </div>
+                {% else %}
                 <div class="flex items-center justify-between py-1.5 border-b border-[color:var(--border)] last:border-0">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="w-1.5 h-1.5 rounded-full flex-shrink-0
-                            {% if task.status == 'in_progress' %}bg-blue-500 animate-pulse
+                            {% if item.status == 'in_progress' %}bg-blue-500 animate-pulse
                             {% else %}bg-amber-400{% endif %}"></span>
-                        <span class="text-sm text-[color:var(--text)] truncate">{% if _dscr %}{{ t.dscr_task_item }} #{{ loop.index }}{% else %}{{ task.title_override or task.selected_entity_name or '(task)' }}{% endif %}</span>
+                        <span class="text-sm text-[color:var(--text)] truncate">{% if _dscr %}{{ t.dscr_task_item }} #{{ loop.index }}{% else %}{{ item.title }}{% endif %}</span>
                     </div>
-                    <span class="text-xs text-[color:var(--text-muted)] flex-shrink-0 ml-2">{{ localtime(task.scheduled_at, '%H:%M') }}</span>
+                    <span class="text-xs text-[color:var(--text-muted)] flex-shrink-0 ml-2">{% if item.at %}{{ localtime(item.at, '%H:%M') }}{% endif %}</span>
                 </div>
+                {% endif %}
                 {% endfor %}
             </div>
             {% else %}
@@ -253,6 +263,39 @@
             <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dashboard_no_training or "No training plans today" }}</p>
             {% endif %}
         </div>
+    </div>
+    {% elif block == 'medication' %}
+    <!-- Medication summary (Step 11b — relief-only, informational) -->
+    <div id="dash-block-medication" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('medication', 'w-4 h-4') }}{{ dscr_label('medication', t.nav_medication) }}</h2>
+            <a href="/medications" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+        </div>
+        {% if med_summary and med_summary.due %}
+        <div class="space-y-2">
+            {% for d in med_summary.due[:5] %}
+            <div class="flex items-center justify-between py-1.5 border-b border-[color:var(--border)] last:border-0">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-emerald-400"></span>
+                    <span class="text-sm text-[color:var(--text)] truncate">{% if _dscr %}{{ t.dscr_task_item }} #{{ loop.index }}{% else %}{{ d.medication_name }}{% endif %}</span>
+                </div>
+                <span class="text-xs text-[color:var(--text-muted)] flex-shrink-0 ml-2">{{ d.dose }}{% if d.pending > 1 %} · {{ d.pending }} {{ t.med_doses_due }}{% endif %}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.med_no_due }}</p>
+        {% endif %}
+        {% if med_summary and (med_summary.expiring or med_summary.low_stock) %}
+        <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
+            {% if med_summary.expiring %}
+            <span class="inline-flex items-center gap-1">{{ icon('calendar', 'w-3.5 h-3.5') }}{{ t.dash_med_expiring }}: {{ med_summary.expiring | length }}</span>
+            {% endif %}
+            {% if med_summary.low_stock %}
+            <span class="inline-flex items-center gap-1">{{ icon('inventory', 'w-3.5 h-3.5') }}{{ t.dash_med_low }}: {{ med_summary.low_stock | length }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
     {% elif block == 'timer' %}
     <!-- LockTimer active session card -->

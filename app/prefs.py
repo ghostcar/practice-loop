@@ -44,7 +44,7 @@ BLUR_LEVELS = (0, 1, 2)
 
 # Dashboard blocks in default order. Keys must match the `data-dash-block`
 # markers in dashboard_v2.html.
-DASH_BLOCKS = ("header", "stats", "charts", "summaries", "xp", "quick", "today", "timer")
+DASH_BLOCKS = ("header", "stats", "charts", "summaries", "xp", "quick", "today", "medication", "timer")
 
 DEFAULT_PREFS: dict[str, Any] = {
     "accent": "ember",

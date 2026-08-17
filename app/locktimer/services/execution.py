@@ -23,6 +23,7 @@ from app.locktimer import enums as e
 from app.locktimer.repositories import get_active_session, get_session, write_audit
 from app.locktimer.services.drafts import (
     _next_rule_sort_order,
+    add_medication_task_rule,
     add_slot_rule,
     add_task_rule,
     create_draft,
@@ -69,6 +70,7 @@ __all__ = [
     "update_draft",
     "add_slot_rule",
     "add_task_rule",
+    "add_medication_task_rule",
     "delete_slot_rule",
     "delete_task_rule",
     "reorder_rules",

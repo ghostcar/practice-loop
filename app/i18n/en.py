@@ -920,7 +920,11 @@ EN = {
     "settings_block_xp": "Level & XP",
     "settings_block_quick": "Quick actions",
     "settings_block_today": "Today",
+    "settings_block_medication": "Medication",
     "settings_block_timer": "Active timer",
+    # Dashboard medication block (Step 11b)
+    "dash_med_expiring": "Expiring",
+    "dash_med_low": "Low stock",
     "settings_section_discretion": "Discretion",
     "settings_discretion_hint": "Neutral labels, blurred images, neutral favicon — data and rules never change",
     "settings_discretion_off": "Off",
@@ -1019,4 +1023,14 @@ EN = {
     "med_days_left": "days left",
     "med_save": "Save",
     "med_delete": "Delete",
+    # One-time inventory→medicine migration (Шаг 12)
+    "med_migrate": "Import from inventory",
+    "med_migrate_confirm": "Create medications from medical inventory items? Migrated items are hidden from the inventory list.",
+    "med_migrate_done": "Medications created from inventory",
+    "med_migrate_skipped": "skipped (duplicates)",
+    "med_migrate_none": "No new medications",
+    # LockTimer medication relief task (ADR-085)
+    "locktimer_add_med_task": "Add Medication Relief Task",
+    "locktimer_med_task_hint": "Medication doses appear as relief tasks — skipping them never triggers a penalty.",
+    "locktimer_med_schedule": "Medication schedule",
 }

@@ -34,6 +34,7 @@ from app.database import get_db
 from app.locktimer import enums as e
 from app.locktimer.repositories import get_session
 from app.locktimer.services.execution import (
+    add_medication_task_rule,
     add_slot_rule,
     add_task_rule,
     close_slot,
@@ -391,6 +392,43 @@ async def api_add_task_rule(
         due_window_seconds=due_window_seconds,
         requires_report=requires_report,
     )
+
+    return action_response(
+        request,
+        json_body={"status": "created", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
+
+
+@router.post("/sessions/{session_id}/medication-task-rules")
+async def api_add_medication_task_rule(
+    session_id: uuid.UUID,
+    request: Request,
+    med_schedule_id: uuid.UUID = Form(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Add a medication relief task rule to a draft session (ADR-085).
+
+    Relief-only: the generated task rule has no penalty policy, so a skipped
+    medication dose never triggers a penalty. The rule is marked with
+    availability_policy relief=medication for honest UI.
+    """
+    session = await get_session(db, session_id, current_user.id)
+    if session is None:
+        raise HTTPException(404, "Session not found")
+    if session.state != e.SESSION_DRAFT:
+        raise HTTPException(400, "Only draft sessions can be edited")
+
+    try:
+        await add_medication_task_rule(
+            db,
+            session_id=session_id,
+            med_schedule_id=med_schedule_id,
+            owner_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
     return action_response(
         request,

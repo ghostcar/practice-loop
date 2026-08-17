@@ -228,6 +228,32 @@ async def locktimer_session_detail(
 
     bound_device, devices = await _load_device_info(db, session)
 
+    # Medication schedules for the relief-task picker (ADR-085, relief-only).
+    med_schedules: list[dict] = []
+    try:
+        from app.platform.composition import composition
+
+        if composition.medication_enabled:
+            from app.models.medication import MedSchedule
+
+            sched_result = await db.execute(
+                select(MedSchedule)
+                .where(MedSchedule.user_id == current_user.id, MedSchedule.is_active.is_(True))
+                .order_by(MedSchedule.created_at)
+                .limit(50)
+            )
+            for s in sched_result.scalars().all():
+                dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
+                med_schedules.append(
+                    {
+                        "id": str(s.id),
+                        "label": f"{s.medication.name if s.medication else '?'}"
+                        + (f" ({dose})" if dose else ""),
+                    }
+                )
+    except Exception:
+        pass  # medication module may not be deployed yet
+
     return templates.TemplateResponse(
         request,
         "locktimer/session_detail.html",
@@ -236,6 +262,7 @@ async def locktimer_session_detail(
             "user": current_user,
             "locale": locale,
             "session": _serialize_session(session, t),
+            "med_schedules": med_schedules,
             "bound_device": bound_device,
             "devices": devices,
             "slot_rules": [
@@ -255,6 +282,7 @@ async def locktimer_session_detail(
                     "schedule_type": r.schedule_type,
                     "schedule": r.schedule,
                     "due_window_seconds": r.due_window_seconds,
+                    "is_relief": bool((r.availability_policy or {}).get("relief") == "medication"),
                 }
                 for r in task_rules
             ],
