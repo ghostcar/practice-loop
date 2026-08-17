@@ -36,6 +36,7 @@ from app.locktimer.repositories import (
     list_task_rules,
 )
 from app.locktimer.services.extras import list_templates
+from app.models.device import DEVICE_EVENT_TYPES, ChastityDeviceEvent
 from app.models.locktimer import (
     LockLlmProposal,
     LockSession,
@@ -248,6 +249,29 @@ async def locktimer_session_detail(
 
     bound_device, devices = await _load_device_info(db, session)
 
+    # Device care log (B2, §6.2) — комфорт/проблемы/обслуживание устройства.
+    device_events: list[dict] = []
+    ev_result = await db.execute(
+        select(ChastityDeviceEvent)
+        .where(
+            ChastityDeviceEvent.user_id == current_user.id,
+            ChastityDeviceEvent.session_id == session_id,
+        )
+        .order_by(ChastityDeviceEvent.created_at.desc())
+        .limit(50)
+    )
+    for ev in ev_result.scalars().all():
+        device_events.append(
+            {
+                "id": str(ev.id),
+                "event_type": ev.event_type,
+                "comfort_level": ev.comfort_level,
+                "severity": ev.severity,
+                "notes": ev.notes,
+                "created_at": ev.created_at,
+            }
+        )
+
     # Сквозной каталог (ADR-091): пикер причин/целей окон (домен timer).
     catalog_items: list[dict] = []
     try:
@@ -321,6 +345,8 @@ async def locktimer_session_detail(
             "care_products": care_products,
             "bound_device": bound_device,
             "devices": devices,
+            "device_events": device_events,
+            "device_event_types": list(DEVICE_EVENT_TYPES),
             "slot_rules": [
                 {
                     "id": str(r.id),

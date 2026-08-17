@@ -458,6 +458,66 @@
   </section>
   {% endif %}
 
+  <!-- Device care log (B2, §6.2) -->
+  <section class="pl-surface rounded-xl border border-[color:var(--border)] p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
+      {{ icon('device', 'w-4 h-4') }}{{ t.locktimer_device_care or "Device Care" }}
+    </h3>
+    <p class="text-xs text-[color:var(--text-muted)]">{{ t.locktimer_device_care_hint or "Comfort, problems and maintenance while wearing" }}</p>
+
+    <form action="/device-events" method="post" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      <input type="hidden" name="session_id" value="{{ session.id }}">
+      {% if bound_device %}<input type="hidden" name="device_id" value="{{ bound_device.id }}">{% endif %}
+      <div>
+        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_device_event_type or "Type" }}</label>
+        <select name="event_type" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
+          <option value="comfort">{{ t.device_event_comfort or "Comfort" }}</option>
+          <option value="problem">{{ t.device_event_problem or "Problem" }}</option>
+          <option value="maintenance">{{ t.device_event_maintenance or "Maintenance" }}</option>
+          <option value="cleaning">{{ t.device_event_cleaning or "Cleaning" }}</option>
+          <option value="inspection">{{ t.device_event_inspection or "Inspection" }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_device_comfort or "Comfort (1-5)" }}</label>
+        <input name="comfort_level" type="number" min="1" max="5" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
+      </div>
+      <div>
+        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_device_severity or "Severity" }}</label>
+        <select name="severity" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
+          <option value="">—</option>
+          <option value="low">{{ t.device_severity_low or "Low" }}</option>
+          <option value="medium">{{ t.device_severity_medium or "Medium" }}</option>
+          <option value="high">{{ t.device_severity_high or "High" }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_device_notes or "Notes" }}</label>
+        <input name="notes" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
+      </div>
+      <div class="sm:col-span-2 lg:col-span-4 flex justify-end">
+        <button type="submit" class="px-4 py-1.5 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 text-sm cursor-pointer">{{ t.locktimer_device_add or "Log" }}</button>
+      </div>
+    </form>
+
+    {% if device_events %}
+    <ul class="divide-y divide-[color:var(--border)] text-sm">
+      {% for ev in device_events %}
+      <li class="py-2 flex items-start gap-2 flex-wrap">
+        <span class="px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]">
+          {{ ev.event_type }}{% if ev.comfort_level %} · {{ ev.comfort_level }}/5{% endif %}{% if ev.severity %} · {{ ev.severity }}{% endif %}
+        </span>
+        {% if ev.notes %}<span class="text-[color:var(--text-secondary)]">{{ ev.notes }}</span>{% endif %}
+        <span class="text-xs text-[color:var(--text-muted)] ml-auto">{{ localtime(ev.created_at, '%Y-%m-%d %H:%M') }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-xs text-[color:var(--text-muted)]">{{ t.locktimer_device_no_events or "No device care entries yet." }}</p>
+    {% endif %}
+  </section>
+
 </div>
 {% endblock %}
 

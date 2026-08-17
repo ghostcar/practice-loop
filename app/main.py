@@ -333,6 +333,8 @@ if composition.tracker_active:
 # ---------------------------------------------------------------------------
 
 if composition.timer_operational:
+    from app.api.device_events import json_router as device_events_json_router  # noqa: E402
+    from app.api.device_events import router as device_events_router  # noqa: E402
     from app.api.locktimer_commands import router as locktimer_commands_router  # noqa: E402
     from app.api.locktimer_proposals import router as locktimer_proposals_router  # noqa: E402
     from app.api.locktimer_ui import router as locktimer_ui_router  # noqa: E402
@@ -340,6 +342,8 @@ if composition.timer_operational:
     app.include_router(locktimer_commands_router)
     app.include_router(locktimer_proposals_router)
     app.include_router(locktimer_ui_router)
+    app.include_router(device_events_router)
+    app.include_router(device_events_json_router)
 
 # ---------------------------------------------------------------------------
 # Register domain social adapters (S1 — after route registration)
