@@ -50,7 +50,7 @@ LLM_MODES = ("safe", "expanded")
 # markers in dashboard_v2.html.
 DASH_BLOCKS = (
     "header", "stats", "charts", "summaries", "xp", "quick", "today",
-    "medication", "health", "journal", "care", "insights", "timer",
+    "medication", "health", "journal", "care", "aftercare", "insights", "timer",
 )
 
 DEFAULT_PREFS: dict[str, Any] = {

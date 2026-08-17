@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('aftercare', 'w-6 h-6') }}{{ t.aftercare_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.aftercare_subtitle }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Add entry -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.aftercare_add }}</h2>
+            <p class="text-xs pl-text-muted">{{ t.aftercare_add_hint }}</p>
+            <form action="/aftercare/entries" method="post" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary">{{ t.aftercare_date }}
+                    <input type="date" name="entry_date" value="{{ today }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.aftercare_kind }}
+                    <select name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for k in kinds %}<option value="{{ k }}" {% if k == 'physical' %}selected{% endif %}>{{ t['aftercare_kind_' + k] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.aftercare_comfort }}
+                    <input type="number" name="comfort_level" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.aftercare_journal_link }}
+                    <select name="journal_entry_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">{{ t.aftercare_no_link }}</option>
+                        {% for je in journal_entries %}<option value="{{ je.id }}">{{ je.entry_date.isoformat() }} · {{ je.activity_type or '—' }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.aftercare_notes }}
+                    <textarea name="notes" rows="2" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]"></textarea>
+                </label>
+                <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.aftercare_save }}</button>
+            </form>
+        </section>
+
+        <!-- History -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.aftercare_history }}</h2>
+            {% if entries %}
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for e in entries %}
+                <li class="py-2 flex items-start gap-2 flex-wrap">
+                    <span class="px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] pl-text-secondary">{{ t['aftercare_kind_' + e.kind] }}{% if e.comfort_level %} · {{ e.comfort_level }}/5{% endif %}</span>
+                    <span class="text-xs pl-text-muted">{{ e.entry_date }}</span>
+                    {% if e.notes %}<span class="pl-text-secondary w-full">{{ e.notes }}</span>{% endif %}
+                    <form action="/aftercare/entries/{{ e.id }}/delete" method="post" class="ml-auto">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" class="text-xs pl-text-muted hover:text-[color:var(--text)] inline-flex items-center gap-1" title="{{ t.aftercare_delete }}">{{ icon('trash', 'w-4 h-4') }}</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs pl-text-muted">{{ t.aftercare_empty }}</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

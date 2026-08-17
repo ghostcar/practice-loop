@@ -262,6 +262,18 @@ async def dashboard(
     except Exception:
         pass  # care may not be deployed yet
 
+    # Aftercare summary (entries total / last / kinds) — relief-only.
+    aftercare_summary = None
+    try:
+        from app.platform.composition import composition
+
+        if composition.aftercare_enabled:
+            from app.api.aftercare import _aftercare_summary
+
+            aftercare_summary = await _aftercare_summary(db, user.id)
+    except Exception:
+        pass  # aftercare may not be deployed yet
+
     # Personal Insights summary (latest run / findings count) — relief-only.
     insights_summary = None
     try:
@@ -339,6 +351,7 @@ async def dashboard(
             "health_summary": health_summary,
             "journal_summary": journal_summary,
             "care_summary": care_summary,
+            "aftercare_summary": aftercare_summary,
             "insights_summary": insights_summary,
         },
     )

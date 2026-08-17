@@ -328,6 +328,13 @@ if composition.tracker_active:
         app.include_router(insights_json_router)
         app.include_router(catalog_json_router)
 
+    if composition.aftercare_enabled:
+        from app.api.aftercare import json_router as aftercare_json_router  # noqa: E402
+        from app.api.aftercare import router as aftercare_router  # noqa: E402
+
+        app.include_router(aftercare_router)
+        app.include_router(aftercare_json_router)
+
 # ---------------------------------------------------------------------------
 # Timer routes (C1-C8 — registered when LOCKTIMER_CORE_ENABLED)
 # ---------------------------------------------------------------------------

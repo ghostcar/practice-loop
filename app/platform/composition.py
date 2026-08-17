@@ -49,6 +49,8 @@ class ProductComposition:
     care_enabled: bool = True
     catalog_enabled: bool = True
     insights_enabled: bool = True
+    aftercare_enabled: bool = True
+    consent_enabled: bool = True
 
     # Migration sequence numbers for debugging
     tracker_active: bool = field(init=False)
@@ -113,6 +115,8 @@ def build_product_composition() -> ProductComposition:
         care_enabled=settings.care_enabled,
         catalog_enabled=settings.catalog_enabled,
         insights_enabled=settings.insights_enabled,
+        aftercare_enabled=settings.aftercare_enabled,
+        consent_enabled=settings.consent_enabled,
     )
 
 

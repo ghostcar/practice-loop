@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     # анализ личных данных (явно запрошенный), relief-only.
     insights_enabled: bool = True
 
+    # Aftercare (C1) — отдельный модуль заботы после сцены. Relief-only (PD-013).
+    aftercare_enabled: bool = True
+
+    # Consent records (C3) — согласия на чувствительную обработку данных.
+    consent_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+asyncpg://tracker:tracker@localhost:5432/tracker"
 

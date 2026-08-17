@@ -369,6 +369,27 @@
             {% endif %}
         </div>
     </div>
+    {% elif block == 'aftercare' %}
+    <!-- Aftercare summary (C1 — relief-only, informational) -->
+    <div id="dash-block-aftercare" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ dscr_label('aftercare', t.nav_aftercare) }}</h2>
+            <a href="/aftercare" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+        </div>
+        {% if aftercare_summary and aftercare_summary.total %}
+        <div class="flex items-center gap-3 flex-wrap text-sm">
+            {% if aftercare_summary.last %}<span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ aftercare_summary.last.entry_date }}</span>{% endif %}
+            {% if aftercare_summary.last and aftercare_summary.last.kind %}<span class="pl-text-secondary text-xs">{{ t['aftercare_kind_' + aftercare_summary.last.kind] }}</span>{% endif %}
+        </div>
+        {% else %}
+        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_aftercare_empty }}</p>
+        {% endif %}
+        <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
+            {% if aftercare_summary %}
+            <span class="inline-flex items-center gap-1">{{ icon('aftercare', 'w-3.5 h-3.5') }}{{ aftercare_summary.total }} {{ t.dash_aftercare_total }}</span>
+            {% endif %}
+        </div>
+    </div>
     {% elif block == 'insights' %}
     <!-- Personal Insights summary (Step 17 — relief-only, informational) -->
     <div id="dash-block-insights" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
