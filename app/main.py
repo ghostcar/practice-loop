@@ -342,6 +342,10 @@ if composition.tracker_active:
         app.include_router(consent_router)
         app.include_router(consent_json_router)
 
+    from app.api.today import router as today_router  # noqa: E402
+
+    app.include_router(today_router)
+
 # ---------------------------------------------------------------------------
 # Timer routes (C1-C8 — registered when LOCKTIMER_CORE_ENABLED)
 # ---------------------------------------------------------------------------

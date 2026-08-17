@@ -38,6 +38,7 @@
 ) %}
 {% set context_titles = {
     'dashboard': t.dashboard_title,
+    'today': t.nav_today,
     'tasks': t.nav_tasks,
     'sessions': t.nav_sessions,
     'catalog': t.catalog_title,
@@ -78,7 +79,8 @@
   {% if composition and composition.tracker_active %}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_now }}</div>
-    {{ nav_item('dashboard', '/dashboard', 'today', t.nav_today) }}
+    {{ nav_item('dashboard', '/dashboard', 'dashboard', t.dashboard_title) }}
+    {{ nav_item('today', '/today', 'today', t.nav_today) }}
     {{ nav_item('tasks', '/tasks/', 'tasks', t.nav_tasks) }}
     {{ nav_item('sessions', '/sessions', 'session', t.nav_sessions) }}
   </div>

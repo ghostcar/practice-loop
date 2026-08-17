@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('today', 'w-6 h-6') }}{{ t.today_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ today_label }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Timer status -->
+        {% if timer %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('timer', 'w-4 h-4') }}{{ t.today_timer }}</h2>
+            <div class="flex items-center gap-3 flex-wrap text-sm">
+                <span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">{{ timer.state }}</span>
+                {% if timer.effective_end_at %}<span class="text-xs pl-text-muted">{{ t.today_timer_until }} {{ localtime(timer.effective_end_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
+                <span class="text-xs pl-text-muted">{{ timer.slots_count }} {{ t.today_timer_slots }} · {{ timer.tasks_count }} {{ t.today_timer_tasks }}</span>
+            </div>
+            <a href="/locktimer" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Active session -->
+        {% if active_session %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('session', 'w-4 h-4') }}{{ t.today_session }}</h2>
+            <div class="flex items-center gap-3 flex-wrap text-sm">
+                <span class="px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] pl-text-secondary">{{ active_session.status }}</span>
+                {% if active_session.title %}<span class="pl-text-secondary text-sm">{{ active_session.title }}</span>{% endif %}
+            </div>
+            <a href="/sessions" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Tasks -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('tasks', 'w-4 h-4') }}{{ t.today_tasks }}</h2>
+            {% if tasks %}
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for task in tasks %}
+                <li class="py-1.5 flex items-center gap-2">
+                    <span class="pl-text-secondary flex-1">{{ task.title_override or task.selected_entity_name or '—' }}</span>
+                    {% if task.scheduled_at %}<span class="text-xs pl-text-muted">{{ localtime(task.scheduled_at, '%H:%M') }}</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs pl-text-muted">{{ t.today_tasks_empty }}</p>
+            {% endif %}
+        </section>
+
+        <!-- Medication -->
+        {% if med_summary %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('medication', 'w-4 h-4') }}{{ t.today_medication }}</h2>
+            {% if med_summary.due %}
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for d in med_summary.due %}
+                <li class="py-1.5 flex items-center gap-2">
+                    <span class="pl-text-secondary flex-1">{{ d.medication_name }}</span>
+                    <span class="text-xs pl-text-muted">{{ d.dose }} · {{ d.pending }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs pl-text-muted">{{ t.today_medication_empty }}</p>
+            {% endif %}
+            <a href="/medications" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Health / Cycle -->
+        {% if health_summary %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('health', 'w-4 h-4') }}{{ t.today_health }}</h2>
+            <div class="flex items-center gap-3 flex-wrap text-sm">
+                {% if health_summary.has_checkin %}
+                <span class="inline-flex items-center gap-1 text-xs pl-text-muted">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.today_health_checked }}</span>
+                {% if health_summary.mood %}<span class="text-xs pl-text-muted">{{ t.today_mood }} {{ health_summary.mood }}/5</span>{% endif %}
+                {% else %}
+                <span class="text-xs pl-text-muted">{{ t.today_health_no_checkin }}</span>
+                {% endif %}
+                {% if health_summary.phase %}<span class="px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] pl-text-secondary">{{ health_summary.phase }}</span>{% endif %}
+            </div>
+            <a href="/health" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Care -->
+        {% if care_summary %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.today_care }}</h2>
+            <div class="flex items-center gap-3 flex-wrap text-sm">
+                {% if care_summary.last_date %}<span class="text-xs pl-text-muted">{{ t.today_last }} {{ care_summary.last_date }}</span>{% endif %}
+                <span class="text-xs pl-text-muted">{{ care_summary.routines }} {{ t.today_care_routines }}</span>
+            </div>
+            <a href="/care" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Aftercare -->
+        {% if aftercare_summary %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.today_aftercare }}</h2>
+            <div class="flex items-center gap-3 flex-wrap text-sm">
+                {% if aftercare_summary.last %}<span class="text-xs pl-text-muted">{{ t.today_last }} {{ aftercare_summary.last.entry_date }}</span>{% endif %}
+                <span class="text-xs pl-text-muted">{{ aftercare_summary.total }} {{ t.today_aftercare_total }}</span>
+            </div>
+            <a href="/aftercare" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Journal -->
+        {% if journal_summary %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.today_journal }}</h2>
+            <div class="flex items-center gap-3 flex-wrap text-sm">
+                {% if journal_summary.last_date %}<span class="text-xs pl-text-muted">{{ t.today_last }} {{ journal_summary.last_date }}</span>{% endif %}
+                {% if journal_summary.pending %}<span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">{{ journal_summary.pending }} {{ t.today_journal_pending }}</span>{% endif %}
+            </div>
+            <a href="/journal" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Training -->
+        {% if today_training %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('training', 'w-4 h-4') }}{{ t.today_training }}</h2>
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for td in today_training %}
+                <li class="py-1.5"><span class="pl-text-secondary">{{ td.title or td.plan_name or '—' }}</span></li>
+                {% endfor %}
+            </ul>
+            <a href="/training" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+
+        <!-- Diet -->
+        {% if active_diets %}
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('diet', 'w-4 h-4') }}{{ t.today_diet }}</h2>
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for diet in active_diets %}
+                <li class="py-1.5"><span class="pl-text-secondary">{{ diet.name }}</span></li>
+                {% endfor %}
+            </ul>
+            <a href="/diets" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
