@@ -208,6 +208,81 @@ class CareRoutineProduct(Base):
         return f"<CareRoutineProduct(routine={self.routine_id}, product={self.product_id})>"
 
 
+class CareCourse(Base):
+    """Курс процедур (серия сеансов) — лазер, массаж, пилинг (Шаг 17c, ADR-095).
+
+    Курс объединяет N сеансов с интервалом между ними; прогресс и следующая
+    дата сеанса считаются по ``care_course_sessions``. Relief-only (PD-013).
+    """
+
+    __tablename__ = "care_courses"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # ссылка на универсальный каталог (ADR-091) — вид процедуры курса
+    catalog_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("activity_catalog.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    # face | body | hair | hands | feet | other
+    area: Mapped[str] = mapped_column(String(20), default="other", nullable=False)
+    total_sessions: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # интервал между сеансами в днях (напр. 30 для лазера)
+    interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # active | completed | archived
+    status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    user: Mapped[User] = relationship("User", lazy="selectin")
+    sessions: Mapped[list[CareCourseSession]] = relationship(
+        "CareCourseSession", back_populates="course", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+    def __repr__(self) -> str:
+        return f"<CareCourse(id={self.id}, name={self.name!r})>"
+
+
+class CareCourseSession(Base):
+    """Сеанс курса процедур: номер, запланированная дата, статус, связь с записью ухода."""
+
+    __tablename__ = "care_course_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    course_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("care_courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    session_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    scheduled_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    # pending | done | skipped
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    # мягкая ссылка на запись ухода (факт выполнения процедуры)
+    entry_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("care_entries.id", ondelete="SET NULL"), nullable=True
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    course: Mapped[CareCourse] = relationship("CareCourse", back_populates="sessions")
+    entry: Mapped[CareEntry | None] = relationship("CareEntry", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<CareCourseSession(course={self.course_id}, #{self.session_number}, {self.status})>"
+
+
 class CareEntryProduct(Base):
     """Many-to-many: какие средства использованы в записи ухода."""
 

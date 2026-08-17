@@ -42,6 +42,8 @@ from app.models.care import (
     CARE_KINDS,
     CARE_PRODUCT_CATEGORIES,
     SCALE_1_5,
+    CareCourse,
+    CareCourseSession,
     CareEntry,
     CareEntryProduct,
     CareProduct,
@@ -226,6 +228,49 @@ async def care_page(
     product_names = {str(p.id): p.name for p in products}
     product_ids_by_entry = await _entry_product_map(db, user.id)
 
+    # Курсы процедур (Шаг 17c, ADR-095): серии сеансов с прогрессом.
+    courses = (
+        (
+            await db.execute(
+                select(CareCourse).where(CareCourse.user_id == user.id).order_by(CareCourse.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    course_views = [
+        {
+            "id": str(c.id),
+            "name": c.name,
+            "area": c.area,
+            "total_sessions": c.total_sessions,
+            "interval_days": c.interval_days,
+            "start_date": c.start_date.isoformat() if c.start_date else None,
+            "notes": c.notes,
+            "status": c.status,
+            "done": sum(1 for s in c.sessions if s.status == "done"),
+            "next_date": next(
+                (
+                    s.scheduled_date.isoformat()
+                    for s in sorted(c.sessions, key=lambda s: s.scheduled_date)
+                    if s.status == "pending"
+                ),
+                None,
+            ),
+            "sessions": [
+                {
+                    "id": str(s.id),
+                    "session_number": s.session_number,
+                    "scheduled_date": s.scheduled_date.isoformat(),
+                    "status": s.status,
+                    "notes": s.notes,
+                }
+                for s in sorted(c.sessions, key=lambda s: s.session_number)
+            ],
+        }
+        for c in courses
+    ]
+
     return templates.TemplateResponse(
         request=request,
         name="care.html",
@@ -236,6 +281,7 @@ async def care_page(
             "locale": locale,
             "theme": theme,
             "today": today,
+            "courses": course_views,
             "routines": [
                 {
                     "id": str(r.id),
@@ -1002,3 +1048,206 @@ async def json_delete_product(
     await db.delete(product)
     await db.flush()
     return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Procedure courses (Шаг 17c, ADR-095) — серии сеансов
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _course_json(c: CareCourse) -> dict:
+    return {
+        "id": str(c.id),
+        "name": c.name,
+        "catalog_item_id": str(c.catalog_item_id) if c.catalog_item_id else None,
+        "area": c.area,
+        "total_sessions": c.total_sessions,
+        "interval_days": c.interval_days,
+        "start_date": c.start_date.isoformat() if c.start_date else None,
+        "notes": c.notes,
+        "status": c.status,
+        "sessions": [
+            {
+                "id": str(s.id),
+                "session_number": s.session_number,
+                "scheduled_date": s.scheduled_date.isoformat(),
+                "status": s.status,
+                "entry_id": str(s.entry_id) if s.entry_id else None,
+                "notes": s.notes,
+            }
+            for s in sorted(c.sessions, key=lambda s: s.session_number)
+        ],
+    }
+
+
+@router.post("/care/courses")
+async def add_course(
+    request: Request,
+    name: str = Form(...),
+    area: str = Form(default="other"),
+    total_sessions: str = Form(default="1"),
+    interval_days: str = Form(default=""),
+    start_date: str = Form(default=""),
+    notes: str = Form(default=""),
+    catalog_item_id: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Создать курс процедур — генерирует N сеансов с интервалом."""
+    name = name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    if area not in CARE_AREAS:
+        area = "other"
+    total = _parse_int(total_sessions, "total_sessions", minimum=1, maximum=200) or 1
+    interval = _parse_int(interval_days, "interval_days", minimum=1, maximum=3650)
+    start = None
+    if start_date.strip():
+        try:
+            start = date.fromisoformat(start_date.strip())
+        except ValueError as exc:
+            raise HTTPException(400, "Invalid start_date (ISO 8601)") from exc
+    if start is None:
+        start = local_today()
+    catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
+
+    course = CareCourse(
+        user_id=user.id,
+        name=name,
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        area=area,
+        total_sessions=total,
+        interval_days=interval,
+        start_date=start,
+        notes=(notes or "").strip() or None,
+        status="active",
+    )
+    db.add(course)
+    await db.flush()
+    for i in range(1, total + 1):
+        db.add(
+            CareCourseSession(
+                course_id=course.id,
+                session_number=i,
+                scheduled_date=start + timedelta(days=(i - 1) * (interval or 0)),
+                status="pending",
+            )
+        )
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
+@router.post("/care/courses/{course_id}/delete")
+async def delete_course(
+    request: Request,
+    course_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    course = (
+        await db.execute(select(CareCourse).where(CareCourse.id == course_id, CareCourse.user_id == user.id))
+    ).scalar_one_or_none()
+    if course is None:
+        raise HTTPException(404, "Course not found")
+    await db.delete(course)
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
+@router.post("/care/course-sessions/{session_id}/done")
+async def mark_session_done(
+    request: Request,
+    session_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = (
+        await db.execute(
+            select(CareCourseSession)
+            .join(CareCourse, CareCourse.id == CareCourseSession.course_id)
+            .where(CareCourseSession.id == session_id, CareCourse.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if session is None:
+        raise HTTPException(404, "Course session not found")
+    session.status = "done"
+    session.completed_at = _now_utc()
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
+@router.post("/care/course-sessions/{session_id}/skip")
+async def mark_session_skipped(
+    request: Request,
+    session_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = (
+        await db.execute(
+            select(CareCourseSession)
+            .join(CareCourse, CareCourse.id == CareCourseSession.course_id)
+            .where(CareCourseSession.id == session_id, CareCourse.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if session is None:
+        raise HTTPException(404, "Course session not found")
+    session.status = "skipped"
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
+class CourseBody(BaseModel):
+    name: str
+    area: str = "other"
+    total_sessions: int = Field(default=1, ge=1, le=200)
+    interval_days: int | None = Field(default=None, ge=1, le=3650)
+    start_date: date | None = None
+    notes: str | None = None
+    catalog_item_id: uuid.UUID | None = None
+
+
+@json_router.post("/courses", status_code=201)
+async def json_add_course(
+    body: CourseBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    name = body.name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    area = body.area if body.area in CARE_AREAS else "other"
+    start = body.start_date or local_today()
+    catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
+    course = CareCourse(
+        user_id=user.id,
+        name=name,
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        area=area,
+        total_sessions=body.total_sessions,
+        interval_days=body.interval_days,
+        start_date=start,
+        notes=(body.notes or "").strip() or None,
+        status="active",
+    )
+    db.add(course)
+    await db.flush()
+    for i in range(1, body.total_sessions + 1):
+        db.add(
+            CareCourseSession(
+                course_id=course.id,
+                session_number=i,
+                scheduled_date=start + timedelta(days=(i - 1) * (body.interval_days or 0)),
+                status="pending",
+            )
+        )
+    await db.flush()
+    await db.refresh(course, ["sessions"])
+    return _course_json(course)
+
+
+def _now_utc():
+    from datetime import UTC
+    from datetime import datetime as _dt
+
+    return _dt.now(UTC)

@@ -282,7 +282,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (77):
+Полный перечень таблиц `app/models/*` (80):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -300,7 +300,10 @@ sidebar (иконки + подписи).
   кожи, снимок фазы Cycle), `care_products` (каталог средств/косметики: остаток,
   срок, привязка к инвентарю и универсальному каталогу), `care_entry_products`
   (средства, использованные в записи ухода), `care_routine_products` (рекомендуемые
-  средства для процедуры) — relief-only, PD-013, Private Record.
+  средства для процедуры), `care_courses` (курс из N сеансов), `care_course_sessions`
+  (сеансы курса) — relief-only, PD-013, Private Record.
+- **Reminders (§29)**: `reminder_log` (дедупликация напоминаний: медикаменты/средства/
+  уход/курсы/таймер) — relief-only, PD-013.
 - **Универсальный каталог активностей (§26)**: `activity_catalog` — сквозной
   справочник видов активностей (как Entity: категория/теги/описание/domains),
   на который ссылаются журнал, уход, окна таймера и трекер-задачи — нейтрален,
@@ -679,7 +682,7 @@ Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true
 никаких штрафов; все записи Private Record (DATA_LIFECYCLE.md).
 Feature flag `care_enabled` (default true).
 
-- **Модель (5 таблиц, миграции 047 + 049 + 051)**:
+- **Модель (7 таблиц, миграции 047 + 049 + 051 + 053)**:
   - `care_routines` — каталог процедур/рутин: name, area (face/body/hair/hands/feet/other),
     kind (home/salon), frequency_days (частота в днях, необязательно), notes;
   - `care_entries` — факты выполнения процедуры: routine_id (FK SET NULL), entry_date,
@@ -692,7 +695,15 @@ Feature flag `care_enabled` (default true).
   - `care_entry_products` — какие средства использованы в записи ухода (many-to-many
     care_entries ↔ care_products, CASCADE);
   - `care_routine_products` — рекомендуемые средства для процедуры (many-to-many
-    care_routines ↔ care_products, CASCADE).
+    care_routines ↔ care_products, CASCADE);
+  - `care_courses` — курс процедур (серия сеансов, Шаг 17c, ADR-095): name, area,
+    total_sessions, interval_days, start_date, status, catalog_item_id;
+  - `care_course_sessions` — сеансы курса: session_number, scheduled_date, status
+    (pending/done/skipped), entry_id (мягкая ссылка на запись ухода).
+- **Курсы процедур (Шаг 17c, ADR-095)**: секция на /care — создание курса (название,
+  зона, число сеансов, интервал, дата старта) генерирует сеансы; прогресс-чипы,
+  отметка сеанса «done» по клику; напоминание о следующем сеансе (reminder engine).
+  JSON `/api/v2/care/courses` (POST 201).
 - **Страница `/care`**: форма процедуры (название, зона, тип, частота, заметки) +
   журнал ухода (дата, процедура, длительность, реакция кожи, заметки) + каталог рутин
   (с числом выполнений) + история записей с фото-плитками.
@@ -789,3 +800,25 @@ Feature flag `insights_enabled` (default true).
   раз использовалось) и low-stock (низкий остаток/истёкший срок).
 - **Валидация владельца** во всех местах (чужое средство → 400); JSON-колонки хранят
   строки UUID (UUID не сериализуется в JSON).
+
+## 29. Reminders & авто-инсайты (Шаг 17c, ADR-095)
+
+Фоновые напоминания личного контура + автозапуск Personal Insights + Cycle-инсайты.
+**Relief-only** (PD-013): напоминания и курсы не применяют очки/штрафы.
+
+- **Reminder engine** (`app/reminders/` + `reminder_log`, миграция 052):
+  - коллекторы: медикаменты (due today по расписанию / низкий остаток / истекающие),
+    средства ухода (low-stock quantity≤1 / expiring ≤30д), процедуры ухода (по
+    frequency_days), курсы (следующий сеанс), таймер (предстоящие окна/задачи, 24ч);
+  - дедупликация через `reminder_log` (unique user+kind+dedupe_key): daily — ежедневно,
+    state — разово, occurrence — разово на occurrence;
+  - доставка: in-app `Notification` (type=reminder) + Telegram + push; тексты
+    нейтрализуются при discretion (ADR-081);
+  - asyncio-планировщик (`reminder_time`/`reminder_tz`, `REMINDER_ENABLED`,
+    default 09:00 UTC) в lifespan.
+- **Авто-инсайты** (`app/insights/scheduler.py`): `prefs.insights_auto` +
+  `insights_auto_days`; `run_auto_insights` для opted-in пользователей с активным
+  LLM-конфигом (lookback window, все секции).
+- **Cycle-инсайты**: раздел `cycle` в `INSIGHT_SECTIONS` + `_ctx_cycle` — фаза по
+  дням периода, агрегаты настроения/удовлетворённости/реакции кожи по фазам
+  (расчётная фаза, без причинности — §9.4).

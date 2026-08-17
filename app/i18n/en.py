@@ -1253,6 +1253,7 @@ EN = {
     "insights_section_care": "Care",
     "insights_section_training": "Training",
     "insights_section_diet": "Diet",
+    "insights_section_cycle": "Cycle",
     "insights_result_title": "Analysis result",
     "insights_used_data": "Data used",
     "insights_no_data": "No findings for the selected sections and period — add data or widen the period.",
@@ -1297,4 +1298,13 @@ EN = {
     "catalog_domain_care": "Care",
     "catalog_domain_timer": "Timer",
     "catalog_domain_tracker": "Tracker",
+    # Procedure courses (ADR-095, Step 17c)
+    "care_courses_title": "Procedure courses",
+    "care_course_name_ph": "e.g. Laser epilation",
+    "care_course_sessions": "Sessions",
+    "care_course_interval_ph": "interval days",
+    "care_course_start": "Start date",
+    "care_course_add": "Add course",
+    "care_course_next": "next",
+    "care_no_courses": "No procedure courses yet",
 }

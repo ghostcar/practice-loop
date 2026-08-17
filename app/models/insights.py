@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 # разделы, доступные для кросс-модульного анализа
-INSIGHT_SECTIONS = ("tracker", "timer", "journal", "health", "care", "training", "diet")
+INSIGHT_SECTIONS = ("tracker", "timer", "journal", "health", "care", "training", "diet", "cycle")
 
 
 class InsightRun(Base):

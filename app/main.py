@@ -73,9 +73,17 @@ async def lifespan(app: FastAPI):
     if composition.timer_operational:
         logger.info("LockTimer Core enabled — worker entry point reserved for C4")
 
+    # Reminder engine — medication/care/timer reminders (ADR-095, relief-only).
+    from app.reminders.scheduler import start_reminders
+
+    await start_reminders()
+
     yield
 
     # Shutdown.
+    from app.reminders.scheduler import stop_reminders
+
+    await stop_reminders()
     if _tg_polling and settings.tg_bot_token:
         from app.telegram.bot import stop_polling as tg_stop
 

@@ -175,6 +175,57 @@
         {% endif %}
     </section>
 
+    <!-- Procedure courses (серии сеансов) -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.care_courses_title }}</h2>
+        <form action="/care/courses" method="post" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input name="name" placeholder="{{ t.care_course_name_ph }}" required class="col-span-2 px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <select name="area" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                {% for a in care_areas %}<option value="{{ a }}">{{ t['care_area_' + a] }}</option>{% endfor %}
+            </select>
+            <input name="total_sessions" type="number" min="1" max="200" value="4" aria-label="{{ t.care_course_sessions }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <input name="interval_days" type="number" min="1" max="3650" placeholder="{{ t.care_course_interval_ph }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <input name="start_date" type="date" aria-label="{{ t.care_course_start }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm min-h-[44px] col-span-2">{{ t.care_course_add }}</button>
+        </form>
+        {% if courses %}
+        <ul class="divide-y divide-[color:var(--border)] text-sm">
+            {% for c in courses %}
+            <li class="py-3 flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-[color:var(--text)]">{{ c.name }}</span>
+                        <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ c.done }}/{{ c.total_sessions }}</span>
+                        {% if c.next_date %}<span class="pl-text-muted text-xs">{{ t.care_course_next }}: {{ c.next_date }}</span>{% endif %}
+                    </div>
+                    {% if c.sessions %}
+                    <div class="flex gap-1.5 flex-wrap pt-1">
+                        {% for s in c.sessions %}
+                        {% if s.status == 'pending' %}
+                        <form action="/care/course-sessions/{{ s.id }}/done" method="post" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <button type="submit" title="{{ s.scheduled_date }}" class="px-2 py-1 rounded-lg text-xs bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)] min-h-[36px]">{{ s.session_number }}</button>
+                        </form>
+                        {% else %}
+                        <span class="px-2 py-1 rounded-lg text-xs {% if s.status == 'done' %}bg-[color:var(--success-soft)] text-[color:var(--success)]{% else %}bg-[color:var(--surface-soft)] text-[color:var(--text-muted)] line-through{% endif %}">{{ s.session_number }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <form action="/care/courses/{{ c.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.care_no_courses }}</p>
+        {% endif %}
+    </section>
+
     <!-- Care log -->
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
         <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.care_log }}</h2>

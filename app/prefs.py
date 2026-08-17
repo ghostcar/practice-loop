@@ -60,6 +60,9 @@ DEFAULT_PREFS: dict[str, Any] = {
     "blur": 0,
     "theme_choice": "dark",
     "llm_mode": "safe",
+    # Auto-run Personal Insights (ADR-095): периодический автоанализ.
+    "insights_auto": False,
+    "insights_auto_days": 7,
 }
 
 DISCRETION_LABELS = (
@@ -80,6 +83,8 @@ class UserPrefs:
     blur: int = 0
     theme_choice: str = "dark"
     llm_mode: str = "safe"
+    insights_auto: bool = False
+    insights_auto_days: int = 7
 
     # --- convenience ------------------------------------------------------
 
@@ -153,6 +158,11 @@ def sanitize_prefs(raw: dict | None) -> dict:
     out["theme_choice"] = raw.get("theme_choice") if raw.get("theme_choice") in THEME_CHOICES else "dark"
     out["blur"] = raw.get("blur") if raw.get("blur") in BLUR_LEVELS else 0
     out["llm_mode"] = raw.get("llm_mode") if raw.get("llm_mode") in LLM_MODES else "safe"
+    out["insights_auto"] = bool(raw.get("insights_auto"))
+    try:
+        out["insights_auto_days"] = max(1, min(730, int(raw.get("insights_auto_days") or 7)))
+    except (TypeError, ValueError):
+        out["insights_auto_days"] = 7
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

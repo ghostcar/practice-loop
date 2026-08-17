@@ -1257,6 +1257,7 @@ RU = {
     "insights_section_care": "Уход",
     "insights_section_training": "Тренировки",
     "insights_section_diet": "Диеты",
+    "insights_section_cycle": "Цикл",
     "insights_result_title": "Результат анализа",
     "insights_used_data": "Использованные данные",
     "insights_no_data": "Нет находок по выбранным разделам и периоду — добавьте данные или расширьте период.",
@@ -1301,4 +1302,13 @@ RU = {
     "catalog_domain_care": "Уход",
     "catalog_domain_timer": "Таймер",
     "catalog_domain_tracker": "Трекер",
+    # Procedure courses (ADR-095, Step 17c)
+    "care_courses_title": "Курсы процедур",
+    "care_course_name_ph": "напр. Лазерная эпиляция",
+    "care_course_sessions": "Сеансы",
+    "care_course_interval_ph": "интервал, дней",
+    "care_course_start": "Дата старта",
+    "care_course_add": "Добавить курс",
+    "care_course_next": "следующий",
+    "care_no_courses": "Курсов процедур пока нет",
 }

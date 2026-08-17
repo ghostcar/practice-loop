@@ -23,6 +23,8 @@ from app.models.api_token import ApiToken  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
 from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate  # noqa: F401
 from app.models.care import (  # noqa: F401
+    CareCourse,
+    CareCourseSession,
     CareEntry,
     CareEntryProduct,
     CareProduct,
@@ -61,6 +63,7 @@ from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.points import PenaltyRedemption, PointsProfile, PointsTransaction  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.push_device import PushDevice  # noqa: F401
+from app.models.reminder_log import ReminderLog  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
 from app.models.task_history import ActivityTaskHistory  # noqa: F401
 from app.models.task_inventory import ActivityInventoryRequirement, TaskInventoryUsage  # noqa: F401

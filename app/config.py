@@ -111,6 +111,12 @@ class Settings(BaseSettings):
     tg_auto_analysis_time: str = "23:00"  # HH:MM — when to run end-of-day training analysis
     tg_auto_analysis_tz: str = "UTC"  # IANA timezone for the analysis time + "today" day boundary
 
+    # Reminder engine (ADR-095) — medication/care/timer reminders via
+    # Telegram + in-app + push. relief-only (PD-013).
+    reminder_enabled: bool = True
+    reminder_time: str = "09:00"  # HH:MM — daily reminder cycle
+    reminder_tz: str = "UTC"  # IANA timezone for the reminder time
+
     @field_validator("app_env")
     @classmethod
     def _normalize_env(cls, v: str) -> str:

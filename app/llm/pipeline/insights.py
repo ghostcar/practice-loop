@@ -302,6 +302,137 @@ async def _ctx_diet(db: AsyncSession, user_id: uuid.UUID, start: date, end: date
     ]
 
 
+async def _ctx_cycle(db: AsyncSession, user_id: uuid.UUID, start: date, end: date) -> list[str]:
+    """Cycle-контекст: фаза по дням периода + корреляция с журналом/уходом/настроением.
+
+    Не объявляет фазу фактом (расчётная, §9.4) и не утверждает причинность —
+    только агрегаты по фазам, чтобы LLM мог сопоставить тенденции.
+    """
+    from app.models.health import CycleEvent, CycleSettings, HealthState
+    from app.models.journal import JournalEntry
+
+    settings = (
+        (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))).scalar_one_or_none()
+    )
+    events = (await db.execute(select(CycleEvent).where(CycleEvent.user_id == user_id))).scalars().all()
+    if not events and not settings:
+        return []
+
+    cycle_length = settings.cycle_length if settings else 28
+    period_length = settings.period_length if settings else 5
+
+    # День цикла для каждого дня периода — считаем от последнего начала кровотечения.
+    def _day_of_cycle_for(d: date) -> int | None:
+        bleeds = sorted((e.event_date for e in events if e.event_type == "bleeding"), key=lambda x: x)
+        if not bleeds:
+            return None
+        start_bleed = None
+        prev = None
+        for b in bleeds:
+            if prev is None or (b - prev).days >= 3:
+                start_bleed = b
+            prev = b
+        if start_bleed is None:
+            return None
+        delta = (d - start_bleed).days
+        return (delta % cycle_length) + 1
+
+    from app.api.health import _cycle_phase  # reuse the canonical phase helper
+
+    # агрегаты по фазам: настроение (health), удовлетворённость (journal), реакция кожи (care)
+    moods: dict[str, list] = {}
+    satisf: dict[str, list] = {}
+    skin: dict[str, list] = {}
+    journal_count = 0
+    states = (
+        (
+            await db.execute(
+                select(HealthState).where(
+                    HealthState.user_id == user_id,
+                    HealthState.event_date >= start,
+                    HealthState.event_date <= end,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for s in states:
+        day = _day_of_cycle_for(s.event_date)
+        if day is None:
+            continue
+        phase = _cycle_phase(day, cycle_length, period_length)
+        if s.mood is not None:
+            moods.setdefault(phase, []).append(s.mood)
+    journals = (
+        (
+            await db.execute(
+                select(JournalEntry).where(
+                    JournalEntry.user_id == user_id,
+                    JournalEntry.entry_date >= start,
+                    JournalEntry.entry_date <= end,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for j in journals:
+        day = _day_of_cycle_for(j.entry_date)
+        if day is None:
+            continue
+        journal_count += 1
+        phase = _cycle_phase(day, cycle_length, period_length)
+        if j.satisfaction is not None:
+            satisf.setdefault(phase, []).append(j.satisfaction)
+    from app.models.care import CareEntry
+
+    care_rows = (
+        (
+            await db.execute(
+                select(CareEntry).where(
+                    CareEntry.user_id == user_id,
+                    CareEntry.entry_date >= start,
+                    CareEntry.entry_date <= end,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for c in care_rows:
+        day = _day_of_cycle_for(c.entry_date)
+        if day is None:
+            continue
+        phase = _cycle_phase(day, cycle_length, period_length)
+        if c.skin_reaction is not None:
+            skin.setdefault(phase, []).append(c.skin_reaction)
+
+    def _avg(vals: list) -> float | None:
+        return sum(vals) / len(vals) if vals else None
+
+    bleeds_in_period = sum(
+        1 for e in events if start <= e.event_date <= end and e.event_type == "bleeding"
+    )
+    lines: list[str] = [
+        f"cycle: length {cycle_length}, period {period_length} days",
+        f"bleeding events in period: {bleeds_in_period}",
+    ]
+    for phase in ("menstrual", "follicular", "ovulation", "luteal"):
+        parts = []
+        if moods.get(phase):
+            parts.append(f"mood {_fmt_num(_avg(moods[phase]))} (n={len(moods[phase])})")
+        if satisf.get(phase):
+            parts.append(f"satisfaction {_fmt_num(_avg(satisf[phase]))} (n={len(satisf[phase])})")
+        if skin.get(phase):
+            parts.append(f"skin {_fmt_num(_avg(skin[phase]))} (n={len(skin[phase])})")
+        if parts:
+            lines.append(f"{phase}: {', '.join(parts)}")
+    if journal_count:
+        lines.append(f"journal entries in period: {journal_count}")
+    return lines
+
+
 _CONTEXT_BUILDERS = {
     "tracker": _ctx_tracker,
     "timer": _ctx_timer,
@@ -310,6 +441,7 @@ _CONTEXT_BUILDERS = {
     "care": _ctx_care,
     "training": _ctx_training,
     "diet": _ctx_diet,
+    "cycle": _ctx_cycle,
 }
 
 
