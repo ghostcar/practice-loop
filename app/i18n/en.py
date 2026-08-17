@@ -954,6 +954,11 @@ EN = {
     "settings_llm_safe": "Safe",
     "settings_llm_expanded": "Expanded",
     "settings_llm_expanded_warning": "Expanded mode: the assistant may give recommendations and advice. It is not a medical professional — verify anything important with a doctor.",
+    # Step 17f — Per-user reminders (ADR-098)
+    "settings_section_reminders": "Reminders",
+    "settings_reminder_hint": "Daily reminder time and timezone for this account. Leave the timezone empty to use the server default shown in the field.",
+    "settings_reminder_time": "Time",
+    "settings_reminder_tz": "Timezone (IANA)",
     # Step 9e — Discretion neutral labels (§12)
     "dscr_today": "Overview",
     "dscr_tasks": "Items",

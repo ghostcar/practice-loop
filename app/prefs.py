@@ -29,6 +29,7 @@ import contextvars
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.timeutils import local_now
 
@@ -63,6 +64,10 @@ DEFAULT_PREFS: dict[str, Any] = {
     # Auto-run Personal Insights (ADR-095): периодический автоанализ.
     "insights_auto": False,
     "insights_auto_days": 7,
+    # Per-user reminder schedule (ADR-098). Empty string = inherit the global
+    # settings.reminder_time / settings.reminder_tz.
+    "reminder_time": "",
+    "reminder_tz": "",
 }
 
 DISCRETION_LABELS = (
@@ -85,6 +90,8 @@ class UserPrefs:
     llm_mode: str = "safe"
     insights_auto: bool = False
     insights_auto_days: int = 7
+    reminder_time: str = ""  # HH:MM, "" = inherit settings.reminder_time
+    reminder_tz: str = ""  # IANA name, "" = inherit settings.reminder_tz
 
     # --- convenience ------------------------------------------------------
 
@@ -163,6 +170,9 @@ def sanitize_prefs(raw: dict | None) -> dict:
         out["insights_auto_days"] = max(1, min(730, int(raw.get("insights_auto_days") or 7)))
     except (TypeError, ValueError):
         out["insights_auto_days"] = 7
+    # Per-user reminder schedule (ADR-098): invalid/empty → inherit global.
+    out["reminder_time"] = raw.get("reminder_time") if _valid_hhmm(raw.get("reminder_time")) else ""
+    out["reminder_tz"] = raw.get("reminder_tz") if _valid_tz(raw.get("reminder_tz")) else ""
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]
@@ -186,10 +196,21 @@ def _valid_hhmm(value: Any) -> bool:
     if not isinstance(value, str) or len(value) != 5 or value[2] != ":":
         return False
     try:
-        int(value[:2])
-        int(value[3:])
-        return True
+        hour = int(value[:2])
+        minute = int(value[3:])
+        return 0 <= hour <= 23 and 0 <= minute <= 59
     except ValueError:
+        return False
+
+
+def _valid_tz(value: Any) -> bool:
+    """True for a valid IANA timezone name (empty/None → False = inherit)."""
+    if not isinstance(value, str) or not value.strip():
+        return False
+    try:
+        ZoneInfo(value.strip())
+        return True
+    except (ZoneInfoNotFoundError, ValueError):
         return False
 
 

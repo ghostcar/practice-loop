@@ -101,3 +101,4 @@
 | [ADR-095](ADR-095.md) | 2026-08-17 | Шаг 17c: Reminders+Telegram, курсы процедур, авто-инсайты, Cycle-инсайты | accepted |
 | [ADR-096](ADR-096.md) | 2026-08-17 | Шаг 17d: Event-напоминания + настройки и таймер в боте | accepted |
 | [ADR-097](ADR-097.md) | 2026-08-17 | Шаг 17e: Команды бота для личного контура (med/health/cycle/care) | accepted |
+| [ADR-098](ADR-098.md) | 2026-08-17 | Шаг 17f: Reminder time/tz на пользователя | accepted |

@@ -959,6 +959,11 @@ RU = {
     "settings_llm_safe": "Безопасный",
     "settings_llm_expanded": "Расширенный",
     "settings_llm_expanded_warning": "Расширенный режим: ассистент может давать рекомендации и советы. Он не врач — важное проверяйте с врачом.",
+    # Step 17f — Напоминания на пользователя (ADR-098)
+    "settings_section_reminders": "Напоминания",
+    "settings_reminder_hint": "Время и часовой пояс ежедневных напоминаний для этого аккаунта. Оставьте пояс пустым — используется серверный, показанный в поле.",
+    "settings_reminder_time": "Время",
+    "settings_reminder_tz": "Часовой пояс (IANA)",
     # Step 9e — Discretion neutral labels (§12)
     "dscr_today": "Обзор",
     "dscr_tasks": "Пункты",

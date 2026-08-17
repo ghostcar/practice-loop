@@ -449,19 +449,36 @@ async def deliver_reminders(db: AsyncSession, user: User, reminders: list[Remind
     return delivered
 
 
-async def run_reminder_cycle(db: AsyncSession, tz_name: str = "UTC", mode: str = "daily") -> int:
-    """Run one reminder cycle for all users. Returns total delivered count."""
-    from app.models.user import User
+async def run_reminder_cycle_for_user(
+    db: AsyncSession, user: User, mode: str = "daily", tz_name: str = "UTC"
+) -> int:
+    """Run one reminder cycle for a single user in their own timezone (ADR-098).
 
-    tz = resolve_tz(tz_name)
+    "Today"/"now" are computed in the user's ``prefs.reminder_tz`` (falling back
+    to ``tz_name``, i.e. the global ``settings.reminder_tz``), so medication dose
+    times and day boundaries match the user's local day.
+    """
+    prefs = prefs_from_dict(user.prefs) if hasattr(user, "prefs") else None
+    tz = resolve_tz((prefs.reminder_tz if prefs else None) or tz_name)
     now = _now(tz)
     today = now.date()
+    reminders = await collect_reminders(db, user.id, today, now, mode=mode)
+    return await deliver_reminders(db, user, reminders)
+
+
+async def run_reminder_cycle(db: AsyncSession, tz_name: str = "UTC", mode: str = "daily") -> int:
+    """Run one reminder cycle for all users (per-user timezone, ADR-098).
+
+    ``tz_name`` is the fallback for users who haven't configured their own
+    ``prefs.reminder_tz``. Returns total delivered count.
+    """
+    from app.models.user import User
+
     users = (await db.execute(select(User))).scalars().all()
     total = 0
     for user in users:
         try:
-            reminders = await collect_reminders(db, user.id, today, now, mode=mode)
-            total += await deliver_reminders(db, user, reminders)
+            total += await run_reminder_cycle_for_user(db, user, mode=mode, tz_name=tz_name)
         except Exception:
             logger.warning("reminder cycle failed for %s", user.id, exc_info=True)
     await db.commit()

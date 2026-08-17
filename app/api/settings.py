@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
+from app.config import settings as app_settings
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
@@ -43,6 +44,7 @@ async def settings_page(
             "theme": theme,
             "prefs": prefs,
             "dash_blocks": DASH_BLOCKS,
+            "settings": app_settings,
         },
     )
     from app.security import ensure_csrf_cookie
@@ -66,6 +68,8 @@ async def save_settings(
     discretion_end: str = Form("07:00"),
     blur: int = Form(0),
     llm_mode: str = Form("safe"),
+    reminder_time: str = Form(""),
+    reminder_tz: str = Form(""),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
     raw = sanitize_prefs(
@@ -84,6 +88,8 @@ async def save_settings(
             },
             "blur": blur,
             "llm_mode": llm_mode,
+            "reminder_time": reminder_time,
+            "reminder_tz": reminder_tz,
         }
     )
 

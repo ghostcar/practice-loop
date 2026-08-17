@@ -860,3 +860,14 @@ Feature flag `insights_enabled` (default true).
 - **`/care`** — due-рутины по `frequency_days` + ближайшие сеансы курсов; инлайн «Done»
   создаёт `CareEntry` на сегодня (со снимком фазы Cycle) или помечает сеанс `done`.
 - `/start` help дополнен этими командами.
+
+---
+
+## 32. Напоминания: время/пояс на пользователя (Шаг 17f, ADR-098)
+
+Глобальные `REMINDER_TIME`/`REMINDER_TZ` стали **дефолтами** (default 09:00 UTC), а не единственным значением.
+
+- **Prefs**: `users.prefs.reminder_time` (HH:MM) + `reminder_tz` (IANA); пустое/невалидное = наследовать глобальный дефолт.
+- **Engine**: daily-цикл считает «сегодня»/«сейчас» в tz пользователя (границы суток и время доз корректны); `run_reminder_cycle_for_user` — per-user.
+- **Scheduler**: daily-триггер per-user (локальное время ≥ reminder_time, раз в локальный день); event-цикл (ADR-096) — глобальный каденс с per-user «сейчас»; auto-insights — раз в день.
+- **UI**: `/settings` → секция «Напоминания» (время + часовой пояс IANA с подсказкой).

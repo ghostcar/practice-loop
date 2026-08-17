@@ -151,6 +151,37 @@
             {% endif %}
         </section>
 
+        <!-- Reminders (ADR-098) -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="rem-h">
+            <h2 id="rem-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_reminders }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_reminder_hint }}</p>
+            <div class="flex flex-wrap items-center gap-4">
+                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_reminder_time }}
+                    <input type="time" name="reminder_time"
+                           value="{{ prefs.reminder_time or settings.reminder_time }}"
+                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
+                </label>
+                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_reminder_tz }}
+                    <input type="text" name="reminder_tz" list="tz-list"
+                           value="{{ prefs.reminder_tz or settings.reminder_tz }}"
+                           placeholder="UTC"
+                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)] w-48">
+                </label>
+                <datalist id="tz-list">
+                    <option value="UTC"></option>
+                    <option value="Europe/Moscow"></option>
+                    <option value="Europe/London"></option>
+                    <option value="Europe/Berlin"></option>
+                    <option value="Europe/Paris"></option>
+                    <option value="America/New_York"></option>
+                    <option value="America/Chicago"></option>
+                    <option value="America/Los_Angeles"></option>
+                    <option value="Asia/Dubai"></option>
+                    <option value="Asia/Tokyo"></option>
+                </datalist>
+            </div>
+        </section>
+
         <div class="flex justify-end">
             <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
                 {{ t.settings_save }}
