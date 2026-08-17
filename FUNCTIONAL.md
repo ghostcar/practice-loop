@@ -587,7 +587,8 @@ Shared Artifact. Feature flag `medication_enabled` (default true).
 - **JSON API** (`/api/v2/medications`, bearer): список, `/today` (due + expiring +
   low_stock по локальному дню устройства), `POST /{id}/intake`, `/export` (JSON),
   `GET /stocks` (партии/остатки), `GET /schedules` (расписания), `GET /kits` (аптечки) —
-  плоские owner-scoped списки для мобильного клиента.
+  плоские owner-scoped списки для мобильного клиента; создание — `POST /` (препарат),
+  `POST /stocks`, `POST /schedules`, `POST /kits` (owner-scoped, 201).
 - **Экспорт**: `GET /medications/export` — CSV (список + история приёма) для врача;
   `Content-Disposition: attachment`.
 - **Границы дня**: «сегодня» и подсчёт принятого — через `timeutils.local_date()`

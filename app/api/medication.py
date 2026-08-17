@@ -78,6 +78,40 @@ def _med_dict(m: Medication) -> dict:
     }
 
 
+def _stock_dict(st: MedStock) -> dict:
+    return {
+        "id": str(st.id),
+        "medication_id": str(st.medication_id),
+        "medication_name": st.medication.name if st.medication else "",
+        "kit_id": str(st.kit_id) if st.kit_id else None,
+        "kit_name": st.kit.name if st.kit else None,
+        "quantity": st.quantity,
+        "unit": st.unit,
+        "lot_number": st.lot_number,
+        "expiry_date": st.expiry_date.isoformat() if st.expiry_date else None,
+        "low_stock_threshold": st.low_stock_threshold,
+    }
+
+
+def _schedule_dict(s: MedSchedule) -> dict:
+    return {
+        "id": str(s.id),
+        "medication_id": str(s.medication_id),
+        "medication_name": s.medication.name if s.medication else "",
+        "dose_quantity": s.dose_quantity,
+        "dose_unit": s.dose_unit,
+        "frequency_type": s.frequency_type,
+        "times_per_day": s.times_per_day,
+        "times_of_day": s.times_of_day,
+        "interval_hours": s.interval_hours,
+        "days_of_week": s.days_of_week,
+        "start_date": s.start_date.isoformat() if s.start_date else None,
+        "end_date": s.end_date.isoformat() if s.end_date else None,
+        "instructions": s.instructions,
+        "is_active": s.is_active,
+    }
+
+
 def _doses_today(s: MedSchedule, today: date) -> int:
     """Ожидаемое число приёмов сегодня по расписанию (0 = не в этот день)."""
     if not s.is_active:
@@ -823,21 +857,7 @@ async def json_list_stocks(
         .scalars()
         .all()
     )
-    return [
-        {
-            "id": str(st.id),
-            "medication_id": str(st.medication_id),
-            "medication_name": st.medication.name if st.medication else "",
-            "kit_id": str(st.kit_id) if st.kit_id else None,
-            "kit_name": st.kit.name if st.kit else None,
-            "quantity": st.quantity,
-            "unit": st.unit,
-            "lot_number": st.lot_number,
-            "expiry_date": st.expiry_date.isoformat() if st.expiry_date else None,
-            "low_stock_threshold": st.low_stock_threshold,
-        }
-        for st in stocks
-    ]
+    return [_stock_dict(st) for st in stocks]
 
 
 @json_router.get("/schedules")
@@ -855,25 +875,7 @@ async def json_list_schedules(
         .scalars()
         .all()
     )
-    return [
-        {
-            "id": str(s.id),
-            "medication_id": str(s.medication_id),
-            "medication_name": s.medication.name if s.medication else "",
-            "dose_quantity": s.dose_quantity,
-            "dose_unit": s.dose_unit,
-            "frequency_type": s.frequency_type,
-            "times_per_day": s.times_per_day,
-            "times_of_day": s.times_of_day,
-            "interval_hours": s.interval_hours,
-            "days_of_week": s.days_of_week,
-            "start_date": s.start_date.isoformat() if s.start_date else None,
-            "end_date": s.end_date.isoformat() if s.end_date else None,
-            "instructions": s.instructions,
-            "is_active": s.is_active,
-        }
-        for s in schedules
-    ]
+    return [_schedule_dict(s) for s in schedules]
 
 
 @json_router.get("/kits")
@@ -886,6 +888,156 @@ async def json_list_kits(
         (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
     )
     return [{"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes} for k in kits]
+
+
+class MedicationBody(BaseModel):
+    name: str
+    kind: str = "medication"
+    active_ingredient: str | None = None
+    form: str | None = None
+    strength: str | None = None
+    unit: str | None = None
+    instructions: str | None = None
+    notes: str | None = None
+    is_active: bool = True
+
+
+class StockBody(BaseModel):
+    medication_id: uuid.UUID
+    quantity: float = 0.0
+    unit: str | None = None
+    kit_id: uuid.UUID | None = None
+    lot_number: str | None = None
+    expiry_date: date | None = None
+    low_stock_threshold: float | None = None
+    notes: str | None = None
+
+
+class ScheduleBody(BaseModel):
+    medication_id: uuid.UUID
+    dose_quantity: float = 1.0
+    dose_unit: str | None = None
+    frequency_type: str = "daily"
+    times_per_day: int | None = None
+    times_of_day: list[str] | None = None
+    interval_hours: float | None = None
+    days_of_week: list[int] | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    instructions: str | None = None
+    is_active: bool = True
+
+
+class KitBody(BaseModel):
+    name: str
+    location: str | None = None
+    notes: str | None = None
+
+
+@json_router.post("", status_code=201)
+async def json_create_medication(
+    body: MedicationBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Создать препарат (JSON) — для мобильного клиента."""
+    name = body.name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    kind = body.kind if body.kind in MED_KINDS else "medication"
+    m = Medication(
+        user_id=user.id,
+        name=name,
+        kind=kind,
+        active_ingredient=(body.active_ingredient or "").strip()[:200] or None,
+        form=(body.form or "").strip()[:50] or None,
+        strength=(body.strength or "").strip()[:50] or None,
+        unit=(body.unit or "").strip()[:20] or None,
+        instructions=(body.instructions or "").strip() or None,
+        notes=(body.notes or "").strip() or None,
+        is_active=body.is_active,
+    )
+    db.add(m)
+    await db.flush()
+    return _med_dict(m)
+
+
+@json_router.post("/stocks", status_code=201)
+async def json_create_stock(
+    body: StockBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Создать партию/остаток (JSON) — для мобильного клиента."""
+    m = await _get_med(db, user.id, body.medication_id)
+    kit = await _get_kit(db, user.id, body.kit_id) if body.kit_id else None
+    st = MedStock(
+        user_id=user.id,
+        medication_id=m.id,
+        kit_id=kit.id if kit else None,
+        quantity=body.quantity,
+        unit=(body.unit or "").strip()[:20] or m.unit,
+        lot_number=(body.lot_number or "").strip()[:100] or None,
+        expiry_date=body.expiry_date,
+        low_stock_threshold=body.low_stock_threshold,
+        notes=(body.notes or "").strip() or None,
+    )
+    st.medication = m
+    st.kit = kit
+    db.add(st)
+    await db.flush()
+    return _stock_dict(st)
+
+
+@json_router.post("/schedules", status_code=201)
+async def json_create_schedule(
+    body: ScheduleBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Создать расписание приёма (JSON) — для мобильного клиента."""
+    m = await _get_med(db, user.id, body.medication_id)
+    freq = body.frequency_type if body.frequency_type in FREQUENCY_TYPES else "daily"
+    s = MedSchedule(
+        user_id=user.id,
+        medication_id=m.id,
+        dose_quantity=body.dose_quantity,
+        dose_unit=(body.dose_unit or "").strip()[:20] or m.unit,
+        frequency_type=freq,
+        times_per_day=body.times_per_day,
+        times_of_day=body.times_of_day,
+        interval_hours=body.interval_hours,
+        days_of_week=body.days_of_week,
+        start_date=body.start_date,
+        end_date=body.end_date,
+        instructions=(body.instructions or "").strip() or None,
+        is_active=body.is_active,
+    )
+    s.medication = m
+    db.add(s)
+    await db.flush()
+    return _schedule_dict(s)
+
+
+@json_router.post("/kits", status_code=201)
+async def json_create_kit(
+    body: KitBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Создать аптечку (JSON) — для мобильного клиента."""
+    name = body.name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    k = MedKit(
+        user_id=user.id,
+        name=name,
+        location=(body.location or "").strip()[:200] or None,
+        notes=(body.notes or "").strip() or None,
+    )
+    db.add(k)
+    await db.flush()
+    return {"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes}
 
 
 class IntakeBody(BaseModel):

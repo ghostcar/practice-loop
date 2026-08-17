@@ -210,6 +210,66 @@ async def test_json_lists_cross_user_isolation(auth_client, test_user, db_sessio
         assert resp.json() == []
 
 
+@pytest.mark.asyncio
+async def test_json_create_medication_stock_schedule_kit(auth_client, test_user, db_session):
+    """JSON POST create for medication/stock/schedule/kit — for mobile."""
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={"name": "Ibuprofen", "kind": "medication", "strength": "400 mg", "unit": "tablet"},
+    )
+    assert resp.status_code == 201, resp.text
+    med_id = resp.json()["id"]
+
+    kit_resp = await auth_client.post(
+        "/api/v2/medications/kits", json={"name": "Home kit", "location": "Bathroom"}
+    )
+    assert kit_resp.status_code == 201, kit_resp.text
+    kit_id = kit_resp.json()["id"]
+
+    stock_resp = await auth_client.post(
+        "/api/v2/medications/stocks",
+        json={
+            "medication_id": med_id,
+            "quantity": 20.0,
+            "kit_id": kit_id,
+            "expiry_date": (date.today() + timedelta(days=30)).isoformat(),
+        },
+    )
+    assert stock_resp.status_code == 201, stock_resp.text
+    stock = stock_resp.json()
+    assert stock["medication_name"] == "Ibuprofen"
+    assert stock["kit_name"] == "Home kit"
+    assert stock["quantity"] == 20.0
+
+    sched_resp = await auth_client.post(
+        "/api/v2/medications/schedules",
+        json={"medication_id": med_id, "dose_quantity": 1, "frequency_type": "daily", "times_per_day": 2},
+    )
+    assert sched_resp.status_code == 201, sched_resp.text
+    assert sched_resp.json()["medication_name"] == "Ibuprofen"
+
+    # lists reflect the created records
+    assert len((await auth_client.get("/api/v2/medications/stocks")).json()) == 1
+    assert len((await auth_client.get("/api/v2/medications/schedules")).json()) == 1
+    assert len((await auth_client.get("/api/v2/medications/kits")).json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_json_create_stock_foreign_medication_rejected(auth_client, test_user, db_session):
+    """POST /stocks with another user's medication_id → 404 (owner-scoped)."""
+    other = User(email="other-json@example.com", password_hash=hash_password("x"), locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    other_med = Medication(user_id=other.id, name="Other med", kind="medication")
+    db_session.add(other_med)
+    await db_session.flush()
+
+    resp = await auth_client.post(
+        "/api/v2/medications/stocks", json={"medication_id": str(other_med.id), "quantity": 1}
+    )
+    assert resp.status_code == 404
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Dashboard block (Step 11b)
 # ─────────────────────────────────────────────────────────────────────────────
