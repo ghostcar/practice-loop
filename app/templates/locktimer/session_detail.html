@@ -40,7 +40,7 @@
       <button onclick="validateSession('{{ session.id }}')" class="px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium transition cursor-pointer">
         {{ icon('search', 'w-4 h-4') }}{{ t.locktimer_validate or "Validate" }}
       </button>
-      <form action="/api/v2/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this lock session? Rules will be frozen.')">
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this chastity session? Rules will be frozen.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button type="submit" class="px-4 py-2 bg-[color:var(--success)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 text-sm font-medium transition cursor-pointer inline-flex items-center gap-1.5">
           {{ icon('play', 'w-4 h-4') }}{{ t.locktimer_start or "Start" }}
@@ -454,7 +454,7 @@
   {% if not slot_rules and not task_rules and not slot_occurrences and not task_occurrences %}
   <section class="pl-surface rounded-xl border border-[color:var(--border)] p-8 text-center">
     <p class="text-[color:var(--text-secondary)]">{{ t.locktimer_session_empty or "No rules or occurrences yet." }}</p>
-    {% if session.state == 'draft' %}<p class="text-sm text-[color:var(--text-muted)] mt-1">Add unlock rules and tasks above, then start the lock session.</p>{% endif %}
+    {% if session.state == 'draft' %}<p class="text-sm text-[color:var(--text-muted)] mt-1">Add unlock rules and tasks above, then start the chastity session.</p>{% endif %}
   </section>
   {% endif %}
 

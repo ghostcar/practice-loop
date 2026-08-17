@@ -87,7 +87,7 @@ if TG_BOT_TOKEN:
             "/health — daily check-in (mood/energy)\n"
             "/cycle — cycle phase & next period\n"
             "/care — due routines & course sessions\n"
-            "/lock — active lock session status\n"
+            "/lock — active chastity session status\n"
             "/lock_start — start your latest draft\n"
             "/lock_stop — safety-stop the active session\n"
             "/lock_slots — unlock windows (open/close)\n"
@@ -615,14 +615,14 @@ if TG_BOT_TOKEN:
             session = await get_active_session(db, user.id)
             if session is None:
                 await message.answer(
-                    "🔓 No active lock session.\n"
+                    "🔓 No active chastity session.\n"
                     "Create a draft in the web app (/locktimer), or send /lock_start to start your latest draft."
                 )
                 return
             slot_occs = await list_slot_occurrences(db, session.id, limit=5)
             task_occs = await list_task_occurrences(db, session.id, limit=5)
 
-        lines = ["🔒 *Active Lock Session*"]
+        lines = ["🔒 *Active Chastity Session*"]
         if session.started_at:
             started = as_utc(session.started_at)
             lines.append(f"Locked since: {started.strftime('%Y-%m-%d %H:%M')} UTC")
@@ -668,7 +668,7 @@ if TG_BOT_TOKEN:
             draft = result.scalar_one_or_none()
 
         if draft is None:
-            await message.answer("📭 No draft lock session. Create one in the web app (/locktimer).")
+            await message.answer("📭 No draft chastity session. Create one in the web app (/locktimer).")
             return
 
         kb = InlineKeyboardMarkup(
@@ -680,7 +680,7 @@ if TG_BOT_TOKEN:
             ]
         )
         await message.answer(
-            f"Start lock session `{str(draft.id)[:8]}`? Rules will be frozen.",
+            f"Start chastity session `{str(draft.id)[:8]}`? Rules will be frozen.",
             parse_mode="Markdown",
             reply_markup=kb,
         )
@@ -701,7 +701,7 @@ if TG_BOT_TOKEN:
             session = await get_active_session(db, user.id)
 
         if session is None:
-            await message.answer("🔓 No active lock session.")
+            await message.answer("🔓 No active chastity session.")
             return
 
         kb = InlineKeyboardMarkup(
@@ -806,7 +806,7 @@ if TG_BOT_TOKEN:
         async with async_session_factory() as db:
             session = await get_active_session(db, user.id)
             if session is None:
-                await message.answer("🔓 No active lock session.")
+                await message.answer("🔓 No active chastity session.")
                 return
             slots = await list_slot_occurrences(db, session.id, limit=10)
 
@@ -841,7 +841,7 @@ if TG_BOT_TOKEN:
         async with async_session_factory() as db:
             session = await get_active_session(db, user.id)
             if session is None:
-                await message.answer("🔓 No active lock session.")
+                await message.answer("🔓 No active chastity session.")
                 return
             tasks = await list_task_occurrences(db, session.id, limit=10)
 
@@ -884,7 +884,7 @@ if TG_BOT_TOKEN:
         async with async_session_factory() as db:
             session = await get_active_session(db, user.id)
             if session is None:
-                await message.answer("🔓 No active lock session.")
+                await message.answer("🔓 No active chastity session.")
                 return
             slots = await list_slot_occurrences(db, session.id)
             open_slots = [o for o in slots if o.state == "open"]
@@ -929,7 +929,7 @@ if TG_BOT_TOKEN:
         async with async_session_factory() as db:
             session = await get_active_session(db, user.id)
             if session is None:
-                await message.answer("🔓 No active lock session.")
+                await message.answer("🔓 No active chastity session.")
                 return
             try:
                 result = await lookup_tag(db, tag_number=tag, session_id=session.id, owner_id=user.id)

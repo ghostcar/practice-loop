@@ -88,7 +88,7 @@ def format_timer_prompt(context: dict, user_brief: str | None = None) -> str:
 
 
 TIMER_SYSTEM_PROMPT = (
-    "You are a self-discipline timer assistant. The user has an active (or draft) timer session "
+    "You are a chastity timer assistant. The user has an active (or draft) chastity session "
     "with slot rules and task rules. Your job is to suggest improvements: new slot/task rules, "
     "schedule adjustments, parameter overrides. Every suggestion must be a validated, structured "
     "proposal item that the user can accept or reject individually.\n\n"
