@@ -807,9 +807,10 @@ Feature flag `insights_enabled` (default true).
 **Relief-only** (PD-013): напоминания и курсы не применяют очки/штрафы.
 
 - **Reminder engine** (`app/reminders/` + `reminder_log`, миграция 052):
-  - коллекторы: медикаменты (due today по расписанию / низкий остаток / истекающие),
-    средства ухода (low-stock quantity≤1 / expiring ≤30д), процедуры ухода (по
-    frequency_days), курсы (следующий сеанс), таймер (предстоящие окна/задачи, 24ч);
+  - коллекторы (daily): медикаменты (due today по расписанию / низкий остаток /
+    истекающие), средства ухода (low-stock quantity≤1 / expiring ≤30д), процедуры
+    ухода (по frequency_days), курсы (следующий сеанс); таймер и точное время дозы
+    переехали в event-режим (§30);
   - дедупликация через `reminder_log` (unique user+kind+dedupe_key): daily — ежедневно,
     state — разово, occurrence — разово на occurrence;
   - доставка: in-app `Notification` (type=reminder) + Telegram + push; тексты
@@ -822,3 +823,22 @@ Feature flag `insights_enabled` (default true).
 - **Cycle-инсайты**: раздел `cycle` в `INSIGHT_SECTIONS` + `_ctx_cycle` — фаза по
   дням периода, агрегаты настроения/удовлетворённости/реакции кожи по фазам
   (расчётная фаза, без причинности — §9.4).
+
+## 30. Event-напоминания + настройки и таймер в боте (Шаг 17d, ADR-096)
+
+Дополнение к Reminders (§29) и Telegram-боту. **Relief-only** (PD-013); без миграций.
+
+- **Event-напоминания («незадолго до события»):**
+  - режим `event` в reminder engine: `med_dose` (доза в конкретное `times_of_day`-время)
+    и `timer_slot_upcoming`/`timer_task_due` (lead-окно вместо 24ч lookahead);
+  - scheduler с двумя каденсами: daily-батч (`reminder_time`) + event-цикл каждые
+    `reminder_event_interval_minutes` (default 15); lead `reminder_event_lead_minutes`
+    (default 30) — т.е. уведомление приходит ~за 30 минут до события;
+  - дедуп: `med_dose:{schedule}:{date}:{HH:MM}` (пересрабатывает ежедневно на дозу),
+    таймер — occurrence-ключи (разово на окно/задачу).
+- **Настройки в боте:** `/settings` — язык (EN/RU), discretion (off/always/schedule),
+  llm_mode (safe/expanded) инлайн-меню; пишутся в `users.prefs`.
+- **Таймер в боте (полное управление):** `/lock_slots` (открыть/закрыть окно),
+  `/lock_tasks` (reveal/complete/skip), `/lock_close <номер бирки>` (закрытие с биркой,
+  `require_tag`), `/lock_tag <номер>` (проверка номерной бирки); все inline-действия
+  вызывают сервисы `app/locktimer/services/execution.py` с проверкой владельца сессии.

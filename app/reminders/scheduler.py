@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 _check_interval_seconds = 60  # Check every minute
 
 
-async def _run_once() -> None:
+async def _run_daily() -> None:
     from app.reminders.engine import run_reminder_cycle
 
     async with async_session_factory() as db:
-        delivered = await run_reminder_cycle(db, tz_name=settings.reminder_tz)
+        delivered = await run_reminder_cycle(db, tz_name=settings.reminder_tz, mode="daily")
         if delivered:
-            logger.info(f"Reminders: delivered {delivered} notification(s)")
+            logger.info(f"Reminders (daily): delivered {delivered} notification(s)")
 
     # Auto-run Personal Insights (ADR-095) — пользователи, включившие insights_auto.
     from app.insights.scheduler import run_auto_insights
@@ -38,19 +38,42 @@ async def _run_once() -> None:
             logger.info(f"Auto-insights: {runs} run(s)")
 
 
+async def _run_event() -> None:
+    from app.reminders.engine import run_reminder_cycle
+
+    async with async_session_factory() as db:
+        delivered = await run_reminder_cycle(db, tz_name=settings.reminder_tz, mode="event")
+        if delivered:
+            logger.info(f"Reminders (event): delivered {delivered} notification(s)")
+
+
 async def _scheduler_loop(stop_event: asyncio.Event) -> None:
+    import time as _time
+
     hour, minute = _parse_time(settings.reminder_time)
     tz = resolve_tz(settings.reminder_tz)
-    logger.info(f"Reminder scheduler started (daily at {hour:02d}:{minute:02d} {settings.reminder_tz})")
+    event_interval = max(10, settings.reminder_event_interval_minutes * 60)
+    logger.info(
+        f"Reminder scheduler started (daily at {hour:02d}:{minute:02d} {settings.reminder_tz}; "
+        f"event every {settings.reminder_event_interval_minutes}m, "
+        f"lead {settings.reminder_event_lead_minutes}m)"
+    )
 
-    last_run_date: date | None = None
+    last_daily: date | None = None
+    last_event = 0.0
     while not stop_event.is_set():
         try:
             now = datetime.now(tz)
-            if now.hour == hour and now.minute == minute and last_run_date != now.date():
+            if now.hour == hour and now.minute == minute and last_daily != now.date():
                 logger.info("Reminders: triggering daily run")
-                await _run_once()
-                last_run_date = now.date()
+                await _run_daily()
+                last_daily = now.date()
+
+            # Event reminders — faster cadence, "shortly before" events (ADR-096).
+            if _time.monotonic() - last_event >= event_interval:
+                await _run_event()
+                last_event = _time.monotonic()
+
             await asyncio.wait_for(stop_event.wait(), timeout=_check_interval_seconds)
         except TimeoutError:
             pass  # normal

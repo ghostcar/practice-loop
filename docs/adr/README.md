@@ -99,3 +99,4 @@
 | [ADR-093](ADR-093.md) | 2026-08-17 | Шаг 17: Personal Insights (ROADMAP §7 4E) | accepted |
 | [ADR-094](ADR-094.md) | 2026-08-17 | Шаг 17b: Care Products — остатки/сроки/фото + кросс-модуль | accepted |
 | [ADR-095](ADR-095.md) | 2026-08-17 | Шаг 17c: Reminders+Telegram, курсы процедур, авто-инсайты, Cycle-инсайты | accepted |
+| [ADR-096](ADR-096.md) | 2026-08-17 | Шаг 17d: Event-напоминания + настройки и таймер в боте | accepted |

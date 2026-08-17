@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.prefs import neutral_notification, prefs_from_dict
 from app.timeutils import resolve_tz
 
@@ -28,11 +29,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Lookahead window for timer reminders (occurrences opening/due soon).
-TIMER_LOOKAHEAD_HOURS = 24
 # Care product low-stock threshold (quantity <= 1) mirrors the /care badge.
 CARE_LOW_STOCK = 1
 CARE_EXPIRING_DAYS = 30
+
+
+def _lead_minutes() -> int:
+    """How far ahead of an event the "shortly before" reminders fire (ADR-096)."""
+    return max(1, settings.reminder_event_lead_minutes)
 
 
 @dataclass
@@ -214,10 +218,69 @@ async def _care_course_reminders(db: AsyncSession, user_id: uuid.UUID, today: da
     return out
 
 
+async def _medication_dose_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Reminder]:
+    """Event: a medication dose at a specific ``times_of_day`` time is coming up.
+
+    Fires within ``[dose_time - lead, dose_time]`` so the user gets a nudge
+    shortly before the dose is due (not just in the morning batch). The
+    ``reminder_log`` dedupe (per dose time/day) already guarantees a single
+    notification, and the window naturally closes once the dose time passes.
+    """
+    from app.models.medication import MedSchedule
+
+    lead = timedelta(minutes=_lead_minutes())
+    window_end = now + lead
+    out: list[Reminder] = []
+    schedules = (
+        (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user_id, MedSchedule.is_active.is_(True))))
+        .scalars()
+        .all()
+    )
+
+    for s in schedules:
+        if not s.times_of_day:
+            continue
+        if s.start_date and now.date() < s.start_date:
+            continue
+        if s.end_date and now.date() > s.end_date:
+            continue
+        for t_str in s.times_of_day:
+            dose_dt = _parse_hhmm(now, t_str)
+            if dose_dt is None:
+                continue
+            if not (now <= dose_dt <= window_end):
+                continue
+            name = s.medication.name if s.medication else "?"
+            dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
+            out.append(
+                Reminder(
+                    kind="med_dose",
+                    title=f"Medication soon: {name}",
+                    body=f"Take {dose} at {t_str}.",
+                    link="/medications",
+                    dedupe_key=f"med_dose:{s.id}:{now.date().isoformat()}:{t_str}",
+                )
+            )
+    return out
+
+
+def _parse_hhmm(now, t_str: str):
+    """Parse ``HH:MM`` into an aware datetime on ``now``'s day (None on bad input)."""
+    try:
+        hour = int(t_str[:2])
+        minute = int(t_str[3:5])
+    except (ValueError, IndexError):
+        return None
+    return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+
 async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Reminder]:
+    """Event: a timer window opens / task is due within the lead window (ADR-096)."""
     from app.locktimer import enums as e
     from app.models.locktimer import LockSession, LockSlotOccurrence, LockTaskOccurrence
 
+    lead = timedelta(minutes=_lead_minutes())
+    window_end = now + lead
     out: list[Reminder] = []
     sessions = (
         await db.execute(
@@ -231,8 +294,8 @@ async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Re
                 .where(
                     LockSlotOccurrence.session_id == session.id,
                     LockSlotOccurrence.state.in_(["pending", "eligible"]),
-                    LockSlotOccurrence.planned_open_at <= now + timedelta(hours=TIMER_LOOKAHEAD_HOURS),
                     LockSlotOccurrence.planned_open_at >= now,
+                    LockSlotOccurrence.planned_open_at <= window_end,
                 )
             )
         ).scalars().all()
@@ -252,8 +315,8 @@ async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Re
                 .where(
                     LockTaskOccurrence.session_id == session.id,
                     LockTaskOccurrence.state.in_(["scheduled", "visible"]),
-                    LockTaskOccurrence.due_at <= now + timedelta(hours=TIMER_LOOKAHEAD_HOURS),
                     LockTaskOccurrence.due_at >= now,
+                    LockTaskOccurrence.due_at <= window_end,
                 )
             )
         ).scalars().all()
@@ -270,9 +333,30 @@ async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Re
     return out
 
 
-async def collect_reminders(db: AsyncSession, user_id: uuid.UUID, today: date, now) -> list[Reminder]:
-    """Gather all due reminders for one user (best-effort per module)."""
+async def collect_reminders(
+    db: AsyncSession, user_id: uuid.UUID, today: date, now, mode: str = "daily"
+) -> list[Reminder]:
+    """Gather due reminders for one user (best-effort per module).
+
+    ``mode="daily"`` — the morning batch (medication due summary, low stock /
+    expiry, care routine/course heads-up). ``mode="event"`` — "shortly before"
+    reminders (timer window/task, medication dose at a specific time, ADR-096).
+    """
     out: list[Reminder] = []
+    if mode == "event":
+        collectors = (_medication_dose_reminders, _timer_reminders)
+        for collector in collectors:
+            try:
+                out.extend(await collector(db, user_id, now))
+            except Exception:
+                logger.warning(
+                    "reminder collector %s failed for %s",
+                    getattr(collector, "__name__", "?"),
+                    user_id,
+                    exc_info=True,
+                )
+        return out
+
     date_collectors = (
         _medication_reminders,
         _care_product_reminders,
@@ -289,10 +373,6 @@ async def collect_reminders(db: AsyncSession, user_id: uuid.UUID, today: date, n
                 user_id,
                 exc_info=True,
             )
-    try:
-        out.extend(await _timer_reminders(db, user_id, now))
-    except Exception:
-        logger.warning("reminder collector _timer_reminders failed for %s", user_id, exc_info=True)
     return out
 
 
@@ -369,7 +449,7 @@ async def deliver_reminders(db: AsyncSession, user: User, reminders: list[Remind
     return delivered
 
 
-async def run_reminder_cycle(db: AsyncSession, tz_name: str = "UTC") -> int:
+async def run_reminder_cycle(db: AsyncSession, tz_name: str = "UTC", mode: str = "daily") -> int:
     """Run one reminder cycle for all users. Returns total delivered count."""
     from app.models.user import User
 
@@ -380,7 +460,7 @@ async def run_reminder_cycle(db: AsyncSession, tz_name: str = "UTC") -> int:
     total = 0
     for user in users:
         try:
-            reminders = await collect_reminders(db, user.id, today, now)
+            reminders = await collect_reminders(db, user.id, today, now, mode=mode)
             total += await deliver_reminders(db, user, reminders)
         except Exception:
             logger.warning("reminder cycle failed for %s", user.id, exc_info=True)

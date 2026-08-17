@@ -44,8 +44,9 @@ class ReminderLog(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    # med_due | med_low | med_expiring | care_product_low | care_product_expiring
-    # | care_routine_due | care_course_session | timer_slot_upcoming | timer_task_due
+    # med_due | med_dose | med_low | med_expiring | care_product_low
+    # | care_product_expiring | care_routine_due | care_course_session
+    # | timer_slot_upcoming | timer_task_due
     kind: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
     dedupe_key: Mapped[str] = mapped_column(String(200), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

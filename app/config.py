@@ -116,6 +116,12 @@ class Settings(BaseSettings):
     reminder_enabled: bool = True
     reminder_time: str = "09:00"  # HH:MM — daily reminder cycle
     reminder_tz: str = "UTC"  # IANA timezone for the reminder time
+    # Event reminders (ADR-096): "shortly before" notifications fire on a
+    # faster cadence than the daily batch. The event loop runs every
+    # reminder_event_interval_minutes and notifies reminder_event_lead_minutes
+    # ahead of the event (timer window opening, task due, medication dose time).
+    reminder_event_interval_minutes: int = 15
+    reminder_event_lead_minutes: int = 30
 
     @field_validator("app_env")
     @classmethod

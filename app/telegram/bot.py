@@ -24,7 +24,7 @@ from app.models.activity_log import ActivityLog
 from app.models.progress import UserProgress
 from app.models.session import ActivitySession
 from app.models.user import User
-from app.prefs import prefs_from_dict
+from app.prefs import prefs_from_dict, raw_dict, sanitize_prefs
 from app.timeutils import as_utc
 
 logger = logging.getLogger(__name__)
@@ -86,6 +86,10 @@ if TG_BOT_TOKEN:
             "/lock — active lock session status\n"
             "/lock_start — start your latest draft\n"
             "/lock_stop — safety-stop the active session\n"
+            "/lock_slots — unlock windows (open/close)\n"
+            "/lock_tasks — required tasks (reveal/complete/skip)\n"
+            "/lock_close — close window with a numbered seal\n"
+            "/lock_tag — verify a numbered seal\n"
             "/settings — preferences",
             parse_mode="Markdown",
         )
@@ -464,43 +468,114 @@ if TG_BOT_TOKEN:
 
     # ── /settings ───────────────────────────────────────────────────
 
+    def _settings_view(user: User) -> tuple[str, InlineKeyboardMarkup]:
+        """Build the settings text + inline keyboard reflecting current prefs."""
+        prefs = prefs_from_dict(user.prefs)
+        text = (
+            "⚙️ *Settings*\n"
+            f"Language: {user.locale.upper()}\n"
+            f"Discretion: {prefs.discretion_mode}\n"
+            f"LLM mode: {prefs.llm_mode}\n"
+            "\nTap to change:"
+        )
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🇬🇧 EN", callback_data="lang:en"),
+                    InlineKeyboardButton(text="🇷🇺 RU", callback_data="lang:ru"),
+                ],
+                [
+                    InlineKeyboardButton(text="Discretion: Off", callback_data="disc:off"),
+                    InlineKeyboardButton(text="Always", callback_data="disc:always"),
+                    InlineKeyboardButton(text="Schedule", callback_data="disc:schedule"),
+                ],
+                [
+                    InlineKeyboardButton(text="LLM: Safe", callback_data="llm:safe"),
+                    InlineKeyboardButton(text="Expanded", callback_data="llm:expanded"),
+                ],
+            ]
+        )
+        return text, kb
+
+    async def _rerender_settings(callback: types.CallbackQuery) -> None:
+        async with async_session_factory() as db:
+            u = (
+                await db.execute(select(User).where(User.telegram_chat_id == callback.message.chat.id))
+            ).scalar_one_or_none()
+            if u is None:
+                await callback.answer("Account not linked.", show_alert=True)
+                return
+            text, kb = _settings_view(u)
+        await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=kb)
+
+    async def _fetch_by_chat(chat_id: int):
+        async with async_session_factory() as db:
+            return (
+                await db.execute(select(User).where(User.telegram_chat_id == chat_id))
+            ).scalar_one_or_none()
+
     @main_router.message(Command("settings"))
     async def cmd_settings(message: types.Message):
         user = await _require_user(message)
         if user is None:
             return
-
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(text="EN 🇬🇧", callback_data="lang:en"),
-                    InlineKeyboardButton(text="RU 🇷🇺", callback_data="lang:ru"),
-                ]
-            ]
-        )
-        await message.answer(
-            f"⚙️ **Settings**\nLanguage: {user.locale.upper()}\n\nChange language:",
-            parse_mode="Markdown",
-            reply_markup=kb,
-        )
+        u = await _fetch_by_chat(message.chat.id)
+        if u is None:
+            await message.answer("Account not linked.")
+            return
+        text, kb = _settings_view(u)
+        await message.answer(text, parse_mode="Markdown", reply_markup=kb)
 
     @main_router.callback_query(F.data.startswith("lang:"))
     async def inline_lang(callback: types.CallbackQuery):
         new_locale = callback.data.split(":", 1)[1]
-        user = await _get_user_by_chat(callback.message.chat.id)
-        if user is None:
-            await callback.answer("Account not linked.", show_alert=True)
-            return
-
         async with async_session_factory() as db:
-            result = await db.execute(select(User).where(User.id == user.id))
-            u = result.scalar_one_or_none()
-            if u:
-                u.locale = new_locale
-                db.add(u)
-                await db.commit()
+            u = (
+                await db.execute(select(User).where(User.telegram_chat_id == callback.message.chat.id))
+            ).scalar_one_or_none()
+            if u is None:
+                await callback.answer("Account not linked.", show_alert=True)
+                return
+            u.locale = new_locale
+            db.add(u)
+            await db.commit()
+        await _rerender_settings(callback)
+        await callback.answer()
 
-        await callback.message.edit_text(f"⚙️ Language set to: {new_locale.upper()}")
+    @main_router.callback_query(F.data.startswith("disc:"))
+    async def inline_disc(callback: types.CallbackQuery):
+        mode = callback.data.split(":", 1)[1]
+        async with async_session_factory() as db:
+            u = (
+                await db.execute(select(User).where(User.telegram_chat_id == callback.message.chat.id))
+            ).scalar_one_or_none()
+            if u is None:
+                await callback.answer("Account not linked.", show_alert=True)
+                return
+            raw = sanitize_prefs(raw_dict(u.prefs))
+            raw["discretion"]["mode"] = mode
+            u.prefs = raw
+            db.add(u)
+            await db.commit()
+        await _rerender_settings(callback)
+        await callback.answer()
+
+    @main_router.callback_query(F.data.startswith("llm:"))
+    async def inline_llm(callback: types.CallbackQuery):
+        mode = callback.data.split(":", 1)[1]
+        async with async_session_factory() as db:
+            u = (
+                await db.execute(select(User).where(User.telegram_chat_id == callback.message.chat.id))
+            ).scalar_one_or_none()
+            if u is None:
+                await callback.answer("Account not linked.", show_alert=True)
+                return
+            raw = sanitize_prefs(raw_dict(u.prefs))
+            raw["llm_mode"] = mode
+            u.prefs = raw
+            db.add(u)
+            await db.commit()
+        await _rerender_settings(callback)
         await callback.answer()
 
     # ── Lock Timer commands (Personal, Step 8) ───────────────────────
@@ -684,6 +759,346 @@ if TG_BOT_TOKEN:
     async def inline_lock_cancel(callback: types.CallbackQuery):
         await callback.message.edit_text("Cancelled.")
         await callback.answer()
+
+    # ── Lock Timer: slot/task management + seal verification (ADR-096) ──
+
+    def _task_title(occ) -> str:
+        snap = occ.occurrence_snapshot or {}
+        return snap.get("title") or snap.get("name") or "Task"
+
+    async def _get_slot_occ(db, occ_id: uuid.UUID, owner_id: uuid.UUID):
+        from app.models.locktimer import LockSession, LockSlotOccurrence
+
+        occ = await db.get(LockSlotOccurrence, occ_id)
+        if occ is None:
+            return None
+        session = await db.get(LockSession, occ.session_id)
+        if session is None or session.owner_id != owner_id:
+            return None
+        return occ
+
+    async def _get_task_occ(db, occ_id: uuid.UUID, owner_id: uuid.UUID):
+        from app.models.locktimer import LockSession, LockTaskOccurrence
+
+        occ = await db.get(LockTaskOccurrence, occ_id)
+        if occ is None:
+            return None
+        session = await db.get(LockSession, occ.session_id)
+        if session is None or session.owner_id != owner_id:
+            return None
+        return occ
+
+    @main_router.message(Command("lock_slots"))
+    async def cmd_lock_slots(message: types.Message):
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        from app.locktimer.repositories import get_active_session, list_slot_occurrences
+
+        async with async_session_factory() as db:
+            session = await get_active_session(db, user.id)
+            if session is None:
+                await message.answer("🔓 No active lock session.")
+                return
+            slots = await list_slot_occurrences(db, session.id, limit=10)
+
+        open_slots = [o for o in slots if o.state == "open"]
+        upcoming = [o for o in slots if o.state in ("pending", "eligible") and o.planned_open_at]
+        lines = ["🔒 *Unlock Windows*"]
+        kb_rows = []
+        for o in upcoming[:6]:
+            when = as_utc(o.planned_open_at).strftime("%m-%d %H:%M") if o.planned_open_at else "?"
+            lines.append(f"⏳ {when}")
+            kb_rows.append([InlineKeyboardButton(text=f"Open {when}", callback_data=f"slot_open:{o.id}")])
+        for o in open_slots[:3]:
+            due = as_utc(o.close_due_at).strftime("%H:%M") if o.close_due_at else "?"
+            lines.append(f"🔓 Open (close due {due})")
+            kb_rows.append([InlineKeyboardButton(text="Close", callback_data=f"slot_close:{o.id}")])
+        if not kb_rows:
+            lines.append("No upcoming or open windows.")
+        kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.message(Command("lock_tasks"))
+    async def cmd_lock_tasks(message: types.Message):
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        from app.locktimer.repositories import get_active_session, list_task_occurrences
+
+        async with async_session_factory() as db:
+            session = await get_active_session(db, user.id)
+            if session is None:
+                await message.answer("🔓 No active lock session.")
+                return
+            tasks = await list_task_occurrences(db, session.id, limit=10)
+
+        active = [t for t in tasks if t.state in ("scheduled", "visible", "submitted")]
+        lines = ["🎯 *Required Tasks*"]
+        kb_rows = []
+        for t in active[:6]:
+            lines.append(f"• {_task_title(t)}")
+            row = []
+            if t.state == "scheduled":
+                row.append(InlineKeyboardButton(text="Reveal", callback_data=f"task_reveal:{t.id}"))
+            if t.state in ("scheduled", "visible"):
+                row.append(InlineKeyboardButton(text="Complete", callback_data=f"task_complete:{t.id}"))
+                row.append(InlineKeyboardButton(text="Skip", callback_data=f"task_skip:{t.id}"))
+            if t.state == "submitted":
+                row.append(InlineKeyboardButton(text="Complete", callback_data=f"task_complete:{t.id}"))
+            if row:
+                kb_rows.append(row)
+        if not kb_rows:
+            lines.append("No active tasks.")
+        kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.message(Command("lock_close"))
+    async def cmd_lock_close(message: types.Message):
+        """Close the open window, optionally with a numbered seal: /lock_close A-0042."""
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        tag = message.text.replace("/lock_close", "").strip() or None
+
+        from app.locktimer.repositories import get_active_session, list_slot_occurrences
+        from app.locktimer.services.execution import close_slot
+        from app.models.locktimer import LockSlotRule
+
+        async with async_session_factory() as db:
+            session = await get_active_session(db, user.id)
+            if session is None:
+                await message.answer("🔓 No active lock session.")
+                return
+            slots = await list_slot_occurrences(db, session.id)
+            open_slots = [o for o in slots if o.state == "open"]
+            if not open_slots:
+                await message.answer("No open window to close.")
+                return
+            occ = open_slots[0]
+            rule = await db.get(LockSlotRule, occ.rule_id)
+            if rule and rule.require_tag and not tag:
+                await message.answer(
+                    "🔐 This window requires a numbered seal.\nSend:\n/lock_close <seal_number>"
+                )
+                return
+            try:
+                await close_slot(db, occurrence=occ, owner_id=user.id, tag_number=tag)
+                await db.commit()
+            except ValueError as exc:
+                await message.answer(f"❌ {exc}")
+                return
+
+        suffix = f" with seal #{tag}" if tag else ""
+        await message.answer(f"🔒 Window closed{suffix}.")
+
+    @main_router.message(Command("lock_tag"))
+    async def cmd_lock_tag(message: types.Message):
+        """Verify a numbered seal: /lock_tag A-0042."""
+        user = await _require_user(message)
+        if user is None:
+            return
+        if not getattr(settings, "locktimer_core_enabled", False):
+            await message.answer("⏳ Lock Timer is not enabled on this instance.")
+            return
+
+        tag = message.text.replace("/lock_tag", "").strip()
+        if not tag:
+            await message.answer("Usage: /lock_tag <seal_number>")
+            return
+
+        from app.locktimer.repositories import get_active_session
+        from app.locktimer.services.tags import lookup_tag
+
+        async with async_session_factory() as db:
+            session = await get_active_session(db, user.id)
+            if session is None:
+                await message.answer("🔓 No active lock session.")
+                return
+            try:
+                result = await lookup_tag(db, tag_number=tag, session_id=session.id, owner_id=user.id)
+            except ValueError as exc:
+                await message.answer(f"❌ {exc}")
+                return
+
+        if result is None:
+            await message.answer(f"❌ No window was closed with seal #{tag}.")
+        else:
+            closed = result.get("actual_closed_at") or "?"
+            await message.answer(f"✅ Seal #{tag} matches a closed window.\nClosed: {closed}")
+
+    @main_router.callback_query(F.data.startswith("slot_open:"))
+    async def inline_slot_open(callback: types.CallbackQuery):
+        occ_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.execution import open_slot
+
+        async with async_session_factory() as db:
+            occ = await _get_slot_occ(db, occ_id, user.id)
+            if occ is None:
+                await callback.answer("Window not found.", show_alert=True)
+                return
+            try:
+                await open_slot(db, occurrence=occ, owner_id=user.id)
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("🔓 Window opened. Send /lock to see status.")
+        await callback.answer("Opened")
+
+    @main_router.callback_query(F.data.startswith("slot_close:"))
+    async def inline_slot_close_prompt(callback: types.CallbackQuery):
+        occ_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.models.locktimer import LockSlotRule
+
+        async with async_session_factory() as db:
+            occ = await _get_slot_occ(db, occ_id, user.id)
+            if occ is None:
+                await callback.answer("Window not found.", show_alert=True)
+                return
+            rule = await db.get(LockSlotRule, occ.rule_id)
+            requires_tag = bool(rule and rule.require_tag)
+
+        if requires_tag:
+            await callback.message.edit_text(
+                "🔐 This window requires a numbered seal.\nSend:\n/lock_close <seal_number>"
+            )
+        else:
+            kb = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="Yes, close", callback_data=f"slot_close_confirm:{occ_id}"),
+                        InlineKeyboardButton(text="Cancel", callback_data="lock_cancel"),
+                    ]
+                ]
+            )
+            await callback.message.edit_text("Close this window?", reply_markup=kb)
+        await callback.answer()
+
+    @main_router.callback_query(F.data.startswith("slot_close_confirm:"))
+    async def inline_slot_close_confirm(callback: types.CallbackQuery):
+        occ_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.execution import close_slot
+
+        async with async_session_factory() as db:
+            occ = await _get_slot_occ(db, occ_id, user.id)
+            if occ is None:
+                await callback.answer("Window not found.", show_alert=True)
+                return
+            try:
+                await close_slot(db, occurrence=occ, owner_id=user.id, tag_number=None)
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("🔒 Window closed.")
+        await callback.answer("Closed")
+
+    @main_router.callback_query(F.data.startswith("task_reveal:"))
+    async def inline_task_reveal(callback: types.CallbackQuery):
+        occ_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.execution import reveal_task
+
+        async with async_session_factory() as db:
+            occ = await _get_task_occ(db, occ_id, user.id)
+            if occ is None:
+                await callback.answer("Task not found.", show_alert=True)
+                return
+            try:
+                await reveal_task(db, occurrence=occ, owner_id=user.id)
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("📖 Task revealed. Send /lock_tasks to act on it.")
+        await callback.answer("Revealed")
+
+    @main_router.callback_query(F.data.startswith("task_complete:"))
+    async def inline_task_complete(callback: types.CallbackQuery):
+        occ_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.execution import complete_task, submit_task
+
+        async with async_session_factory() as db:
+            occ = await _get_task_occ(db, occ_id, user.id)
+            if occ is None:
+                await callback.answer("Task not found.", show_alert=True)
+                return
+            try:
+                if occ.state == "visible":
+                    occ = await submit_task(db, occurrence=occ, owner_id=user.id)
+                await complete_task(db, occurrence=occ, owner_id=user.id)
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("✅ Task completed.")
+        await callback.answer("Completed")
+
+    @main_router.callback_query(F.data.startswith("task_skip:"))
+    async def inline_task_skip(callback: types.CallbackQuery):
+        occ_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.locktimer.services.execution import skip_task
+
+        async with async_session_factory() as db:
+            occ = await _get_task_occ(db, occ_id, user.id)
+            if occ is None:
+                await callback.answer("Task not found.", show_alert=True)
+                return
+            try:
+                await skip_task(db, occurrence=occ, owner_id=user.id)
+                await db.commit()
+            except ValueError as exc:
+                await callback.answer(str(exc), show_alert=True)
+                return
+
+        await callback.message.edit_text("⏭ Task skipped.")
+        await callback.answer("Skipped")
 
     # ── Notification sender (public API for the rest of the app) ──────
 
