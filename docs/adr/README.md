@@ -93,3 +93,4 @@
 | [ADR-087](ADR-087.md) | 2026-08-17 | LLM-режим пользователя (safe/expanded) + LLM-разбор анализов | accepted |
 | [ADR-088](ADR-088.md) | 2026-08-17 | Шаг 14: Sexual Journal (ROADMAP §7 4A) | accepted |
 | [ADR-089](ADR-089.md) | 2026-08-17 | Шаг 14b: Sexual Journal — медиа + связки с Tracker/Timer | accepted |
+| [ADR-090](ADR-090.md) | 2026-08-17 | Шаг 15: Personal Care (ROADMAP §7 4B) | accepted |

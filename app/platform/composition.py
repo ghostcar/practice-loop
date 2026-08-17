@@ -46,6 +46,7 @@ class ProductComposition:
     medication_enabled: bool = True
     health_enabled: bool = True
     journal_enabled: bool = True
+    care_enabled: bool = True
 
     # Migration sequence numbers for debugging
     tracker_active: bool = field(init=False)
@@ -107,6 +108,7 @@ def build_product_composition() -> ProductComposition:
         medication_enabled=settings.medication_enabled,
         health_enabled=settings.health_enabled,
         journal_enabled=settings.journal_enabled,
+        care_enabled=settings.care_enabled,
     )
 
 

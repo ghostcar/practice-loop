@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.activity_log import ActivityLog
+from app.models.care import CareEntry
 from app.models.diet import Diet
 from app.models.journal import JournalEntry
 from app.models.life import BodyMeasurement, InventoryItem
@@ -82,6 +83,10 @@ async def _authorize_journal_entry(db: AsyncSession, ref_id: uuid.UUID, user_id:
     return await _model_exists(db, JournalEntry, JournalEntry.user_id, ref_id, user_id)
 
 
+async def _authorize_care_entry(db: AsyncSession, ref_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    return await _model_exists(db, CareEntry, CareEntry.user_id, ref_id, user_id)
+
+
 # owner_type → async authorize_bind(db, ref_id, user_id) -> bool
 BIND_AUTHORIZERS: dict[str, object] = {
     "activity_log": _authorize_activity_log,
@@ -95,6 +100,7 @@ BIND_AUTHORIZERS: dict[str, object] = {
     "lock_task_occurrence": _authorize_lock_task_occurrence,
     "social_publication": _authorize_social_publication,
     "journal_entry": _authorize_journal_entry,
+    "care_entry": _authorize_care_entry,
 }
 
 

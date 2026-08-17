@@ -22,6 +22,7 @@ from app.models.activity_log import ActivityLog  # noqa: F401 — ensure table r
 from app.models.api_token import ApiToken  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
 from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate  # noqa: F401
+from app.models.care import CareEntry, CareRoutine  # noqa: F401
 from app.models.category import ActivityCategory  # noqa: F401
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview  # noqa: F401
 from app.models.entity import Entity  # noqa: F401

@@ -48,6 +48,7 @@
     'medication': t.nav_medication,
     'health': t.nav_health,
     'journal': t.nav_journal,
+    'care': t.nav_care,
     'schedule': t.nav_schedule,
     'body_parts': t.nav_body_parts,
     'locations': t.nav_locations,
@@ -90,6 +91,7 @@
     {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
     {{ nav_item('health', '/health', 'health', t.nav_health) }}
     {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
+    {{ nav_item('care', '/care', 'routine', t.nav_care) }}
     {{ nav_item('schedule', '/schedule/page', 'schedule', t.nav_schedule) }}
     {{ nav_item('body_parts', '/body-parts', 'body', t.nav_body_parts) }}
     {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('routine', 'w-6 h-6') }}{{ t.care_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.care_subtitle }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Add routine -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.care_add_routine }}</h2>
+            <form action="/care/routines" method="post" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_routine_name }}
+                    <input type="text" name="name" required placeholder="e.g. Night skincare" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.care_area }}
+                    <select name="area" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for a in care_areas %}<option value="{{ a }}" {% if a == 'face' %}selected{% endif %}>{{ t['care_area_' + a] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.care_kind }}
+                    <select name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for k in care_kinds %}<option value="{{ k }}" {% if k == 'home' %}selected{% endif %}>{{ t['care_kind_' + k] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.care_frequency_days }}
+                    <input type="number" name="frequency_days" min="1" placeholder="7" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_notes }}
+                    <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.care_save }}</button>
+            </form>
+        </section>
+
+        <!-- Add entry -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.care_log }}</h2>
+            <p class="text-xs pl-text-muted">{{ t.care_log_hint }}</p>
+            <form action="/care/entries" method="post" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary">{{ t.care_entry_date }}
+                    <input type="date" name="entry_date" value="{{ today.isoformat() }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.care_routine }}
+                    <select name="routine_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">—</option>
+                        {% for r in routines %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.care_duration }}
+                    <input type="number" name="duration_minutes" min="0" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.care_skin_reaction }}
+                    <select name="skin_reaction" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">—</option>
+                        {% for s in scales %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_notes }}
+                    <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.care_save }}</button>
+            </form>
+        </section>
+    </div>
+
+    <!-- Routines catalog -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.care_routines_title }}</h2>
+        {% if routines %}
+        <ul class="divide-y divide-[color:var(--border)] text-sm">
+            {% for r in routines %}
+            <li class="py-2 flex items-center justify-between gap-2">
+                <div class="min-w-0 space-y-0.5">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-[color:var(--text)]">{{ r.name }}</span>
+                        <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ t['care_area_' + r.area] }}</span>
+                        <span class="pl-text-muted text-xs">{{ t['care_kind_' + r.kind] }}</span>
+                        {% if r.frequency_days %}<span class="pl-text-muted text-xs">{{ t.care_frequency_days }}: {{ r.frequency_days }}</span>{% endif %}
+                        <span class="pl-text-muted text-xs">{{ r.entries_count }} {{ t.care_entries_count }}</span>
+                    </div>
+                    {% if r.notes %}<div class="text-xs pl-text-muted">{{ r.notes }}</div>{% endif %}
+                </div>
+                <form action="/care/routines/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.care_no_routines }}</p>
+        {% endif %}
+    </section>
+
+    <!-- Care log -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.care_log }}</h2>
+        {% if entries %}
+        <ul class="divide-y divide-[color:var(--border)] text-sm">
+            {% for e in entries %}
+            <li class="py-3 flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-[color:var(--text)]">{{ e.entry_date }}</span>
+                        {% if e.routine_name %}<span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ e.routine_name }}</span>{% endif %}
+                        {% if e.cycle_phase %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('cycle', 'w-3.5 h-3.5') }}{{ t['health_phase_' + e.cycle_phase] }} {{ t.care_cycle_phase }}</span>{% endif %}
+                    </div>
+                    <div class="pl-text-secondary text-xs flex items-center gap-3 flex-wrap">
+                        {% if e.duration_minutes is not none %}<span>{{ t.care_duration }}: {{ e.duration_minutes }}</span>{% endif %}
+                        {% if e.skin_reaction %}<span>{{ t.care_skin_reaction }}: {{ e.skin_reaction }}</span>{% endif %}
+                    </div>
+                    {% if e.notes %}<div class="text-xs pl-text-muted">{{ e.notes }}</div>{% endif %}
+                    {% set photos = media[e.id] if media and media[e.id] else [] %}
+                    {% if photos %}
+                    <div class="flex gap-2 pt-1 flex-wrap">
+                        {% for ph in photos %}
+                        <a href="/api/v2/media/{{ ph.id }}" class="block w-20 h-16 rounded-lg overflow-hidden bg-[color:var(--surface-soft)]" aria-label="{{ ph.caption or '' }}">
+                            {% if ph.is_image and ph.has_thumbnail %}<img src="/api/v2/media/{{ ph.id }}/thumbnail" alt="{{ ph.caption or '' }}" loading="lazy" class="w-full h-full object-cover">{% else %}<div class="w-full h-full flex items-center justify-center text-[color:var(--text-muted)]">{{ icon('image', 'w-6 h-6') }}</div>{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <form action="/care/entries/{{ e.id }}/media" method="post" enctype="multipart/form-data" class="flex items-center gap-2 pt-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="file" name="file" accept="image/*" aria-label="{{ t.care_add_photo }}" class="text-xs text-[color:var(--text-secondary)] file:mr-2 file:px-2 file:py-1.5 file:rounded-lg file:border file:border-[color:var(--border)] file:bg-[color:var(--surface-soft)] file:text-[color:var(--text)] file:cursor-pointer file:min-h-[40px]">
+                        <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[40px]">{{ icon('upload', 'w-3.5 h-3.5') }}{{ t.care_add_photo }}</button>
+                    </form>
+                </div>
+                <form action="/care/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.care_no_entries }}</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -295,6 +295,9 @@ sidebar (иконки + подписи).
 - **Sexual Journal (M3, §24)**: `sj_partners` (локальные псевдонимы партнёров),
   `sj_entries` (записи журнала: факт/ощущения/реакции/aftercare, снимок фазы Cycle,
   мягкие связи с Timer/Health по ID) — relief-only, PD-013, Private Record.
+- **Personal Care (M3, §25)**: `care_routines` (каталог процедур/рутин: зона, тип,
+  частота, заметки), `care_entries` (факты выполнения: дата, длительность, реакция
+  кожи, снимок фазы Cycle) — relief-only, PD-013, Private Record.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -658,3 +661,31 @@ Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true
 - **Дашборд**: блок `dash-block-journal` (записи за 30д / последняя запись /
   ср. удовлетворённость), управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **Навигация**: пункт «Журнал» (иконка aftercare.svg из пакета) в группе «Данные».
+
+## 25. Personal Care (M3 Personal Suite, Шаг 15, ADR-090)
+
+Третий срез ухода личного контура (ROADMAP §7 4B, PRODUCT_VISION §8): уход, косметика,
+гигиена, процедуры и внешность. **Relief-only** (PD-013): никакой игровой интеграции,
+никаких штрафов; все записи Private Record (DATA_LIFECYCLE.md).
+Feature flag `care_enabled` (default true).
+
+- **Модель (2 таблицы, миграция 047)**:
+  - `care_routines` — каталог процедур/рутин: name, area (face/body/hair/hands/feet/other),
+    kind (home/salon), frequency_days (частота в днях, необязательно), notes;
+  - `care_entries` — факты выполнения процедуры: routine_id (FK SET NULL), entry_date,
+    duration_minutes, skin_reaction (1–5), notes, снимок cycle_phase/cycle_day.
+- **Страница `/care`**: форма процедуры (название, зона, тип, частота, заметки) +
+  журнал ухода (дата, процедура, длительность, реакция кожи, заметки) + каталог рутин
+  (с числом выполнений) + история записей с фото-плитками.
+- **Медиа**: `owner_type=care_entry` в media registry/allowlist;
+  `POST /care/entries/{id}/media` (загрузка фото → MediaAsset, owner-scoped, чужой
+  entry → 404) — фото динамики.
+- **Связь с Cycle (§9.4)**: при создании записи сохраняется снимок расчётной фазы цикла
+  (`cycle_phase`/`cycle_day`) — помечен как оценка, не факт. Если Cycle недоступен —
+  (None, None).
+- **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи),
+  `POST /routines`, `POST /entries`. Object-level auth: чужой routine_id отклоняется;
+  удаление процедуры обнуляет ссылки в записях (SET NULL на уровне приложения).
+- **Дашборд**: блок `dash-block-care` (процедуры за 30д / последняя / число рутин),
+  управляется в /settings (DASH_BLOCKS), discretion-aware.
+- **Навигация**: пункт «Уход» (иконка routine.svg из пакета) в группе «Данные».
