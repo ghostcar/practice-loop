@@ -96,3 +96,4 @@
 | [ADR-090](ADR-090.md) | 2026-08-17 | Шаг 15: Personal Care (ROADMAP §7 4B) | accepted |
 | [ADR-091](ADR-091.md) | 2026-08-17 | Шаг 16: Универсальный каталог активностей (сквозной) | accepted |
 | [ADR-092](ADR-092.md) | 2026-08-17 | Шаг 16b: Care Products — средства/косметика с привязкой к инвентарю | accepted |
+| [ADR-093](ADR-093.md) | 2026-08-17 | Шаг 17: Personal Insights (ROADMAP §7 4E) | accepted |

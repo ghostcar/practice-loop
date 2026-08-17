@@ -262,6 +262,18 @@ async def dashboard(
     except Exception:
         pass  # care may not be deployed yet
 
+    # Personal Insights summary (latest run / findings count) — relief-only.
+    insights_summary = None
+    try:
+        from app.platform.composition import composition
+
+        if composition.insights_enabled:
+            from app.api.insights import _insights_summary
+
+            insights_summary = await _insights_summary(db, user.id)
+    except Exception:
+        pass  # insights may not be deployed yet
+
     # Tracker 'today' merge (view-level): combine scheduled tasks with due meds
     # so the user sees everything due today in one place. No ActivityLog rows are
     # created — medication stays a separate Health domain (ADR-085, relief-only).
@@ -327,6 +339,7 @@ async def dashboard(
             "health_summary": health_summary,
             "journal_summary": journal_summary,
             "care_summary": care_summary,
+            "insights_summary": insights_summary,
         },
     )
     # Set CSRF cookie ONLY if absent — re-issuing it here after render used to

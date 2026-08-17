@@ -282,7 +282,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (74):
+Полный перечень таблиц `app/models/*` (76):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -304,6 +304,9 @@ sidebar (иконки + подписи).
   справочник видов активностей (как Entity: категория/теги/описание/domains),
   на который ссылаются журнал, уход, окна таймера и трекер-задачи — нейтрален,
   relief-only, PD-013.
+- **Personal Insights (M3, §27)**: `insight_runs` (запуск кросс-модульного
+  анализа: период, выбранные разделы, статус, usage), `insight_findings`
+  (находки по разделу с used_data) — relief-only, PD-013, Private Record.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -730,3 +733,30 @@ Feature flag `care_enabled` (default true).
 - **Хелпер `catalog_options(domain)`**: для пикеров в формах журнала, ухода, слота
   таймера и my_entities (системные + свои, фильтр по domain).
 - **Навигация**: пункт «Каталог» (иконка library.svg из пакета) в группе «Данные».
+
+## 27. Personal Insights (M3 Personal Suite, Шаг 17, ADR-093)
+
+Явно запрошенный кросс-модульный LLM-анализ личных данных (PRODUCT_OVERVIEW §12,
+TARGET_ARCHITECTURE §3.10): тенденции и связи между активностями, таймером,
+журналом, здоровьем, уходом, тренировками и диетами. **Relief-only** (PD-013):
+без игровой интеграции; все записи Private Record (DATA_LIFECYCLE.md).
+Feature flag `insights_enabled` (default true).
+
+- **Модель (2 таблицы, миграция 050)**:
+  - `insight_runs` — запуск анализа: period_start/period_end, sections (JSON),
+    status (completed/failed), summary (общий вывод), usage_tokens/usage_cost, error;
+  - `insight_findings` — находки (run_id FK CASCADE): section, title, summary,
+    used_data (JSON — какие данные использованы, прозрачность).
+- **LLM-пайплайн** (`app/llm/pipeline/insights.py` + `insights_prompts.py`):
+  контекст собирается только из выбранных разделов за выбранный период
+  (tracker/timer/journal/health/care/training/diet); промпт требует показывать
+  использованные данные и **не объявляет корреляцию причиной**; режим
+  `prefs.llm_mode` (safe/expanded, ADR-087); usage трекается на LLMProviderConfig.
+- **Страница `/insights`**: пикер разделов (чекбоксы) + период + «Запустить
+  анализ» + результат (summary + находки с used_data) + история запусков
+  (с удалением). Object-level auth: чужой run → 404; удаление каскадит findings.
+- **JSON API** (`/api/v2/insights`, bearer): GET список, POST запуск,
+  GET /runs/{id}.
+- **Дашборд**: блок `dash-block-insights` (последний запуск / число находок /
+  период), управляется в /settings (DASH_BLOCKS), discretion-aware.
+- **Навигация**: пункт «Инсайты» (иконка insights.svg из пакета) в группе «Данные».

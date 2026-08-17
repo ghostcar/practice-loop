@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     # на который ссылаются журнал/уход/таймер/трекер. Нейтрален (relief-only).
     catalog_enabled: bool = True
 
+    # M3 Personal Suite (Шаг 17) — Personal Insights (4E). Кросс-модульный LLM-
+    # анализ личных данных (явно запрошенный), relief-only.
+    insights_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+asyncpg://tracker:tracker@localhost:5432/tracker"
 

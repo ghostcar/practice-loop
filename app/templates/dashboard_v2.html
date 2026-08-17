@@ -369,6 +369,31 @@
             {% endif %}
         </div>
     </div>
+    {% elif block == 'insights' %}
+    <!-- Personal Insights summary (Step 17 — relief-only, informational) -->
+    <div id="dash-block-insights" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('insights', 'w-4 h-4') }}{{ dscr_label('insights', t.nav_insights) }}</h2>
+            <a href="/insights" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">{{ t.dashboard_view_all or "All" }}</a>
+        </div>
+        {% if insights_summary and insights_summary.has_runs %}
+        <div class="flex items-center gap-3 flex-wrap text-sm">
+            {% if insights_summary.last_date %}<span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ insights_summary.last_date }}</span>{% endif %}
+            <span class="pl-text-secondary text-xs">{{ insights_summary.period }}</span>
+        </div>
+        {% if insights_summary.last_summary %}<p class="text-sm pl-text-secondary mt-1">{{ insights_summary.last_summary }}</p>{% endif %}
+        {% else %}
+        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_insights_empty }}</p>
+        {% endif %}
+        <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
+            {% if insights_summary %}
+            <span class="inline-flex items-center gap-1">{{ icon('insights', 'w-3.5 h-3.5') }}{{ insights_summary.runs_count }} {{ t.dash_insights_runs }}</span>
+            {% if insights_summary.findings_count %}
+            <span class="inline-flex items-center gap-1">{{ icon('check', 'w-3.5 h-3.5') }}{{ insights_summary.findings_count }} {{ t.dash_insights_findings }}</span>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
     {% elif block == 'timer' %}
     <!-- LockTimer active session card -->
     {% if locktimer_session %}

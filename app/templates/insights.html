@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('insights', 'w-6 h-6') }}{{ t.insights_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.insights_subtitle }}</p>
+        </div>
+    </div>
+
+    {% if request.query_params.get('error') == 'no_llm_config' %}
+    <div class="rounded-xl p-4 bg-[color:var(--danger-soft)] border border-[color:var(--danger)] text-sm">
+        {{ icon('warning', 'w-4 h-4 inline') }} {{ t.insights_no_llm }}
+    </div>
+    {% endif %}
+
+    <!-- Run analysis form -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('ai', 'w-4 h-4') }}{{ t.insights_run_title }}</h2>
+        <p class="text-xs pl-text-muted">{{ t.insights_run_hint }}</p>
+        <form action="/insights/run" method="post" class="space-y-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <label class="text-xs pl-text-secondary">{{ t.insights_period_start }}
+                    <input type="date" name="period_start" value="{{ default_start }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.insights_period_end }}
+                    <input type="date" name="period_end" value="{{ default_end }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <div class="col-span-2 sm:col-span-2 flex items-end">
+                    <button type="submit" class="w-full pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('ai', 'w-4 h-4') }}{{ t.insights_run }}</button>
+                </div>
+            </div>
+            <fieldset>
+                <legend class="text-xs pl-text-secondary mb-1.5">{{ t.insights_sections }}</legend>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {% for s in sections %}
+                    <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] min-h-[36px]">
+                        <input type="checkbox" name="sections" value="{{ s }}" checked class="accent-[color:var(--accent)]">
+                        <span class="truncate">{{ t['insights_section_' + s] }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+        </form>
+    </section>
+
+    <!-- Latest / selected run result -->
+    {% if selected %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('insights', 'w-4 h-4') }}{{ t.insights_result_title }}</h2>
+            <span class="text-xs pl-text-muted">{{ selected.period_start }} — {{ selected.period_end }}</span>
+        </div>
+        {% if selected.status == 'failed' %}
+        <div class="rounded-lg p-3 bg-[color:var(--danger-soft)] border border-[color:var(--danger)] text-sm">{{ t.insights_failed }}: {{ selected.error or '' }}</div>
+        {% elif selected.findings %}
+        <p class="text-sm text-[color:var(--text-secondary)]">{{ selected.summary }}</p>
+        <ul class="space-y-3">
+            {% for f in selected.findings %}
+            <li class="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3 space-y-1.5">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ t['insights_section_' + f.section] }}</span>
+                    <span class="font-medium text-[color:var(--text)] text-sm">{{ f.title }}</span>
+                </div>
+                <p class="text-sm text-[color:var(--text-secondary)]">{{ f.summary }}</p>
+                {% if f.used_data %}
+                <div class="text-xs pl-text-muted space-y-0.5">
+                    <div class="inline-flex items-center gap-1">{{ icon('database', 'w-3 h-3') }}{{ t.insights_used_data }}</div>
+                    <ul class="list-disc list-inside pl-1">
+                        {% for u in f.used_data %}<li>{{ u }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm">{{ t.insights_no_data }}</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- History -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.insights_history }}</h2>
+        {% if runs %}
+        <ul class="divide-y divide-[color:var(--border)] text-sm">
+            {% for r in runs %}
+            <li class="py-2 flex items-center justify-between gap-2">
+                <a href="/insights?run_id={{ r.id }}" class="min-w-0 flex items-center gap-2 {% if selected and selected.id == r.id %}pl-accent-text{% else %}text-[color:var(--text)]{% endif %}">
+                    <span class="truncate">{{ r.period_start }} — {{ r.period_end }}</span>
+                    <span class="pl-text-muted text-xs shrink-0">{{ r.sections | length }} {{ t.insights_sections_short }}</span>
+                    {% if r.status == 'failed' %}<span class="text-xs shrink-0 text-[color:var(--danger)]">{{ t.insights_failed_short }}</span>{% endif %}
+                </a>
+                <form action="/insights/runs/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.insights_delete }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.insights_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('insights', 'w-4 h-4') }}{{ t.insights_no_runs }}</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

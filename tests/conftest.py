@@ -28,6 +28,7 @@ from app.models.category import ActivityCategory  # noqa: F401
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
 from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
+from app.models.insights import InsightFinding, InsightRun  # noqa: F401
 from app.models.inventory_category import InventoryCategory  # noqa: F401
 from app.models.journal import JournalEntry, JournalPartner  # noqa: F401
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule  # noqa: F401

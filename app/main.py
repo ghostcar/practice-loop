@@ -254,6 +254,8 @@ if composition.tracker_active:
     from app.api.health import json_router as health_json_router  # noqa: E402
     from app.api.health import router as health_router  # noqa: E402
     from app.api.import_data import router as import_router  # noqa: E402
+    from app.api.insights import json_router as insights_json_router  # noqa: E402
+    from app.api.insights import router as insights_router  # noqa: E402
     from app.api.journal import json_router as journal_json_router  # noqa: E402
     from app.api.journal import router as journal_router  # noqa: E402
     from app.api.knowledge import router as knowledge_router  # noqa: E402
@@ -312,6 +314,10 @@ if composition.tracker_active:
 
     if composition.catalog_enabled:
         app.include_router(catalog_router)
+
+    if composition.insights_enabled:
+        app.include_router(insights_router)
+        app.include_router(insights_json_router)
         app.include_router(catalog_json_router)
 
 # ---------------------------------------------------------------------------

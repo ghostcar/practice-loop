@@ -55,6 +55,10 @@ from app.llm.pipeline.generate import (  # noqa: F401
     get_active_llm_config,
 )
 from app.llm.pipeline.health import analyze_labs  # noqa: F401
+from app.llm.pipeline.insights import (  # noqa: F401
+    analyze_insights,
+    build_insights_context,
+)
 from app.llm.pipeline.templates import (  # noqa: F401
     extract_template_vars,
     generate_from_template,
