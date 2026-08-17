@@ -54,9 +54,14 @@ _ACHIEVEMENTS = [
 
 
 def upgrade() -> None:
+    import uuid as _uuid
+
     bind = op.get_bind()
+    # achievements.id has no server default (only the ORM-side uuid4 default),
+    # so raw inserts must provide the id explicitly.
     table = sa.table(
         "achievements",
+        sa.column("id", sa.Uuid),
         sa.column("code", sa.String),
         sa.column("name", sa.String),
         sa.column("description", sa.Text),
@@ -69,7 +74,7 @@ def upgrade() -> None:
             sa.select(table.c.code).where(table.c.code == data["code"])
         ).first()
         if exists is None:
-            bind.execute(table.insert().values(**data))
+            bind.execute(table.insert().values(id=_uuid.uuid4(), **data))
 
 
 def downgrade() -> None:
