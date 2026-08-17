@@ -588,7 +588,8 @@ Shared Artifact. Feature flag `medication_enabled` (default true).
   low_stock по локальному дню устройства), `POST /{id}/intake`, `/export` (JSON),
   `GET /stocks` (партии/остатки), `GET /schedules` (расписания), `GET /kits` (аптечки) —
   плоские owner-scoped списки для мобильного клиента; создание — `POST /` (препарат),
-  `POST /stocks`, `POST /schedules`, `POST /kits` (owner-scoped, 201).
+  `POST /stocks`, `POST /schedules`, `POST /kits` (owner-scoped, 201); удаление —
+  `DELETE /{id}`, `DELETE /stocks/{id}`, `DELETE /schedules/{id}`, `DELETE /kits/{id}` (204).
 - **Экспорт**: `GET /medications/export` — CSV (список + история приёма) для врача;
   `Content-Disposition: attachment`.
 - **Границы дня**: «сегодня» и подсчёт принятого — через `timeutils.local_date()`
@@ -619,7 +620,8 @@ Private Record (DATA_LIFECYCLE.md). Расчётная фаза Cycle никог
   (новый цикл после перерыва ≥3 дней), `_cycle_phase` — фаза по дню. Всегда помечается
   `phase_estimated=True`.
 - **JSON API** (`/api/v2/health`, bearer): сводка (`/`), `/states`, `/labs`, `/cycle`,
-  `POST /state`, `POST /labs`, `POST /cycle/events`.
+  `POST /state`, `POST /labs`, `POST /cycle/events`, `POST /cycle/settings` (upsert),
+  `DELETE /labs/{id}`, `DELETE /cycle/events/{id}`.
 - **Дашборд**: блок `dash-block-health` (check-in сегодня / число анализов / фаза цикла),
   управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **LLM-разбор анализов** (§9.3, ADR-087): `POST /health/analyze` (form) и
@@ -672,7 +674,8 @@ Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true
 - **Связи с Timer/Health — по ID без раскрытия** (DATA_LIFECYCLE.md): мягкие UUID-ссылки
   без FK; отдельное удаление; общая проекция не открывает журналы друг друга (§7).
 - **JSON API** (`/api/v2/journal`, bearer): сводка (`/` — записи + партнёры),
-  `POST /entries`, `POST /partners`, `POST /entries/{id}/complete`. Object-level auth:
+  `POST /entries`, `POST /partners`, `POST /entries/{id}/complete`,
+  `DELETE /entries/{id}`, `DELETE /partners/{id}`. Object-level auth:
   чужой partner_id отклоняется; удаление псевдонима обнуляет ссылки в записях
   (SET NULL на уровне приложения).
 - **Дашборд**: блок `dash-block-journal` (записи за 30д / последняя запись /
@@ -728,7 +731,8 @@ Feature flag `care_enabled` (default true).
   чистит join-строки на уровне приложения + CASCADE в БД.
 - **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи + средства),
   `GET /products`, `GET /courses`, `POST /routines`, `POST /entries`, `POST /products`,
-  `DELETE /products/{id}`, `DELETE /routines/{id}`, `DELETE /entries/{id}`, `POST /courses`.
+  `DELETE /products/{id}`, `DELETE /routines/{id}`, `DELETE /entries/{id}`,
+  `POST /courses`, `DELETE /courses/{id}`.
   Object-level
   auth: чужой routine_id отклоняется; удаление процедуры обнуляет ссылки в записях
   (SET NULL на уровне приложения).
@@ -782,7 +786,7 @@ Feature flag `insights_enabled` (default true).
   анализ» + результат (summary + находки с used_data) + история запусков
   (с удалением). Object-level auth: чужой run → 404; удаление каскадит findings.
 - **JSON API** (`/api/v2/insights`, bearer): GET список, POST запуск,
-  GET /runs/{id}.
+  GET /runs/{id}, DELETE /runs/{id}.
 - **Дашборд**: блок `dash-block-insights` (последний запуск / число находок /
   период), управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **Навигация**: пункт «Инсайты» (иконка insights.svg из пакета) в группе «Данные».

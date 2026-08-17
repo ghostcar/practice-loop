@@ -1335,6 +1335,23 @@ async def json_add_course(
     return _course_json(course)
 
 
+@json_router.delete("/courses/{course_id}", status_code=204)
+async def json_delete_course(
+    course_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить курс процедур (сеансы удаляются каскадом) — для мобильного клиента."""
+    course = (
+        await db.execute(select(CareCourse).where(CareCourse.id == course_id, CareCourse.user_id == user.id))
+    ).scalar_one_or_none()
+    if course is None:
+        raise HTTPException(404, "Course not found")
+    await db.delete(course)
+    await db.flush()
+    return None
+
+
 def _now_utc():
     from datetime import UTC
     from datetime import datetime as _dt

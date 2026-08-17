@@ -247,6 +247,25 @@ async def test_delete_run_cascades_findings(auth_client, test_user, db_session, 
     assert len(remaining) == 0  # CASCADE
 
 
+@pytest.mark.asyncio
+async def test_json_delete_run(auth_client, test_user, db_session):
+    """DELETE /api/v2/insights/runs/{id} — mobile CRUD + findings cascade."""
+    run = InsightRun(user_id=test_user.id, period_start=TODAY, period_end=TODAY, sections=["care"])
+    db_session.add(run)
+    await db_session.flush()
+    db_session.add(InsightFinding(run_id=run.id, section="care", title="t", summary="s"))
+    await db_session.flush()
+
+    resp = await auth_client.delete(f"/api/v2/insights/runs/{run.id}")
+    assert resp.status_code == 204, resp.text
+    assert (
+        await db_session.execute(select(InsightRun).where(InsightRun.user_id == test_user.id))
+    ).scalar_one_or_none() is None
+    assert (
+        await db_session.execute(select(InsightFinding).where(InsightFinding.run_id == run.id))
+    ).scalars().all() == []
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Cross-user isolation
 # ─────────────────────────────────────────────────────────────────────────────

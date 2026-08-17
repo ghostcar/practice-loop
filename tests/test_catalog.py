@@ -320,3 +320,26 @@ def test_catalog_module_no_gamification():
     assert "app.models.progress" not in source
     assert "award_points" not in source
     assert "apply_penalty" not in source
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON DELETE (complete mobile CRUD)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_json_delete_item(auth_client, test_user, db_session):
+    item = (
+        await auth_client.post("/api/v2/catalog/items", json={"name": "JSON вид", "domains": ["journal"]})
+    ).json()
+    resp = await auth_client.delete(f"/api/v2/catalog/items/{item['id']}")
+    assert resp.status_code == 204
+    data = (await auth_client.get("/api/v2/catalog")).json()
+    assert not any(i["name"] == "JSON вид" for i in data["items"])
+
+
+@pytest.mark.asyncio
+async def test_json_delete_system_item_rejected(auth_client, test_user, db_session):
+    item = await _system_item(db_session)
+    resp = await auth_client.delete(f"/api/v2/catalog/items/{item.id}")
+    assert resp.status_code == 404

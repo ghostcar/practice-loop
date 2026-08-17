@@ -361,3 +361,49 @@ def test_medication_module_positive_only_no_penalties():
     assert "-=" not in gsource.replace(" #", " #").split("-")[0]  # no deduction of xp
     assert "deduct" not in gsource.lower()
     assert "penalty" not in gsource.lower()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON DELETE (complete mobile CRUD)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_json_delete_medication_stock_schedule_kit(auth_client, test_user, db_session):
+    """JSON DELETE for medication/stock/schedule/kit — complete mobile CRUD."""
+    med = (await auth_client.post("/api/v2/medications", json={"name": "Ibuprofen"})).json()
+    kit = (await auth_client.post("/api/v2/medications/kits", json={"name": "Home kit"})).json()
+    stock = (
+        await auth_client.post(
+            "/api/v2/medications/stocks", json={"medication_id": med["id"], "quantity": 20}
+        )
+    ).json()
+    sched = (
+        await auth_client.post(
+            "/api/v2/medications/schedules", json={"medication_id": med["id"], "frequency_type": "daily"}
+        )
+    ).json()
+
+    assert (await auth_client.delete(f"/api/v2/medications/stocks/{stock['id']}")).status_code == 204
+    assert (await auth_client.delete(f"/api/v2/medications/schedules/{sched['id']}")).status_code == 204
+    assert (await auth_client.delete(f"/api/v2/medications/kits/{kit['id']}")).status_code == 204
+    assert (await auth_client.delete(f"/api/v2/medications/{med['id']}")).status_code == 204
+
+    assert (await auth_client.get("/api/v2/medications/stocks")).json() == []
+    assert (await auth_client.get("/api/v2/medications/schedules")).json() == []
+    assert (await auth_client.get("/api/v2/medications/kits")).json() == []
+    assert (await auth_client.get("/api/v2/medications")).json() == []
+
+
+@pytest.mark.asyncio
+async def test_json_delete_medication_foreign_rejected(auth_client, test_user, db_session):
+    """DELETE /medications/{id} for another user's record → 404 (owner-scoped)."""
+    other = User(email="other-del@example.com", password_hash=hash_password("x"), locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    other_med = Medication(user_id=other.id, name="Other med", kind="medication")
+    db_session.add(other_med)
+    await db_session.flush()
+
+    resp = await auth_client.delete(f"/api/v2/medications/{other_med.id}")
+    assert resp.status_code == 404

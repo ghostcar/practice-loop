@@ -302,6 +302,23 @@ async def json_get_run(
     return _run_view(run)
 
 
+@json_router.delete("/runs/{run_id}", status_code=204)
+async def json_delete_run(
+    run_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить запуск анализа (findings — CASCADE) — для мобильного клиента."""
+    run = (
+        await db.execute(select(InsightRun).where(InsightRun.id == run_id, InsightRun.user_id == user.id))
+    ).scalar_one_or_none()
+    if run is None:
+        raise HTTPException(404, "Insight run not found")
+    await db.delete(run)
+    await db.flush()
+    return None
+
+
 class InsightBody(BaseModel):
     period_start: date | None = None
     period_end: date | None = None

@@ -265,6 +265,34 @@ async def test_json_list_courses_cross_user_isolation(auth_client, test_user, db
 
 
 @pytest.mark.asyncio
+async def test_json_delete_course(auth_client, test_user, db_session):
+    """DELETE /api/v2/care/courses/{id} — mobile CRUD, sessions removed too."""
+    resp = await auth_client.post(
+        "/api/v2/care/courses",
+        json={"name": "Laser", "area": "body", "total_sessions": 3, "interval_days": 7},
+    )
+    course_id = resp.json()["id"]
+
+    del_resp = await auth_client.delete(f"/api/v2/care/courses/{course_id}")
+    assert del_resp.status_code == 204, del_resp.text
+
+    assert (await auth_client.get("/api/v2/care/courses")).json() == []
+
+
+@pytest.mark.asyncio
+async def test_json_delete_course_foreign_rejected(auth_client, test_user, db_session):
+    other = User(email="other-course-del@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    course = CareCourse(user_id=other.id, name="Other", area="face")
+    db_session.add(course)
+    await db_session.flush()
+
+    resp = await auth_client.delete(f"/api/v2/care/courses/{course.id}")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_course_cross_user_isolation(auth_client, test_user, db_session):
     other = User(email="other2@example.com", password_hash="x", locale="en", theme="dark")
     db_session.add(other)

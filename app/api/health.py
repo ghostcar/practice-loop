@@ -797,6 +797,23 @@ async def json_add_lab(
     }
 
 
+@json_router.delete("/labs/{lab_id}", status_code=204)
+async def json_delete_lab(
+    lab_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить лабораторную запись — для мобильного клиента (owner-scoped)."""
+    rec = (
+        await db.execute(select(LabRecord).where(LabRecord.id == lab_id, LabRecord.user_id == user.id))
+    ).scalar_one_or_none()
+    if rec is None:
+        raise HTTPException(404, "Lab record not found")
+    await db.delete(rec)
+    await db.flush()
+    return None
+
+
 class CycleEventBody(BaseModel):
     event_date: date
     event_type: str
@@ -827,6 +844,57 @@ async def json_add_cycle_event(
         "event_type": ev.event_type,
         "value": ev.value,
         "notes": ev.notes,
+    }
+
+
+@json_router.delete("/cycle/events/{event_id}", status_code=204)
+async def json_delete_cycle_event(
+    event_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить событие Cycle — для мобильного клиента (owner-scoped)."""
+    ev = (
+        await db.execute(select(CycleEvent).where(CycleEvent.id == event_id, CycleEvent.user_id == user.id))
+    ).scalar_one_or_none()
+    if ev is None:
+        raise HTTPException(404, "Cycle event not found")
+    await db.delete(ev)
+    await db.flush()
+    return None
+
+
+class CycleSettingsBody(BaseModel):
+    cycle_length: int = Field(default=28, ge=1, le=120)
+    period_length: int = Field(default=5, ge=1, le=30)
+    contraception: str = "none"
+    notes: str | None = None
+
+
+@json_router.post("/cycle/settings", status_code=201)
+async def json_save_cycle_settings(
+    body: CycleSettingsBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Обновить настройки Cycle (upsert) — для мобильного клиента."""
+    contraception = body.contraception if body.contraception in CONTRACEPTION_TYPES else "none"
+    row = (
+        await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))
+    ).scalar_one_or_none()
+    if row is None:
+        row = CycleSettings(user_id=user.id)
+        db.add(row)
+    row.cycle_length = body.cycle_length
+    row.period_length = body.period_length
+    row.contraception = contraception
+    row.notes = (body.notes or "").strip() or None
+    await db.flush()
+    return {
+        "cycle_length": row.cycle_length,
+        "period_length": row.period_length,
+        "contraception": row.contraception,
+        "notes": row.notes,
     }
 
 

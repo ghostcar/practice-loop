@@ -279,3 +279,39 @@ def test_journal_module_no_gamification():
     assert "award_points" not in source
     assert "apply_penalty" not in source
     assert "calculate_entity_penalty" not in source
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON DELETE (complete mobile CRUD)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_json_delete_entry_and_partner(auth_client, test_user, db_session):
+    partner = (await auth_client.post("/api/v2/journal/partners", json={"name": "M."})).json()
+    entry = (
+        await auth_client.post(
+            "/api/v2/journal/entries",
+            json={"entry_date": TODAY.isoformat(), "partner_id": partner["id"]},
+        )
+    ).json()
+
+    assert (await auth_client.delete(f"/api/v2/journal/entries/{entry['id']}")).status_code == 204
+    assert (await auth_client.delete(f"/api/v2/journal/partners/{partner['id']}")).status_code == 204
+
+    data = (await auth_client.get("/api/v2/journal")).json()
+    assert data["total"] == 0
+    assert data["partners"] == []
+
+
+@pytest.mark.asyncio
+async def test_json_delete_foreign_entry_rejected(auth_client, test_user, db_session):
+    other = User(email="other-journal@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    other_entry = JournalEntry(user_id=other.id, entry_date=TODAY)
+    db_session.add(other_entry)
+    await db_session.flush()
+
+    resp = await auth_client.delete(f"/api/v2/journal/entries/{other_entry.id}")
+    assert resp.status_code == 404

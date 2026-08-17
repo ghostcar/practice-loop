@@ -584,3 +584,62 @@ def test_pipeline_functions_accept_llm_mode():
     ):
         sig = inspect.signature(fn)
         assert "llm_mode" in sig.parameters, f"{fn.__name__} missing llm_mode"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON DELETE + cycle settings (complete mobile CRUD)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_json_delete_lab_and_cycle_event(auth_client, test_user, db_session):
+    lab = (
+        await auth_client.post(
+            "/api/v2/health/labs", json={"name": "Glucose", "measured_at": TODAY.isoformat(), "value": 5.2}
+        )
+    ).json()
+    ev = (
+        await auth_client.post(
+            "/api/v2/health/cycle/events", json={"event_date": TODAY.isoformat(), "event_type": "libido"}
+        )
+    ).json()
+
+    assert (await auth_client.delete(f"/api/v2/health/labs/{lab['id']}")).status_code == 204
+    assert (await auth_client.delete(f"/api/v2/health/cycle/events/{ev['id']}")).status_code == 204
+
+    assert (await auth_client.get("/api/v2/health/labs")).json() == []
+    assert (await auth_client.get("/api/v2/health/cycle")).json()["events"] == []
+
+
+@pytest.mark.asyncio
+async def test_json_cycle_settings_upsert(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/api/v2/health/cycle/settings",
+        json={"cycle_length": 30, "period_length": 6, "contraception": "hormonal"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["cycle_length"] == 30
+
+    resp2 = await auth_client.post(
+        "/api/v2/health/cycle/settings",
+        json={"cycle_length": 32, "period_length": 5, "contraception": "none"},
+    )
+    assert resp2.status_code == 201
+    rows = (
+        await db_session.execute(select(CycleSettings).where(CycleSettings.user_id == test_user.id))
+    ).scalars().all()
+    assert len(rows) == 1
+    assert rows[0].cycle_length == 32
+
+
+@pytest.mark.asyncio
+async def test_json_delete_foreign_lab_rejected(auth_client, test_user, db_session):
+    other = User(email="other-health@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    other_lab = LabRecord(user_id=other.id, name="X", measured_at=TODAY, value=1.0)
+    db_session.add(other_lab)
+    await db_session.flush()
+
+    resp = await auth_client.delete(f"/api/v2/health/labs/{other_lab.id}")
+    assert resp.status_code == 404

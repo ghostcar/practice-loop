@@ -1040,6 +1040,66 @@ async def json_create_kit(
     return {"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes}
 
 
+@json_router.delete("/stocks/{stock_id}", status_code=204)
+async def json_delete_stock(
+    stock_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    st = (
+        await db.execute(select(MedStock).where(MedStock.id == stock_id, MedStock.user_id == user.id))
+    ).scalar_one_or_none()
+    if st is None:
+        raise HTTPException(404, "Stock not found")
+    await db.delete(st)
+    await db.flush()
+    return None
+
+
+@json_router.delete("/schedules/{schedule_id}", status_code=204)
+async def json_delete_schedule(
+    schedule_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    s = (
+        await db.execute(select(MedSchedule).where(MedSchedule.id == schedule_id, MedSchedule.user_id == user.id))
+    ).scalar_one_or_none()
+    if s is None:
+        raise HTTPException(404, "Schedule not found")
+    await db.delete(s)
+    await db.flush()
+    return None
+
+
+@json_router.delete("/kits/{kit_id}", status_code=204)
+async def json_delete_kit(
+    kit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    k = (
+        await db.execute(select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user.id))
+    ).scalar_one_or_none()
+    if k is None:
+        raise HTTPException(404, "Kit not found")
+    await db.delete(k)
+    await db.flush()
+    return None
+
+
+@json_router.delete("/{medication_id}", status_code=204)
+async def json_delete_medication(
+    medication_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    m = await _get_med(db, user.id, medication_id)
+    await db.delete(m)
+    await db.flush()
+    return None
+
+
 class IntakeBody(BaseModel):
     schedule_id: uuid.UUID | None = None
     status: str = "taken"

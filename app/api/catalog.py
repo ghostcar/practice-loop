@@ -286,3 +286,25 @@ async def json_create_item(
         "domains": item.domains or [],
         "owner_id": str(item.owner_id) if item.owner_id else None,
     }
+
+
+@json_router.delete("/items/{item_id}", status_code=204)
+async def json_delete_item(
+    item_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить только свою запись каталога (системные не удаляются)."""
+    item = (
+        await db.execute(
+            select(ActivityCatalogItem).where(
+                ActivityCatalogItem.id == item_id,
+                ActivityCatalogItem.owner_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(404, "Catalog item not found")
+    await db.delete(item)
+    await db.flush()
+    return None

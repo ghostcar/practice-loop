@@ -1051,3 +1051,50 @@ async def json_add_partner(
         "name": partner.name,
         "notes": partner.notes,
     }
+
+
+@json_router.delete("/entries/{entry_id}", status_code=204)
+async def json_delete_entry(
+    entry_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить запись журнала — для мобильного клиента (owner-scoped)."""
+    entry = (
+        await db.execute(select(JournalEntry).where(JournalEntry.id == entry_id, JournalEntry.user_id == user.id))
+    ).scalar_one_or_none()
+    if entry is None:
+        raise HTTPException(404, "Journal entry not found")
+    await db.delete(entry)
+    await db.flush()
+    return None
+
+
+@json_router.delete("/partners/{partner_id}", status_code=204)
+async def json_delete_partner(
+    partner_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Удалить псевдоним партнёра — записи сохраняются, ссылка обнуляется (SET NULL)."""
+    partner = (
+        await db.execute(
+            select(JournalPartner).where(JournalPartner.id == partner_id, JournalPartner.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if partner is None:
+        raise HTTPException(404, "Partner not found")
+    entries = (
+        (
+            await db.execute(
+                select(JournalEntry).where(JournalEntry.user_id == user.id, JournalEntry.partner_id == partner_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for e in entries:
+        e.partner_id = None
+    await db.delete(partner)
+    await db.flush()
+    return None
