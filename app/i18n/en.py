@@ -785,6 +785,14 @@ EN = {
     "device_severity_low": "Low",
     "device_severity_medium": "Medium",
     "device_severity_high": "High",
+    # Chastity check-ins (C2, §6.6)
+    "locktimer_checkins": "Check-ins",
+    "locktimer_checkins_hint": "Regular wear check-ins: state, comfort, report",
+    "locktimer_checkin_mood": "Mood (1-5)",
+    "locktimer_checkin_comfort": "Comfort (1-5)",
+    "locktimer_checkin_notes": "Report",
+    "locktimer_checkin_add": "Check in",
+    "locktimer_checkin_no_entries": "No check-ins yet.",
     # Q14 — honest action results (JS)
     "locktimer_action_locked": "Locked on.",
     "locktimer_action_skipped": "Skipped.",

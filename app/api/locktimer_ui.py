@@ -36,6 +36,7 @@ from app.locktimer.repositories import (
     list_task_rules,
 )
 from app.locktimer.services.extras import list_templates
+from app.models.chastity import ChastityCheckIn
 from app.models.device import DEVICE_EVENT_TYPES, ChastityDeviceEvent
 from app.models.locktimer import (
     LockLlmProposal,
@@ -272,6 +273,25 @@ async def locktimer_session_detail(
             }
         )
 
+    # Chastity check-ins (C2, §6.6) — состояние/комфорт/отчёт во время ношения.
+    check_ins: list[dict] = []
+    ci_result = await db.execute(
+        select(ChastityCheckIn)
+        .where(ChastityCheckIn.user_id == current_user.id, ChastityCheckIn.session_id == session_id)
+        .order_by(ChastityCheckIn.created_at.desc())
+        .limit(50)
+    )
+    for ci in ci_result.scalars().all():
+        check_ins.append(
+            {
+                "id": str(ci.id),
+                "mood": ci.mood,
+                "comfort_level": ci.comfort_level,
+                "notes": ci.notes,
+                "created_at": ci.created_at,
+            }
+        )
+
     # Сквозной каталог (ADR-091): пикер причин/целей окон (домен timer).
     catalog_items: list[dict] = []
     try:
@@ -347,6 +367,7 @@ async def locktimer_session_detail(
             "devices": devices,
             "device_events": device_events,
             "device_event_types": list(DEVICE_EVENT_TYPES),
+            "check_ins": check_ins,
             "slot_rules": [
                 {
                     "id": str(r.id),

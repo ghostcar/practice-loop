@@ -789,6 +789,14 @@ RU = {
     "device_severity_low": "Низкая",
     "device_severity_medium": "Средняя",
     "device_severity_high": "Высокая",
+    # Chastity check-ins (C2, §6.6)
+    "locktimer_checkins": "Чекины",
+    "locktimer_checkins_hint": "Регулярные чекины ношения: состояние, комфорт, отчёт",
+    "locktimer_checkin_mood": "Настроение (1-5)",
+    "locktimer_checkin_comfort": "Комфорт (1-5)",
+    "locktimer_checkin_notes": "Отчёт",
+    "locktimer_checkin_add": "Записать чекин",
+    "locktimer_checkin_no_entries": "Чекинов пока нет.",
     # Q14 — honest action results (JS)
     "locktimer_action_locked": "Надето.",
     "locktimer_action_skipped": "Пропущено.",
