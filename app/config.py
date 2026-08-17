@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # M3 Personal Suite (Шаг 11b) — Medication Organizer. Health-модуль, relief-only.
     medication_enabled: bool = True
 
+    # M3 Personal Suite (Шаг 13) — Health + Cycle foundation (4D). Health-модуль, relief-only.
+    health_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+asyncpg://tracker:tracker@localhost:5432/tracker"
 

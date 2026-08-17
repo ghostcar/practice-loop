@@ -247,6 +247,8 @@ if composition.tracker_active:
     from app.api.dashboard import router as dashboard_router  # noqa: E402
     from app.api.diets import router as diets_router  # noqa: E402
     from app.api.entities import router as entities_router  # noqa: E402
+    from app.api.health import json_router as health_json_router  # noqa: E402
+    from app.api.health import router as health_router  # noqa: E402
     from app.api.import_data import router as import_router  # noqa: E402
     from app.api.knowledge import router as knowledge_router  # noqa: E402
     from app.api.llm_configs import router as llm_configs_router  # noqa: E402
@@ -289,6 +291,10 @@ if composition.tracker_active:
     if composition.medication_enabled:
         app.include_router(medication_router)
         app.include_router(medication_json_router)
+
+    if composition.health_enabled:
+        app.include_router(health_router)
+        app.include_router(health_json_router)
 
 # ---------------------------------------------------------------------------
 # Timer routes (C1-C8 — registered when LOCKTIMER_CORE_ENABLED)

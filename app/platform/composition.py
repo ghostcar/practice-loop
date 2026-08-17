@@ -44,6 +44,7 @@ class ProductComposition:
     locktimer_keyholder_enabled: bool = False
     locktimer_cloud_media_enabled: bool = False
     medication_enabled: bool = True
+    health_enabled: bool = True
 
     # Migration sequence numbers for debugging
     tracker_active: bool = field(init=False)
@@ -103,6 +104,7 @@ def build_product_composition() -> ProductComposition:
         locktimer_keyholder_enabled=settings.locktimer_keyholder_enabled,
         locktimer_cloud_media_enabled=settings.locktimer_cloud_media_enabled,
         medication_enabled=settings.medication_enabled,
+        health_enabled=settings.health_enabled,
     )
 
 

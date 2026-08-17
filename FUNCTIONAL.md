@@ -66,6 +66,7 @@ sidebar (иконки + подписи).
 | `/llm-configs` | BYOK-конфиги провайдеров, активный конфиг, режимы full/abstract, хранение raw |
 | `/measurements` | Замеры тела (утро/вечер), графики |
 | `/medications` | Medication Organizer: лекарства/аптечки/остатки/расписание/факт приёма, экспорт для врача (§22) |
+| `/health` | Health + Cycle foundation (4D): ежедневный check-in (настроение/энергия/сон/симптомы), анализы с оригинальным диапазоном, цикл с расчётной фазой (§23) |
 | `/inventory` | Инвентарь: предметы, фото, сортировка drag&drop, shopping list |
 | `/schedule` | Правила расписания дня (day_of_week + время + тип задачи + recurring) |
 | `/import` | Импорт/экспорт данных: CSV/JSON шаблоны, upload, API-push, полный экспорт |
@@ -281,13 +282,16 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (63):
+Полный перечень таблиц `app/models/*` (67):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
 - **Мобильный фундамент (M4)**: `api_tokens` (refresh-токены), `push_devices`.
 - **Medication Organizer (M3, §22)**: `medications`, `med_kits`, `med_stocks`,
   `med_schedules`, `med_intakes` (relief-only, без игровой интеграции — PD-013).
+- **Health + Cycle foundation (M3, §23)**: `health_states` (check-in: настроение/энергия/сон/
+  симптомы/восстановление), `lab_records` (анализы с оригинальным диапазоном лаборатории),
+  `cycle_settings` (одна строка на пользователя), `cycle_events` (факты цикла) — relief-only, PD-013.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -567,3 +571,33 @@ Shared Artifact. Feature flag `medication_enabled` (default true).
 - **Границы дня**: «сегодня» и подсчёт принятого — через `timeutils.local_date()`
   (client-tz), а не жёсткий UTC.
 - **OCR/LLM верификация кодов** (Q13 в OPEN_QUESTIONS.md): отложено.
+
+---
+
+## 23. Health + Cycle foundation (M3 Personal Suite, Шаг 13, ADR-086)
+
+Второй Health-модуль личного контура (ROADMAP §7 4D, PRODUCT_VISION §9.2–9.4).
+**Relief-only** (PD-013): никакой игровой интеграции, никаких штрафов; все записи —
+Private Record (DATA_LIFECYCLE.md). Расчётная фаза Cycle никогда не выдаётся за
+достоверный факт (§9.4). Feature flag `health_enabled` (default true).
+
+- **Модель (4 таблицы, миграция 044)**:
+  - `health_states` — ежедневный check-in: event_date, mood/energy/sleep_quality/recovery (1–5),
+    sleep_hours, symptoms (JSON-список), notes;
+  - `lab_records` — анализы: name, measured_at, value, unit, ref_min/ref_max (оригинальный
+    диапазон конкретной лаборатории), lab_name, flagged (пометка лаборатории), notes;
+  - `cycle_settings` — одна строка на пользователя: cycle_length, period_length, contraception;
+  - `cycle_events` — факты цикла: event_date, event_type
+    (bleeding/symptom/state/sleep/energy/libido/skin/test/note), value, notes.
+- **Страница `/health`**: check-in на сегодня (upsert по дате), история check-in'ов,
+  анализы с подсветкой вне-диапазона, Cycle: настройки + события + расчётная фаза
+  (menstrual/follicular/ovulation/luteal) по дню цикла от последнего начала кровотечения.
+- **Расчёт фазы**: `_day_of_cycle` — день цикла от последнего начала кровотечения
+  (новый цикл после перерыва ≥3 дней), `_cycle_phase` — фаза по дню. Всегда помечается
+  `phase_estimated=True`.
+- **JSON API** (`/api/v2/health`, bearer): сводка (`/`), `/states`, `/labs`, `/cycle`,
+  `POST /state`, `POST /labs`, `POST /cycle/events`.
+- **Дашборд**: блок `dash-block-health` (check-in сегодня / число анализов / фаза цикла),
+  управляется в /settings (DASH_BLOCKS), discretion-aware.
+- **Ограниченный LLM-разбор** (§9.3): отложен — анализы хранят исходный диапазон,
+  LLM-пересказ/вопросы врачу — будущий срез (см. PLAN.md).

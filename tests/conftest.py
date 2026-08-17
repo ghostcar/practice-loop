@@ -44,6 +44,7 @@ from app.models.locktimer import (  # noqa: F401
     LockTimerTemplate,
 )
 from app.models.media import MediaAsset, MediaVerificationResult, VerificationChallenge  # noqa: F401
+from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
 from app.models.medication import Medication, MedIntake, MedKit, MedSchedule, MedStock  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
