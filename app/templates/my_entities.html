@@ -51,6 +51,15 @@
  </select>
  </div>
  {% endif %}
+ {% if care_products %}
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">{{ t.care_products_label }}</label>
+ <select name="care_product_ids" multiple size="3"
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ {% for p in care_products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+ </select>
+ </div>
+ {% endif %}
  <div>
  <label class="block text-sm font-medium text-[color:var(--text)] mb-1">Tags (comma-separated)</label>
  <input name="tags"

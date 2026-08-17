@@ -39,6 +39,7 @@ ALLOWED_OWNER_TYPES = {
     "social_publication",
     "journal_entry",
     "care_entry",
+    "care_product",
 }
 
 

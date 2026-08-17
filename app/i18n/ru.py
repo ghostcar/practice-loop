@@ -1226,6 +1226,7 @@ RU = {
     "care_product_brand": "Бренд",
     "care_product_inventory": "Связанный предмет инвентаря",
     "care_product_used": "использований",
+    "care_products_label": "Средства ухода",
     "care_no_products": "Средств пока нет — добавьте те, что используете",
     "care_product_cat_cleanser": "Очищение",
     "care_product_cat_toner": "Тоник",

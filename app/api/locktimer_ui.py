@@ -257,6 +257,31 @@ async def locktimer_session_detail(
     except Exception:
         pass  # catalog module may not be deployed yet
 
+    # Средства/косметика (ADR-094): пикер средств для окон таймера.
+    care_products: list[dict] = []
+    care_names: dict[str, str] = {}
+    care_products_by_rule: dict[str, list[dict]] = {}
+    try:
+        from app.models.care import CareProduct
+
+        cp_result = await db.execute(
+            select(CareProduct)
+            .where(CareProduct.user_id == current_user.id)
+            .order_by(CareProduct.name)
+            .limit(200)
+        )
+        for p in cp_result.scalars().all():
+            care_products.append({"id": str(p.id), "name": p.name})
+            care_names[str(p.id)] = p.name
+        # карта rule_id → средства окна (для отображения в открытых окнах)
+        for r in slot_rules:
+            if r.care_product_ids:
+                care_products_by_rule[str(r.id)] = [
+                    {"id": pid, "name": care_names.get(str(pid), str(pid))} for pid in r.care_product_ids
+                ]
+    except Exception:
+        pass  # care module may not be deployed yet
+
     # Medication schedules for the relief-task picker (ADR-085, relief-only).
     med_schedules: list[dict] = []
     try:
@@ -293,6 +318,7 @@ async def locktimer_session_detail(
             "session": _serialize_session(session, t),
             "med_schedules": med_schedules,
             "catalog_items": catalog_items,
+            "care_products": care_products,
             "bound_device": bound_device,
             "devices": devices,
             "slot_rules": [
@@ -302,6 +328,7 @@ async def locktimer_session_detail(
                     "rule_type": r.rule_type,
                     "schedule": r.schedule,
                     "duration_seconds": r.duration_seconds,
+                    "care_product_ids": r.care_product_ids or [],
                 }
                 for r in slot_rules
             ],
@@ -316,7 +343,10 @@ async def locktimer_session_detail(
                 }
                 for r in task_rules
             ],
-            "slot_occurrences": [_serialize_slot_occ(o, t) for o in slot_occs],
+            "slot_occurrences": [
+                _serialize_slot_occ(o, t, care_products_by_rule=care_products_by_rule, care_names=care_names)
+                for o in slot_occs
+            ],
             "slot_journal_pending": slot_journal_pending,
             "task_occurrences": [_serialize_task_occ(o, t) for o in task_occs],
             "proposals": [
@@ -576,9 +606,18 @@ def _serialize_session(session, t) -> dict | None:
     }
 
 
-def _serialize_slot_occ(occ: LockSlotOccurrence, t) -> dict:
+def _serialize_slot_occ(
+    occ: LockSlotOccurrence,
+    t,
+    care_products_by_rule: dict[str, list[dict]] | None = None,
+    care_names: dict[str, str] | None = None,
+) -> dict:
+    care_products_by_rule = care_products_by_rule or {}
+    care_names = care_names or {}
+    rule_id = str(occ.rule_id) if occ.rule_id else None
     return {
         "id": str(occ.id),
+        "rule_id": rule_id,
         "state": occ.state,
         "planned_open_at": occ.planned_open_at,
         "planned_close_at": occ.planned_close_at,
@@ -588,6 +627,7 @@ def _serialize_slot_occ(occ: LockSlotOccurrence, t) -> dict:
         "extension_applied_seconds": occ.extension_applied_seconds,
         "blocked_reason_code": occ.blocked_reason_code,
         "close_tag_number": occ.close_tag_number,
+        "care_products": care_products_by_rule.get(rule_id or "", []),
     }
 
 

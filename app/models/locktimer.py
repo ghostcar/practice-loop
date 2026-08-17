@@ -177,6 +177,9 @@ class LockSlotRule(Base):
     # Шаг 14b: окно для плановой сексуальной активности — при открытии авто-создаётся
     # draft-запись Sexual Journal (детали пользователь обязан внести при закрытии).
     journal_auto: Mapped[bool] = mapped_column(default=False, nullable=False)
+    # Шаг 17b: средства/косметика, которые нужно использовать в этом окне
+    # (мягкие ссылки на care_products по ID, DATA_LIFECYCLE.md)
+    care_product_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

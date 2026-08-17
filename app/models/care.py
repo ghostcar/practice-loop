@@ -33,6 +33,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models import Base
 
 if TYPE_CHECKING:
+    from app.models.catalog import ActivityCatalogItem
     from app.models.life import InventoryItem
     from app.models.user import User
 
@@ -87,6 +88,10 @@ class CareRoutine(Base):
     )
 
     user: Mapped[User] = relationship("User", lazy="selectin")
+    # рекомендуемые средства для этой процедуры (care_routine_products)
+    products: Mapped[list[CareProduct]] = relationship(
+        "CareProduct", secondary="care_routine_products", lazy="selectin", viewonly=True
+    )
 
     def __repr__(self) -> str:
         return f"<CareRoutine(id={self.id}, name={self.name!r})>"
@@ -135,9 +140,11 @@ class CareProduct(Base):
     """Каталог средств/косметики для ухода (PRODUCT_OVERVIEW §8).
 
     Каждая позиция может ссылаться на предмет инвентаря (inventory_item_id) —
-    чтобы вести остатки/список покупок в одном месте. Категории — из
-    CARE_PRODUCT_CATEGORIES. Средства используются в записях ухода
-    (care_entry_products). Relief-only (PD-013): справочник без игровой
+    чтобы вести остатки/список покупок в одном месте, и на универсальный каталог
+    (catalog_item_id, домен care). У позиции есть остаток (quantity) и срок
+    (expiry_date). Категории — из CARE_PRODUCT_CATEGORIES. Средства используются
+    в записях ухода (care_entry_products) и рекомендуются для процедур
+    (care_routine_products). Relief-only (PD-013): справочник без игровой
     интеграции.
     """
 
@@ -152,10 +159,21 @@ class CareProduct(Base):
     category: Mapped[str] = mapped_column(String(30), default="other", nullable=False)
     brand: Mapped[str | None] = mapped_column(String(120), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # остаток (штук/мл — условно), 0/None = неизвестно
+    quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # срок годности (необязательно)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     # привязка к инвентарю: остаток/список покупок ведётся в inventory_items
     inventory_item_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("inventory_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    # ссылка на универсальный каталог (ADR-091, домен care) — вид активности
+    catalog_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("activity_catalog.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -166,9 +184,28 @@ class CareProduct(Base):
 
     user: Mapped[User] = relationship("User", lazy="selectin")
     inventory_item: Mapped[InventoryItem | None] = relationship("InventoryItem", lazy="selectin")
+    catalog_item: Mapped[ActivityCatalogItem | None] = relationship("ActivityCatalogItem", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<CareProduct(id={self.id}, name={self.name!r})>"
+
+
+class CareRoutineProduct(Base):
+    """Many-to-many: рекомендуемые средства для процедуры ухода."""
+
+    __tablename__ = "care_routine_products"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    routine_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("care_routines.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("care_products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<CareRoutineProduct(routine={self.routine_id}, product={self.product_id})>"
 
 
 class CareEntryProduct(Base):

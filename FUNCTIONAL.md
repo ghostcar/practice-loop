@@ -282,7 +282,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (76):
+Полный перечень таблиц `app/models/*` (77):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -297,9 +297,10 @@ sidebar (иконки + подписи).
   мягкие связи с Timer/Health по ID) — relief-only, PD-013, Private Record.
 - **Personal Care (M3, §25)**: `care_routines` (каталог процедур/рутин: зона, тип,
   частота, заметки), `care_entries` (факты выполнения: дата, длительность, реакция
-  кожи, снимок фазы Cycle), `care_products` (каталог средств/косметики с привязкой
-  к инвентарю), `care_entry_products` (средства, использованные в записи ухода) —
-  relief-only, PD-013, Private Record.
+  кожи, снимок фазы Cycle), `care_products` (каталог средств/косметики: остаток,
+  срок, привязка к инвентарю и универсальному каталогу), `care_entry_products`
+  (средства, использованные в записи ухода), `care_routine_products` (рекомендуемые
+  средства для процедуры) — relief-only, PD-013, Private Record.
 - **Универсальный каталог активностей (§26)**: `activity_catalog` — сквозной
   справочник видов активностей (как Entity: категория/теги/описание/domains),
   на который ссылаются журнал, уход, окна таймера и трекер-задачи — нейтрален,
@@ -678,16 +679,20 @@ Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true
 никаких штрафов; все записи Private Record (DATA_LIFECYCLE.md).
 Feature flag `care_enabled` (default true).
 
-- **Модель (4 таблицы, миграции 047 + 049)**:
+- **Модель (5 таблиц, миграции 047 + 049 + 051)**:
   - `care_routines` — каталог процедур/рутин: name, area (face/body/hair/hands/feet/other),
     kind (home/salon), frequency_days (частота в днях, необязательно), notes;
   - `care_entries` — факты выполнения процедуры: routine_id (FK SET NULL), entry_date,
     duration_minutes, skin_reaction (1–5), notes, снимок cycle_phase/cycle_day;
   - `care_products` — каталог средств/косметики (Шаг 16b, ADR-092): name, category
     (cleanser/toner/serum/moisturizer/mask/exfoliant/sun/body/hair/other), brand, notes,
-    inventory_item_id (FK inventory_items, SET NULL — остаток/список покупок в инвентаре);
+    quantity (остаток), expiry_date (срок), inventory_item_id (FK inventory_items, SET NULL —
+    остаток/список покупок в инвентаре), catalog_item_id (FK activity_catalog, SET NULL —
+    связь с универсальным каталогом);
   - `care_entry_products` — какие средства использованы в записи ухода (many-to-many
-    care_entries ↔ care_products, CASCADE).
+    care_entries ↔ care_products, CASCADE);
+  - `care_routine_products` — рекомендуемые средства для процедуры (many-to-many
+    care_routines ↔ care_products, CASCADE).
 - **Страница `/care`**: форма процедуры (название, зона, тип, частота, заметки) +
   журнал ухода (дата, процедура, длительность, реакция кожи, заметки) + каталог рутин
   (с числом выполнений) + история записей с фото-плитками.
@@ -697,11 +702,14 @@ Feature flag `care_enabled` (default true).
 - **Связь с Cycle (§9.4)**: при создании записи сохраняется снимок расчётной фазы цикла
   (`cycle_phase`/`cycle_day`) — помечен как оценка, не факт. Если Cycle недоступен —
   (None, None).
-- **Средства/косметика (Шаг 16b, ADR-092)**: секция на /care — форма (название,
-  категория, бренд, связанный предмет инвентаря) + список с инвентарным бейджем и
-  счётчиком использований; форма записи ухода — мультиселект средств. Валидация
-  владельца: чужой inventory_item_id/product_id → 400; удаление продукта чистит
-  join-строки на уровне приложения + CASCADE в БД.
+- **Средства/косметика (Шаг 16b, ADR-092; Шаг 17b, ADR-094)**: секция на /care —
+  форма (название, категория, бренд, остаток quantity, срок expiry_date, связанный
+  предмет инвентаря, ссылка на универсальный каталог) + список с инвентарным бейджем,
+  low-stock/expiring-бейджами и счётчиком использований; фото средства (owner_type=
+  care_product, POST /care/products/{id}/media); форма записи ухода — мультиселект
+  средств; форма рутины — мультиселект рекомендуемых средств (care_routine_products).
+  Валидация владельца: чужой inventory_item_id/product_id → 400; удаление продукта
+  чистит join-строки на уровне приложения + CASCADE в БД.
 - **JSON API** (`/api/v2/care`, bearer): сводка (`/` — процедуры + записи + средства),
   `POST /routines`, `POST /entries`, `POST /products`, `DELETE /products/{id}`. Object-level
   auth: чужой routine_id отклоняется; удаление процедуры обнуляет ссылки в записях
@@ -760,3 +768,24 @@ Feature flag `insights_enabled` (default true).
 - **Дашборд**: блок `dash-block-insights` (последний запуск / число находок /
   период), управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **Навигация**: пункт «Инсайты» (иконка insights.svg из пакета) в группе «Данные».
+
+## 28. Средства/косметика в других модулях (кросс-модуль, Шаг 17b, ADR-094)
+
+Доработка каталога средств/косметики (§25) и его сквозное использование в
+других модулях личного контура. **Relief-only** (PD-013): без игровой интеграции.
+Все связи — мягкие ссылки JSON по ID (DATA_LIFECYCLE.md, без FK, отдельное удаление).
+
+- **Остатки и сроки**: `care_products.quantity` (остаток, low-stock при ≤1) и
+  `care_products.expiry_date` (срок, expiring при ≤30 дней) — бейджи на /care.
+- **Средства ↔ рутины**: `care_routine_products` — рекомендуемые средства для
+  процедуры (мультиселект в форме рутины).
+- **Средства в окнах таймера**: `lock_slot_rules.care_product_ids` (JSON) — какие
+  средства использовать в окне; пикер в форме слота + отображение в открытом окне.
+- **Средства в задачах трекера**: `entities.care_product_ids` (JSON) — какие средства
+  нужны для задачи; пикер в форме my_entities.
+- **Средства → журнал**: `sj_entries.care_product_ids` (JSON) — использованные
+  средства в записи; мультиселект в форме/complete + JSON API.
+- **Средства в Insights**: контекст раздела care дополнен расходом средств (сколько
+  раз использовалось) и low-stock (низкий остаток/истёкший срок).
+- **Валидация владельца** во всех местах (чужое средство → 400); JSON-колонки хранят
+  строки UUID (UUID не сериализуется в JSON).

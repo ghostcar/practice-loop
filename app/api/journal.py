@@ -315,6 +315,18 @@ async def journal_page(
     # Сквозной каталог (ADR-091): пикер видов активности (домен journal).
     catalog_items = await catalog_options(db, user.id, domain="journal")
 
+    # Средства/косметика (ADR-094): мультиселект средств в записи журнала.
+    care_products: list[dict] = []
+    try:
+        from app.models.care import CareProduct
+
+        cp_result = await db.execute(
+            select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name).limit(200)
+        )
+        care_products = [{"id": str(p.id), "name": p.name} for p in cp_result.scalars().all()]
+    except Exception:
+        pass  # care module may not be deployed yet
+
     return templates.TemplateResponse(
         request=request,
         name="journal.html",
@@ -340,6 +352,7 @@ async def journal_page(
             "activity_titles": activity_titles,
             "recent_activities": recent_activity_options,
             "catalog_items": catalog_items,
+            "care_products": care_products,
             "scales": list(SCALE_1_5),
             "protection_types": list(PROTECTION_TYPES),
             "reaction_choices": list(REACTION_CHOICES),
@@ -367,6 +380,7 @@ def _entry_view(e: JournalEntry, partner_names: dict[str, str]) -> dict:
         "pleasure": e.pleasure,
         "reactions": e.reactions or [],
         "emotional_state": e.emotional_state or [],
+        "care_product_ids": [str(x) for x in (e.care_product_ids or [])],
         "aftercare": e.aftercare,
         "recovery": e.recovery,
         "notes": e.notes,
@@ -436,6 +450,39 @@ async def _validate_activity_log(
     return aid
 
 
+async def _validate_care_products(
+    db: AsyncSession, care_product_ids: str | list[uuid.UUID] | None, user_id: uuid.UUID
+) -> list[str] | None:
+    """Validate care product references (ADR-094) — soft links by ID.
+
+    Accepts a comma-separated string (form) or a list of UUIDs (JSON). Returns
+    None when empty, else the validated UUID list. Unknown/foreign products → 400.
+    """
+    if care_product_ids is None:
+        return None
+    if isinstance(care_product_ids, str):
+        raw = [x.strip() for x in care_product_ids.split(",") if x.strip()]
+        if not raw:
+            return None
+        try:
+            parsed = [uuid.UUID(x) for x in raw]
+        except ValueError:
+            raise HTTPException(400, "Invalid care_product_ids") from None
+    else:
+        parsed = list(care_product_ids)
+    if not parsed:
+        return None
+    from app.models.care import CareProduct
+
+    rows = (
+        await db.execute(select(CareProduct.id).where(CareProduct.id.in_(parsed), CareProduct.user_id == user_id))
+    ).scalars().all()
+    if len(rows) != len(set(parsed)):
+        raise HTTPException(400, "One or more care products not found")
+    # JSON-колонка: храним строки (UUID не сериализуется в JSON)
+    return [str(x) for x in parsed]
+
+
 async def _resolve_catalog_item(
     db: AsyncSession, catalog_item_id: str | uuid.UUID | None, user_id: uuid.UUID
 ) -> ActivityCatalogItem | None:
@@ -485,10 +532,12 @@ async def _apply_entry_fields(
     recovery: int | None,
     notes: str,
     activity_log_id: uuid.UUID | None,
+    care_product_ids: list[str] | None = None,
 ) -> None:
     entry.entry_date = entry_date
     entry.partner_id = partner_id
     entry.catalog_item_id = catalog_item_id
+    entry.care_product_ids = care_product_ids
     # снимок названия: из каталога (если выбрана запись) или свободная строка (legacy)
     entry.activity_type = (activity_type or "").strip()[:100] or None
     entry.duration_minutes = duration_minutes
@@ -529,6 +578,7 @@ async def add_entry(
     notes: str = Form(default=""),
     activity_log_id: str = Form(default=""),
     catalog_item_id: str = Form(default=""),
+    care_product_ids: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -553,6 +603,7 @@ async def add_entry(
     emotion_list = [x.strip() for x in emotional_state.split(",") if x.strip()] if emotional_state.strip() else None
     aid = await _validate_activity_log(db, activity_log_id, user.id)
     catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
+    care_uuids = await _validate_care_products(db, care_product_ids, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, d)
 
@@ -584,6 +635,7 @@ async def add_entry(
         recovery=_parse_scale(recovery, "recovery"),
         notes=notes,
         activity_log_id=aid,
+        care_product_ids=care_uuids,
     )
     db.add(entry)
     await db.flush()
@@ -609,6 +661,7 @@ async def complete_entry(
     recovery: str = Form(default=""),
     notes: str = Form(default=""),
     catalog_item_id: str = Form(default=""),
+    care_product_ids: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -626,6 +679,7 @@ async def complete_entry(
     reaction_list = [x.strip() for x in reactions.split(",") if x.strip()] if reactions.strip() else None
     emotion_list = [x.strip() for x in emotional_state.split(",") if x.strip()] if emotional_state.strip() else None
     catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
+    care_uuids = await _validate_care_products(db, care_product_ids, user.id)
 
     await _apply_entry_fields(
         entry,
@@ -647,6 +701,7 @@ async def complete_entry(
         recovery=_parse_scale(recovery, "recovery"),
         notes=notes,
         activity_log_id=entry.activity_log_id,
+        care_product_ids=care_uuids,
     )
     await db.flush()
     return RedirectResponse(url="/journal", status_code=303)
@@ -824,6 +879,7 @@ def _entry_json(e: JournalEntry) -> dict:
         "source": e.source,
         "activity_log_id": str(e.activity_log_id) if e.activity_log_id else None,
         "slot_occurrence_id": str(e.slot_occurrence_id) if e.slot_occurrence_id else None,
+        "care_product_ids": [str(x) for x in (e.care_product_ids or [])],
         "cycle_phase": e.cycle_phase,
         "cycle_day": e.cycle_day,
     }
@@ -848,6 +904,7 @@ class EntryBody(BaseModel):
     recovery: int | None = Field(default=None, ge=1, le=5)
     notes: str | None = None
     activity_log_id: uuid.UUID | None = None
+    care_product_ids: list[uuid.UUID] | None = None
 
 
 @json_router.post("/entries", status_code=201)
@@ -869,6 +926,7 @@ async def json_add_entry(
     protection = body.protection if body.protection in PROTECTION_TYPES else "none"
     aid = await _validate_activity_log(db, body.activity_log_id, user.id)
     catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
+    care_uuids = await _validate_care_products(db, body.care_product_ids, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, body.entry_date)
 
@@ -900,6 +958,7 @@ async def json_add_entry(
         recovery=body.recovery,
         notes=body.notes or "",
         activity_log_id=aid,
+        care_product_ids=care_uuids,
     )
     db.add(entry)
     await db.flush()
@@ -922,6 +981,7 @@ class CompleteBody(BaseModel):
     aftercare: str | None = None
     recovery: int | None = Field(default=None, ge=1, le=5)
     notes: str | None = None
+    care_product_ids: list[uuid.UUID] | None = None
 
 
 @json_router.post("/entries/{entry_id}/complete")
@@ -942,6 +1002,7 @@ async def json_complete_entry(
 
     protection = body.protection if body.protection in PROTECTION_TYPES else "none"
     catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
+    care_uuids = await _validate_care_products(db, body.care_product_ids, user.id)
     await _apply_entry_fields(
         entry,
         entry_date=entry.entry_date,
@@ -962,6 +1023,7 @@ async def json_complete_entry(
         recovery=body.recovery,
         notes=body.notes or "",
         activity_log_id=entry.activity_log_id,
+        care_product_ids=care_uuids,
     )
     await db.flush()
     return _entry_json(entry)

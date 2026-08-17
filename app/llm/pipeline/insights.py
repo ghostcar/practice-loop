@@ -30,7 +30,7 @@ from app.llm.insights_prompts import INSIGHTS_SYSTEM
 from app.llm.mode import llm_mode_hint
 from app.llm.repair import parse_llm_json
 from app.models.activity_log import ActivityLog
-from app.models.care import CareEntry
+from app.models.care import CareEntry, CareEntryProduct, CareProduct
 from app.models.diet import DietEvaluation
 from app.models.health import HealthState, LabRecord
 from app.models.insights import INSIGHT_SECTIONS
@@ -215,7 +215,48 @@ async def _ctx_care(db: AsyncSession, user_id: uuid.UUID, start: date, end: date
     if not rows:
         return []
     routines = {str(e.routine_id) for e in rows if e.routine_id}
-    return [f"care entries: {len(rows)}", f"distinct routines: {len(routines)}"]
+    lines = [f"care entries: {len(rows)}", f"distinct routines: {len(routines)}"]
+    # Средства (ADR-094): какие средства использовались и сколько раз,
+    # расходники на исходе (низкий остаток / истёкший срок).
+    try:
+        entry_ids = [e.id for e in rows]
+        if entry_ids:
+            usage_rows = (
+                (
+                    await db.execute(
+                        select(CareEntryProduct.product_id, func.count(CareEntryProduct.id))
+                        .where(CareEntryProduct.entry_id.in_(entry_ids))
+                        .group_by(CareEntryProduct.product_id)
+                    )
+                )
+                .all()
+            )
+            if usage_rows:
+                products = {
+                    str(p.id): p
+                    for p in (
+                        (
+                            await db.execute(
+                                select(CareProduct).where(CareProduct.user_id == user_id)
+                            )
+                        )
+                        .scalars()
+                        .all()
+                    )
+                }
+                used = [
+                    f"{products.get(str(pid)).name if products.get(str(pid)) else '?'} x{count}"
+                    for pid, count in usage_rows
+                ]
+                lines.append(f"products used: {', '.join(used)}")
+                low_stock = [
+                    p.name for p in products.values() if p.quantity is not None and p.quantity <= 1
+                ]
+                if low_stock:
+                    lines.append(f"low stock products: {', '.join(low_stock)}")
+    except Exception:
+        logger.warning("care products context skipped", exc_info=True)
+    return lines
 
 
 async def _ctx_training(db: AsyncSession, user_id: uuid.UUID, start: date, end: date) -> list[str]:

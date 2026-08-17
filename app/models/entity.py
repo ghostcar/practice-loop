@@ -39,6 +39,9 @@ class Entity(Base):
         ForeignKey("activity_catalog.id", ondelete="SET NULL"),
         nullable=True,
     )
+    # Шаг 17b: средства/косметика, которые использовать при выполнении задачи
+    # (мягкие ссылки на care_products по ID, DATA_LIFECYCLE.md)
+    care_product_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False, default="one_time")  # one_time / series / infinite
     real_name: Mapped[str] = mapped_column(String(500), nullable=False)
     # ADR-035/036: stable machine-readable slug; short display title

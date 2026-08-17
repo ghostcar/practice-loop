@@ -33,6 +33,13 @@
                     </select>
                     <a href="/catalog?domain=journal" class="text-xs pl-accent-text inline-flex items-center gap-0.5 mt-1">{{ icon('plus', 'w-3 h-3') }}{{ t.catalog_create_own }}</a>
                 </label>
+                {% if care_products %}
+                <label class="text-xs pl-text-secondary">{{ t.care_products_label }}
+                    <select name="care_product_ids" multiple size="2" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for p in care_products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                {% endif %}
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_link_activity }}
                     <select name="activity_log_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                         <option value="">{{ t.journal_no_activity }}</option>
@@ -142,6 +149,13 @@
                         {% for c in catalog_items %}<option value="{{ c.id }}" {% if e.catalog_item_id == c.id %}selected{% endif %}>{{ c.name }}{% if c.owner_id %} · {{ t.catalog_mine }}{% endif %}</option>{% endfor %}
                     </select>
                 </label>
+                {% if care_products %}
+                <label class="text-xs pl-text-secondary">{{ t.care_products_label }}
+                    <select name="care_product_ids" multiple size="2" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        {% for p in care_products %}<option value="{{ p.id }}" {% if p.id in e.care_product_ids %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                {% endif %}
                 <label class="text-xs pl-text-secondary">{{ t.journal_duration }}
                     <input type="number" name="duration_minutes" min="0" value="{{ e.duration_minutes or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                 </label>

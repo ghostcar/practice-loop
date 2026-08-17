@@ -115,6 +115,9 @@ class JournalEntry(Base):
     status: Mapped[str] = mapped_column(String(20), default="completed", nullable=False, index=True)
     # manual | activity | timer_slot
     source: Mapped[str] = mapped_column(String(20), default="manual", nullable=False)
+    # Шаг 17b: использованные средства/косметика (мягкие ссылки на care_products
+    # по ID, DATA_LIFECYCLE.md)
+    care_product_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # снимок расчётной фазы Cycle на момент записи (не выдаётся за факт, §9.4)
     cycle_phase: Mapped[str | None] = mapped_column(String(20), nullable=True)
     cycle_day: Mapped[int | None] = mapped_column(Integer, nullable=True)

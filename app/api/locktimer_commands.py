@@ -340,6 +340,7 @@ async def api_add_slot_rule(
     max_late_seconds: int = Form(default=3600),
     journal_auto: bool = Form(default=False),
     catalog_item_id: str = Form(default=""),
+    care_product_ids: str = Form(default=""),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -390,6 +391,34 @@ async def api_add_slot_rule(
             raise HTTPException(400, "Catalog item not found")
         catalog_uuid = cid
 
+    # Средства/косметика (ADR-092/094): какие средства нужно использовать
+    # в этом окне. Мягкие ссылки на care_products по ID — валидируем
+    # принадлежность пользователю.
+    care_uuids: list[uuid.UUID] | None = None
+    if care_product_ids.strip():
+        from sqlalchemy import select
+
+        from app.models.care import CareProduct
+
+        raw = [x.strip() for x in care_product_ids.split(",") if x.strip()]
+        try:
+            parsed = [uuid.UUID(x) for x in raw]
+        except ValueError as exc:
+            raise HTTPException(422, "Invalid care_product_ids format") from exc
+        if parsed:
+            rows = (
+                await db.execute(
+                    select(CareProduct.id).where(
+                        CareProduct.id.in_(parsed),
+                        CareProduct.user_id == current_user.id,
+                    )
+                )
+            ).scalars().all()
+            if len(rows) != len(set(parsed)):
+                raise HTTPException(400, "One or more care products not found")
+            # JSON-колонка: храним строки (UUID не сериализуется в JSON)
+            care_uuids = [str(x) for x in parsed]
+
     await add_slot_rule(
         db,
         session_id=session_id,
@@ -401,6 +430,7 @@ async def api_add_slot_rule(
         max_late_seconds=max_late_seconds,
         journal_auto=journal_auto,
         catalog_item_id=catalog_uuid,
+        care_product_ids=care_uuids,
     )
 
     return action_response(

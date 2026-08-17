@@ -1222,6 +1222,7 @@ EN = {
     "care_product_brand": "Brand",
     "care_product_inventory": "Linked inventory item",
     "care_product_used": "used",
+    "care_products_label": "Care products",
     "care_no_products": "No products yet — add the ones you use",
     "care_product_cat_cleanser": "Cleanser",
     "care_product_cat_toner": "Toner",

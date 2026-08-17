@@ -160,6 +160,14 @@
         </select>
       </div>
       {% endif %}
+      {% if care_products %}
+      <div>
+        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.care_products_label or "Care products to use" }}</label>
+        <select name="care_product_ids" multiple size="3" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
+          {% for p in care_products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs text-[color:var(--text-secondary)]">Schedule (JSON)</label>
@@ -236,6 +244,9 @@
           <span class="font-medium text-[color:var(--text)]">{{ r.name }}</span>
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded pl-accent-soft">{{ r.rule_type }}</span>
           <span class="ml-1 text-[color:var(--text-secondary)]">{{ r.duration_seconds }}s</span>
+          {% if r.care_product_ids %}
+          <span class="ml-1 px-1.5 py-0.5 text-xs rounded pl-surface-soft border border-[color:var(--border)]">{{ icon('comfort', 'w-3 h-3 inline') }} {{ r.care_product_ids|length }}</span>
+          {% endif %}
         </div>
         {% if session.state == 'draft' %}
         <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
@@ -321,6 +332,11 @@
             {% if o.extension_applied_seconds %}+{{ o.extension_applied_seconds }}s{% endif %}
           </span>
           {% if o.close_due_at %}<span class="text-xs text-[color:var(--text-muted)] hidden sm:inline">due {{ localtime(o.close_due_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
+          {% if o.state == 'open' and o.care_products %}
+          <span class="text-xs text-[color:var(--text-secondary)] inline-flex items-center gap-1">{{ icon('comfort', 'w-3 h-3') }}
+            {% for p in o.care_products %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+          </span>
+          {% endif %}
         </div>
         {% if session.state == 'active' and o.state in ('pending', 'eligible') %}
         <form action="/api/v2/locktimer/slot-occurrences/{{ o.id }}/open" method="post" class="flex-shrink-0">

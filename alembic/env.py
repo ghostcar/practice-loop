@@ -12,7 +12,13 @@ from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401
 from app.models.api_token import ApiToken  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
-from app.models.care import CareEntry, CareEntryProduct, CareProduct, CareRoutine  # noqa: F401
+from app.models.care import (  # noqa: F401
+    CareEntry,
+    CareEntryProduct,
+    CareProduct,
+    CareRoutine,
+    CareRoutineProduct,
+)
 from app.models.catalog import ActivityCatalogItem  # noqa: F401
 from app.models.category import ActivityCategory  # noqa: F401
 from app.models.entity import Entity  # noqa: F401

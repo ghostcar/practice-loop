@@ -152,6 +152,18 @@ async def my_entities_page(
     # Сквозной каталог (ADR-091): пикер видов активностей (домен tracker).
     catalog_items = await catalog_options(db, user.id, domain="tracker")
 
+    # Средства/косметика (ADR-094): задача может требовать использования средства.
+    care_products: list[dict] = []
+    try:
+        from app.models.care import CareProduct
+
+        cp_result = await db.execute(
+            select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name).limit(200)
+        )
+        care_products = [{"id": str(p.id), "name": p.name} for p in cp_result.scalars().all()]
+    except Exception:
+        pass  # care module may not be deployed yet
+
     return templates.TemplateResponse(
         request=request,
         name="my_entities.html",
@@ -163,6 +175,7 @@ async def my_entities_page(
             "theme": theme,
             "entities": entities,
             "catalog_items": catalog_items,
+            "care_products": care_products,
             "active_nav": "catalog",
         },
     )
@@ -182,6 +195,7 @@ async def create_entity(
     risk_level: str = Form(default="not_assessed"),
     category_id: uuid.UUID | None = Form(default=None),
     catalog_item_id: str = Form(default=""),
+    care_product_ids: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -214,6 +228,27 @@ async def create_entity(
         if item is None:
             raise HTTPException(400, "Catalog item not found")
         catalog_uuid = cid
+    # Средства/косметика (ADR-094): какие средства нужны для задачи.
+    care_uuids: list[uuid.UUID] | None = None
+    if care_product_ids.strip():
+        from app.models.care import CareProduct
+
+        raw = [x.strip() for x in care_product_ids.split(",") if x.strip()]
+        try:
+            parsed = [uuid.UUID(x) for x in raw]
+        except ValueError as exc:
+            raise HTTPException(422, "Invalid care_product_ids format") from exc
+        if parsed:
+            rows = (
+                await db.execute(
+                    select(CareProduct.id).where(CareProduct.id.in_(parsed), CareProduct.user_id == user.id)
+                )
+            ).scalars().all()
+            if len(rows) != len(set(parsed)):
+                raise HTTPException(400, "One or more care products not found")
+            # JSON-колонка: храним строки (UUID не сериализуется в JSON)
+            care_uuids = [str(x) for x in parsed]
+
     entity = Entity(
         type=type,
         real_name=real_name.strip(),
@@ -221,6 +256,7 @@ async def create_entity(
         category=category.strip(),
         category_id=category_id,
         catalog_item_id=catalog_uuid,
+        care_product_ids=care_uuids,
         tags=[t.strip() for t in tags.split(",") if t.strip()] if tags else None,
         owner_id=user.id,
         is_public=is_public,

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -46,6 +46,7 @@ from app.models.care import (
     CareEntryProduct,
     CareProduct,
     CareRoutine,
+    CareRoutineProduct,
 )
 from app.models.catalog import ActivityCatalogItem
 from app.models.life import InventoryItem
@@ -131,12 +132,15 @@ async def _care_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 
 async def _media_map(db: AsyncSession, user_id: uuid.UUID) -> dict[str, list[dict]]:
-    """entry_id → [media assets] for care photos (owner_type=care_entry)."""
+    """owner_ref_id → [media assets] for care photos (care_entry + care_product)."""
     rows = (
         (
             await db.execute(
                 select(MediaAsset)
-                .where(MediaAsset.owner_id == user_id, MediaAsset.owner_type == "care_entry")
+                .where(
+                    MediaAsset.owner_id == user_id,
+                    MediaAsset.owner_type.in_(["care_entry", "care_product"]),
+                )
                 .order_by(MediaAsset.created_at.desc())
             )
         )
@@ -218,6 +222,7 @@ async def care_page(
     usage_by_product = {str(pid): cnt for pid, cnt in product_usage}
     inventory_options = await _inventory_options(db, user.id)
     inventory_names = {i["id"]: i for i in inventory_options}
+    catalog_names = {c["id"]: c["name"] for c in catalog_items}
     product_names = {str(p.id): p.name for p in products}
     product_ids_by_entry = await _entry_product_map(db, user.id)
 
@@ -240,13 +245,14 @@ async def care_page(
                     "frequency_days": r.frequency_days,
                     "notes": r.notes,
                     "entries_count": sum(1 for e in entries if e.routine_id == r.id),
+                    "product_ids": [str(pr.id) for pr in r.products],
                 }
                 for r in routines
             ],
             "entries": [_entry_view(e, routine_names, product_ids_by_entry) for e in entries],
             "media": media,
             "catalog_items": catalog_items,
-            "products": [_product_view(p, usage_by_product, inventory_names) for p in products],
+            "products": [_product_view(p, usage_by_product, inventory_names, catalog_names) for p in products],
             "product_names": product_names,
             "inventory_options": inventory_options,
             "care_areas": list(CARE_AREAS),
@@ -258,18 +264,30 @@ async def care_page(
 
 
 def _product_view(
-    p: CareProduct, usage_by_product: dict[str, int], inventory_names: dict[str, dict]
+    p: CareProduct,
+    usage_by_product: dict[str, int],
+    inventory_names: dict[str, dict],
+    catalog_names: dict[str, str] | None = None,
 ) -> dict:
     inv = inventory_names.get(str(p.inventory_item_id)) if p.inventory_item_id else None
+    today = local_today()
+    low_stock = p.quantity is not None and 0 < p.quantity <= 1
+    expiring = p.expiry_date is not None and p.expiry_date <= today + timedelta(days=30)
     return {
         "id": str(p.id),
         "name": p.name,
         "category": p.category,
         "brand": p.brand,
         "notes": p.notes,
+        "quantity": p.quantity,
+        "expiry_date": p.expiry_date.isoformat() if p.expiry_date else None,
+        "low_stock": low_stock,
+        "expiring": expiring,
         "inventory_item_id": str(p.inventory_item_id) if p.inventory_item_id else None,
         "inventory_name": inv["name"] if inv else None,
         "inventory_status": inv["status"] if inv else None,
+        "catalog_item_id": str(p.catalog_item_id) if p.catalog_item_id else None,
+        "catalog_name": (catalog_names or {}).get(str(p.catalog_item_id)) if p.catalog_item_id else None,
         "usage_count": usage_by_product.get(str(p.id), 0),
     }
 
@@ -327,6 +345,15 @@ def _parse_int(raw: str, field_name: str, minimum: int = 0, maximum: int = 10000
     if v < minimum or v > maximum:
         raise HTTPException(400, f"Invalid {field_name} (out of range)")
     return v
+
+
+def _parse_date(raw: str, field_name: str) -> date | None:
+    if not raw.strip():
+        return None
+    try:
+        return date.fromisoformat(raw.strip())
+    except ValueError:
+        raise HTTPException(400, f"Invalid {field_name} (ISO 8601)") from None
 
 
 async def _validate_routine(db: AsyncSession, routine_id: str, user_id: uuid.UUID) -> uuid.UUID | None:
@@ -459,6 +486,15 @@ async def _set_entry_products(db: AsyncSession, entry_id: uuid.UUID, product_ids
         db.add(CareEntryProduct(entry_id=entry_id, product_id=pid))
 
 
+async def _set_routine_products(db: AsyncSession, routine_id: uuid.UUID, product_ids: list[uuid.UUID]) -> None:
+    """Replace the recommended product set for a routine (care_routine_products)."""
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine_id))
+    for pid in product_ids:
+        db.add(CareRoutineProduct(routine_id=routine_id, product_id=pid))
+
+
 @router.post("/care/routines")
 async def add_routine(
     request: Request,
@@ -468,6 +504,7 @@ async def add_routine(
     frequency_days: str = Form(default=""),
     notes: str = Form(default=""),
     catalog_item_id: str = Form(default=""),
+    product_ids: list[str] = Form(default=[]),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -479,6 +516,7 @@ async def add_routine(
     if kind not in CARE_KINDS:
         kind = "home"
     catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
+    resolved_products = await _resolve_products(db, product_ids, user.id)
     routine = CareRoutine(
         user_id=user.id,
         name=name,
@@ -489,6 +527,8 @@ async def add_routine(
         notes=(notes or "").strip() or None,
     )
     db.add(routine)
+    await db.flush()
+    await _set_routine_products(db, routine.id, resolved_products)
     await db.flush()
     return RedirectResponse(url="/care", status_code=303)
 
@@ -517,6 +557,10 @@ async def delete_routine(
     )
     for e in entries:
         e.routine_id = None
+    # join-строки рекомендуемых средств удаляются на уровне приложения + CASCADE в БД
+    from sqlalchemy import delete
+
+    await db.execute(delete(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine_id))
     await db.delete(routine)
     await db.flush()
     return RedirectResponse(url="/care", status_code=303)
@@ -530,6 +574,9 @@ async def add_product(
     brand: str = Form(default=""),
     notes: str = Form(default=""),
     inventory_item_id: str = Form(default=""),
+    catalog_item_id: str = Form(default=""),
+    quantity: str = Form(default=""),
+    expiry_date: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -539,6 +586,7 @@ async def add_product(
     if category not in CARE_PRODUCT_CATEGORIES:
         category = "other"
     inventory_item = await _resolve_inventory_item(db, inventory_item_id, user.id)
+    catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
     product = CareProduct(
         user_id=user.id,
         name=name,
@@ -546,6 +594,9 @@ async def add_product(
         brand=(brand or "").strip()[:120] or None,
         notes=(notes or "").strip() or None,
         inventory_item_id=inventory_item.id if inventory_item else None,
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        quantity=_parse_int(quantity, "quantity", minimum=0, maximum=100000) or 0,
+        expiry_date=_parse_date(expiry_date, "expiry_date"),
     )
     db.add(product)
     await db.flush()
@@ -564,10 +615,12 @@ async def delete_product(
     ).scalar_one_or_none()
     if product is None:
         raise HTTPException(404, "Product not found")
-    # join-строки care_entry_products удаляются на уровне приложения (и CASCADE в БД)
+    # join-строки care_entry_products + care_routine_products удаляются на уровне
+    # приложения (и CASCADE в БД)
     from sqlalchemy import delete
 
     await db.execute(delete(CareEntryProduct).where(CareEntryProduct.product_id == product_id))
+    await db.execute(delete(CareRoutineProduct).where(CareRoutineProduct.product_id == product_id))
     await db.delete(product)
     await db.flush()
     return RedirectResponse(url="/care", status_code=303)
@@ -660,6 +713,43 @@ async def add_entry_media(
     return RedirectResponse(url="/care", status_code=303)
 
 
+@router.post("/care/products/{product_id}/media")
+async def add_product_media(
+    request: Request,
+    product_id: uuid.UUID,
+    file: UploadFile = File(...),
+    caption: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Привязать фото средства (owner_type=care_product, owner-scoped)."""
+    product = (
+        await db.execute(select(CareProduct).where(CareProduct.id == product_id, CareProduct.user_id == user.id))
+    ).scalar_one_or_none()
+    if product is None:
+        raise HTTPException(404, "Care product not found")
+
+    info = await save_media(file)
+    asset = MediaAsset(
+        owner_id=user.id,
+        owner_type="care_product",
+        owner_ref_id=product.id,
+        state="ready",
+        file_path=info["file_path"],
+        thumbnail_path=info["thumbnail_path"],
+        original_filename=info["original_filename"],
+        mime_type=info["mime_type"],
+        file_size_bytes=info["file_size_bytes"],
+        sha256_hex=info["sha256_hex"],
+        width=info["width"],
+        height=info["height"],
+        caption=(caption or "").strip()[:500] or None,
+    )
+    db.add(asset)
+    await db.flush()
+    return RedirectResponse(url="/care", status_code=303)
+
+
 @router.post("/care/entries/{entry_id}/delete")
 async def delete_entry(
     request: Request,
@@ -734,6 +824,7 @@ def _routine_json(r: CareRoutine) -> dict:
         "kind": r.kind,
         "frequency_days": r.frequency_days,
         "notes": r.notes,
+        "product_ids": [str(pr.id) for pr in r.products],
     }
 
 
@@ -744,7 +835,10 @@ def _product_json(p: CareProduct) -> dict:
         "category": p.category,
         "brand": p.brand,
         "notes": p.notes,
+        "quantity": p.quantity,
+        "expiry_date": p.expiry_date.isoformat() if p.expiry_date else None,
         "inventory_item_id": str(p.inventory_item_id) if p.inventory_item_id else None,
+        "catalog_item_id": str(p.catalog_item_id) if p.catalog_item_id else None,
     }
 
 
@@ -769,6 +863,7 @@ class RoutineBody(BaseModel):
     kind: str = "home"
     frequency_days: int | None = Field(default=None, ge=1, le=3650)
     notes: str | None = None
+    product_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 @json_router.post("/routines", status_code=201)
@@ -783,6 +878,7 @@ async def json_add_routine(
     area = body.area if body.area in CARE_AREAS else "other"
     kind = body.kind if body.kind in CARE_KINDS else "home"
     catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
+    resolved_products = await _resolve_products(db, body.product_ids, user.id)
     routine = CareRoutine(
         user_id=user.id,
         name=name,
@@ -794,6 +890,11 @@ async def json_add_routine(
     )
     db.add(routine)
     await db.flush()
+    await _set_routine_products(db, routine.id, resolved_products)
+    await db.flush()
+    # `products` — lazy="selectin": для только что созданной рутины нужен
+    # явный refresh, иначе async-контекст бросит MissingGreenlet.
+    await db.refresh(routine, ["products"])
     return _routine_json(routine)
 
 
@@ -850,6 +951,9 @@ class ProductBody(BaseModel):
     brand: str | None = None
     notes: str | None = None
     inventory_item_id: uuid.UUID | None = None
+    catalog_item_id: uuid.UUID | None = None
+    quantity: int = Field(default=0, ge=0, le=100000)
+    expiry_date: date | None = None
 
 
 @json_router.post("/products", status_code=201)
@@ -863,6 +967,7 @@ async def json_add_product(
         raise HTTPException(400, "Name is required")
     category = body.category if body.category in CARE_PRODUCT_CATEGORIES else "other"
     inventory_item = await _resolve_inventory_item(db, body.inventory_item_id, user.id)
+    catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
     product = CareProduct(
         user_id=user.id,
         name=name,
@@ -870,6 +975,9 @@ async def json_add_product(
         brand=(body.brand or "").strip()[:120] or None,
         notes=(body.notes or "").strip() or None,
         inventory_item_id=inventory_item.id if inventory_item else None,
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        quantity=body.quantity,
+        expiry_date=body.expiry_date,
     )
     db.add(product)
     await db.flush()
@@ -890,6 +998,7 @@ async def json_delete_product(
     from sqlalchemy import delete
 
     await db.execute(delete(CareEntryProduct).where(CareEntryProduct.product_id == product_id))
+    await db.execute(delete(CareRoutineProduct).where(CareRoutineProduct.product_id == product_id))
     await db.delete(product)
     await db.flush()
     return None
