@@ -282,7 +282,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (67):
+Полный перечень таблиц `app/models/*` (69):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -292,6 +292,9 @@ sidebar (иконки + подписи).
 - **Health + Cycle foundation (M3, §23)**: `health_states` (check-in: настроение/энергия/сон/
   симптомы/восстановление), `lab_records` (анализы с оригинальным диапазоном лаборатории),
   `cycle_settings` (одна строка на пользователя), `cycle_events` (факты цикла) — relief-only, PD-013.
+- **Sexual Journal (M3, §24)**: `sj_partners` (локальные псевдонимы партнёров),
+  `sj_entries` (записи журнала: факт/ощущения/реакции/aftercare, снимок фазы Cycle,
+  мягкие связи с Timer/Health по ID) — relief-only, PD-013, Private Record.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -611,3 +614,33 @@ Private Record (DATA_LIFECYCLE.md). Расчётная фаза Cycle никог
   только факты; expanded — рекомендации/советы). Параметр `llm_mode` у всех
   pipeline-функций (None → из prefs); Telegram `/next` и фоновый scheduler передают
   режим явно из `user.prefs`.
+
+## 24. Sexual Journal (M3 Personal Suite, Шаг 14, ADR-088)
+
+Первый срез журналов личного контура (ROADMAP §7 4A, PRODUCT_VISION §7).
+**Relief-only** (PD-013): никакой игровой интеграции, никаких штрафов; все записи —
+Private Record (DATA_LIFECYCLE.md). Feature flag `journal_enabled` (default true).
+
+- **Модель (2 таблицы, миграция 045)**:
+  - `sj_partners` — локальные псевдонимы партнёров (user-scoped, name/notes; никогда
+    не раскрываются наружу);
+  - `sj_entries` — записи журнала: entry_date, partner_id (FK SET NULL), activity_type,
+    duration_minutes, desire_before/arousal_before (1–5), protection
+    (none/condom/birth_control/withdrawal/other), orgasms, intensity/satisfaction/pleasure
+    (1–5), reactions (JSON), emotional_state (JSON), aftercare, recovery (1–5), notes,
+    мягкие ссылки timer_session_id/health_state_id (UUID без FK) и снимок cycle_phase/cycle_day.
+- **Страница `/journal`**: форма записи (дата, партнёр, вид активности, длительность,
+  желание/возбуждение до начала, защита/контрацепция, оргазмы, интенсивность,
+  удовлетворённость, удовольствие, реакции, эмоциональное состояние, aftercare,
+  восстановление, заметки), история записей, псевдонимы партнёров (CRUD).
+- **Связь с Cycle (§16)**: при создании записи сохраняется снимок расчётной фазы цикла
+  (`cycle_phase`/`cycle_day`) — помечен как оценка, не факт (§9.4). Если Cycle недоступен —
+  (None, None).
+- **Связи с Timer/Health — по ID без раскрытия** (DATA_LIFECYCLE.md): мягкие UUID-ссылки
+  без FK; отдельное удаление; общая проекция не открывает журналы друг друга (§7).
+- **JSON API** (`/api/v2/journal`, bearer): сводка (`/` — записи + партнёры),
+  `POST /entries`, `POST /partners`. Object-level auth: чужой partner_id отклоняется;
+  удаление псевдонима обнуляет ссылки в записях (SET NULL на уровне приложения).
+- **Дашборд**: блок `dash-block-journal` (записи за 30д / последняя запись /
+  ср. удовлетворённость), управляется в /settings (DASH_BLOCKS), discretion-aware.
+- **Навигация**: пункт «Журнал» (иконка aftercare.svg из пакета) в группе «Данные».

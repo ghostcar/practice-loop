@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('aftercare', 'w-6 h-6') }}{{ t.journal_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.journal_subtitle }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Add entry -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.journal_add_entry }}</h2>
+            <form action="/journal/entries" method="post" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary">{{ t.journal_date }}
+                    <input type="date" name="entry_date" value="{{ today.isoformat() }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_partner }}
+                    <select name="partner_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">{{ t.journal_no_partner }}</option>
+                        {% for p in partners %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_activity_type }}
+                    <input type="text" name="activity_type" placeholder="{{ t.journal_activity_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_duration }}
+                    <input type="number" name="duration_minutes" min="0" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_desire_before }} (1-5)
+                    <input type="number" name="desire_before" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_arousal_before }} (1-5)
+                    <input type="number" name="arousal_before" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_protection }}
+                    <select name="protection" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        {% for p in protection_types %}<option value="{{ p }}" {% if p == 'none' %}selected{% endif %}>{{ t['journal_protection_' + p] }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_orgasms }}
+                    <input type="number" name="orgasms" min="0" max="100" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_intensity }} (1-5)
+                    <input type="number" name="intensity" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_satisfaction }} (1-5)
+                    <input type="number" name="satisfaction" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_pleasure }} (1-5)
+                    <input type="number" name="pleasure" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.journal_recovery }} (1-5)
+                    <input type="number" name="recovery" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_reactions }}
+                    <input type="text" name="reactions" placeholder="{{ reaction_choices | map('replace', '_', ' ') | join(', ') }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_emotional_state }}
+                    <input type="text" name="emotional_state" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_aftercare }}
+                    <input type="text" name="aftercare" placeholder="{{ t.journal_aftercare_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_notes }}
+                    <input type="text" name="notes" placeholder="{{ t.journal_notes_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.journal_save }}</button>
+            </form>
+        </section>
+
+        <!-- Partner aliases -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('heart', 'w-4 h-4') }}{{ t.journal_partners }}</h2>
+            <details class="text-sm">
+                <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('plus', 'w-3.5 h-3.5') }}{{ t.journal_add_partner }}</summary>
+                <form action="/journal/partners" method="post" class="mt-2 grid grid-cols-2 gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <label class="text-xs pl-text-secondary">{{ t.journal_partner_name }}
+                        <input type="text" name="name" required class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                    </label>
+                    <label class="text-xs pl-text-secondary">{{ t.journal_partner_notes }}
+                        <input type="text" name="notes" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                    </label>
+                    <button type="submit" class="col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.journal_save }}</button>
+                </form>
+            </details>
+            {% if partners %}
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
+                {% for p in partners %}
+                <li class="py-2 flex items-center justify-between gap-2">
+                    <span class="min-w-0">
+                        <span class="font-medium text-[color:var(--text)]">{{ p.name }}</span>
+                        {% if p.notes %}<span class="pl-text-muted text-xs"> · {{ p.notes }}</span>{% endif %}
+                        <span class="pl-text-muted text-xs"> · {{ p.entries_count }}</span>
+                    </span>
+                    <form action="/journal/partners/{{ p.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.journal_delete }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('heart', 'w-4 h-4') }}{{ t.journal_no_partners }}</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- History -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.journal_history }}</h2>
+        {% if entries %}
+        <ul class="divide-y divide-[color:var(--border)] text-sm">
+            {% for e in entries %}
+            <li class="py-3 flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-[color:var(--text)]">{{ e.entry_date }}</span>
+                        {% if e.activity_type %}<span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ e.activity_type }}</span>{% endif %}
+                        {% if e.partner_name %}<span class="pl-text-secondary text-xs">{{ e.partner_name }}</span>{% endif %}
+                        {% if e.cycle_phase %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('cycle', 'w-3.5 h-3.5') }}{{ t['health_phase_' + e.cycle_phase] }} {{ t.journal_cycle_phase }}</span>{% endif %}
+                    </div>
+                    <div class="pl-text-secondary text-xs flex items-center gap-3 flex-wrap">
+                        {% if e.duration_minutes is not none %}<span>{{ t.journal_duration }}: {{ e.duration_minutes }}</span>{% endif %}
+                        {% if e.desire_before %}<span>{{ t.journal_desire_before }}: {{ e.desire_before }}</span>{% endif %}
+                        {% if e.arousal_before %}<span>{{ t.journal_arousal_before }}: {{ e.arousal_before }}</span>{% endif %}
+                        {% if e.orgasms is not none %}<span>{{ t.journal_orgasms }}: {{ e.orgasms }}</span>{% endif %}
+                        {% if e.intensity %}<span>{{ t.journal_intensity }}: {{ e.intensity }}</span>{% endif %}
+                        {% if e.satisfaction %}<span>{{ t.journal_satisfaction }}: {{ e.satisfaction }}</span>{% endif %}
+                        {% if e.pleasure %}<span>{{ t.journal_pleasure }}: {{ e.pleasure }}</span>{% endif %}
+                        {% if e.recovery %}<span>{{ t.journal_recovery }}: {{ e.recovery }}</span>{% endif %}
+                        {% if e.protection != 'none' %}<span>{{ t.journal_protection }}: {{ t['journal_protection_' + e.protection] }}</span>{% endif %}
+                    </div>
+                    {% if e.reactions %}<div class="text-xs flex gap-1 flex-wrap"><span class="pl-text-muted">{{ t.journal_reactions }}:</span>{% for r in e.reactions %}<span class="pl-accent-soft px-1.5 py-0.5 rounded">{{ r }}</span>{% endfor %}</div>{% endif %}
+                    {% if e.emotional_state %}<div class="text-xs flex gap-1 flex-wrap"><span class="pl-text-muted">{{ t.journal_emotional_state }}:</span>{% for s in e.emotional_state %}<span class="pl-accent-soft px-1.5 py-0.5 rounded">{{ s }}</span>{% endfor %}</div>{% endif %}
+                    {% if e.aftercare %}<div class="text-xs pl-text-muted">{{ t.journal_aftercare }}: {{ e.aftercare }}</div>{% endif %}
+                    {% if e.notes %}<div class="text-xs pl-text-muted">{{ e.notes }}</div>{% endif %}
+                </div>
+                <form action="/journal/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.journal_delete }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.journal_no_entries }}</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -25,7 +25,9 @@ from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTe
 from app.models.category import ActivityCategory  # noqa: F401
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
+from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
 from app.models.inventory_category import InventoryCategory  # noqa: F401
+from app.models.journal import JournalEntry, JournalPartner  # noqa: F401
 from app.models.life import BodyMeasurement, InventoryItem, ScheduleRule  # noqa: F401
 from app.models.llm_config import LLMProviderConfig  # noqa: F401
 from app.models.locktimer import (  # noqa: F401
@@ -44,7 +46,6 @@ from app.models.locktimer import (  # noqa: F401
     LockTimerTemplate,
 )
 from app.models.media import MediaAsset, MediaVerificationResult, VerificationChallenge  # noqa: F401
-from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
 from app.models.medication import Medication, MedIntake, MedKit, MedSchedule, MedStock  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401

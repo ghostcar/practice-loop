@@ -91,3 +91,4 @@
 | [ADR-085](ADR-085.md) | 2026-08-17 | Шаг 12: Медицина × игра — смягчение PD-013 (adherence) | accepted |
 | [ADR-086](ADR-086.md) | 2026-08-17 | Шаг 13: Health + Cycle foundation (ROADMAP §7 4D) | accepted |
 | [ADR-087](ADR-087.md) | 2026-08-17 | LLM-режим пользователя (safe/expanded) + LLM-разбор анализов | accepted |
+| [ADR-088](ADR-088.md) | 2026-08-17 | Шаг 14: Sexual Journal (ROADMAP §7 4A) | accepted |

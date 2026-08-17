@@ -47,7 +47,9 @@ LLM_MODES = ("safe", "expanded")
 
 # Dashboard blocks in default order. Keys must match the `data-dash-block`
 # markers in dashboard_v2.html.
-DASH_BLOCKS = ("header", "stats", "charts", "summaries", "xp", "quick", "today", "medication", "health", "timer")
+DASH_BLOCKS = (
+    "header", "stats", "charts", "summaries", "xp", "quick", "today", "medication", "health", "journal", "timer"
+)
 
 DEFAULT_PREFS: dict[str, Any] = {
     "accent": "ember",
