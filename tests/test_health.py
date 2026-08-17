@@ -502,3 +502,85 @@ async def test_analyze_no_llm_config(auth_client, test_user, db_session):
     resp = await auth_client.post("/health/analyze")
     assert resp.status_code == 303
     assert "no_llm_config" in resp.headers["location"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM mode hint across all blocks (ADR-087, Session 137)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_llm_mode_hint_safe_and_expanded():
+    from app.llm.mode import EXPANDED_HINT, SAFE_HINT, llm_mode_hint
+
+    safe = llm_mode_hint("safe")
+    expanded = llm_mode_hint("expanded")
+    assert safe == SAFE_HINT
+    assert expanded == EXPANDED_HINT
+    assert safe != expanded
+    # safe: factual, no unsolicited advice
+    assert "factual" in safe
+    assert "advice" in safe
+    # expanded: recommendations allowed
+    assert "recommendations" in expanded
+    assert "advice" in expanded
+
+
+def test_llm_mode_hint_defaults_to_prefs():
+    """No explicit mode → reads from request-scoped prefs (safe by default)."""
+    from app.llm.mode import llm_mode_hint
+    from app.prefs import UserPrefs, reset_prefs, set_prefs
+
+    # default (no prefs context) → safe
+    assert llm_mode_hint() == llm_mode_hint("safe")
+
+    token = set_prefs(UserPrefs(llm_mode="expanded"))
+    try:
+        assert llm_mode_hint() == llm_mode_hint("expanded")
+    finally:
+        reset_prefs(token)
+
+
+def test_prompts_have_no_doctor_disclaimer():
+    """Session 137: 'not a doctor' disclaimer lives in the UI, not in prompts."""
+    import inspect
+    import re
+
+    import app.llm.health_prompts as hp
+
+    # only the actual prompt strings (module docstring may mention the policy)
+    source = inspect.getsource(hp)
+    # strip the module docstring (first triple-quoted block)
+    body = re.sub(r'^\s*""".*?"""\n', "", source, count=1, flags=re.DOTALL)
+    assert "not a doctor" not in body.lower()
+    assert "you are not" not in body.lower()
+
+
+def test_pipeline_functions_accept_llm_mode():
+    """All LLM pipeline functions expose the llm_mode parameter (None → prefs)."""
+    import inspect
+
+    from app.llm.pipeline import (
+        analyze_diet_training_synergy,
+        analyze_labs,
+        analyze_training_day,
+        evaluate_diet,
+        generate_daily_plan,
+        generate_diet,
+        generate_from_template,
+        generate_task,
+        generate_weekly_tasks,
+    )
+
+    for fn in (
+        generate_task,
+        generate_weekly_tasks,
+        generate_daily_plan,
+        analyze_training_day,
+        generate_diet,
+        evaluate_diet,
+        analyze_diet_training_synergy,
+        analyze_labs,
+        generate_from_template,
+    ):
+        sig = inspect.signature(fn)
+        assert "llm_mode" in sig.parameters, f"{fn.__name__} missing llm_mode"

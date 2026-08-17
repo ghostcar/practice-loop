@@ -15,6 +15,7 @@ from app.llm.diet_prompts import (
     DIET_GENERATE_SYSTEM,
     DIET_TRAINING_SYNERGY_SYSTEM,
 )
+from app.llm.mode import llm_mode_hint
 from app.llm.repair import parse_llm_json
 from app.models.activity_log import ActivityLog
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
@@ -37,6 +38,7 @@ async def generate_diet(
     direction: str | None = None,
     goal: str | None = None,
     preferences: str | None = None,
+    llm_mode: str | None = None,
 ) -> Diet:
     """Generate a new diet plan via LLM (name, description, food items).
 
@@ -46,7 +48,7 @@ async def generate_diet(
     failed attempt never leaves a partial diet behind.
     """
     user_goal = " ".join(x for x in (direction, goal, preferences) if x) or "balanced healthy diet"
-    system_prompt = DIET_GENERATE_SYSTEM.format(locale=locale)
+    system_prompt = DIET_GENERATE_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = f"Direction/goal: {user_goal}\n\nCreate a daily diet plan."
 
     result = await client.call_llm(
@@ -112,6 +114,7 @@ async def evaluate_diet(
     llm_config: LLMProviderConfig,
     locale: str = "en",
     days: int = 7,
+    llm_mode: str | None = None,
 ) -> dict:
     """Evaluate the user's actual consumption against a diet plan via LLM.
 
@@ -143,7 +146,7 @@ async def evaluate_diet(
         or "- (no consumption recorded)"
     )
 
-    system_prompt = DIET_EVALUATE_SYSTEM.format(locale=locale)
+    system_prompt = DIET_EVALUATE_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = (
         f"Diet: {diet.name} (direction: {diet.direction or '—'}, goal: {diet.goal or '—'})\n\n"
         f"Planned items:\n{plan_text}\n\n"
@@ -261,6 +264,7 @@ async def analyze_diet_training_synergy(
     llm_config: LLMProviderConfig,
     locale: str = "en",
     days: int = 7,
+    llm_mode: str | None = None,
 ) -> DietTrainingReview:
     """Analyze the mutual influence between diets and training via LLM.
 
@@ -322,7 +326,7 @@ async def analyze_diet_training_synergy(
         )
     training_text = "\n".join(training_lines) or "- (no training recorded)"
 
-    system_prompt = DIET_TRAINING_SYNERGY_SYSTEM.format(locale=locale)
+    system_prompt = DIET_TRAINING_SYNERGY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = (
         f"Period: {period_start} .. {period_end}\n\n"
         f"Active diets:\n{diet_text}\n\n"

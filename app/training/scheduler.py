@@ -16,6 +16,8 @@ from app.config import settings
 from app.database import async_session_factory
 from app.llm.pipeline import analyze_training_day, get_active_llm_config
 from app.models.training import TrainingDay
+from app.models.user import User
+from app.prefs import prefs_from_dict
 from app.timeutils import resolve_tz
 
 logger = logging.getLogger(__name__)
@@ -50,11 +52,17 @@ async def _run_auto_analysis() -> None:
                     logger.debug(f"Auto-analysis: skip user {td.user_id} — no active LLM config")
                     continue
 
+                user = (
+                    await db.execute(select(User).where(User.id == td.user_id))
+                ).scalar_one_or_none()
+                llm_mode = prefs_from_dict(user.prefs).llm_mode if user else "safe"
+
                 await analyze_training_day(
                     db=db,
                     training_day=td,
                     llm_config=config,
-                    locale="en",
+                    locale=user.locale if user else "en",
+                    llm_mode=llm_mode,
                 )
                 await db.commit()
                 logger.info(f"Auto-analysis: completed for user {td.user_id}, day {td.target_date}")

@@ -17,6 +17,7 @@ from app.llm.context_builder import (
     format_context_abstract,
     format_context_for_prompt,
 )
+from app.llm.mode import llm_mode_hint
 from app.llm.repair import JsonRepairError, parse_llm_json
 from app.llm.tools import TOOLS
 from app.llm.validator import (
@@ -109,6 +110,7 @@ async def generate_task(
     body_part_id: str | None = None,
     location_id: str | None = None,
     inventory_item_id: str | None = None,
+    llm_mode: str | None = None,
 ) -> ActivityLog:
     """Generate a task via LLM and save to ActivityLog."""
     context = await context_builder.build_context(db, user_id, session_id=session_id, locale=locale)
@@ -120,7 +122,7 @@ async def generate_task(
     # Choose format based on LLM mode
     is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
     context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(locale=locale)
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(locale=locale) + llm_mode_hint(llm_mode)
 
     user_message = f"Context:\n{context_text}\n\n"
     if custom_prompt:
@@ -262,6 +264,7 @@ async def generate_weekly_tasks(
     llm_config: LLMProviderConfig,
     locale: str = "en",
     days: int = 7,
+    llm_mode: str | None = None,
 ) -> list[ActivityLog]:
     """Generate tasks for multiple days ahead (audit P1-2 hardened).
 
@@ -294,7 +297,7 @@ async def generate_weekly_tasks(
         '"entity_name": "<name>", "params": {...}, "reasoning": "..."}]}'
         f"\nThe dates MUST be exactly one of: {', '.join(date_labels)}. "
         "Exactly one task per date, every date covered, no duplicates."
-    )
+    ) + llm_mode_hint(llm_mode)
 
     user_message = (
         f"Context:\n{context_text}\n\n"

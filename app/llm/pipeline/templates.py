@@ -28,6 +28,7 @@ from app.llm.context_builder import (
     format_context_abstract,
     format_context_for_prompt,
 )
+from app.llm.mode import llm_mode_hint
 from app.llm.pipeline.generate import (
     MAX_RETRIES,
     _generate_task_title,
@@ -82,6 +83,7 @@ async def generate_from_template(
     params: dict | None = None,
     locale: str = "en",
     session_id: uuid.UUID | None = None,
+    llm_mode: str | None = None,
 ) -> dict:
     """Run a prompt template. Returns a dict with the generated result.
 
@@ -99,9 +101,11 @@ async def generate_from_template(
         raise ValueError(f"Template params invalid: {'; '.join(schema_errors)}")
 
     if template.template_type == "task":
-        return await _generate_task_from_template(db, user_id, llm_config, template, params, locale, session_id)
+        return await _generate_task_from_template(
+            db, user_id, llm_config, template, params, locale, session_id, llm_mode
+        )
 
-    return await _generate_text_from_template(llm_config, template, params, locale)
+    return await _generate_text_from_template(llm_config, template, params, locale, llm_mode)
 
 
 async def _generate_text_from_template(
@@ -109,9 +113,10 @@ async def _generate_text_from_template(
     template: PromptTemplate,
     params: dict,
     locale: str,
+    llm_mode: str | None = None,
 ) -> dict:
     """Free-text generation: system = rendered template, user = params context."""
-    system_prompt = render_template_prompt(template.system_prompt, params)
+    system_prompt = render_template_prompt(template.system_prompt, params) + llm_mode_hint(llm_mode)
     user_message = (
         f"Parameters:\n{json.dumps(params, ensure_ascii=False, default=str)}\n\n"
         f"Follow the instructions in the system prompt. Respond in {locale}."
@@ -151,6 +156,7 @@ async def _generate_task_from_template(
     params: dict,
     locale: str,
     session_id: uuid.UUID | None,
+    llm_mode: str | None = None,
 ) -> dict:
     """Task selection with a custom system prompt (like generate_task)."""
     context = await context_builder.build_context(db, user_id, session_id=session_id, locale=locale)
@@ -160,7 +166,7 @@ async def _generate_task_from_template(
     is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
     context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
 
-    system_prompt = render_template_prompt(template.system_prompt, params)
+    system_prompt = render_template_prompt(template.system_prompt, params) + llm_mode_hint(llm_mode)
     user_message = f"Context:\n{context_text}\n\n"
     if params:
         user_message += f"Template parameters: {json.dumps(params, ensure_ascii=False, default=str)}\n\n"

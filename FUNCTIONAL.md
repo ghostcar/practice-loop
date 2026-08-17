@@ -603,5 +603,11 @@ Private Record (DATA_LIFECYCLE.md). Расчётная фаза Cycle никог
   `POST /api/v2/health/analyze` (JSON). Режим из `prefs.llm_mode` (safe/expanded,
   настройка в /settings → «LLM mode»): safe — нейтральный пересказ + вопросы врачу;
   expanded — дополнительно рекомендации/советы (в т.ч. по схеме приёма — активные
-  med_schedules в контексте), всегда с дисклеймером. Usage-трекинг на активном
-  LLMProviderConfig. Результат stateless (не сохраняется в БД).
+  med_schedules в контексте). Usage-трекинг на активном LLMProviderConfig. Результат
+  stateless (не сохраняется в БД). Дисклеймер «не врач» — только в UI, в промпты
+  не подаётся (решение владельца).
+- **LLM-режим на всех блоках** (ADR-087): `app/llm/mode.py` — единый `llm_mode_hint()`
+  аппендится к системным промптам задач/тренировок/диет/промпт-шаблонов (safe —
+  только факты; expanded — рекомендации/советы). Параметр `llm_mode` у всех
+  pipeline-функций (None → из prefs); Telegram `/next` и фоновый scheduler передают
+  режим явно из `user.prefs`.

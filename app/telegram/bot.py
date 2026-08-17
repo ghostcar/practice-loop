@@ -24,6 +24,7 @@ from app.models.activity_log import ActivityLog
 from app.models.progress import UserProgress
 from app.models.session import ActivitySession
 from app.models.user import User
+from app.prefs import prefs_from_dict
 from app.timeutils import as_utc
 
 logger = logging.getLogger(__name__)
@@ -142,6 +143,7 @@ if TG_BOT_TOKEN:
                     llm_config=config,
                     session_id=None,
                     locale=user.locale,
+                    llm_mode=prefs_from_dict(user.prefs).llm_mode,
                 )
                 await db.commit()
             except JsonRepairError:

@@ -15,6 +15,7 @@ from app.llm.context_builder import (
     format_context_abstract,
     format_context_for_prompt,
 )
+from app.llm.mode import llm_mode_hint
 from app.llm.pipeline.generate import (
     _resolve_raw_response,
 )
@@ -44,6 +45,7 @@ async def generate_daily_plan(
     target_date: date,
     locale: str = "en",
     name: str | None = None,
+    llm_mode: str | None = None,
 ) -> TrainingDay:
     """Generate a full daily training plan via LLM.
 
@@ -67,7 +69,7 @@ async def generate_daily_plan(
     is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
     context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
 
-    system_prompt = PLAN_DAY_SYSTEM.format(locale=locale)
+    system_prompt = PLAN_DAY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = f"Context:\n{context_text}\n\nGenerate a daily training plan for {target_date}."
 
     result = await client.call_llm(
@@ -169,6 +171,7 @@ async def analyze_training_day(
     training_day: TrainingDay,
     llm_config: LLMProviderConfig,
     locale: str = "en",
+    llm_mode: str | None = None,
 ) -> TrainingDay:
     """Run end-of-day analysis and generate next-day suggestion via LLM.
 
@@ -211,7 +214,7 @@ async def analyze_training_day(
     day_text = "\n".join(day_text_parts)
 
     # 1. Analyze day
-    system_prompt = ANALYZE_DAY_SYSTEM.format(locale=locale)
+    system_prompt = ANALYZE_DAY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = f"Day results:\n{day_text}\n\nProvide analysis."
 
     analysis_result = await client.call_llm(
@@ -225,7 +228,7 @@ async def analyze_training_day(
     usage_a = analysis_result["usage"]
 
     # 2. Generate next-day suggestion
-    next_system = SUGGEST_NEXT_DAY_SYSTEM.format(locale=locale)
+    next_system = SUGGEST_NEXT_DAY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     next_message = f"Today's results:\n{day_text}\n\nAnalysis: {analysis_summary}\n\nSuggest tomorrow's plan."
 
     next_result = await client.call_llm(

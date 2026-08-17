@@ -54,7 +54,6 @@ The owner has explicitly enabled the expanded mode and wants recommendations:
 - You MAY give practical recommendations and advice, including around a
   medication schedule (timing, reminders, questions to ask), as reasonable
   health-literacy guidance.
-- Always remind that you are not a doctor and important decisions need a doctor.
 
 Respond ONLY with valid JSON matching exactly this schema:
 {{
