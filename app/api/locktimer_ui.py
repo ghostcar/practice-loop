@@ -248,6 +248,15 @@ async def locktimer_session_detail(
 
     bound_device, devices = await _load_device_info(db, session)
 
+    # Сквозной каталог (ADR-091): пикер причин/целей окон (домен timer).
+    catalog_items: list[dict] = []
+    try:
+        from app.api.catalog import catalog_options
+
+        catalog_items = await catalog_options(db, current_user.id, domain="timer")
+    except Exception:
+        pass  # catalog module may not be deployed yet
+
     # Medication schedules for the relief-task picker (ADR-085, relief-only).
     med_schedules: list[dict] = []
     try:
@@ -283,6 +292,7 @@ async def locktimer_session_detail(
             "locale": locale,
             "session": _serialize_session(session, t),
             "med_schedules": med_schedules,
+            "catalog_items": catalog_items,
             "bound_device": bound_device,
             "devices": devices,
             "slot_rules": [

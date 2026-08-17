@@ -136,6 +136,7 @@ async def add_slot_rule(
         late_close_policy=extra.get("late_close_policy"),
         llm_flags=extra.get("llm_flags", {}),
         journal_auto=extra.get("journal_auto", False),
+        catalog_item_id=extra.get("catalog_item_id"),
         schema_version=1,
     )
     db.add(rule)

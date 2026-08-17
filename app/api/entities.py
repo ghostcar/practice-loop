@@ -6,10 +6,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.catalog import catalog_options
 from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.models.catalog import ActivityCatalogItem
 from app.models.category import ActivityCategory
 from app.models.entity import Entity
 from app.models.opt_in import UserEntityOptIn
@@ -147,6 +149,9 @@ async def my_entities_page(
     )
     entities = result.scalars().all()
 
+    # Сквозной каталог (ADR-091): пикер видов активностей (домен tracker).
+    catalog_items = await catalog_options(db, user.id, domain="tracker")
+
     return templates.TemplateResponse(
         request=request,
         name="my_entities.html",
@@ -157,6 +162,7 @@ async def my_entities_page(
             "locale": locale,
             "theme": theme,
             "entities": entities,
+            "catalog_items": catalog_items,
             "active_nav": "catalog",
         },
     )
@@ -175,6 +181,7 @@ async def create_entity(
     is_public: bool = Form(default=False),
     risk_level: str = Form(default="not_assessed"),
     category_id: uuid.UUID | None = Form(default=None),
+    catalog_item_id: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -189,12 +196,31 @@ async def create_entity(
         cat = cat_result.scalar_one_or_none()
         if cat is not None:
             category = cat.title
+    # Сквозной каталог (ADR-091): задача может быть основана на универсальном виде
+    catalog_uuid = None
+    if catalog_item_id.strip():
+        try:
+            cid = uuid.UUID(catalog_item_id.strip())
+        except ValueError as exc:
+            raise HTTPException(422, "Invalid catalog_item_id format") from exc
+        item = (
+            await db.execute(
+                select(ActivityCatalogItem).where(
+                    ActivityCatalogItem.id == cid,
+                    ActivityCatalogItem.owner_id.is_(None) | (ActivityCatalogItem.owner_id == user.id),
+                )
+            )
+        ).scalar_one_or_none()
+        if item is None:
+            raise HTTPException(400, "Catalog item not found")
+        catalog_uuid = cid
     entity = Entity(
         type=type,
         real_name=real_name.strip(),
         slug=slugify(real_name),
         category=category.strip(),
         category_id=category_id,
+        catalog_item_id=catalog_uuid,
         tags=[t.strip() for t in tags.split(",") if t.strip()] if tags else None,
         owner_id=user.id,
         is_public=is_public,

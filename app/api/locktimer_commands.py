@@ -339,6 +339,7 @@ async def api_add_slot_rule(
     allow_late_open: bool = Form(default=False),
     max_late_seconds: int = Form(default=3600),
     journal_auto: bool = Form(default=False),
+    catalog_item_id: str = Form(default=""),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -366,6 +367,29 @@ async def api_add_slot_rule(
     except json.JSONDecodeError:
         schedule = {}
 
+    # Сквозной каталог (ADR-091): причина/цель окна (системная или своя запись).
+    catalog_uuid = None
+    if catalog_item_id.strip():
+        from sqlalchemy import select
+
+        from app.models.catalog import ActivityCatalogItem
+
+        try:
+            cid = uuid.UUID(catalog_item_id.strip())
+        except ValueError as exc:
+            raise HTTPException(422, "Invalid catalog_item_id format") from exc
+        item = (
+            await db.execute(
+                select(ActivityCatalogItem).where(
+                    ActivityCatalogItem.id == cid,
+                    ActivityCatalogItem.owner_id.is_(None) | (ActivityCatalogItem.owner_id == current_user.id),
+                )
+            )
+        ).scalar_one_or_none()
+        if item is None:
+            raise HTTPException(400, "Catalog item not found")
+        catalog_uuid = cid
+
     await add_slot_rule(
         db,
         session_id=session_id,
@@ -376,6 +400,7 @@ async def api_add_slot_rule(
         allow_late_open=allow_late_open,
         max_late_seconds=max_late_seconds,
         journal_auto=journal_auto,
+        catalog_item_id=catalog_uuid,
     )
 
     return action_response(

@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     # M3 Personal Suite (Шаг 15) — Personal Care (4B). Уход/процедуры, relief-only.
     care_enabled: bool = True
 
+    # Сквозной каталог активностей (ADR-091) — единый справочник видов активностей,
+    # на который ссылаются журнал/уход/таймер/трекер. Нейтрален (relief-only).
+    catalog_enabled: bool = True
+
     # Database
     database_url: str = "postgresql+asyncpg://tracker:tracker@localhost:5432/tracker"
 

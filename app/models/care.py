@@ -49,6 +49,13 @@ class CareRoutine(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # ссылка на универсальный каталог (ADR-091) — вид процедуры ухода
+    catalog_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("activity_catalog.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     # face | body | hair | hands | feet | other
     area: Mapped[str] = mapped_column(String(20), default="other", nullable=False)
     # home | salon

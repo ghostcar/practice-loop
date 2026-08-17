@@ -27,7 +27,11 @@
                     </select>
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.journal_activity_type }}
-                    <input type="text" name="activity_type" placeholder="{{ t.journal_activity_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <select name="catalog_item_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">{{ t.catalog_select_none }}</option>
+                        {% for c in catalog_items %}<option value="{{ c.id }}">{{ c.name }}{% if c.owner_id %} · {{ t.catalog_mine }}{% endif %}</option>{% endfor %}
+                    </select>
+                    <a href="/catalog?domain=journal" class="text-xs pl-accent-text inline-flex items-center gap-0.5 mt-1">{{ icon('plus', 'w-3 h-3') }}{{ t.catalog_create_own }}</a>
                 </label>
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.journal_link_activity }}
                     <select name="activity_log_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
@@ -133,7 +137,10 @@
             <form action="/journal/entries/{{ e.id }}/complete" method="post" class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)]">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                 <label class="text-xs pl-text-secondary">{{ t.journal_activity_type }}
-                    <input type="text" name="activity_type" value="{{ e.activity_type or '' }}" placeholder="{{ t.journal_activity_ph }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                    <select name="catalog_item_id" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        <option value="">{{ t.catalog_select_none }}</option>
+                        {% for c in catalog_items %}<option value="{{ c.id }}" {% if e.catalog_item_id == c.id %}selected{% endif %}>{{ c.name }}{% if c.owner_id %} · {{ t.catalog_mine }}{% endif %}</option>{% endfor %}
+                    </select>
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.journal_duration }}
                     <input type="number" name="duration_minutes" min="0" value="{{ e.duration_minutes or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">

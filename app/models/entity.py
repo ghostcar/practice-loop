@@ -32,6 +32,13 @@ class Entity(Base):
         nullable=True,
         index=True,
     )
+    # ссылка на универсальный каталог (ADR-091) — задача может быть основана на
+    # сквозном виде активности; мягкая ссылка, SET NULL
+    catalog_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("activity_catalog.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     type: Mapped[str] = mapped_column(String(50), nullable=False, default="one_time")  # one_time / series / infinite
     real_name: Mapped[str] = mapped_column(String(500), nullable=False)
     # ADR-035/036: stable machine-readable slug; short display title

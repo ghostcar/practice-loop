@@ -41,6 +41,16 @@
  <option value="infinite">Infinite (routine)</option>
  </select>
  </div>
+ {% if catalog_items %}
+ <div>
+ <label class="block text-sm font-medium text-[color:var(--text)] mb-1">{{ t.catalog_kind_label }}</label>
+ <select name="catalog_item_id"
+ class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ <option value="">{{ t.catalog_select_none }}</option>
+ {% for c in catalog_items %}<option value="{{ c.id }}">{{ c.name }}{% if c.owner_id %} · {{ t.catalog_mine }}{% endif %}</option>{% endfor %}
+ </select>
+ </div>
+ {% endif %}
  <div>
  <label class="block text-sm font-medium text-[color:var(--text)] mb-1">Tags (comma-separated)</label>
  <input name="tags"

@@ -78,7 +78,15 @@ class JournalEntry(Base):
     partner_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sj_partners.id", ondelete="SET NULL"), nullable=True
     )
-    # вид активности (свободная строка; каталог активностей — будущий срез)
+    # вид активности — ссылка на универсальный каталог (ADR-091);
+    # activity_type остаётся денормализованным снимком названия для отображения
+    # и обратной совместимости (старые записи без catalog_item_id).
+    catalog_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("activity_catalog.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     activity_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # желание и возбуждение до начала — 1..5

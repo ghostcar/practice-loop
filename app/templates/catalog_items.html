@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('activity', 'w-6 h-6') }}{{ t.catalog_items_title }}</h1>
+            <p class="pl-text-secondary text-sm mt-1">{{ t.catalog_items_subtitle }}</p>
+        </div>
+    </div>
+
+    <!-- Domain filter chips -->
+    <div class="flex items-center gap-2 flex-wrap">
+        <a href="/catalog" class="px-3 py-1.5 rounded-full text-xs font-medium border border-[color:var(--border)] transition-colors {{ 'pl-accent-bg border-transparent' if not active_domain else 'pl-text-secondary hover:bg-[color:var(--surface-soft)]' }}">{{ t.catalog_domain_all }}</a>
+        {% for d in domains %}
+        <a href="/catalog?domain={{ d }}" class="px-3 py-1.5 rounded-full text-xs font-medium border border-[color:var(--border)] transition-colors {{ 'pl-accent-bg border-transparent' if active_domain == d else 'pl-text-secondary hover:bg-[color:var(--surface-soft)]' }}">{{ t['catalog_domain_' + d] }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Add item -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.catalog_add_item }}</h2>
+            <p class="text-xs pl-text-muted">{{ t.catalog_add_hint }}</p>
+            <form action="/catalog/items" method="post" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.catalog_name }}
+                    <input type="text" name="name" required maxlength="200" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]" placeholder="{{ t.catalog_name_ph }}">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.catalog_description }}
+                    <input type="text" name="description" maxlength="500" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.catalog_category }}
+                    <select name="category_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">—</option>
+                        {% for c in categories %}<option value="{{ c.id }}">{{ c.title }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label class="text-xs pl-text-secondary">{{ t.catalog_tags }}
+                    <input type="text" name="tags" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]" placeholder="{{ t.catalog_tags_ph }}">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2">{{ t.catalog_domains }}
+                    <input type="text" name="domains" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]" placeholder="journal, care, timer, tracker">
+                    <span class="text-[11px] pl-text-muted">{{ t.catalog_domains_hint }}</span>
+                </label>
+                <button type="submit" class="col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.catalog_save }}</button>
+            </form>
+        </section>
+
+        <!-- Items list -->
+        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('list', 'w-4 h-4') }}{{ t.catalog_items_list }} <span class="pl-text-muted">({{ items|length }})</span></h2>
+            {% if items %}
+            <ul class="divide-y divide-[color:var(--border)] text-sm max-h-[520px] overflow-y-auto">
+                {% for it in items %}
+                <li class="py-2.5 flex items-start justify-between gap-2">
+                    <div class="min-w-0 space-y-0.5">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-medium text-[color:var(--text)]">{{ it.name }}</span>
+                            {% if it.is_system %}<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--info-soft)] text-[color:var(--info)]">{{ t.catalog_system }}</span>{% else %}<span class="px-1.5 py-0.5 rounded text-[10px] font-medium pl-accent-soft">{{ t.catalog_mine }}</span>{% endif %}
+                            {% if it.category_title %}<span class="pl-text-muted text-xs">{{ it.category_title }}</span>{% endif %}
+                        </div>
+                        {% if it.description %}<div class="text-xs pl-text-muted">{{ it.description }}</div>{% endif %}
+                        {% if it.domains %}<div class="text-[11px] flex gap-1 flex-wrap pt-0.5">{% for d in it.domains %}<span class="px-1.5 py-0.5 rounded bg-[color:var(--surface-soft)] pl-text-secondary">{{ t['catalog_domain_' + d] }}</span>{% endfor %}</div>{% endif %}
+                        {% if it.tags %}<div class="text-[11px] pl-text-muted">{{ t.catalog_tags }}: {{ it.tags | join(', ') }}</div>{% endif %}
+                    </div>
+                    {% if not it.is_system %}
+                    <form action="/catalog/items/{{ it.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.catalog_delete }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.catalog_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('activity', 'w-4 h-4') }}{{ t.catalog_no_items }}</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

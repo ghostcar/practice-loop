@@ -282,7 +282,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (69):
+Полный перечень таблиц `app/models/*` (72):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -298,6 +298,10 @@ sidebar (иконки + подписи).
 - **Personal Care (M3, §25)**: `care_routines` (каталог процедур/рутин: зона, тип,
   частота, заметки), `care_entries` (факты выполнения: дата, длительность, реакция
   кожи, снимок фазы Cycle) — relief-only, PD-013, Private Record.
+- **Универсальный каталог активностей (§26)**: `activity_catalog` — сквозной
+  справочник видов активностей (как Entity: категория/теги/описание/domains),
+  на который ссылаются журнал, уход, окна таймера и трекер-задачи — нейтрален,
+  relief-only, PD-013.
 - **Задачи и сессии**: `activity_logs`, `activity_task_history`, `activity_sessions`.
 - **Тренировки и диеты**: `training_days`, `training_log_entries`, `diets`, `diet_items`,
   `diet_consumptions`, `diet_evaluations`, `diet_training_reviews`.
@@ -689,3 +693,27 @@ Feature flag `care_enabled` (default true).
 - **Дашборд**: блок `dash-block-care` (процедуры за 30д / последняя / число рутин),
   управляется в /settings (DASH_BLOCKS), discretion-aware.
 - **Навигация**: пункт «Уход» (иконка routine.svg из пакета) в группе «Данные».
+
+## 26. Универсальный каталог активностей (сквозной, Шаг 16, ADR-091)
+
+Единый каталог «видов активностей» по образцу Entity (категории/теги/описание),
+на который могут ссылаться любые модули личного контура. **Relief-only** (PD-013):
+это справочник без игровой интеграции (XP/баллы/штрафы); игровые параметры остаются
+в Entity-каталоге трекера. Feature flag `catalog_enabled` (default true).
+
+- **Модель (1 таблица, миграция 048)**: `activity_catalog` — name, description,
+  category_id (FK activity_categories, SET NULL), tags (JSON), domains (JSON-список
+  контекстов: journal/care/timer/tracker; пусто/None = «сквозная», применима везде),
+  owner_id (NULL = системная запись, видна всем; иначе — пользовательская, только
+  владельцу), is_public, created_at/updated_at.
+- **Замена свободных полей на FK-ссылку (все SET NULL)**: `sj_entries.catalog_item_id`
+  (вид активности в журнале), `care_routines.catalog_item_id` (вид процедуры ухода),
+  `lock_slot_rules.catalog_item_id` (причина/цель окна таймера), `entities.catalog_item_id`
+  (трекер-задача). Свободный ввод остаётся только через создание своей записи каталога.
+- **Страница `/catalog`**: просмотр/создание/удаление записей, фильтр по domain,
+  системные + личные записи.
+- **JSON API** (`/api/v2/catalog`, bearer): список/создание/удаление. Object-level auth:
+  чужая запись недоступна.
+- **Хелпер `catalog_options(domain)`**: для пикеров в формах журнала, ухода, слота
+  таймера и my_entities (системные + свои, фильтр по domain).
+- **Навигация**: пункт «Каталог» (иконка library.svg из пакета) в группе «Данные».

@@ -246,6 +246,8 @@ if composition.tracker_active:
     from app.api.calendar import router as calendar_router  # noqa: E402
     from app.api.care import json_router as care_json_router  # noqa: E402
     from app.api.care import router as care_router  # noqa: E402
+    from app.api.catalog import json_router as catalog_json_router  # noqa: E402
+    from app.api.catalog import router as catalog_router  # noqa: E402
     from app.api.dashboard import router as dashboard_router  # noqa: E402
     from app.api.diets import router as diets_router  # noqa: E402
     from app.api.entities import router as entities_router  # noqa: E402
@@ -307,6 +309,10 @@ if composition.tracker_active:
     if composition.care_enabled:
         app.include_router(care_router)
         app.include_router(care_json_router)
+
+    if composition.catalog_enabled:
+        app.include_router(catalog_router)
+        app.include_router(catalog_json_router)
 
 # ---------------------------------------------------------------------------
 # Timer routes (C1-C8 — registered when LOCKTIMER_CORE_ENABLED)

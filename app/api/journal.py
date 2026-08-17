@@ -41,11 +41,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.catalog import catalog_options
 from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.activity_log import ActivityLog
+from app.models.catalog import ActivityCatalogItem
 from app.models.journal import (
     JOURNAL_SOURCES,
     JOURNAL_STATUSES,
@@ -310,6 +312,9 @@ async def journal_page(
     pending_entries = [e for e in entries if e.status == "draft"]
     done_entries = [e for e in entries if e.status != "draft"]
 
+    # Сквозной каталог (ADR-091): пикер видов активности (домен journal).
+    catalog_items = await catalog_options(db, user.id, domain="journal")
+
     return templates.TemplateResponse(
         request=request,
         name="journal.html",
@@ -334,6 +339,7 @@ async def journal_page(
             "media": media,
             "activity_titles": activity_titles,
             "recent_activities": recent_activity_options,
+            "catalog_items": catalog_items,
             "scales": list(SCALE_1_5),
             "protection_types": list(PROTECTION_TYPES),
             "reaction_choices": list(REACTION_CHOICES),
@@ -349,6 +355,7 @@ def _entry_view(e: JournalEntry, partner_names: dict[str, str]) -> dict:
         "entry_date": e.entry_date.isoformat(),
         "partner_id": str(e.partner_id) if e.partner_id else None,
         "partner_name": partner_names.get(str(e.partner_id)) if e.partner_id else None,
+        "catalog_item_id": str(e.catalog_item_id) if e.catalog_item_id else None,
         "activity_type": e.activity_type,
         "duration_minutes": e.duration_minutes,
         "desire_before": e.desire_before,
@@ -429,11 +436,40 @@ async def _validate_activity_log(
     return aid
 
 
+async def _resolve_catalog_item(
+    db: AsyncSession, catalog_item_id: str | uuid.UUID | None, user_id: uuid.UUID
+) -> ActivityCatalogItem | None:
+    """Validate catalog reference (system or owned by user) and return the item.
+
+    The free-string ``activity_type`` is replaced by a catalog reference
+    (ADR-091): the picker sends ``catalog_item_id``; the display snapshot
+    ``activity_type`` is set from the item's name on save.
+    """
+    if not catalog_item_id:
+        return None
+    try:
+        cid = uuid.UUID(str(catalog_item_id))
+    except ValueError:
+        raise HTTPException(400, "Invalid catalog_item_id") from None
+    item = (
+        await db.execute(
+            select(ActivityCatalogItem).where(
+                ActivityCatalogItem.id == cid,
+                ActivityCatalogItem.owner_id.is_(None) | (ActivityCatalogItem.owner_id == user_id),
+            )
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(400, "Catalog item not found")
+    return item
+
+
 async def _apply_entry_fields(
     entry: JournalEntry,
     *,
     entry_date: date,
     partner_id: uuid.UUID | None,
+    catalog_item_id: uuid.UUID | None,
     activity_type: str,
     duration_minutes: int | None,
     desire_before: int | None,
@@ -452,6 +488,8 @@ async def _apply_entry_fields(
 ) -> None:
     entry.entry_date = entry_date
     entry.partner_id = partner_id
+    entry.catalog_item_id = catalog_item_id
+    # снимок названия: из каталога (если выбрана запись) или свободная строка (legacy)
     entry.activity_type = (activity_type or "").strip()[:100] or None
     entry.duration_minutes = duration_minutes
     entry.desire_before = desire_before
@@ -490,6 +528,7 @@ async def add_entry(
     recovery: str = Form(default=""),
     notes: str = Form(default=""),
     activity_log_id: str = Form(default=""),
+    catalog_item_id: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -513,6 +552,7 @@ async def add_entry(
     reaction_list = [x.strip() for x in reactions.split(",") if x.strip()] if reactions.strip() else None
     emotion_list = [x.strip() for x in emotional_state.split(",") if x.strip()] if emotional_state.strip() else None
     aid = await _validate_activity_log(db, activity_log_id, user.id)
+    catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, d)
 
@@ -528,7 +568,8 @@ async def add_entry(
         entry,
         entry_date=d,
         partner_id=partner_uuid,
-        activity_type=activity_type,
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        activity_type=catalog_item.name if catalog_item else activity_type,
         duration_minutes=_parse_int(duration_minutes, "duration_minutes"),
         desire_before=_parse_scale(desire_before, "desire_before"),
         arousal_before=_parse_scale(arousal_before, "arousal_before"),
@@ -567,6 +608,7 @@ async def complete_entry(
     aftercare: str = Form(default=""),
     recovery: str = Form(default=""),
     notes: str = Form(default=""),
+    catalog_item_id: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -583,12 +625,14 @@ async def complete_entry(
         protection = "none"
     reaction_list = [x.strip() for x in reactions.split(",") if x.strip()] if reactions.strip() else None
     emotion_list = [x.strip() for x in emotional_state.split(",") if x.strip()] if emotional_state.strip() else None
+    catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
 
     await _apply_entry_fields(
         entry,
         entry_date=entry.entry_date,
         partner_id=entry.partner_id,
-        activity_type=activity_type,
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        activity_type=catalog_item.name if catalog_item else activity_type,
         duration_minutes=_parse_int(duration_minutes, "duration_minutes"),
         desire_before=_parse_scale(desire_before, "desire_before"),
         arousal_before=_parse_scale(arousal_before, "arousal_before"),
@@ -761,6 +805,7 @@ def _entry_json(e: JournalEntry) -> dict:
         "id": str(e.id),
         "entry_date": e.entry_date.isoformat(),
         "partner_id": str(e.partner_id) if e.partner_id else None,
+        "catalog_item_id": str(e.catalog_item_id) if e.catalog_item_id else None,
         "activity_type": e.activity_type,
         "duration_minutes": e.duration_minutes,
         "desire_before": e.desire_before,
@@ -787,6 +832,7 @@ def _entry_json(e: JournalEntry) -> dict:
 class EntryBody(BaseModel):
     entry_date: date
     partner_id: uuid.UUID | None = None
+    catalog_item_id: uuid.UUID | None = None
     activity_type: str | None = None
     duration_minutes: int | None = Field(default=None, ge=0, le=10000)
     desire_before: int | None = Field(default=None, ge=1, le=5)
@@ -822,6 +868,7 @@ async def json_add_entry(
             raise HTTPException(400, "Partner not found")
     protection = body.protection if body.protection in PROTECTION_TYPES else "none"
     aid = await _validate_activity_log(db, body.activity_log_id, user.id)
+    catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
 
     cycle_phase, cycle_day = await _cycle_snapshot(db, user.id, body.entry_date)
 
@@ -837,7 +884,8 @@ async def json_add_entry(
         entry,
         entry_date=body.entry_date,
         partner_id=body.partner_id,
-        activity_type=body.activity_type or "",
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        activity_type=catalog_item.name if catalog_item else body.activity_type or "",
         duration_minutes=body.duration_minutes,
         desire_before=body.desire_before,
         arousal_before=body.arousal_before,
@@ -859,6 +907,7 @@ async def json_add_entry(
 
 
 class CompleteBody(BaseModel):
+    catalog_item_id: uuid.UUID | None = None
     activity_type: str | None = None
     duration_minutes: int | None = Field(default=None, ge=0, le=10000)
     desire_before: int | None = Field(default=None, ge=1, le=5)
@@ -892,11 +941,13 @@ async def json_complete_entry(
         raise HTTPException(400, "Only draft entries can be completed")
 
     protection = body.protection if body.protection in PROTECTION_TYPES else "none"
+    catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
     await _apply_entry_fields(
         entry,
         entry_date=entry.entry_date,
         partner_id=entry.partner_id,
-        activity_type=body.activity_type or "",
+        catalog_item_id=catalog_item.id if catalog_item else None,
+        activity_type=catalog_item.name if catalog_item else body.activity_type or "",
         duration_minutes=body.duration_minutes,
         desire_before=body.desire_before,
         arousal_before=body.arousal_before,

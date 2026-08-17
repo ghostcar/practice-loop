@@ -32,11 +32,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.catalog import catalog_options
 from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.care import CARE_AREAS, CARE_KINDS, SCALE_1_5, CareEntry, CareRoutine
+from app.models.catalog import ActivityCatalogItem
 from app.models.media import MediaAsset
 from app.models.user import User
 from app.services.media import save_media
@@ -179,6 +181,9 @@ async def care_page(
     )
     media = await _media_map(db, user.id)
 
+    # Сквозной каталог (ADR-091): пикер видов процедур (домен care).
+    catalog_items = await catalog_options(db, user.id, domain="care")
+
     return templates.TemplateResponse(
         request=request,
         name="care.html",
@@ -203,6 +208,7 @@ async def care_page(
             ],
             "entries": [_entry_view(e, routine_names) for e in entries],
             "media": media,
+            "catalog_items": catalog_items,
             "care_areas": list(CARE_AREAS),
             "care_kinds": list(CARE_KINDS),
             "scales": list(SCALE_1_5),
@@ -256,6 +262,29 @@ async def _validate_routine(db: AsyncSession, routine_id: str, user_id: uuid.UUI
     return rid
 
 
+async def _resolve_catalog_item(
+    db: AsyncSession, catalog_item_id: str | uuid.UUID | None, user_id: uuid.UUID
+) -> ActivityCatalogItem | None:
+    """Validate catalog reference (system or owned by user)."""
+    if not catalog_item_id:
+        return None
+    try:
+        cid = uuid.UUID(str(catalog_item_id))
+    except ValueError:
+        raise HTTPException(400, "Invalid catalog_item_id") from None
+    item = (
+        await db.execute(
+            select(ActivityCatalogItem).where(
+                ActivityCatalogItem.id == cid,
+                ActivityCatalogItem.owner_id.is_(None) | (ActivityCatalogItem.owner_id == user_id),
+            )
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(400, "Catalog item not found")
+    return item
+
+
 @router.post("/care/routines")
 async def add_routine(
     request: Request,
@@ -264,6 +293,7 @@ async def add_routine(
     kind: str = Form(default="home"),
     frequency_days: str = Form(default=""),
     notes: str = Form(default=""),
+    catalog_item_id: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -274,9 +304,11 @@ async def add_routine(
         area = "other"
     if kind not in CARE_KINDS:
         kind = "home"
+    catalog_item = await _resolve_catalog_item(db, catalog_item_id, user.id)
     routine = CareRoutine(
         user_id=user.id,
         name=name,
+        catalog_item_id=catalog_item.id if catalog_item else None,
         area=area,
         kind=kind,
         frequency_days=_parse_int(frequency_days, "frequency_days", minimum=1, maximum=3650),
@@ -457,6 +489,7 @@ def _routine_json(r: CareRoutine) -> dict:
     return {
         "id": str(r.id),
         "name": r.name,
+        "catalog_item_id": str(r.catalog_item_id) if r.catalog_item_id else None,
         "area": r.area,
         "kind": r.kind,
         "frequency_days": r.frequency_days,
@@ -479,6 +512,7 @@ def _entry_json(e: CareEntry) -> dict:
 
 class RoutineBody(BaseModel):
     name: str
+    catalog_item_id: uuid.UUID | None = None
     area: str = "other"
     kind: str = "home"
     frequency_days: int | None = Field(default=None, ge=1, le=3650)
@@ -496,9 +530,11 @@ async def json_add_routine(
         raise HTTPException(400, "Name is required")
     area = body.area if body.area in CARE_AREAS else "other"
     kind = body.kind if body.kind in CARE_KINDS else "home"
+    catalog_item = await _resolve_catalog_item(db, body.catalog_item_id, user.id)
     routine = CareRoutine(
         user_id=user.id,
         name=name,
+        catalog_item_id=catalog_item.id if catalog_item else None,
         area=area,
         kind=kind,
         frequency_days=body.frequency_days,

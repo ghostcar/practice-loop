@@ -18,6 +18,7 @@
     or (_path.startswith('/medications') and 'medication')
     or (_path.startswith('/health') and 'health')
     or (_path.startswith('/journal') and 'journal')
+    or (_path.startswith('/catalog') and 'activity_catalog')
     or (_path.startswith('/schedule') and 'schedule')
     or (_path.startswith('/body-parts') and 'body_parts')
     or (_path.startswith('/locations') and 'locations')
@@ -49,6 +50,7 @@
     'health': t.nav_health,
     'journal': t.nav_journal,
     'care': t.nav_care,
+    'activity_catalog': t.nav_activity_catalog,
     'schedule': t.nav_schedule,
     'body_parts': t.nav_body_parts,
     'locations': t.nav_locations,
@@ -92,6 +94,7 @@
     {{ nav_item('health', '/health', 'health', t.nav_health) }}
     {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
     {{ nav_item('care', '/care', 'routine', t.nav_care) }}
+    {{ nav_item('activity_catalog', '/catalog', 'activity', t.nav_activity_catalog) }}
     {{ nav_item('schedule', '/schedule/page', 'schedule', t.nav_schedule) }}
     {{ nav_item('body_parts', '/body-parts', 'body', t.nav_body_parts) }}
     {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}

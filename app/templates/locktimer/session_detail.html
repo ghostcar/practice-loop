@@ -151,6 +151,15 @@
           <option value="flexible_window_once">Flexible window (once)</option>
         </select>
       </div>
+      {% if catalog_items %}
+      <div>
+        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.catalog_kind_label or "Reason / purpose" }}</label>
+        <select name="catalog_item_id" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
+          <option value="">{{ t.catalog_select_none or "— none —" }}</option>
+          {% for c in catalog_items %}<option value="{{ c.id }}">{{ c.name }}{% if c.owner_id %} · {{ t.catalog_mine or "mine" }}{% endif %}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-xs text-[color:var(--text-secondary)]">Schedule (JSON)</label>

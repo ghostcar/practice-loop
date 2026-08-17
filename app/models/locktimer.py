@@ -157,6 +157,12 @@ class LockSlotRule(Base):
     )
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # причина/цель окна — ссылка на универсальный каталог (ADR-091)
+    catalog_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("activity_catalog.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     rule_type: Mapped[str] = mapped_column(String(32), nullable=False)
     schedule: Mapped[dict] = mapped_column(JSON, nullable=False)
     duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)

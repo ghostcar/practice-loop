@@ -20,6 +20,13 @@
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_routine_name }}
                     <input type="text" name="name" required placeholder="e.g. Night skincare" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.catalog_kind_label }}
+                    <select name="catalog_item_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                        <option value="">{{ t.catalog_select_none }}</option>
+                        {% for c in catalog_items %}<option value="{{ c.id }}">{{ c.name }}{% if c.owner_id %} · {{ t.catalog_mine }}{% endif %}</option>{% endfor %}
+                    </select>
+                    <a href="/catalog?domain=care" class="text-xs pl-accent-text inline-flex items-center gap-0.5 mt-1">{{ icon('plus', 'w-3 h-3') }}{{ t.catalog_create_own }}</a>
+                </label>
                 <label class="text-xs pl-text-secondary">{{ t.care_area }}
                     <select name="area" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                         {% for a in care_areas %}<option value="{{ a }}" {% if a == 'face' %}selected{% endif %}>{{ t['care_area_' + a] }}</option>{% endfor %}
