@@ -18,9 +18,9 @@ Social S0–S7 присутствует в коде, но не открыт вн
 `base → 057 → 058 → 057 → 058`, конкурентную идемпотентность consent и CRUD/cascade новых
 Personal-таблиц.
 
-Запущенный здесь production-like compose здоров, но его образ и БД намеренно остаются на
-миграции **053**. Миграции 054–058 и соответствующий образ применяются только следующим
-deploy gate S5 после backup/rollback preflight.
+Запущенный здесь production-like compose обновлён и здоров: образ содержит актуальный код, БД на
+head **058**. Перед S5 создан backup, миграции 054–058 применены, общий prod-smoke, password E2E и
+Chromium smoke/a11y/usability прошли успешно.
 
 ## 2. Проверенная исходная точка
 
@@ -33,7 +33,7 @@ deploy gate S5 после backup/rollback preflight.
 | Полный pytest baseline | **1132 passed, 1 skipped, 4 warnings** (S2, Python 3.11) |
 | Статические проверки | Ruff check + format-check ✅ |
 | PostgreSQL integration | migration roundtrip + consent concurrency + Personal CRUD/cascade ✅ |
-| Запущенный compose | health ✅; БД/образ на 053 до S5 |
+| Запущенный compose | health ✅; БД на 058; S5 smoke ✅ |
 
 Счётчик тестов относится к проверенному S2-дереву; его нельзя автоматически переносить на
 будущий HEAD без нового полного прогона.
@@ -43,6 +43,7 @@ deploy gate S5 после backup/rollback preflight.
 | Область | Фактический статус | Главный остаток |
 |---|---|---|
 | Auth, CSRF, privacy/export | ✅ работает | email verification/public hardening |
+| Профиль/пароль | ✅ настройки и self-service смена пароля | полноценное admin-управление пользователями отсутствует |
 | Activity Tracker + 11 статусов | ✅ работает | accepted-session freeze и UI аудита |
 | Today projection | ✅ foundation работает | UX просроченного и единый главный CTA |
 | Training, Diet, Calendar, Points | ✅ работает | дальнейшая унификация контрактов |
@@ -82,10 +83,9 @@ deploy gate S5 после backup/rollback preflight.
 
 ## 5. Ближайшая последовательность
 
-1. **S5 — deploy gate 054–058:** backup/restore preflight, сборка нового образа, миграции,
-   health и целевые smoke для device events, wear check-ins, aftercare и consent; rollback plan.
-2. Закрыть остатки M1: accepted-session enforcement, UI истории переходов и Today polish.
-3. Расширить export/restore и JSON-first покрытие новых Personal-модулей.
+1. Закрыть остатки M1: accepted-session enforcement, UI истории переходов и Today polish.
+2. Расширить export/restore и JSON-first покрытие новых Personal-модулей.
+3. Решить объём account profile/admin user management (email, роли, reset/disable/audit).
 4. Отдельно решить приоритет: mobile client или подготовка закрытого Social к limited rollout.
 
 Future Research по автономным физическим устройствам описан в `ROADMAP.md` §12 и не является

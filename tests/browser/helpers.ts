@@ -12,10 +12,17 @@ export async function registerFreshUser(page: Page): Promise<void> {
   // Registration redirects to /login?registered=1 (no auto-login). Wait for the
   // redirect to settle before branching — page.url() right after click() can
   // still be the register page (race, observed on WebKit).
-  await page.waitForURL(/(\/login|\/dashboard)/, { timeout: 10_000 });
+  await page.waitForURL(/(\/login|\/dashboard|\/consent\/setup)/, { timeout: 10_000 });
   if (page.url().includes("/login")) {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
+    await page.locator('button[type="submit"]').click();
+  }
+  if (page.url().includes("/consent/setup")) {
+    const consentBoxes = page.locator('input[name="consent_types"]');
+    for (let index = 0; index < await consentBoxes.count(); index += 1) {
+      await consentBoxes.nth(index).check();
+    }
     await page.locator('button[type="submit"]').click();
   }
   await expect(page).toHaveURL(/\/dashboard/);
