@@ -11,3 +11,6 @@ requirements не было. Удалены только эти 30 записей
 `activity_catalog` не является удалённым справочником действий: это сохранённый межмодульный
 справочник типов Care/Journal/Timer. Legacy `SEED_ENTITIES` нельзя повторно запускать до его
 замены новым проверенным manifest по `docs/catalog/ADULT_ACTIVITY_CATALOG.md`.
+
+Runtime-защита: `/admin/seed-entities` отвечает 410, а кнопка legacy seed удалена из admin UI.
+LLM preset и shared references seed остаются доступны. Регрессия admin/auth/shell: 44 passed.

@@ -397,8 +397,8 @@ async def test_non_admin_cannot_seed(auth_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_admin_seed_with_form_csrf_token_passes(db_session: AsyncSession):
-    """Admin POST /admin/seed-entities with form-encoded csrf_token is accepted (S51).
+async def test_admin_legacy_seed_is_retired(db_session: AsyncSession):
+    """Admin cannot accidentally restore the retired 30-item legacy catalog.
 
     Regression for the reported bug: native form POSTs without a hidden
     csrf_token field returned 403 'CSRF token missing or invalid'.
@@ -434,11 +434,11 @@ async def test_admin_seed_with_form_csrf_token_passes(db_session: AsyncSession):
             data={"csrf_token": csrf},
             follow_redirects=False,
         )
-    assert response.status_code == 303
+    assert response.status_code == 410
 
-    # Entities were actually seeded
+    # The retired endpoint never writes entities.
     result = await db_session.execute(select(Entity))
-    assert result.scalars().first() is not None
+    assert result.scalars().first() is None
 
 
 @pytest.mark.asyncio

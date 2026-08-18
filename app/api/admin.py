@@ -12,9 +12,8 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.api_token import ApiToken
 from app.models.user import User
-from app.seed import seed_entities, seed_llm_presets
+from app.seed import seed_llm_presets
 from app.seed_body_parts import seed_body_parts
-from app.seed_categories import seed_categories
 from app.seed_inventory_categories import seed_inventory_categories
 from app.seed_locations import seed_locations
 from app.templates_setup import templates
@@ -53,10 +52,8 @@ async def seed_entities_endpoint(
     user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Seed entity catalog + activity categories — requires admin role."""
-    await seed_categories(db)
-    await seed_entities(db, owner_id=user.id)
-    return RedirectResponse(url="/admin", status_code=303)
+    """Reject the retired legacy catalog until its reviewed manifest is ready."""
+    raise HTTPException(status_code=410, detail="Legacy entity seed is retired; use the reviewed catalog manifest")
 
 
 @router.post("/seed-llm-presets")

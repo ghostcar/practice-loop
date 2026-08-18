@@ -60,15 +60,11 @@
  <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
  {{ icon('plus', 'w-10 h-10 mb-3 text-indigo-600 dark:text-indigo-400') }}
  <h3 class="text-lg font-semibold text-[color:var(--text)]">Seed Data</h3>
- <p class="text-sm text-[color:var(--text-secondary)] mt-1 mb-4">Initialize the catalog and provider presets</p>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1 mb-4">Initialize provider and shared reference presets</p>
  <div class="flex flex-wrap gap-2">
- <form action="/admin/seed-entities" method="post">
- <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
- <button type="submit"
- class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium">
- Seed 30+ Entities
- </button>
- </form>
+ <span class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl border border-[color:var(--border)] text-[color:var(--text-secondary)] text-sm">
+ Activity seed retired — reviewed 18+ manifest pending
+ </span>
  <form action="/admin/seed-llm-presets" method="post">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
  <button type="submit"
@@ -92,7 +88,7 @@
  <h3 class="text-lg font-semibold text-[color:var(--text)] mb-3">System Info</h3>
  <div class="text-sm text-[color:var(--text-secondary)] space-y-1">
  <div>Phase 2 — Catalog &amp; Configs</div>
- <div>Seed: 30+ entities across 6 categories + 3 LLM presets</div>
+ <div>Activity catalog: empty; reviewed 18+ manifest pending</div>
  <div>Opt-in: desire levels (want_very_much → unacceptable), rating 1–5</div>
  </div>
  </div>
