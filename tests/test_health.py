@@ -121,9 +121,7 @@ async def test_lab_out_of_range_marker(auth_client, test_user, db_session):
 
 @pytest.mark.asyncio
 async def test_delete_lab(auth_client, test_user, db_session):
-    await auth_client.post(
-        "/health/labs", data={"name": "Glucose", "measured_at": TODAY.isoformat(), "value": "5.2"}
-    )
+    await auth_client.post("/health/labs", data={"name": "Glucose", "measured_at": TODAY.isoformat(), "value": "5.2"})
     rec = (await db_session.execute(select(LabRecord).where(LabRecord.user_id == test_user.id))).scalar_one()
     resp = await auth_client.post(f"/health/labs/{rec.id}/delete")
     assert resp.status_code == 303
@@ -260,9 +258,7 @@ async def test_json_invalid_cycle_event_type(auth_client, test_user, db_session)
 
 @pytest.mark.asyncio
 async def test_cross_user_isolation(auth_client, test_user, db_session):
-    await auth_client.post(
-        "/health/labs", data={"name": "Private Lab", "measured_at": TODAY.isoformat(), "value": "1"}
-    )
+    await auth_client.post("/health/labs", data={"name": "Private Lab", "measured_at": TODAY.isoformat(), "value": "1"})
     # second user
     other = User(email="other@example.com", password_hash="x", locale="en", theme="dark")
     db_session.add(other)
@@ -351,6 +347,10 @@ def test_prefs_llm_mode_default_safe():
 
 @pytest.mark.asyncio
 async def test_settings_save_llm_mode(auth_client, test_user, db_session):
+    await auth_client.post(
+        "/api/v2/consent",
+        json={"consent_type": "llm_expanded", "state": "granted"},
+    )
     resp = await auth_client.post(
         "/settings",
         data={"llm_mode": "expanded", "theme_choice": "dark", "accent": "ember", "density": "comfortable"},
@@ -433,12 +433,14 @@ async def test_analyze_labs_json_safe(auth_client, test_user, db_session, monkey
 
 
 @pytest.mark.asyncio
-async def test_analyze_labs_json_expanded_includes_recommendations(
-    auth_client, test_user, db_session, monkeypatch
-):
+async def test_analyze_labs_json_expanded_includes_recommendations(auth_client, test_user, db_session, monkeypatch):
     from app.llm import client
 
     # enable expanded mode + a medication schedule for dosing context
+    await auth_client.post(
+        "/api/v2/consent",
+        json={"consent_type": "llm_expanded", "state": "granted"},
+    )
     await auth_client.post(
         "/settings",
         data={"llm_mode": "expanded", "theme_choice": "dark", "accent": "ember", "density": "comfortable"},
@@ -626,8 +628,8 @@ async def test_json_cycle_settings_upsert(auth_client, test_user, db_session):
     )
     assert resp2.status_code == 201
     rows = (
-        await db_session.execute(select(CycleSettings).where(CycleSettings.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(CycleSettings).where(CycleSettings.user_id == test_user.id))).scalars().all()
+    )
     assert len(rows) == 1
     assert rows[0].cycle_length == 32
 

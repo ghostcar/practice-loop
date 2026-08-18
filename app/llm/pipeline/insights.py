@@ -165,22 +165,19 @@ async def _ctx_health(db: AsyncSession, user_id: uuid.UUID, start: date, end: da
         .all()
     )
     labs_count = (
-        (
-            await db.execute(
-                select(func.count(LabRecord.id)).where(
-                    LabRecord.user_id == user_id,
-                    func.date(LabRecord.measured_at) >= start,
-                    func.date(LabRecord.measured_at) <= end,
-                )
+        await db.execute(
+            select(func.count(LabRecord.id)).where(
+                LabRecord.user_id == user_id,
+                func.date(LabRecord.measured_at) >= start,
+                func.date(LabRecord.measured_at) <= end,
             )
         )
-        .scalar()
-        or 0
-    )
+    ).scalar() or 0
     if not states:
         if labs_count:
             return [f"lab records: {labs_count}"]
         return []
+
     def _avg(vals: list) -> float | None:
         return sum(vals) / len(vals) if vals else None
 
@@ -222,26 +219,17 @@ async def _ctx_care(db: AsyncSession, user_id: uuid.UUID, start: date, end: date
         entry_ids = [e.id for e in rows]
         if entry_ids:
             usage_rows = (
-                (
-                    await db.execute(
-                        select(CareEntryProduct.product_id, func.count(CareEntryProduct.id))
-                        .where(CareEntryProduct.entry_id.in_(entry_ids))
-                        .group_by(CareEntryProduct.product_id)
-                    )
+                await db.execute(
+                    select(CareEntryProduct.product_id, func.count(CareEntryProduct.id))
+                    .where(CareEntryProduct.entry_id.in_(entry_ids))
+                    .group_by(CareEntryProduct.product_id)
                 )
-                .all()
-            )
+            ).all()
             if usage_rows:
                 products = {
                     str(p.id): p
                     for p in (
-                        (
-                            await db.execute(
-                                select(CareProduct).where(CareProduct.user_id == user_id)
-                            )
-                        )
-                        .scalars()
-                        .all()
+                        (await db.execute(select(CareProduct).where(CareProduct.user_id == user_id))).scalars().all()
                     )
                 }
                 used = [
@@ -249,9 +237,7 @@ async def _ctx_care(db: AsyncSession, user_id: uuid.UUID, start: date, end: date
                     for pid, count in usage_rows
                 ]
                 lines.append(f"products used: {', '.join(used)}")
-                low_stock = [
-                    p.name for p in products.values() if p.quantity is not None and p.quantity <= 1
-                ]
+                low_stock = [p.name for p in products.values() if p.quantity is not None and p.quantity <= 1]
                 if low_stock:
                     lines.append(f"low stock products: {', '.join(low_stock)}")
     except Exception:
@@ -311,9 +297,7 @@ async def _ctx_cycle(db: AsyncSession, user_id: uuid.UUID, start: date, end: dat
     from app.models.health import CycleEvent, CycleSettings, HealthState
     from app.models.journal import JournalEntry
 
-    settings = (
-        (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))).scalar_one_or_none()
-    )
+    settings = (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))).scalar_one_or_none()
     events = (await db.execute(select(CycleEvent).where(CycleEvent.user_id == user_id))).scalars().all()
     if not events and not settings:
         return []
@@ -411,9 +395,7 @@ async def _ctx_cycle(db: AsyncSession, user_id: uuid.UUID, start: date, end: dat
     def _avg(vals: list) -> float | None:
         return sum(vals) / len(vals) if vals else None
 
-    bleeds_in_period = sum(
-        1 for e in events if start <= e.event_date <= end and e.event_type == "bleeding"
-    )
+    bleeds_in_period = sum(1 for e in events if start <= e.event_date <= end and e.event_type == "bleeding")
     lines: list[str] = [
         f"cycle: length {cycle_length}, period {period_length} days",
         f"bleeding events in period: {bleeds_in_period}",
@@ -506,8 +488,7 @@ async def analyze_insights(
         }
 
     sections_text = "\n\n".join(
-        f"## {section}\n" + "\n".join(f"- {line}" for line in lines)
-        for section, lines in context.items()
+        f"## {section}\n" + "\n".join(f"- {line}" for line in lines) for section, lines in context.items()
     )
     mode = llm_mode or "safe"
     system_prompt = INSIGHTS_SYSTEM.format(locale=locale) + llm_mode_hint(mode)
@@ -548,11 +529,9 @@ async def analyze_insights(
             used = item.get("used_data")
             if not isinstance(used, list):
                 used = []
-            used = [str(u)[:500] for u in used if isinstance(u, (str, int, float))][:10]
+            used = [str(u)[:500] for u in used if isinstance(u, str | int | float)][:10]
             if section and title and body:
-                findings.append(
-                    {"section": section, "title": title, "summary": body[:2000], "used_data": used}
-                )
+                findings.append({"section": section, "title": title, "summary": body[:2000], "used_data": used})
 
     llm_config.total_tokens += usage["total_tokens"]
     llm_config.total_cost += usage["cost"]

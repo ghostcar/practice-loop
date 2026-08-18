@@ -68,9 +68,7 @@ async def test_medication_due_reminder_and_dedupe(db_session, test_user):
     # второй вызов — дедупликация: ничего нового
     delivered2 = await deliver_reminders(db_session, test_user, reminders)
     assert delivered2 == 0
-    n = (
-        await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))
-    ).scalars().all()
+    n = (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))).scalars().all()
     assert len(n) == 1
     assert n[0].type == "reminder"
 
@@ -104,9 +102,7 @@ async def test_care_routine_due(db_session, test_user):
 
     from app.reminders.engine import collect_reminders
 
-    db_session.add(
-        CareRoutine(user_id=test_user.id, name="Peeling", area="face", kind="home", frequency_days=7)
-    )
+    db_session.add(CareRoutine(user_id=test_user.id, name="Peeling", area="face", kind="home", frequency_days=7))
     await db_session.flush()
     reminders = await collect_reminders(db_session, test_user.id, TODAY, datetime.now(UTC))
     assert any(r.kind == "care_routine_due" for r in reminders)
@@ -130,9 +126,7 @@ async def test_reminder_cycle_runs_for_all_users(db_session, test_user):
     await db_session.flush()
     total = await run_reminder_cycle(db_session, tz_name="UTC")
     assert total >= 1
-    logs = (
-        await db_session.execute(select(ReminderLog).where(ReminderLog.user_id == test_user.id))
-    ).scalars().all()
+    logs = (await db_session.execute(select(ReminderLog).where(ReminderLog.user_id == test_user.id))).scalars().all()
     assert len(logs) >= 1
 
 
@@ -154,15 +148,13 @@ async def test_create_course_generates_sessions(auth_client, test_user, db_sessi
         },
     )
     assert resp.status_code == 303, resp.text
-    course = (
-        await db_session.execute(select(CareCourse).where(CareCourse.user_id == test_user.id))
-    ).scalar_one()
+    course = (await db_session.execute(select(CareCourse).where(CareCourse.user_id == test_user.id))).scalar_one()
     assert course.total_sessions == 4
     sessions = (
-        await db_session.execute(
-            select(CareCourseSession).where(CareCourseSession.course_id == course.id)
-        )
-    ).scalars().all()
+        (await db_session.execute(select(CareCourseSession).where(CareCourseSession.course_id == course.id)))
+        .scalars()
+        .all()
+    )
     assert len(sessions) == 4
     assert sorted(s.session_number for s in sessions) == [1, 2, 3, 4]
 
@@ -173,13 +165,12 @@ async def test_course_sessions_progress_and_page(auth_client, test_user, db_sess
         "/care/courses",
         data={"name": "Massage course", "area": "body", "total_sessions": "3", "interval_days": "7"},
     )
-    course = (
-        await db_session.execute(select(CareCourse).where(CareCourse.user_id == test_user.id))
-    ).scalar_one()
+    course = (await db_session.execute(select(CareCourse).where(CareCourse.user_id == test_user.id))).scalar_one()
     session = (
         await db_session.execute(
-            select(CareCourseSession)
-            .where(CareCourseSession.course_id == course.id, CareCourseSession.session_number == 1)
+            select(CareCourseSession).where(
+                CareCourseSession.course_id == course.id, CareCourseSession.session_number == 1
+            )
         )
     ).scalar_one()
     resp = await auth_client.post(f"/care/course-sessions/{session.id}/done")
@@ -335,9 +326,7 @@ async def test_auto_insights_opted_in_only(db_session, test_user, monkeypatch):
     monkeypatch.setattr(client, "call_llm", fake_call_llm)
     runs = await run_auto_insights(db_session)
     assert runs == 1
-    stored = (
-        await db_session.execute(select(InsightRun).where(InsightRun.user_id == test_user.id))
-    ).scalars().all()
+    stored = (await db_session.execute(select(InsightRun).where(InsightRun.user_id == test_user.id))).scalars().all()
     assert len(stored) == 1
 
 
@@ -397,9 +386,7 @@ async def test_reminders_relief_only(db_session, test_user):
     reminders = await collect_reminders(db_session, test_user.id, TODAY, datetime.now(UTC))
     await deliver_reminders(db_session, test_user, reminders)
     # нет points_transactions / achievements — только Notification + ReminderLog
-    n = (
-        await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))
-    ).scalars().all()
+    n = (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))).scalars().all()
     assert len(n) >= 1
     for item in n:
         assert item.type == "reminder"

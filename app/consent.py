@@ -56,12 +56,16 @@ def purpose(key: str) -> ConsentPurpose:
 
 async def latest_record(db: AsyncSession, user_id: uuid.UUID, key: str) -> ConsentRecord | None:
     return (
-        await db.execute(
-            select(ConsentRecord)
-            .where(ConsentRecord.user_id == user_id, ConsentRecord.consent_type == key)
-            .order_by(ConsentRecord.version.desc())
+        (
+            await db.execute(
+                select(ConsentRecord)
+                .where(ConsentRecord.user_id == user_id, ConsentRecord.consent_type == key)
+                .order_by(ConsentRecord.version.desc())
+            )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
 
 
 async def has_consent(db: AsyncSession, user_id: uuid.UUID, key: str) -> bool:

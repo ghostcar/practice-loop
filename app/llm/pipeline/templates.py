@@ -68,7 +68,7 @@ def render_template_prompt(system_prompt: str, params: dict | None) -> str:
         val = values.get(key)
         if val is None:
             return ""
-        if isinstance(val, (dict, list)):
+        if isinstance(val, dict | list):
             return json.dumps(val, ensure_ascii=False)
         return str(val)
 

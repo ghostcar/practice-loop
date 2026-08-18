@@ -47,9 +47,7 @@ def upgrade() -> None:
     op.create_table(
         "insight_findings",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column(
-            "run_id", sa.Uuid(), sa.ForeignKey("insight_runs.id", ondelete="CASCADE"), nullable=False
-        ),
+        sa.Column("run_id", sa.Uuid(), sa.ForeignKey("insight_runs.id", ondelete="CASCADE"), nullable=False),
         sa.Column("section", sa.String(30), nullable=False),
         sa.Column("title", sa.String(200), nullable=False),
         sa.Column("summary", sa.Text(), nullable=False),

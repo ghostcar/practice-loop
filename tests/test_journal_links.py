@@ -200,13 +200,17 @@ async def test_open_journal_auto_slot_idempotent(db_session, test_user):
         entry_date=TODAY,
     )
     count = (
-        await db_session.execute(
-            select(JournalEntry).where(
-                JournalEntry.user_id == test_user.id,
-                JournalEntry.slot_occurrence_id == occ.id,
+        (
+            await db_session.execute(
+                select(JournalEntry).where(
+                    JournalEntry.user_id == test_user.id,
+                    JournalEntry.slot_occurrence_id == occ.id,
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(count) == 1
 
 
@@ -243,9 +247,7 @@ async def test_close_reports_pending_and_complete_fills_details(db_session, test
     csrf = secrets.token_hex(32)
     token = create_access_token(test_user.id)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        client.headers.update(
-            {"Cookie": f"access_token={token}; csrf_token={csrf}", "X-CSRF-Token": csrf}
-        )
+        client.headers.update({"Cookie": f"access_token={token}; csrf_token={csrf}", "X-CSRF-Token": csrf})
         resp = await client.post(
             f"/journal/entries/{pending.id}/complete",
             data={
@@ -258,9 +260,7 @@ async def test_close_reports_pending_and_complete_fills_details(db_session, test
     app.dependency_overrides.pop(get_db, None)
     assert resp.status_code == 303, resp.text
 
-    entry = (
-        await db_session.execute(select(JournalEntry).where(JournalEntry.id == pending.id))
-    ).scalar_one()
+    entry = (await db_session.execute(select(JournalEntry).where(JournalEntry.id == pending.id))).scalar_one()
     assert entry.status == "completed"
     assert entry.activity_type == "intimacy"
     assert entry.duration_minutes == 30
@@ -290,8 +290,8 @@ async def test_non_journal_auto_slot_creates_no_entry(db_session, test_user):
     ).scalar_one()
     await open_slot(db_session, occurrence=occ, owner_id=test_user.id, now=occ.planned_open_at)
     entries = (
-        await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))).scalars().all()
+    )
     assert len(entries) == 0
 
 

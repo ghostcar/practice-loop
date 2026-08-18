@@ -13,6 +13,10 @@ from app.models.llm_config import LLMProviderConfig
 @pytest.mark.asyncio
 async def test_create_llm_config(auth_client: AsyncClient, db_session: AsyncSession, test_user):
     """Add a new LLM provider config."""
+    await auth_client.post(
+        "/api/v2/consent",
+        json={"consent_type": "byok_provider", "state": "granted"},
+    )
     response = await auth_client.post(
         "/llm-configs/",
         data={

@@ -183,14 +183,14 @@ async def test_on_task_interrupted_applies_penalty(db_session: AsyncSession, tes
 async def test_seed_achievements(db_session: AsyncSession):
     """Seeding creates the default 13 achievements."""
     achievements = await seed_achievements(db_session)
-    assert len(achievements) == 13
+    assert len(achievements) == 17
 
     achievements2 = await seed_achievements(db_session)
     assert len(achievements2) == 0
 
     result = await db_session.execute(select(Achievement))
     all_achs = result.scalars().all()
-    assert len(all_achs) == 13
+    assert len(all_achs) == 17
 
 
 # --- Audit fixes: interrupt 500 + state integrity ---

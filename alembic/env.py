@@ -10,6 +10,7 @@ from app.config import settings
 from app.models import Base  # noqa: F401 — import all models for autogenerate
 from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401
+from app.models.aftercare import AftercareEntry  # noqa: F401
 from app.models.api_token import ApiToken  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
 from app.models.care import (  # noqa: F401
@@ -24,9 +25,8 @@ from app.models.care import (  # noqa: F401
 from app.models.catalog import ActivityCatalogItem  # noqa: F401
 from app.models.category import ActivityCategory  # noqa: F401
 from app.models.chastity import ChastityCheckIn  # noqa: F401
-from app.models.device import ChastityDeviceEvent  # noqa: F401
-from app.models.aftercare import AftercareEntry  # noqa: F401
 from app.models.consent import ConsentRecord  # noqa: F401
+from app.models.device import ChastityDeviceEvent  # noqa: F401
 from app.models.entity import Entity  # noqa: F401
 from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
 from app.models.insights import InsightFinding, InsightRun  # noqa: F401

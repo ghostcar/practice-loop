@@ -60,7 +60,8 @@ class TestSettingsPage:
 
     async def test_save_settings_persists(self, db_session, auth_client, test_user):
         await _save_prefs(
-            auth_client, db_session,
+            auth_client,
+            db_session,
             theme_choice="system",
             accent="sage",
             density="compact",
@@ -88,7 +89,8 @@ class TestSettingsPage:
 
     async def test_invalid_values_fall_back_to_defaults(self, db_session, auth_client, test_user):
         await _save_prefs(
-            auth_client, db_session,
+            auth_client,
+            db_session,
             accent="neon",
             density="huge",
             theme_choice="matrix",
@@ -110,7 +112,8 @@ class TestDashboardBlocks:
     async def test_blocks_render_in_stored_order_and_hide(self, db_session, auth_client):
         # order: today before stats; hide charts, summaries, quick, xp
         await _save_prefs(
-            auth_client, db_session,
+            auth_client,
+            db_session,
             block_order="header,today,stats",
             block_hidden="charts,summaries,xp,quick",
         )
@@ -134,6 +137,7 @@ class TestDiscretion:
         def _html_tag(html: str) -> str:
             m = re.search(r"<html[^>]*>", html)
             return m.group(0) if m else ""
+
         now = datetime.now(UTC)
         db_session.add(
             ActivityLog(
@@ -161,7 +165,8 @@ class TestDiscretion:
         import re
 
         await _save_prefs(
-            auth_client, db_session,
+            auth_client,
+            db_session,
             discretion_mode="schedule",
             discretion_start="00:00",
             discretion_end="23:59",
@@ -171,7 +176,8 @@ class TestDiscretion:
         assert 'data-discretion="on"' in tag
 
         await _save_prefs(
-            auth_client, db_session,
+            auth_client,
+            db_session,
             discretion_mode="schedule",
             discretion_start="12:00",
             discretion_end="12:00",

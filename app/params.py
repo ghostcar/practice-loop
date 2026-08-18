@@ -249,7 +249,7 @@ def _validate_value(key: str, value: Any, d: dict[str, Any]) -> list[str]:
             return [f"PARAM_TYPE_MISMATCH: {key} expected {t} got boolean"]
         if t == "integer" and not isinstance(value, int):
             return [f"PARAM_TYPE_MISMATCH: {key} expected integer got {type(value).__name__}"]
-        if t in ("decimal", "duration") and not isinstance(value, (int, float)):
+        if t in ("decimal", "duration") and not isinstance(value, int | float):
             return [f"PARAM_TYPE_MISMATCH: {key} expected {t} got {type(value).__name__}"]
         errors: list[str] = []
         if "min" in d and value < d["min"]:

@@ -282,13 +282,9 @@ def load_manifest(root: Path) -> dict | None:
 
 def index_code(root: Path, *, mode: str = "full", limit: int | None = None) -> dict:
     """Extract units → embed → upsert → write HEAD-bound manifest (RFC §7)."""
-    available, reason = is_available()
-    if not available:
-        return {"available": False, "reason": reason, "status": "blocked"}
-
     head = git_head(root)
     if head is None:
-        return {"available": True, "status": "blocked", "reason": "no Git HEAD (worktree not resolved)"}
+        return {"available": is_available()[0], "status": "blocked", "reason": "no Git HEAD (worktree not resolved)"}
 
     if mode == "check":
         m = load_manifest(root)
@@ -301,6 +297,10 @@ def index_code(root: Path, *, mode: str = "full", limit: int | None = None) -> d
             "head": m.get("head"),
             "unit_count": m.get("unit_count", 0),
         }
+
+    available, reason = is_available()
+    if not available:
+        return {"available": False, "reason": reason, "status": "blocked"}
 
     units = code_units.extract_units(root, denylist=is_denied)
     if limit is not None:

@@ -240,10 +240,14 @@ async def create_entity(
             raise HTTPException(422, "Invalid care_product_ids format") from exc
         if parsed:
             rows = (
-                await db.execute(
-                    select(CareProduct.id).where(CareProduct.id.in_(parsed), CareProduct.user_id == user.id)
+                (
+                    await db.execute(
+                        select(CareProduct.id).where(CareProduct.id.in_(parsed), CareProduct.user_id == user.id)
+                    )
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             if len(rows) != len(set(parsed)):
                 raise HTTPException(400, "One or more care products not found")
             # JSON-колонка: храним строки (UUID не сериализуется в JSON)

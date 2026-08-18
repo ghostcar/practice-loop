@@ -136,9 +136,7 @@ async def test_journal_entry_links_catalog_item(auth_client, test_user, db_sessi
         data={"entry_date": TODAY.isoformat(), "catalog_item_id": str(item.id)},
     )
     assert resp.status_code == 303, resp.text
-    entry = (
-        await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))
-    ).scalar_one()
+    entry = (await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))).scalar_one()
     assert entry.catalog_item_id == item.id
     # денормализованный снимок названия для отображения
     assert entry.activity_type == "Массаж"
@@ -181,9 +179,7 @@ async def test_care_routine_links_catalog_item(auth_client, test_user, db_sessio
         data={"name": "Вечерний уход", "catalog_item_id": str(item.id), "area": "face", "kind": "home"},
     )
     assert resp.status_code == 303, resp.text
-    routine = (
-        await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))
-    ).scalar_one()
+    routine = (await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))).scalar_one()
     assert routine.catalog_item_id == item.id
 
 
@@ -223,9 +219,7 @@ async def test_slot_rule_links_catalog_item(auth_client, test_user, db_session):
         },
     )
     assert resp.status_code in (200, 303), resp.text
-    rule = (
-        await db_session.execute(select(LockSlotRule).where(LockSlotRule.session_id == session.id))
-    ).scalar_one()
+    rule = (await db_session.execute(select(LockSlotRule).where(LockSlotRule.session_id == session.id))).scalar_one()
     assert rule.catalog_item_id == item.id
 
 
@@ -329,9 +323,7 @@ def test_catalog_module_no_gamification():
 
 @pytest.mark.asyncio
 async def test_json_delete_item(auth_client, test_user, db_session):
-    item = (
-        await auth_client.post("/api/v2/catalog/items", json={"name": "JSON вид", "domains": ["journal"]})
-    ).json()
+    item = (await auth_client.post("/api/v2/catalog/items", json={"name": "JSON вид", "domains": ["journal"]})).json()
     resp = await auth_client.delete(f"/api/v2/catalog/items/{item['id']}")
     assert resp.status_code == 204
     data = (await auth_client.get("/api/v2/catalog")).json()

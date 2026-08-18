@@ -50,8 +50,10 @@ async def test_form_handler_adds_checkin(auth_client, test_user, db_session):
     )
     assert resp.status_code == 303
     rows = (
-        await db_session.execute(select(ChastityCheckIn).where(ChastityCheckIn.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(ChastityCheckIn).where(ChastityCheckIn.user_id == test_user.id)))
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1
     assert rows[0].mood == 4
     assert rows[0].comfort_level == 2
@@ -60,17 +62,13 @@ async def test_form_handler_adds_checkin(auth_client, test_user, db_session):
 @pytest.mark.asyncio
 async def test_verify_without_media_and_missing_checkin(auth_client, test_user, db_session):
     # missing check-in → 404
-    assert (
-        await auth_client.post(f"/api/v2/chastity/check-ins/{uuid.uuid4()}/verify", json={})
-    ).status_code == 404
+    assert (await auth_client.post(f"/api/v2/chastity/check-ins/{uuid.uuid4()}/verify", json={})).status_code == 404
 
     # existing check-in without photo → 400
     c = ChastityCheckIn(user_id=test_user.id, mood=3)
     db_session.add(c)
     await db_session.flush()
-    assert (
-        await auth_client.post(f"/api/v2/chastity/check-ins/{c.id}/verify", json={})
-    ).status_code == 400
+    assert (await auth_client.post(f"/api/v2/chastity/check-ins/{c.id}/verify", json={})).status_code == 400
 
 
 @pytest.mark.asyncio

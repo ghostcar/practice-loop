@@ -113,9 +113,7 @@ async def _insights_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     )
     if run is None:
         return {"has_runs": False, "runs_count": 0}
-    count = (
-        await db.execute(select(func.count(InsightRun.id)).where(InsightRun.user_id == user_id))
-    ).scalar() or 0
+    count = (await db.execute(select(func.count(InsightRun.id)).where(InsightRun.user_id == user_id))).scalar() or 0
     return {
         "has_runs": True,
         "runs_count": count,

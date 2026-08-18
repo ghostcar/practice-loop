@@ -56,9 +56,7 @@ async def _latest_consents(db: AsyncSession, user_id: uuid.UUID) -> dict[str, di
     rows = (
         (
             await db.execute(
-                select(ConsentRecord)
-                .where(ConsentRecord.user_id == user_id)
-                .order_by(ConsentRecord.version.desc())
+                select(ConsentRecord).where(ConsentRecord.user_id == user_id).order_by(ConsentRecord.version.desc())
             )
         )
         .scalars()

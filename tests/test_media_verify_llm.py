@@ -25,6 +25,7 @@ from app.llm.pipeline.media_verify import (
     find_active_challenge,
     verify_media_with_llm,
 )
+from app.models.consent import ConsentRecord
 from app.models.llm_config import LLMProviderConfig
 from app.models.media import MediaAsset, MediaVerificationResult, VerificationChallenge
 from app.models.user import User
@@ -33,6 +34,21 @@ from app.services.media import compute_code_hmac, generate_verification_code
 pytestmark = pytest.mark.anyio
 
 JPEG_BYTES = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xff\xd9"
+
+
+@pytest.fixture(autouse=True)
+async def _media_verification_consent(db_session: AsyncSession, test_user: User) -> None:
+    """All legacy verification cases exercise behavior after explicit consent."""
+    db_session.add(
+        ConsentRecord(
+            user_id=test_user.id,
+            consent_type="media_verification",
+            state="granted",
+            version=1,
+            terms_version="1",
+        )
+    )
+    await db_session.flush()
 
 
 def _write_media_file(file_path: str) -> Path:

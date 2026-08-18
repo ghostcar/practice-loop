@@ -53,8 +53,8 @@ async def test_add_entry_and_list(auth_client, test_user, db_session):
     )
     assert resp.status_code == 303, resp.text
     entries = (
-        await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))).scalars().all()
+    )
     assert len(entries) == 1
     e = entries[0]
     assert e.activity_type == "intimacy"
@@ -74,23 +74,19 @@ async def test_add_entry_and_list(auth_client, test_user, db_session):
 
 @pytest.mark.asyncio
 async def test_invalid_scale_rejected(auth_client, test_user, db_session):
-    resp = await auth_client.post(
-        "/journal/entries", data={"entry_date": TODAY.isoformat(), "satisfaction": "9"}
-    )
+    resp = await auth_client.post("/journal/entries", data={"entry_date": TODAY.isoformat(), "satisfaction": "9"})
     assert resp.status_code == 400
 
 
 @pytest.mark.asyncio
 async def test_delete_entry(auth_client, test_user, db_session):
-    await auth_client.post(
-        "/journal/entries", data={"entry_date": TODAY.isoformat(), "activity_type": "massage"}
-    )
+    await auth_client.post("/journal/entries", data={"entry_date": TODAY.isoformat(), "activity_type": "massage"})
     entry = (await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))).scalar_one()
     resp = await auth_client.post(f"/journal/entries/{entry.id}/delete")
     assert resp.status_code == 303
     remaining = (
-        await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))).scalars().all()
+    )
     assert len(remaining) == 0
 
 
@@ -214,9 +210,7 @@ async def test_json_invalid_protection_defaults(auth_client, test_user, db_sessi
 
 @pytest.mark.asyncio
 async def test_cross_user_isolation(auth_client, test_user, db_session):
-    await auth_client.post(
-        "/journal/entries", data={"entry_date": TODAY.isoformat(), "activity_type": "private"}
-    )
+    await auth_client.post("/journal/entries", data={"entry_date": TODAY.isoformat(), "activity_type": "private"})
     other = User(email="other@example.com", password_hash="x", locale="en", theme="dark")
     db_session.add(other)
     await db_session.flush()

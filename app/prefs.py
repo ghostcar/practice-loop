@@ -46,15 +46,34 @@ BLUR_LEVELS = (0, 1, 2)
 # expanded — рекомендации/советы/интерпретация (влияет на все LLM-блоки).
 LLM_MODES = ("safe", "expanded")
 PROFILE_MODULES = (
-    "tracker", "timer", "medication", "health", "journal",
-    "care", "catalog", "insights", "aftercare",
+    "tracker",
+    "timer",
+    "medication",
+    "health",
+    "journal",
+    "care",
+    "catalog",
+    "insights",
+    "aftercare",
 )
 
 # Dashboard blocks in default order. Keys must match the `data-dash-block`
 # markers in dashboard_v2.html.
 DASH_BLOCKS = (
-    "header", "stats", "charts", "summaries", "xp", "quick", "today",
-    "medication", "health", "journal", "care", "aftercare", "insights", "timer",
+    "header",
+    "stats",
+    "charts",
+    "summaries",
+    "xp",
+    "quick",
+    "today",
+    "medication",
+    "health",
+    "journal",
+    "care",
+    "aftercare",
+    "insights",
+    "timer",
 )
 
 DEFAULT_PREFS: dict[str, Any] = {
@@ -78,9 +97,22 @@ DEFAULT_PREFS: dict[str, Any] = {
 }
 
 DISCRETION_LABELS = (
-    "today", "tasks", "sessions", "catalog", "training", "diets",
-    "inventory", "measurements", "schedule", "body_parts", "calendar",
-    "points", "achievements", "media", "timer", "social",
+    "today",
+    "tasks",
+    "sessions",
+    "catalog",
+    "training",
+    "diets",
+    "inventory",
+    "measurements",
+    "schedule",
+    "body_parts",
+    "calendar",
+    "points",
+    "achievements",
+    "media",
+    "timer",
+    "social",
 )
 
 
@@ -254,9 +286,7 @@ def neutral_notification(
 # Request-scoped ContextVar (mirrors app.timeutils client_tz pattern)
 # ---------------------------------------------------------------------------
 
-_prefs_var: contextvars.ContextVar[UserPrefs | None] = contextvars.ContextVar(
-    "user_prefs", default=None
-)
+_prefs_var: contextvars.ContextVar[UserPrefs | None] = contextvars.ContextVar("user_prefs", default=None)
 
 
 def set_prefs(prefs: UserPrefs) -> contextvars.Token:

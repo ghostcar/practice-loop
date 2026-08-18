@@ -55,7 +55,8 @@ async def test_json_filter_and_history_is_immutable(auth_client, test_user, db_s
 
     rec_id = filtered["records"][0]["id"]
     assert filtered["records"][0]["terms_version"] == "1"
-    assert (await auth_client.delete(f"/api/v2/consent/{rec_id}")).status_code == 405
+    # The immutable resource has no DELETE route at all.
+    assert (await auth_client.delete(f"/api/v2/consent/{rec_id}")).status_code == 404
     assert len((await auth_client.get("/api/v2/consent?consent_type=data_processing")).json()["records"]) == 1
 
 

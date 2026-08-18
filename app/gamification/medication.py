@@ -86,12 +86,8 @@ async def adherence_streak(db: AsyncSession, user_id: uuid.UUID) -> int:
     the number of taken intakes that day >= expected doses. Days with no active
     schedule are ignored (do not break the streak).
     """
-    schedules = (
-        (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user_id))).scalars().all()
-    )
-    intakes = (
-        (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
-    )
+    schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user_id))).scalars().all()
+    intakes = (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
 
     # taken intakes per local day
     taken_by_day: dict = {}
@@ -137,9 +133,7 @@ async def adherence_streak(db: AsyncSession, user_id: uuid.UUID) -> int:
 async def _xp_earned_today(db: AsyncSession, user_id: uuid.UUID) -> int:
     """XP already earned from medication today (for the daily cap)."""
     today = local_today()
-    intakes = (
-        (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
-    )
+    intakes = (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
     count = 0
     for it in intakes:
         if it.status != "taken":

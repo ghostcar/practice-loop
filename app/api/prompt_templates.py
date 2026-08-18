@@ -206,7 +206,7 @@ def _validate_schema_json(raw: str) -> dict | list | None:
         parsed = json.loads(raw)
     except json.JSONDecodeError as e:
         raise HTTPException(400, f"params_schema is not valid JSON: {e}") from e
-    if not isinstance(parsed, (dict, list)):
+    if not isinstance(parsed, dict | list):
         raise HTTPException(400, "params_schema must be a JSON object or array")
     # Validate the shape via the typed DSL (raises ValueError on bad definitions).
     from app.params import normalize_schema

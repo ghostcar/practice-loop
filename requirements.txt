@@ -107,6 +107,8 @@ openai==1.59.9
     # via practice-loop (pyproject.toml)
 passlib[bcrypt]==1.7.4
     # via practice-loop (pyproject.toml)
+pillow==10.4.0
+    # via practice-loop (pyproject.toml)
 propcache==0.5.2
     # via yarl
 pyasn1==0.6.4

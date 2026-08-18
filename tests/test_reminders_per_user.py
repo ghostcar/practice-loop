@@ -69,8 +69,6 @@ async def test_run_reminder_cycle_for_user(db_session: AsyncSession, test_user: 
 
     assert delivered >= 1
     notifs = (
-        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id)))
-        .scalars()
-        .all()
+        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))).scalars().all()
     )
     assert any(n.type == "reminder" for n in notifs)

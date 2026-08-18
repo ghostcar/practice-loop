@@ -79,9 +79,7 @@ async def test_add_product_foreign_inventory_rejected(auth_client, test_user, db
     await db_session.flush()
     other_inv = await _add_inventory(db_session, other, name="Other's item")
 
-    resp = await auth_client.post(
-        "/care/products", data={"name": "P", "inventory_item_id": str(other_inv.id)}
-    )
+    resp = await auth_client.post("/care/products", data={"name": "P", "inventory_item_id": str(other_inv.id)})
     assert resp.status_code == 400
 
 
@@ -94,20 +92,22 @@ async def test_delete_product_cascades_join_rows(auth_client, test_user, db_sess
     product = (await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))).scalar_one()
 
     # bind product to an entry
-    await auth_client.post(
-        "/care/entries", data={"entry_date": TODAY.isoformat(), "product_ids": str(product.id)}
-    )
+    await auth_client.post("/care/entries", data={"entry_date": TODAY.isoformat(), "product_ids": str(product.id)})
     entry = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalar_one()
     joins = (
-        await db_session.execute(select(CareEntryProduct).where(CareEntryProduct.entry_id == entry.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareEntryProduct).where(CareEntryProduct.entry_id == entry.id)))
+        .scalars()
+        .all()
+    )
     assert len(joins) == 1
 
     resp = await auth_client.post(f"/care/products/{product.id}/delete")
     assert resp.status_code == 303
     remaining_joins = (
-        await db_session.execute(select(CareEntryProduct).where(CareEntryProduct.entry_id == entry.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareEntryProduct).where(CareEntryProduct.entry_id == entry.id)))
+        .scalars()
+        .all()
+    )
     assert len(remaining_joins) == 0  # CASCADE
 
 
@@ -121,8 +121,8 @@ async def test_entry_with_products_form(auth_client, test_user, db_session):
     await auth_client.post("/care/products", data={"name": "Toner", "category": "toner"})
     await auth_client.post("/care/products", data={"name": "Moisturizer", "category": "moisturizer"})
     products = (
-        await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))).scalars().all()
+    )
     assert len(products) == 2
 
     resp = await auth_client.post(
@@ -135,8 +135,10 @@ async def test_entry_with_products_form(auth_client, test_user, db_session):
     assert resp.status_code == 303, resp.text
     entry = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalar_one()
     joins = (
-        await db_session.execute(select(CareEntryProduct).where(CareEntryProduct.entry_id == entry.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareEntryProduct).where(CareEntryProduct.entry_id == entry.id)))
+        .scalars()
+        .all()
+    )
     assert {j.product_id for j in joins} == {p.id for p in products}
 
     resp = await auth_client.get("/care")
@@ -232,8 +234,8 @@ async def test_json_delete_product(auth_client, test_user, db_session):
     resp = await auth_client.delete(f"/api/v2/care/products/{product.id}")
     assert resp.status_code == 204
     remaining = (
-        await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))).scalars().all()
+    )
     assert len(remaining) == 0
 
 
@@ -243,9 +245,7 @@ async def test_json_foreign_inventory_rejected(auth_client, test_user, db_sessio
     db_session.add(other)
     await db_session.flush()
     other_inv = await _add_inventory(db_session, other, name="Other's")
-    resp = await auth_client.post(
-        "/api/v2/care/products", json={"name": "P", "inventory_item_id": str(other_inv.id)}
-    )
+    resp = await auth_client.post("/api/v2/care/products", json={"name": "P", "inventory_item_id": str(other_inv.id)})
     assert resp.status_code == 400
 
 

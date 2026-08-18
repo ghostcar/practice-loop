@@ -460,7 +460,7 @@ def _model_to_dict(obj: Any) -> dict:
     data: dict = {}
     for col in obj.__table__.columns:
         val = getattr(obj, col.key)
-        if isinstance(val, (datetime, date, time)):
+        if isinstance(val, datetime | date | time):
             val = val.isoformat()
         elif isinstance(val, uuid.UUID):
             val = str(val)
@@ -478,11 +478,11 @@ def _rows_to_csv(rows: list, headers: list[str], export_type: str) -> PlainTextR
         values = []
         for h in headers:
             val = getattr(row, h, None)
-            if isinstance(val, (datetime, date, time)):
+            if isinstance(val, datetime | date | time):
                 val = val.isoformat()
             elif isinstance(val, uuid.UUID):
                 val = str(val)
-            elif isinstance(val, (dict, list)):
+            elif isinstance(val, dict | list):
                 val = json.dumps(val, ensure_ascii=False)
             values.append(str(val) if val is not None else "")
         writer.writerow(values)

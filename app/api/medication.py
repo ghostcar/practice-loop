@@ -140,12 +140,8 @@ def _doses_today(s: MedSchedule, today: date) -> int:
 async def _schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """«Сегодня»: расписания с невыполненными приёмами + истекающие/низкий остаток."""
     today = local_today()
-    schedules = (
-        (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user_id))).scalars().all()
-    )
-    intakes = (
-        (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
-    )
+    schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user_id))).scalars().all()
+    intakes = (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
 
     # количество принятых сегодня по каждому расписанию (по локальному дню устройства)
     taken_today: dict[str, int] = {}
@@ -227,9 +223,7 @@ async def medications_page(
     )
     kits = (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
     stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user.id))).scalars().all()
-    schedules = (
-        (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
-    )
+    schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
     summary = await _schedule_summary(db, user.id)
 
     # index by medication id
@@ -543,9 +537,7 @@ async def record_intake_form(
     if schedule_id and schedule_id != "__none__":
         sched = (
             await db.execute(
-                select(MedSchedule).where(
-                    MedSchedule.id == uuid.UUID(schedule_id), MedSchedule.user_id == user.id
-                )
+                select(MedSchedule).where(MedSchedule.id == uuid.UUID(schedule_id), MedSchedule.user_id == user.id)
             )
         ).scalar_one_or_none()
     if status not in INTAKE_STATUSES:
@@ -688,10 +680,33 @@ async def export_medications(
 _MEDICAL_INVENTORY_CATEGORIES = {"hygiene_supply", "consumable", "recovery_item", "other"}
 # Keyword hints in item name/description that suggest a medical item regardless of category.
 _MEDICAL_KEYWORDS = (
-    "мазь", "крем", "таблетк", "лекарств", "витамин", "бинт", "пластыр",
-    "йод", "зеленк", "спрей", "капл", "гель", "раствор", "аптечк",
-    "ointment", "cream", "tablet", "pill", "medicine", "medication",
-    "vitamin", "bandage", "plaster", "iodine", "spray", "drops", "gel",
+    "мазь",
+    "крем",
+    "таблетк",
+    "лекарств",
+    "витамин",
+    "бинт",
+    "пластыр",
+    "йод",
+    "зеленк",
+    "спрей",
+    "капл",
+    "гель",
+    "раствор",
+    "аптечк",
+    "ointment",
+    "cream",
+    "tablet",
+    "pill",
+    "medicine",
+    "medication",
+    "vitamin",
+    "bandage",
+    "plaster",
+    "iodine",
+    "spray",
+    "drops",
+    "gel",
 )
 
 
@@ -711,11 +726,13 @@ async def migrate_inventory_to_medications(
     from app.models.life import InventoryItem
 
     items = (
-        (await db.execute(
-            select(InventoryItem)
-            .where(InventoryItem.user_id == user.id, InventoryItem.migrated_to_medication.is_(False))
-            .order_by(InventoryItem.name)
-        ))
+        (
+            await db.execute(
+                select(InventoryItem)
+                .where(InventoryItem.user_id == user.id, InventoryItem.migrated_to_medication.is_(False))
+                .order_by(InventoryItem.name)
+            )
+        )
         .scalars()
         .all()
     )
@@ -771,9 +788,7 @@ json_router = APIRouter(prefix="/api/v2/medications", tags=["medication"])
 
 async def _get_med(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID) -> Medication:
     m = (
-        await db.execute(
-            select(Medication).where(Medication.id == medication_id, Medication.user_id == user_id)
-        )
+        await db.execute(select(Medication).where(Medication.id == medication_id, Medication.user_id == user_id))
     ).scalar_one_or_none()
     if m is None:
         raise HTTPException(404, "Medication not found")
@@ -798,9 +813,7 @@ async def json_list(
         .all()
     )
     stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user.id))).scalars().all()
-    schedules = (
-        (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
-    )
+    schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
     out = []
     for m in meds:
         d = _med_dict(m)
@@ -849,11 +862,7 @@ async def json_list_stocks(
 ):
     """Список партий/остатков — для мобильного клиента (owner-scoped)."""
     stocks = (
-        (
-            await db.execute(
-                select(MedStock).where(MedStock.user_id == user.id).order_by(MedStock.created_at.desc())
-            )
-        )
+        (await db.execute(select(MedStock).where(MedStock.user_id == user.id).order_by(MedStock.created_at.desc())))
         .scalars()
         .all()
     )
@@ -884,9 +893,7 @@ async def json_list_kits(
     user: User = Depends(get_current_user),
 ):
     """Список аптечек — для мобильного клиента (owner-scoped)."""
-    kits = (
-        (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
-    )
+    kits = (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
     return [{"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes} for k in kits]
 
 
@@ -1078,9 +1085,7 @@ async def json_delete_kit(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    k = (
-        await db.execute(select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user.id))
-    ).scalar_one_or_none()
+    k = (await db.execute(select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user.id))).scalar_one_or_none()
     if k is None:
         raise HTTPException(404, "Kit not found")
     await db.delete(k)

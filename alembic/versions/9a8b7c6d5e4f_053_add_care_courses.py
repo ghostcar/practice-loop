@@ -36,7 +36,12 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_foreign_key(
-        "fk_care_courses_catalog_item", "care_courses", "activity_catalog", ["catalog_item_id"], ["id"], ondelete="SET NULL"
+        "fk_care_courses_catalog_item",
+        "care_courses",
+        "activity_catalog",
+        ["catalog_item_id"],
+        ["id"],
+        ondelete="SET NULL",
     )
     op.create_index("ix_care_courses_user_id", "care_courses", ["user_id"])
     op.create_index("ix_care_courses_catalog_item_id", "care_courses", ["catalog_item_id"])

@@ -220,9 +220,7 @@ async def test_json_create_medication_stock_schedule_kit(auth_client, test_user,
     assert resp.status_code == 201, resp.text
     med_id = resp.json()["id"]
 
-    kit_resp = await auth_client.post(
-        "/api/v2/medications/kits", json={"name": "Home kit", "location": "Bathroom"}
-    )
+    kit_resp = await auth_client.post("/api/v2/medications/kits", json={"name": "Home kit", "location": "Bathroom"})
     assert kit_resp.status_code == 201, kit_resp.text
     kit_id = kit_resp.json()["id"]
 
@@ -374,9 +372,7 @@ async def test_json_delete_medication_stock_schedule_kit(auth_client, test_user,
     med = (await auth_client.post("/api/v2/medications", json={"name": "Ibuprofen"})).json()
     kit = (await auth_client.post("/api/v2/medications/kits", json={"name": "Home kit"})).json()
     stock = (
-        await auth_client.post(
-            "/api/v2/medications/stocks", json={"medication_id": med["id"], "quantity": 20}
-        )
+        await auth_client.post("/api/v2/medications/stocks", json={"medication_id": med["id"], "quantity": 20})
     ).json()
     sched = (
         await auth_client.post(

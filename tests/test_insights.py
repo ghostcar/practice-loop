@@ -234,16 +234,14 @@ async def test_delete_run_cascades_findings(auth_client, test_user, db_session, 
 
     await auth_client.post("/insights/run", data={"period_start": TODAY.isoformat(), "period_end": TODAY.isoformat()})
     run = (await db_session.execute(select(InsightRun).where(InsightRun.user_id == test_user.id))).scalar_one()
-    findings = (
-        await db_session.execute(select(InsightFinding).where(InsightFinding.run_id == run.id))
-    ).scalars().all()
+    findings = (await db_session.execute(select(InsightFinding).where(InsightFinding.run_id == run.id))).scalars().all()
     assert len(findings) == 2
 
     resp = await auth_client.post(f"/insights/runs/{run.id}/delete")
     assert resp.status_code == 303
     remaining = (
-        await db_session.execute(select(InsightFinding).where(InsightFinding.run_id == run.id))
-    ).scalars().all()
+        (await db_session.execute(select(InsightFinding).where(InsightFinding.run_id == run.id))).scalars().all()
+    )
     assert len(remaining) == 0  # CASCADE
 
 
@@ -273,7 +271,6 @@ async def test_json_delete_run(auth_client, test_user, db_session):
 
 @pytest.mark.asyncio
 async def test_cross_user_isolation(auth_client, test_user, db_session, monkeypatch):
-
     other = User(email="other@example.com", password_hash="x", locale="en", theme="dark")
     db_session.add(other)
     await db_session.flush()
@@ -282,9 +279,7 @@ async def test_cross_user_isolation(auth_client, test_user, db_session, monkeypa
     )
     db_session.add(other_run)
     await db_session.flush()
-    db_session.add(
-        InsightFinding(run_id=other_run.id, section="care", title="secret", summary="private")
-    )
+    db_session.add(InsightFinding(run_id=other_run.id, section="care", title="secret", summary="private"))
     await db_session.flush()
 
     resp = await auth_client.get("/api/v2/insights")

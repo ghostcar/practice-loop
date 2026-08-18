@@ -283,22 +283,29 @@ async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Re
     window_end = now + lead
     out: list[Reminder] = []
     sessions = (
-        await db.execute(
-            select(LockSession).where(LockSession.owner_id == user_id, LockSession.state == e.SESSION_ACTIVE)
+        (
+            await db.execute(
+                select(LockSession).where(LockSession.owner_id == user_id, LockSession.state == e.SESSION_ACTIVE)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for session in sessions:
         slots = (
-            await db.execute(
-                select(LockSlotOccurrence)
-                .where(
-                    LockSlotOccurrence.session_id == session.id,
-                    LockSlotOccurrence.state.in_(["pending", "eligible"]),
-                    LockSlotOccurrence.planned_open_at >= now,
-                    LockSlotOccurrence.planned_open_at <= window_end,
+            (
+                await db.execute(
+                    select(LockSlotOccurrence).where(
+                        LockSlotOccurrence.session_id == session.id,
+                        LockSlotOccurrence.state.in_(["pending", "eligible"]),
+                        LockSlotOccurrence.planned_open_at >= now,
+                        LockSlotOccurrence.planned_open_at <= window_end,
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         for occ in slots:
             out.append(
                 Reminder(
@@ -310,16 +317,19 @@ async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Re
                 )
             )
         tasks = (
-            await db.execute(
-                select(LockTaskOccurrence)
-                .where(
-                    LockTaskOccurrence.session_id == session.id,
-                    LockTaskOccurrence.state.in_(["scheduled", "visible"]),
-                    LockTaskOccurrence.due_at >= now,
-                    LockTaskOccurrence.due_at <= window_end,
+            (
+                await db.execute(
+                    select(LockTaskOccurrence).where(
+                        LockTaskOccurrence.session_id == session.id,
+                        LockTaskOccurrence.state.in_(["scheduled", "visible"]),
+                        LockTaskOccurrence.due_at >= now,
+                        LockTaskOccurrence.due_at <= window_end,
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         for occ in tasks:
             out.append(
                 Reminder(
@@ -449,9 +459,7 @@ async def deliver_reminders(db: AsyncSession, user: User, reminders: list[Remind
     return delivered
 
 
-async def run_reminder_cycle_for_user(
-    db: AsyncSession, user: User, mode: str = "daily", tz_name: str = "UTC"
-) -> int:
+async def run_reminder_cycle_for_user(db: AsyncSession, user: User, mode: str = "daily", tz_name: str = "UTC") -> int:
     """Run one reminder cycle for a single user in their own timezone (ADR-098).
 
     "Today"/"now" are computed in the user's ``prefs.reminder_tz`` (falling back

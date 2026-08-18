@@ -33,13 +33,17 @@ async def run_auto_insights(db: AsyncSession) -> int:
         if not prefs.insights_auto:
             continue
         config = (
-            await db.execute(
-                select(LLMProviderConfig).where(
-                    LLMProviderConfig.user_id == user.id,
-                    LLMProviderConfig.is_active.is_(True),
+            (
+                await db.execute(
+                    select(LLMProviderConfig).where(
+                        LLMProviderConfig.user_id == user.id,
+                        LLMProviderConfig.is_active.is_(True),
+                    )
                 )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if config is None:
             continue
         try:

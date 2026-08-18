@@ -1,0 +1,8 @@
+.git
+.agent-runtime
+.pytest_cache
+.ruff_cache
+.venv*
+__pycache__
+uploads
+design/prototype/node_modules

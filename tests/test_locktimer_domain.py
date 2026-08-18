@@ -150,7 +150,6 @@ class TestDeterministicRandom:
         assert v1 != v2
 
     def test_in_range(self) -> None:
-
         for i in range(100):
             v = deterministic_random("seed", "rule-1", i)
             assert 0.0 <= v < 1.0

@@ -46,8 +46,8 @@ async def test_add_routine_and_list(auth_client, test_user, db_session):
     )
     assert resp.status_code == 303, resp.text
     routines = (
-        await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))).scalars().all()
+    )
     assert len(routines) == 1
     r = routines[0]
     assert r.name == "Night skincare"
@@ -115,9 +115,7 @@ async def test_add_entry_and_list(auth_client, test_user, db_session):
 
 @pytest.mark.asyncio
 async def test_invalid_reaction_rejected(auth_client, test_user, db_session):
-    resp = await auth_client.post(
-        "/care/entries", data={"entry_date": TODAY.isoformat(), "skin_reaction": "9"}
-    )
+    resp = await auth_client.post("/care/entries", data={"entry_date": TODAY.isoformat(), "skin_reaction": "9"})
     assert resp.status_code == 400
 
 
@@ -142,9 +140,7 @@ async def test_delete_entry(auth_client, test_user, db_session):
     entry = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalar_one()
     resp = await auth_client.post(f"/care/entries/{entry.id}/delete")
     assert resp.status_code == 303
-    remaining = (
-        await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))
-    ).scalars().all()
+    remaining = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalars().all()
     assert len(remaining) == 0
 
 

@@ -58,9 +58,7 @@ async def _make_med_schedule(db: AsyncSession, user: User, name: str = "Vitamin 
 
 
 class TestReliefTask:
-    async def test_relief_task_created_without_penalty_policy(
-        self, db_session: AsyncSession, test_user: User
-    ) -> None:
+    async def test_relief_task_created_without_penalty_policy(self, db_session: AsyncSession, test_user: User) -> None:
         sched = await _make_med_schedule(db_session, test_user, "Ibuprofen")
         session = await create_draft(db_session, owner_id=test_user.id)
         rule = await add_medication_task_rule(
@@ -85,9 +83,7 @@ class TestReliefTask:
             owner_id=test_user.id,
         )
         await start_session(db_session, session_id=session.id, owner_id=test_user.id, now=FIXED_NOW)
-        result = await db_session.execute(
-            select(LockTaskOccurrence).where(LockTaskOccurrence.rule_id == rule.id)
-        )
+        result = await db_session.execute(select(LockTaskOccurrence).where(LockTaskOccurrence.rule_id == rule.id))
         occ = result.scalars().first()
         assert occ is not None
         await skip_task(db_session, occurrence=occ, owner_id=test_user.id)

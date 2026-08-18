@@ -1,0 +1,13 @@
+# Reproducible Python 3.11 quality/test environment (S2 baseline).
+FROM python:3.11-slim
+
+WORKDIR /workspace
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.lock /tmp/requirements.lock
+RUN pip install --no-cache-dir --disable-pip-version-check -r /tmp/requirements.lock
+
+CMD ["pytest", "tests/", "-q"]

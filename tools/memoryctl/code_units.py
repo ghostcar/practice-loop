@@ -159,7 +159,7 @@ def _route_meta(decorators: list[ast.expr]) -> tuple[str, str] | None:
 
 def _is_model(body: list[ast.stmt]) -> bool:
     for stmt in body:
-        if isinstance(stmt, (ast.Assign, ast.AnnAssign)):
+        if isinstance(stmt, ast.Assign | ast.AnnAssign):
             targets = stmt.targets if isinstance(stmt, ast.Assign) else [stmt.target]
             for t in targets:
                 if isinstance(t, ast.Name) and t.id == "__tablename__":
@@ -211,7 +211,7 @@ def parse_python(path: str, text: str) -> list[CodeUnit]:
             body_src = span_lines(node.lineno, node.end_lineno)
             units.append(make(f"{node.name}", node, cls_kind, sig, doc, body_src))
             for child in node.body:
-                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if isinstance(child, ast.FunctionDef | ast.AsyncFunctionDef):
                     cdoc = _docstring(child)
                     route = _route_meta(child.decorator_list)
                     if route:
@@ -231,7 +231,7 @@ def parse_python(path: str, text: str) -> list[CodeUnit]:
                             span_lines(child.lineno, child.end_lineno),
                         )
                     )
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             doc = _docstring(node)
             route = _route_meta(node.decorator_list)
             is_fixture = any(

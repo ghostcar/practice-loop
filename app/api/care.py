@@ -76,8 +76,8 @@ async def _cycle_snapshot(db: AsyncSession, user_id: uuid.UUID, entry_date: date
     except Exception:  # health may not be deployed
         return None, None
     settings_row = (
-        (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))).scalar_one_or_none()
-    )
+        await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))
+    ).scalar_one_or_none()
     events = (await db.execute(select(CycleEvent).where(CycleEvent.user_id == user_id))).scalars().all()
     day = _day_of_cycle(list(events), settings_row, entry_date)
     if day is None:
@@ -112,9 +112,7 @@ async def _care_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
         .scalars()
         .all()
     )
-    total = (
-        await db.execute(select(func.count(CareEntry.id)).where(CareEntry.user_id == user_id))
-    ).scalar() or 0
+    total = (await db.execute(select(func.count(CareEntry.id)).where(CareEntry.user_id == user_id))).scalar() or 0
     routines = (
         await db.execute(select(func.count(CareRoutine.id)).where(CareRoutine.user_id == user_id))
     ).scalar() or 0
@@ -177,21 +175,13 @@ async def care_page(
 
     today = local_today()
     routines = (
-        (
-            await db.execute(
-                select(CareRoutine).where(CareRoutine.user_id == user.id).order_by(CareRoutine.name.asc())
-            )
-        )
+        (await db.execute(select(CareRoutine).where(CareRoutine.user_id == user.id).order_by(CareRoutine.name.asc())))
         .scalars()
         .all()
     )
     routine_names = {str(r.id): r.name for r in routines}
     entries = (
-        (
-            await db.execute(
-                select(CareEntry).where(CareEntry.user_id == user.id).order_by(CareEntry.entry_date.desc())
-            )
-        )
+        (await db.execute(select(CareEntry).where(CareEntry.user_id == user.id).order_by(CareEntry.entry_date.desc())))
         .scalars()
         .all()
     )
@@ -202,25 +192,18 @@ async def care_page(
 
     # Каталог средств/косметики (Шаг 16b): позиции + счётчик использований.
     products = (
-        (
-            await db.execute(
-                select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name.asc())
-            )
-        )
+        (await db.execute(select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name.asc())))
         .scalars()
         .all()
     )
     product_usage = (
-        (
-            await db.execute(
-                select(CareEntryProduct.product_id, func.count(CareEntryProduct.id))
-                .join(CareEntry, CareEntry.id == CareEntryProduct.entry_id)
-                .where(CareEntry.user_id == user.id)
-                .group_by(CareEntryProduct.product_id)
-            )
+        await db.execute(
+            select(CareEntryProduct.product_id, func.count(CareEntryProduct.id))
+            .join(CareEntry, CareEntry.id == CareEntryProduct.entry_id)
+            .where(CareEntry.user_id == user.id)
+            .group_by(CareEntryProduct.product_id)
         )
-        .all()
-    )
+    ).all()
     usage_by_product = {str(pid): cnt for pid, cnt in product_usage}
     inventory_options = await _inventory_options(db, user.id)
     inventory_names = {i["id"]: i for i in inventory_options}
@@ -341,15 +324,12 @@ def _product_view(
 async def _entry_product_map(db: AsyncSession, user_id: uuid.UUID) -> dict[str, list[str]]:
     """entry_id → [product_ids] for the care log (all entries of the user)."""
     rows = (
-        (
-            await db.execute(
-                select(CareEntryProduct.entry_id, CareEntryProduct.product_id)
-                .join(CareEntry, CareEntry.id == CareEntryProduct.entry_id)
-                .where(CareEntry.user_id == user_id)
-            )
+        await db.execute(
+            select(CareEntryProduct.entry_id, CareEntryProduct.product_id)
+            .join(CareEntry, CareEntry.id == CareEntryProduct.entry_id)
+            .where(CareEntry.user_id == user_id)
         )
-        .all()
-    )
+    ).all()
     out: dict[str, list[str]] = {}
     for entry_id, product_id in rows:
         out.setdefault(str(entry_id), []).append(str(product_id))
@@ -451,9 +431,7 @@ async def _resolve_inventory_item(
     except ValueError:
         raise HTTPException(400, "Invalid inventory_item_id") from None
     item = (
-        await db.execute(
-            select(InventoryItem).where(InventoryItem.id == iid, InventoryItem.user_id == user_id)
-        )
+        await db.execute(select(InventoryItem).where(InventoryItem.id == iid, InventoryItem.user_id == user_id))
     ).scalar_one_or_none()
     if item is None:
         raise HTTPException(400, "Inventory item not found")
@@ -504,19 +482,13 @@ async def _inventory_options(db: AsyncSession, user_id: uuid.UUID) -> list[dict]
         .scalars()
         .all()
     )
-    return [
-        {"id": str(i.id), "name": i.name, "status": i.inventory_status, "category": i.category} for i in rows
-    ]
+    return [{"id": str(i.id), "name": i.name, "status": i.inventory_status, "category": i.category} for i in rows]
 
 
 async def _entry_product_ids(db: AsyncSession, entry_id: uuid.UUID) -> list[str]:
     """Product ids bound to a care entry (for view/JSON)."""
     rows = (
-        (
-            await db.execute(
-                select(CareEntryProduct.product_id).where(CareEntryProduct.entry_id == entry_id)
-            )
-        )
+        (await db.execute(select(CareEntryProduct.product_id).where(CareEntryProduct.entry_id == entry_id)))
         .scalars()
         .all()
     )
@@ -593,11 +565,7 @@ async def delete_routine(
         raise HTTPException(404, "Routine not found")
     # записи сохраняются, ссылка обнуляется (SET NULL на уровне приложения)
     entries = (
-        (
-            await db.execute(
-                select(CareEntry).where(CareEntry.user_id == user.id, CareEntry.routine_id == routine_id)
-            )
-        )
+        (await db.execute(select(CareEntry).where(CareEntry.user_id == user.id, CareEntry.routine_id == routine_id)))
         .scalars()
         .all()
     )
@@ -826,29 +794,17 @@ async def json_summary(
     user: User = Depends(get_current_user),
 ):
     routines = (
-        (
-            await db.execute(
-                select(CareRoutine).where(CareRoutine.user_id == user.id).order_by(CareRoutine.name.asc())
-            )
-        )
+        (await db.execute(select(CareRoutine).where(CareRoutine.user_id == user.id).order_by(CareRoutine.name.asc())))
         .scalars()
         .all()
     )
     entries = (
-        (
-            await db.execute(
-                select(CareEntry).where(CareEntry.user_id == user.id).order_by(CareEntry.entry_date.desc())
-            )
-        )
+        (await db.execute(select(CareEntry).where(CareEntry.user_id == user.id).order_by(CareEntry.entry_date.desc())))
         .scalars()
         .all()
     )
     products = (
-        (
-            await db.execute(
-                select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name.asc())
-            )
-        )
+        (await db.execute(select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name.asc())))
         .scalars()
         .all()
     )
@@ -999,18 +955,12 @@ async def json_delete_routine(
 ):
     """Удалить процедуру (JSON) — записи сохраняются, ссылка обнуляется."""
     routine = (
-        await db.execute(
-            select(CareRoutine).where(CareRoutine.id == routine_id, CareRoutine.user_id == user.id)
-        )
+        await db.execute(select(CareRoutine).where(CareRoutine.id == routine_id, CareRoutine.user_id == user.id))
     ).scalar_one_or_none()
     if routine is None:
         raise HTTPException(404, "Routine not found")
     entries = (
-        (
-            await db.execute(
-                select(CareEntry).where(CareEntry.user_id == user.id, CareEntry.routine_id == routine_id)
-            )
-        )
+        (await db.execute(select(CareEntry).where(CareEntry.user_id == user.id, CareEntry.routine_id == routine_id)))
         .scalars()
         .all()
     )

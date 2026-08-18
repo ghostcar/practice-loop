@@ -79,9 +79,7 @@ async def test_interrupt_masks_penalty_notification_when_discreet(db_session: As
     assert result["combo_reset"] is True
 
     notifs = (
-        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id)))
-        .scalars()
-        .all()
+        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))).scalars().all()
     )
     assert len(notifs) == 1
     n = notifs[0]
@@ -98,9 +96,7 @@ async def test_interrupt_keeps_notification_when_not_discreet(db_session: AsyncS
     await on_task_interrupted(db_session, test_user.id, log)
 
     notifs = (
-        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id)))
-        .scalars()
-        .all()
+        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))).scalars().all()
     )
     assert len(notifs) == 1
     assert notifs[0].title == "Task Interrupted ⚠️"
@@ -123,9 +119,7 @@ async def test_complete_masks_streak_notification_when_discreet(db_session: Asyn
     await on_task_completed(db_session, test_user.id, log)
 
     notifs = (
-        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id)))
-        .scalars()
-        .all()
+        (await db_session.execute(select(Notification).where(Notification.user_id == test_user.id))).scalars().all()
     )
     streak = [n for n in notifs if n.type == "streak"]
     assert len(streak) == 1

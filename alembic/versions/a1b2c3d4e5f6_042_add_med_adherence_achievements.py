@@ -70,9 +70,7 @@ def upgrade() -> None:
         sa.column("color", sa.String),
     )
     for data in _ACHIEVEMENTS:
-        exists = bind.execute(
-            sa.select(table.c.code).where(table.c.code == data["code"])
-        ).first()
+        exists = bind.execute(sa.select(table.c.code).where(table.c.code == data["code"])).first()
         if exists is None:
             bind.execute(table.insert().values(id=_uuid.uuid4(), **data))
 

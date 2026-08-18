@@ -183,14 +183,10 @@ async def _journal_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
         .scalars()
         .all()
     )
-    total = (
-        await db.execute(select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id))
-    ).scalar() or 0
+    total = (await db.execute(select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id))).scalar() or 0
     pending = (
         await db.execute(
-            select(func.count(JournalEntry.id)).where(
-                JournalEntry.user_id == user_id, JournalEntry.status == "draft"
-            )
+            select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id, JournalEntry.status == "draft")
         )
     ).scalar() or 0
     satisfactions = [r.satisfaction for r in rows if r.satisfaction is not None]
@@ -244,8 +240,9 @@ async def _activity_title_map(db: AsyncSession, user_id: uuid.UUID) -> dict[str,
     ids = (
         (
             await db.execute(
-                select(JournalEntry.activity_log_id)
-                .where(JournalEntry.user_id == user_id, JournalEntry.activity_log_id.is_not(None))
+                select(JournalEntry.activity_log_id).where(
+                    JournalEntry.user_id == user_id, JournalEntry.activity_log_id.is_not(None)
+                )
             )
         )
         .scalars()
@@ -475,8 +472,10 @@ async def _validate_care_products(
     from app.models.care import CareProduct
 
     rows = (
-        await db.execute(select(CareProduct.id).where(CareProduct.id.in_(parsed), CareProduct.user_id == user_id))
-    ).scalars().all()
+        (await db.execute(select(CareProduct.id).where(CareProduct.id.in_(parsed), CareProduct.user_id == user_id)))
+        .scalars()
+        .all()
+    )
     if len(rows) != len(set(parsed)):
         raise HTTPException(400, "One or more care products not found")
     # JSON-колонка: храним строки (UUID не сериализуется в JSON)
@@ -916,9 +915,7 @@ async def json_add_entry(
     if body.partner_id is not None:
         partner = (
             await db.execute(
-                select(JournalPartner).where(
-                    JournalPartner.id == body.partner_id, JournalPartner.user_id == user.id
-                )
+                select(JournalPartner).where(JournalPartner.id == body.partner_id, JournalPartner.user_id == user.id)
             )
         ).scalar_one_or_none()
         if partner is None:

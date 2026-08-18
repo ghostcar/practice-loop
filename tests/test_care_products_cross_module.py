@@ -78,9 +78,7 @@ async def test_add_product_with_quantity_expiry_catalog(auth_client, test_user, 
         },
     )
     assert resp.status_code == 303, resp.text
-    product = (
-        await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))
-    ).scalar_one()
+    product = (await db_session.execute(select(CareProduct).where(CareProduct.user_id == test_user.id))).scalar_one()
     assert product.quantity == 3
     assert product.expiry_date is not None
     assert product.inventory_item_id == inv.id
@@ -139,12 +137,12 @@ async def test_routine_with_recommended_products(auth_client, test_user, db_sess
         },
     )
     assert resp.status_code == 303, resp.text
-    routine = (
-        await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))
-    ).scalar_one()
+    routine = (await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))).scalar_one()
     rows = (
-        await db_session.execute(select(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine.id)))
+        .scalars()
+        .all()
+    )
     assert {r.product_id for r in rows} == {p1.id, p2.id}
 
 
@@ -160,8 +158,8 @@ async def test_slot_rule_with_care_products(auth_client, test_user, db_session):
     resp = await auth_client.post("/locktimer/new")
     assert resp.status_code in (200, 303, 307), resp.text
     session = (
-        await db_session.execute(select(LockSession).where(LockSession.owner_id == test_user.id))
-    ).scalars().first()
+        (await db_session.execute(select(LockSession).where(LockSession.owner_id == test_user.id))).scalars().first()
+    )
     assert session is not None
 
     resp = await auth_client.post(
@@ -175,9 +173,7 @@ async def test_slot_rule_with_care_products(auth_client, test_user, db_session):
         },
     )
     assert resp.status_code in (200, 303), resp.text
-    rule = (
-        await db_session.execute(select(LockSlotRule).where(LockSlotRule.session_id == session.id))
-    ).scalar_one()
+    rule = (await db_session.execute(select(LockSlotRule).where(LockSlotRule.session_id == session.id))).scalar_one()
     assert rule.care_product_ids == [str(p.id)]
 
 
@@ -188,8 +184,8 @@ async def test_slot_rule_foreign_care_product_rejected(auth_client, test_user, d
     foreign = await _add_product(db_session, other, name="Foreign serum")
     resp = await auth_client.post("/locktimer/new")
     session = (
-        await db_session.execute(select(LockSession).where(LockSession.owner_id == test_user.id))
-    ).scalars().first()
+        (await db_session.execute(select(LockSession).where(LockSession.owner_id == test_user.id))).scalars().first()
+    )
     resp = await auth_client.post(
         f"/api/v2/locktimer/sessions/{session.id}/slot-rules",
         data={
@@ -221,9 +217,7 @@ async def test_entity_with_care_products(auth_client, test_user, db_session):
         },
     )
     assert resp.status_code == 303, resp.text
-    entity = (
-        await db_session.execute(select(Entity).where(Entity.owner_id == test_user.id))
-    ).scalar_one()
+    entity = (await db_session.execute(select(Entity).where(Entity.owner_id == test_user.id))).scalar_one()
     assert entity.care_product_ids == [str(p.id)]
 
 
@@ -244,9 +238,7 @@ async def test_journal_entry_with_care_products_form(auth_client, test_user, db_
         },
     )
     assert resp.status_code == 303, resp.text
-    entry = (
-        await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))
-    ).scalar_one()
+    entry = (await db_session.execute(select(JournalEntry).where(JournalEntry.user_id == test_user.id))).scalar_one()
     assert entry.care_product_ids == [str(p.id)]
 
 
@@ -314,11 +306,11 @@ async def test_care_products_relief_only_no_points(auth_client, test_user, db_se
         data={"name": "Relief routine", "area": "face", "kind": "home", "product_ids": [str(p.id)]},
     )
     assert resp.status_code == 303, resp.text
-    routine = (
-        await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))
-    ).scalar_one()
+    routine = (await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))).scalar_one()
     # рекомендация средств сохранена; никакой игровой механики у ухода нет
     rows = (
-        await db_session.execute(select(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine.id))
-    ).scalars().all()
+        (await db_session.execute(select(CareRoutineProduct).where(CareRoutineProduct.routine_id == routine.id)))
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1

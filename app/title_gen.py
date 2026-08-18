@@ -74,9 +74,9 @@ def _fmt_value(key: str, value: Any) -> str:
         return ""
     if isinstance(value, bool):
         return "yes"
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         # intensity N/5 convention
-        if key == "intensity" and isinstance(value, (int, float)) and 1 <= value <= 5:
+        if key == "intensity" and isinstance(value, int | float) and 1 <= value <= 5:
             return f"{value}/5"
         return str(value)
     if isinstance(value, list):

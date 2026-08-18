@@ -129,9 +129,9 @@ def _parse_analysis_param(raw: str) -> dict | None:
         "summary": str(parsed.get("summary") or "")[:2000],
         "observations": [str(i)[:500] for i in parsed.get("observations", []) if isinstance(i, str)][:20],
         "assumptions": [str(i)[:500] for i in parsed.get("assumptions", []) if isinstance(i, str)][:20],
-        "questions_for_doctor": [
-            str(i)[:500] for i in parsed.get("questions_for_doctor", []) if isinstance(i, str)
-        ][:20],
+        "questions_for_doctor": [str(i)[:500] for i in parsed.get("questions_for_doctor", []) if isinstance(i, str)][
+            :20
+        ],
         "recommendations": [str(i)[:500] for i in parsed.get("recommendations", []) if isinstance(i, str)][:20],
         "mode": str(parsed.get("_mode") or "safe"),
     }
@@ -148,9 +148,7 @@ async def _health_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     state = (
         await db.execute(select(HealthState).where(HealthState.user_id == user_id, HealthState.event_date == today))
     ).scalar_one_or_none()
-    labs_count = (
-        await db.execute(select(func.count(LabRecord.id)).where(LabRecord.user_id == user_id))
-    ).scalar() or 0
+    labs_count = (await db.execute(select(func.count(LabRecord.id)).where(LabRecord.user_id == user_id))).scalar() or 0
     cycle = await _get_cycle_context(db, user_id)
     return {
         "today": today.isoformat(),
@@ -193,17 +191,11 @@ async def health_page(
         .all()
     )
     labs = (
-        (
-            await db.execute(
-                select(LabRecord).where(LabRecord.user_id == user.id).order_by(LabRecord.measured_at.desc())
-            )
-        )
+        (await db.execute(select(LabRecord).where(LabRecord.user_id == user.id).order_by(LabRecord.measured_at.desc())))
         .scalars()
         .all()
     )
-    settings = (
-        await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))
-    ).scalar_one_or_none()
+    settings = (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))).scalar_one_or_none()
     events = (
         (
             await db.execute(
@@ -376,9 +368,7 @@ async def analyze_labs_page(
     locale = detect_locale(request, user.locale)
     mode = get_prefs().llm_mode
     try:
-        result = await analyze_labs(
-            db, user.id, llm_config, locale=locale, llm_mode=mode
-        )
+        result = await analyze_labs(db, user.id, llm_config, locale=locale, llm_mode=mode)
     except Exception as exc:  # LLM/parse failures — surface a retry, don't crash
         logger.warning("health analyze failed: %s", exc)
         return RedirectResponse(url="/health?error=analyze_failed", status_code=303)
@@ -475,9 +465,7 @@ async def save_cycle_settings(
         raise HTTPException(400, "Cycle lengths out of range")
     if contraception not in CONTRACEPTION_TYPES:
         contraception = "none"
-    row = (
-        await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))
-    ).scalar_one_or_none()
+    row = (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))).scalar_one_or_none()
     if row is None:
         row = CycleSettings(user_id=user.id)
         db.add(row)
@@ -542,12 +530,8 @@ json_router = APIRouter(prefix="/api/v2/health", tags=["health"])
 
 
 async def _get_cycle_context(db: AsyncSession, user_id: uuid.UUID) -> dict:
-    settings = (
-        await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))
-    ).scalar_one_or_none()
-    events = (
-        (await db.execute(select(CycleEvent).where(CycleEvent.user_id == user_id))).scalars().all()
-    )
+    settings = (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user_id))).scalar_one_or_none()
+    events = (await db.execute(select(CycleEvent).where(CycleEvent.user_id == user_id))).scalars().all()
     today = local_today()
     day_of_cycle = _day_of_cycle(list(events), settings, today)
     phase = None
@@ -593,11 +577,7 @@ async def json_summary(
         await db.execute(select(HealthState).where(HealthState.user_id == user.id, HealthState.event_date == today))
     ).scalar_one_or_none()
     labs = (
-        (
-            await db.execute(
-                select(LabRecord).where(LabRecord.user_id == user.id).order_by(LabRecord.measured_at.desc())
-            )
-        )
+        (await db.execute(select(LabRecord).where(LabRecord.user_id == user.id).order_by(LabRecord.measured_at.desc())))
         .scalars()
         .all()
     )
@@ -672,11 +652,7 @@ async def json_labs(
     user: User = Depends(get_current_user),
 ):
     labs = (
-        (
-            await db.execute(
-                select(LabRecord).where(LabRecord.user_id == user.id).order_by(LabRecord.measured_at.desc())
-            )
-        )
+        (await db.execute(select(LabRecord).where(LabRecord.user_id == user.id).order_by(LabRecord.measured_at.desc())))
         .scalars()
         .all()
     )
@@ -879,9 +855,7 @@ async def json_save_cycle_settings(
 ):
     """Обновить настройки Cycle (upsert) — для мобильного клиента."""
     contraception = body.contraception if body.contraception in CONTRACEPTION_TYPES else "none"
-    row = (
-        await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))
-    ).scalar_one_or_none()
+    row = (await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))).scalar_one_or_none()
     if row is None:
         row = CycleSettings(user_id=user.id)
         db.add(row)

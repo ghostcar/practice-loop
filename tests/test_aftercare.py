@@ -76,8 +76,8 @@ async def test_form_handler_adds_entry(auth_client, test_user, db_session):
     )
     assert resp.status_code == 303
     rows = (
-        await db_session.execute(select(AftercareEntry).where(AftercareEntry.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(AftercareEntry).where(AftercareEntry.user_id == test_user.id))).scalars().all()
+    )
     assert len(rows) == 1
     assert rows[0].kind == "hydration"
     assert rows[0].comfort_level == 5

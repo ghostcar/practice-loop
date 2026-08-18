@@ -51,12 +51,8 @@ def upgrade() -> None:
     op.create_table(
         "care_entry_products",
         sa.Column("id", sa.Uuid(), nullable=False),
-        sa.Column(
-            "entry_id", sa.Uuid(), sa.ForeignKey("care_entries.id", ondelete="CASCADE"), nullable=False
-        ),
-        sa.Column(
-            "product_id", sa.Uuid(), sa.ForeignKey("care_products.id", ondelete="CASCADE"), nullable=False
-        ),
+        sa.Column("entry_id", sa.Uuid(), sa.ForeignKey("care_entries.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("product_id", sa.Uuid(), sa.ForeignKey("care_products.id", ondelete="CASCADE"), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )

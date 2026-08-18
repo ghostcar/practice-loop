@@ -39,10 +39,7 @@ def set_csrf_cookie(response: Response, request: Request | None = None) -> str:
     flag is omitted there — mirroring the access_token cookie in auth.py.
     """
     raw = _generate_csrf_token()
-    loopback = bool(
-        request is not None
-        and request.url.hostname in ("127.0.0.1", "localhost", "::1")
-    )
+    loopback = bool(request is not None and request.url.hostname in ("127.0.0.1", "localhost", "::1"))
     response.set_cookie(
         key=CSRF_COOKIE_NAME,
         value=raw,

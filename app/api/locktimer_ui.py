@@ -309,10 +309,7 @@ async def locktimer_session_detail(
         from app.models.care import CareProduct
 
         cp_result = await db.execute(
-            select(CareProduct)
-            .where(CareProduct.user_id == current_user.id)
-            .order_by(CareProduct.name)
-            .limit(200)
+            select(CareProduct).where(CareProduct.user_id == current_user.id).order_by(CareProduct.name).limit(200)
         )
         for p in cp_result.scalars().all():
             care_products.append({"id": str(p.id), "name": p.name})
@@ -345,8 +342,7 @@ async def locktimer_session_detail(
                 med_schedules.append(
                     {
                         "id": str(s.id),
-                        "label": f"{s.medication.name if s.medication else '?'}"
-                        + (f" ({dose})" if dose else ""),
+                        "label": f"{s.medication.name if s.medication else '?'}" + (f" ({dose})" if dose else ""),
                     }
                 )
     except Exception:

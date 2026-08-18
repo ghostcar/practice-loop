@@ -87,11 +87,14 @@ async def analyze_labs(
         return f"- {rec.measured_at}: {rec.name} = {rec.value:g}{f' {rec.unit}' if rec.unit else ''}{ref}{flag}"
 
     labs_text = "\n".join(_fmt_lab(rec) for rec in labs) or "- (no lab records)"
-    sched_text = "\n".join(
-        f"- {s.medication.name if s.medication else '?'}: {s.dose_quantity:g} {s.dose_unit or ''}"
-        f" ({s.frequency_type}{f' ×{s.times_per_day}' if s.times_per_day else ''})"
-        for s in schedules
-    ) or "- (no active medication schedules)"
+    sched_text = (
+        "\n".join(
+            f"- {s.medication.name if s.medication else '?'}: {s.dose_quantity:g} {s.dose_unit or ''}"
+            f" ({s.frequency_type}{f' ×{s.times_per_day}' if s.times_per_day else ''})"
+            for s in schedules
+        )
+        or "- (no active medication schedules)"
+    )
 
     if llm_mode == "expanded":
         system_prompt = HEALTH_ANALYZE_SYSTEM_EXPANDED.format(locale=locale)
@@ -134,7 +137,7 @@ async def analyze_labs(
     for key in ("observations", "assumptions", "questions_for_doctor", "recommendations"):
         items = parsed.get(key)
         if isinstance(items, list):
-            out[key] = [str(i)[:500] for i in items if isinstance(i, (str, int, float))][:20]
+            out[key] = [str(i)[:500] for i in items if isinstance(i, str | int | float)][:20]
 
     llm_config.total_tokens += usage["total_tokens"]
     llm_config.total_cost += usage["cost"]

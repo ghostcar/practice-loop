@@ -514,9 +514,7 @@ if TG_BOT_TOKEN:
 
     async def _fetch_by_chat(chat_id: int):
         async with async_session_factory() as db:
-            return (
-                await db.execute(select(User).where(User.telegram_chat_id == chat_id))
-            ).scalar_one_or_none()
+            return (await db.execute(select(User).where(User.telegram_chat_id == chat_id))).scalar_one_or_none()
 
     @main_router.message(Command("settings"))
     async def cmd_settings(message: types.Message):
@@ -894,9 +892,7 @@ if TG_BOT_TOKEN:
             occ = open_slots[0]
             rule = await db.get(LockSlotRule, occ.rule_id)
             if rule and rule.require_tag and not tag:
-                await message.answer(
-                    "🔐 This window requires a numbered seal.\nSend:\n/lock_close <seal_number>"
-                )
+                await message.answer("🔐 This window requires a numbered seal.\nSend:\n/lock_close <seal_number>")
                 return
             try:
                 await close_slot(db, occurrence=occ, owner_id=user.id, tag_number=tag)
@@ -1203,14 +1199,8 @@ if TG_BOT_TOKEN:
             lines.append(f"Cycle: {cycle['phase']} (day {cycle['day_of_cycle']})")
         kb = InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(text=f"Mood {i}", callback_data=f"health_mood:{i}")
-                    for i in range(1, 6)
-                ],
-                [
-                    InlineKeyboardButton(text=f"Energy {i}", callback_data=f"health_energy:{i}")
-                    for i in range(1, 6)
-                ],
+                [InlineKeyboardButton(text=f"Mood {i}", callback_data=f"health_mood:{i}") for i in range(1, 6)],
+                [InlineKeyboardButton(text=f"Energy {i}", callback_data=f"health_energy:{i}") for i in range(1, 6)],
             ]
         )
         return "\n".join(lines), kb
@@ -1311,9 +1301,7 @@ if TG_BOT_TOKEN:
 
         today = datetime.now(UTC).date()
         async with async_session_factory() as db:
-            routines = (
-                (await db.execute(select(CareRoutine).where(CareRoutine.user_id == user.id))).scalars().all()
-            )
+            routines = (await db.execute(select(CareRoutine).where(CareRoutine.user_id == user.id))).scalars().all()
             entries = (await db.execute(select(CareEntry).where(CareEntry.user_id == user.id))).scalars().all()
             courses = (
                 (
@@ -1356,9 +1344,7 @@ if TG_BOT_TOKEN:
             if not pending:
                 continue
             nxt = pending[0]
-            lines.append(
-                f"📅 {c.name}: session {nxt.session_number}/{c.total_sessions} on {nxt.scheduled_date}"
-            )
+            lines.append(f"📅 {c.name}: session {nxt.session_number}/{c.total_sessions} on {nxt.scheduled_date}")
             if nxt.scheduled_date <= today + timedelta(days=2):
                 kb_rows.append(
                     [

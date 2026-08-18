@@ -111,6 +111,8 @@ packaging==25.0
     # via pytest
 passlib[bcrypt]==1.7.4
     # via practice-loop (pyproject.toml)
+pillow==10.4.0
+    # via practice-loop (pyproject.toml)
 pluggy==1.6.0
     # via pytest
 propcache==0.5.2

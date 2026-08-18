@@ -76,12 +76,7 @@ async def media_vault_page(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    stmt = (
-        select(MediaAsset)
-        .where(MediaAsset.owner_id == user.id)
-        .order_by(MediaAsset.created_at.desc())
-        .limit(100)
-    )
+    stmt = select(MediaAsset).where(MediaAsset.owner_id == user.id).order_by(MediaAsset.created_at.desc()).limit(100)
     asset_rows = (await db.execute(stmt)).scalars().all()
 
     verification = await _verification_map(db, user.id)

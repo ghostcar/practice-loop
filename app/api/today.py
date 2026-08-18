@@ -122,21 +122,13 @@ async def today_page(
             timer = None
 
     # Module summaries (relief-only)
-    med_summary = (
-        await _safe(lambda: _load_med_summary(db, user.id)) if composition.medication_enabled else None
-    )
-    health_summary = (
-        await _safe(lambda: _load_health_summary(db, user.id)) if composition.health_enabled else None
-    )
-    care_summary = (
-        await _safe(lambda: _load_care_summary(db, user.id)) if composition.care_enabled else None
-    )
+    med_summary = await _safe(lambda: _load_med_summary(db, user.id)) if composition.medication_enabled else None
+    health_summary = await _safe(lambda: _load_health_summary(db, user.id)) if composition.health_enabled else None
+    care_summary = await _safe(lambda: _load_care_summary(db, user.id)) if composition.care_enabled else None
     aftercare_summary = (
         await _safe(lambda: _load_aftercare_summary(db, user.id)) if composition.aftercare_enabled else None
     )
-    journal_summary = (
-        await _safe(lambda: _load_journal_summary(db, user.id)) if composition.journal_enabled else None
-    )
+    journal_summary = await _safe(lambda: _load_journal_summary(db, user.id)) if composition.journal_enabled else None
 
     return templates.TemplateResponse(
         request,

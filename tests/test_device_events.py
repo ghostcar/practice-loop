@@ -16,9 +16,7 @@ from app.models.user import User
 
 
 def _make_device(db: AsyncSession, user: User) -> InventoryItem:
-    item = InventoryItem(
-        user_id=user.id, category="wearable", name="Steel cage", quantity=1, status="bought"
-    )
+    item = InventoryItem(user_id=user.id, category="wearable", name="Steel cage", quantity=1, status="bought")
     db.add(item)
     return item
 
@@ -80,8 +78,10 @@ async def test_form_handler_adds_event(auth_client, test_user, db_session):
     )
     assert resp.status_code == 303
     evs = (
-        await db_session.execute(select(ChastityDeviceEvent).where(ChastityDeviceEvent.user_id == test_user.id))
-    ).scalars().all()
+        (await db_session.execute(select(ChastityDeviceEvent).where(ChastityDeviceEvent.user_id == test_user.id)))
+        .scalars()
+        .all()
+    )
     assert len(evs) == 1
     assert evs[0].severity == "medium"
     assert evs[0].device_id == dev.id

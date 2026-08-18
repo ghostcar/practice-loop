@@ -22,6 +22,7 @@ import warnings
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
+from PIL import Image
 
 from app.config import settings
 
@@ -154,8 +155,6 @@ def _get_dimensions(data: bytes, mime: str) -> tuple[int | None, int | None]:
     try:
         from io import BytesIO
 
-        from PIL import Image
-
         with Image.open(BytesIO(data)) as img:
             w, h = img.size
             if w > MAX_IMAGE_DIMENSION or h > MAX_IMAGE_DIMENSION:
@@ -174,8 +173,6 @@ def _make_thumbnail(data: bytes, original_name: str, mime: str) -> str | None:
     _enable_pillow_guard()
     try:
         from io import BytesIO
-
-        from PIL import Image
 
         with Image.open(BytesIO(data)) as img:
             img.thumbnail(THUMBNAIL_MAX_SIZE, Image.LANCZOS)

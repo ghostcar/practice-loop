@@ -52,9 +52,7 @@ async def _run_auto_analysis() -> None:
                     logger.debug(f"Auto-analysis: skip user {td.user_id} — no active LLM config")
                     continue
 
-                user = (
-                    await db.execute(select(User).where(User.id == td.user_id))
-                ).scalar_one_or_none()
+                user = (await db.execute(select(User).where(User.id == td.user_id))).scalar_one_or_none()
                 llm_mode = prefs_from_dict(user.prefs).llm_mode if user else "safe"
 
                 await analyze_training_day(

@@ -50,7 +50,7 @@ def parse_llm_json(raw_content: str, is_last_attempt: bool = False) -> dict | li
     try:
         repaired = repair_json(content)
         result = json.loads(repaired)
-        if isinstance(result, (dict, list)):
+        if isinstance(result, dict | list):
             return result
         errors.append(f"json_repair: returned {type(result).__name__}, expected dict or list")
     except Exception as e:
@@ -62,7 +62,7 @@ def parse_llm_json(raw_content: str, is_last_attempt: bool = False) -> dict | li
         if match:
             extracted = match.group(1).strip()
             result = json.loads(extracted)
-            if isinstance(result, (dict, list)):
+            if isinstance(result, dict | list):
                 return result
             errors.append(f"regex(md): returned {type(result).__name__}, expected dict or list")
         # Try to find any JSON object in the text

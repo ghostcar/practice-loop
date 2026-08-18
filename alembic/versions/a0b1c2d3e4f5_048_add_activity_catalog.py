@@ -89,11 +89,19 @@ def upgrade() -> None:
         "fk_sj_entries_catalog_item", "sj_entries", "activity_catalog", ["catalog_item_id"], ["id"], ondelete="SET NULL"
     )
     op.create_foreign_key(
-        "fk_care_routines_catalog_item", "care_routines", "activity_catalog", ["catalog_item_id"], ["id"],
+        "fk_care_routines_catalog_item",
+        "care_routines",
+        "activity_catalog",
+        ["catalog_item_id"],
+        ["id"],
         ondelete="SET NULL",
     )
     op.create_foreign_key(
-        "fk_lock_slot_rules_catalog_item", "lock_slot_rules", "activity_catalog", ["catalog_item_id"], ["id"],
+        "fk_lock_slot_rules_catalog_item",
+        "lock_slot_rules",
+        "activity_catalog",
+        ["catalog_item_id"],
+        ["id"],
         ondelete="SET NULL",
     )
     op.create_foreign_key(

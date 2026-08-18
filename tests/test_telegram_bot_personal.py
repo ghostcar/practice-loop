@@ -61,9 +61,7 @@ async def test_med_due_summary_and_intake_flow(db_session: AsyncSession, test_us
 
     assert result["xp_earned"] > 0
 
-    intakes = (
-        (await db_session.execute(select(MedIntake).where(MedIntake.user_id == test_user.id))).scalars().all()
-    )
+    intakes = (await db_session.execute(select(MedIntake).where(MedIntake.user_id == test_user.id))).scalars().all()
     assert len(intakes) == 1
     assert intakes[0].status == "taken"
     assert intakes[0].schedule_id == sched.id
@@ -116,9 +114,7 @@ async def test_care_due_and_entry_flow(db_session: AsyncSession, test_user: User
     )
     await db_session.commit()
 
-    saved = (
-        (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalars().all()
-    )
+    saved = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalars().all()
     assert len(saved) == 1
     assert saved[0].routine_id == routine.id
     assert saved[0].entry_date == today

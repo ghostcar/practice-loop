@@ -203,9 +203,7 @@ async def add_medication_task_rule(
     from app.models.medication import MedSchedule
 
     sched = (
-        await db.execute(
-            select(MedSchedule).where(MedSchedule.id == med_schedule_id, MedSchedule.user_id == owner_id)
-        )
+        await db.execute(select(MedSchedule).where(MedSchedule.id == med_schedule_id, MedSchedule.user_id == owner_id))
     ).scalar_one_or_none()
     if sched is None:
         raise ValueError("Medication schedule not found")
@@ -214,9 +212,7 @@ async def add_medication_task_rule(
     dose = f"{sched.dose_quantity:g} {sched.dose_unit or ''}".strip()
     title = f"{med.name}" + (f" ({dose})" if dose else "")
 
-    schedule = (
-        {"time_of_day": sched.times_of_day[0]} if sched.times_of_day else {"time_of_day": "09:00"}
-    )
+    schedule = {"time_of_day": sched.times_of_day[0]} if sched.times_of_day else {"time_of_day": "09:00"}
 
     return await add_task_rule(
         db,

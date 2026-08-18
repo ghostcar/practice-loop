@@ -90,7 +90,7 @@ class TestActiveTimerHero:
     def test_active_hero_device_and_range(self):
         html = _render_session()
         assert "Steel Cage" in html
-        assert "Locked Since" in html  # t.locktimer_started
+        assert "Locked On Since" in html  # t.locktimer_started
         assert "Unlock At" in html  # t.locktimer_ends
 
     def test_active_hero_shows_cap_when_different(self):

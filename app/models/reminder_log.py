@@ -36,9 +36,7 @@ class ReminderLog(Base):
     """A delivered reminder, keyed for idempotency."""
 
     __tablename__ = "reminder_log"
-    __table_args__ = (
-        UniqueConstraint("user_id", "kind", "dedupe_key", name="uq_reminder_log_user_kind_key"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "kind", "dedupe_key", name="uq_reminder_log_user_kind_key"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
