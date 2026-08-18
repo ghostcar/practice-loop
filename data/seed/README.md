@@ -64,8 +64,10 @@ python3 -m tools.adult_catalog_import --apply --yes \\
     --database-url postgresql+asyncpg://...                 # gated: откажет при import_allowed=false
 ```
 
-Импорт-гейт: запись отказывает, пока **все** манифесты не выставят `import_allowed=true`;
-сейчас все файлы `import_allowed=false`, поэтому инструмент read-only. Idempotent по `slug`.
+Импорт-гейт: запись отказывает, пока **все** манифесты не выставят `import_allowed=true`.
+Foundation и editorial candidates уже подняли гейт (`import_allowed=true`) и залиты в боевую БД
+(41 сущность, `content_status=approved`); остальные source-файлы остаются `import_allowed=false`.
+Idempotent по `slug`.
 
 ## Проверка
 

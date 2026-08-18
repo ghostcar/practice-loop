@@ -109,7 +109,12 @@ Breath остаётся research-контуром (18/20), исполняемы�
 **Dry-run importer реализован** (`tools/adult_catalog_import.py`): проекция 41 карточки
 (foundation 7 + candidates 34) в `entities` с `safety_contract` и `content_status=approved`;
 read-only по умолчанию, `--apply` гейтится `import_allowed=true` + `--yes` + `--database-url`,
-idempotent по `slug`. Остаётся только production import (после поднятия гейта).
+idempotent по `slug`.
+
+**Production import выполнен** (2026-08-18): гейт поднят (`import_allowed=true` в foundation
+и editorial candidates), миграция 061 применена к боевой БД, импортирована 41 сущность
+(7 foundation automation on, 34 candidates automation off, все `content_status=approved`).
+Backup создан до импорта; приложение пересобрано, health 200.
 
 ## 7. Что остаётся запрещённым независимо от review
 

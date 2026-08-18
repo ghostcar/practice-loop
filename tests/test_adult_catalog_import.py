@@ -40,9 +40,9 @@ def test_plan_is_valid(plan):
     assert validate_plan(plan) == []
 
 
-def test_plan_gate_is_closed(plan):
-    assert plan["gate"]["foundation_import_allowed"] is False
-    assert plan["gate"]["candidates_import_allowed"] is False
+def test_plan_gate_is_open(plan):
+    assert plan["gate"]["foundation_import_allowed"] is True
+    assert plan["gate"]["candidates_import_allowed"] is True
 
 
 def test_plan_preserves_automation_and_risk(plan):
@@ -97,7 +97,7 @@ def test_render_plan_is_read_only_summary(plan):
 
     assert "entities=41" in rendered
     assert "content_status=approved" in rendered
-    assert "gate.foundation_import_allowed=False" in rendered
+    assert "gate.foundation_import_allowed=True" in rendered
 
 
 def test_validate_rejects_elevated_automation():

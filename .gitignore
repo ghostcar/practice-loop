@@ -69,3 +69,6 @@ blob-report/
 
 # Node/browser-test tooling (playwright etc. — never commit)
 node_modules/
+
+# Database backups (production dumps)
+backups/

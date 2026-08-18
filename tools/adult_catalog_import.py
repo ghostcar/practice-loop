@@ -252,6 +252,13 @@ async def apply_plan(database_url: str, plan: dict[str, Any]) -> dict[str, Any]:
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+    # Import all model modules so the mapper registry resolves Entity's
+    # relationships and FK target tables (User / ActivityCategory /
+    # UserEntityOptIn / ActivityCatalogItem).
+    import app.models.catalog  # noqa: F401
+    import app.models.category  # noqa: F401
+    import app.models.opt_in  # noqa: F401
+    import app.models.user  # noqa: F401
     from app.models.entity import Entity
 
     engine = create_async_engine(database_url)

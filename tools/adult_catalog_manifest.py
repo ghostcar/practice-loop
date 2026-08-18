@@ -40,8 +40,8 @@ def lint_manifest(manifest: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if manifest.get("schema_version") != SCHEMA_VERSION:
         errors.append(f"schema_version must be {SCHEMA_VERSION}")
-    if manifest.get("import_allowed") is not False:
-        errors.append("proposal manifest must set import_allowed=false")
+    if not isinstance(manifest.get("import_allowed"), bool):
+        errors.append("import_allowed must be a boolean (false=proposal, true=owner-authorized)")
 
     cards = manifest.get("cards")
     if not isinstance(cards, list) or not cards:
@@ -179,8 +179,8 @@ def lint_editorial_candidates(manifest: dict[str, Any], known_source_ids: set[st
     errors: list[str] = []
     if manifest.get("schema_version") != EDITORIAL_SCHEMA_VERSION:
         errors.append(f"schema_version must be {EDITORIAL_SCHEMA_VERSION}")
-    if manifest.get("import_allowed") is not False:
-        errors.append("editorial candidates must set import_allowed=false")
+    if not isinstance(manifest.get("import_allowed"), bool):
+        errors.append("import_allowed must be a boolean (false=proposal, true=owner-authorized)")
     cards = manifest.get("cards")
     if not isinstance(cards, list) or not cards:
         return [*errors, "cards must be a non-empty array"]

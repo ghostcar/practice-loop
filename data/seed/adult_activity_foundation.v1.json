@@ -1,7 +1,7 @@
 {
   "schema_version": "adult-activity/v1alpha1",
   "manifest_status": "owner_reviewed",
-  "import_allowed": false,
+  "import_allowed": true,
   "review_required": false,
   "cards": [
     {

@@ -55,7 +55,7 @@ def test_foundation_manifest_is_valid() -> None:
     manifest = load_manifest(MANIFEST_PATH)
 
     assert lint_manifest(manifest) == []
-    assert manifest["import_allowed"] is False
+    assert manifest["import_allowed"] is True
     assert len(manifest["cards"]) == 7
 
 
@@ -76,7 +76,7 @@ def test_preview_is_read_only_summary() -> None:
 
     result = preview(manifest)
 
-    assert "import_allowed=False" in result
+    assert "import_allowed=True" in result
     assert "cards=7" in result
 
 
@@ -107,7 +107,7 @@ def test_editorial_candidates_reference_retained_source_records() -> None:
     source_ids = {record["source_id"] for record in source["records"]}
 
     assert lint_editorial_candidates(candidates, source_ids) == []
-    assert candidates["import_allowed"] is False
+    assert candidates["import_allowed"] is True
     assert len(candidates["cards"]) == 34
     assert all(not card["automation_allowed"] for card in candidates["cards"])
 
