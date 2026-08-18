@@ -125,6 +125,7 @@ async def admin_set_user_role(
         raise HTTPException(409, "An administrator cannot demote their own account")
     target.role = role
     db.add(target)
+    await db.flush()
     return RedirectResponse(url="/admin/users?status=role", status_code=303)
 
 
@@ -142,6 +143,7 @@ async def admin_set_user_disabled(
     db.add(target)
     if disabled:
         await db.execute(delete(ApiToken).where(ApiToken.user_id == target.id))
+    await db.flush()
     return RedirectResponse(url="/admin/users?status=disabled", status_code=303)
 
 
@@ -163,4 +165,5 @@ async def admin_reset_user_password(
     target.password_hash = hash_password(new_password)
     db.add(target)
     await db.execute(delete(ApiToken).where(ApiToken.user_id == target.id))
+    await db.flush()
     return RedirectResponse(url="/admin/users?status=password", status_code=303)
