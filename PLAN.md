@@ -108,6 +108,7 @@
 ### Следующий gate — Personal operations и новый 18+ каталог (Social не входит)
 
 - [ ] **P1 — Новый модерируемый каталог действий 18+** — исходный inventory полностью просмотрен: 163/163 записей сохранены и покрыты review manifests ровно по одному разу; editorial pack содержит 34 карточки. Следующий gate — сводный owner review, выбор физического хранения safety contract, затем promotion approved candidates в полный seed schema и dry-run importer. Production import пока запрещён.
+- [ ] **P1b — Второй extraction pass DOCX/XLSX** — source audit зафиксирован в `docs/catalog/SOURCE_FILES_AUDIT.md`; последовательно извлечь нормализованный инвентарь, категории/дополнительные активности, параметры, зоны, сценарии, progression, timers и evidence policies. Исторические пользовательские даты, plan/fact, расходы, штрафы и логи не переносить в seed или память.
 - [ ] **P2 — Автоматические off-site backups** — PostgreSQL + uploads, шифрование, ротация, контроль размера/возраста, внешнее хранилище, уведомление об ошибке и регулярный restore drill в отдельной БД.
 - [ ] **P3 — Единый export/restore contract** — удалить расхождение нового `/privacy/export` schema v2 и legacy `/import/export/full`; один versioned manifest, preview/dry-run, owner remapping, транзакционное восстановление, conflict report и тест `export→empty DB→restore→semantic compare`.
 - [ ] **P4 — Production observability** — error tracking без PII, request correlation ID, health/readiness monitoring, метрики и alerts для app/DB/schedulers/backups/Telegram/LLM.
