@@ -28,6 +28,8 @@
     исторических дат, цен, количеств, штрафов и фактических сессий.
 11. `adult_category_taxonomy_source.v1.json` — 13 source-категорий и две обязательные platform
     extensions для consent и aftercare.
+12. `adult_additional_activity_titles.v1.json` — 289 title rows из concrete chat tables,
+    `Задачи.xlsx` и иерархии `Книга1.xlsx`; semantic dedupe ещё не выполнен.
 
 ## Значение статусов источника
 
@@ -55,6 +57,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_activity_restraint_bonda
 pytest -q tests/test_adult_catalog_manifest.py
 python3 -m tools.adult_catalog_manifest data/seed/adult_inventory_source.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_category_taxonomy_source.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_additional_activity_titles.v1.json --preview
 ```
 
 Все команды read-only. Importer намеренно отсутствует.

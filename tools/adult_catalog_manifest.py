@@ -15,6 +15,7 @@ EDITORIAL_SCHEMA_VERSION = "adult-activity-editorial-candidates/v1alpha1"
 REVIEW_SCHEMA_VERSION = "adult-activity-editorial-review/v1alpha1"
 INVENTORY_SCHEMA_VERSION = "adult-inventory-source/v1alpha1"
 TAXONOMY_SCHEMA_VERSION = "adult-category-taxonomy/v1alpha1"
+ADDITIONAL_TITLE_SCHEMA_VERSION = "adult-additional-title-source/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
@@ -385,6 +386,47 @@ def preview_category_taxonomy(manifest: dict[str, Any]) -> str:
     )
 
 
+def lint_additional_titles(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != ADDITIONAL_TITLE_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {ADDITIONAL_TITLE_SCHEMA_VERSION}")
+    if manifest.get("import_allowed") is not False:
+        errors.append("additional titles must set import_allowed=false")
+    records = manifest.get("records", [])
+    titles = manifest.get("titles", [])
+    if len(records) != manifest.get("source_record_count"):
+        errors.append("source_record_count mismatch")
+    if len(titles) != manifest.get("unique_title_count"):
+        errors.append("unique_title_count mismatch")
+    record_ids = [record.get("source_id") for record in records]
+    if len(record_ids) != len(set(record_ids)):
+        errors.append("source IDs must be unique")
+    known = set(record_ids)
+    refs = {ref for title in titles for ref in title.get("source_refs", [])}
+    if refs != known:
+        errors.append("every source row must be referenced exactly by the title layer")
+    if any(record.get("retained") is not True or record.get("seed_ready") is not False for record in records):
+        errors.append("source records must be retained and not seed-ready")
+    if any(title.get("seed_ready") is not False for title in titles):
+        errors.append("normalized titles must not be seed-ready")
+    return errors
+
+
+def preview_additional_titles(manifest: dict[str, Any]) -> str:
+    sources = Counter(record["source"] for record in manifest["records"])
+    routing = Counter(title["review_routing"] for title in manifest["titles"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"source_records={len(manifest['records'])}",
+            f"unique_titles={len(manifest['titles'])}",
+            "sources=" + ", ".join(f"{key}:{value}" for key, value in sorted(sources.items())),
+            "routing=" + ", ".join(f"{key}:{value}" for key, value in sorted(routing.items())),
+        ]
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -401,6 +443,7 @@ def main() -> int:
     is_review = schema_version == REVIEW_SCHEMA_VERSION
     is_inventory = schema_version == INVENTORY_SCHEMA_VERSION
     is_taxonomy = schema_version == TAXONOMY_SCHEMA_VERSION
+    is_additional_titles = schema_version == ADDITIONAL_TITLE_SCHEMA_VERSION
     if is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
@@ -411,6 +454,8 @@ def main() -> int:
         errors = lint_inventory_source(manifest)
     elif is_taxonomy:
         errors = lint_category_taxonomy(manifest)
+    elif is_additional_titles:
+        errors = lint_additional_titles(manifest)
     else:
         errors = lint_manifest(manifest)
     if errors:
@@ -429,6 +474,8 @@ def main() -> int:
             print(preview_inventory_source(manifest))
         elif is_taxonomy:
             print(preview_category_taxonomy(manifest))
+        elif is_additional_titles:
+            print(preview_additional_titles(manifest))
         else:
             print(preview(manifest))
     return 0

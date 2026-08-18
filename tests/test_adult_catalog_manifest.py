@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from tools.adult_catalog_manifest import (
+    lint_additional_titles,
     lint_category_taxonomy,
     lint_editorial_candidates,
     lint_editorial_review,
@@ -10,6 +11,7 @@ from tools.adult_catalog_manifest import (
     lint_source_inventory,
     load_manifest,
     preview,
+    preview_additional_titles,
     preview_category_taxonomy,
     preview_editorial_candidates,
     preview_editorial_review,
@@ -30,6 +32,7 @@ IMPACT_REVIEW_PATH = Path("data/seed/adult_activity_impact_review.v1.json")
 STANDALONE_REVIEW_PATH = Path("data/seed/adult_activity_standalone_review.v1.json")
 INVENTORY_SOURCE_PATH = Path("data/seed/adult_inventory_source.v1.json")
 TAXONOMY_PATH = Path("data/seed/adult_category_taxonomy_source.v1.json")
+ADDITIONAL_TITLES_PATH = Path("data/seed/adult_additional_activity_titles.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -328,3 +331,20 @@ def test_category_taxonomy_preview_reports_routing() -> None:
     assert "categories=13" in result
     assert "platform_extensions=2" in result
     assert "research_only:1" in result
+
+
+def test_additional_title_inventory_retains_all_rows() -> None:
+    manifest = load_manifest(ADDITIONAL_TITLES_PATH)
+
+    assert lint_additional_titles(manifest) == []
+    assert len(manifest["records"]) == 289
+    assert len(manifest["titles"]) == 286
+    assert all(record["retained"] and not record["seed_ready"] for record in manifest["records"])
+
+
+def test_additional_title_preview_reports_sources() -> None:
+    result = preview_additional_titles(load_manifest(ADDITIONAL_TITLES_PATH))
+
+    assert "source_records=289" in result
+    assert "unique_titles=286" in result
+    assert "examples/Книга1.xlsx:" in result
