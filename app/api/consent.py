@@ -101,6 +101,7 @@ async def consent_page(
         "consent.html",
         {
             "t": t,
+            "user": user,
             "theme": theme,
             "nav_key": "consent",
             "records": [_record_json(r) for r in records],
@@ -139,6 +140,7 @@ async def consent_setup_page(
         "consent_setup.html",
         {
             "t": get_translations(detect_locale(request, user.locale)),
+            "user": user,
             "theme": detect_theme(user.theme),
             "nav_key": "consent",
             "required": await missing_consents(db, user.id, keys),

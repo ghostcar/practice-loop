@@ -13,14 +13,14 @@
     or (_path.startswith('/training') and 'training')
     or (_path.startswith('/diets') and 'diets')
     or (_path.startswith('/locktimer') and 'locktimer')
-    or (_path.startswith('/inventory') and 'inventory')
-    or (_path.startswith('/measurements') and 'measurements')
+    or (_path.startswith('/api/v2/inventory') and 'inventory')
+    or (_path.startswith('/api/v2/measurements') and 'measurements')
     or (_path.startswith('/medications') and 'medication')
     or (_path.startswith('/health') and 'health')
     or (_path.startswith('/journal') and 'journal')
     or (_path.startswith('/catalog') and 'activity_catalog')
-    or (_path.startswith('/schedule') and 'schedule')
-    or (_path.startswith('/body-parts') and 'body_parts')
+    or (_path.startswith('/api/v2/schedule') and 'schedule')
+    or (_path.startswith('/api/v2/body-parts') and 'body_parts')
     or (_path.startswith('/locations') and 'locations')
     or (_path.startswith('/calendar') and 'calendar')
     or (_path.startswith('/api/v2/points') and 'points')
@@ -93,8 +93,8 @@
   </div>
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_data }}</div>
-    {{ nav_item('inventory', '/inventory/page', 'inventory', t.nav_inventory) }}
-    {{ nav_item('measurements', '/measurements/page', 'measurement', t.nav_measurements) }}
+    {{ nav_item('inventory', '/api/v2/inventory/page', 'inventory', t.nav_inventory) }}
+    {{ nav_item('measurements', '/api/v2/measurements/page', 'measurement', t.nav_measurements) }}
     {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
     {{ nav_item('health', '/health', 'health', t.nav_health) }}
     {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
@@ -102,8 +102,8 @@
     {{ nav_item('aftercare', '/aftercare', 'aftercare', t.nav_aftercare) }}
     {{ nav_item('activity_catalog', '/catalog', 'activity', t.nav_activity_catalog) }}
     {{ nav_item('insights', '/insights', 'insights', t.nav_insights) }}
-    {{ nav_item('schedule', '/schedule/page', 'schedule', t.nav_schedule) }}
-    {{ nav_item('body_parts', '/body-parts', 'body', t.nav_body_parts) }}
+    {{ nav_item('schedule', '/api/v2/schedule/page', 'schedule', t.nav_schedule) }}
+    {{ nav_item('body_parts', '/api/v2/body-parts/page', 'body', t.nav_body_parts) }}
     {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}
     {{ nav_item('points', '/api/v2/points/page', 'insights', t.nav_points) }}
     {{ nav_item('achievements', '/achievements', 'trophy', t.achievements_title) }}
