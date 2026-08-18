@@ -16,14 +16,14 @@ export async function registerFreshUser(page: Page): Promise<void> {
   if (page.url().includes("/login")) {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
-    await page.locator('form[action="/consent/setup"] button[type="submit"]').click();
+    await page.locator('button[type="submit"]').click();
   }
   if (page.url().includes("/consent/setup")) {
     const consentBoxes = page.locator('input[name="consent_types"]');
     for (let index = 0; index < await consentBoxes.count(); index += 1) {
       await consentBoxes.nth(index).check();
     }
-    await page.locator('button[type="submit"]').click();
+    await page.locator('form[action="/consent/setup"] button[type="submit"]').click();
   }
   await expect(page).toHaveURL(/\/dashboard/);
 }
