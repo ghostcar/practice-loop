@@ -337,7 +337,11 @@ deployment evidence.
 
 ## 15. Следующая фактическая работа
 
-Ближайший gate — безопасно доставить миграции **054–058** и новый образ в запущенный
-production-like compose (S5), сохранив rollback. Затем закрываются остатки M1/Today и выбирается
-следующий продуктовый приоритет: mobile client либо limited Social rollout. Конкретная очередь —
-в `CURRENT_STATE.md` и `PLAN.md`.
+Personal release gate S8 завершён, production-like compose находится на migration 060. Старый
+справочник `entities` очищен после backup; ближайшая продуктовая работа — новый модерируемый
+consensual-adult/BDSM starter catalog по `docs/catalog/ADULT_ACTIVITY_CATALOG.md`.
+
+Ближайшая инженерная очередь вне Social: off-site backups и restore drill → единый переносимый
+export/restore → observability → account recovery → enforcing CSP → transaction cleanup → media
+storage abstraction. Owner self-testing идёт параллельно и имеет приоритет над новыми крупными
+модулями. Мобильный клиент начинается после стабилизации этих контрактов.

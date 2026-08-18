@@ -45,6 +45,7 @@ head **060**. Полный Personal release gate, общий prod-smoke и Chrom
 | Профиль/пароль | ✅ `/account`, self-service пароль | изменение email и recovery по email отсутствуют |
 | Admin users | ✅ роли, disable/enable, явный password reset | audit trail и приглашения отсутствуют |
 | Activity Tracker + 11 статусов | ✅ accepted-session enforcement + append-only audit | дальнейший UX polish |
+| Каталог действий (`entities`) | 🧹 очищен: 0 записей после backup S8a | новый модерируемый 18+ starter set |
 | Today projection | ✅ overdue/review queue и локальные сутки | дальнейшая унификация CTA |
 | Training, Diet, Calendar, Points | ✅ работает | дальнейшая унификация контрактов |
 | Media Vault / attachments | ✅ foundation работает | storage abstraction, derivatives/retention polish |
@@ -83,10 +84,13 @@ head **060**. Полный Personal release gate, общий prod-smoke и Chrom
 
 ## 5. Ближайшая последовательность
 
-1. Провести владельцем self-testing полного Personal-контура и собирать конкретные UX-дефекты.
-2. При необходимости расширить account management: verified email change, recovery, invitations и audit trail.
-3. Реализовать storage abstraction/retention для media и регулярный автоматизированный restore drill.
-4. Только после self-testing спроектировать keyholder capability-контракт поверх закрытого Social rollout;
+1. Утвердить модель и starter set нового consensual-adult/BDSM каталога, затем заменить legacy seed.
+2. Автоматизировать off-site backup PostgreSQL+uploads и restore drill.
+3. Объединить privacy export и legacy full export в единый восстанавливаемый manifest.
+4. Добавить production observability и account recovery; затем enforcing CSP и transaction cleanup.
+5. Проводить owner self-testing параллельно и превращать найденные дефекты в browser regression.
+6. Mobile client и любые новые крупные контуры — только после этих эксплуатационных gates.
+7. Social/keyholder/public rollout остаётся отдельным замороженным направлением.
    public rollout остаётся отдельным этапом после rate limits и email verification.
 
 Future Research по автономным физическим устройствам описан в `ROADMAP.md` §12 и не является
