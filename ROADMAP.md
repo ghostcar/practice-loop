@@ -35,11 +35,11 @@ Community.
 
 ## 3. Этап 0 — восстановление доказуемого baseline
 
-**Статус: ✅ ДОСТИГНУТ (сессии 55–80).**
+**Статус: ✅ ДОСТИГНУТ И ПЕРЕПРОВЕРЕН (S2–S3, 18 августа 2026).**
 
-- полный pytest на чистом окружении — **592/592 ✅**;
-- ruff/format ✅; Docker build ✅; деплой на VPS живой;
-- PostgreSQL migration roundtrip ✅ (001→035);
+- полный pytest в воспроизводимом Python 3.11 dev image — **1132 passed, 1 skipped ✅**;
+- ruff/format ✅; production-like compose health ✅;
+- PostgreSQL 15 migration roundtrip ✅ (`base→057→058→057→058`), single head 058;
 - секреты из Git вычищены (S51), без uploads/БД/экспортов в репозитории;
 - GitHub Actions: CI зелёный, включая docker job.
 
@@ -70,11 +70,11 @@ Docker image собирается; документация не утвержд�
 - комментарий к результату ✅; история изменений — ⏳ (UI-экран аудита);
 - понятные состояния empty/loading/error — ⏳; RU/EN, dark/light, mobile ✅.
 
-### 1C. Today foundation — ⏳
+### 1C. Today foundation — ✅ реализован, UX-достройка ⏳
 
-Дашборд v2 уже агрегирует (today's tasks, активная Timer-сессия, диеты, тренировки) — это прообраз
-Today. Осталось: просроченное и требующее решения; один основной CTA на блок; личные напоминания;
-быстрый переход к разбору.
+Today projection агрегирует задачи, активную Timer-сессию, диеты, тренировки и личные модули;
+работают напоминания и быстрые действия. Осталось: единая подача просроченного/требующего решения,
+один основной CTA на блок и быстрый переход к разбору.
 
 ### Gate M1
 
@@ -84,6 +84,8 @@ Today. Осталось: просроченное и требующее реше
 → **Прогресс: ~80%.** Остаток: accepted-session enforcement, UI аудита, Today-достройка.
 
 ## 5. Этап 2 — Personal Foundation
+
+**Статус: ✅ основной фундамент реализован; операционные расширения продолжаются.**
 
 ### Цель
 
@@ -97,21 +99,20 @@ Today. Осталось: просроченное и требующее реше
 - timezone и quiet hours (timezone уже есть у User);
 - надёжные notifications/outbox (задел есть: `lock_outbox_events`);
 - Media Vault foundation: original, derivative, ownership, retention (база: `media_assets`);
-- consent records для чувствительной обработки;
+- durable versioned consent для чувствительной обработки: одно согласие на цель/версию условий,
+  запрос при первом входе или включении нового профильного модуля, явный revoke;
 - discretion mode и нейтральные уведомления;
 - export/restore и проверяемые бэкапы;
 - audit primitives;
 - единые attachment и inventory links без прямого доступа к чужим таблицам;
 - **storage-абстракция** (volume → S3-совместимое объектное хранилище) — PD-019.
 
-### Архитектурный артефакт
-
-До реализации создаётся `TARGET_ARCHITECTURE.md`, который заменяет необходимость угадывать
-границы из старого LockTimer-пакета.
+Границы и фактические контракты закреплены в `TARGET_ARCHITECTURE.md`, ADR и `FUNCTIONAL.md`.
+Остаются storage-абстракция и расширение export/restore/operational evidence.
 
 ## 6. Этап 3 — личный Chastity Timer
 
-**Статус: ⚠️ ЯДРО ЕСТЬ (C0–C9), осталось «одеть» в предметную модель.**
+**Статус: ✅ личный контур реализован; остаются export/restore и polish.**
 
 Ядро LockTimer реализовано полностью: draft/start, immutable snapshot, 6+7+10 state machines,
 материализатор (5 slot + 6 task типов, rolling 90d), окна снятия, check-in, задания, одноразовые
@@ -119,24 +120,22 @@ Today. Осталось: просроченное и требующее реше
 штрафы и отработки, safety stop, outbox, media, LLM-предложения, tag-механика, календарь,
 compliance, drag&drop.
 
-### Осталось (предметная обвязка)
-
-### 3A. Device inventory — ❌ не начато
+### 3A. Device inventory — ✅ реализовано
 
 - каталог устройств (тип, название, фото, размер, конфигурация);
 - обслуживание, комфорт, проблемы;
 - связи с общим Inventory и Care.
 
-### 3B. Честная терминология фронта — ⏳ PD-017
+### 3B. Честная терминология фронта — ✅ PD-017
 
 Внутренние `lock_*` имена остаются; **фронт и уведомления переводятся на честные термины**
 (device, wearer, lock-on, unlock window, keyholder). Это i18n + шаблоны, без миграций.
 
-### 3C–3E. Остальное — ⏳ частично
+### 3C–3E. Остальное
 
-- Health override (только облегчение) — ⏳;
-- Today card — есть на дашборде, нужна полноценная;
-- Personal Telegram Timer-команды — ⏳ не начато;
+- Health/Cycle и care остаются relief-only и не усиливают ограничения ✅;
+- Today card/projection ✅, дальнейший UX polish ⏳;
+- Personal Telegram Timer-команды ✅;
 - одно активное правило vs параллельность — явно решить.
 
 ### Gate M2
@@ -144,18 +143,18 @@ compliance, drag&drop.
 Полный self-lock flow работает без LLM, Social и другого пользователя. Freeze snapshot и caps
 проверены concurrency tests; emergency stop доступен всегда; полный export/restore сохраняет Timer
 history.
-→ **Прогресс: ~60%** (ядро 100%, предметная обвязка 0–30%).
+→ **Прогресс: основной self-lock flow и предметная обвязка готовы; остаётся operational polish.**
 
 ## 7. Этап 4 — специализированный Personal Suite
 
 Направления используют общую Personal Foundation. Каждое поставляется вертикальным законченным
 срезом.
 
-- **4A. Sexual Journal** — ❌ не начато;
-- **4B. Personal Care** — ❌ (частично пересекается с inventory/measurements);
-- **4C. Medication Organizer** — ❌ не начато;
-- **4D. Health and Cycle foundation** — ❌ не начато;
-- **4E. Personal Insights** — ❌ (есть отдельные графики и LLM-анализы, общего модуля нет).
+- **4A. Sexual Journal** — ✅ реализован, включая Aftercare;
+- **4B. Personal Care** — ✅ процедуры, средства, курсы, медиа и напоминания;
+- **4C. Medication Organizer** — ✅ каталог, остатки, расписание, факты и Telegram;
+- **4D. Health and Cycle foundation** — ✅ check-ins, labs, факты и расчётные фазы;
+- **4E. Personal Insights** — ✅ opt-in кросс-модульный анализ без утверждения причинности.
 
 ### Gate M3
 
@@ -164,7 +163,7 @@ history.
 
 ## 8. Этап 5 — Mobile Foundation и мобильный клиент (PD-018)
 
-**Статус: ⏳ не начато; решения приняты.**
+**Статус: 5A ✅ реализован; 5B ❌ не начат.**
 
 ### 5A. Mobile Foundation (технический фундамент)
 
@@ -175,6 +174,10 @@ history.
 - media URL-контракты для мобильного клиента;
 - закладывается **до Social** — Social и так строит JSON API, мобильный клиент переиспользует те же
   контракты.
+
+Реализовано: access/refresh с ротацией и отзывом, push-device registry и provider abstraction,
+bearer media URL, dual-mode JSON для ключевых Timer/actions. Расширение JSON-first покрытия остаётся
+операционным долгом перед клиентом.
 
 ### 5B. Кроссплатформенный клиент
 
@@ -293,6 +296,11 @@ operations выдерживают публичный трафик; публич�
 На каждом этапе: object-level auth, CSRF, idempotency, concurrency tests, audit, retention,
 export/delete, secret scanning.
 
+Согласие действует один раз для конкретных purpose и terms version до явного отзыва; новые
+профильные модули запрашивают своё согласие при включении. Для BYOK отдельно раскрывается, что
+провайдера и ключ принёс пользователь и он отвечает за выбор провайдера, ToS, расходы и данные;
+это не отменяет локальные policy/safety gates портала.
+
 ### UX
 
 RU/EN, dark/light, keyboard, 360/768/1280, discretion, нейтральные lock-screen notifications и
@@ -329,6 +337,7 @@ deployment evidence.
 
 ## 15. Следующая фактическая работа
 
-Завершается **Этап 1** (M1), параллельно — **предметная обвязка Timer** (Этап 3: device inventory,
-честный фронт). Конкретная очередь — в `CURRENT_STATE.md`. Этап 2 (Personal Foundation) начинается
-после зелёного M1.
+Ближайший gate — безопасно доставить миграции **054–058** и новый образ в запущенный
+production-like compose (S5), сохранив rollback. Затем закрываются остатки M1/Today и выбирается
+следующий продуктовый приоритет: mobile client либо limited Social rollout. Конкретная очередь —
+в `CURRENT_STATE.md` и `PLAN.md`.

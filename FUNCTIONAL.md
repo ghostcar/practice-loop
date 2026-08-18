@@ -29,7 +29,7 @@ Lock Timer (chastity) и социальная платформа (обезлич
 | DB | PostgreSQL 15 (prod), SQLite (dev/tests), SQLAlchemy 2.0 async, Alembic |
 | Auth | JWT-cookie + CSRF double-submit (native-формы и JS-fetch покрыты) |
 | Frontend | SSR Jinja2 + HTMX + TailwindCSS, Chart.js; JS вынесен в ES-модули |
-| i18n | EN/RU (876 ключей), темы dark/light/system + 3 акцентных набора (ember/sage/slate) |
+| i18n | EN/RU, темы dark/light/system + 3 акцентных набора (ember/sage/slate) |
 | LLM | OpenAI-совместимые endpoints, BYOK: Omniroute (по умолчанию), Groq, OpenRouter |
 | Telegram | aiogram 3.x (вебхук + исходящие уведомления) |
 | Инфра | Docker Compose (app, PostgreSQL, Nginx+SSL), загрузки в volume `uploads` |
@@ -77,6 +77,8 @@ sidebar (иконки + подписи).
 | `/achievements` | Доска достижений (обезличенная), скрытие |
 | `/privacy` | Экспорт данных, удаление аккаунта, статус Telegram-привязки |
 | `/settings` | Кастомизация: тема (dark/light/system), акцент, плотность, блоки дашборда, discretion (ADR-081) |
+| `/consent` | Неизменяемая история согласий; grant/revoke по purpose и версии условий (§35) |
+| `/aftercare` | Структурированный relief-only журнал восстановления и дебрифа (§34) |
 | `/locktimer` | Lock Timer: обзор, детали сессии, шаблоны (§16) |
 | `/social/*` | Социальная подсистема: профиль, связи, лента, верификация, модерация (§17) |
 
@@ -276,6 +278,13 @@ sidebar (иконки + подписи).
   bearer-запросов не требуется (нет cookie-сессии).
 - **Приватность**: экспорт данных (JSON), полное удаление аккаунта или с сохранением
   обезличенных данных; обезличенная доска достижений.
+- **Durable consent (ADR-102/104)**: согласие выдаётся один раз на конкретные purpose и
+  `terms_version`, действует до явного отзыва и не запрашивается повторно при простом выключении/
+  включении уже согласованного модуля. Первый вход запрашивает активные модули, новый модуль — при
+  его включении в профиле. История append-only; revoke — новая версия и немедленный gate.
+- **BYOK disclosure**: перед сохранением пользовательского LLM-провайдера отдельно раскрывается,
+  что endpoint, модель и ключ принёс пользователь и он отвечает за выбор провайдера, его ToS,
+  тарифы и допустимость отправляемых данных. Портал не снимает собственные policy/safety gates.
 - Cross-user изоляция: чужие private entities/thresholds не видны; импорт ищет Entity
   только owner/public.
 
@@ -283,7 +292,7 @@ sidebar (иконки + подписи).
 
 ## 15. Модель данных (таблицы)
 
-Полный перечень таблиц `app/models/*` (80):
+Перечень основных таблиц `app/models/*` (фактическая схема развивается миграциями):
 
 - **Пользователи и каталог**: `users`, `user_progress`, `entities`, `user_entity_opt_ins`,
   `activity_categories`, `llm_provider_configs`, `prompt_templates`.
@@ -305,6 +314,10 @@ sidebar (иконки + подписи).
   (сеансы курса) — relief-only, PD-013, Private Record.
 - **Reminders (§29)**: `reminder_log` (дедупликация напоминаний: медикаменты/средства/
   уход/курсы/таймер) — relief-only, PD-013.
+- **Consent (§35)**: `consent_records` — append-only журнал granted/revoked с монотонной
+  версией и `terms_version`.
+- **Timer care/check-ins (§33)**: `chastity_device_events`, `chastity_check_ins`.
+- **Aftercare (§34)**: `aftercare_entries` — Private Record, relief-only.
 - **Универсальный каталог активностей (§26)**: `activity_catalog` — сквозной
   справочник видов активностей (как Entity: категория/теги/описание/domains),
   на который ссылаются журнал, уход, окна таймера и трекер-задачи — нейтрален,
@@ -881,3 +894,38 @@ Feature flag `insights_enabled` (default true).
 - **Engine**: daily-цикл считает «сегодня»/«сейчас» в tz пользователя (границы суток и время доз корректны); `run_reminder_cycle_for_user` — per-user.
 - **Scheduler**: daily-триггер per-user (локальное время ≥ reminder_time, раз в локальный день); event-цикл (ADR-096) — глобальный каденс с per-user «сейчас»; auto-insights — раз в день.
 - **UI**: `/settings` → секция «Напоминания» (время + часовой пояс IANA с подсказкой).
+
+---
+
+## 33. Уход за устройством и wear check-ins (B2/C2, миграции 054–055)
+
+- `chastity_device_events` хранит owner-scoped события comfort/problem/maintenance/cleaning/
+  inspection с мягкими связями на Inventory device и Timer session. Контур relief-only:
+  проблемы и обслуживание не начисляют очки и не применяют штрафы.
+- `chastity_check_ins` хранит настроение, физический комфорт, заметку и опциональный фото-отчёт
+  во время ношения. Фото может ссылаться на существующий результат media verification.
+- Web и bearer JSON API поддерживают создание/просмотр; все ссылки проверяются по владельцу.
+
+## 34. Aftercare (C1, миграция 056)
+
+Отдельный Private Record для физической и эмоциональной заботы, дебрифа, гидратации и отдыха.
+Запись содержит дату, вид, уровень восстановления, заметку и мягкие связи с Sexual Journal и
+Timer. Модуль доступен через `/aftercare` и `/api/v2/aftercare`, owner-scoped, relief-only и без
+игровой интеграции.
+
+## 35. Durable consent и BYOK disclosure (C3/S1, ADR-102/104, миграции 057–058)
+
+- Реестр purpose включает профильные модули Tracker/Timer/Medication/Health/Journal/Care/
+  Catalog/Insights/Aftercare и отдельные цели `byok_provider`, `llm_expanded`,
+  `media_verification`, `data_processing`.
+- Grant действует **один раз на весь срок пользования порталом** для конкретной цели и версии
+  условий. Повторный grant идемпотентен; выключение модуля не отзывает согласие. Явный revoke или
+  новая версия условий требуют новой append-only записи.
+- При первом входе запрашиваются согласия включённых модулей; при включении нового модуля в
+  профиле запрашивается только его недостающее согласие. Sensitive endpoints возвращают 428 с
+  машинным кодом `consent_required` до grant.
+- История доступна в `/consent` и `/api/v2/consent`; DELETE отсутствует. PostgreSQL сериализует
+  выдачу версии блокировкой пользователя, а unique/check constraints защищают инварианты.
+- BYOK имеет отдельное раскрытие: пользователь сам принёс провайдера, endpoint, модель и ключ и
+  несёт ответственность за их выбор, условия, стоимость и передаваемые данные. Это не разрешает
+  обход safety-фильтров и не отменяет серверную валидацию и consent gates портала.

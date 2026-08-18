@@ -12,8 +12,8 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
-    "dirty": false,
+    "diff_hash": "sha256:61d85fde1418872e39b95f6fa435e9b29a211be2877603964bccbc75ce32be2a",
+    "dirty": true,
     "head": "079a8fbf596ae4e40733068a83cc775cb8f62e74"
   },
   "kind": "fact_manifest",

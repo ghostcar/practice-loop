@@ -1,100 +1,98 @@
-# Practice Loop — текущее состояние и план ближайших доработок
+# Practice Loop — текущее состояние и ближайшие gates
 
-> Снимок на: 12 августа 2026 года.
+> Снимок на: 18 августа 2026 года.
 > Репозиторий: `ghostcar/practice-loop`.
-> Это фактический документ: целевая модель описана в `PRODUCT_VISION.md`.
+> Это фактический документ; продуктовая цель описана в `PRODUCT_VISION.md`, порядок — в
+> `ROADMAP.md`, текущая рабочая очередь — в `PLAN.md`.
 
 ## 1. Резюме
 
-Practice Loop — крупный работающий прототип Personal-first продукта: Tracker (каталог, задачи,
-сессии, тренировки, питание, геймификация, календарь, замеры, инвентарь, импорт/экспорт, медиа,
-LLM, личный Telegram-бот), **LockTimer Core C0–C9** (предметное ядро Chastity Timer) и **Social
-Platform S0–S7** (профили, отношения, публикации, верификация, модерация — не открыта публично).
+Practice Loop — работающий Personal-first веб-продукт: Activity Tracker, Today projection,
+Lock Timer, Personal Suite, Mobile Foundation, Telegram, LLM/BYOK и закрытая Social Platform.
+Social S0–S7 присутствует в коде, но не открыт внешним пользователям. Полноценного
+кроссплатформенного мобильного клиента, D/s delegation и Community пока нет.
 
-**Основной факт:** `main` — зелёная поставочная точка: **592/592 тестов ✅, ruff ✅, Docker ✅,
-миграции 001→035 ✅, деплой на VPS живой.**
+Исходное дерево находится на единственной Alembic head **058 (`a9b0c1d2e3f4`)**. Последний
+полный воспроизводимый baseline на Python 3.11: **1132 passed, 1 skipped, 4 warnings**, Ruff check
+и format-check зелёные. Проверка PostgreSQL 15 отдельно подтвердила миграции
+`base → 057 → 058 → 057 → 058`, конкурентную идемпотентность consent и CRUD/cascade новых
+Personal-таблиц.
 
-Не реализованы: предметная обвязка Timer (device inventory, честный фронт), специализированные
-Personal-журналы (Sexual Journal, Care, Medication, Cycle, Media Vault, Insights), открытие Social,
-D/s, Community, мобильный клиент.
+Запущенный здесь production-like compose здоров, но его образ и БД намеренно остаются на
+миграции **053**. Миграции 054–058 и соответствующий образ применяются только следующим
+deploy gate S5 после backup/rollback preflight.
 
-## 2. Git и проверенная исходная точка
+## 2. Проверенная исходная точка
 
 | Параметр | Состояние |
 |---|---|
 | Ветка | `main` |
-| HEAD | `f3079be` (2026-08-12) |
+| Проверенный HEAD документации S3 | `1432ae4` (2026-08-18) |
 | Версия приложения | `0.8.0` |
-| Последняя миграция | `035_add_template_sort_order.py` |
-| Тесты | **592/592 ✅** |
-| CI | GitHub Actions: lint/test/migrations/docker — зелёный |
+| Исходная Alembic head | `058_consent_policy_enforcement` (`a9b0c1d2e3f4`) |
+| Полный pytest baseline | **1132 passed, 1 skipped, 4 warnings** (S2, Python 3.11) |
+| Статические проверки | Ruff check + format-check ✅ |
+| PostgreSQL integration | migration roundtrip + consent concurrency + Personal CRUD/cascade ✅ |
+| Запущенный compose | health ✅; БД/образ на 053 до S5 |
+
+Счётчик тестов относится к проверенному S2-дереву; его нельзя автоматически переносить на
+будущий HEAD без нового полного прогона.
 
 ## 3. Функциональная матрица
 
-| Область | Статус | Главный остаток |
+| Область | Фактический статус | Главный остаток |
 |---|---|---|
-| Auth, роли, CSRF | ✅ готово | — |
-| Приватный Activity Tracker | ✅ готово | — |
-| Категории | ✅ backend + UI (S61) | — |
-| ActivityTask v2 (11 статусов) | ✅ backend + UI | accepted-session freeze, UI аудита |
-| Типизированные параметры (DSL) | ✅ готово | — |
-| Сессии accepted | ⚠️ модель есть | фактический freeze snapshot + enforcement |
-| Training | ✅ готово | согласовать с ActivityTask v2 |
-| Diet/Nutrition | ✅ готово | объединённые Personal Insights |
-| Геймификация | ✅ готово | семантика всех 11 статусов (частично) |
-| Calendar/Schedule | ✅ готово | интеграция с Today и Chastity Timer |
-| Measurements / Inventory | ✅ готово | — |
-| Media/Attachments | ⚠️ частично | Media Vault, derivatives, retention |
-| Import/Export | ✅ готово | новые модели, restore roundtrip |
-| LLM BYOK | ✅ готово | унификация use cases |
-| Personal Telegram | ✅ готово | Today, Chastity Timer, discretion |
-| **LockTimer Core (C0–C9)** | ✅ ядро | **предметная обвязка**: device inventory, честный фронт (PD-017), Health override, TG-команды Timer |
-| Верификация кодов | ✅ HMAC one-time | **OCR/LLM по фото — отложено** (Q13) |
-| Sexual Journal | ❌ нет | продуктовый и технический design |
-| Personal Care | ❌ концепт | специализированные процедуры |
-| Medication/Health | ❌ нет | Medication Organizer, границы |
-| Cycle | ❌ нет | модель факта/расчёта |
-| Personal Insights | ❌ нет | общий opt-in анализ |
-| Social Platform (S0–S7) | ✅ функции | **открытие публично** + Chastity Social (PQ-003) |
-| Chastity Social | ❌ нет | публичные check-in, продления с caps |
-| Manual Dominant Workspace | ❌ нет | — |
-| Registered D/s | ❌ нет | — |
-| Community | ❌ нет | после Trust & Safety |
-| Mobile Foundation / клиент | ❌ нет | JSON-first (PD-020), bearer-auth, push (PD-018) |
+| Auth, CSRF, privacy/export | ✅ работает | email verification/public hardening |
+| Activity Tracker + 11 статусов | ✅ работает | accepted-session freeze и UI аудита |
+| Today projection | ✅ foundation работает | UX просроченного и единый главный CTA |
+| Training, Diet, Calendar, Points | ✅ работает | дальнейшая унификация контрактов |
+| Media Vault / attachments | ✅ foundation работает | storage abstraction, derivatives/retention polish |
+| LLM/BYOK | ✅ работает | расширять use cases только через consent/policy gates |
+| Durable consent | ✅ S1 | одно согласие на purpose+terms version; новые модули запрашиваются при включении |
+| BYOK disclosure | ✅ S1 | пользователь сам подключает провайдера и отвечает за его выбор, ключ и условия |
+| Lock Timer Core | ✅ C0–C9 | export/restore coverage и дальнейший subject polish |
+| Device inventory / care | ✅ работает | расширение аналитики и UX обслуживания |
+| Wear check-ins | ✅ реализовано, head 055 | production deploy S5 |
+| Aftercare | ✅ реализовано, head 056 | production deploy S5 |
+| Personal Telegram | ✅ работает | локализация части bot-текстов |
+| Medication Organizer | ✅ работает | — |
+| Health + Cycle | ✅ работает, relief-only | — |
+| Sexual Journal | ✅ работает, Private Record | — |
+| Personal Care + products/courses | ✅ работает, relief-only | — |
+| Activity Catalog | ✅ работает | — |
+| Personal Insights | ✅ работает | причинность не заявляется; opt-in разделов |
+| Mobile Foundation | ✅ bearer/refresh, push registry, JSON/media contracts | расширить JSON-first покрытие |
+| Mobile client | ❌ не реализован | выбор Flutter/React Native и отдельный этап |
+| Social Platform S0–S7 | ✅ код, 🔒 закрыта | public rollout, rate limits, email verification |
+| Chastity Social | ❌ не реализован | отдельное продуктовое решение |
+| D/s delegation / Community | ❌ не реализованы | после Social/capability gates |
 
-## 4. Ближайший план доработок
+## 4. Consent и ответственность BYOK
 
-### Шаг 1. Завершить M1 (Activity Tracker v2 + Today)
+- Согласие выдаётся один раз на конкретную цель и версию условий и действует всё время
+  пользования порталом, пока пользователь явно его не отзовёт или не изменится версия условий.
+- При первом входе запрашиваются согласия только для уже включённых профильных модулей. При
+  последующем включении нового модуля в профиле портал отдельно запрашивает нужное ему согласие.
+  Простое выключение функции не считается отзывом.
+- История consent append-only; повторный grant идемпотентен, revoke немедленно закрывает
+  чувствительное действие. Новая версия условий создаёт новую версию записи.
+- Для BYOK интерфейс отдельно сообщает, что провайдера, endpoint, модель и ключ принёс сам
+  пользователь. Пользователь отвечает за выбор провайдера, его ToS, тарифы и допустимость
+  передаваемых данных; портал всё равно не обходит provider safety и применяет собственные gates.
 
-- accepted-session freeze и enforcement;
-- UI-экран истории аудита;
-- Today-достройка (просроченное, CTA, напоминания).
+## 5. Ближайшая последовательность
 
-### Шаг 2. Предметная обвязка Chastity Timer (Этап 3)
+1. **S5 — deploy gate 054–058:** backup/restore preflight, сборка нового образа, миграции,
+   health и целевые smoke для device events, wear check-ins, aftercare и consent; rollback plan.
+2. Закрыть остатки M1: accepted-session enforcement, UI истории переходов и Today polish.
+3. Расширить export/restore и JSON-first покрытие новых Personal-модулей.
+4. Отдельно решить приоритет: mobile client или подготовка закрытого Social к limited rollout.
 
-- честная терминология фронта и уведомлений (PD-017) — i18n + шаблоны, без миграций;
-- device inventory;
-- Health override (только облегчение);
-- Personal Telegram Timer-команды.
+Future Research по автономным физическим устройствам описан в `ROADMAP.md` §12 и не является
+разрешением на hardware-разработку или safety-critical управление.
 
-### Шаг 3. Мобильный фундамент (Этап 5A)
+## 6. Правило обновления
 
-- JSON-first пилот: перевести timer start/safety-stop и ключевые действия на JSON-ответы (PD-020);
-- bearer-auth слой;
-- storage-абстракция (PD-019).
-
-### Шаг 4. Рефакторинг и нормализация
-
-- разбить крупные файлы (execution.py 1409, import_data.py 988, social/repositories.py 1032,
-  references.py 817, social/api.py 957, pipeline.py 953);
-- lint-нормализация; устранение дублей (list_templates уже объединён S80).
-
-### Дальше
-
-Social-открытие (PQ-003), Personal Suite, Mobile клиент, D/s, Community — `ROADMAP.md`.
-
-## 5. Правило обновления
-
-После каждого значимого commit или фазы обновляются: `FUNCTIONAL.md`, этот файл,
-`memory/STATUS.md`/`SESSIONS.md`/`CHANGELOG.md`, ADR — при изменении решения, `ROADMAP.md` — при
-изменении порядка или gate.
+Факты меняются здесь и в `FUNCTIONAL.md`; порядок — в `ROADMAP.md`; рабочий gate — в `PLAN.md`.
+Generated `docs/state/*` обновляются только через `python -m tools.memoryctl facts`. Замороженные
+`memory/STATUS.md`, `memory/SESSIONS.md` и `memory/CHANGELOG.md` не дописываются.
