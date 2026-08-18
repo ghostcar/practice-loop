@@ -18,6 +18,7 @@ SOURCE_INVENTORY_PATH = Path("data/seed/adult_activity_source_inventory.v1.json"
 EDITORIAL_PATH = Path("data/seed/adult_activity_editorial_candidates.v1.json")
 FLUID_TOILET_REVIEW_PATH = Path("data/seed/adult_activity_fluid_toilet_review.v1.json")
 BREATH_REVIEW_PATH = Path("data/seed/adult_activity_breath_review.v1.json")
+SEXUAL_TECHNIQUE_REVIEW_PATH = Path("data/seed/adult_activity_sexual_technique_review.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -137,3 +138,38 @@ def test_breath_review_preview_reports_research_queue() -> None:
     assert "records=20" in result
     assert "research_backlog:18" in result
     assert "rewrite_required:1" in result
+
+
+def test_sexual_technique_review_has_exact_source_coverage() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    review = load_manifest(SEXUAL_TECHNIQUE_REVIEW_PATH)
+    expected_ids = {record["source_id"] for record in source["records"] if record["source_area"] == "sexual_technique"}
+
+    assert lint_editorial_review(review, expected_ids) == []
+    assert {record["source_id"] for record in review["records"]} == expected_ids
+    assert len(review["records"]) == 20
+    assert all(record["retained"] for record in review["records"])
+    assert all(not record["automation_allowed"] for record in review["records"])
+
+
+def test_promoted_sexual_sources_have_editorial_derivatives() -> None:
+    review = load_manifest(SEXUAL_TECHNIQUE_REVIEW_PATH)
+    candidates = load_manifest(EDITORIAL_PATH)
+    candidate_slugs = {card["slug"] for card in candidates["cards"]}
+    candidate_refs = {source_ref for card in candidates["cards"] for source_ref in card["source_refs"]}
+    promoted = [record for record in review["records"] if record["review_outcome"] == "promote_candidate"]
+
+    assert len(promoted) == 9
+    assert all(record["source_id"] in candidate_refs for record in promoted)
+    assert all(record["derived_card_slug"] in candidate_slugs for record in promoted)
+
+
+def test_sexual_technique_review_preview_reports_outcomes() -> None:
+    review = load_manifest(SEXUAL_TECHNIQUE_REVIEW_PATH)
+
+    result = preview_editorial_review(review)
+
+    assert "records=20" in result
+    assert "promote_candidate:9" in result
+    assert "rewrite_required:5" in result
+    assert "research_backlog:1" in result
