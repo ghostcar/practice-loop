@@ -26,6 +26,8 @@
    `adult_activity_standalone_review.v1.json` закрывают оставшиеся 41 source record.
 10. `adult_inventory_source.v1.json` — allowlisted inventory extraction из chat/DOCX/XLSX без
     исторических дат, цен, количеств, штрафов и фактических сессий.
+11. `adult_category_taxonomy_source.v1.json` — 13 source-категорий и две обязательные platform
+    extensions для consent и aftercare.
 
 ## Значение статусов источника
 
@@ -52,6 +54,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_activity_wearing_chastit
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_restraint_bondage_review.v1.json --preview
 pytest -q tests/test_adult_catalog_manifest.py
 python3 -m tools.adult_catalog_manifest data/seed/adult_inventory_source.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_category_taxonomy_source.v1.json --preview
 ```
 
 Все команды read-only. Importer намеренно отсутствует.

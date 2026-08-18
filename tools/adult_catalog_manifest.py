@@ -14,6 +14,7 @@ SOURCE_SCHEMA_VERSION = "adult-activity-source-inventory/v1alpha1"
 EDITORIAL_SCHEMA_VERSION = "adult-activity-editorial-candidates/v1alpha1"
 REVIEW_SCHEMA_VERSION = "adult-activity-editorial-review/v1alpha1"
 INVENTORY_SCHEMA_VERSION = "adult-inventory-source/v1alpha1"
+TAXONOMY_SCHEMA_VERSION = "adult-category-taxonomy/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
@@ -346,6 +347,44 @@ def preview_inventory_source(manifest: dict[str, Any]) -> str:
     )
 
 
+def lint_category_taxonomy(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != TAXONOMY_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {TAXONOMY_SCHEMA_VERSION}")
+    if manifest.get("import_allowed") is not False:
+        errors.append("taxonomy proposal must set import_allowed=false")
+    categories = manifest.get("categories")
+    if not isinstance(categories, list) or len(categories) != 13:
+        return [*errors, "taxonomy must contain exactly 13 source categories"]
+    if [category.get("order") for category in categories] != list(range(1, 14)):
+        errors.append("category order must be continuous from 1 to 13")
+    slugs = [category.get("slug") for category in categories]
+    if len(slugs) != len(set(slugs)):
+        errors.append("category slugs must be unique")
+    for index, category in enumerate(categories):
+        if not category.get("title_ru") or not category.get("source_refs"):
+            errors.append(f"categories[{index}] requires title_ru and source_refs")
+    extensions = {extension.get("slug") for extension in manifest.get("platform_extensions", [])}
+    if extensions != {"consent_communication", "connection_aftercare"}:
+        errors.append("platform extensions must contain consent and aftercare")
+    return errors
+
+
+def preview_category_taxonomy(manifest: dict[str, Any]) -> str:
+    kinds = Counter(category["content_kind"] for category in manifest["categories"])
+    routing = Counter(category["default_routing"] for category in manifest["categories"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"categories={len(manifest['categories'])}",
+            f"platform_extensions={len(manifest.get('platform_extensions', []))}",
+            "content_kinds=" + ", ".join(f"{key}:{value}" for key, value in sorted(kinds.items())),
+            "routing=" + ", ".join(f"{key}:{value}" for key, value in sorted(routing.items())),
+        ]
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -361,6 +400,7 @@ def main() -> int:
     is_editorial = schema_version == EDITORIAL_SCHEMA_VERSION
     is_review = schema_version == REVIEW_SCHEMA_VERSION
     is_inventory = schema_version == INVENTORY_SCHEMA_VERSION
+    is_taxonomy = schema_version == TAXONOMY_SCHEMA_VERSION
     if is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
@@ -369,6 +409,8 @@ def main() -> int:
         errors = lint_editorial_review(manifest)
     elif is_inventory:
         errors = lint_inventory_source(manifest)
+    elif is_taxonomy:
+        errors = lint_category_taxonomy(manifest)
     else:
         errors = lint_manifest(manifest)
     if errors:
@@ -385,6 +427,8 @@ def main() -> int:
             print(preview_editorial_review(manifest))
         elif is_inventory:
             print(preview_inventory_source(manifest))
+        elif is_taxonomy:
+            print(preview_category_taxonomy(manifest))
         else:
             print(preview(manifest))
     return 0

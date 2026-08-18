@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from tools.adult_catalog_manifest import (
+    lint_category_taxonomy,
     lint_editorial_candidates,
     lint_editorial_review,
     lint_inventory_source,
@@ -9,6 +10,7 @@ from tools.adult_catalog_manifest import (
     lint_source_inventory,
     load_manifest,
     preview,
+    preview_category_taxonomy,
     preview_editorial_candidates,
     preview_editorial_review,
     preview_inventory_source,
@@ -27,6 +29,7 @@ SENSORY_REVIEW_PATH = Path("data/seed/adult_activity_sensory_review.v1.json")
 IMPACT_REVIEW_PATH = Path("data/seed/adult_activity_impact_review.v1.json")
 STANDALONE_REVIEW_PATH = Path("data/seed/adult_activity_standalone_review.v1.json")
 INVENTORY_SOURCE_PATH = Path("data/seed/adult_inventory_source.v1.json")
+TAXONOMY_PATH = Path("data/seed/adult_category_taxonomy_source.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -305,3 +308,23 @@ def test_inventory_preview_reports_families_and_routing() -> None:
     assert "normalized_items=135" in result
     assert "clothing_fetish:30" in result
     assert "future_research:18" in result
+
+
+def test_category_taxonomy_has_source_and_platform_layers() -> None:
+    manifest = load_manifest(TAXONOMY_PATH)
+
+    assert lint_category_taxonomy(manifest) == []
+    assert len(manifest["categories"]) == 13
+    assert [category["order"] for category in manifest["categories"]] == list(range(1, 14))
+    assert {extension["slug"] for extension in manifest["platform_extensions"]} == {
+        "consent_communication",
+        "connection_aftercare",
+    }
+
+
+def test_category_taxonomy_preview_reports_routing() -> None:
+    result = preview_category_taxonomy(load_manifest(TAXONOMY_PATH))
+
+    assert "categories=13" in result
+    assert "platform_extensions=2" in result
+    assert "research_only:1" in result

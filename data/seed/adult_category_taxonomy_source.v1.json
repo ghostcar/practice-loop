@@ -1,0 +1,24 @@
+{
+  "schema_version": "adult-category-taxonomy/v1alpha1",
+  "status": "proposal",
+  "import_allowed": false,
+  "categories": [
+    {"order": 1, "slug": "fluid_enema_control", "title_ru": "Контроль жидкости и клизмы", "source_labels": ["ЗД / Контроль жидкости + клизмы", "Watersports + Enema"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1198", "examples/category-chat.md:1726"]},
+    {"order": 2, "slug": "toilet_bowel_control", "title_ru": "Туалетный и кишечный контроль", "source_labels": ["КП / Туалетный контроль и скат", "Scat & Bowel Control"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1220", "examples/category-chat.md:1781"]},
+    {"order": 3, "slug": "breath_restriction", "title_ru": "Практики ограничения дыхания", "source_labels": ["Breath-play"], "content_kind": "research_category", "default_routing": "research_only", "source_refs": ["examples/category-chat.md:1244", "examples/Breatheplay.docx"]},
+    {"order": 4, "slug": "sexual_technique", "title_ru": "Интимная техника", "source_labels": ["Фрикции и техника"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1269", "examples/Книга1.xlsx:Лист1"]},
+    {"order": 5, "slug": "wearing_chastity", "title_ru": "Ношение и целомудрие", "source_labels": ["Ношение и целомудрие"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1297", "examples/Книга_j.xlsx:Лист1"]},
+    {"order": 6, "slug": "restraint_bondage", "title_ru": "Фиксация и бондаж", "source_labels": ["Фиксация и бондаж"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1321", "examples/Книга_j.xlsx:Лист1"]},
+    {"order": 7, "slug": "sensory_play", "title_ru": "Сенсорные практики", "source_labels": ["Сенсорика"], "content_kind": "activity_category", "default_routing": "moderated", "source_refs": ["examples/category-chat.md:1345"]},
+    {"order": 8, "slug": "impact_play", "title_ru": "Ударные практики", "source_labels": ["Порка и ударные", "Impact Play"], "content_kind": "activity_category", "default_routing": "moderated", "source_refs": ["examples/category-chat.md:1370"]},
+    {"order": 9, "slug": "humiliation_objectification", "title_ru": "Унижение и объектность", "source_labels": ["Унижение и объектность"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1637"]},
+    {"order": 10, "slug": "service_protocol", "title_ru": "Сервис и обслуживание", "source_labels": ["Сервис и обслуживание"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1651"]},
+    {"order": 11, "slug": "psychological_control", "title_ru": "Психологический контроль", "source_labels": ["Психологический контроль"], "content_kind": "activity_category", "default_routing": "manual_only", "source_refs": ["examples/category-chat.md:1665", "examples/Регламент.docx"]},
+    {"order": 12, "slug": "clothing_fetish", "title_ru": "Одежда и фетиш-элементы", "source_labels": ["Одежда и фетиш-элементы"], "content_kind": "activity_category", "default_routing": "moderated", "source_refs": ["examples/category-chat.md:1679", "examples/Книга_j.xlsx:Лист6"]},
+    {"order": 13, "slug": "session_hybrid", "title_ru": "Гибридные и сессионные блоки", "source_labels": ["Гибридные / сессионные блоки"], "content_kind": "scenario_category", "default_routing": "scenario_review", "source_refs": ["examples/category-chat.md:1693", "examples/Сценарий на сессию.docx"]}
+  ],
+  "platform_extensions": [
+    {"slug": "consent_communication", "reason": "Обязательный foundation-контур портала, отсутствующий как самостоятельная область legacy source."},
+    {"slug": "connection_aftercare", "reason": "Обязательный recovery-контур; в source встречается внутри сценариев, но должен быть отдельной категорией."}
+  ]
+}
