@@ -4,12 +4,14 @@ from pathlib import Path
 from tools.adult_catalog_manifest import (
     lint_editorial_candidates,
     lint_editorial_review,
+    lint_inventory_source,
     lint_manifest,
     lint_source_inventory,
     load_manifest,
     preview,
     preview_editorial_candidates,
     preview_editorial_review,
+    preview_inventory_source,
     preview_source_inventory,
 )
 
@@ -24,6 +26,7 @@ RESTRAINT_REVIEW_PATH = Path("data/seed/adult_activity_restraint_bondage_review.
 SENSORY_REVIEW_PATH = Path("data/seed/adult_activity_sensory_review.v1.json")
 IMPACT_REVIEW_PATH = Path("data/seed/adult_activity_impact_review.v1.json")
 STANDALONE_REVIEW_PATH = Path("data/seed/adult_activity_standalone_review.v1.json")
+INVENTORY_SOURCE_PATH = Path("data/seed/adult_inventory_source.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -282,3 +285,23 @@ def test_promoted_sensory_and_impact_sources_have_derivatives() -> None:
         assert len(promoted) == expected_promoted
         assert all(record["source_id"] in candidate_refs for record in promoted)
         assert all(record["derived_card_slug"] in candidate_slugs for record in promoted)
+
+
+def test_inventory_source_is_complete_and_non_importable() -> None:
+    manifest = load_manifest(INVENTORY_SOURCE_PATH)
+
+    assert lint_inventory_source(manifest) == []
+    assert manifest["import_allowed"] is False
+    assert len(manifest["source_records"]) == 186
+    assert len(manifest["items"]) == 135
+    assert all(item["seed_ready"] is False for item in manifest["items"])
+    assert all("price" not in record and "quantity" not in record for record in manifest["source_records"])
+
+
+def test_inventory_preview_reports_families_and_routing() -> None:
+    result = preview_inventory_source(load_manifest(INVENTORY_SOURCE_PATH))
+
+    assert "source_records=186" in result
+    assert "normalized_items=135" in result
+    assert "clothing_fetish:30" in result
+    assert "future_research:18" in result

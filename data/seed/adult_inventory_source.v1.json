@@ -1,0 +1,2857 @@
+{
+  "schema_version": "adult-inventory-source/v1alpha1",
+  "status": "source_review",
+  "import_allowed": false,
+  "privacy_policy": "allowlisted_reference_rows_only_no_history_prices_quantities",
+  "sources": [
+    "examples/category-chat.md",
+    "examples/Breatheplay.docx",
+    "examples/Книга_j.xlsx",
+    "examples/Новый документ.docx",
+    "examples/Сценарий на сессию.docx"
+  ],
+  "source_record_count": 186,
+  "normalized_item_count": 135,
+  "source_records": [
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:168",
+      "raw_name": "Кляпы (член, шар, палка, кольцо, надувной, тканевый)",
+      "source_id": "inventory-source-001",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:169",
+      "raw_name": "Анальные пробки (разных размеров) + фиксация/обвязка",
+      "source_id": "inventory-source-002",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:170",
+      "raw_name": "Клетка (chastity) + стяжки",
+      "source_id": "inventory-source-003",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:171",
+      "raw_name": "Прищепки / зажимы (обычные, усиленные, с хвостами, красный-синий уровни) + грузы / натяжение",
+      "source_id": "inventory-source-004",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:172",
+      "raw_name": "Веревки (2 / 4 / 6 мм), цепи (разной ячейки и длины), замки, карабины, хомуты",
+      "source_id": "inventory-source-005",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:173",
+      "raw_name": "Стрейч-плёнка, скотч (обычный + герметичный)",
+      "source_id": "inventory-source-006",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:174",
+      "raw_name": "Пакеты, мешки",
+      "source_id": "inventory-source-007",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:175",
+      "raw_name": "Воронки, трубки",
+      "source_id": "inventory-source-008",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:176",
+      "raw_name": "Тампоны (супер-плюс), впитывающий материал, ткань",
+      "source_id": "inventory-source-009",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:177",
+      "raw_name": "Вибратор / дилдо",
+      "source_id": "inventory-source-010",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:178",
+      "raw_name": "Лёд, хозяйственные свечи",
+      "source_id": "inventory-source-011",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:179",
+      "raw_name": "Повязки на глаза, маски, шлем",
+      "source_id": "inventory-source-012",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:180",
+      "raw_name": "Наручники / браслеты, spreader bars, ошейник, пояса",
+      "source_id": "inventory-source-013",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:181",
+      "raw_name": "Электростимуляция (клетка + ягодицы)",
+      "source_id": "inventory-source-014",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:182",
+      "raw_name": "Таймеры",
+      "source_id": "inventory-source-015",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:183",
+      "raw_name": "Гипноз-аудио + метроном",
+      "source_id": "inventory-source-016",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:186",
+      "raw_name": "Колготки / чулки разных ден и цветов",
+      "source_id": "inventory-source-017",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:187",
+      "raw_name": "Стринги, танга, бикини, шортики",
+      "source_id": "inventory-source-018",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:188",
+      "raw_name": "Латекс / капроновые кэтсьюты",
+      "source_id": "inventory-source-019",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:189",
+      "raw_name": "Туфли / сапоги на шпильке",
+      "source_id": "inventory-source-020",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:192",
+      "raw_name": "Трубки для дыхания + затычки",
+      "source_id": "inventory-source-021",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:193",
+      "raw_name": "Воронки в пакет",
+      "source_id": "inventory-source-022",
+      "retained": true
+    },
+    {
+      "source": "examples/category-chat.md",
+      "locator": "line:194",
+      "raw_name": "Непрозрачный впитывающий материал",
+      "source_id": "inventory-source-023",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:2",
+      "raw_name": "Пленка",
+      "source_id": "inventory-source-024",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:3",
+      "raw_name": "Пакеты",
+      "source_id": "inventory-source-025",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:4",
+      "raw_name": "Скотч",
+      "source_id": "inventory-source-026",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:5",
+      "raw_name": "Скотч герметичный",
+      "source_id": "inventory-source-027",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:6",
+      "raw_name": "Воронки",
+      "source_id": "inventory-source-028",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:7",
+      "raw_name": "Трубки",
+      "source_id": "inventory-source-029",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:8",
+      "raw_name": "Веревка",
+      "source_id": "inventory-source-030",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:9",
+      "raw_name": "Тампоны",
+      "source_id": "inventory-source-031",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:10",
+      "raw_name": "Ткань для кляпа",
+      "source_id": "inventory-source-032",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:11",
+      "raw_name": "Непрозрачный впитывающий материал",
+      "source_id": "inventory-source-033",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:12",
+      "raw_name": "Кляп",
+      "source_id": "inventory-source-034",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:13",
+      "raw_name": "Веревки",
+      "source_id": "inventory-source-035",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:14",
+      "raw_name": "Прищепки",
+      "source_id": "inventory-source-036",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:15",
+      "raw_name": "Пробка",
+      "source_id": "inventory-source-037",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:16",
+      "raw_name": "Вибратор",
+      "source_id": "inventory-source-038",
+      "retained": true
+    },
+    {
+      "source": "examples/Breatheplay.docx",
+      "locator": "paragraph:17",
+      "raw_name": "Клеточка",
+      "source_id": "inventory-source-039",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A2",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-040",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A3",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-041",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A4",
+      "raw_name": "Замок",
+      "source_id": "inventory-source-042",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A5",
+      "raw_name": "Хомут 50 - 70 мм",
+      "source_id": "inventory-source-043",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A6",
+      "raw_name": "Хомут 70 - 90 мм",
+      "source_id": "inventory-source-044",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A7",
+      "raw_name": "Держатели труб",
+      "source_id": "inventory-source-045",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A8",
+      "raw_name": "Крепеж (кольца с резьбой)",
+      "source_id": "inventory-source-046",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A9",
+      "raw_name": "Крепеж (карабины)",
+      "source_id": "inventory-source-047",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A14",
+      "raw_name": "Чулки телесные",
+      "source_id": "inventory-source-048",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A15",
+      "raw_name": "Чулки цвет загара",
+      "source_id": "inventory-source-049",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A16",
+      "raw_name": "чулки белые",
+      "source_id": "inventory-source-050",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A17",
+      "raw_name": "челки чёрные",
+      "source_id": "inventory-source-051",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A18",
+      "raw_name": "Чулки цвет капучино",
+      "source_id": "inventory-source-052",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A19",
+      "raw_name": "Чулки сеткой черные",
+      "source_id": "inventory-source-053",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A20",
+      "raw_name": "Чулки сеткой телесные",
+      "source_id": "inventory-source-054",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A21",
+      "raw_name": "колготки сеткой черные",
+      "source_id": "inventory-source-055",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A22",
+      "raw_name": "колготки сеткой телесные",
+      "source_id": "inventory-source-056",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A23",
+      "raw_name": "колготки цвет загара",
+      "source_id": "inventory-source-057",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A24",
+      "raw_name": "колготки белые",
+      "source_id": "inventory-source-058",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A25",
+      "raw_name": "колготки чёрные",
+      "source_id": "inventory-source-059",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A26",
+      "raw_name": "Колготки коричневые",
+      "source_id": "inventory-source-060",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A27",
+      "raw_name": "Стринги",
+      "source_id": "inventory-source-061",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A28",
+      "raw_name": "Шортики",
+      "source_id": "inventory-source-062",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A29",
+      "raw_name": "танга",
+      "source_id": "inventory-source-063",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A30",
+      "raw_name": "бикини",
+      "source_id": "inventory-source-064",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A31",
+      "raw_name": "Юбка",
+      "source_id": "inventory-source-065",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A32",
+      "raw_name": "Джинсы женские",
+      "source_id": "inventory-source-066",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A34",
+      "raw_name": "Веревка 6 мм",
+      "source_id": "inventory-source-067",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A35",
+      "raw_name": "Веревка 4 мм",
+      "source_id": "inventory-source-068",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A36",
+      "raw_name": "Веревка 2 мм",
+      "source_id": "inventory-source-069",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A37",
+      "raw_name": "Цепь длинноячеистая 6 мм",
+      "source_id": "inventory-source-070",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A38",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-071",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A39",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-072",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A40",
+      "raw_name": "замки",
+      "source_id": "inventory-source-073",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A41",
+      "raw_name": "карабины",
+      "source_id": "inventory-source-074",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A42",
+      "raw_name": "крепеж",
+      "source_id": "inventory-source-075",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A43",
+      "raw_name": "Пластиковые хомуты",
+      "source_id": "inventory-source-076",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A44",
+      "raw_name": "Паук из резинок",
+      "source_id": "inventory-source-077",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A45",
+      "raw_name": "Лебедка",
+      "source_id": "inventory-source-078",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A46",
+      "raw_name": "Магнит",
+      "source_id": "inventory-source-079",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A47",
+      "raw_name": "Электростимуляторы",
+      "source_id": "inventory-source-080",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A48",
+      "raw_name": "Таймер",
+      "source_id": "inventory-source-081",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A49",
+      "raw_name": "Стрейч-пленка",
+      "source_id": "inventory-source-082",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A50",
+      "raw_name": "Скотч",
+      "source_id": "inventory-source-083",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A51",
+      "raw_name": "Деппелятор",
+      "source_id": "inventory-source-084",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A52",
+      "raw_name": "Косметика",
+      "source_id": "inventory-source-085",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A53",
+      "raw_name": "бондажные коробки",
+      "source_id": "inventory-source-086",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A56",
+      "raw_name": "Кляп",
+      "source_id": "inventory-source-087",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A57",
+      "raw_name": "кляп тренировочный",
+      "source_id": "inventory-source-088",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A58",
+      "raw_name": "ошейник",
+      "source_id": "inventory-source-089",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A59",
+      "raw_name": "наручники",
+      "source_id": "inventory-source-090",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A60",
+      "raw_name": "браслеты кож",
+      "source_id": "inventory-source-091",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A61",
+      "raw_name": "браслеты кож для подвешивания",
+      "source_id": "inventory-source-092",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A62",
+      "raw_name": "пояс",
+      "source_id": "inventory-source-093",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A63",
+      "raw_name": "маска",
+      "source_id": "inventory-source-094",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A64",
+      "raw_name": "шлем",
+      "source_id": "inventory-source-095",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A65",
+      "raw_name": "spreader bars",
+      "source_id": "inventory-source-096",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A66",
+      "raw_name": "Вибратор/дилда",
+      "source_id": "inventory-source-097",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A67",
+      "raw_name": "анальная пробка",
+      "source_id": "inventory-source-098",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A68",
+      "raw_name": "кольца на член",
+      "source_id": "inventory-source-099",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A69",
+      "raw_name": "вакуум",
+      "source_id": "inventory-source-100",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A70",
+      "raw_name": "вакуум увелич груди",
+      "source_id": "inventory-source-101",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A71",
+      "raw_name": "Прищепки",
+      "source_id": "inventory-source-102",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A72",
+      "raw_name": "CBT",
+      "source_id": "inventory-source-103",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A73",
+      "raw_name": "Латексный кэтсьют",
+      "source_id": "inventory-source-104",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A74",
+      "raw_name": "Латексные трусы с анальной пробкой",
+      "source_id": "inventory-source-105",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A75",
+      "raw_name": "Кэтсъют капрон",
+      "source_id": "inventory-source-106",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A76",
+      "raw_name": "Туфли",
+      "source_id": "inventory-source-107",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A77",
+      "raw_name": "Сапоги на шпильке",
+      "source_id": "inventory-source-108",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A78",
+      "raw_name": "Затычки для ушей",
+      "source_id": "inventory-source-109",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист1!A79",
+      "raw_name": "иппликаторы",
+      "source_id": "inventory-source-110",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B7",
+      "raw_name": "Стринги",
+      "source_id": "inventory-source-111",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B8",
+      "raw_name": "Стринги",
+      "source_id": "inventory-source-112",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B9",
+      "raw_name": "Шортики",
+      "source_id": "inventory-source-113",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B10",
+      "raw_name": "Шортики",
+      "source_id": "inventory-source-114",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B11",
+      "raw_name": "Танга",
+      "source_id": "inventory-source-115",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B12",
+      "raw_name": "Бикини",
+      "source_id": "inventory-source-116",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B13",
+      "raw_name": "Бикини",
+      "source_id": "inventory-source-117",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B14",
+      "raw_name": "Колготки 40 ден",
+      "source_id": "inventory-source-118",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B15",
+      "raw_name": "Чулки",
+      "source_id": "inventory-source-119",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B16",
+      "raw_name": "колготки 50 ден",
+      "source_id": "inventory-source-120",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B17",
+      "raw_name": "колготки 70 ден",
+      "source_id": "inventory-source-121",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B18",
+      "raw_name": "колготки 90 ден",
+      "source_id": "inventory-source-122",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B19",
+      "raw_name": "Колготки 40 ден",
+      "source_id": "inventory-source-123",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B20",
+      "raw_name": "колготки 100-160 ден",
+      "source_id": "inventory-source-124",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B21",
+      "raw_name": "Колготки 50 и более ден",
+      "source_id": "inventory-source-125",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B22",
+      "raw_name": "Веревка 6 мм",
+      "source_id": "inventory-source-126",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B23",
+      "raw_name": "Веревка 4 мм",
+      "source_id": "inventory-source-127",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B24",
+      "raw_name": "Веревка 2 мм",
+      "source_id": "inventory-source-128",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B25",
+      "raw_name": "Цепь длинноячеистая 6 мм",
+      "source_id": "inventory-source-129",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B26",
+      "raw_name": "Цепь длинноячеистая 6 мм",
+      "source_id": "inventory-source-130",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B27",
+      "raw_name": "Цепь длинноячеистая 6 мм",
+      "source_id": "inventory-source-131",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B28",
+      "raw_name": "Цепь длинноячеистая 6 мм",
+      "source_id": "inventory-source-132",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B29",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-133",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B30",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-134",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B31",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-135",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B32",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-136",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B33",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-137",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B34",
+      "raw_name": "Цепь длинноячеистая 4 мм",
+      "source_id": "inventory-source-138",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B35",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-139",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B36",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-140",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B37",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-141",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B38",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-142",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B39",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-143",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B40",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-144",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B41",
+      "raw_name": "Цепь длинноячеистая 2 мм",
+      "source_id": "inventory-source-145",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B42",
+      "raw_name": "Замки",
+      "source_id": "inventory-source-146",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B43",
+      "raw_name": "Карабины",
+      "source_id": "inventory-source-147",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B44",
+      "raw_name": "крепежные элементы",
+      "source_id": "inventory-source-148",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B45",
+      "raw_name": "Цепь короткоячеистая 6 мм",
+      "source_id": "inventory-source-149",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B46",
+      "raw_name": "Цепь короткоячеистая 8 мм",
+      "source_id": "inventory-source-150",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B47",
+      "raw_name": "Стрейч-пленка",
+      "source_id": "inventory-source-151",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B48",
+      "raw_name": "трос (металл или веревка)",
+      "source_id": "inventory-source-152",
+      "retained": true
+    },
+    {
+      "source": "examples/Книга_j.xlsx",
+      "locator": "Лист6!B49",
+      "raw_name": "резьбовая шпилька 2 м",
+      "source_id": "inventory-source-153",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:2",
+      "raw_name": "Электромагниты на все двери с управление от контроллера",
+      "source_id": "inventory-source-154",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:3",
+      "raw_name": "Датчики открывания двери на все двери",
+      "source_id": "inventory-source-155",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:4",
+      "raw_name": "Датчики движения:",
+      "source_id": "inventory-source-156",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:5",
+      "raw_name": "На пересечение дверей",
+      "source_id": "inventory-source-157",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:6",
+      "raw_name": "На движение в помещении",
+      "source_id": "inventory-source-158",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:7",
+      "raw_name": "На движение в определенной зоне",
+      "source_id": "inventory-source-159",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:8",
+      "raw_name": "Камеры наблюдения:",
+      "source_id": "inventory-source-160",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:9",
+      "raw_name": "Под потолком в каждом углу каждого помещения",
+      "source_id": "inventory-source-161",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:10",
+      "raw_name": "В каждом углу каждого помещения на уровне пола (на уровне коленей?)",
+      "source_id": "inventory-source-162",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:11",
+      "raw_name": "Наблюдение за зонами помещений",
+      "source_id": "inventory-source-163",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:12",
+      "raw_name": "Наблюдение в местах изоляции",
+      "source_id": "inventory-source-164",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:13",
+      "raw_name": "Камеры для записи сессий",
+      "source_id": "inventory-source-165",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:14",
+      "raw_name": "Нажимные датчики присутствия",
+      "source_id": "inventory-source-166",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:15",
+      "raw_name": "Нажимные датчики для счетчиков и фиксации действий",
+      "source_id": "inventory-source-167",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:16",
+      "raw_name": "Звуковые сенсоры",
+      "source_id": "inventory-source-168",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:17",
+      "raw_name": "Медицинские датчики контроля состояния организма",
+      "source_id": "inventory-source-169",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:18",
+      "raw_name": "Электроприводы дверей",
+      "source_id": "inventory-source-170",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:19",
+      "raw_name": "Контроллер света",
+      "source_id": "inventory-source-171",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:20",
+      "raw_name": "Таймер включения-выключения электричества",
+      "source_id": "inventory-source-172",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:21",
+      "raw_name": "Электрические лебедки 2 шт. С возможностью перемещать по нескольким точкам",
+      "source_id": "inventory-source-173",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:22",
+      "raw_name": "Электродвигатели для регулировок постоянных цепей и тросов",
+      "source_id": "inventory-source-174",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:23",
+      "raw_name": "Пневматический аппарат для порки, с регулируемой силой",
+      "source_id": "inventory-source-175",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:24",
+      "raw_name": "Электрический аппарат для порки (электропривод для плеткок)",
+      "source_id": "inventory-source-176",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:25",
+      "raw_name": "2 Fuck машины (орал, анал)",
+      "source_id": "inventory-source-177",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:26",
+      "raw_name": "Мастурбатор",
+      "source_id": "inventory-source-178",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:27",
+      "raw_name": "Электростимулятор на 8 зон",
+      "source_id": "inventory-source-179",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:28",
+      "raw_name": "Датчики уровня жидкости",
+      "source_id": "inventory-source-180",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:29",
+      "raw_name": "Беспроводные сенсоры",
+      "source_id": "inventory-source-181",
+      "retained": true
+    },
+    {
+      "source": "examples/Новый документ.docx",
+      "locator": "paragraph:30",
+      "raw_name": "Система для передвижения поршней и блоков",
+      "source_id": "inventory-source-182",
+      "retained": true
+    },
+    {
+      "source": "examples/Сценарий на сессию.docx",
+      "locator": "paragraph:23",
+      "raw_name": "2 хозяйственные свечи",
+      "source_id": "inventory-source-183",
+      "retained": true
+    },
+    {
+      "source": "examples/Сценарий на сессию.docx",
+      "locator": "paragraph:23",
+      "raw_name": "Скотч",
+      "source_id": "inventory-source-184",
+      "retained": true
+    },
+    {
+      "source": "examples/Сценарий на сессию.docx",
+      "locator": "paragraph:23",
+      "raw_name": "Прищепки",
+      "source_id": "inventory-source-185",
+      "retained": true
+    },
+    {
+      "source": "examples/Сценарий на сессию.docx",
+      "locator": "paragraph:23",
+      "raw_name": "Лед",
+      "source_id": "inventory-source-186",
+      "retained": true
+    }
+  ],
+  "items": [
+    {
+      "item_id": "inventory-item-001",
+      "normalized_key": "кляпы",
+      "display_name_ru": "Кляпы (член, шар, палка, кольцо, надувной, тканевый)",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-001"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-002",
+      "normalized_key": "анальные-пробки-фиксация-обвязка",
+      "display_name_ru": "Анальные пробки (разных размеров) + фиксация/обвязка",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-002"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-003",
+      "normalized_key": "клетка-стяжки",
+      "display_name_ru": "Клетка (chastity) + стяжки",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-003"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-004",
+      "normalized_key": "прищепки-зажимы-грузы-натяжение",
+      "display_name_ru": "Прищепки / зажимы (обычные, усиленные, с хвостами, красный-синий уровни) + грузы / натяжение",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-004"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-005",
+      "normalized_key": "веревки-цепи-замки-карабины-хомуты",
+      "display_name_ru": "Веревки (2 / 4 / 6 мм), цепи (разной ячейки и длины), замки, карабины, хомуты",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-005"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-006",
+      "normalized_key": "стрейч-пленка-скотч",
+      "display_name_ru": "Стрейч-плёнка, скотч (обычный + герметичный)",
+      "family": "consumable_material",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-006"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-007",
+      "normalized_key": "пакеты-мешки",
+      "display_name_ru": "Пакеты, мешки",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-007"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-008",
+      "normalized_key": "воронки-трубки",
+      "display_name_ru": "Воронки, трубки",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-008"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-009",
+      "normalized_key": "тампоны-впитывающий-материал-ткань",
+      "display_name_ru": "Тампоны (супер-плюс), впитывающий материал, ткань",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-009"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-010",
+      "normalized_key": "вибратор-дилдо",
+      "display_name_ru": "Вибратор / дилдо",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-010"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-011",
+      "normalized_key": "лед-хозяйственные-свечи",
+      "display_name_ru": "Лёд, хозяйственные свечи",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-011"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-012",
+      "normalized_key": "повязки-на-глаза-маски-шлем",
+      "display_name_ru": "Повязки на глаза, маски, шлем",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-012"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-013",
+      "normalized_key": "наручники-браслеты-spreader-bars-ошейник-пояса",
+      "display_name_ru": "Наручники / браслеты, spreader bars, ошейник, пояса",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-013"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-014",
+      "normalized_key": "электростимуляция",
+      "display_name_ru": "Электростимуляция (клетка + ягодицы)",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-014"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-015",
+      "normalized_key": "таймеры",
+      "display_name_ru": "Таймеры",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-015"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-016",
+      "normalized_key": "гипноз-аудио-метроном",
+      "display_name_ru": "Гипноз-аудио + метроном",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-016"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-017",
+      "normalized_key": "колготки-чулки-разных-ден-и-цветов",
+      "display_name_ru": "Колготки / чулки разных ден и цветов",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-017"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-018",
+      "normalized_key": "стринги-танга-бикини-шортики",
+      "display_name_ru": "Стринги, танга, бикини, шортики",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-018"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-019",
+      "normalized_key": "латекс-капроновые-кэтсьюты",
+      "display_name_ru": "Латекс / капроновые кэтсьюты",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-019"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-020",
+      "normalized_key": "туфли-сапоги-на-шпильке",
+      "display_name_ru": "Туфли / сапоги на шпильке",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-020"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-021",
+      "normalized_key": "трубки-для-дыхания-затычки",
+      "display_name_ru": "Трубки для дыхания + затычки",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-021"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-022",
+      "normalized_key": "воронки-в-пакет",
+      "display_name_ru": "Воронки в пакет",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-022"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-023",
+      "normalized_key": "непрозрачный-впитывающий-материал",
+      "display_name_ru": "Непрозрачный впитывающий материал",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-023",
+        "inventory-source-033"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-024",
+      "normalized_key": "пленка",
+      "display_name_ru": "Пленка",
+      "family": "consumable_material",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-024"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-025",
+      "normalized_key": "пакеты",
+      "display_name_ru": "Пакеты",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-025"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-026",
+      "normalized_key": "скотч",
+      "display_name_ru": "Скотч",
+      "family": "consumable_material",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-026",
+        "inventory-source-083",
+        "inventory-source-184"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-027",
+      "normalized_key": "скотч-герметичный",
+      "display_name_ru": "Скотч герметичный",
+      "family": "consumable_material",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-027"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-028",
+      "normalized_key": "воронки",
+      "display_name_ru": "Воронки",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-028"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-029",
+      "normalized_key": "трубки",
+      "display_name_ru": "Трубки",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-029"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-030",
+      "normalized_key": "веревка",
+      "display_name_ru": "Веревка",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-030"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-031",
+      "normalized_key": "тампоны",
+      "display_name_ru": "Тампоны",
+      "family": "consumable_material",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-031"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-032",
+      "normalized_key": "ткань-для-кляпа",
+      "display_name_ru": "Ткань для кляпа",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-032"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-033",
+      "normalized_key": "кляп",
+      "display_name_ru": "Кляп",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-034",
+        "inventory-source-087"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-034",
+      "normalized_key": "веревки",
+      "display_name_ru": "Веревки",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-035"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-035",
+      "normalized_key": "прищепки",
+      "display_name_ru": "Прищепки",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-036",
+        "inventory-source-102",
+        "inventory-source-185"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-036",
+      "normalized_key": "пробка",
+      "display_name_ru": "Пробка",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-037"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-037",
+      "normalized_key": "вибратор",
+      "display_name_ru": "Вибратор",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-038"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-038",
+      "normalized_key": "клеточка",
+      "display_name_ru": "Клеточка",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-039"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-039",
+      "normalized_key": "цепь-длинноячеистая-мм",
+      "display_name_ru": "Цепь длинноячеистая 4 мм",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-040",
+        "inventory-source-041",
+        "inventory-source-070",
+        "inventory-source-071",
+        "inventory-source-072",
+        "inventory-source-129",
+        "inventory-source-130",
+        "inventory-source-131",
+        "inventory-source-132",
+        "inventory-source-133",
+        "inventory-source-134",
+        "inventory-source-135",
+        "inventory-source-136",
+        "inventory-source-137",
+        "inventory-source-138",
+        "inventory-source-139",
+        "inventory-source-140",
+        "inventory-source-141",
+        "inventory-source-142",
+        "inventory-source-143",
+        "inventory-source-144",
+        "inventory-source-145"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-040",
+      "normalized_key": "замок",
+      "display_name_ru": "Замок",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-042"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-041",
+      "normalized_key": "хомут-мм",
+      "display_name_ru": "Хомут 50 - 70 мм",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-043",
+        "inventory-source-044"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-042",
+      "normalized_key": "держатели-труб",
+      "display_name_ru": "Держатели труб",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-045"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-043",
+      "normalized_key": "крепеж",
+      "display_name_ru": "Крепеж (кольца с резьбой)",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-046",
+        "inventory-source-047",
+        "inventory-source-075"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-044",
+      "normalized_key": "чулки-телесные",
+      "display_name_ru": "Чулки телесные",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-048"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-045",
+      "normalized_key": "чулки-цвет-загара",
+      "display_name_ru": "Чулки цвет загара",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-049"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-046",
+      "normalized_key": "чулки-белые",
+      "display_name_ru": "чулки белые",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-050"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-047",
+      "normalized_key": "челки-черные",
+      "display_name_ru": "челки чёрные",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-051"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-048",
+      "normalized_key": "чулки-цвет-капучино",
+      "display_name_ru": "Чулки цвет капучино",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-052"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-049",
+      "normalized_key": "чулки-сеткой-черные",
+      "display_name_ru": "Чулки сеткой черные",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-053"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-050",
+      "normalized_key": "чулки-сеткой-телесные",
+      "display_name_ru": "Чулки сеткой телесные",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-054"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-051",
+      "normalized_key": "колготки-сеткой-черные",
+      "display_name_ru": "колготки сеткой черные",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-055"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-052",
+      "normalized_key": "колготки-сеткой-телесные",
+      "display_name_ru": "колготки сеткой телесные",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-056"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-053",
+      "normalized_key": "колготки-цвет-загара",
+      "display_name_ru": "колготки цвет загара",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-057"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-054",
+      "normalized_key": "колготки-белые",
+      "display_name_ru": "колготки белые",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-058"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-055",
+      "normalized_key": "колготки-черные",
+      "display_name_ru": "колготки чёрные",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-059"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-056",
+      "normalized_key": "колготки-коричневые",
+      "display_name_ru": "Колготки коричневые",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-060"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-057",
+      "normalized_key": "стринги",
+      "display_name_ru": "Стринги",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-061",
+        "inventory-source-111",
+        "inventory-source-112"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-058",
+      "normalized_key": "шортики",
+      "display_name_ru": "Шортики",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-062",
+        "inventory-source-113",
+        "inventory-source-114"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-059",
+      "normalized_key": "танга",
+      "display_name_ru": "танга",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-063",
+        "inventory-source-115"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-060",
+      "normalized_key": "бикини",
+      "display_name_ru": "бикини",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-064",
+        "inventory-source-116",
+        "inventory-source-117"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-061",
+      "normalized_key": "юбка",
+      "display_name_ru": "Юбка",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-065"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-062",
+      "normalized_key": "джинсы-женские",
+      "display_name_ru": "Джинсы женские",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-066"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-063",
+      "normalized_key": "веревка-мм",
+      "display_name_ru": "Веревка 6 мм",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-067",
+        "inventory-source-068",
+        "inventory-source-069",
+        "inventory-source-126",
+        "inventory-source-127",
+        "inventory-source-128"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-064",
+      "normalized_key": "замки",
+      "display_name_ru": "замки",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-073",
+        "inventory-source-146"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-065",
+      "normalized_key": "карабины",
+      "display_name_ru": "карабины",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-074",
+        "inventory-source-147"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-066",
+      "normalized_key": "пластиковые-хомуты",
+      "display_name_ru": "Пластиковые хомуты",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-076"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-067",
+      "normalized_key": "паук-из-резинок",
+      "display_name_ru": "Паук из резинок",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-077"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-068",
+      "normalized_key": "лебедка",
+      "display_name_ru": "Лебедка",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-078"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-069",
+      "normalized_key": "магнит",
+      "display_name_ru": "Магнит",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-079"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-070",
+      "normalized_key": "электростимуляторы",
+      "display_name_ru": "Электростимуляторы",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-080"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-071",
+      "normalized_key": "таймер",
+      "display_name_ru": "Таймер",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-081"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-072",
+      "normalized_key": "стрейч-пленка",
+      "display_name_ru": "Стрейч-пленка",
+      "family": "consumable_material",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-082",
+        "inventory-source-151"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-073",
+      "normalized_key": "деппелятор",
+      "display_name_ru": "Деппелятор",
+      "family": "care_supply",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-084"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-074",
+      "normalized_key": "косметика",
+      "display_name_ru": "Косметика",
+      "family": "care_supply",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-085"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-075",
+      "normalized_key": "бондажные-коробки",
+      "display_name_ru": "бондажные коробки",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-086"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-076",
+      "normalized_key": "кляп-тренировочный",
+      "display_name_ru": "кляп тренировочный",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-088"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-077",
+      "normalized_key": "ошейник",
+      "display_name_ru": "ошейник",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-089"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-078",
+      "normalized_key": "наручники",
+      "display_name_ru": "наручники",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-090"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-079",
+      "normalized_key": "браслеты-кож",
+      "display_name_ru": "браслеты кож",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-091"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-080",
+      "normalized_key": "браслеты-кож-для-подвешивания",
+      "display_name_ru": "браслеты кож для подвешивания",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-092"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-081",
+      "normalized_key": "пояс",
+      "display_name_ru": "пояс",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-093"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-082",
+      "normalized_key": "маска",
+      "display_name_ru": "маска",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-094"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-083",
+      "normalized_key": "шлем",
+      "display_name_ru": "шлем",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-095"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-084",
+      "normalized_key": "spreader-bars",
+      "display_name_ru": "spreader bars",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-096"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-085",
+      "normalized_key": "вибратор-дилда",
+      "display_name_ru": "Вибратор/дилда",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-097"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-086",
+      "normalized_key": "анальная-пробка",
+      "display_name_ru": "анальная пробка",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-098"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-087",
+      "normalized_key": "кольца-на-член",
+      "display_name_ru": "кольца на член",
+      "family": "body_device",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-099"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-088",
+      "normalized_key": "вакуум",
+      "display_name_ru": "вакуум",
+      "family": "body_device",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-100"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-089",
+      "normalized_key": "вакуум-увелич-груди",
+      "display_name_ru": "вакуум увелич груди",
+      "family": "body_device",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-101"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-090",
+      "normalized_key": "cbt",
+      "display_name_ru": "CBT",
+      "family": "body_device",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-103"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-091",
+      "normalized_key": "латексный-кэтсьют",
+      "display_name_ru": "Латексный кэтсьют",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-104"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-092",
+      "normalized_key": "латексные-трусы-с-анальной-пробкой",
+      "display_name_ru": "Латексные трусы с анальной пробкой",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-105"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-093",
+      "normalized_key": "кэтсъют-капрон",
+      "display_name_ru": "Кэтсъют капрон",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-106"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-094",
+      "normalized_key": "туфли",
+      "display_name_ru": "Туфли",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-107"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-095",
+      "normalized_key": "сапоги-на-шпильке",
+      "display_name_ru": "Сапоги на шпильке",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-108"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-096",
+      "normalized_key": "затычки-для-ушей",
+      "display_name_ru": "Затычки для ушей",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-109"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-097",
+      "normalized_key": "иппликаторы",
+      "display_name_ru": "иппликаторы",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-110"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-098",
+      "normalized_key": "колготки-ден",
+      "display_name_ru": "Колготки 40 ден",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-118",
+        "inventory-source-120",
+        "inventory-source-121",
+        "inventory-source-122",
+        "inventory-source-123",
+        "inventory-source-124"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-099",
+      "normalized_key": "чулки",
+      "display_name_ru": "Чулки",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-119"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-100",
+      "normalized_key": "колготки-и-более-ден",
+      "display_name_ru": "Колготки 50 и более ден",
+      "family": "clothing_fetish",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-125"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-101",
+      "normalized_key": "крепежные-элементы",
+      "display_name_ru": "крепежные элементы",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-148"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-102",
+      "normalized_key": "цепь-короткоячеистая-мм",
+      "display_name_ru": "Цепь короткоячеистая 6 мм",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-149",
+        "inventory-source-150"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-103",
+      "normalized_key": "трос",
+      "display_name_ru": "трос (металл или веревка)",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-152"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-104",
+      "normalized_key": "резьбовая-шпилька-м",
+      "display_name_ru": "резьбовая шпилька 2 м",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-153"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-105",
+      "normalized_key": "электромагниты-на-все-двери-с-управление-от-контроллера",
+      "display_name_ru": "Электромагниты на все двери с управление от контроллера",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-154"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-106",
+      "normalized_key": "датчики-открывания-двери-на-все-двери",
+      "display_name_ru": "Датчики открывания двери на все двери",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-155"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-107",
+      "normalized_key": "датчики-движения-",
+      "display_name_ru": "Датчики движения:",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-156"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-108",
+      "normalized_key": "на-пересечение-дверей",
+      "display_name_ru": "На пересечение дверей",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-157"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-109",
+      "normalized_key": "на-движение-в-помещении",
+      "display_name_ru": "На движение в помещении",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-158"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-110",
+      "normalized_key": "на-движение-в-определенной-зоне",
+      "display_name_ru": "На движение в определенной зоне",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-159"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-111",
+      "normalized_key": "камеры-наблюдения-",
+      "display_name_ru": "Камеры наблюдения:",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-160"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-112",
+      "normalized_key": "под-потолком-в-каждом-углу-каждого-помещения",
+      "display_name_ru": "Под потолком в каждом углу каждого помещения",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-161"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-113",
+      "normalized_key": "в-каждом-углу-каждого-помещения-на-уровне-пола",
+      "display_name_ru": "В каждом углу каждого помещения на уровне пола (на уровне коленей?)",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-162"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-114",
+      "normalized_key": "наблюдение-за-зонами-помещений",
+      "display_name_ru": "Наблюдение за зонами помещений",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-163"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-115",
+      "normalized_key": "наблюдение-в-местах-изоляции",
+      "display_name_ru": "Наблюдение в местах изоляции",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-164"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-116",
+      "normalized_key": "камеры-для-записи-сессий",
+      "display_name_ru": "Камеры для записи сессий",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-165"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-117",
+      "normalized_key": "нажимные-датчики-присутствия",
+      "display_name_ru": "Нажимные датчики присутствия",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-166"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-118",
+      "normalized_key": "нажимные-датчики-для-счетчиков-и-фиксации-действий",
+      "display_name_ru": "Нажимные датчики для счетчиков и фиксации действий",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-167"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-119",
+      "normalized_key": "звуковые-сенсоры",
+      "display_name_ru": "Звуковые сенсоры",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-168"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-120",
+      "normalized_key": "медицинские-датчики-контроля-состояния-организма",
+      "display_name_ru": "Медицинские датчики контроля состояния организма",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-169"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-121",
+      "normalized_key": "электроприводы-дверей",
+      "display_name_ru": "Электроприводы дверей",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-170"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-122",
+      "normalized_key": "контроллер-света",
+      "display_name_ru": "Контроллер света",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-171"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-123",
+      "normalized_key": "таймер-включения-выключения-электричества",
+      "display_name_ru": "Таймер включения-выключения электричества",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-172"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-124",
+      "normalized_key": "электрические-лебедки-шт-с-возможностью-перемещать-по-нескольким-точкам",
+      "display_name_ru": "Электрические лебедки 2 шт. С возможностью перемещать по нескольким точкам",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-173"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-125",
+      "normalized_key": "электродвигатели-для-регулировок-постоянных-цепей-и-тросов",
+      "display_name_ru": "Электродвигатели для регулировок постоянных цепей и тросов",
+      "family": "restraint_hardware",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-174"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-126",
+      "normalized_key": "пневматический-аппарат-для-порки-с-регулируемой-силой",
+      "display_name_ru": "Пневматический аппарат для порки, с регулируемой силой",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-175"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-127",
+      "normalized_key": "электрический-аппарат-для-порки",
+      "display_name_ru": "Электрический аппарат для порки (электропривод для плеткок)",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-176"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-128",
+      "normalized_key": "fuck-машины",
+      "display_name_ru": "2 Fuck машины (орал, анал)",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-177"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-129",
+      "normalized_key": "мастурбатор",
+      "display_name_ru": "Мастурбатор",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-178"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-130",
+      "normalized_key": "электростимулятор-на-зон",
+      "display_name_ru": "Электростимулятор на 8 зон",
+      "family": "restraint_hardware",
+      "risk_routing": "specialist_review",
+      "source_refs": [
+        "inventory-source-179"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-131",
+      "normalized_key": "датчики-уровня-жидкости",
+      "display_name_ru": "Датчики уровня жидкости",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-180"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-132",
+      "normalized_key": "беспроводные-сенсоры",
+      "display_name_ru": "Беспроводные сенсоры",
+      "family": "electronic_concept",
+      "risk_routing": "future_research",
+      "source_refs": [
+        "inventory-source-181"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-133",
+      "normalized_key": "система-для-передвижения-поршней-и-блоков",
+      "display_name_ru": "Система для передвижения поршней и блоков",
+      "family": "other",
+      "risk_routing": "standard",
+      "source_refs": [
+        "inventory-source-182"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-134",
+      "normalized_key": "хозяйственные-свечи",
+      "display_name_ru": "2 хозяйственные свечи",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-183"
+      ],
+      "seed_ready": false
+    },
+    {
+      "item_id": "inventory-item-135",
+      "normalized_key": "лед",
+      "display_name_ru": "Лед",
+      "family": "sensory_equipment",
+      "risk_routing": "moderated",
+      "source_refs": [
+        "inventory-source-186"
+      ],
+      "seed_ready": false
+    }
+  ]
+}

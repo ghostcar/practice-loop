@@ -24,6 +24,8 @@
    quick release, независимое освобождение, нейтральная поза и проверки обязательны.
 9. `adult_activity_sensory_review.v1.json`, `adult_activity_impact_review.v1.json` и
    `adult_activity_standalone_review.v1.json` закрывают оставшиеся 41 source record.
+10. `adult_inventory_source.v1.json` — allowlisted inventory extraction из chat/DOCX/XLSX без
+    исторических дат, цен, количеств, штрафов и фактических сессий.
 
 ## Значение статусов источника
 
@@ -49,6 +51,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_activity_sexual_techniqu
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_wearing_chastity_review.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_restraint_bondage_review.v1.json --preview
 pytest -q tests/test_adult_catalog_manifest.py
+python3 -m tools.adult_catalog_manifest data/seed/adult_inventory_source.v1.json --preview
 ```
 
 Все команды read-only. Importer намеренно отсутствует.

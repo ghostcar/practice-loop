@@ -13,6 +13,7 @@ SCHEMA_VERSION = "adult-activity/v1alpha1"
 SOURCE_SCHEMA_VERSION = "adult-activity-source-inventory/v1alpha1"
 EDITORIAL_SCHEMA_VERSION = "adult-activity-editorial-candidates/v1alpha1"
 REVIEW_SCHEMA_VERSION = "adult-activity-editorial-review/v1alpha1"
+INVENTORY_SCHEMA_VERSION = "adult-inventory-source/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
@@ -284,6 +285,67 @@ def preview_editorial_review(manifest: dict[str, Any]) -> str:
     )
 
 
+def lint_inventory_source(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != INVENTORY_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {INVENTORY_SCHEMA_VERSION}")
+    if manifest.get("import_allowed") is not False:
+        errors.append("inventory source must set import_allowed=false")
+    records = manifest.get("source_records")
+    items = manifest.get("items")
+    if not isinstance(records, list) or not isinstance(items, list):
+        return [*errors, "source_records and items must be arrays"]
+    if len(records) != manifest.get("source_record_count"):
+        errors.append("source_record_count mismatch")
+    if len(items) != manifest.get("normalized_item_count"):
+        errors.append("normalized_item_count mismatch")
+    source_ids = [record.get("source_id") for record in records]
+    if len(source_ids) != len(set(source_ids)):
+        errors.append("source IDs must be unique")
+    if any(record.get("retained") is not True for record in records):
+        errors.append("every source record must be retained")
+    known_ids = set(source_ids)
+    referenced_ids: set[str] = set()
+    item_ids: set[str] = set()
+    normalized_keys: set[str] = set()
+    for index, item in enumerate(items):
+        prefix = f"items[{index}]"
+        item_id = item.get("item_id")
+        key = item.get("normalized_key")
+        if item_id in item_ids:
+            errors.append(f"{prefix}.item_id is duplicated")
+        item_ids.add(item_id)
+        if key in normalized_keys:
+            errors.append(f"{prefix}.normalized_key is duplicated")
+        normalized_keys.add(key)
+        refs = set(item.get("source_refs", []))
+        if not refs:
+            errors.append(f"{prefix}.source_refs must be non-empty")
+        if refs - known_ids:
+            errors.append(f"{prefix}.source_refs contains unknown IDs")
+        referenced_ids.update(refs)
+        if item.get("seed_ready") is not False:
+            errors.append(f"{prefix}.seed_ready must remain false")
+    if referenced_ids != known_ids:
+        errors.append("every source record must be referenced by a normalized item")
+    return errors
+
+
+def preview_inventory_source(manifest: dict[str, Any]) -> str:
+    families = Counter(item["family"] for item in manifest["items"])
+    routing = Counter(item["risk_routing"] for item in manifest["items"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"source_records={len(manifest['source_records'])}",
+            f"normalized_items={len(manifest['items'])}",
+            "families=" + ", ".join(f"{key}:{value}" for key, value in sorted(families.items())),
+            "risk_routing=" + ", ".join(f"{key}:{value}" for key, value in sorted(routing.items())),
+        ]
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -298,12 +360,15 @@ def main() -> int:
     is_source_inventory = schema_version == SOURCE_SCHEMA_VERSION
     is_editorial = schema_version == EDITORIAL_SCHEMA_VERSION
     is_review = schema_version == REVIEW_SCHEMA_VERSION
+    is_inventory = schema_version == INVENTORY_SCHEMA_VERSION
     if is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
         errors = lint_editorial_candidates(manifest)
     elif is_review:
         errors = lint_editorial_review(manifest)
+    elif is_inventory:
+        errors = lint_inventory_source(manifest)
     else:
         errors = lint_manifest(manifest)
     if errors:
@@ -318,6 +383,8 @@ def main() -> int:
             print(preview_editorial_candidates(manifest))
         elif is_review:
             print(preview_editorial_review(manifest))
+        elif is_inventory:
+            print(preview_inventory_source(manifest))
         else:
             print(preview(manifest))
     return 0
