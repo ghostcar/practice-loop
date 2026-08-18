@@ -106,6 +106,10 @@ Breath остаётся research-контуром (18/20), исполняемы�
 
 Оставшийся gate: dry-run importer (backup → dry-run → import gate), затем production import
 как отдельный шаг с отдельным подтверждением. Схема хранения (миграция 061) готова.
+**Dry-run importer реализован** (`tools/adult_catalog_import.py`): проекция 41 карточки
+(foundation 7 + candidates 34) в `entities` с `safety_contract` и `content_status=approved`;
+read-only по умолчанию, `--apply` гейтится `import_allowed=true` + `--yes` + `--database-url`,
+idempotent по `slug`. Остаётся только production import (после поднятия гейта).
 
 ## 7. Что остаётся запрещённым независимо от review
 

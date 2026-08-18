@@ -53,6 +53,20 @@
 Ни один из этих статусов не удаляет запись. Переход в пользовательский справочник выполняется
 созданием производной карточки с provenance, а не сменой смысла исходной строки.
 
+## Dry-run importer
+
+`tools/adult_catalog_import.py` проектирует foundation (7 reviewed) + editorial candidates (34)
+в `entities` с типизированным `safety_contract` и `content_status=approved` (ADR-105).
+
+```bash
+python3 -m tools.adult_catalog_import                      # read-only dry-run (без БД)
+python3 -m tools.adult_catalog_import --apply --yes \\
+    --database-url postgresql+asyncpg://...                 # gated: откажет при import_allowed=false
+```
+
+Импорт-гейт: запись отказывает, пока **все** манифесты не выставят `import_allowed=true`;
+сейчас все файлы `import_allowed=false`, поэтому инструмент read-only. Idempotent по `slug`.
+
 ## Проверка
 
 ```bash
@@ -95,4 +109,4 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_evidence_source.v1.json 
 6. Добавить prerequisites, stop conditions, quick release, checkpoints и aftercare.
 7. Запретить обязательное медиа-подтверждение и штраф за safety stop.
 8. Прогнать lint/preview и выполнить ручной owner review.
-9. Только после выбора физической схемы реализовать dry-run importer.
+9. Только после выбора физической схемы реализовать dry-run importer (`tools/adult_catalog_import.py`).
