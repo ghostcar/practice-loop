@@ -9,7 +9,7 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
 
   const routes = [
     "/dashboard", "/tasks/", "/entities/catalog", "/training", "/locktimer",
-    "/settings", "/media", "/api/v2/points/page",
+    "/settings", "/account", "/media", "/api/v2/points/page",
   ];
   for (const route of routes) {
     const response = await page.goto(route);

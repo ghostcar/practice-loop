@@ -12,15 +12,15 @@ Lock Timer, Personal Suite, Mobile Foundation, Telegram, LLM/BYOK и закры�
 Social S0–S7 присутствует в коде, но не открыт внешним пользователям. Полноценного
 кроссплатформенного мобильного клиента, D/s delegation и Community пока нет.
 
-Исходное дерево находится на единственной Alembic head **058 (`a9b0c1d2e3f4`)**. Последний
+Исходное дерево находится на единственной Alembic head **059 (`b0c1d2e3f4a5`)**. Последний
 полный воспроизводимый baseline на Python 3.11: **1132 passed, 1 skipped, 4 warnings**, Ruff check
 и format-check зелёные. Проверка PostgreSQL 15 отдельно подтвердила миграции
 `base → 057 → 058 → 057 → 058`, конкурентную идемпотентность consent и CRUD/cascade новых
 Personal-таблиц.
 
 Запущенный здесь production-like compose обновлён и здоров: образ содержит актуальный код, БД на
-head **058**. Перед S5 создан backup, миграции 054–058 применены, общий prod-smoke, password E2E и
-Chromium smoke/a11y/usability прошли успешно.
+head **059**. После S5 дополнительно доставлен account management S6; общий prod-smoke, password/
+admin E2E и Chromium smoke/a11y/usability прошли успешно.
 
 ## 2. Проверенная исходная точка
 
@@ -29,11 +29,11 @@ Chromium smoke/a11y/usability прошли успешно.
 | Ветка | `main` |
 | Проверенный HEAD документации S3 | `1432ae4` (2026-08-18) |
 | Версия приложения | `0.8.0` |
-| Исходная Alembic head | `058_consent_policy_enforcement` (`a9b0c1d2e3f4`) |
+| Исходная Alembic head | `059_add_user_disabled_at` (`b0c1d2e3f4a5`) |
 | Полный pytest baseline | **1132 passed, 1 skipped, 4 warnings** (S2, Python 3.11) |
 | Статические проверки | Ruff check + format-check ✅ |
 | PostgreSQL integration | migration roundtrip + consent concurrency + Personal CRUD/cascade ✅ |
-| Запущенный compose | health ✅; БД на 058; S5 smoke ✅ |
+| Запущенный compose | health ✅; БД на 059; S5/S6 smoke ✅ |
 
 Счётчик тестов относится к проверенному S2-дереву; его нельзя автоматически переносить на
 будущий HEAD без нового полного прогона.
@@ -43,7 +43,8 @@ Chromium smoke/a11y/usability прошли успешно.
 | Область | Фактический статус | Главный остаток |
 |---|---|---|
 | Auth, CSRF, privacy/export | ✅ работает | email verification/public hardening |
-| Профиль/пароль | ✅ настройки и self-service смена пароля | полноценное admin-управление пользователями отсутствует |
+| Профиль/пароль | ✅ `/account`, self-service пароль | изменение email и recovery по email отсутствуют |
+| Admin users | ✅ роли, disable/enable, явный password reset | audit trail и приглашения отсутствуют |
 | Activity Tracker + 11 статусов | ✅ работает | accepted-session freeze и UI аудита |
 | Today projection | ✅ foundation работает | UX просроченного и единый главный CTA |
 | Training, Diet, Calendar, Points | ✅ работает | дальнейшая унификация контрактов |
@@ -85,7 +86,7 @@ Chromium smoke/a11y/usability прошли успешно.
 
 1. Закрыть остатки M1: accepted-session enforcement, UI истории переходов и Today polish.
 2. Расширить export/restore и JSON-first покрытие новых Personal-модулей.
-3. Решить объём account profile/admin user management (email, роли, reset/disable/audit).
+3. При необходимости расширить account management: verified email change, recovery, invitations и audit trail.
 4. Отдельно решить приоритет: mobile client или подготовка закрытого Social к limited rollout.
 
 Future Research по автономным физическим устройствам описан в `ROADMAP.md` §12 и не является
