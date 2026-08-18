@@ -21,6 +21,9 @@ BREATH_REVIEW_PATH = Path("data/seed/adult_activity_breath_review.v1.json")
 SEXUAL_TECHNIQUE_REVIEW_PATH = Path("data/seed/adult_activity_sexual_technique_review.v1.json")
 WEARING_CHASTITY_REVIEW_PATH = Path("data/seed/adult_activity_wearing_chastity_review.v1.json")
 RESTRAINT_REVIEW_PATH = Path("data/seed/adult_activity_restraint_bondage_review.v1.json")
+SENSORY_REVIEW_PATH = Path("data/seed/adult_activity_sensory_review.v1.json")
+IMPACT_REVIEW_PATH = Path("data/seed/adult_activity_impact_review.v1.json")
+STANDALONE_REVIEW_PATH = Path("data/seed/adult_activity_standalone_review.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -240,3 +243,42 @@ def test_restraint_review_preview_reports_outcomes() -> None:
     assert "manual_reference:5" in result
     assert "rewrite_required:9" in result
     assert "research_backlog:2" in result
+
+
+def test_remaining_review_batches_have_exact_source_coverage() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    for path, area, expected_count in (
+        (SENSORY_REVIEW_PATH, "sensory_play", 20),
+        (IMPACT_REVIEW_PATH, "impact_play", 20),
+        (STANDALONE_REVIEW_PATH, "other", 1),
+    ):
+        review = load_manifest(path)
+        expected_ids = {record["source_id"] for record in source["records"] if record["source_area"] == area}
+        assert lint_editorial_review(review, expected_ids) == []
+        assert {record["source_id"] for record in review["records"]} == expected_ids
+        assert len(review["records"]) == expected_count
+
+
+def test_all_source_records_are_covered_once_by_review_batches() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    review_paths = sorted(Path("data/seed").glob("adult_activity_*_review.v1.json"))
+    reviewed_ids = [record["source_id"] for path in review_paths for record in load_manifest(path)["records"]]
+    source_ids = {record["source_id"] for record in source["records"]}
+
+    assert len(reviewed_ids) == 163
+    assert len(set(reviewed_ids)) == 163
+    assert set(reviewed_ids) == source_ids
+
+
+def test_promoted_sensory_and_impact_sources_have_derivatives() -> None:
+    candidates = load_manifest(EDITORIAL_PATH)
+    candidate_slugs = {card["slug"] for card in candidates["cards"]}
+    candidate_refs = {source_ref for card in candidates["cards"] for source_ref in card["source_refs"]}
+
+    for path, expected_promoted in ((SENSORY_REVIEW_PATH, 5), (IMPACT_REVIEW_PATH, 6)):
+        promoted = [
+            record for record in load_manifest(path)["records"] if record["review_outcome"] == "promote_candidate"
+        ]
+        assert len(promoted) == expected_promoted
+        assert all(record["source_id"] in candidate_refs for record in promoted)
+        assert all(record["derived_card_slug"] in candidate_slugs for record in promoted)

@@ -1,0 +1,34 @@
+{
+  "schema_version": "adult-activity-editorial-review/v1alpha1",
+  "review_batch": "standalone-2026-08-18",
+  "source_manifest": "adult_activity_source_inventory.v1.json",
+  "policy": "retain_unknown_context_for_rewrite",
+  "import_allowed": false,
+  "source_areas": [
+    "other"
+  ],
+  "expected_records": 1,
+  "records": [
+    {
+      "source_id": "category-chat-163",
+      "source_line": 3937,
+      "source_title": "Полный бак и увеличенное мясо",
+      "source_area": "other",
+      "review_status": "reviewed_v1",
+      "review_outcome": "rewrite_required",
+      "retained": true,
+      "user_discoverable_after_moderation": true,
+      "automation_allowed": false,
+      "derived_card_slug": "standalone-source-context-rewrite",
+      "required_gates": [
+        "recover_source_context",
+        "adult_explicit_opt_in",
+        "manual_selection_only",
+        "no_medical_volume",
+        "no_automatic_escalation",
+        "no_executable_instruction_before_review"
+      ],
+      "editorial_note": "Сохранить запись, восстановить контекст исходного блока и только затем предложить нейтральное название и производную карточку."
+    }
+  ]
+}

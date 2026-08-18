@@ -22,6 +22,8 @@
    независимое снятие, emergency exit, duration cap и проверки состояния обязательны.
 8. `adult_activity_restraint_bondage_review.v1.json` — formal review 20 restraint/bondage идей;
    quick release, независимое освобождение, нейтральная поза и проверки обязательны.
+9. `adult_activity_sensory_review.v1.json`, `adult_activity_impact_review.v1.json` и
+   `adult_activity_standalone_review.v1.json` закрывают оставшиеся 41 source record.
 
 ## Значение статусов источника
 
