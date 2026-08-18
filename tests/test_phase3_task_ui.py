@@ -291,6 +291,31 @@ async def test_tasks_page_shows_quick_actions_and_stats(db_session, auth_client,
     assert "planned" in r.text
 
 
+@pytest.mark.asyncio
+async def test_tasks_page_shows_transition_history(db_session, auth_client, test_user):
+    from app.models.task_history import ActivityTaskHistory
+
+    log = ActivityLog(user_id=test_user.id, status="completed", selected_entity_name="History task")
+    db_session.add(log)
+    await db_session.flush()
+    db_session.add(
+        ActivityTaskHistory(
+            task_id=log.id,
+            actor_id=test_user.id,
+            previous_status="planned",
+            new_status="completed",
+            comment="done carefully",
+        )
+    )
+    await db_session.flush()
+
+    response = await auth_client.get("/tasks/")
+    assert response.status_code == 200
+    assert "Transition history" in response.text
+    assert "planned → completed" in response.text
+    assert "done carefully" in response.text
+
+
 # ── Phase 2 remainder: scheduler + actual params in gamification/LLM ────
 
 

@@ -333,6 +333,20 @@
                     <div class="text-xs text-[color:var(--text-muted)] mt-1">
                         {{ log.total_tokens }} tokens · ${{ "%.5f" % log.cost }}
                     </div>
+                    {% set history = task_histories.get(log.id, []) %}
+                    {% if history %}
+                    <details class="mt-2">
+                        <summary class="text-xs text-[color:var(--text-muted)] cursor-pointer">{{ t.get('tasks_history_title', 'Transition history') }} ({{ history|length }})</summary>
+                        <ol class="mt-1 space-y-1 border-l border-[color:var(--border)] pl-3">
+                            {% for event in history %}
+                            <li class="text-xs text-[color:var(--text-muted)]">
+                                <span class="font-mono">{{ localtime(event.changed_at, '%Y-%m-%d %H:%M') }}</span>
+                                · {{ event.previous_status or '—' }} → {{ event.new_status }}{% if event.comment %} · {{ event.comment }}{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </details>
+                    {% endif %}
                 </div>
 
                 {% if actions %}

@@ -5,7 +5,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +21,9 @@ from app.models.achievement import Achievement, UserAchievement
 from app.models.activity_log import ActivityLog
 from app.models.diet import Diet
 from app.models.notification import Notification
+from app.models.progress import UserProgress
 from app.models.session import ActivitySession
+from app.models.session_history import ActivitySessionHistory
 from app.models.training import TrainingDay
 from app.models.user import User
 from app.security import ensure_csrf_cookie
@@ -528,6 +530,31 @@ async def sessions_page(
     )
     sessions = result.scalars().all()
 
+    history_result = (
+        await db.execute(
+            select(ActivitySessionHistory)
+            .where(ActivitySessionHistory.session_id.in_([s.id for s in sessions]))
+            .order_by(ActivitySessionHistory.created_at.desc())
+        )
+        if sessions
+        else None
+    )
+    histories: dict[uuid.UUID, list[ActivitySessionHistory]] = {s.id: [] for s in sessions}
+    if history_result is not None:
+        for event in history_result.scalars().all():
+            histories[event.session_id].append(event)
+
+    available_result = await db.execute(
+        select(ActivityLog)
+        .where(
+            ActivityLog.user_id == user.id,
+            ActivityLog.session_id.is_(None),
+            ActivityLog.status.in_(["draft", "planned"]),
+        )
+        .order_by(ActivityLog.created_at.desc())
+        .limit(50)
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="sessions.html",
@@ -538,6 +565,8 @@ async def sessions_page(
             "locale": locale,
             "theme": theme,
             "sessions": sessions,
+            "session_histories": histories,
+            "available_tasks": available_result.scalars().all(),
             "active_nav": "dashboard",
         },
     )
@@ -553,6 +582,141 @@ async def create_session(
     session = ActivitySession(owner_id=user.id, status="created")
     db.add(session)
     await db.flush()
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
+    return RedirectResponse(url="/sessions", status_code=303)
+
+
+async def _owned_session(db: AsyncSession, session_id: uuid.UUID, user: User) -> ActivitySession:
+    result = await db.execute(
+        select(ActivitySession).where(ActivitySession.id == session_id, ActivitySession.owner_id == user.id)
+    )
+    session = result.scalar_one_or_none()
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
+async def _record_session_event(
+    db: AsyncSession,
+    session: ActivitySession,
+    user: User,
+    event_type: str,
+    *,
+    details: dict | None = None,
+    penalize_change: bool = False,
+) -> int:
+    penalty_xp = 0
+    if penalize_change and session.accepted_at is not None:
+        configured = (session.session_rules or {}).get("change_penalty_xp", 10)
+        try:
+            penalty_xp = max(1, int(configured))
+        except (TypeError, ValueError):
+            penalty_xp = 10
+        progress_result = await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))
+        progress = progress_result.scalar_one_or_none()
+        if progress is None:
+            progress = UserProgress(user_id=user.id)
+        progress.xp = max(0, progress.xp - penalty_xp)
+        progress.combo_count = 0
+        progress.total_interrupted += 1
+        db.add(progress)
+    db.add(
+        ActivitySessionHistory(
+            session_id=session.id,
+            actor_id=user.id,
+            event_type=event_type,
+            details=details,
+            penalty_xp=penalty_xp,
+        )
+    )
+    return penalty_xp
+
+
+@router.post("/sessions/{s_id}/accept")
+async def accept_session(
+    s_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, s_id, user)
+    if session.status != "created":
+        raise HTTPException(status_code=409, detail="Only a created session can be accepted")
+    if session.accepted_at is None:
+        session.accepted_at = datetime.now(UTC)
+        db.add(session)
+        await _record_session_event(
+            db,
+            session,
+            user,
+            "accepted",
+            details={"task_ids": [str(log.id) for log in session.logs]},
+        )
+        await db.flush()
+    return RedirectResponse(url="/sessions", status_code=303)
+
+
+@router.post("/sessions/{s_id}/tasks/attach")
+async def attach_session_task(
+    s_id: uuid.UUID,
+    task_id: uuid.UUID = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, s_id, user)
+    if session.status == "ended":
+        raise HTTPException(status_code=409, detail="Ended session cannot be changed")
+    task_result = await db.execute(select(ActivityLog).where(ActivityLog.id == task_id, ActivityLog.user_id == user.id))
+    task = task_result.scalar_one_or_none()
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.session_id not in (None, session.id):
+        raise HTTPException(status_code=409, detail="Task belongs to another session")
+    if task.session_id is None:
+        task.session_id = session.id
+        db.add(task)
+        await _record_session_event(
+            db,
+            session,
+            user,
+            "task_added",
+            details={"task_id": str(task.id), "title": task.title_override or task.selected_entity_name},
+            penalize_change=True,
+        )
+        await db.flush()
+    return RedirectResponse(url="/sessions", status_code=303)
+
+
+@router.post("/sessions/{s_id}/tasks/{task_id}/detach")
+async def detach_session_task(
+    s_id: uuid.UUID,
+    task_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, s_id, user)
+    if session.status == "ended":
+        raise HTTPException(status_code=409, detail="Ended session cannot be changed")
+    task_result = await db.execute(
+        select(ActivityLog).where(
+            ActivityLog.id == task_id,
+            ActivityLog.user_id == user.id,
+            ActivityLog.session_id == session.id,
+        )
+    )
+    task = task_result.scalar_one_or_none()
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task.session_id = None
+    db.add(task)
+    await _record_session_event(
+        db,
+        session,
+        user,
+        "task_removed",
+        details={"task_id": str(task.id), "title": task.title_override or task.selected_entity_name},
+        penalize_change=True,
+    )
+    await db.flush()
     return RedirectResponse(url="/sessions", status_code=303)
 
 
@@ -564,13 +728,18 @@ async def start_session(
     db: AsyncSession = Depends(get_db),
 ):
     """Start a session."""
-    result = await db.execute(select(ActivitySession).where(ActivitySession.id == s_id))
-    s = result.scalar_one_or_none()
-    if s and s.owner_id == user.id:
-        s.status = "active"
-        s.started_at = datetime.now(UTC)
-        db.add(s)
-        await db.flush()
+    s = await _owned_session(db, s_id, user)
+    if s.status != "created":
+        raise HTTPException(status_code=409, detail="Only a created session can be started")
+    now = datetime.now(UTC)
+    if s.accepted_at is None:
+        s.accepted_at = now
+        await _record_session_event(db, s, user, "accepted", details={"task_ids": [str(log.id) for log in s.logs]})
+    s.status = "active"
+    s.started_at = now
+    db.add(s)
+    await _record_session_event(db, s, user, "started")
+    await db.flush()
     return RedirectResponse(url="/sessions", status_code=303)
 
 
@@ -582,13 +751,14 @@ async def end_session(
     db: AsyncSession = Depends(get_db),
 ):
     """End a session."""
-    result = await db.execute(select(ActivitySession).where(ActivitySession.id == s_id))
-    s = result.scalar_one_or_none()
-    if s and s.owner_id == user.id:
-        s.status = "ended"
-        s.ended_at = datetime.now(UTC)
-        db.add(s)
-        await db.flush()
+    s = await _owned_session(db, s_id, user)
+    if s.status not in ("created", "active"):
+        raise HTTPException(status_code=409, detail="Session is already ended")
+    s.status = "ended"
+    s.ended_at = datetime.now(UTC)
+    db.add(s)
+    await _record_session_event(db, s, user, "ended")
+    await db.flush()
     return RedirectResponse(url="/sessions", status_code=303)
 
 

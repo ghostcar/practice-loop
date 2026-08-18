@@ -523,6 +523,7 @@ RU = {
     "tasks_complete_actual_empty": "Параметры для записи не нужны.",
     # Статистика по статусам
     "tasks_stats_title": "Сводка по статусам",
+    "tasks_history_title": "История переходов",
     "tasks_stats_total": "всего",
     # Timer navigation (LockTimer — честные термины, ADR-066)
     "nav_timer": "Таймер верности",

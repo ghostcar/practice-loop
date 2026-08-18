@@ -521,6 +521,7 @@ EN = {
     "tasks_complete_actual_empty": "No parameters to record.",
     # Status statistics
     "tasks_stats_title": "Status summary",
+    "tasks_history_title": "Transition history",
     "tasks_stats_total": "total",
     # Timer navigation (LockTimer — honest terms, ADR-066)
     "nav_timer": "Chastity Timer",

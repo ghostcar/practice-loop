@@ -245,7 +245,7 @@ async def test_cannot_start_others_session(auth_client: AsyncClient, db_session:
     await db_session.flush()
 
     response = await auth_client.post(f"/sessions/{session.id}/start", follow_redirects=False)
-    assert response.status_code == 303  # Redirects (no error to user), but session unchanged
+    assert response.status_code == 404
 
     await db_session.refresh(session)
     assert session.status == "created"  # Should remain 'created' — not started
@@ -259,7 +259,7 @@ async def test_cannot_end_others_session(auth_client: AsyncClient, db_session: A
     await db_session.flush()
 
     response = await auth_client.post(f"/sessions/{session.id}/end", follow_redirects=False)
-    assert response.status_code == 303
+    assert response.status_code == 404
 
     await db_session.refresh(session)
     assert session.status == "active"  # Should remain 'active'

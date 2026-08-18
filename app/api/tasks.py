@@ -19,6 +19,7 @@ from app.models.activity_log import ActivityLog
 from app.models.body_part import TaskBodyTarget
 from app.models.entity import Entity
 from app.models.opt_in import UserEntityOptIn
+from app.models.task_history import ActivityTaskHistory
 from app.models.task_inventory import TaskInventoryUsage
 from app.models.task_location import TaskLocationUsage
 from app.models.task_status import PLANNED, STATUS_TRANSITIONS
@@ -86,6 +87,20 @@ async def tasks_page(
     result = await db.execute(query.order_by(ActivityLog.created_at.desc()).limit(20))
     recent_logs = result.scalars().all()
 
+    history_result = (
+        await db.execute(
+            select(ActivityTaskHistory)
+            .where(ActivityTaskHistory.task_id.in_([log.id for log in recent_logs]))
+            .order_by(ActivityTaskHistory.changed_at.desc())
+        )
+        if recent_logs
+        else None
+    )
+    task_histories: dict[uuid.UUID, list[ActivityTaskHistory]] = {log.id: [] for log in recent_logs}
+    if history_result is not None:
+        for event in history_result.scalars().all():
+            task_histories[event.task_id].append(event)
+
     # Status statistics (over ALL user tasks, not just the filtered page)
     stats_result = await db.execute(
         select(ActivityLog.status, func.count()).where(ActivityLog.user_id == user.id).group_by(ActivityLog.status)
@@ -133,6 +148,7 @@ async def tasks_page(
             "locale": locale,
             "theme": theme,
             "recent_logs": recent_logs,
+            "task_histories": task_histories,
             "active_config": active_config,
             "error": error,
             "today_schedule": today_schedule,

@@ -69,6 +69,7 @@ from app.models.progress import UserProgress  # noqa: F401
 from app.models.push_device import PushDevice  # noqa: F401
 from app.models.reminder_log import ReminderLog  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
+from app.models.session_history import ActivitySessionHistory  # noqa: F401
 from app.models.task_history import ActivityTaskHistory  # noqa: F401
 from app.models.task_inventory import ActivityInventoryRequirement, TaskInventoryUsage  # noqa: F401
 from app.models.task_location import ActivityLocationRequirement, TaskLocation, TaskLocationUsage  # noqa: F401
