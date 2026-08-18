@@ -15,8 +15,10 @@ source_refs:
     relation: contract
   - path: app/api/today.py
     relation: fixed-example
+  - path: app/api/consent.py
+    relation: fixed-example
 last_verified_at: 2026-08-18T00:00:00Z
-last_verified_commit: 299d2814779296063c9d854f9142db3ea3b3627f
+last_verified_commit: dacbe2c200b7064ea14a988f45250c56306529e4
 review_on: source-change
 ---
 
@@ -28,4 +30,7 @@ can successfully resolve `get_current_user` yet render the anonymous shell if it
 
 Every authenticated SSR route extending `base.html` must pass `"user": user`. Browser smoke must
 assert that the sidebar exists and that the guest login link does not exist, rather than relying
-only on HTTP 200. The `/today` regression fixed in S6a is the canonical example.
+only on HTTP 200. The `/today` regression fixed in S6a and `/consent` regression fixed in S6b are
+canonical examples. Sidebar smoke coverage must use the canonical mounted route (including the
+`/api/v2` prefix for Points pages), because a stale link can otherwise hide template and JavaScript
+regressions behind a 404.
