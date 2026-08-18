@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "adult-activity/v1alpha1"
+SOURCE_SCHEMA_VERSION = "adult-activity-source-inventory/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
+SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -108,6 +110,59 @@ def preview(manifest: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def lint_source_inventory(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != SOURCE_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {SOURCE_SCHEMA_VERSION}")
+    records = manifest.get("records")
+    if not isinstance(records, list):
+        return [*errors, "records must be an array"]
+    expected = manifest.get("source_title_rows", 0) - manifest.get("ignored_template_rows", 0)
+    if manifest.get("content_rows") != len(records) or len(records) != expected:
+        errors.append(f"row count mismatch: expected={expected} records={len(records)}")
+    ids: set[str] = set()
+    lines: set[int] = set()
+    for index, record in enumerate(records):
+        prefix = f"records[{index}]"
+        if not isinstance(record, dict):
+            errors.append(f"{prefix} must be an object")
+            continue
+        source_id = record.get("source_id")
+        source_line = record.get("source_line")
+        if source_id in ids:
+            errors.append(f"{prefix}.source_id is duplicated: {source_id}")
+        ids.add(source_id)
+        if source_line in lines:
+            errors.append(f"{prefix}.source_line is duplicated: {source_line}")
+        lines.add(source_line)
+        if not isinstance(record.get("source_title"), str) or not record["source_title"].strip():
+            errors.append(f"{prefix}.source_title must be non-empty")
+        if record.get("disposition") not in SOURCE_DISPOSITIONS:
+            errors.append(f"{prefix}.disposition is invalid")
+        if record.get("retained") is not True:
+            errors.append(f"{prefix}.retained must be true")
+        if record.get("seed_ready") is not False:
+            errors.append(f"{prefix}.seed_ready must remain false before editorial review")
+        if not record.get("reason_codes"):
+            errors.append(f"{prefix}.reason_codes must be non-empty")
+    return errors
+
+
+def preview_source_inventory(manifest: dict[str, Any]) -> str:
+    records = manifest["records"]
+    dispositions = Counter(record["disposition"] for record in records)
+    areas = Counter(record["source_area"] for record in records)
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"policy={manifest.get('policy')}",
+            f"records={len(records)}",
+            "dispositions=" + ", ".join(f"{key}:{value}" for key, value in sorted(dispositions.items())),
+            "areas=" + ", ".join(f"{key}:{value}" for key, value in sorted(areas.items())),
+        ]
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -118,14 +173,15 @@ def main() -> int:
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    errors = lint_manifest(manifest)
+    is_source_inventory = manifest.get("schema_version") == SOURCE_SCHEMA_VERSION
+    errors = lint_source_inventory(manifest) if is_source_inventory else lint_manifest(manifest)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
     print("MANIFEST_OK")
     if args.preview:
-        print(preview(manifest))
+        print(preview_source_inventory(manifest) if is_source_inventory else preview(manifest))
     return 0
 
 

@@ -1,9 +1,16 @@
 import json
 from pathlib import Path
 
-from tools.adult_catalog_manifest import lint_manifest, load_manifest, preview
+from tools.adult_catalog_manifest import (
+    lint_manifest,
+    lint_source_inventory,
+    load_manifest,
+    preview,
+    preview_source_inventory,
+)
 
 MANIFEST_PATH = Path("data/seed/adult_activity_foundation.v1.json")
+SOURCE_INVENTORY_PATH = Path("data/seed/adult_activity_source_inventory.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -33,3 +40,24 @@ def test_preview_is_read_only_summary() -> None:
 
     assert "import_allowed=False" in result
     assert "cards=7" in result
+
+
+def test_source_inventory_retains_every_content_title() -> None:
+    manifest = load_manifest(SOURCE_INVENTORY_PATH)
+
+    assert lint_source_inventory(manifest) == []
+    assert manifest["source_title_rows"] == 164
+    assert manifest["ignored_template_rows"] == 1
+    assert len(manifest["records"]) == 163
+    assert all(record["retained"] for record in manifest["records"])
+    assert all(not record["seed_ready"] for record in manifest["records"])
+
+
+def test_source_inventory_preview_reports_dispositions() -> None:
+    manifest = load_manifest(SOURCE_INVENTORY_PATH)
+
+    result = preview_source_inventory(manifest)
+
+    assert "records=163" in result
+    assert "research_only:" in result
+    assert "manual_only:" in result
