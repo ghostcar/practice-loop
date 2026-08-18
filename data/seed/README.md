@@ -20,6 +20,8 @@
    производными editorial candidates.
 7. `adult_activity_wearing_chastity_review.v1.json` — formal review 20 wearing/chastity идей;
    независимое снятие, emergency exit, duration cap и проверки состояния обязательны.
+8. `adult_activity_restraint_bondage_review.v1.json` — formal review 20 restraint/bondage идей;
+   quick release, независимое освобождение, нейтральная поза и проверки обязательны.
 
 ## Значение статусов источника
 
@@ -43,6 +45,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_activity_fluid_toilet_re
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_breath_review.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_sexual_technique_review.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_wearing_chastity_review.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_activity_restraint_bondage_review.v1.json --preview
 pytest -q tests/test_adult_catalog_manifest.py
 ```
 
