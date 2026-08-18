@@ -124,7 +124,7 @@ async def login(
     result = await db.execute(select(User).where(User.email == email.lower().strip()))
     user = result.scalar_one_or_none()
 
-    if user is None or not verify_password(password, user.password_hash):
+    if user is None or user.disabled_at is not None or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(
             request=request,
             name="login.html",

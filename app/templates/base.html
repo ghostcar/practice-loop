@@ -68,6 +68,7 @@
     'admin': t.admin_title_page,
     'social': t.nav_social,
     'settings': t.nav_settings,
+    'account': t.nav_account,
 } %}
 {% macro nav_item(key, href, icon_name, label) -%}
 <a href="{{ href }}" class="pl-nav-item {{ 'pl-nav-active' if nav_key == key else '' }}"{% if nav_key == key %} aria-current="page"{% endif %} title="{{ dscr_label(key, label) }}" data-dscr="{{ t.get('dscr_' + key, label) }}" data-label="{{ label }}">
@@ -115,7 +116,8 @@
     {{ nav_item('llm', '/llm/templates', 'ai', t.nav_llm) }}
     {{ nav_item('privacy', '/privacy', 'privacy', t.privacy_title) }}
     {{ nav_item('consent', '/consent', 'shield', t.nav_consent) }}
-    {{ nav_item('admin', '/admin', 'admin', t.admin_title_page) }}
+    {{ nav_item('account', '/account', 'profile', t.nav_account) }}
+    {% if user and user.role == 'admin' %}{{ nav_item('admin', '/admin', 'admin', t.admin_title_page) }}{% endif %}
     {{ nav_item('settings', '/settings', 'settings', t.nav_settings) }}
   </div>
   {% endif %}
@@ -135,6 +137,7 @@
   {# Settings stays reachable in timer-only / social-only variants #}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_system }}</div>
+    {{ nav_item('account', '/account', 'profile', t.nav_account) }}
     {{ nav_item('settings', '/settings', 'settings', t.nav_settings) }}
   </div>
   {% endif %}

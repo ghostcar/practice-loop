@@ -3,7 +3,7 @@
     "checked_at": "2026-08-18T03:54:24Z",
     "command": "alembic heads",
     "heads": [
-      "a9b0c1d2e3f4"
+      "b0c1d2e3f4a5"
     ]
   },
   "artifacts": [],
@@ -12,8 +12,8 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
-    "dirty": false,
+    "diff_hash": "sha256:15fd5e66b45938587e0c847785c8bd4a8974279db11fecc8c6423412f60501ee",
+    "dirty": true,
     "head": "0e3b837104f599490402b357d199b7fe5c53c7db"
   },
   "kind": "fact_manifest",

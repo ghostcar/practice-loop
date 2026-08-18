@@ -113,7 +113,7 @@ async def issue_token(
     email = body.email.strip().lower()
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
-    if user is None or not verify_password(body.password, user.password_hash):
+    if user is None or user.disabled_at is not None or not verify_password(body.password, user.password_hash):
         raise HTTPException(401, "Invalid credentials")
 
     raw_access = create_access_token(user.id)
@@ -137,6 +137,9 @@ async def refresh_token(
     # expires_at is stored timezone-aware; SQLite reads it back naive → normalize.
     if as_utc(record.expires_at) <= now:
         raise HTTPException(401, "Refresh token expired")
+    user = (await db.execute(select(User).where(User.id == record.user_id))).scalar_one_or_none()
+    if user is None or user.disabled_at is not None:
+        raise HTTPException(401, "Invalid or revoked refresh token")
 
     # Rotate: revoke the presented token, mint a fresh pair.
     record.revoked_at = now

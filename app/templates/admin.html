@@ -11,6 +11,11 @@
  </div>
 
  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+ <a href="/admin/users" class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
+ {{ icon('users', 'w-10 h-10 mb-3 text-[color:var(--accent)]') }}
+ <h3 class="text-lg font-semibold text-[color:var(--text)]">{{ t.admin_users_title }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.admin_users_subtitle }}</p>
+ </a>
  <!-- Catalog management -->
  <a href="/entities/catalog"
  class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">

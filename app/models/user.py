@@ -29,6 +29,7 @@ class User(Base):
     # Generic JSON keeps SQLite-based tests green; the migration uses PG JSONB.
     prefs: Mapped[dict] = mapped_column(JSON, default=dict, server_default=text("'{}'"), nullable=False)
     timezone_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Telegram linking

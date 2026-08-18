@@ -119,9 +119,9 @@ async def get_current_user(
             detail="Invalid or expired token",
         )
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(select(User).where(User.id == user_id, User.disabled_at.is_(None)))
     user = result.scalar_one_or_none()
-    if user is None:
+    if user is None or user.disabled_at is not None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
@@ -172,7 +172,7 @@ async def get_optional_user(
         from app.database import async_session_factory
 
         async with async_session_factory() as session:
-            result = await session.execute(select(User).where(User.id == user_id))
+            result = await session.execute(select(User).where(User.id == user_id, User.disabled_at.is_(None)))
             user = result.scalar_one_or_none()
             if user is not None:
                 _load_prefs_context(user)

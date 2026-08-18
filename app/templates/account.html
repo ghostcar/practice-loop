@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+{% block content %}
+<div class="max-w-3xl space-y-5">
+  <header>
+    <h1 class="pl-display text-2xl font-semibold inline-flex items-center gap-2">{{ icon('profile', 'w-6 h-6') }}{{ t.account_title }}</h1>
+    <p class="pl-text-secondary text-sm mt-1">{{ t.account_subtitle }}</p>
+  </header>
+  <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3">
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+      <div><dt class="pl-text-muted">{{ t.account_email }}</dt><dd class="mt-1 break-all">{{ user.email }}</dd></div>
+      <div><dt class="pl-text-muted">{{ t.account_role }}</dt><dd class="mt-1">{{ t['account_role_' + user.role] }}</dd></div>
+      <div><dt class="pl-text-muted">{{ t.account_created }}</dt><dd class="mt-1">{{ localtime(user.created_at, '%Y-%m-%d %H:%M') }}</dd></div>
+      <div><dt class="pl-text-muted">{{ t.account_timezone }}</dt><dd class="mt-1">{{ user.timezone }}</dd></div>
+    </dl>
+  </section>
+  <div class="flex flex-wrap gap-3">
+    <a href="/settings#password-h" class="pl-accent-bg px-4 py-2 rounded-lg inline-flex items-center gap-2">{{ icon('key', 'w-4 h-4') }}{{ t.account_change_password }}</a>
+    <a href="/privacy" class="pl-surface px-4 py-2 rounded-lg border border-[color:var(--border)]">{{ t.account_privacy }}</a>
+    {% if user.role == 'admin' %}<a href="/admin/users" class="pl-surface px-4 py-2 rounded-lg border border-[color:var(--border)]">{{ t.admin_users_title }}</a>{% endif %}
+  </div>
+</div>
+{% endblock %}
