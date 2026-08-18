@@ -84,6 +84,10 @@ async def create_llm_config(
     db: AsyncSession = Depends(get_db),
 ):
     """Add a new LLM provider config."""
+    from app.consent import has_consent
+
+    if not await has_consent(db, user.id, "byok_provider"):
+        return RedirectResponse(url="/consent/setup?required=byok_provider", status_code=status.HTTP_303_SEE_OTHER)
     encrypted = encrypt_api_key(api_key) if api_key else None
     # HTML form values: "true"/"false"/"on"/"1" accepted as True
     store_raw = store_raw_response.strip().lower() in {"true", "on", "1", "yes"}

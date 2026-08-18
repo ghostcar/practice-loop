@@ -11,25 +11,25 @@
 JSON API (мобильный/bearer):
 - GET    /api/v2/consent         — список (фильтр по consent_type/state)
 - POST   /api/v2/consent         — grant/revoke (201)
-- DELETE /api/v2/consent/{id}    — удалить запись (204)
+История неизменяема: отзыв оформляется новой записью, DELETE отсутствует.
 """
 
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
+from app.consent import PURPOSES, missing_consents, record_consent
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.consent import CONSENT_STATES, CONSENT_TYPES, ConsentRecord
+from app.models.consent import CONSENT_STATES, ConsentRecord
 from app.models.user import User
 from app.templates_setup import templates
 
@@ -44,6 +44,7 @@ def _record_json(r: ConsentRecord) -> dict:
         "state": r.state,
         "scope": r.scope,
         "version": r.version,
+        "terms_version": r.terms_version,
         "granted_at": r.granted_at.isoformat() if r.granted_at else None,
         "revoked_at": r.revoked_at.isoformat() if r.revoked_at else None,
         "notes": r.notes,
@@ -106,7 +107,7 @@ async def consent_page(
             "nav_key": "consent",
             "records": [_record_json(r) for r in records],
             "latest": await _latest_consents(db, user.id),
-            "consent_types": CONSENT_TYPES,
+            "consent_types": tuple(PURPOSES),
             "states": CONSENT_STATES,
         },
     )
@@ -122,33 +123,49 @@ async def add_consent_form(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if consent_type not in CONSENT_TYPES:
-        raise HTTPException(400, "Invalid consent_type")
-    if state not in CONSENT_STATES:
-        raise HTTPException(400, "Invalid state")
-
-    latest = (
-        await db.execute(
-            select(ConsentRecord)
-            .where(ConsentRecord.user_id == user.id, ConsentRecord.consent_type == consent_type)
-            .order_by(ConsentRecord.version.desc())
-        )
-    ).scalars().first()
-
-    version = (latest.version + 1) if latest else 1
-    r = ConsentRecord(
-        user_id=user.id,
-        consent_type=consent_type,
-        state=state,
-        scope=(scope or "").strip() or None,
-        version=version,
-        notes=(notes or "").strip() or None,
-    )
-    if state == "revoked":
-        r.revoked_at = datetime.now(UTC)
-    db.add(r)
-    await db.flush()
+    await record_consent(db, user, consent_type, state, scope=scope, notes=notes)
     return RedirectResponse(url="/consent", status_code=303)
+
+
+@router.get("/consent/setup", response_class=HTMLResponse)
+async def consent_setup_page(
+    request: Request,
+    required: str = Query(default=""),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    keys = [key for key in required.split(",") if key] or [key for key, item in PURPOSES.items() if item.module]
+    keys = [key for key in keys if key in PURPOSES]
+    return templates.TemplateResponse(
+        request,
+        "consent_setup.html",
+        {
+            "t": get_translations(detect_locale(request, user.locale)),
+            "theme": detect_theme(user.theme),
+            "nav_key": "consent",
+            "required": await missing_consents(db, user.id, keys),
+        },
+    )
+
+
+@router.post("/consent/setup")
+async def consent_setup_submit(
+    consent_types: list[str] = Form(default=[]),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    for key in consent_types:
+        await record_consent(db, user, key, "granted", scope="portal_lifetime")
+    from app.prefs import sanitize_prefs
+
+    still_missing = await missing_consents(
+        db,
+        user.id,
+        [f"module:{name}" for name in sanitize_prefs(user.prefs)["enabled_modules"]],
+    )
+    if still_missing:
+        return RedirectResponse(url="/consent/setup?required=" + ",".join(still_missing), status_code=303)
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -185,46 +202,5 @@ async def json_add(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    if body.consent_type not in CONSENT_TYPES:
-        raise HTTPException(400, "Invalid consent_type")
-    if body.state not in CONSENT_STATES:
-        raise HTTPException(400, "Invalid state")
-
-    latest = (
-        await db.execute(
-            select(ConsentRecord)
-            .where(ConsentRecord.user_id == user.id, ConsentRecord.consent_type == body.consent_type)
-            .order_by(ConsentRecord.version.desc())
-        )
-    ).scalars().first()
-
-    version = (latest.version + 1) if latest else 1
-    r = ConsentRecord(
-        user_id=user.id,
-        consent_type=body.consent_type,
-        state=body.state,
-        scope=(body.scope or "").strip() or None,
-        version=version,
-        notes=(body.notes or "").strip() or None,
-    )
-    if body.state == "revoked":
-        r.revoked_at = datetime.now(UTC)
-    db.add(r)
-    await db.flush()
+    r = await record_consent(db, user, body.consent_type, body.state, scope=body.scope, notes=body.notes)
     return _record_json(r)
-
-
-@json_router.delete("/{record_id}", status_code=204)
-async def json_delete(
-    record_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    r = (
-        await db.execute(select(ConsentRecord).where(ConsentRecord.id == record_id, ConsentRecord.user_id == user.id))
-    ).scalar_one_or_none()
-    if r is None:
-        raise HTTPException(404, "Consent record not found")
-    await db.delete(r)
-    await db.flush()
-    return None

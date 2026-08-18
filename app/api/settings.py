@@ -15,7 +15,7 @@ from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.user import User
-from app.prefs import DASH_BLOCKS, sanitize_prefs
+from app.prefs import DASH_BLOCKS, PROFILE_MODULES, sanitize_prefs
 from app.templates_setup import templates
 
 router = APIRouter()
@@ -45,6 +45,7 @@ async def settings_page(
             "prefs": prefs,
             "dash_blocks": DASH_BLOCKS,
             "settings": app_settings,
+            "profile_modules": PROFILE_MODULES,
         },
     )
     from app.security import ensure_csrf_cookie
@@ -70,6 +71,7 @@ async def save_settings(
     llm_mode: str = Form("safe"),
     reminder_time: str = Form(""),
     reminder_tz: str = Form(""),
+    enabled_modules: list[str] = Form(default=[]),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
     raw = sanitize_prefs(
@@ -88,6 +90,7 @@ async def save_settings(
             },
             "blur": blur,
             "llm_mode": llm_mode,
+            "enabled_modules": enabled_modules,
             "reminder_time": reminder_time,
             "reminder_tz": reminder_tz,
         }
@@ -97,6 +100,20 @@ async def save_settings(
     user.theme = raw["theme_choice"]
     user.prefs = raw
     db.add(user)
+
+    # Enabling a module is allowed only after its one-time consent. Save the
+    # preference first, then route the user to the missing disclosures.
+    from app.consent import missing_consents
+
+    required = [f"module:{name}" for name in raw["enabled_modules"]]
+    missing = await missing_consents(db, user.id, required)
+    if llm_mode == "expanded":
+        missing.extend(await missing_consents(db, user.id, ["llm_expanded"]))
+        if "llm_expanded" in missing:
+            raw["llm_mode"] = "safe"
+            user.prefs = raw
+    if missing:
+        return RedirectResponse(url="/consent/setup?required=" + ",".join(missing), status_code=303)
 
     referer = request.headers.get("referer", "/settings")
     return RedirectResponse(url=referer, status_code=303)

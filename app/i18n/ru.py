@@ -1251,11 +1251,53 @@ RU = {
     "consent_history": "История",
     "consent_empty": "Записей согласий пока нет.",
     "consent_type_llm_expanded": "Расширенный LLM-режим",
+    "consent_type_byok_provider": "Собственный LLM-провайдер (BYOK)",
     "consent_type_media_verification": "Фото-верификация",
     "consent_type_data_processing": "Обработка данных",
     "consent_type_custom": "Своё",
     "consent_state_granted": "Дано",
     "consent_state_revoked": "Отозвано",
+    "consent_setup_title": "Разрешения модулей",
+    "consent_setup_durable": (
+        "Каждое разрешение запрашивается один раз и действует всё время пользования порталом — до вашего явного "
+        "отзыва или существенного обновления соответствующих условий. Новый модуль запрашивает отдельное разрешение "
+        "при включении в профиле."
+    ),
+    "consent_setup_accept": "Разрешить и продолжить",
+    "consent_setup_complete": "Все необходимые разрешения уже выданы.",
+    "settings_modules_title": "Модули профиля",
+    "settings_modules_hint": (
+        "При первом включении каждого модуля портал отдельно запросит бессрочное разрешение. Отключение модуля не "
+        "удаляет историю согласия; согласие можно явно отозвать на странице «Согласия»."
+    ),
+    "consent_type_module:tracker": "Трекер",
+    "consent_type_module:timer": "Таймер",
+    "consent_type_module:medication": "Лекарства",
+    "consent_type_module:health": "Здоровье",
+    "consent_type_module:journal": "Дневник",
+    "consent_type_module:care": "Уход",
+    "consent_type_module:catalog": "Каталог",
+    "consent_type_module:insights": "Аналитика",
+    "consent_type_module:aftercare": "Поддержка после активности",
+    "consent_disclosure_byok_provider": (
+        "Вы сами выбрали и подключили этого провайдера, его адрес и ключ. Запросы и необходимые данные будут "
+        "передаваться ему по его собственным условиям; ответственность за выбор и настройку провайдера несёте вы. "
+        "Practice Loop при этом отвечает за безопасность и обработку данных внутри самого портала."
+    ),
+    "consent_disclosure_llm_expanded": "Разрешить расширенную передачу контекста активному LLM-провайдеру.",
+    "consent_disclosure_media_verification": (
+        "Разрешить передачу выбранных изображений активному LLM-провайдеру для проверки."
+    ),
+    "consent_disclosure_data_processing": "Разрешить обработку данных профиля для работы портала.",
+    "consent_disclosure_module:tracker": "Разрешить хранение и обработку данных трекера.",
+    "consent_disclosure_module:timer": "Разрешить хранение и обработку данных таймера.",
+    "consent_disclosure_module:medication": "Разрешить хранение и обработку данных о лекарствах.",
+    "consent_disclosure_module:health": "Разрешить хранение и обработку данных здоровья.",
+    "consent_disclosure_module:journal": "Разрешить хранение и обработку записей дневника.",
+    "consent_disclosure_module:care": "Разрешить хранение и обработку данных ухода.",
+    "consent_disclosure_module:catalog": "Разрешить хранение и обработку данных каталога.",
+    "consent_disclosure_module:insights": "Разрешить анализ данных профиля и истории.",
+    "consent_disclosure_module:aftercare": "Разрешить хранение и обработку данных поддержки.",
     # C4 — Today projection (единый экран дня, §10.1)
     "today_title": "Сегодня",
     "today_timer": "Таймер верности",

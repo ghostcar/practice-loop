@@ -137,11 +137,17 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    # Create JWT and redirect to dashboard
+    # First login (and newly enabled modules) goes through one-time consent.
     from app.config import settings
+    from app.consent import missing_consents
+    from app.prefs import sanitize_prefs
+
+    module_keys = [f"module:{name}" for name in sanitize_prefs(user.prefs)["enabled_modules"]]
+    missing = await missing_consents(db, user.id, module_keys)
 
     token = create_access_token(user.id)
-    response = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    target = "/consent/setup?required=" + ",".join(missing) if missing else "/dashboard"
+    response = RedirectResponse(url=target, status_code=status.HTTP_303_SEE_OTHER)
     # Secure is meaningful only over HTTPS. On plain-http loopback (local dev,
     # browser E2E) strict engines (WebKit) drop a Secure cookie entirely; the
     # flag there is both useless and harmful. Real deployments (non-loopback)

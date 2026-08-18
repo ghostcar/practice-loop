@@ -46,7 +46,7 @@ async def test_json_invalid_type_and_state(auth_client, test_user, db_session):
 
 
 @pytest.mark.asyncio
-async def test_json_filter_and_delete(auth_client, test_user, db_session):
+async def test_json_filter_and_history_is_immutable(auth_client, test_user, db_session):
     await auth_client.post("/api/v2/consent", json={"consent_type": "data_processing", "state": "granted"})
     await auth_client.post("/api/v2/consent", json={"consent_type": "media_verification", "state": "granted"})
 
@@ -54,8 +54,19 @@ async def test_json_filter_and_delete(auth_client, test_user, db_session):
     assert len(filtered["records"]) == 1
 
     rec_id = filtered["records"][0]["id"]
-    assert (await auth_client.delete(f"/api/v2/consent/{rec_id}")).status_code == 204
-    assert (await auth_client.get("/api/v2/consent?consent_type=data_processing")).json()["records"] == []
+    assert filtered["records"][0]["terms_version"] == "1"
+    assert (await auth_client.delete(f"/api/v2/consent/{rec_id}")).status_code == 405
+    assert len((await auth_client.get("/api/v2/consent?consent_type=data_processing")).json()["records"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_repeated_grant_is_idempotent(auth_client, test_user, db_session):
+    payload = {"consent_type": "byok_provider", "state": "granted"}
+    first = await auth_client.post("/api/v2/consent", json=payload)
+    second = await auth_client.post("/api/v2/consent", json=payload)
+    assert first.status_code == second.status_code == 201
+    assert first.json()["id"] == second.json()["id"]
+    assert second.json()["version"] == 1
 
 
 @pytest.mark.asyncio

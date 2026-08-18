@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+    <header>
+        <h1 class="text-2xl font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('shield', 'w-6 h-6') }}{{ t.consent_setup_title }}</h1>
+        <p class="text-sm pl-text-secondary mt-2">{{ t.consent_setup_durable }}</p>
+    </header>
+    {% if required %}
+    <form action="/consent/setup" method="post" class="space-y-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        {% for key in required %}
+        <label class="block pl-surface border border-[color:var(--border)] rounded-xl p-4 cursor-pointer">
+            <span class="flex gap-3 items-start">
+                <input type="checkbox" name="consent_types" value="{{ key }}" required class="mt-1 accent-[color:var(--accent)]">
+                <span><span class="block font-medium text-[color:var(--text)]">{{ t['consent_type_' + key] }}</span><span class="block text-sm pl-text-secondary mt-1">{{ t['consent_disclosure_' + key] }}</span></span>
+            </span>
+        </label>
+        {% endfor %}
+        <button class="pl-accent-bg px-5 py-3 rounded-lg font-medium min-h-[44px]" type="submit">{{ t.consent_setup_accept }}</button>
+    </form>
+    {% else %}
+    <p class="pl-surface rounded-xl p-4 text-sm">{{ t.consent_setup_complete }}</p>
+    <a href="/dashboard" class="inline-flex pl-accent-bg px-4 py-2 rounded-lg">{{ t.nav_dashboard }}</a>
+    {% endif %}
+</div>
+{% endblock %}

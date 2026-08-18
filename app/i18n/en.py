@@ -1247,11 +1247,52 @@ EN = {
     "consent_history": "History",
     "consent_empty": "No consent records yet.",
     "consent_type_llm_expanded": "Expanded LLM mode",
+    "consent_type_byok_provider": "Your own LLM provider (BYOK)",
     "consent_type_media_verification": "Photo verification",
     "consent_type_data_processing": "Data processing",
     "consent_type_custom": "Custom",
     "consent_state_granted": "Granted",
     "consent_state_revoked": "Revoked",
+    "consent_setup_title": "Module permissions",
+    "consent_setup_durable": (
+        "Each permission is requested once and remains valid for your use of the portal, until you explicitly revoke "
+        "it or the applicable terms materially change. A newly enabled profile module asks for its own permission."
+    ),
+    "consent_setup_accept": "Allow and continue",
+    "consent_setup_complete": "All required permissions have already been granted.",
+    "settings_modules_title": "Profile modules",
+    "settings_modules_hint": (
+        "The first time you enable a module, the portal asks for a durable permission. Disabling a module does not "
+        "erase consent history; you can explicitly revoke consent on the Consent page."
+    ),
+    "consent_type_module:tracker": "Tracker",
+    "consent_type_module:timer": "Timer",
+    "consent_type_module:medication": "Medication",
+    "consent_type_module:health": "Health",
+    "consent_type_module:journal": "Journal",
+    "consent_type_module:care": "Care",
+    "consent_type_module:catalog": "Catalog",
+    "consent_type_module:insights": "Insights",
+    "consent_type_module:aftercare": "Aftercare",
+    "consent_disclosure_byok_provider": (
+        "You selected and connected this provider, endpoint, and key yourself. Requests and necessary data will be "
+        "sent to it under its own terms; you are responsible for choosing and configuring it. Practice Loop remains "
+        "responsible for security and data handling within the portal itself."
+    ),
+    "consent_disclosure_llm_expanded": "Allow expanded context to be sent to the active LLM provider.",
+    "consent_disclosure_media_verification": (
+        "Allow selected images to be sent to the active LLM provider for verification."
+    ),
+    "consent_disclosure_data_processing": "Allow profile data processing needed to operate the portal.",
+    "consent_disclosure_module:tracker": "Allow tracker data to be stored and processed.",
+    "consent_disclosure_module:timer": "Allow timer data to be stored and processed.",
+    "consent_disclosure_module:medication": "Allow medication data to be stored and processed.",
+    "consent_disclosure_module:health": "Allow health data to be stored and processed.",
+    "consent_disclosure_module:journal": "Allow journal entries to be stored and processed.",
+    "consent_disclosure_module:care": "Allow care data to be stored and processed.",
+    "consent_disclosure_module:catalog": "Allow catalog data to be stored and processed.",
+    "consent_disclosure_module:insights": "Allow profile and history data to be analyzed.",
+    "consent_disclosure_module:aftercare": "Allow aftercare data to be stored and processed.",
     # C4 — Today projection (единый экран дня, §10.1)
     "today_title": "Today",
     "today_timer": "Chastity Timer",

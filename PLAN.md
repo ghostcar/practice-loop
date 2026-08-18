@@ -93,7 +93,7 @@
 
 ### Следующий gate — стабилизация текущего Personal Suite
 
-- [ ] **S1 — Consent enforcement и целостность истории (P0 privacy)** — чувствительное медиа нельзя отправлять в облачный LLM без актуального `media_verification=granted`; expanded LLM требует актуального `llm_expanded=granted`; revoke немедленно закрывает действие. Удаление отдельных consent-записей убрать, добавить уникальность версий и concurrency-тесты; полное удаление остаётся только частью удаления аккаунта/privacy workflow.
+- [~] **S1 — Consent enforcement и целостность истории (P0 privacy), в работе (ADR-104/PD-022)** — реализован одноразовый versioned consent при первом входе и включении нового профильного модуля; отключение не отзывает его. Добавлены отдельное BYOK-раскрытие, gates для BYOK/media verification/expanded LLM, append-only API без DELETE и уникальность версий (миграция 058). До закрытия: PostgreSQL concurrency-тест, полный regression и migration roundtrip.
 - [ ] **S2 — Зелёный воспроизводимый baseline** — восстановить Python 3.11 dev-окружение и pinned Ruff 0.5.x, исправить lint/format, установить `.githooks`, прогнать полный pytest с итоговым summary и не переносить старые частичные счётчики как доказательство текущего HEAD.
 - [ ] **S3 — Миграции и интеграционные проверки** — один Alembic head уже есть; подтвердить PostgreSQL upgrade 053→057, downgrade/upgrade roundtrip и поведение новых consent/check-in/aftercare моделей на PostgreSQL 15.
 - [ ] **S4 — Синхронизация канонической документации** — обновить `CURRENT_STATE.md`, `ROADMAP.md`, `FUNCTIONAL.md` и generated `docs/state/*` по фактическим Personal Suite, Mobile Foundation, Today и закрытому Social; убрать противоречия про 592 теста, миграцию 035 и «не начатые» уже реализованные модули.

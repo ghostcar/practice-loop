@@ -107,3 +107,4 @@
 | [ADR-101](ADR-101.md) | 2026-08-17 | Шаг C1: Aftercare — отдельный модуль | accepted |
 | [ADR-102](ADR-102.md) | 2026-08-17 | Шаг C3: Consent records (согласия) | accepted |
 | [ADR-103](ADR-103.md) | 2026-08-17 | Шаг C4: Today projection (единый экран дня) | accepted |
+| [ADR-104](ADR-104.md) | 2026-08-18 | Durable purpose/version consent + BYOK disclosure | accepted |

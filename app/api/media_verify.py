@@ -77,6 +77,9 @@ async def _run_verification(
     locale: str,
 ) -> tuple[MediaVerificationResult, VerificationChallenge | None]:
     """Run LLM verification, optionally consuming an active challenge."""
+    from app.consent import require_consent
+
+    await require_consent(db, user.id, "media_verification")
     if verification_type not in VALID_TYPES:
         raise HTTPException(400, f"Unsupported verification_type: {verification_type}")
 

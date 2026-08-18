@@ -45,6 +45,10 @@ BLUR_LEVELS = (0, 1, 2)
 # LLM режимы (ADR-087): safe — нейтральный пересказ фактов (default);
 # expanded — рекомендации/советы/интерпретация (влияет на все LLM-блоки).
 LLM_MODES = ("safe", "expanded")
+PROFILE_MODULES = (
+    "tracker", "timer", "medication", "health", "journal",
+    "care", "catalog", "insights", "aftercare",
+)
 
 # Dashboard blocks in default order. Keys must match the `data-dash-block`
 # markers in dashboard_v2.html.
@@ -61,6 +65,9 @@ DEFAULT_PREFS: dict[str, Any] = {
     "blur": 0,
     "theme_choice": "dark",
     "llm_mode": "safe",
+    # Profile-level feature activation. A newly enabled module requires its
+    # durable module consent before use (ADR-104).
+    "enabled_modules": list(PROFILE_MODULES),
     # Auto-run Personal Insights (ADR-095): периодический автоанализ.
     "insights_auto": False,
     "insights_auto_days": 7,
@@ -88,6 +95,7 @@ class UserPrefs:
     blur: int = 0
     theme_choice: str = "dark"
     llm_mode: str = "safe"
+    enabled_modules: list[str] = field(default_factory=lambda: list(PROFILE_MODULES))
     insights_auto: bool = False
     insights_auto_days: int = 7
     reminder_time: str = ""  # HH:MM, "" = inherit settings.reminder_time
@@ -165,6 +173,10 @@ def sanitize_prefs(raw: dict | None) -> dict:
     out["theme_choice"] = raw.get("theme_choice") if raw.get("theme_choice") in THEME_CHOICES else "dark"
     out["blur"] = raw.get("blur") if raw.get("blur") in BLUR_LEVELS else 0
     out["llm_mode"] = raw.get("llm_mode") if raw.get("llm_mode") in LLM_MODES else "safe"
+    requested_modules = raw.get("enabled_modules")
+    if not isinstance(requested_modules, list):
+        requested_modules = list(PROFILE_MODULES)
+    out["enabled_modules"] = [name for name in PROFILE_MODULES if name in requested_modules]
     out["insights_auto"] = bool(raw.get("insights_auto"))
     try:
         out["insights_auto_days"] = max(1, min(730, int(raw.get("insights_auto_days") or 7)))

@@ -133,6 +133,19 @@
             </div>
         </section>
 
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="modules-h">
+            <h2 id="modules-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_modules_title }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_modules_hint }}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {% for module in profile_modules %}
+                <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="enabled_modules" value="{{ module }}" class="accent-[color:var(--accent)]" {{ 'checked' if module in prefs.enabled_modules else '' }}>
+                    <span class="text-sm text-[color:var(--text)]">{{ t['consent_type_module:' + module] }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </section>
+
         <!-- LLM mode (ADR-087) -->
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="llm-h">
             <h2 id="llm-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_llm }}</h2>
