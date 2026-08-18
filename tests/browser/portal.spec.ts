@@ -23,6 +23,17 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
   }
 });
 
+test("@smoke activity session can be created and accepted with visible audit", async ({ page }) => {
+  await registerFreshUser(page);
+  await page.goto("/sessions");
+  await page.getByRole("button", { name: /new session/i }).click();
+  await expect(page).toHaveURL(/\/sessions/);
+  await page.getByRole("button", { name: /^accept$/i }).first().click();
+  await expect(page.getByText(/changes to the task set apply an xp penalty/i)).toBeVisible();
+  await page.getByText(/audit history/i).click();
+  await expect(page.getByText(/· accepted/)).toBeVisible();
+});
+
 test("@a11y authenticated shell has no serious axe violations (dark + light)", async ({ page }) => {
   // 2 real theme passes × 5 routes of axe runs exceed the default 30 s timeout
   test.setTimeout(180_000);
