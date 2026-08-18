@@ -3,17 +3,20 @@ from pathlib import Path
 
 from tools.adult_catalog_manifest import (
     lint_editorial_candidates,
+    lint_editorial_review,
     lint_manifest,
     lint_source_inventory,
     load_manifest,
     preview,
     preview_editorial_candidates,
+    preview_editorial_review,
     preview_source_inventory,
 )
 
 MANIFEST_PATH = Path("data/seed/adult_activity_foundation.v1.json")
 SOURCE_INVENTORY_PATH = Path("data/seed/adult_activity_source_inventory.v1.json")
 EDITORIAL_PATH = Path("data/seed/adult_activity_editorial_candidates.v1.json")
+FLUID_TOILET_REVIEW_PATH = Path("data/seed/adult_activity_fluid_toilet_review.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -73,7 +76,7 @@ def test_editorial_candidates_reference_retained_source_records() -> None:
 
     assert lint_editorial_candidates(candidates, source_ids) == []
     assert candidates["import_allowed"] is False
-    assert len(candidates["cards"]) == 20
+    assert len(candidates["cards"]) == 32
 
 
 def test_editorial_preview_reports_candidate_mix() -> None:
@@ -81,5 +84,30 @@ def test_editorial_preview_reports_candidate_mix() -> None:
 
     result = preview_editorial_candidates(candidates)
 
-    assert "cards=20" in result
-    assert "elevated:12" in result
+    assert "cards=32" in result
+    assert "elevated:17" in result
+
+
+def test_fluid_toilet_review_retains_and_covers_all_source_records() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    review = load_manifest(FLUID_TOILET_REVIEW_PATH)
+    expected_ids = {
+        record["source_id"]
+        for record in source["records"]
+        if record["source_area"] in {"fluid_enema_control", "toilet_control"}
+    }
+
+    assert lint_editorial_review(review, expected_ids) == []
+    assert {record["source_id"] for record in review["records"]} == expected_ids
+    assert len(review["records"]) == 42
+    assert all(record["retained"] for record in review["records"])
+
+
+def test_fluid_toilet_review_preview_reports_outcomes() -> None:
+    review = load_manifest(FLUID_TOILET_REVIEW_PATH)
+
+    result = preview_editorial_review(review)
+
+    assert "records=42" in result
+    assert "promote_candidate:12" in result
+    assert "research_backlog:6" in result

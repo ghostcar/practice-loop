@@ -12,9 +12,11 @@ from typing import Any
 SCHEMA_VERSION = "adult-activity/v1alpha1"
 SOURCE_SCHEMA_VERSION = "adult-activity-source-inventory/v1alpha1"
 EDITORIAL_SCHEMA_VERSION = "adult-activity-editorial-candidates/v1alpha1"
+REVIEW_SCHEMA_VERSION = "adult-activity-editorial-review/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
+REVIEW_OUTCOMES = {"promote_candidate", "manual_reference", "rewrite_required", "research_backlog"}
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -224,6 +226,64 @@ def preview_editorial_candidates(manifest: dict[str, Any]) -> str:
     )
 
 
+def lint_editorial_review(manifest: dict[str, Any], known_source_ids: set[str] | None = None) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != REVIEW_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {REVIEW_SCHEMA_VERSION}")
+    if manifest.get("import_allowed") is not False:
+        errors.append("editorial review must set import_allowed=false")
+    records = manifest.get("records")
+    if not isinstance(records, list):
+        return [*errors, "records must be an array"]
+    if len(records) != manifest.get("expected_records"):
+        errors.append("records count must match expected_records")
+    ids: set[str] = set()
+    for index, record in enumerate(records):
+        prefix = f"records[{index}]"
+        source_id = record.get("source_id")
+        if source_id in ids:
+            errors.append(f"{prefix}.source_id is duplicated: {source_id}")
+        ids.add(source_id)
+        if known_source_ids is not None and source_id not in known_source_ids:
+            errors.append(f"{prefix}.source_id is unknown: {source_id}")
+        if record.get("review_outcome") not in REVIEW_OUTCOMES:
+            errors.append(f"{prefix}.review_outcome is invalid")
+        if record.get("retained") is not True:
+            errors.append(f"{prefix}.retained must be true")
+        if record.get("automation_allowed") is not False:
+            errors.append(f"{prefix}.automation_allowed must be false in review")
+        if not record.get("required_gates"):
+            errors.append(f"{prefix}.required_gates must be non-empty")
+        if not str(record.get("editorial_note", "")).strip():
+            errors.append(f"{prefix}.editorial_note must be non-empty")
+        if record.get("review_outcome") == "research_backlog":
+            if record.get("user_discoverable_after_moderation") is not False:
+                errors.append(f"{prefix} research backlog cannot be user-discoverable yet")
+        elif record.get("user_discoverable_after_moderation") is not True:
+            errors.append(f"{prefix} reviewed non-research record should remain discoverable after moderation")
+        if record.get("review_outcome") in {"promote_candidate", "rewrite_required"} and not record.get(
+            "derived_card_slug"
+        ):
+            errors.append(f"{prefix}.derived_card_slug is required for a derivative")
+    return errors
+
+
+def preview_editorial_review(manifest: dict[str, Any]) -> str:
+    records = manifest["records"]
+    outcomes = Counter(record["review_outcome"] for record in records)
+    areas = Counter(record["source_area"] for record in records)
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"batch={manifest.get('review_batch')}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"records={len(records)}",
+            "outcomes=" + ", ".join(f"{key}:{value}" for key, value in sorted(outcomes.items())),
+            "areas=" + ", ".join(f"{key}:{value}" for key, value in sorted(areas.items())),
+        ]
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -237,10 +297,13 @@ def main() -> int:
     schema_version = manifest.get("schema_version")
     is_source_inventory = schema_version == SOURCE_SCHEMA_VERSION
     is_editorial = schema_version == EDITORIAL_SCHEMA_VERSION
+    is_review = schema_version == REVIEW_SCHEMA_VERSION
     if is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
         errors = lint_editorial_candidates(manifest)
+    elif is_review:
+        errors = lint_editorial_review(manifest)
     else:
         errors = lint_manifest(manifest)
     if errors:
@@ -253,6 +316,8 @@ def main() -> int:
             print(preview_source_inventory(manifest))
         elif is_editorial:
             print(preview_editorial_candidates(manifest))
+        elif is_review:
+            print(preview_editorial_review(manifest))
         else:
             print(preview(manifest))
     return 0
