@@ -252,6 +252,25 @@ async def test_json_create_medication_stock_schedule_kit(auth_client, test_user,
     assert len((await auth_client.get("/api/v2/medications/kits")).json()) == 1
 
 
+async def test_json_update_medication_is_owner_scoped(auth_client, test_user, db_session):
+    med = (await auth_client.post("/api/v2/medications", json={"name": "Old"})).json()
+    response = await auth_client.put(
+        f"/api/v2/medications/{med['id']}",
+        json={"name": "New", "kind": "supplement", "unit": "tablet", "is_active": False},
+    )
+    assert response.status_code == 200
+    assert response.json()["name"] == "New"
+    assert response.json()["is_active"] is False
+
+    foreign_user = User(email="foreign-med@example.com", password_hash=hash_password("secret123"))
+    db_session.add(foreign_user)
+    await db_session.flush()
+    other = Medication(user_id=foreign_user.id, name="Foreign")
+    db_session.add(other)
+    await db_session.flush()
+    assert (await auth_client.put(f"/api/v2/medications/{other.id}", json={"name": "Nope"})).status_code == 404
+
+
 @pytest.mark.asyncio
 async def test_json_create_stock_foreign_medication_rejected(auth_client, test_user, db_session):
     """POST /stocks with another user's medication_id → 404 (owner-scoped)."""

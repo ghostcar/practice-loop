@@ -270,6 +270,23 @@ async def test_json_delete_course(auth_client, test_user, db_session):
     assert (await auth_client.get("/api/v2/care/courses")).json() == []
 
 
+async def test_json_course_session_done_and_skip(auth_client, test_user, db_session):
+    course = (
+        await auth_client.post(
+            "/api/v2/care/courses",
+            json={"name": "Course", "total_sessions": 1, "start_date": "2026-08-18"},
+        )
+    ).json()
+    session_id = course["sessions"][0]["id"]
+    done = await auth_client.post(f"/api/v2/care/course-sessions/{session_id}/done")
+    assert done.status_code == 200
+    assert done.json()["status"] == "done"
+    assert done.json()["completed_at"] is not None
+    skipped = await auth_client.post(f"/api/v2/care/course-sessions/{session_id}/skip")
+    assert skipped.status_code == 200
+    assert skipped.json() == {"id": session_id, "status": "skipped", "completed_at": None}
+
+
 @pytest.mark.asyncio
 async def test_json_delete_course_foreign_rejected(auth_client, test_user, db_session):
     other = User(email="other-course-del@example.com", password_hash="x", locale="en", theme="dark")

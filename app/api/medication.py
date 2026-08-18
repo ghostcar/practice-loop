@@ -969,6 +969,31 @@ async def json_create_medication(
     return _med_dict(m)
 
 
+@json_router.put("/{medication_id}")
+async def json_update_medication(
+    medication_id: uuid.UUID,
+    body: MedicationBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Replace editable medication fields (owner-scoped JSON contract)."""
+    m = await _get_med(db, user.id, medication_id)
+    name = body.name.strip()[:200]
+    if not name:
+        raise HTTPException(400, "Name is required")
+    m.name = name
+    m.kind = body.kind if body.kind in MED_KINDS else "medication"
+    m.active_ingredient = (body.active_ingredient or "").strip()[:200] or None
+    m.form = (body.form or "").strip()[:50] or None
+    m.strength = (body.strength or "").strip()[:50] or None
+    m.unit = (body.unit or "").strip()[:20] or None
+    m.instructions = (body.instructions or "").strip() or None
+    m.notes = (body.notes or "").strip() or None
+    m.is_active = body.is_active
+    await db.flush()
+    return _med_dict(m)
+
+
 @json_router.post("/stocks", status_code=201)
 async def json_create_stock(
     body: StockBody,

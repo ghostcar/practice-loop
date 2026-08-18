@@ -1302,6 +1302,45 @@ async def json_delete_course(
     return None
 
 
+async def _owned_course_session(db: AsyncSession, user_id: uuid.UUID, session_id: uuid.UUID):
+    session = (
+        await db.execute(
+            select(CareCourseSession)
+            .join(CareCourse, CareCourse.id == CareCourseSession.course_id)
+            .where(CareCourseSession.id == session_id, CareCourse.user_id == user_id)
+        )
+    ).scalar_one_or_none()
+    if session is None:
+        raise HTTPException(404, "Course session not found")
+    return session
+
+
+@json_router.post("/course-sessions/{session_id}/done")
+async def json_mark_course_session_done(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    session = await _owned_course_session(db, user.id, session_id)
+    session.status = "done"
+    session.completed_at = _now_utc()
+    await db.flush()
+    return {"id": str(session.id), "status": session.status, "completed_at": session.completed_at.isoformat()}
+
+
+@json_router.post("/course-sessions/{session_id}/skip")
+async def json_mark_course_session_skipped(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    session = await _owned_course_session(db, user.id, session_id)
+    session.status = "skipped"
+    session.completed_at = None
+    await db.flush()
+    return {"id": str(session.id), "status": session.status, "completed_at": None}
+
+
 def _now_utc():
     from datetime import UTC
     from datetime import datetime as _dt
