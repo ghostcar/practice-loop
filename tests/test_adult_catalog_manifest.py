@@ -2,15 +2,18 @@ import json
 from pathlib import Path
 
 from tools.adult_catalog_manifest import (
+    lint_editorial_candidates,
     lint_manifest,
     lint_source_inventory,
     load_manifest,
     preview,
+    preview_editorial_candidates,
     preview_source_inventory,
 )
 
 MANIFEST_PATH = Path("data/seed/adult_activity_foundation.v1.json")
 SOURCE_INVENTORY_PATH = Path("data/seed/adult_activity_source_inventory.v1.json")
+EDITORIAL_PATH = Path("data/seed/adult_activity_editorial_candidates.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -61,3 +64,22 @@ def test_source_inventory_preview_reports_dispositions() -> None:
     assert "records=163" in result
     assert "research_only:" in result
     assert "manual_only:" in result
+
+
+def test_editorial_candidates_reference_retained_source_records() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    candidates = load_manifest(EDITORIAL_PATH)
+    source_ids = {record["source_id"] for record in source["records"]}
+
+    assert lint_editorial_candidates(candidates, source_ids) == []
+    assert candidates["import_allowed"] is False
+    assert len(candidates["cards"]) == 12
+
+
+def test_editorial_preview_reports_candidate_mix() -> None:
+    candidates = load_manifest(EDITORIAL_PATH)
+
+    result = preview_editorial_candidates(candidates)
+
+    assert "cards=12" in result
+    assert "elevated:6" in result

@@ -11,6 +11,7 @@ from typing import Any
 
 SCHEMA_VERSION = "adult-activity/v1alpha1"
 SOURCE_SCHEMA_VERSION = "adult-activity-source-inventory/v1alpha1"
+EDITORIAL_SCHEMA_VERSION = "adult-activity-editorial-candidates/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
@@ -163,6 +164,61 @@ def preview_source_inventory(manifest: dict[str, Any]) -> str:
     )
 
 
+def lint_editorial_candidates(manifest: dict[str, Any], known_source_ids: set[str] | None = None) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != EDITORIAL_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {EDITORIAL_SCHEMA_VERSION}")
+    if manifest.get("import_allowed") is not False:
+        errors.append("editorial candidates must set import_allowed=false")
+    cards = manifest.get("cards")
+    if not isinstance(cards, list) or not cards:
+        return [*errors, "cards must be a non-empty array"]
+    slugs: set[str] = set()
+    for index, card in enumerate(cards):
+        prefix = f"cards[{index}]"
+        slug = card.get("slug")
+        if not isinstance(slug, str) or not slug:
+            errors.append(f"{prefix}.slug must be non-empty")
+        elif slug in slugs:
+            errors.append(f"{prefix}.slug is duplicated: {slug}")
+        slugs.add(slug)
+        refs = card.get("source_refs")
+        if not isinstance(refs, list) or not refs:
+            errors.append(f"{prefix}.source_refs must be non-empty")
+        elif known_source_ids is not None:
+            unknown = sorted(set(refs) - known_source_ids)
+            if unknown:
+                errors.append(f"{prefix}.source_refs are unknown: {', '.join(unknown)}")
+        for locale in ("ru", "en"):
+            for field in ("title", "summary"):
+                if not str(card.get(field, {}).get(locale, "")).strip():
+                    errors.append(f"{prefix}.{field}.{locale} must be non-empty")
+        if card.get("risk_level") not in ALLOWED_RISKS:
+            errors.append(f"{prefix}.risk_level must be low or elevated")
+        controls = card.get("required_controls")
+        if not isinstance(controls, list) or not controls:
+            errors.append(f"{prefix}.required_controls must be non-empty")
+        if card.get("risk_level") == "elevated" and card.get("automation_allowed") is not False:
+            errors.append(f"{prefix} elevated editorial candidate cannot enable automation")
+    return errors
+
+
+def preview_editorial_candidates(manifest: dict[str, Any]) -> str:
+    cards = manifest["cards"]
+    categories = Counter(card["category"] for card in cards)
+    risks = Counter(card["risk_level"] for card in cards)
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"status={manifest.get('manifest_status')}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"cards={len(cards)}",
+            "categories=" + ", ".join(f"{key}:{value}" for key, value in sorted(categories.items())),
+            "risks=" + ", ".join(f"{key}:{value}" for key, value in sorted(risks.items())),
+        ]
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -173,15 +229,27 @@ def main() -> int:
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    is_source_inventory = manifest.get("schema_version") == SOURCE_SCHEMA_VERSION
-    errors = lint_source_inventory(manifest) if is_source_inventory else lint_manifest(manifest)
+    schema_version = manifest.get("schema_version")
+    is_source_inventory = schema_version == SOURCE_SCHEMA_VERSION
+    is_editorial = schema_version == EDITORIAL_SCHEMA_VERSION
+    if is_source_inventory:
+        errors = lint_source_inventory(manifest)
+    elif is_editorial:
+        errors = lint_editorial_candidates(manifest)
+    else:
+        errors = lint_manifest(manifest)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
     print("MANIFEST_OK")
     if args.preview:
-        print(preview_source_inventory(manifest) if is_source_inventory else preview(manifest))
+        if is_source_inventory:
+            print(preview_source_inventory(manifest))
+        elif is_editorial:
+            print(preview_editorial_candidates(manifest))
+        else:
+            print(preview(manifest))
     return 0
 
 

@@ -1,0 +1,152 @@
+{
+  "schema_version": "adult-activity-editorial-candidates/v1alpha1",
+  "manifest_status": "proposal",
+  "import_allowed": false,
+  "promotion_target": "adult-activity/v1alpha1",
+  "cards": [
+    {
+      "slug": "equipment-condition-check",
+      "source_refs": ["category-chat-084", "category-chat-103", "category-chat-104", "category-chat-124", "category-chat-144"],
+      "title": {"ru": "Проверить оборудование перед активностью", "en": "Check equipment before an activity"},
+      "summary": {"ru": "Проверить исправность, чистоту, совместимость и возможность быстрого прекращения использования выбранного оборудования.", "en": "Check selected equipment for condition, cleanliness, compatibility, and quick removal."},
+      "category": "consent_communication",
+      "content_kind": "preparation",
+      "risk_level": "low",
+      "automation_allowed": true,
+      "required_controls": ["equipment_allowlist", "quick_release_check", "stop_signal_check"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 15}}
+    },
+    {
+      "slug": "skin-and-contact-zone-check",
+      "source_refs": ["category-chat-083", "category-chat-123", "category-chat-143"],
+      "title": {"ru": "Проверить кожу и согласованные зоны", "en": "Check skin and agreed contact areas"},
+      "summary": {"ru": "До начала проверить состояние кожи и ещё раз подтвердить разрешённые и исключённые зоны воздействия.", "en": "Before starting, check skin condition and reconfirm allowed and excluded contact areas."},
+      "category": "consent_communication",
+      "content_kind": "preparation",
+      "risk_level": "low",
+      "automation_allowed": true,
+      "required_controls": ["body_zone_allowlist", "pre_session_checkin", "stop_conditions"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 10}}
+    },
+    {
+      "slug": "timed-chastity-device-wear",
+      "source_refs": ["category-chat-085"],
+      "title": {"ru": "Ограниченное по времени ношение устройства целомудрия", "en": "Time-limited chastity device wear"},
+      "summary": {"ru": "Добровольное ношение заранее проверенного устройства в пределах выбранного времени с доступным самостоятельным снятием.", "en": "Voluntary wear of a checked device for a selected duration with self-removal always available."},
+      "category": "device_timer",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["per_session_confirmation", "local_emergency_exit", "skin_check", "circulation_check", "duration_cap"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 5, "max": 120}, "checkin_interval_minutes": {"unit": "minutes", "min": 5, "max": 30}}
+    },
+    {
+      "slug": "timed-plug-wear",
+      "source_refs": ["category-chat-088"],
+      "title": {"ru": "Ограниченное по времени ношение пробки", "en": "Time-limited plug wear"},
+      "summary": {"ru": "Добровольное ношение индивидуально выбранного устройства с ограничением времени, периодической проверкой состояния и свободным прекращением.", "en": "Voluntary wear of an individually selected device with a time cap, periodic checks, and unrestricted stopping."},
+      "category": "device_timer",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["per_session_confirmation", "equipment_allowlist", "local_emergency_exit", "duration_cap", "aftercare_plan"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 5, "max": 60}, "checkin_interval_minutes": {"unit": "minutes", "min": 5, "max": 20}}
+    },
+    {
+      "slug": "ritual-device-removal",
+      "source_refs": ["category-chat-102"],
+      "title": {"ru": "Ритуал безопасного снятия устройства", "en": "Safe device removal ritual"},
+      "summary": {"ru": "Спокойно завершить ношение, снять устройство и выполнить согласованную проверку состояния без штрафов за досрочное окончание.", "en": "Calmly end wear, remove the device, and complete an agreed wellbeing check without penalties for ending early."},
+      "category": "connection_aftercare",
+      "content_kind": "aftercare",
+      "risk_level": "low",
+      "automation_allowed": true,
+      "required_controls": ["no_stop_penalty", "skin_check", "wellbeing_check"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 15}}
+    },
+    {
+      "slug": "quick-release-wrist-restraint",
+      "source_refs": ["category-chat-105"],
+      "title": {"ru": "Фиксация рук с быстрым освобождением", "en": "Quick-release wrist restraint"},
+      "summary": {"ru": "Короткая добровольная фиксация рук с заранее проверенным быстрым освобождением и регулярной проверкой состояния.", "en": "Brief voluntary wrist restraint with verified quick release and regular wellbeing checks."},
+      "category": "restraint_bondage",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["per_session_confirmation", "quick_release_required", "circulation_check", "no_neck_or_breath", "duration_cap"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 15}, "checkin_interval_minutes": {"unit": "minutes", "min": 1, "max": 5}}
+    },
+    {
+      "slug": "quick-release-ankle-restraint",
+      "source_refs": ["category-chat-106"],
+      "title": {"ru": "Фиксация ног с быстрым освобождением", "en": "Quick-release ankle restraint"},
+      "summary": {"ru": "Короткая добровольная фиксация ног без опасной позы, с быстрым освобождением и проверкой кровообращения.", "en": "Brief voluntary ankle restraint without a hazardous position, with quick release and circulation checks."},
+      "category": "restraint_bondage",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["per_session_confirmation", "quick_release_required", "circulation_check", "stable_position", "duration_cap"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 15}, "checkin_interval_minutes": {"unit": "minutes", "min": 1, "max": 5}}
+    },
+    {
+      "slug": "blindfold-sensory-focus",
+      "source_refs": ["category-chat-135"],
+      "title": {"ru": "Сенсорный фокус с повязкой на глаза", "en": "Blindfold sensory focus"},
+      "summary": {"ru": "Короткая активность с добровольным ограничением зрения, знакомой обстановкой и возможностью снять повязку самостоятельно.", "en": "A brief activity with voluntary sight restriction, familiar surroundings, and independent blindfold removal."},
+      "category": "sensory_play",
+      "content_kind": "activity",
+      "risk_level": "low",
+      "automation_allowed": true,
+      "required_controls": ["clear_space", "self_release", "stop_signal_check", "duration_cap"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}}
+    },
+    {
+      "slug": "texture-exploration",
+      "source_refs": ["category-chat-134"],
+      "title": {"ru": "Исследование текстур", "en": "Texture exploration"},
+      "summary": {"ru": "Исследовать заранее выбранные безопасные текстуры на согласованных участках тела, отмечая комфортные и нежелательные ощущения.", "en": "Explore preselected safe textures on agreed body areas and note comfortable or unwanted sensations."},
+      "category": "sensory_play",
+      "content_kind": "activity",
+      "risk_level": "low",
+      "automation_allowed": true,
+      "required_controls": ["material_allowlist", "body_zone_allowlist", "skin_check", "stop_conditions"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
+    },
+    {
+      "slug": "external-vibration-focus",
+      "source_refs": ["category-chat-132"],
+      "title": {"ru": "Сенсорный фокус с внешней вибрацией", "en": "External vibration sensory focus"},
+      "summary": {"ru": "Использовать проверенное внешнее устройство на согласованных зонах в пределах выбранной интенсивности и времени.", "en": "Use a checked external device on agreed areas within selected intensity and time limits."},
+      "category": "sensory_play",
+      "content_kind": "activity",
+      "risk_level": "low",
+      "automation_allowed": true,
+      "required_controls": ["equipment_allowlist", "body_zone_allowlist", "duration_cap", "stop_conditions"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
+    },
+    {
+      "slug": "hand-impact-counted-set",
+      "source_refs": ["category-chat-145", "category-chat-150", "category-chat-156"],
+      "title": {"ru": "Согласованная серия ударов ладонью", "en": "Agreed counted hand-impact set"},
+      "summary": {"ru": "Выполнить заранее согласованное ограниченное число ударов ладонью только по разрешённой безопасной зоне с промежуточной проверкой.", "en": "Complete a pre-agreed capped number of hand impacts on an allowed safer area with an interim check-in."},
+      "category": "impact_play",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["per_session_confirmation", "body_zone_allowlist", "vulnerable_zone_denylist", "repetition_cap", "midpoint_checkin"],
+      "proposed_parameters": {"repetitions": {"unit": "count", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
+    },
+    {
+      "slug": "rhythmic-impact-counted-set",
+      "source_refs": ["category-chat-158"],
+      "title": {"ru": "Ритмичная ограниченная серия ударов", "en": "Capped rhythmic impact set"},
+      "summary": {"ru": "Короткая серия в заранее согласованном ритме, числе повторов, интенсивности и разрешённой зоне с возможностью остановки в любой момент.", "en": "A brief set with agreed rhythm, repetition count, intensity, and allowed area, stoppable at any moment."},
+      "category": "impact_play",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["per_session_confirmation", "equipment_allowlist", "body_zone_allowlist", "repetition_cap", "stop_signal_check"],
+      "proposed_parameters": {"repetitions": {"unit": "count", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}, "tempo_bpm": {"unit": "bpm", "min": 30, "max": 90}}
+    }
+  ]
+}
