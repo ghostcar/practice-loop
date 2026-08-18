@@ -209,8 +209,8 @@ def lint_editorial_candidates(manifest: dict[str, Any], known_source_ids: set[st
         controls = card.get("required_controls")
         if not isinstance(controls, list) or not controls:
             errors.append(f"{prefix}.required_controls must be non-empty")
-        if card.get("risk_level") == "elevated" and card.get("automation_allowed") is not False:
-            errors.append(f"{prefix} elevated editorial candidate cannot enable automation")
+        if card.get("automation_allowed") is not False:
+            errors.append(f"{prefix} editorial candidates must keep automation_allowed=false until owner re-enables")
         if card.get("category") == "sexual_connection":
             if card.get("automation_allowed") is not False:
                 errors.append(f"{prefix} sexual_connection must remain manual-only")

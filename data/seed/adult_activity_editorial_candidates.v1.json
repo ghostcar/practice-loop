@@ -12,7 +12,7 @@
       "category": "consent_communication",
       "content_kind": "preparation",
       "risk_level": "low",
-      "automation_allowed": true,
+      "automation_allowed": false,
       "required_controls": ["equipment_allowlist", "quick_release_check", "stop_signal_check"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 15}}
     },
@@ -24,7 +24,7 @@
       "category": "consent_communication",
       "content_kind": "preparation",
       "risk_level": "low",
-      "automation_allowed": true,
+      "automation_allowed": false,
       "required_controls": ["body_zone_allowlist", "pre_session_checkin", "stop_conditions"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 10}}
     },
@@ -60,7 +60,7 @@
       "category": "connection_aftercare",
       "content_kind": "aftercare",
       "risk_level": "low",
-      "automation_allowed": true,
+      "automation_allowed": false,
       "required_controls": ["no_stop_penalty", "skin_check", "wellbeing_check"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 15}}
     },
@@ -96,7 +96,7 @@
       "category": "sensory_play",
       "content_kind": "activity",
       "risk_level": "low",
-      "automation_allowed": true,
+      "automation_allowed": false,
       "required_controls": ["clear_space", "self_release", "stop_signal_check", "duration_cap"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}}
     },
@@ -108,7 +108,7 @@
       "category": "sensory_play",
       "content_kind": "activity",
       "risk_level": "low",
-      "automation_allowed": true,
+      "automation_allowed": false,
       "required_controls": ["material_allowlist", "body_zone_allowlist", "skin_check", "stop_conditions"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
     },
@@ -120,7 +120,7 @@
       "category": "sensory_play",
       "content_kind": "activity",
       "risk_level": "low",
-      "automation_allowed": true,
+      "automation_allowed": false,
       "required_controls": ["equipment_allowlist", "body_zone_allowlist", "duration_cap", "stop_conditions"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
     },

@@ -1,12 +1,12 @@
 {
   "schema_version": "adult-activity/v1alpha1",
-  "manifest_status": "proposal",
+  "manifest_status": "owner_reviewed",
   "import_allowed": false,
-  "review_required": true,
+  "review_required": false,
   "cards": [
     {
       "slug": "agree-session-boundaries",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "preparation",
       "title": {"ru": "Согласовать границы сессии", "en": "Agree session boundaries"},
       "summary": {"ru": "Заранее обсудить допустимые и недопустимые элементы предстоящей сессии.", "en": "Discuss allowed and excluded elements before the session."},
@@ -25,7 +25,7 @@
     },
     {
       "slug": "choose-stop-signals",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "preparation",
       "title": {"ru": "Выбрать сигналы остановки", "en": "Choose stop signals"},
       "summary": {"ru": "Согласовать голосовой и невербальный сигнал немедленной остановки.", "en": "Agree verbal and non-verbal immediate stop signals."},
@@ -44,7 +44,7 @@
     },
     {
       "slug": "pre-session-readiness-check",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "checkin",
       "title": {"ru": "Проверить готовность перед сессией", "en": "Pre-session readiness check"},
       "summary": {"ru": "Каждый участник независимо подтверждает актуальную готовность или откладывает сессию.", "en": "Each participant independently confirms current readiness or postpones the session."},
@@ -63,7 +63,7 @@
     },
     {
       "slug": "mid-session-checkin",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "checkin",
       "title": {"ru": "Промежуточная проверка состояния", "en": "Mid-session wellbeing check"},
       "summary": {"ru": "Остановиться и явно выбрать продолжение, снижение интенсивности или завершение.", "en": "Pause and explicitly choose to continue, reduce intensity, or finish."},
@@ -82,7 +82,7 @@
     },
     {
       "slug": "prepare-aftercare-plan",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "preparation",
       "title": {"ru": "Подготовить план заботы после сессии", "en": "Prepare an aftercare plan"},
       "summary": {"ru": "Заранее выбрать доступные способы восстановления и время последующей проверки состояния.", "en": "Choose available recovery options and a later wellbeing check time."},
@@ -101,7 +101,7 @@
     },
     {
       "slug": "post-session-debrief",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "aftercare",
       "title": {"ru": "Обсудить сессию", "en": "Post-session debrief"},
       "summary": {"ru": "Кратко отметить комфортные и нежелательные элементы без обязанности объяснять остановку.", "en": "Note comfortable and unwanted elements without requiring an explanation for stopping."},
@@ -120,7 +120,7 @@
     },
     {
       "slug": "later-wellbeing-check",
-      "status": "draft",
+      "status": "reviewed",
       "content_kind": "aftercare",
       "title": {"ru": "Проверить состояние позднее", "en": "Later wellbeing check"},
       "summary": {"ru": "В согласованное время проверить физическое и эмоциональное состояние и при необходимости обратиться за помощью.", "en": "At an agreed time, check physical and emotional wellbeing and seek help if needed."},

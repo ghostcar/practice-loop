@@ -108,3 +108,4 @@
 | [ADR-102](ADR-102.md) | 2026-08-17 | Шаг C3: Consent records (согласия) | accepted |
 | [ADR-103](ADR-103.md) | 2026-08-17 | Шаг C4: Today projection (единый экран дня) | accepted |
 | [ADR-104](ADR-104.md) | 2026-08-18 | Durable purpose/version consent + BYOK disclosure | accepted |
+| [ADR-105](ADR-105.md) | 2026-08-18 | P1 18+ каталог: хранение safety contract | accepted |

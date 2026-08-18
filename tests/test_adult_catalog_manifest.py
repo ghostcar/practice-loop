@@ -109,6 +109,7 @@ def test_editorial_candidates_reference_retained_source_records() -> None:
     assert lint_editorial_candidates(candidates, source_ids) == []
     assert candidates["import_allowed"] is False
     assert len(candidates["cards"]) == 34
+    assert all(not card["automation_allowed"] for card in candidates["cards"])
 
 
 def test_editorial_preview_reports_candidate_mix() -> None:
