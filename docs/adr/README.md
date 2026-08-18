@@ -102,3 +102,8 @@
 | [ADR-096](ADR-096.md) | 2026-08-17 | Шаг 17d: Event-напоминания + настройки и таймер в боте | accepted |
 | [ADR-097](ADR-097.md) | 2026-08-17 | Шаг 17e: Команды бота для личного контура (med/health/cycle/care) | accepted |
 | [ADR-098](ADR-098.md) | 2026-08-17 | Шаг 17f: Reminder time/tz на пользователя | accepted |
+| [ADR-099](ADR-099.md) | 2026-08-17 | Шаг B2: Chastity device care (уход за устройством) | accepted |
+| [ADR-100](ADR-100.md) | 2026-08-17 | Шаг B3/C2: Chastity wear check-ins + LLM-верификация фото | accepted |
+| [ADR-101](ADR-101.md) | 2026-08-17 | Шаг C1: Aftercare — отдельный модуль | accepted |
+| [ADR-102](ADR-102.md) | 2026-08-17 | Шаг C3: Consent records (согласия) | accepted |
+| [ADR-103](ADR-103.md) | 2026-08-17 | Шаг C4: Today projection (единый экран дня) | accepted |
