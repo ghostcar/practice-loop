@@ -30,6 +30,17 @@ curl -s -o /dev/null -w 'login: %{http_code} -> %{redirect_url}\n' \
   "$BASE/auth/login"
 CSRF=$(grep csrf_token "$JAR" | awk '{print $7}' | tail -1)
 HDR=(-b "$JAR" -c "$JAR" -H "X-CSRF-Token: $CSRF")
+curl -s -o /dev/null -w 'consent setup: %{http_code}\n' "${HDR[@]}" \
+  --data-urlencode "consent_types=module:tracker" \
+  --data-urlencode "consent_types=module:timer" \
+  --data-urlencode "consent_types=module:medication" \
+  --data-urlencode "consent_types=module:health" \
+  --data-urlencode "consent_types=module:journal" \
+  --data-urlencode "consent_types=module:care" \
+  --data-urlencode "consent_types=module:catalog" \
+  --data-urlencode "consent_types=module:insights" \
+  --data-urlencode "consent_types=module:aftercare" \
+  "$BASE/consent/setup"
 curl -s -o /dev/null -w 'dashboard: %{http_code}\n' "${HDR[@]}" "$BASE/dashboard"
 
 echo "== inventory (device) =="
@@ -50,7 +61,9 @@ echo "session: $SID"
 chip_ok=0
 for _attempt in 1 2 3 4 5 6; do
   PAGE="$(curl -s "${HDR[@]}" "$LOC" || true)"
-  if echo "$PAGE" | grep -q "SMOKE CAGE"; then
+  # Avoid grep -q under pipefail: it closes the pipe after the match and can
+  # make the producer exit with SIGPIPE, turning a successful match into 141.
+  if [[ "$PAGE" == *"SMOKE CAGE"* ]]; then
     chip_ok=1
     break
   fi
