@@ -65,7 +65,7 @@ admin E2E и Chromium smoke/a11y/usability прошли успешно.
 | Personal Insights | ✅ работает | причинность не заявляется; opt-in разделов |
 | Mobile Foundation | ✅ bearer/refresh, push registry, JSON/media contracts | расширить JSON-first покрытие |
 | Mobile client | ❌ не реализован | выбор Flutter/React Native и отдельный этап |
-| Social Platform S0–S7 | ✅ код, 🔒 закрыта | public rollout, rate limits, email verification |
+| Social Platform S0–S7 | ✅ код, 🧪 закрытый rollout: Tracker adapter включён локально | public rollout, rate limits, email verification |
 | Chastity Social | ❌ не реализован | отдельное продуктовое решение |
 | D/s delegation / Community | ❌ не реализованы | после Social/capability gates |
 
@@ -87,7 +87,8 @@ admin E2E и Chromium smoke/a11y/usability прошли успешно.
 1. Закрыть остатки M1: accepted-session enforcement, UI истории переходов и Today polish.
 2. Расширить export/restore и JSON-first покрытие новых Personal-модулей.
 3. При необходимости расширить account management: verified email change, recovery, invitations и audit trail.
-4. Отдельно решить приоритет: mobile client или подготовка закрытого Social к limited rollout.
+4. Спроектировать S8 keyholder capability-контракт поверх проверенного закрытого Social rollout;
+   public rollout остаётся отдельным этапом после rate limits и email verification.
 
 Future Research по автономным физическим устройствам описан в `ROADMAP.md` §12 и не является
 разрешением на hardware-разработку или safety-critical управление.
