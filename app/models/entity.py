@@ -79,6 +79,28 @@ class Entity(Base):
     # ADR-038: per-activity penalty switch — allows/disallows penalties even
     # where the global rules would apply (and vice versa).
     penalty_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # ADR-105: typed safety contract for the 18+ catalog. Eligibility, risk,
+    # safety (stop/checkpoint/aftercare), evidence policy, gamification and
+    # provenance. Null for legacy non-adult rows.
+    safety_contract: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # ADR-105: explicit automation gate. False by default — nothing is
+    # auto-selected by the LLM/planner until explicitly approved.
+    automation_allowed: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
+    # ADR-105: marks adult-only content; legacy rows default to False.
+    adult_only: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
+    # ADR-105: editorial status. not_assessed is the safe default (nothing
+    # reviewed); the promotion pipeline uses draft/reviewed/approved/rejected.
+    content_status: Mapped[str] = mapped_column(
+        String(20), default="not_assessed", nullable=False, server_default="not_assessed", index=True
+    )
+    # ADR-105: monotonic content revision, bumped on each editorial edit.
+    content_version: Mapped[int] = mapped_column(
+        Integer, default=1, nullable=False, server_default="1"
+    )
     gamification_config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # gamification_config JSON structure:
     # {

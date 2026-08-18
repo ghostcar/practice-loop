@@ -98,12 +98,14 @@ Breath остаётся research-контуром (18/20), исполняемы�
    `review_required=false`.
 2. ✅ **Хранение safety contract — JSONB** (ADR-105): типизированный `safety_contract` JSONB +
    `automation_allowed`/`adult_only`/`content_status`/`content_version` на `Entity`.
-   Нормализация не выполняется, ADR-031 в силе.
+   Нормализация не выполняется, ADR-031 в силе. **Миграция 061 реализована**
+   (`d1e2f3a4b5c6`), модель и Pydantic-схемы обновлены; дефолты безопасны (automation off,
+   adult_only false, not_assessed, version 1).
 3. ✅ **Automation выключен у всех 34 editorial candidates** (`automation_allowed=false`) до
    первого прод-прогона; lint теперь требует false для всех candidates.
 
 Оставшийся gate: dry-run importer (backup → dry-run → import gate), затем production import
-как отдельный шаг с отдельным подтверждением.
+как отдельный шаг с отдельным подтверждением. Схема хранения (миграция 061) готова.
 
 ## 7. Что остаётся запрещённым независимо от review
 

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 
 RISK_LEVELS = ("not_assessed", "low", "elevated", "high")
+CONTENT_STATUSES = ("not_assessed", "draft", "reviewed", "approved", "rejected")
 
 
 class EntityCreate(BaseModel):
@@ -23,6 +24,11 @@ class EntityCreate(BaseModel):
     params_schema: dict | None = None
     risk_level: str = Field(default="not_assessed", pattern=r"^(not_assessed|low|elevated|high)$")
     penalty_enabled: bool = True
+    safety_contract: dict | None = None
+    automation_allowed: bool = False
+    adult_only: bool = False
+    content_status: str = Field(default="not_assessed", pattern=r"^(not_assessed|draft|reviewed|approved|rejected)$")
+    content_version: int = Field(default=1, ge=1)
 
 
 class EntityUpdate(BaseModel):
@@ -39,6 +45,11 @@ class EntityUpdate(BaseModel):
     params_schema: dict | None = None
     risk_level: str | None = Field(default=None, pattern=r"^(not_assessed|low|elevated|high)$")
     penalty_enabled: bool | None = None
+    safety_contract: dict | None = None
+    automation_allowed: bool | None = None
+    adult_only: bool | None = None
+    content_status: str | None = Field(default=None, pattern=r"^(not_assessed|draft|reviewed|approved|rejected)$")
+    content_version: int | None = Field(default=None, ge=1)
 
 
 class EntityResponse(BaseModel):
@@ -58,6 +69,11 @@ class EntityResponse(BaseModel):
     params_schema: dict | None = None
     risk_level: str = "not_assessed"
     penalty_enabled: bool = True
+    safety_contract: dict | None = None
+    automation_allowed: bool = False
+    adult_only: bool = False
+    content_status: str = "not_assessed"
+    content_version: int = 1
     created_at: datetime
     updated_at: datetime | None = None
 
