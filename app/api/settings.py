@@ -7,13 +7,15 @@ POST /settings/discretion/toggle → quick on/off discretion toggle (JSON)
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_user
+from app.auth import get_current_user, hash_password, verify_password
 from app.config import settings as app_settings
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.models.api_token import ApiToken
 from app.models.user import User
 from app.prefs import DASH_BLOCKS, PROFILE_MODULES, sanitize_prefs
 from app.templates_setup import templates
@@ -138,3 +140,27 @@ async def toggle_discretion(
     user.prefs = raw
     db.add(user)
     return JSONResponse({"mode": mode})
+
+
+@router.post("/settings/password")
+async def change_password(
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Change the current user's password and revoke all mobile refresh tokens."""
+    if not verify_password(current_password, user.password_hash):
+        return RedirectResponse(url="/settings?password_status=invalid", status_code=303)
+    if not 6 <= len(new_password) <= 128:
+        return RedirectResponse(url="/settings?password_status=length", status_code=303)
+    if new_password != confirm_password:
+        return RedirectResponse(url="/settings?password_status=mismatch", status_code=303)
+    if verify_password(new_password, user.password_hash):
+        return RedirectResponse(url="/settings?password_status=same", status_code=303)
+
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+    await db.execute(delete(ApiToken).where(ApiToken.user_id == user.id))
+    return RedirectResponse(url="/settings?password_status=changed", status_code=303)

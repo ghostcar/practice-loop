@@ -201,5 +201,39 @@
             </button>
         </div>
     </form>
+
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="password-h">
+        <div>
+            <h2 id="password-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_password_title }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.settings_password_hint }}</p>
+        </div>
+        {% set password_status = request.query_params.get('password_status') %}
+        {% if password_status %}
+        <p class="text-sm {{ 'text-[color:var(--success)]' if password_status == 'changed' else 'text-[color:var(--danger)]' }}" role="status">
+            {{ t['settings_password_' + password_status] }}
+        </p>
+        {% endif %}
+        <form method="post" action="/settings/password" class="space-y-3 max-w-md">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.settings_password_current }}
+                <input type="password" name="current_password" required autocomplete="current-password"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+            </label>
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.settings_password_new }}
+                <input type="password" name="new_password" required minlength="6" maxlength="128" autocomplete="new-password"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+            </label>
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.settings_password_confirm }}
+                <input type="password" name="confirm_password" required minlength="6" maxlength="128" autocomplete="new-password"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+            </label>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                {{ t.settings_password_submit }}
+            </button>
+        </form>
+    </section>
 </div>
 {% endblock %}
