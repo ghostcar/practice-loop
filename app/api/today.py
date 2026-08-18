@@ -13,7 +13,6 @@ Training, Diet).
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
@@ -31,7 +30,7 @@ from app.models.training import TrainingDay
 from app.models.user import User
 from app.platform.composition import get_composition
 from app.templates_setup import templates
-from app.timeutils import local_today
+from app.timeutils import local_day_bounds, local_today
 
 router = APIRouter(tags=["today"])
 
@@ -56,8 +55,7 @@ async def today_page(
     composition = get_composition()
 
     today = local_today()
-    today_start = datetime(today.year, today.month, today.day, tzinfo=UTC)
-    today_end = today_start + timedelta(days=1)
+    today_start, today_end = local_day_bounds(today)
 
     # Tracker: today's scheduled tasks + active session
     tasks_result = await db.execute(
@@ -72,6 +70,20 @@ async def today_page(
         .limit(15)
     )
     tasks = list(tasks_result.scalars().all())
+
+    attention_result = await db.execute(
+        select(ActivityLog)
+        .where(
+            ActivityLog.user_id == user.id,
+            (
+                ((ActivityLog.scheduled_at < today_start) & ActivityLog.status.in_(["planned", "in_progress"]))
+                | (ActivityLog.status == "review_needed")
+            ),
+        )
+        .order_by(ActivityLog.scheduled_at.asc().nulls_last(), ActivityLog.created_at.asc())
+        .limit(10)
+    )
+    attention_tasks = list(attention_result.scalars().all())
 
     active_session = (
         await db.execute(
@@ -140,6 +152,7 @@ async def today_page(
             "nav_key": "today",
             "today_label": _today_label(today, locale),
             "tasks": tasks,
+            "attention_tasks": attention_tasks,
             "active_session": active_session,
             "today_training": today_training,
             "active_diets": active_diets,

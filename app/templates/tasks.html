@@ -239,7 +239,7 @@
     <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h2 class="text-xl font-semibold text-[color:var(--text)]">{{ t.tasks_section_recent }}</h2>
         <div class="flex items-center gap-2">
-            {% if status_filter or body_part_id or location_id or inventory_item_id %}
+            {% if status_filter or body_part_id or location_id or inventory_item_id or attention %}
             <a href="/tasks/" class="text-xs pl-accent-text underline">{{ t.tasks_filter_clear }}</a>
             {% endif %}
             <!-- Row density toggle (DESIGN v2 §10: compact/comfortable) -->

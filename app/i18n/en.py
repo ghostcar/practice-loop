@@ -1373,6 +1373,11 @@ EN = {
     "today_diet": "Diet",
     "today_last": "Last",
     "today_open": "Open",
+    "today_attention": "Needs attention",
+    "today_attention_hint": "Overdue tasks and items waiting for your decision.",
+    "today_needs_review": "needs review",
+    "today_overdue": "overdue",
+    "today_review": "Review now",
     # Шаг 15 — Personal Care (4B)
     "nav_care": "Care",
     "dscr_care": "Care",

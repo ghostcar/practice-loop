@@ -28,7 +28,7 @@ from app.params import normalize_schema, validate_params
 from app.security import complete_once, interrupt_once
 from app.services.scheduler import get_due_practices, set_next_due, set_retry_block
 from app.templates_setup import templates
-from app.timeutils import local_today
+from app.timeutils import local_day_bounds, local_today
 from app.title_gen import generate_title
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,7 @@ async def tasks_page(
     body_part_id: str | None = Query(None),
     location_id: str | None = Query(None),
     inventory_item_id: str | None = Query(None),
+    attention: bool = Query(False),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -81,6 +82,13 @@ async def tasks_page(
             ActivityLog.id.in_(
                 select(TaskInventoryUsage.activity_log_id).where(TaskInventoryUsage.inventory_item_id == inv_uuid)
             )
+        )
+
+    if attention:
+        today_start, _ = local_day_bounds(local_today())
+        query = query.where(
+            ((ActivityLog.scheduled_at < today_start) & ActivityLog.status.in_(["planned", "in_progress"]))
+            | (ActivityLog.status == "review_needed")
         )
 
     # Get recent logs
@@ -164,6 +172,7 @@ async def tasks_page(
             "body_part_id": body_part_id or "",
             "location_id": location_id or "",
             "inventory_item_id": inventory_item_id or "",
+            "attention": attention,
         },
     )
 

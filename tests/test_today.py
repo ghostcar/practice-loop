@@ -7,10 +7,11 @@ Medication/Care/Aftercare/Journal/Training/Diet) без создания агр�
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
+from app.models.activity_log import ActivityLog
 from app.models.aftercare import AftercareEntry
 from app.models.journal import JournalEntry
 
@@ -37,3 +38,40 @@ async def test_today_page_with_data(auth_client, test_user, db_session):
     body = resp.text
     assert "Journal" in body or "Журнал" in body
     assert "Aftercare" in body
+
+
+@pytest.mark.asyncio
+async def test_today_prioritizes_overdue_and_review_tasks(auth_client, test_user, db_session):
+    now = datetime.now(UTC)
+    db_session.add_all(
+        [
+            ActivityLog(
+                user_id=test_user.id,
+                status="planned",
+                selected_entity_name="Overdue task",
+                scheduled_at=now - timedelta(days=2),
+            ),
+            ActivityLog(user_id=test_user.id, status="review_needed", selected_entity_name="Decision task"),
+            ActivityLog(
+                user_id=test_user.id,
+                status="completed",
+                selected_entity_name="Finished old task",
+                scheduled_at=now - timedelta(days=2),
+            ),
+        ]
+    )
+    await db_session.flush()
+
+    response = await auth_client.get("/today")
+    assert response.status_code == 200
+    assert "Needs attention" in response.text
+    assert "Overdue task" in response.text
+    assert "Decision task" in response.text
+    assert "Finished old task" not in response.text
+    assert 'href="/tasks/?attention=true"' in response.text
+
+    filtered = await auth_client.get("/tasks/?attention=true")
+    assert filtered.status_code == 200
+    assert "Overdue task" in filtered.text
+    assert "Decision task" in filtered.text
+    assert "Finished old task" not in filtered.text

@@ -1377,6 +1377,11 @@ RU = {
     "today_diet": "Питание",
     "today_last": "Последняя",
     "today_open": "Открыть",
+    "today_attention": "Требует внимания",
+    "today_attention_hint": "Просроченные задачи и решения, ожидающие вашего разбора.",
+    "today_needs_review": "нужно решение",
+    "today_overdue": "просрочено",
+    "today_review": "Разобрать сейчас",
     # Шаг 15 — Personal Care (4B)
     "nav_care": "Уход",
     "dscr_care": "Уход",
