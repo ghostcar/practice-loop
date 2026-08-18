@@ -31,13 +31,15 @@
       '<tr><td colspan="7" class="px-4 py-8 text-center text-[color:var(--text-muted)]">No measurements yet</td></tr>';
   }
 
-  async function loadChart(metric) {
+  async function loadChart(metric, trigger) {
     document.querySelectorAll('.chart-btn').forEach((b) => {
       b.classList.remove('bg-indigo-600', 'text-white');
       b.classList.add('bg-slate-100', 'dark:bg-slate-800');
     });
-    event.target.classList.add('bg-indigo-600', 'text-white');
-    event.target.classList.remove('bg-slate-100', 'dark:bg-slate-800');
+    if (trigger) {
+      trigger.classList.add('bg-indigo-600', 'text-white');
+      trigger.classList.remove('bg-slate-100', 'dark:bg-slate-800');
+    }
     const res = await fetch(`/api/v2/measurements/charts?metric=${metric}&limit=60`);
     const data = await res.json();
     const ctx = document.getElementById('meas-chart').getContext('2d');

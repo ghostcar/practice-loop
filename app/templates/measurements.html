@@ -27,11 +27,11 @@
  <span id="trend-indicator" class="text-xs px-2 py-1 rounded-full font-medium"></span>
  </div>
  <div class="flex gap-1.5 mb-3 flex-wrap">
- <button onclick="loadChart('weight')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Weight</button>
- <button onclick="loadChart('chest')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Chest</button>
- <button onclick="loadChart('waist')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Waist</button>
- <button onclick="loadChart('hips')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Hips</button>
- <button onclick="loadChart('thigh')" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Thigh</button>
+ <button onclick="loadChart('weight', this)" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Weight</button>
+ <button onclick="loadChart('chest', this)" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Chest</button>
+ <button onclick="loadChart('waist', this)" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Waist</button>
+ <button onclick="loadChart('hips', this)" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Hips</button>
+ <button onclick="loadChart('thigh', this)" class="chart-btn px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] text-xs font-medium transition-colors">Thigh</button>
  </div>
  <div class="h-52"><canvas id="meas-chart"></canvas></div>
  </div>

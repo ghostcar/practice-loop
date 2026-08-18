@@ -18,8 +18,8 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator("#pl-sidebar"), `${route} authenticated sidebar`).toBeVisible();
     await expect(page.locator('a[href="/login"]'), `${route} must not show guest login`).toHaveCount(0);
+    expect(errors.splice(0), `${route} browser errors`).toEqual([]);
   }
-  expect(errors).toEqual([]);
 });
 
 test("@a11y authenticated shell has no serious axe violations (dark + light)", async ({ page }) => {
