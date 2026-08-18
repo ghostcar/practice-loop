@@ -144,8 +144,8 @@ async def _ctx_journal(db: AsyncSession, user_id: uuid.UUID, start: date, end: d
     orgasms = sum(r.orgasms or 0 for r in rows)
     return [
         f"journal entries: {len(rows)}",
-        f"avg satisfaction (1-5): {_fmt_num(sum(sats)/len(sats) if sats else None)}",
-        f"avg intensity (1-5): {_fmt_num(sum(ints)/len(ints) if ints else None)}",
+        f"avg satisfaction (1-5): {_fmt_num(sum(sats) / len(sats) if sats else None)}",
+        f"avg intensity (1-5): {_fmt_num(sum(ints) / len(ints) if ints else None)}",
         f"orgasms total: {orgasms}",
     ]
 
@@ -284,7 +284,7 @@ async def _ctx_diet(db: AsyncSession, user_id: uuid.UUID, start: date, end: date
     scores = [r.score for r in rows if r.score is not None]
     return [
         f"diet evaluations: {len(rows)}",
-        f"avg adherence score (0-100): {_fmt_num(sum(scores)/len(scores) if scores else None, 0)}",
+        f"avg adherence score (0-100): {_fmt_num(sum(scores) / len(scores) if scores else None, 0)}",
     ]
 
 

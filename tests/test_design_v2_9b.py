@@ -39,7 +39,7 @@ def _render_session(**overrides):
         autoescape=select_autoescape(),
     )
     env.globals["t"] = EN
-    env.globals["localtime"] = lambda v, fmt="%Y-%m-%d %H:%M": (v.strftime(fmt) if v else "")
+    env.globals["localtime"] = lambda v, fmt="%Y-%m-%d %H:%M": v.strftime(fmt) if v else ""
 
     now = datetime(2026, 8, 14, 12, 0, tzinfo=UTC)
     session = {
