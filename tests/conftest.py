@@ -1,6 +1,5 @@
 """Test fixtures: in-memory SQLite, async client, test user factory."""
 
-import asyncio
 import os
 import secrets
 from collections.abc import AsyncGenerator
@@ -8,7 +7,6 @@ from collections.abc import AsyncGenerator
 # Enable LockTimer Core for tests (must be set before app import).
 os.environ.setdefault("LOCKTIMER_CORE_ENABLED", "true")
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -79,14 +77,6 @@ from app.templates_setup import templates
 
 # Disable Jinja2 template caching in tests to avoid unhashable context issues
 templates.env.cache = None
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Single event loop for the test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(scope="function")

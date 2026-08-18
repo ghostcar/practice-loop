@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
+from pydantic import BaseModel
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -80,6 +81,7 @@ def _today_label(day: datetime.date, locale: str) -> str:
 
 
 router = APIRouter(tags=["dashboard-v2"])
+session_json_router = APIRouter(prefix="/api/v2/sessions", tags=["sessions"])
 
 
 # --- Dashboard ---
@@ -761,6 +763,221 @@ async def end_session(
     await _record_session_event(db, s, user, "ended")
     await db.flush()
     return RedirectResponse(url="/sessions", status_code=303)
+
+
+class SessionCreateIn(BaseModel):
+    title: str | None = None
+    notes: str | None = None
+    session_rules: dict | None = None
+
+
+class SessionTaskIn(BaseModel):
+    task_id: uuid.UUID
+
+
+def _session_json(session: ActivitySession) -> dict:
+    # Never trigger relationship I/O from this synchronous serializer. Queries
+    # load ``logs`` with selectin; newly-created sessions have no tasks yet.
+    logs = session.__dict__.get("logs", [])
+    return {
+        "id": str(session.id),
+        "status": session.status,
+        "title": session.title,
+        "notes": session.notes,
+        "session_rules": session.session_rules,
+        "accepted_at": session.accepted_at.isoformat() if session.accepted_at else None,
+        "started_at": session.started_at.isoformat() if session.started_at else None,
+        "ended_at": session.ended_at.isoformat() if session.ended_at else None,
+        "task_ids": [str(task.id) for task in logs],
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+    }
+
+
+@session_json_router.get("")
+async def json_sessions(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    rows = (
+        (
+            await db.execute(
+                select(ActivitySession)
+                .where(ActivitySession.owner_id == user.id)
+                .order_by(ActivitySession.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [_session_json(session) for session in rows]
+
+
+@session_json_router.post("", status_code=201)
+async def json_create_session(
+    data: SessionCreateIn,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = ActivitySession(
+        owner_id=user.id,
+        status="created",
+        title=data.title,
+        notes=data.notes,
+        session_rules=data.session_rules,
+    )
+    db.add(session)
+    await db.flush()
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
+    await db.flush()
+    return _session_json(session)
+
+
+@session_json_router.post("/{session_id}/accept")
+async def json_accept_session(
+    session_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, session_id, user)
+    if session.status != "created":
+        raise HTTPException(status_code=409, detail="Only a created session can be accepted")
+    if session.accepted_at is None:
+        session.accepted_at = datetime.now(UTC)
+        await _record_session_event(
+            db, session, user, "accepted", details={"task_ids": [str(t.id) for t in session.logs]}
+        )
+        await db.flush()
+    return _session_json(session)
+
+
+@session_json_router.post("/{session_id}/start")
+async def json_start_session(
+    session_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, session_id, user)
+    if session.status != "created":
+        raise HTTPException(status_code=409, detail="Only a created session can be started")
+    now = datetime.now(UTC)
+    if session.accepted_at is None:
+        session.accepted_at = now
+        await _record_session_event(
+            db, session, user, "accepted", details={"task_ids": [str(t.id) for t in session.logs]}
+        )
+    session.status = "active"
+    session.started_at = now
+    await _record_session_event(db, session, user, "started")
+    await db.flush()
+    return _session_json(session)
+
+
+@session_json_router.post("/{session_id}/end")
+async def json_end_session(
+    session_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, session_id, user)
+    if session.status not in ("created", "active"):
+        raise HTTPException(status_code=409, detail="Session is already ended")
+    session.status = "ended"
+    session.ended_at = datetime.now(UTC)
+    await _record_session_event(db, session, user, "ended")
+    await db.flush()
+    return _session_json(session)
+
+
+@session_json_router.post("/{session_id}/tasks")
+async def json_attach_session_task(
+    session_id: uuid.UUID,
+    data: SessionTaskIn,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, session_id, user)
+    if session.status == "ended":
+        raise HTTPException(status_code=409, detail="Ended session cannot be changed")
+    task = (
+        await db.execute(select(ActivityLog).where(ActivityLog.id == data.task_id, ActivityLog.user_id == user.id))
+    ).scalar_one_or_none()
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.session_id not in (None, session.id):
+        raise HTTPException(status_code=409, detail="Task belongs to another session")
+    if task.session_id is None:
+        task.session_id = session.id
+        await _record_session_event(
+            db,
+            session,
+            user,
+            "task_added",
+            details={"task_id": str(task.id), "title": task.title_override or task.selected_entity_name},
+            penalize_change=True,
+        )
+        await db.flush()
+        await db.refresh(session, ["logs"])
+    return _session_json(session)
+
+
+@session_json_router.delete("/{session_id}/tasks/{task_id}", status_code=204)
+async def json_detach_session_task(
+    session_id: uuid.UUID,
+    task_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    session = await _owned_session(db, session_id, user)
+    if session.status == "ended":
+        raise HTTPException(status_code=409, detail="Ended session cannot be changed")
+    task = (
+        await db.execute(
+            select(ActivityLog).where(
+                ActivityLog.id == task_id,
+                ActivityLog.user_id == user.id,
+                ActivityLog.session_id == session.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task.session_id = None
+    await _record_session_event(
+        db,
+        session,
+        user,
+        "task_removed",
+        details={"task_id": str(task.id), "title": task.title_override or task.selected_entity_name},
+        penalize_change=True,
+    )
+    await db.flush()
+
+
+@session_json_router.get("/{session_id}/history")
+async def json_session_history(
+    session_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await _owned_session(db, session_id, user)
+    events = (
+        (
+            await db.execute(
+                select(ActivitySessionHistory)
+                .where(ActivitySessionHistory.session_id == session_id)
+                .order_by(ActivitySessionHistory.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [
+        {
+            "id": str(event.id),
+            "event_type": event.event_type,
+            "details": event.details,
+            "penalty_xp": event.penalty_xp,
+            "created_at": event.created_at.isoformat(),
+        }
+        for event in events
+    ]
 
 
 # --- Privacy ---

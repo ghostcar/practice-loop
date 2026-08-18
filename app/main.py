@@ -259,6 +259,7 @@ if composition.tracker_active:
     from app.api.catalog import json_router as catalog_json_router  # noqa: E402
     from app.api.catalog import router as catalog_router  # noqa: E402
     from app.api.dashboard import router as dashboard_router  # noqa: E402
+    from app.api.dashboard import session_json_router  # noqa: E402
     from app.api.diets import router as diets_router  # noqa: E402
     from app.api.entities import router as entities_router  # noqa: E402
     from app.api.health import json_router as health_json_router  # noqa: E402
@@ -290,6 +291,7 @@ if composition.tracker_active:
         tasks_router,
         training_router,
         dashboard_router,
+        session_json_router,
         points_router,
         task_flows_router,
         references_router,

@@ -190,3 +190,32 @@ async def test_sessions_page_shows_tasks_and_audit(auth_client: AsyncClient, db_
     assert "Audited task" in response.text
     assert "Audit history" in response.text
     assert "-10 XP" in response.text
+
+
+@pytest.mark.asyncio
+async def test_json_session_full_lifecycle(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+    task = ActivityLog(user_id=test_user.id, selected_entity_name="API task")
+    db_session.add(task)
+    await db_session.flush()
+
+    created = await auth_client.post("/api/v2/sessions", json={"title": "API session"})
+    assert created.status_code == 201
+    session_id = created.json()["id"]
+
+    attached = await auth_client.post(f"/api/v2/sessions/{session_id}/tasks", json={"task_id": str(task.id)})
+    assert attached.status_code == 200
+    assert str(task.id) in attached.json()["task_ids"]
+
+    accepted = await auth_client.post(f"/api/v2/sessions/{session_id}/accept")
+    assert accepted.status_code == 200
+    assert accepted.json()["accepted_at"]
+    started = await auth_client.post(f"/api/v2/sessions/{session_id}/start")
+    assert started.status_code == 200
+    assert started.json()["status"] == "active"
+    ended = await auth_client.post(f"/api/v2/sessions/{session_id}/end")
+    assert ended.status_code == 200
+    assert ended.json()["status"] == "ended"
+
+    history = await auth_client.get(f"/api/v2/sessions/{session_id}/history")
+    assert history.status_code == 200
+    assert [item["event_type"] for item in history.json()] == ["created", "task_added", "accepted", "started", "ended"]
