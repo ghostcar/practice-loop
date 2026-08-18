@@ -27,6 +27,7 @@ from app.models.session_history import ActivitySessionHistory
 from app.models.training import TrainingDay
 from app.models.user import User
 from app.security import ensure_csrf_cookie
+from app.services.personal_export import build_personal_export
 from app.templates_setup import templates
 from app.timeutils import local_today
 
@@ -794,58 +795,8 @@ async def export_data(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Export all user data as JSON."""
-    # Gather all data
-    progress = await get_or_create_progress(db, user.id)
-
-    logs_result = await db.execute(
-        select(ActivityLog).where(ActivityLog.user_id == user.id).order_by(ActivityLog.created_at.desc())
-    )
-    logs = logs_result.scalars().all()
-
-    user_achs_result = await db.execute(
-        select(UserAchievement, Achievement).join(Achievement).where(UserAchievement.user_id == user.id)
-    )
-    achievements_list = [
-        {
-            "code": ach.code,
-            "name": ach.name,
-            "obtained_at": ua.obtained_at.isoformat() if ua.obtained_at else None,
-        }
-        for ua, ach in user_achs_result
-    ]
-
-    data = {
-        "exported_at": datetime.now(UTC).isoformat(),
-        "user": {
-            "email": user.email,
-            "locale": user.locale,
-            "theme": user.theme,
-            "created_at": user.created_at.isoformat() if user.created_at else None,
-        },
-        "progress": {
-            "xp": progress.xp,
-            "level": progress.level,
-            "streak": progress.current_streak,
-            "longest_streak": progress.longest_streak,
-            "total_completed": progress.total_completed,
-            "total_interrupted": progress.total_interrupted,
-        },
-        "activities": [
-            {
-                "id": str(log.id),
-                "status": log.status,
-                "entity_name": log.selected_entity_name,
-                "params": log.selected_params,
-                "raw_llm_response": log.raw_llm_response,
-                "tokens": log.total_tokens,
-                "cost": log.cost,
-                "created_at": log.created_at.isoformat() if log.created_at else None,
-            }
-            for log in logs[:200]
-        ],
-        "achievements": achievements_list,
-    }
+    """Export the complete owner-scoped Personal manifest as JSON."""
+    data = await build_personal_export(db, user)
 
     return PlainTextResponse(
         json.dumps(data, indent=2, ensure_ascii=False, default=str),
