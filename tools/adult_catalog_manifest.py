@@ -200,6 +200,11 @@ def lint_editorial_candidates(manifest: dict[str, Any], known_source_ids: set[st
             errors.append(f"{prefix}.required_controls must be non-empty")
         if card.get("risk_level") == "elevated" and card.get("automation_allowed") is not False:
             errors.append(f"{prefix} elevated editorial candidate cannot enable automation")
+        if card.get("category") == "sexual_connection":
+            if card.get("automation_allowed") is not False:
+                errors.append(f"{prefix} sexual_connection must remain manual-only")
+            if not any("explicit" in control and "opt_in" in control for control in controls):
+                errors.append(f"{prefix} sexual_connection requires an explicit opt-in control")
     return errors
 
 

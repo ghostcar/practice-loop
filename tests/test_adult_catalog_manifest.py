@@ -73,7 +73,7 @@ def test_editorial_candidates_reference_retained_source_records() -> None:
 
     assert lint_editorial_candidates(candidates, source_ids) == []
     assert candidates["import_allowed"] is False
-    assert len(candidates["cards"]) == 12
+    assert len(candidates["cards"]) == 20
 
 
 def test_editorial_preview_reports_candidate_mix() -> None:
@@ -81,5 +81,5 @@ def test_editorial_preview_reports_candidate_mix() -> None:
 
     result = preview_editorial_candidates(candidates)
 
-    assert "cards=12" in result
-    assert "elevated:6" in result
+    assert "cards=20" in result
+    assert "elevated:12" in result

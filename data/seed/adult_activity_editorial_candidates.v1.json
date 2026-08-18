@@ -147,6 +147,102 @@
       "automation_allowed": false,
       "required_controls": ["per_session_confirmation", "equipment_allowlist", "body_zone_allowlist", "repetition_cap", "stop_signal_check"],
       "proposed_parameters": {"repetitions": {"unit": "count", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}, "tempo_bpm": {"unit": "bpm", "min": 30, "max": 90}}
+    },
+    {
+      "slug": "intimate-equipment-preparation",
+      "source_refs": ["category-chat-063", "category-chat-064"],
+      "title": {"ru": "Подготовить интимную активность и оборудование", "en": "Prepare an intimate activity and equipment"},
+      "summary": {"ru": "Заранее проверить согласованные границы, гигиену, совместимость и доступность необходимых средств для выбранной взрослой активности.", "en": "Check agreed boundaries, hygiene, compatibility, and necessary supplies for the selected adult activity."},
+      "category": "consent_communication",
+      "content_kind": "preparation",
+      "risk_level": "low",
+      "automation_allowed": false,
+      "required_controls": ["explicit_activity_opt_in", "equipment_allowlist", "hygiene_check", "stop_signal_check"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 2, "max": 15}}
+    },
+    {
+      "slug": "basic-oral-technique-practice",
+      "source_refs": ["category-chat-065"],
+      "title": {"ru": "Практика базовой оральной техники", "en": "Basic oral technique practice"},
+      "summary": {"ru": "Добровольная взрослая практика в заранее согласованных пределах длительности и интенсивности с постоянной возможностью остановки.", "en": "A voluntary adult practice within agreed duration and intensity limits, stoppable at any moment."},
+      "category": "sexual_connection",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["explicit_activity_opt_in", "per_session_confirmation", "no_breath_restriction", "duration_cap", "stop_signal_check"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
+    },
+    {
+      "slug": "paced-oral-technique-practice",
+      "source_refs": ["category-chat-068"],
+      "title": {"ru": "Оральная техника в согласованном темпе", "en": "Oral technique at an agreed pace"},
+      "summary": {"ru": "Практика с заранее выбранным комфортным темпом, короткими интервалами и обязательными паузами для проверки состояния.", "en": "Practice at a preselected comfortable pace with brief intervals and mandatory wellbeing pauses."},
+      "category": "sexual_connection",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["explicit_activity_opt_in", "per_session_confirmation", "no_breath_restriction", "interval_cap", "mandatory_pause"],
+      "proposed_parameters": {"active_seconds": {"unit": "seconds", "min": 5, "max": 60}, "pause_seconds": {"unit": "seconds", "min": 15, "max": 120}, "repetitions": {"unit": "count", "min": 1, "max": 5}}
+    },
+    {
+      "slug": "basic-anal-technique-practice",
+      "source_refs": ["category-chat-063", "category-chat-064", "category-chat-071"],
+      "title": {"ru": "Практика базовой анальной техники", "en": "Basic anal technique practice"},
+      "summary": {"ru": "Добровольная взрослая практика с подготовкой, индивидуально выбранным оборудованием и заранее ограниченными длительностью и интенсивностью.", "en": "A voluntary adult practice with preparation, individually selected equipment, and preset duration and intensity limits."},
+      "category": "sexual_connection",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["explicit_activity_opt_in", "per_session_confirmation", "equipment_allowlist", "hygiene_check", "duration_cap", "stop_signal_check"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
+    },
+    {
+      "slug": "partner-led-position-practice",
+      "source_refs": ["category-chat-074"],
+      "title": {"ru": "Практика в выбранной партнёрской позиции", "en": "Practice in a selected partner position"},
+      "summary": {"ru": "Выбрать устойчивую позицию, в которой участник сохраняет контроль движения и может немедленно остановиться.", "en": "Choose a stable position where the participant retains movement control and can stop immediately."},
+      "category": "sexual_connection",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["explicit_activity_opt_in", "per_session_confirmation", "stable_position", "participant_retains_control", "duration_cap"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}, "intensity": {"unit": "scale_1_3", "min": 1, "max": 3}}
+    },
+    {
+      "slug": "alternating-intimate-activities",
+      "source_refs": ["category-chat-077"],
+      "title": {"ru": "Чередование согласованных интимных активностей", "en": "Alternate agreed intimate activities"},
+      "summary": {"ru": "Чередовать две отдельно подключённые пользователем взрослые активности с явной проверкой перед каждым переходом.", "en": "Alternate two adult activities separately enabled by the user, with an explicit check before each transition."},
+      "category": "sexual_connection",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["explicit_opt_in_for_each_activity", "per_transition_checkin", "duration_cap", "stop_signal_check"],
+      "proposed_parameters": {"block_minutes": {"unit": "minutes", "min": 1, "max": 10}, "repetitions": {"unit": "count", "min": 1, "max": 4}}
+    },
+    {
+      "slug": "paced-intimate-technique-practice",
+      "source_refs": ["category-chat-078"],
+      "title": {"ru": "Интимная техника в выбранном ритме", "en": "Intimate technique at a selected rhythm"},
+      "summary": {"ru": "Практика в заранее выбранном комфортном ритме с ограничением времени и промежуточной проверкой состояния.", "en": "Practice at a preselected comfortable rhythm with a time cap and an interim wellbeing check."},
+      "category": "sexual_connection",
+      "content_kind": "activity",
+      "risk_level": "elevated",
+      "automation_allowed": false,
+      "required_controls": ["explicit_activity_opt_in", "per_session_confirmation", "tempo_cap", "midpoint_checkin", "stop_signal_check"],
+      "proposed_parameters": {"tempo_bpm": {"unit": "bpm", "min": 30, "max": 90}, "duration_minutes": {"unit": "minutes", "min": 1, "max": 15}}
+    },
+    {
+      "slug": "intentional-intimate-practice-stop",
+      "source_refs": ["category-chat-082"],
+      "title": {"ru": "Осознанно завершить интимную практику", "en": "Intentionally stop an intimate practice"},
+      "summary": {"ru": "Остановить текущую практику по собственному решению, отметить состояние и перейти к выбранному восстановлению без штрафа.", "en": "Stop the current practice by personal choice, note current wellbeing, and move to selected recovery without penalty."},
+      "category": "connection_aftercare",
+      "content_kind": "aftercare",
+      "risk_level": "low",
+      "automation_allowed": false,
+      "required_controls": ["no_stop_penalty", "wellbeing_check", "aftercare_choice"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 15}}
     }
   ]
 }
