@@ -19,6 +19,7 @@ EDITORIAL_PATH = Path("data/seed/adult_activity_editorial_candidates.v1.json")
 FLUID_TOILET_REVIEW_PATH = Path("data/seed/adult_activity_fluid_toilet_review.v1.json")
 BREATH_REVIEW_PATH = Path("data/seed/adult_activity_breath_review.v1.json")
 SEXUAL_TECHNIQUE_REVIEW_PATH = Path("data/seed/adult_activity_sexual_technique_review.v1.json")
+WEARING_CHASTITY_REVIEW_PATH = Path("data/seed/adult_activity_wearing_chastity_review.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -173,3 +174,39 @@ def test_sexual_technique_review_preview_reports_outcomes() -> None:
     assert "promote_candidate:9" in result
     assert "rewrite_required:5" in result
     assert "research_backlog:1" in result
+
+
+def test_wearing_chastity_review_has_exact_source_coverage() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    review = load_manifest(WEARING_CHASTITY_REVIEW_PATH)
+    expected_ids = {record["source_id"] for record in source["records"] if record["source_area"] == "wearing_chastity"}
+
+    assert lint_editorial_review(review, expected_ids) == []
+    assert {record["source_id"] for record in review["records"]} == expected_ids
+    assert len(review["records"]) == 20
+    assert all(record["retained"] for record in review["records"])
+    assert all(not record["automation_allowed"] for record in review["records"])
+
+
+def test_promoted_wearing_sources_have_editorial_derivatives() -> None:
+    review = load_manifest(WEARING_CHASTITY_REVIEW_PATH)
+    candidates = load_manifest(EDITORIAL_PATH)
+    candidate_slugs = {card["slug"] for card in candidates["cards"]}
+    candidate_refs = {source_ref for card in candidates["cards"] for source_ref in card["source_refs"]}
+    promoted = [record for record in review["records"] if record["review_outcome"] == "promote_candidate"]
+
+    assert len(promoted) == 5
+    assert all(record["source_id"] in candidate_refs for record in promoted)
+    assert all(record["derived_card_slug"] in candidate_slugs for record in promoted)
+
+
+def test_wearing_chastity_review_preview_reports_outcomes() -> None:
+    review = load_manifest(WEARING_CHASTITY_REVIEW_PATH)
+
+    result = preview_editorial_review(review)
+
+    assert "records=20" in result
+    assert "promote_candidate:5" in result
+    assert "manual_reference:4" in result
+    assert "rewrite_required:9" in result
+    assert "research_backlog:2" in result

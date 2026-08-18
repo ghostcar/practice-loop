@@ -18,6 +18,8 @@
 6. `adult_activity_sexual_technique_review.v1.json` — formal review всех 20 sexual-technique
    источников; manual selection и отдельный opt-in обязательны, promoted sources связаны с
    производными editorial candidates.
+7. `adult_activity_wearing_chastity_review.v1.json` — formal review 20 wearing/chastity идей;
+   независимое снятие, emergency exit, duration cap и проверки состояния обязательны.
 
 ## Значение статусов источника
 
@@ -40,6 +42,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_activity_foundation.v1.j
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_fluid_toilet_review.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_breath_review.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_sexual_technique_review.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_activity_wearing_chastity_review.v1.json --preview
 pytest -q tests/test_adult_catalog_manifest.py
 ```
 
