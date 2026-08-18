@@ -3,11 +3,13 @@ from pathlib import Path
 
 from tools.adult_catalog_manifest import (
     lint_additional_titles,
+    lint_body_zone_vocabulary,
     lint_category_taxonomy,
     lint_editorial_candidates,
     lint_editorial_review,
     lint_inventory_source,
     lint_manifest,
+    lint_parameter_vocabulary,
     lint_source_inventory,
     load_manifest,
     preview,
@@ -33,6 +35,8 @@ STANDALONE_REVIEW_PATH = Path("data/seed/adult_activity_standalone_review.v1.jso
 INVENTORY_SOURCE_PATH = Path("data/seed/adult_inventory_source.v1.json")
 TAXONOMY_PATH = Path("data/seed/adult_category_taxonomy_source.v1.json")
 ADDITIONAL_TITLES_PATH = Path("data/seed/adult_additional_activity_titles.v1.json")
+PARAMETER_VOCABULARY_PATH = Path("data/seed/adult_parameter_vocabulary.v1.json")
+BODY_ZONE_VOCABULARY_PATH = Path("data/seed/adult_body_zone_vocabulary.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -348,3 +352,15 @@ def test_additional_title_preview_reports_sources() -> None:
     assert "source_records=289" in result
     assert "unique_titles=286" in result
     assert "examples/Книга1.xlsx:" in result
+
+
+def test_parameter_and_body_zone_vocabularies_are_safe_overlays() -> None:
+    parameters = load_manifest(PARAMETER_VOCABULARY_PATH)
+    body_zones = load_manifest(BODY_ZONE_VOCABULARY_PATH)
+
+    assert lint_parameter_vocabulary(parameters) == []
+    assert lint_body_zone_vocabulary(body_zones) == []
+    assert len(parameters["definitions"]) == 27
+    assert parameters["legacy_values_imported"] is False
+    assert body_zones["existing_count"] == 39
+    assert body_zones["extension_count"] == 9

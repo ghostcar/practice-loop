@@ -1,0 +1,421 @@
+{
+  "schema_version": "adult-parameter-vocabulary/v1alpha1",
+  "status": "proposal",
+  "import_allowed": false,
+  "adr": "ADR-041",
+  "legacy_values_imported": false,
+  "definitions": [
+    {
+      "order": 1,
+      "key": "duration",
+      "title_ru": "Длительность",
+      "type": "duration",
+      "unit_group": "time",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 2,
+      "key": "intensity",
+      "title_ru": "Интенсивность",
+      "type": "integer",
+      "unit_group": "scale",
+      "safety_routing": "moderated",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 3,
+      "key": "repetitions",
+      "title_ru": "Количество повторений",
+      "type": "integer",
+      "unit_group": "count",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 4,
+      "key": "tempo",
+      "title_ru": "Темп",
+      "type": "integer",
+      "unit_group": "tempo",
+      "safety_routing": "moderated",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 5,
+      "key": "frequency",
+      "title_ru": "Периодичность",
+      "type": "string",
+      "unit_group": "schedule",
+      "safety_routing": "manual_only",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 6,
+      "key": "volume",
+      "title_ru": "Объём",
+      "type": "decimal",
+      "unit_group": "volume",
+      "safety_routing": "specialist_review",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 7,
+      "key": "temperature",
+      "title_ru": "Температура",
+      "type": "decimal",
+      "unit_group": "temperature",
+      "safety_routing": "specialist_review",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 8,
+      "key": "depth",
+      "title_ru": "Глубина",
+      "type": "integer",
+      "unit_group": "scale",
+      "safety_routing": "specialist_review",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 9,
+      "key": "added_weight",
+      "title_ru": "Дополнительная нагрузка",
+      "type": "decimal",
+      "unit_group": "mass",
+      "safety_routing": "specialist_review",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 10,
+      "key": "layers",
+      "title_ru": "Количество слоёв",
+      "type": "integer",
+      "unit_group": "count",
+      "safety_routing": "moderated",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 11,
+      "key": "participants",
+      "title_ru": "Количество участников",
+      "type": "integer",
+      "unit_group": "count",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 12,
+      "key": "equipment",
+      "title_ru": "Инвентарь",
+      "type": "multi_enum",
+      "unit_group": "inventory_item",
+      "safety_routing": "moderated",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 13,
+      "key": "body_zones",
+      "title_ru": "Зоны тела",
+      "type": "multi_enum",
+      "unit_group": "body_part_selector",
+      "safety_routing": "moderated",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 14,
+      "key": "posture",
+      "title_ru": "Поза",
+      "type": "enum",
+      "unit_group": "posture",
+      "safety_routing": "manual_only",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 15,
+      "key": "checkin_interval",
+      "title_ru": "Интервал проверки состояния",
+      "type": "duration",
+      "unit_group": "time",
+      "safety_routing": "required_safety",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 16,
+      "key": "preparation_duration",
+      "title_ru": "Время подготовки",
+      "type": "duration",
+      "unit_group": "time",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 17,
+      "key": "phase_order",
+      "title_ru": "Порядок этапа",
+      "type": "integer",
+      "unit_group": "position",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 18,
+      "key": "difficulty",
+      "title_ru": "Уровень сложности",
+      "type": "integer",
+      "unit_group": "scale",
+      "safety_routing": "manual_only",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 19,
+      "key": "feedback_mode",
+      "title_ru": "Форма обратной связи",
+      "type": "multi_enum",
+      "unit_group": "feedback",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 20,
+      "key": "evidence_mode",
+      "title_ru": "Подтверждение выполнения",
+      "type": "multi_enum",
+      "unit_group": "evidence",
+      "safety_routing": "privacy_review",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 21,
+      "key": "privacy_level",
+      "title_ru": "Уровень приватности",
+      "type": "enum",
+      "unit_group": "privacy",
+      "safety_routing": "privacy_review",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 22,
+      "key": "stop_signal",
+      "title_ru": "Стоп-сигнал",
+      "type": "string",
+      "unit_group": "safety_signal",
+      "safety_routing": "required_safety",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 23,
+      "key": "stop_conditions",
+      "title_ru": "Условия остановки",
+      "type": "multi_enum",
+      "unit_group": "stop_condition",
+      "safety_routing": "required_safety",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 24,
+      "key": "aftercare_choices",
+      "title_ru": "Варианты восстановления",
+      "type": "multi_enum",
+      "unit_group": "aftercare",
+      "safety_routing": "required_safety",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 25,
+      "key": "side",
+      "title_ru": "Сторона тела",
+      "type": "enum",
+      "unit_group": "body_side",
+      "safety_routing": "standard",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 26,
+      "key": "hold_condition",
+      "title_ru": "Условие удержания",
+      "type": "string",
+      "unit_group": "condition",
+      "safety_routing": "manual_only",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    },
+    {
+      "order": 27,
+      "key": "random_value",
+      "title_ru": "Случайное значение",
+      "type": "integer",
+      "unit_group": "count",
+      "safety_routing": "moderated",
+      "required": false,
+      "allow_custom_value": false,
+      "source_refs": [
+        "examples/category-chat.md:18-30",
+        "examples/category-chat.md:110-118",
+        "examples/Книга1.xlsx:Лист1!A1:I1"
+      ]
+    }
+  ],
+  "invariants": [
+    "Every numeric parameter requires explicit min and max in an approved card.",
+    "Legacy source values are provenance only and are not defaults.",
+    "No automatic escalation of intensity, duration, volume, depth, weight or repetitions.",
+    "stop_signal, stop_conditions, check-in and aftercare are safety contract fields, not LLM free text.",
+    "Evidence media is always optional."
+  ]
+}

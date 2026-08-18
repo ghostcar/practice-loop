@@ -30,6 +30,8 @@
     extensions для consent и aftercare.
 12. `adult_additional_activity_titles.v1.json` — 289 title rows из concrete chat tables,
     `Задачи.xlsx` и иерархии `Книга1.xlsx`; semantic dedupe ещё не выполнен.
+13. `adult_parameter_vocabulary.v1.json` и `adult_body_zone_vocabulary.v1.json` — ADR-041/043
+    overlays без legacy defaults: 27 parameter definitions и фактические 39 existing + 9 proposed zones.
 
 ## Значение статусов источника
 
@@ -58,6 +60,8 @@ pytest -q tests/test_adult_catalog_manifest.py
 python3 -m tools.adult_catalog_manifest data/seed/adult_inventory_source.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_category_taxonomy_source.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_additional_activity_titles.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_parameter_vocabulary.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_body_zone_vocabulary.v1.json --preview
 ```
 
 Все команды read-only. Importer намеренно отсутствует.

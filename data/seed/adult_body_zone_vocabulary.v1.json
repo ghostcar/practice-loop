@@ -1,0 +1,512 @@
+{
+  "schema_version": "adult-body-zone-vocabulary/v1alpha1",
+  "status": "proposal_overlay",
+  "import_allowed": false,
+  "adr": "ADR-043",
+  "existing_count": 39,
+  "extension_count": 9,
+  "zones": [
+    {
+      "slug": "whole_body",
+      "title_ru": "Всё тело",
+      "parent_slug": null,
+      "body_system": "general",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "head",
+      "title_ru": "Голова",
+      "parent_slug": null,
+      "body_system": "head_neck",
+      "is_sensitive": false,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_shoulders",
+      "title_ru": "Плечи",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_chest",
+      "title_ru": "Грудь",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_abdomen",
+      "title_ru": "Живот",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_waist",
+      "title_ru": "Талия",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_back",
+      "title_ru": "Спина",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_buttocks",
+      "title_ru": "Ягодицы",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "torso_pelvis",
+      "title_ru": "Таз",
+      "parent_slug": null,
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "arms",
+      "title_ru": "Руки",
+      "parent_slug": null,
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "legs",
+      "title_ru": "Ноги",
+      "parent_slug": null,
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "intimate_area",
+      "title_ru": "Интимная зона",
+      "parent_slug": null,
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "hair",
+      "title_ru": "Волосы",
+      "parent_slug": "head",
+      "body_system": "head_neck",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "face",
+      "title_ru": "Лицо",
+      "parent_slug": "head",
+      "body_system": "head_neck",
+      "is_sensitive": false,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "neck",
+      "title_ru": "Шея",
+      "parent_slug": "head",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "no_automation",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "forehead",
+      "title_ru": "Лоб",
+      "parent_slug": "face",
+      "body_system": "head_neck",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "cheeks",
+      "title_ru": "Щёки",
+      "parent_slug": "face",
+      "body_system": "head_neck",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "lips",
+      "title_ru": "Губы",
+      "parent_slug": "face",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "moderated",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "mouth",
+      "title_ru": "Рот",
+      "parent_slug": "face",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "ears",
+      "title_ru": "Уши",
+      "parent_slug": "head",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "throat",
+      "title_ru": "Горло",
+      "parent_slug": "neck",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "no_automation",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "nipples",
+      "title_ru": "Соски",
+      "parent_slug": "torso_chest",
+      "body_system": "torso",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "abs",
+      "title_ru": "Пресс",
+      "parent_slug": "torso_abdomen",
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "lower_back",
+      "title_ru": "Поясница",
+      "parent_slug": "torso_back",
+      "body_system": "torso",
+      "is_sensitive": false,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "upper_arm",
+      "title_ru": "Плечо",
+      "parent_slug": "arms",
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "elbows",
+      "title_ru": "Локти",
+      "parent_slug": "arms",
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "forearms",
+      "title_ru": "Предплечья",
+      "parent_slug": "arms",
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "wrists",
+      "title_ru": "Запястья",
+      "parent_slug": "arms",
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "hands",
+      "title_ru": "Кисти",
+      "parent_slug": "arms",
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "fingers",
+      "title_ru": "Пальцы рук",
+      "parent_slug": "hands",
+      "body_system": "upper_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "thighs",
+      "title_ru": "Бёдра",
+      "parent_slug": "legs",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "knees",
+      "title_ru": "Колени",
+      "parent_slug": "legs",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "shins",
+      "title_ru": "Голени",
+      "parent_slug": "legs",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "calves",
+      "title_ru": "Икры",
+      "parent_slug": "legs",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "ankles",
+      "title_ru": "Лодыжки",
+      "parent_slug": "legs",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "feet",
+      "title_ru": "Ступни",
+      "parent_slug": "legs",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "toes",
+      "title_ru": "Пальцы ног",
+      "parent_slug": "feet",
+      "body_system": "lower_limb",
+      "is_sensitive": false,
+      "automation_routing": "standard",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "genitals",
+      "title_ru": "Гениталии",
+      "parent_slug": "intimate_area",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "anal_area",
+      "title_ru": "Анальная зона",
+      "parent_slug": "intimate_area",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "app/seed_body_parts.py",
+      "existing": true
+    },
+    {
+      "slug": "eyes",
+      "title_ru": "Глаза",
+      "parent_slug": "face",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "no_automation",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "nose",
+      "title_ru": "Нос",
+      "parent_slug": "face",
+      "body_system": "head_neck",
+      "is_sensitive": true,
+      "automation_routing": "no_automation",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "breasts",
+      "title_ru": "Молочные железы",
+      "parent_slug": "torso_chest",
+      "body_system": "torso",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "sit_spots",
+      "title_ru": "Нижняя складка ягодиц",
+      "parent_slug": "torso_buttocks",
+      "body_system": "torso",
+      "is_sensitive": true,
+      "automation_routing": "moderated",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "penis",
+      "title_ru": "Пенис",
+      "parent_slug": "genitals",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "scrotum",
+      "title_ru": "Мошонка",
+      "parent_slug": "genitals",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "perineum",
+      "title_ru": "Промежность",
+      "parent_slug": "intimate_area",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "foreskin",
+      "title_ru": "Крайняя плоть",
+      "parent_slug": "penis",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    },
+    {
+      "slug": "prostate",
+      "title_ru": "Простата",
+      "parent_slug": "intimate_area",
+      "body_system": "intimate",
+      "is_sensitive": true,
+      "automation_routing": "specialist_review",
+      "source": "examples/category-chat.md:1400-1978",
+      "existing": false
+    }
+  ],
+  "modalities": [
+    {
+      "slug": "speech",
+      "title_ru": "Речь"
+    },
+    {
+      "slug": "psychological",
+      "title_ru": "Психологическое воздействие"
+    },
+    {
+      "slug": "behaviour",
+      "title_ru": "Поведение"
+    },
+    {
+      "slug": "vision",
+      "title_ru": "Зрение"
+    },
+    {
+      "slug": "hearing",
+      "title_ru": "Слух"
+    }
+  ]
+}

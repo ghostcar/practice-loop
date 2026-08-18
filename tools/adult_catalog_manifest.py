@@ -16,6 +16,8 @@ REVIEW_SCHEMA_VERSION = "adult-activity-editorial-review/v1alpha1"
 INVENTORY_SCHEMA_VERSION = "adult-inventory-source/v1alpha1"
 TAXONOMY_SCHEMA_VERSION = "adult-category-taxonomy/v1alpha1"
 ADDITIONAL_TITLE_SCHEMA_VERSION = "adult-additional-title-source/v1alpha1"
+PARAMETER_SCHEMA_VERSION = "adult-parameter-vocabulary/v1alpha1"
+BODY_ZONE_SCHEMA_VERSION = "adult-body-zone-vocabulary/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
@@ -427,6 +429,54 @@ def preview_additional_titles(manifest: dict[str, Any]) -> str:
     )
 
 
+def lint_parameter_vocabulary(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != PARAMETER_SCHEMA_VERSION or manifest.get("import_allowed") is not False:
+        errors.append("invalid parameter vocabulary header")
+    definitions = manifest.get("definitions", [])
+    keys = [definition.get("key") for definition in definitions]
+    if len(keys) != len(set(keys)) or not definitions:
+        errors.append("parameter keys must be non-empty and unique")
+    if manifest.get("legacy_values_imported") is not False:
+        errors.append("legacy parameter values must not be imported")
+    if any(definition.get("allow_custom_value") is not False for definition in definitions):
+        errors.append("source vocabulary cannot allow custom values")
+    return errors
+
+
+def lint_body_zone_vocabulary(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != BODY_ZONE_SCHEMA_VERSION or manifest.get("import_allowed") is not False:
+        errors.append("invalid body-zone vocabulary header")
+    zones = manifest.get("zones", [])
+    slugs = [zone.get("slug") for zone in zones]
+    if len(slugs) != len(set(slugs)):
+        errors.append("body-zone slugs must be unique")
+    if sum(zone.get("existing") is True for zone in zones) != manifest.get("existing_count"):
+        errors.append("existing body-zone count mismatch")
+    if sum(zone.get("existing") is False for zone in zones) != manifest.get("extension_count"):
+        errors.append("body-zone extension count mismatch")
+    if not {"neck", "throat", "eyes", "nose"}.issubset(
+        {zone["slug"] for zone in zones if zone.get("automation_routing") == "no_automation"}
+    ):
+        errors.append("vulnerable zones must disable automation")
+    return errors
+
+
+def preview_vocabulary(manifest: dict[str, Any]) -> str:
+    if manifest["schema_version"] == PARAMETER_SCHEMA_VERSION:
+        routing = Counter(item["safety_routing"] for item in manifest["definitions"])
+        return f"schema={PARAMETER_SCHEMA_VERSION}\ndefinitions={len(manifest['definitions'])}\nrouting=" + ", ".join(
+            f"{key}:{value}" for key, value in sorted(routing.items())
+        )
+    routing = Counter(item["automation_routing"] for item in manifest["zones"])
+    return (
+        f"schema={BODY_ZONE_SCHEMA_VERSION}\nzones={len(manifest['zones'])}"
+        f"\nexisting={manifest['existing_count']}\nextensions={manifest['extension_count']}\nrouting="
+        + ", ".join(f"{key}:{value}" for key, value in sorted(routing.items()))
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -444,6 +494,8 @@ def main() -> int:
     is_inventory = schema_version == INVENTORY_SCHEMA_VERSION
     is_taxonomy = schema_version == TAXONOMY_SCHEMA_VERSION
     is_additional_titles = schema_version == ADDITIONAL_TITLE_SCHEMA_VERSION
+    is_parameters = schema_version == PARAMETER_SCHEMA_VERSION
+    is_body_zones = schema_version == BODY_ZONE_SCHEMA_VERSION
     if is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
@@ -456,6 +508,10 @@ def main() -> int:
         errors = lint_category_taxonomy(manifest)
     elif is_additional_titles:
         errors = lint_additional_titles(manifest)
+    elif is_parameters:
+        errors = lint_parameter_vocabulary(manifest)
+    elif is_body_zones:
+        errors = lint_body_zone_vocabulary(manifest)
     else:
         errors = lint_manifest(manifest)
     if errors:
@@ -476,6 +532,8 @@ def main() -> int:
             print(preview_category_taxonomy(manifest))
         elif is_additional_titles:
             print(preview_additional_titles(manifest))
+        elif is_parameters or is_body_zones:
+            print(preview_vocabulary(manifest))
         else:
             print(preview(manifest))
     return 0
