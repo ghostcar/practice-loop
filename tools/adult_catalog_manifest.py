@@ -18,6 +18,10 @@ TAXONOMY_SCHEMA_VERSION = "adult-category-taxonomy/v1alpha1"
 ADDITIONAL_TITLE_SCHEMA_VERSION = "adult-additional-title-source/v1alpha1"
 PARAMETER_SCHEMA_VERSION = "adult-parameter-vocabulary/v1alpha1"
 BODY_ZONE_SCHEMA_VERSION = "adult-body-zone-vocabulary/v1alpha1"
+SCENARIO_SCHEMA_VERSION = "adult-scenario-source/v1alpha1"
+PROGRESSION_SCHEMA_VERSION = "adult-progression-source/v1alpha1"
+TIMER_SCHEMA_VERSION = "adult-timer-source/v1alpha1"
+EVIDENCE_SCHEMA_VERSION = "adult-evidence-source/v1alpha1"
 ALLOWED_RISKS = {"low", "elevated"}
 FOUNDATION_KINDS = {"preparation", "checkin", "aftercare"}
 SOURCE_DISPOSITIONS = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
@@ -411,6 +415,38 @@ def lint_additional_titles(manifest: dict[str, Any]) -> list[str]:
         errors.append("source records must be retained and not seed-ready")
     if any(title.get("seed_ready") is not False for title in titles):
         errors.append("normalized titles must not be seed-ready")
+    title_ids = {title.get("title_id") for title in titles}
+    groups = manifest.get("semantic_groups", [])
+    if not isinstance(groups, list):
+        errors.append("semantic_groups must be an array")
+        return errors
+    group_ids: set[str] = set()
+    members_seen: set[str] = set()
+    merged_titles = 0
+    for index, group in enumerate(groups):
+        prefix = f"semantic_groups[{index}]"
+        group_id = group.get("group_id")
+        if not group_id or group_id in group_ids:
+            errors.append(f"{prefix}.group_id must be non-empty and unique")
+        group_ids.add(group_id)
+        members = group.get("member_title_ids")
+        if not isinstance(members, list) or len(members) < 2:
+            errors.append(f"{prefix}.member_title_ids must list at least two titles")
+            continue
+        if len(set(members)) != len(members):
+            errors.append(f"{prefix}.member_title_ids must not repeat")
+        unknown = set(members) - title_ids
+        if unknown:
+            errors.append(f"{prefix} references unknown titles: {', '.join(sorted(unknown))}")
+        overlap = members_seen & set(members)
+        if overlap:
+            errors.append(f"{prefix} overlaps another group: {', '.join(sorted(overlap))}")
+        members_seen.update(members)
+        if group.get("canonical_title_id") not in members:
+            errors.append(f"{prefix}.canonical_title_id must be one of member_title_ids")
+        merged_titles += len(members) - 1
+    if len(titles) - merged_titles != manifest.get("semantic_title_count"):
+        errors.append("semantic_title_count mismatch")
     return errors
 
 
@@ -423,6 +459,8 @@ def preview_additional_titles(manifest: dict[str, Any]) -> str:
             f"import_allowed={manifest.get('import_allowed')}",
             f"source_records={len(manifest['records'])}",
             f"unique_titles={len(manifest['titles'])}",
+            f"semantic_titles={manifest.get('semantic_title_count')}",
+            f"semantic_groups={len(manifest.get('semantic_groups', []))}",
             "sources=" + ", ".join(f"{key}:{value}" for key, value in sorted(sources.items())),
             "routing=" + ", ".join(f"{key}:{value}" for key, value in sorted(routing.items())),
         ]
@@ -463,6 +501,165 @@ def lint_body_zone_vocabulary(manifest: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _lint_reference_layer(
+    manifest: dict[str, Any],
+    schema_version: str,
+    entity_key: str,
+    entity_id_field: str,
+    count_key: str,
+) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != schema_version:
+        errors.append(f"schema_version must be {schema_version}")
+    if manifest.get("import_allowed") is not False:
+        errors.append("source manifest must set import_allowed=false")
+    records = manifest.get("source_records")
+    entities = manifest.get(entity_key)
+    if not isinstance(records, list) or not isinstance(entities, list):
+        return [*errors, "source_records and entity layer must be arrays"]
+    if len(records) != manifest.get("source_record_count"):
+        errors.append("source_record_count mismatch")
+    if len(entities) != manifest.get(count_key):
+        errors.append(f"{count_key} mismatch")
+    record_ids = [record.get("source_id") for record in records]
+    if len(record_ids) != len(set(record_ids)):
+        errors.append("source IDs must be unique")
+    if any(record.get("retained") is not True for record in records):
+        errors.append("every source record must be retained")
+    known_ids = set(record_ids)
+    entity_ids: set[str] = set()
+    referenced_ids: set[str] = set()
+    for index, entity in enumerate(entities):
+        prefix = f"{entity_key}[{index}]"
+        entity_id = entity.get(entity_id_field)
+        if entity_id in entity_ids:
+            errors.append(f"{prefix}.{entity_id_field} is duplicated")
+        entity_ids.add(entity_id)
+        refs = set(entity.get("source_refs", []))
+        if not refs:
+            errors.append(f"{prefix}.source_refs must be non-empty")
+        if refs - known_ids:
+            errors.append(f"{prefix}.source_refs contains unknown IDs")
+        referenced_ids.update(refs)
+        if entity.get("seed_ready") is not False:
+            errors.append(f"{prefix}.seed_ready must remain false")
+    if referenced_ids != known_ids:
+        errors.append("every source record must be referenced by the normalized layer")
+    return errors
+
+
+def lint_scenario_source(manifest: dict[str, Any]) -> list[str]:
+    errors = _lint_reference_layer(manifest, SCENARIO_SCHEMA_VERSION, "scenarios", "scenario_id", "scenario_count")
+    allowed_routing = {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
+    for index, scenario in enumerate(manifest.get("scenarios", [])):
+        prefix = f"scenarios[{index}]"
+        if not scenario.get("phases"):
+            errors.append(f"{prefix}.phases must be non-empty")
+        if scenario.get("review_routing") not in allowed_routing:
+            errors.append(f"{prefix}.review_routing is invalid")
+        if scenario.get("steps_imported") is not False:
+            errors.append(f"{prefix}.steps_imported must be false (no source steps copied)")
+    return errors
+
+
+def preview_scenario_source(manifest: dict[str, Any]) -> str:
+    routing = Counter(scenario["review_routing"] for scenario in manifest["scenarios"])
+    kinds = Counter(scenario["kind"] for scenario in manifest["scenarios"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"source_records={len(manifest['source_records'])}",
+            f"scenarios={len(manifest['scenarios'])}",
+            "routing=" + ", ".join(f"{key}:{value}" for key, value in sorted(routing.items())),
+            "kinds=" + ", ".join(f"{key}:{value}" for key, value in sorted(kinds.items())),
+        ]
+    )
+
+
+def lint_progression_source(manifest: dict[str, Any]) -> list[str]:
+    errors = _lint_reference_layer(
+        manifest, PROGRESSION_SCHEMA_VERSION, "hierarchies", "hierarchy_id", "hierarchy_count"
+    )
+    for index, hierarchy in enumerate(manifest.get("hierarchies", [])):
+        prefix = f"hierarchies[{index}]"
+        stages = hierarchy.get("stages")
+        if not isinstance(stages, list) or not stages:
+            errors.append(f"{prefix}.stages must be non-empty")
+        elif any(
+            not isinstance(stage, dict) or not stage.get("stage") or stage.get("levels", 0) < 1 for stage in stages
+        ):
+            errors.append(f"{prefix}.stages require stage name and levels >= 1")
+        if hierarchy.get("escalation_automation") is not False:
+            errors.append(f"{prefix}.escalation_automation must be false")
+    return errors
+
+
+def preview_progression_source(manifest: dict[str, Any]) -> str:
+    kinds = Counter(hierarchy["kind"] for hierarchy in manifest["hierarchies"])
+    total_levels = sum(stage["levels"] for hierarchy in manifest["hierarchies"] for stage in hierarchy["stages"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"source_records={len(manifest['source_records'])}",
+            f"hierarchies={len(manifest['hierarchies'])}",
+            f"total_levels={total_levels}",
+            "kinds=" + ", ".join(f"{key}:{value}" for key, value in sorted(kinds.items())),
+        ]
+    )
+
+
+def lint_timer_source(manifest: dict[str, Any]) -> list[str]:
+    errors = _lint_reference_layer(manifest, TIMER_SCHEMA_VERSION, "timers", "timer_id", "timer_count")
+    for index, timer in enumerate(manifest.get("timers", [])):
+        prefix = f"timers[{index}]"
+        if not timer.get("name"):
+            errors.append(f"{prefix}.name must be non-empty")
+        if timer.get("emergency_stop_always_available") is not True:
+            errors.append(f"{prefix}.emergency_stop_always_available must be true")
+    return errors
+
+
+def preview_timer_source(manifest: dict[str, Any]) -> str:
+    kinds = Counter(timer["kind"] for timer in manifest["timers"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"source_records={len(manifest['source_records'])}",
+            f"timers={len(manifest['timers'])}",
+            "kinds=" + ", ".join(f"{key}:{value}" for key, value in sorted(kinds.items())),
+        ]
+    )
+
+
+def lint_evidence_source(manifest: dict[str, Any]) -> list[str]:
+    errors = _lint_reference_layer(
+        manifest, EVIDENCE_SCHEMA_VERSION, "evidence_types", "evidence_id", "evidence_type_count"
+    )
+    for index, evidence in enumerate(manifest.get("evidence_types", [])):
+        prefix = f"evidence_types[{index}]"
+        if not evidence.get("name"):
+            errors.append(f"{prefix}.name must be non-empty")
+        if evidence.get("media_required") is not False:
+            errors.append(f"{prefix}.media_required must be false")
+    return errors
+
+
+def preview_evidence_source(manifest: dict[str, Any]) -> str:
+    kinds = Counter(evidence["kind"] for evidence in manifest["evidence_types"])
+    return "\n".join(
+        [
+            f"schema={manifest['schema_version']}",
+            f"import_allowed={manifest.get('import_allowed')}",
+            f"source_records={len(manifest['source_records'])}",
+            f"evidence_types={len(manifest['evidence_types'])}",
+            "kinds=" + ", ".join(f"{key}:{value}" for key, value in sorted(kinds.items())),
+        ]
+    )
+
+
 def preview_vocabulary(manifest: dict[str, Any]) -> str:
     if manifest["schema_version"] == PARAMETER_SCHEMA_VERSION:
         routing = Counter(item["safety_routing"] for item in manifest["definitions"])
@@ -496,6 +693,10 @@ def main() -> int:
     is_additional_titles = schema_version == ADDITIONAL_TITLE_SCHEMA_VERSION
     is_parameters = schema_version == PARAMETER_SCHEMA_VERSION
     is_body_zones = schema_version == BODY_ZONE_SCHEMA_VERSION
+    is_scenario = schema_version == SCENARIO_SCHEMA_VERSION
+    is_progression = schema_version == PROGRESSION_SCHEMA_VERSION
+    is_timer = schema_version == TIMER_SCHEMA_VERSION
+    is_evidence = schema_version == EVIDENCE_SCHEMA_VERSION
     if is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
@@ -512,6 +713,14 @@ def main() -> int:
         errors = lint_parameter_vocabulary(manifest)
     elif is_body_zones:
         errors = lint_body_zone_vocabulary(manifest)
+    elif is_scenario:
+        errors = lint_scenario_source(manifest)
+    elif is_progression:
+        errors = lint_progression_source(manifest)
+    elif is_timer:
+        errors = lint_timer_source(manifest)
+    elif is_evidence:
+        errors = lint_evidence_source(manifest)
     else:
         errors = lint_manifest(manifest)
     if errors:
@@ -534,6 +743,14 @@ def main() -> int:
             print(preview_additional_titles(manifest))
         elif is_parameters or is_body_zones:
             print(preview_vocabulary(manifest))
+        elif is_scenario:
+            print(preview_scenario_source(manifest))
+        elif is_progression:
+            print(preview_progression_source(manifest))
+        elif is_timer:
+            print(preview_timer_source(manifest))
+        elif is_evidence:
+            print(preview_evidence_source(manifest))
         else:
             print(preview(manifest))
     return 0

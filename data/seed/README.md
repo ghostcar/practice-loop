@@ -32,6 +32,14 @@
     `Задачи.xlsx` и иерархии `Книга1.xlsx`; semantic dedupe ещё не выполнен.
 13. `adult_parameter_vocabulary.v1.json` и `adult_body_zone_vocabulary.v1.json` — ADR-041/043
     overlays без legacy defaults: 27 parameter definitions и фактические 39 existing + 9 proposed zones.
+14. `adult_scenario_source.v1.json` — названия сценариев, фазы и связи с reviewed cards; исходные шаги
+    не переносятся (`steps_imported=false`).
+15. `adult_progression_source.v1.json` — только структура уровней/циклов из `Книга1.xlsx`; баллы,
+    штрафы, описания и автоматическая эскалация не переносятся.
+16. `adult_timer_source.v1.json` — типы таймеров с инвариантом `emergency_stop_always_available=true`;
+    запрет выключения из источника не переносится.
+17. `adult_evidence_source.v1.json` — типы обратной связи (текст/фото/видео/голос/таймер/чек-поинты)
+    с инвариантом `media_required=false`; медиа никогда не обязательно.
 
 ## Значение статусов источника
 
@@ -62,9 +70,20 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_category_taxonomy_source
 python3 -m tools.adult_catalog_manifest data/seed/adult_additional_activity_titles.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_parameter_vocabulary.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_body_zone_vocabulary.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_scenario_source.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_progression_source.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_timer_source.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_evidence_source.v1.json --preview
 ```
 
 Все команды read-only. Importer намеренно отсутствует.
+
+## Semantic dedupe дополнительных названий
+
+`adult_additional_activity_titles.v1.json` содержит аддитивный слой `semantic_groups`:
+9 групп схлопывают RU/EN и перефразированные дубликаты (286 → 277 семантически уникальных
+названий). Исходные 289 rows и 286 normalized titles не удаляются — группа хранит
+`canonical_title_id` и `member_title_ids` с причиной слияния.
 
 ## Gate продвижения карточки
 

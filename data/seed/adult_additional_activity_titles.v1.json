@@ -4,6 +4,63 @@
   "import_allowed": false,
   "source_record_count": 289,
   "unique_title_count": 286,
+  "semantic_title_count": 277,
+  "semantic_groups": [
+    {
+      "group_id": "sem-001",
+      "canonical_title_id": "additional-candidate-160",
+      "member_title_ids": ["additional-candidate-026", "additional-candidate-160"],
+      "reason": "same activity: toilet cleaning with tongue"
+    },
+    {
+      "group_id": "sem-002",
+      "canonical_title_id": "additional-candidate-264",
+      "member_title_ids": ["additional-candidate-057", "additional-candidate-264"],
+      "reason": "deepthroat training = оральная техника глубокого горла"
+    },
+    {
+      "group_id": "sem-003",
+      "canonical_title_id": "additional-candidate-208",
+      "member_title_ids": ["additional-candidate-069", "additional-candidate-208"],
+      "reason": "metronome-paced fucking = фрикции метроном + глубина"
+    },
+    {
+      "group_id": "sem-004",
+      "canonical_title_id": "additional-candidate-210",
+      "member_title_ids": ["additional-candidate-088", "additional-candidate-210"],
+      "reason": "full chastity wearing set = ношение полный комплект"
+    },
+    {
+      "group_id": "sem-005",
+      "canonical_title_id": "additional-candidate-212",
+      "member_title_ids": ["additional-candidate-046", "additional-candidate-212"],
+      "reason": "wet bagging = breath мокрый пакет (research only)"
+    },
+    {
+      "group_id": "sem-006",
+      "canonical_title_id": "additional-candidate-265",
+      "member_title_ids": ["additional-candidate-062", "additional-candidate-265"],
+      "reason": "basic anal thrusting = анальная техника"
+    },
+    {
+      "group_id": "sem-007",
+      "canonical_title_id": "additional-candidate-263",
+      "member_title_ids": ["additional-candidate-056", "additional-candidate-263"],
+      "reason": "basic oral stroking = оральная техника"
+    },
+    {
+      "group_id": "sem-008",
+      "canonical_title_id": "additional-candidate-209",
+      "member_title_ids": ["additional-candidate-065", "additional-candidate-209"],
+      "reason": "riding/cowgirl position = наездник + удержание"
+    },
+    {
+      "group_id": "sem-009",
+      "canonical_title_id": "additional-candidate-184",
+      "member_title_ids": ["additional-candidate-086", "additional-candidate-184"],
+      "reason": "underwear in mouth = used underwear wearing or in mouth"
+    }
+  ],
   "records": [
     {
       "source_id": "additional-title-001",

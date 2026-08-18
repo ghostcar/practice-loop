@@ -1,0 +1,151 @@
+{
+  "schema_version": "adult-progression-source/v1alpha1",
+  "status": "source_inventory",
+  "import_allowed": false,
+  "policy": "hierarchy_structure_only_no_points_no_escalation_rules",
+  "source_record_count": 8,
+  "hierarchy_count": 6,
+  "source_records": [
+    {
+      "source_id": "progression-source-001",
+      "source": "examples/Книга1.xlsx",
+      "locator": "Лист1!B2",
+      "raw_name": "01 ЗД: иерархия этапов и уровней",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-002",
+      "source": "examples/Книга1.xlsx",
+      "locator": "Лист1!B29",
+      "raw_name": "02 КП: иерархия этапов и уровней",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-003",
+      "source": "examples/Книга1.xlsx",
+      "locator": "Лист1!B47",
+      "raw_name": "03 Общий бонус: иерархия этапов и уровней",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-004",
+      "source": "examples/category-chat.md",
+      "locator": "line:121",
+      "raw_name": "Система прогрессии: ежедневные/еженедельные задания из таблицы",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-005",
+      "source": "examples/category-chat.md",
+      "locator": "line:123",
+      "raw_name": "Баллы → разблокировка более высоких уровней или новых модулей",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-006",
+      "source": "examples/category-chat.md",
+      "locator": "line:125",
+      "raw_name": "История выполнения с оценками «хочу повторить / сложнее / легче»",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-007",
+      "source": "examples/category-chat.md",
+      "locator": "line:1706",
+      "raw_name": "Training / challenge cycle: повторяемые модули с прогрессией",
+      "retained": true
+    },
+    {
+      "source_id": "progression-source-008",
+      "source": "examples/category-chat.md",
+      "locator": "line:1983",
+      "raw_name": "Прогрессивные многодневные циклы",
+      "retained": true
+    }
+  ],
+  "hierarchies": [
+    {
+      "hierarchy_id": "progression-001",
+      "name": "ЗД",
+      "kind": "activity_hierarchy",
+      "stages": [
+        {"stage": "Накопление", "levels": 10},
+        {"stage": "Опорожнение", "levels": 4},
+        {"stage": "Бонус", "levels": 4},
+        {"stage": "Штраф", "levels": 4}
+      ],
+      "source_refs": ["progression-source-001"],
+      "escalation_automation": false,
+      "seed_ready": false,
+      "note": "Структура уровней без описаний, объёмов, баллов и штрафов."
+    },
+    {
+      "hierarchy_id": "progression-002",
+      "name": "КП",
+      "kind": "activity_hierarchy",
+      "stages": [
+        {"stage": "Накопление", "levels": 3},
+        {"stage": "Подготовка", "levels": 3},
+        {"stage": "Опорожнение", "levels": 4},
+        {"stage": "Бонус", "levels": 3}
+      ],
+      "source_refs": ["progression-source-002"],
+      "escalation_automation": false,
+      "seed_ready": false,
+      "note": "Структура уровней без переноса способов использования."
+    },
+    {
+      "hierarchy_id": "progression-003",
+      "name": "Общий бонус",
+      "kind": "activity_hierarchy",
+      "stages": [
+        {"stage": "Тело", "levels": 6},
+        {"stage": "Фрикции", "levels": 6},
+        {"stage": "Ношение", "levels": 5},
+        {"stage": "Уборка", "levels": 6}
+      ],
+      "source_refs": ["progression-source-003"],
+      "escalation_automation": false,
+      "seed_ready": false,
+      "note": "Структура уровней без описаний и баллов."
+    },
+    {
+      "hierarchy_id": "progression-004",
+      "name": "Система прогрессии",
+      "kind": "cycle",
+      "stages": [
+        {"stage": "Ежедневные/еженедельные задания", "levels": 1},
+        {"stage": "Разблокировка уровней/модулей", "levels": 1},
+        {"stage": "История с оценками", "levels": 1}
+      ],
+      "source_refs": ["progression-source-004", "progression-source-005", "progression-source-006"],
+      "escalation_automation": false,
+      "seed_ready": false,
+      "note": "Концепция прогрессии как функция приложения; балльная механика не переносится."
+    },
+    {
+      "hierarchy_id": "progression-005",
+      "name": "Training / challenge cycle",
+      "kind": "cycle",
+      "stages": [
+        {"stage": "Повторяемые модули", "levels": 1}
+      ],
+      "source_refs": ["progression-source-007"],
+      "escalation_automation": false,
+      "seed_ready": false,
+      "note": "Многодневный цикл; автоматическое повышение интенсивности не допускается."
+    },
+    {
+      "hierarchy_id": "progression-006",
+      "name": "Прогрессивные многодневные циклы",
+      "kind": "cycle",
+      "stages": [
+        {"stage": "Многодневный цикл", "levels": 1}
+      ],
+      "source_refs": ["progression-source-008"],
+      "escalation_automation": false,
+      "seed_ready": false,
+      "note": "Концепция цикла; эскалация только ручная."
+    }
+  ]
+}

@@ -7,18 +7,26 @@ from tools.adult_catalog_manifest import (
     lint_category_taxonomy,
     lint_editorial_candidates,
     lint_editorial_review,
+    lint_evidence_source,
     lint_inventory_source,
     lint_manifest,
     lint_parameter_vocabulary,
+    lint_progression_source,
+    lint_scenario_source,
     lint_source_inventory,
+    lint_timer_source,
     load_manifest,
     preview,
     preview_additional_titles,
     preview_category_taxonomy,
     preview_editorial_candidates,
     preview_editorial_review,
+    preview_evidence_source,
     preview_inventory_source,
+    preview_progression_source,
+    preview_scenario_source,
     preview_source_inventory,
+    preview_timer_source,
 )
 
 MANIFEST_PATH = Path("data/seed/adult_activity_foundation.v1.json")
@@ -37,6 +45,10 @@ TAXONOMY_PATH = Path("data/seed/adult_category_taxonomy_source.v1.json")
 ADDITIONAL_TITLES_PATH = Path("data/seed/adult_additional_activity_titles.v1.json")
 PARAMETER_VOCABULARY_PATH = Path("data/seed/adult_parameter_vocabulary.v1.json")
 BODY_ZONE_VOCABULARY_PATH = Path("data/seed/adult_body_zone_vocabulary.v1.json")
+SCENARIO_SOURCE_PATH = Path("data/seed/adult_scenario_source.v1.json")
+PROGRESSION_SOURCE_PATH = Path("data/seed/adult_progression_source.v1.json")
+TIMER_SOURCE_PATH = Path("data/seed/adult_timer_source.v1.json")
+EVIDENCE_SOURCE_PATH = Path("data/seed/adult_evidence_source.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -346,11 +358,29 @@ def test_additional_title_inventory_retains_all_rows() -> None:
     assert all(record["retained"] and not record["seed_ready"] for record in manifest["records"])
 
 
+def test_additional_title_semantic_dedupe_is_valid() -> None:
+    manifest = load_manifest(ADDITIONAL_TITLES_PATH)
+    title_ids = {title["title_id"] for title in manifest["titles"]}
+
+    assert manifest["semantic_title_count"] == 277
+    assert len(manifest["semantic_groups"]) == 9
+    for group in manifest["semantic_groups"]:
+        assert group["canonical_title_id"] in group["member_title_ids"]
+        assert len(group["member_title_ids"]) >= 2
+        assert set(group["member_title_ids"]) <= title_ids
+    all_members = [title_id for group in manifest["semantic_groups"] for title_id in group["member_title_ids"]]
+    assert len(all_members) == len(set(all_members))
+    merged_titles = sum(len(group["member_title_ids"]) - 1 for group in manifest["semantic_groups"])
+    assert len(manifest["titles"]) - merged_titles == manifest["semantic_title_count"]
+
+
 def test_additional_title_preview_reports_sources() -> None:
     result = preview_additional_titles(load_manifest(ADDITIONAL_TITLES_PATH))
 
     assert "source_records=289" in result
     assert "unique_titles=286" in result
+    assert "semantic_titles=277" in result
+    assert "semantic_groups=9" in result
     assert "examples/Книга1.xlsx:" in result
 
 
@@ -364,3 +394,93 @@ def test_parameter_and_body_zone_vocabularies_are_safe_overlays() -> None:
     assert parameters["legacy_values_imported"] is False
     assert body_zones["existing_count"] == 39
     assert body_zones["extension_count"] == 9
+
+
+def test_scenario_source_keeps_names_and_phases_without_steps() -> None:
+    manifest = load_manifest(SCENARIO_SOURCE_PATH)
+
+    assert lint_scenario_source(manifest) == []
+    assert manifest["import_allowed"] is False
+    assert len(manifest["source_records"]) == 13
+    assert len(manifest["scenarios"]) == 13
+    assert all(scenario["steps_imported"] is False for scenario in manifest["scenarios"])
+    assert all(not scenario["seed_ready"] for scenario in manifest["scenarios"])
+    assert all(scenario["review_routing"] in {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
+               for scenario in manifest["scenarios"])
+
+
+def test_scenario_source_preview_reports_routing() -> None:
+    result = preview_scenario_source(load_manifest(SCENARIO_SOURCE_PATH))
+
+    assert "scenarios=13" in result
+    assert "research_only:11" in result
+    assert "manual_only:2" in result
+
+
+def test_progression_source_is_structure_only() -> None:
+    manifest = load_manifest(PROGRESSION_SOURCE_PATH)
+
+    assert lint_progression_source(manifest) == []
+    assert manifest["import_allowed"] is False
+    assert len(manifest["source_records"]) == 8
+    assert len(manifest["hierarchies"]) == 6
+    assert all(hierarchy["escalation_automation"] is False for hierarchy in manifest["hierarchies"])
+    assert all(not hierarchy["seed_ready"] for hierarchy in manifest["hierarchies"])
+    assert all(stage["levels"] >= 1 for hierarchy in manifest["hierarchies"] for stage in hierarchy["stages"])
+
+
+def test_progression_source_preview_reports_levels() -> None:
+    result = preview_progression_source(load_manifest(PROGRESSION_SOURCE_PATH))
+
+    assert "hierarchies=6" in result
+    assert "total_levels=63" in result
+
+
+def test_timer_source_keeps_emergency_stop_invariant() -> None:
+    manifest = load_manifest(TIMER_SOURCE_PATH)
+
+    assert lint_timer_source(manifest) == []
+    assert manifest["import_allowed"] is False
+    assert len(manifest["source_records"]) == 9
+    assert len(manifest["timers"]) == 9
+    assert all(timer["emergency_stop_always_available"] for timer in manifest["timers"])
+    assert all(not timer["seed_ready"] for timer in manifest["timers"])
+
+
+def test_timer_source_preview_reports_kinds() -> None:
+    result = preview_timer_source(load_manifest(TIMER_SOURCE_PATH))
+
+    assert "timers=9" in result
+    assert "interval_device:4" in result
+
+
+def test_evidence_source_never_requires_media() -> None:
+    manifest = load_manifest(EVIDENCE_SOURCE_PATH)
+
+    assert lint_evidence_source(manifest) == []
+    assert manifest["import_allowed"] is False
+    assert len(manifest["source_records"]) == 8
+    assert len(manifest["evidence_types"]) == 7
+    assert all(evidence["media_required"] is False for evidence in manifest["evidence_types"])
+    assert all(not evidence["seed_ready"] for evidence in manifest["evidence_types"])
+
+
+def test_evidence_source_preview_reports_kinds() -> None:
+    result = preview_evidence_source(load_manifest(EVIDENCE_SOURCE_PATH))
+
+    assert "evidence_types=7" in result
+    assert "checkpoint:1" in result
+
+
+def test_reference_layers_cover_all_source_records() -> None:
+    for path, entity_key in (
+        (SCENARIO_SOURCE_PATH, "scenarios"),
+        (PROGRESSION_SOURCE_PATH, "hierarchies"),
+        (TIMER_SOURCE_PATH, "timers"),
+        (EVIDENCE_SOURCE_PATH, "evidence_types"),
+    ):
+        manifest = load_manifest(path)
+        record_ids = {record["source_id"] for record in manifest["source_records"]}
+        referenced = {ref for entity in manifest[entity_key] for ref in entity["source_refs"]}
+        assert referenced == record_ids
+        assert len(record_ids) == len(manifest["source_records"])

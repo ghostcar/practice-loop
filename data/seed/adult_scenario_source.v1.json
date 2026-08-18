@@ -1,0 +1,248 @@
+{
+  "schema_version": "adult-scenario-source/v1alpha1",
+  "status": "source_inventory",
+  "import_allowed": false,
+  "policy": "scenario_names_and_phase_structure_only_no_steps",
+  "source_record_count": 13,
+  "scenario_count": 13,
+  "source_records": [
+    {
+      "source_id": "scenario-source-001",
+      "source": "examples/Сценарий на сессию.docx",
+      "locator": "para:0",
+      "raw_name": "Сценарий 2",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-002",
+      "source": "examples/Сценарий на сессию.docx",
+      "locator": "para:18",
+      "raw_name": "Сценарий 1",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-003",
+      "source": "examples/Breatheplay.docx",
+      "locator": "para:26",
+      "raw_name": "Варианты: Сухие (Легкая, Легкая 2, Легкая 3, Средняя)",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-004",
+      "source": "examples/Breatheplay.docx",
+      "locator": "para:63",
+      "raw_name": "Варианты: Мокрое (Высокая)",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-005",
+      "source": "examples/Регламент.docx",
+      "locator": "para:217",
+      "raw_name": "Бондажные сценарии",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-006",
+      "source": "examples/category-chat.md",
+      "locator": "line:120",
+      "raw_name": "Конструктор сессий: каркасы короткая/средняя/длинная/полный день",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-007",
+      "source": "examples/category-chat.md",
+      "locator": "line:1700",
+      "raw_name": "Scat + Service + Humiliation block",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-008",
+      "source": "examples/category-chat.md",
+      "locator": "line:1701",
+      "raw_name": "Chastity + Bondage + Impact block",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-009",
+      "source": "examples/category-chat.md",
+      "locator": "line:1702",
+      "raw_name": "Technique + Sensory + Control block",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-010",
+      "source": "examples/category-chat.md",
+      "locator": "line:1703",
+      "raw_name": "Progressive multi-stage session",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-011",
+      "source": "examples/category-chat.md",
+      "locator": "line:1704",
+      "raw_name": "Checkpoint-based long event",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-012",
+      "source": "examples/category-chat.md",
+      "locator": "line:1705",
+      "raw_name": "Aftercare-integrated session",
+      "retained": true
+    },
+    {
+      "source_id": "scenario-source-013",
+      "source": "examples/category-chat.md",
+      "locator": "line:1706",
+      "raw_name": "Training / challenge cycle",
+      "retained": true
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "scenario-001",
+      "name": "Сценарий 2",
+      "kind": "full_session",
+      "phases": ["Подготовка", "Начало", "Продолжение"],
+      "source_refs": ["scenario-source-001"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Многоэтапный сценарий с fluid/impact/restraint блоками. Имя и фазы сохранены; шаги не переносятся."
+    },
+    {
+      "scenario_id": "scenario-002",
+      "name": "Сценарий 1",
+      "kind": "full_session",
+      "phases": ["Подготовка", "Начало", "Основные этапы", "Завершение"],
+      "source_refs": ["scenario-source-002"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Многоэтапный сценарий, сочетает fluid, impact, restraint и service. Только имя и фазы."
+    },
+    {
+      "scenario_id": "scenario-003",
+      "name": "Сухие варианты",
+      "kind": "variant_set",
+      "phases": ["Легкая", "Легкая 2", "Легкая 3", "Средняя"],
+      "source_refs": ["scenario-source-003"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Breath-варианты; research only, исполняемые инструкции не создаются."
+    },
+    {
+      "scenario_id": "scenario-004",
+      "name": "Мокрый вариант",
+      "kind": "variant_set",
+      "phases": ["Высокая"],
+      "source_refs": ["scenario-source-004"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Breath-вариант; research only."
+    },
+    {
+      "scenario_id": "scenario-005",
+      "name": "Бондажный сценарий",
+      "kind": "full_session",
+      "phases": ["Подготовка", "Основная часть", "Освобождение"],
+      "source_refs": ["scenario-source-005"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Персональный сценарий с машиной VENUS2000 и таймерами; имя сохранено, шаги и тайминги не переносятся."
+    },
+    {
+      "scenario_id": "scenario-006",
+      "name": "Конструктор сессий",
+      "kind": "framework",
+      "phases": ["Короткая", "Средняя", "Длинная", "Полный день"],
+      "source_refs": ["scenario-source-006"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Концепция каркасов сессий; это функция приложения, а не исполняемая карточка."
+    },
+    {
+      "scenario_id": "scenario-007",
+      "name": "Scat + Service + Humiliation block",
+      "kind": "session_block",
+      "phases": ["Блок"],
+      "source_refs": ["scenario-source-007"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Экстремальный комбинированный блок; research only."
+    },
+    {
+      "scenario_id": "scenario-008",
+      "name": "Chastity + Bondage + Impact block",
+      "kind": "session_block",
+      "phases": ["Блок"],
+      "source_refs": ["scenario-source-008"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Комбинированный блок высокой интенсивности; research only."
+    },
+    {
+      "scenario_id": "scenario-009",
+      "name": "Technique + Sensory + Control block",
+      "kind": "session_block",
+      "phases": ["Блок"],
+      "source_refs": ["scenario-source-009"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Комбинированный блок; research only."
+    },
+    {
+      "scenario_id": "scenario-010",
+      "name": "Progressive multi-stage session",
+      "kind": "session_block",
+      "phases": ["Нарастание интенсивности"],
+      "source_refs": ["scenario-source-010"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Автоматическая эскалация не допускается; research only."
+    },
+    {
+      "scenario_id": "scenario-011",
+      "name": "Checkpoint-based long event",
+      "kind": "session_block",
+      "phases": ["Блоки с промежуточными проверками"],
+      "source_refs": ["scenario-source-011"],
+      "review_routing": "manual_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "related_card_slugs": ["mid-session-checkin"],
+      "note": "Паттерн чек-поинтов согласуется с foundation-карточкой mid-session-checkin."
+    },
+    {
+      "scenario_id": "scenario-012",
+      "name": "Aftercare-integrated session",
+      "kind": "session_block",
+      "phases": ["Основной блок", "Восстановление"],
+      "source_refs": ["scenario-source-012"],
+      "review_routing": "manual_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "related_card_slugs": ["prepare-aftercare-plan", "post-session-debrief"],
+      "note": "Паттерн восстановления согласуется с foundation-карточками aftercare."
+    },
+    {
+      "scenario_id": "scenario-013",
+      "name": "Training / challenge cycle",
+      "kind": "cycle",
+      "phases": ["Серия из нескольких дней"],
+      "source_refs": ["scenario-source-013"],
+      "review_routing": "research_only",
+      "steps_imported": false,
+      "seed_ready": false,
+      "note": "Многодневный цикл с прогрессией; автоматическая эскалация не допускается, research only."
+    }
+  ]
+}

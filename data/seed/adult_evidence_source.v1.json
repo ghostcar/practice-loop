@@ -1,0 +1,131 @@
+{
+  "schema_version": "adult-evidence-source/v1alpha1",
+  "status": "source_inventory",
+  "import_allowed": false,
+  "policy": "feedback_types_only_media_never_required",
+  "source_record_count": 8,
+  "evidence_type_count": 7,
+  "source_records": [
+    {
+      "source_id": "evidence-source-001",
+      "source": "examples/category-chat.md",
+      "locator": "line:28",
+      "raw_name": "Обратная связь — только отчёт текстом / фото / видео / голосовое",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-002",
+      "source": "examples/category-chat.md",
+      "locator": "line:117",
+      "raw_name": "Требования к отчёту (текст / фото / таймер / голос)",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-003",
+      "source": "examples/category-chat.md",
+      "locator": "line:77",
+      "raw_name": "Голосовой/текстовый отчёт ассистенту",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-004",
+      "source": "examples/category-chat.md",
+      "locator": "line:249",
+      "raw_name": "После каждого этапа — голосовой/текстовый отчёт",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-005",
+      "source": "examples/category-chat.md",
+      "locator": "line:1704",
+      "raw_name": "Checkpoint-based long event — несколько блоков с отчётами, обязательные промежуточные проверки",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-006",
+      "source": "examples/category-chat.md",
+      "locator": "line:1964",
+      "raw_name": "Длинные очереди заданий с обязательным отчётом",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-007",
+      "source": "examples/category-chat.md",
+      "locator": "line:3871",
+      "raw_name": "Task queues с отчётами",
+      "retained": true
+    },
+    {
+      "source_id": "evidence-source-008",
+      "source": "examples/Регламент.docx",
+      "locator": "para:79",
+      "raw_name": "Фото-видео-аудио блог, текстовое описание дня, отчёт о выполнении",
+      "retained": true
+    }
+  ],
+  "evidence_types": [
+    {
+      "evidence_id": "evidence-001",
+      "name": "Текстовый отчёт",
+      "kind": "text",
+      "media_required": false,
+      "source_refs": ["evidence-source-001", "evidence-source-002", "evidence-source-008"],
+      "seed_ready": false,
+      "note": "Текстовое описание выполнения; добровольно."
+    },
+    {
+      "evidence_id": "evidence-002",
+      "name": "Фото",
+      "kind": "photo",
+      "media_required": false,
+      "source_refs": ["evidence-source-001", "evidence-source-002", "evidence-source-008"],
+      "seed_ready": false,
+      "note": "Фото как добровольная обратная связь; никогда не обязательно."
+    },
+    {
+      "evidence_id": "evidence-003",
+      "name": "Видео",
+      "kind": "video",
+      "media_required": false,
+      "source_refs": ["evidence-source-001", "evidence-source-008"],
+      "seed_ready": false,
+      "note": "Видео как добровольная обратная связь; никогда не обязательно."
+    },
+    {
+      "evidence_id": "evidence-004",
+      "name": "Голосовой отчёт",
+      "kind": "voice",
+      "media_required": false,
+      "source_refs": ["evidence-source-001", "evidence-source-002", "evidence-source-003", "evidence-source-004"],
+      "seed_ready": false,
+      "note": "Голосовой отчёт как добровольная обратная связь."
+    },
+    {
+      "evidence_id": "evidence-005",
+      "name": "Таймер/длительность",
+      "kind": "timer",
+      "media_required": false,
+      "source_refs": ["evidence-source-002"],
+      "seed_ready": false,
+      "note": "Таймерные данные как подтверждение длительности; добровольно."
+    },
+    {
+      "evidence_id": "evidence-006",
+      "name": "Промежуточные чек-поинты",
+      "kind": "checkpoint",
+      "media_required": false,
+      "source_refs": ["evidence-source-005"],
+      "seed_ready": false,
+      "note": "Чек-поинты как проверка состояния; подтверждение самочувствия не требует медиа."
+    },
+    {
+      "evidence_id": "evidence-007",
+      "name": "Отчёт в очередях заданий",
+      "kind": "queue_report",
+      "media_required": false,
+      "source_refs": ["evidence-source-006", "evidence-source-007"],
+      "seed_ready": false,
+      "note": "Отчёт по очереди заданий; медиа не обязательно."
+    }
+  ]
+}

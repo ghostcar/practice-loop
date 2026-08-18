@@ -1,0 +1,165 @@
+{
+  "schema_version": "adult-timer-source/v1alpha1",
+  "status": "source_inventory",
+  "import_allowed": false,
+  "policy": "timer_types_no_emergency_stop_prohibition",
+  "source_record_count": 9,
+  "timer_count": 9,
+  "source_records": [
+    {
+      "source_id": "timer-source-001",
+      "source": "examples/category-chat.md",
+      "locator": "line:132",
+      "raw_name": "Таймер удержания",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-002",
+      "source": "examples/category-chat.md",
+      "locator": "line:133",
+      "raw_name": "Таймер ношения",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-003",
+      "source": "examples/category-chat.md",
+      "locator": "line:134",
+      "raw_name": "Случайные числа для порки",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-004",
+      "source": "examples/category-chat.md",
+      "locator": "line:135",
+      "raw_name": "Режим «гипноз» (фоновый аудио + запрет выключать)",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-005",
+      "source": "examples/Регламент.docx",
+      "locator": "table:1",
+      "raw_name": "Таймер недельный Sassin 3SHC18A 15А (ТЭ-15)",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-006",
+      "source": "examples/Регламент.docx",
+      "locator": "table:1",
+      "raw_name": "Таймер недельный Sassin 3SHC8A 15А",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-007",
+      "source": "examples/Регламент.docx",
+      "locator": "table:1",
+      "raw_name": "Таймер недельный Sassin KG316T",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-008",
+      "source": "examples/Регламент.docx",
+      "locator": "table:1",
+      "raw_name": "Таймер недельный Sassin TS-GE2 16А",
+      "retained": true
+    },
+    {
+      "source_id": "timer-source-009",
+      "source": "examples/Новый документ.docx",
+      "locator": "para:19",
+      "raw_name": "Таймер включения-выключения электричества",
+      "retained": true
+    }
+  ],
+  "timers": [
+    {
+      "timer_id": "timer-001",
+      "name": "Таймер удержания",
+      "kind": "holding",
+      "purpose": "Ограничение длительности удержания",
+      "source_refs": ["timer-source-001"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Тип таймера; emergency stop всегда доступен."
+    },
+    {
+      "timer_id": "timer-002",
+      "name": "Таймер ношения",
+      "kind": "wearing",
+      "purpose": "Ограничение длительности ношения устройства",
+      "source_refs": ["timer-source-002"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Тип таймера; снятие устройства не штрафуется и не блокируется."
+    },
+    {
+      "timer_id": "timer-003",
+      "name": "Случайные числа для порки",
+      "kind": "random",
+      "purpose": "Генерация случайного числа для количества ударов",
+      "source_refs": ["timer-source-003"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Только генератор числа; максимальные лимиты и stop остаются."
+    },
+    {
+      "timer_id": "timer-004",
+      "name": "Режим «гипноз»",
+      "kind": "mode",
+      "purpose": "Фоновое аудио в режиме сессии",
+      "source_refs": ["timer-source-004"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Исходный «запрет выключать» не переносится: остановка всегда доступна."
+    },
+    {
+      "timer_id": "timer-005",
+      "name": "Таймер недельный Sassin 3SHC18A 15А (ТЭ-15)",
+      "kind": "interval_device",
+      "purpose": "Недельный таймер включения/выключения электропитания",
+      "source_refs": ["timer-source-005"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Модель оборудования; не переносятся персональные расписания."
+    },
+    {
+      "timer_id": "timer-006",
+      "name": "Таймер недельный Sassin 3SHC8A 15А",
+      "kind": "interval_device",
+      "purpose": "Недельный таймер включения/выключения электропитания",
+      "source_refs": ["timer-source-006"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Модель оборудования; не переносятся персональные расписания."
+    },
+    {
+      "timer_id": "timer-007",
+      "name": "Таймер недельный Sassin KG316T",
+      "kind": "interval_device",
+      "purpose": "Недельный таймер включения/выключения электропитания",
+      "source_refs": ["timer-source-007"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Модель оборудования; не переносятся персональные расписания."
+    },
+    {
+      "timer_id": "timer-008",
+      "name": "Таймер недельный Sassin TS-GE2 16А",
+      "kind": "interval_device",
+      "purpose": "Недельный таймер включения/выключения электропитания",
+      "source_refs": ["timer-source-008"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Модель оборудования; не переносятся персональные расписания."
+    },
+    {
+      "timer_id": "timer-009",
+      "name": "Таймер включения-выключения электричества",
+      "kind": "concept_device",
+      "purpose": "Концепт-устройство управления электропитанием",
+      "source_refs": ["timer-source-009"],
+      "emergency_stop_always_available": true,
+      "seed_ready": false,
+      "note": "Концепт из электронного оснащения; только тип, без схем управления."
+    }
+  ]
+}
