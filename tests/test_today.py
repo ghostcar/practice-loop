@@ -20,6 +20,9 @@ async def test_today_page_renders_empty(auth_client, test_user, db_session):
     resp = await auth_client.get("/today")
     assert resp.status_code == 200
     assert "Today" in resp.text or "Сегодня" in resp.text
+    assert 'id="pl-sidebar"' in resp.text
+    assert 'href="/account"' in resp.text
+    assert 'href="/login"' not in resp.text
 
 
 @pytest.mark.asyncio

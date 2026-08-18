@@ -8,13 +8,15 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
   await registerFreshUser(page);
 
   const routes = [
-    "/dashboard", "/tasks/", "/entities/catalog", "/training", "/locktimer",
+    "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training", "/locktimer",
     "/settings", "/account", "/media", "/api/v2/points/page",
   ];
   for (const route of routes) {
     const response = await page.goto(route);
     expect(response?.status(), `${route} response`).toBeLessThan(400);
     await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("#pl-sidebar"), `${route} authenticated sidebar`).toBeVisible();
+    await expect(page.locator('a[href="/login"]'), `${route} must not show guest login`).toHaveCount(0);
   }
   expect(errors).toEqual([]);
 });
