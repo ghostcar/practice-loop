@@ -13,10 +13,13 @@ from app.models.achievement import UserAchievement
 from app.models.activity_log import ActivityLog
 from app.models.aftercare import AftercareEntry
 from app.models.api_token import ApiToken
+from app.models.attachment import Attachment
 from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate
 from app.models.care import CareCourse, CareEntry, CareProduct, CareRoutine
 from app.models.catalog import ActivityCatalogItem
+from app.models.chastity import ChastityCheckIn
 from app.models.consent import ConsentRecord
+from app.models.device import ChastityDeviceEvent
 from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.entity import Entity
 from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord
@@ -44,6 +47,7 @@ EXPORT_SCHEMA_VERSION = 2
 _DIRECT_USER_MODELS = (
     ActivityLog,
     ApiToken,
+    Attachment,
     AftercareEntry,
     AvailabilityWindow,
     BodyMeasurement,
@@ -53,6 +57,8 @@ _DIRECT_USER_MODELS = (
     CareEntry,
     CareProduct,
     CareRoutine,
+    ChastityCheckIn,
+    ChastityDeviceEvent,
     ConsentRecord,
     CycleEvent,
     CycleSettings,
@@ -136,6 +142,8 @@ async def build_personal_export(db: AsyncSession, user: User) -> dict[str, Any]:
         ActivitySession,
         ActivityCatalogItem,
         LockSession,
+        # User-owned templates are part of the timer aggregate but can exist
+        # before any session is created.
         MediaAsset,
         MediaVerificationResult,
         VerificationChallenge,
@@ -148,6 +156,8 @@ async def build_personal_export(db: AsyncSession, user: User) -> dict[str, Any]:
 
     # Child/audit tables are resolved through their owned roots. This keeps the
     # export owner-scoped even when a child table intentionally has no user_id.
+    from app.models.body_part import TaskBodyTarget
+    from app.models.care import CareCourseSession, CareEntryProduct, CareRoutineProduct
     from app.models.insights import InsightFinding
     from app.models.locktimer import (
         LockAuditEvent,
@@ -161,9 +171,12 @@ async def build_personal_export(db: AsyncSession, user: User) -> dict[str, Any]:
         LockTagViolation,
         LockTaskOccurrence,
         LockTaskRule,
+        LockTimerTemplate,
     )
     from app.models.session_history import ActivitySessionHistory
     from app.models.task_history import ActivityTaskHistory
+    from app.models.task_inventory import TaskInventoryUsage
+    from app.models.task_location import TaskLocation, TaskLocationUsage
 
     activity_ids = select(ActivityLog.id).where(ActivityLog.user_id == user.id)
     session_ids = select(ActivitySession.id).where(ActivitySession.owner_id == user.id)
@@ -171,6 +184,9 @@ async def build_personal_export(db: AsyncSession, user: User) -> dict[str, Any]:
     lock_ids = select(LockSession.id).where(LockSession.owner_id == user.id)
     calendar_ids = select(CalendarTemplate.id).where(CalendarTemplate.user_id == user.id)
     diet_ids = select(Diet.id).where(Diet.user_id == user.id)
+    care_course_ids = select(CareCourse.id).where(CareCourse.user_id == user.id)
+    care_entry_ids = select(CareEntry.id).where(CareEntry.user_id == user.id)
+    care_routine_ids = select(CareRoutine.id).where(CareRoutine.user_id == user.id)
     sections[ActivityTaskHistory.__tablename__] = await _select_rows(
         db, ActivityTaskHistory, ActivityTaskHistory.task_id.in_(activity_ids)
     )
@@ -184,6 +200,28 @@ async def build_personal_export(db: AsyncSession, user: User) -> dict[str, Any]:
         db, AvailabilityWindow, AvailabilityWindow.template_id.in_(calendar_ids)
     )
     sections[DietItem.__tablename__] = await _select_rows(db, DietItem, DietItem.diet_id.in_(diet_ids))
+    sections[TaskBodyTarget.__tablename__] = await _select_rows(
+        db, TaskBodyTarget, TaskBodyTarget.task_id.in_(activity_ids)
+    )
+    sections[TaskInventoryUsage.__tablename__] = await _select_rows(
+        db, TaskInventoryUsage, TaskInventoryUsage.task_id.in_(activity_ids)
+    )
+    sections[TaskLocationUsage.__tablename__] = await _select_rows(
+        db, TaskLocationUsage, TaskLocationUsage.task_id.in_(activity_ids)
+    )
+    sections[TaskLocation.__tablename__] = await _select_rows(db, TaskLocation, TaskLocation.owner_id == user.id)
+    sections[CareCourseSession.__tablename__] = await _select_rows(
+        db, CareCourseSession, CareCourseSession.course_id.in_(care_course_ids)
+    )
+    sections[CareEntryProduct.__tablename__] = await _select_rows(
+        db, CareEntryProduct, CareEntryProduct.entry_id.in_(care_entry_ids)
+    )
+    sections[CareRoutineProduct.__tablename__] = await _select_rows(
+        db, CareRoutineProduct, CareRoutineProduct.routine_id.in_(care_routine_ids)
+    )
+    sections[LockTimerTemplate.__tablename__] = await _select_rows(
+        db, LockTimerTemplate, LockTimerTemplate.owner_id == user.id
+    )
     for model in (
         LockSessionSnapshot,
         LockInnerPeriod,

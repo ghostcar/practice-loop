@@ -39,6 +39,20 @@ async def test_personal_export_is_complete_unbounded_and_owner_scoped(auth_clien
     assert payload["counts"]["aftercare_entries"] == 1
     assert payload["counts"]["activity_sessions"] == 1
     assert payload["counts"]["activity_session_history"] == 1
+    for section in (
+        "attachments",
+        "chastity_check_ins",
+        "chastity_device_events",
+        "task_body_targets",
+        "task_inventory_usages",
+        "task_location_usages",
+        "task_locations",
+        "care_course_sessions",
+        "care_entry_products",
+        "care_routine_products",
+        "lock_timer_templates",
+    ):
+        assert section in payload["sections"]
     assert "Foreign secret" not in response.text
     assert "password_hash" not in response.text
     assert "api_key_encrypted" not in response.text
