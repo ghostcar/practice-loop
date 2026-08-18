@@ -49,7 +49,7 @@ Docker image собирается; документация не утвержд�
 
 ## 4. Этап 1 — Activity Tracker v2
 
-**Статус: ⏳ ~80%.**
+**Статус: ✅ gate достигнут в S8.**
 
 ### 1A. Backend completion — ✅ в основном
 
@@ -57,7 +57,7 @@ Docker image собирается; документация не утвержд�
 - единая семантика одиннадцати состояний во всех сервисах ✅;
 - XP/Points/penalties для каждого финального результата — ⏳ частично (детализация по новым
   статусам: partially_completed, substituted, not_applicable, review_needed);
-- accepted-session freeze и аудит изменений — ⏳ модель есть (`accepted_at`), enforcement не завершён;
+- accepted-session freeze, штрафуемые изменения и append-only аудит ✅;
 - история переходов ✅ (`activity_task_history`);
 - import/export новых полей — ⏳ частично;
 - Telegram и scheduler без legacy `pending/interrupted` ✅;
@@ -67,21 +67,20 @@ Docker image собирается; документация не утвержд�
 
 - категории и фильтры ✅; динамическая форма типизированных параметров ✅;
 - карточка плановых и фактических значений ✅; быстрые допустимые переходы ✅;
-- комментарий к результату ✅; история изменений — ⏳ (UI-экран аудита);
+- комментарий к результату ✅; история изменений и session audit UI ✅;
 - понятные состояния empty/loading/error — ⏳; RU/EN, dark/light, mobile ✅.
 
-### 1C. Today foundation — ✅ реализован, UX-достройка ⏳
+### 1C. Today foundation — ✅ реализован и отполирован для self-testing
 
 Today projection агрегирует задачи, активную Timer-сессию, диеты, тренировки и личные модули;
-работают напоминания и быстрые действия. Осталось: единая подача просроченного/требующего решения,
-один основной CTA на блок и быстрый переход к разбору.
+работают локальные границы суток, очередь overdue/review, напоминания и быстрые действия.
 
 ### Gate M1
 
 Пользователь может создать или получить задание, увидеть причину и параметры, принять сессию,
 выполнить/частично выполнить/пропустить/остановить, внести факт и увидеть аудит. Все пути работают
 из web и корректно отражаются в личном Telegram.
-→ **Прогресс: ~80%.** Остаток: accepted-session enforcement, UI аудита, Today-достройка.
+→ **Прогресс: 100% для self-testing.** Дальнейшие изменения идут из фактической эксплуатации.
 
 ## 5. Этап 2 — Personal Foundation
 
@@ -108,11 +107,12 @@ Today projection агрегирует задачи, активную Timer-се�
 - **storage-абстракция** (volume → S3-совместимое объектное хранилище) — PD-019.
 
 Границы и фактические контракты закреплены в `TARGET_ARCHITECTURE.md`, ADR и `FUNCTIONAL.md`.
-Остаются storage-абстракция и расширение export/restore/operational evidence.
+S8 добавил полный versioned owner-scoped manifest и успешный restore drill production dump +
+отдельный архив uploads. Остаются storage-абстракция и регулярная автоматизация restore drill.
 
 ## 6. Этап 3 — личный Chastity Timer
 
-**Статус: ✅ личный контур реализован; остаются export/restore и polish.**
+**Статус: ✅ личный контур реализован и прошёл export/restore release gate; остаётся эксплуатационный polish.**
 
 Ядро LockTimer реализовано полностью: draft/start, immutable snapshot, 6+7+10 state machines,
 материализатор (5 slot + 6 task типов, rolling 90d), окна снятия, check-in, задания, одноразовые
