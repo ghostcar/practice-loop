@@ -387,6 +387,30 @@
       "automation_allowed": false,
       "required_controls": ["end_control_state", "restore_basic_needs", "wellbeing_check", "no_stop_penalty"],
       "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 20}}
+    },
+    {
+      "slug": "breath-risk-readiness-decision",
+      "source_refs": ["category-chat-043"],
+      "title": {"ru": "Принять решение по breath-related активности", "en": "Make a breath-related activity decision"},
+      "summary": {"ru": "Без пробного воздействия проверить наличие сомнений или противопоказаний и выбрать отказ либо отдельную консультацию.", "en": "Without trial exposure, check for uncertainty or contraindications and choose to decline or seek separate advice."},
+      "category": "consent_communication",
+      "content_kind": "checkin",
+      "risk_level": "low",
+      "automation_allowed": false,
+      "required_controls": ["no_trial_exposure", "decline_by_default_on_uncertainty", "no_stop_penalty", "specialist_advice_option"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 10}}
+    },
+    {
+      "slug": "breath-related-equipment-exclusion-check",
+      "source_refs": ["category-chat-044"],
+      "title": {"ru": "Проверить исключения для breath-related оборудования", "en": "Check breath-related equipment exclusions"},
+      "summary": {"ru": "Зафиксировать недопустимые предметы и сочетания без описания их применения и без запуска активности.", "en": "Record prohibited equipment and combinations without describing their use or starting an activity."},
+      "category": "consent_communication",
+      "content_kind": "preparation",
+      "risk_level": "low",
+      "automation_allowed": false,
+      "required_controls": ["denylist_only", "no_usage_instructions", "no_timing_or_progression", "no_automation"],
+      "proposed_parameters": {"duration_minutes": {"unit": "minutes", "min": 1, "max": 10}}
     }
   ]
 }

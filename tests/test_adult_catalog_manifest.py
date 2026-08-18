@@ -17,6 +17,7 @@ MANIFEST_PATH = Path("data/seed/adult_activity_foundation.v1.json")
 SOURCE_INVENTORY_PATH = Path("data/seed/adult_activity_source_inventory.v1.json")
 EDITORIAL_PATH = Path("data/seed/adult_activity_editorial_candidates.v1.json")
 FLUID_TOILET_REVIEW_PATH = Path("data/seed/adult_activity_fluid_toilet_review.v1.json")
+BREATH_REVIEW_PATH = Path("data/seed/adult_activity_breath_review.v1.json")
 
 
 def test_foundation_manifest_is_valid() -> None:
@@ -76,7 +77,7 @@ def test_editorial_candidates_reference_retained_source_records() -> None:
 
     assert lint_editorial_candidates(candidates, source_ids) == []
     assert candidates["import_allowed"] is False
-    assert len(candidates["cards"]) == 32
+    assert len(candidates["cards"]) == 34
 
 
 def test_editorial_preview_reports_candidate_mix() -> None:
@@ -84,7 +85,7 @@ def test_editorial_preview_reports_candidate_mix() -> None:
 
     result = preview_editorial_candidates(candidates)
 
-    assert "cards=32" in result
+    assert "cards=34" in result
     assert "elevated:17" in result
 
 
@@ -111,3 +112,28 @@ def test_fluid_toilet_review_preview_reports_outcomes() -> None:
     assert "records=42" in result
     assert "promote_candidate:12" in result
     assert "research_backlog:6" in result
+
+
+def test_breath_review_retains_all_sources_without_automation() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    review = load_manifest(BREATH_REVIEW_PATH)
+    expected_ids = {
+        record["source_id"] for record in source["records"] if record["source_area"] == "breath_restriction"
+    }
+
+    assert lint_editorial_review(review, expected_ids) == []
+    assert {record["source_id"] for record in review["records"]} == expected_ids
+    assert len(review["records"]) == 20
+    assert all(record["retained"] for record in review["records"])
+    assert all(not record["automation_allowed"] for record in review["records"])
+    assert all("no_executable_breath_instructions" in record["required_gates"] for record in review["records"])
+
+
+def test_breath_review_preview_reports_research_queue() -> None:
+    review = load_manifest(BREATH_REVIEW_PATH)
+
+    result = preview_editorial_review(review)
+
+    assert "records=20" in result
+    assert "research_backlog:18" in result
+    assert "rewrite_required:1" in result

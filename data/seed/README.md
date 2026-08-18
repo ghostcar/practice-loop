@@ -13,6 +13,8 @@
    consent/check-in/aftercare foundation.
 4. `adult_activity_fluid_toilet_review.v1.json` — поштучное редакторское решение для 42 идей
    fluid/enema/toilet без удаления исходников и без исполняемых медицинских параметров.
+5. `adult_activity_breath_review.v1.json` — полный research review 20 breath-related идей. Все
+   записи сохранены, автоматизация выключена, исполняемые инструкции и таймеры отсутствуют.
 
 ## Значение статусов источника
 
@@ -33,6 +35,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_activity_source_inventor
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_editorial_candidates.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_foundation.v1.json --preview
 python3 -m tools.adult_catalog_manifest data/seed/adult_activity_fluid_toilet_review.v1.json --preview
+python3 -m tools.adult_catalog_manifest data/seed/adult_activity_breath_review.v1.json --preview
 pytest -q tests/test_adult_catalog_manifest.py
 ```
 
