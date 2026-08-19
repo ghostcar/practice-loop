@@ -78,7 +78,11 @@ prod-импорта. Idempotent по `slug`.
 (`manual_reference` / `rewrite_required` / `research_backlog`), а нейтральные имена заменены на
 прямые принятые термины 18+/БДСМ/кинк (скат, копрофагия, урофилия, золотой дождь, breath play,
 wax play, хогтай и т.д.). Дополнительные названия (`adult_additional_activity_titles.v1.json`)
-прикрепляются к карточкам как `alternate_names` по совпадению токенов.
+прикрепляются к карточкам как `alternate_names` (202/286) по curated-правилам + транслитерированному
+совпадению токенов. Русские транслитерации заменены английскими терминами (hogtie, spreader bar,
+rebreathing, flogging, tape bondage, scat holding и т.д.) — где русское имя было лишь транскрипцией
+английского. Оставшиеся непривязанные: kink-названия категорий без карточек (унижение/сервис/
+психология/одежда) и фитнес/трекер-шум из исходников.
 
 Safety-инварианты сохранены: `automation_allowed=false` у всех promoted-карточек; `research_backlog`
 (включая breath) становятся `content_kind=reference` (обнаруживаемые, но неисполняемые — без таймеров

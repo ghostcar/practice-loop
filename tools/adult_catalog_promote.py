@@ -931,12 +931,119 @@ def build_card(
     }
 
 
-def tokenize(text: str) -> set[str]:
-    return {
-        t
-        for t in re.findall(r"[а-яёa-z0-9]{3,}", text.lower())
-        if t not in {"для", "с", "и", "в", "на", "по", "из", "за", "the", "and", "with", "for"}
+CYR_TO_LAT = str.maketrans(
+    {
+        "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh", "з": "z",
+        "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r",
+        "с": "s", "т": "t", "у": "u", "ф": "f", "х": "h", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sch",
+        "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
     }
+)
+
+# Accepted kink loanwords: Cyrillic transliteration -> canonical English term.
+KINK_TERMS = {
+    "хогтай": "hogtie", "стрэппод": "strapdown", "спредер": "spreader", "ребризинг": "rebreathing",
+    "флоггер": "flogger", "флоггинг": "flogging", "скат": "scat", "смазывание": "smearing",
+    "кляп": "gag", "пробка": "plug", "прищепки": "clamps", "прищепка": "clamp",
+    "порка": "spanking", "веревка": "rope", "верёвка": "rope", "ремень": "belt", "стек": "cane",
+    "хлыст": "whip", "шнур": "cord", "подвешивание": "suspension", "бондаж": "bondage",
+    "фиксация": "restraint", "связывание": "bondage", "распорка": "spreader", "распорки": "spreader",
+    "депривация": "deprivation", "лишение": "deprivation", "электростимуляция": "electrostimulation",
+    "вакуум": "vacuum", "вибрация": "vibration", "воск": "wax", "лед": "ice", "лёд": "ice",
+    "температура": "temperature", "клизма": "enema", "моча": "urine", "удержание": "holding",
+    "дефекация": "defecation", "кал": "scat", "унижение": "humiliation", "дыхание": "breath",
+    "удушение": "choking", "грудная": "chest", "глубокое": "deep", "горло": "throat",
+    "анальный": "anal", "оральный": "oral", "выносливост": "endurance", "отягощение": "weight",
+    "наполнение": "fill", "выпуск": "release", "сброс": "release", "накопление": "retention",
+    "ношение": "wearing", "снятие": "removal", "клетка": "cage", "целомудрие": "chastity",
+    "поза": "position", "позиция": "position",
+}
+
+STOPWORDS = {
+    "для", "с", "и", "в", "на", "по", "из", "за", "до", "без", "как", "the", "and", "with", "for",
+    "play", "use", "using", "after", "before", "basic", "review", "control", "controlled",
+}
+
+# Curated synonym rules: card slug -> lowercase substrings that, when present in
+# an additional title, attach that title as an alternate name. Covers matches the
+# token overlap misses (multi-word phrases, bilingual, brand tools).
+SYNONYM_RULES: dict[str, list[str]] = {
+    "golden-shower": ["full bladder release", "bladder release", "watersports", "body marking", "обливание"],
+    "controlled-partial-release": ["controlled release", "сброс давления", "defecation into container"],
+    "scat-on-body": ["scat on body", "дефекация на тело"],
+    "scat-smearing": ["scat smearing", "размазывание"],
+    "bowel-urge-control": ["bowel cleansing", "очистительные клизмы"],
+    "extended-bowel-control": ["daily bowel control", "multi-hour", "bowel control regime"],
+    "consensual-toilet-service-ritual": ["toilet licking", "cleaning with tongue"],
+    "breath-risk-readiness-decision": ["tolerance testing"],
+    "manual-breath-occlusion": ["hand over mouth"],
+    "breathplay-bag-light": ["light bagging", "прозрачный пакет"],
+    "breathplay-bag-tight": ["tight bagging", "air hole control"],
+    "progressive-breath-film": ["clingfilm with progressive", "progressive occlusion"],
+    "breath-restricting-hood": ["latex hood", "leather hood", "restricted airflow"],
+    "combined-dry-breath-block": ["combined dry methods", "плёнка + пакет"],
+    "basic-oral-technique-practice": ["basic face-fucking", "face-fucking / oral", "oral stroking"],
+    "oral-with-breath-restriction": ["oral with nose closed", "nose closed"],
+    "alternating-intimate-activities": ["oral–anal alternating", "oral-anal alternating"],
+    "paced-intimate-technique-practice": ["metronome-paced", "metronome"],
+    "weighted-technique": ["weighted / challenged"],
+    "post-enema-plug-wear": ["plug with secure harness", "secure harness"],
+    "gag-wearing": ["gag wearing"],
+    "genital-clamps": ["cbt clamps", "scrotum, shaft"],
+    "underwear-gag": ["panties / underwear", "underwear in mouth", "panties in mouth"],
+    "tight-clothing-restraint": ["tight pantyhose", "compression wear as restriction"],
+    "quick-release-wrist-restraint": ["wrist bondage"],
+    "quick-release-ankle-restraint": ["ankle / knee / thigh", "knee / thigh bondage"],
+    "hogtie-bondage": ["hogtie / elbows-to-knees", "elbows-to-knees", "hogtie"],
+    "vertical-post-restraint": ["standing spread", "wall bondage"],
+    "mummification-restraint": ["mummification-style", "full body restriction", "mummification"],
+    "spreader-bar": ["spreader bars", "spreader bar"],
+    "uncomfortable-position-bondage": ["stress positions", "stress position"],
+    "ice-play": ["ice play"],
+    "wax-play-trail": ["wax play — trails", "writing on body"],
+    "clamps-sensory-pressure": ["clothespin", "clover clamp"],
+    "external-vibration-focus": ["vibrators — prolonged", "vibrators — intense"],
+    "electrical-stimulation-tens": ["electroplay", "tens / e-stim", "e-stim"],
+    "texture-exploration": ["different textures", "wartenberg wheel", "spike wheel"],
+    "blindfold-sensory-focus": ["complete visual deprivation", "visual deprivation"],
+    "hearing-deprivation": ["ear plugging", "auditory deprivation"],
+    "pressure-compression": ["tight wrapping", "compression / tight"],
+    "vacuum-play": ["vacuum pumping", "vacuum pump"],
+    "belt-spanking": ["belt / strap", "belt spanking"],
+    "cane-whip-impact": ["cane / stick", "cane spanking"],
+    "flogger-impact": ["flogger (leather", "flogger"],
+    "thigh-hamstring-impact": ["impact on thighs", "sit-spots", "sit spots"],
+    "genital-impact": ["cbt impact"],
+    "endurance-spanking": ["endurance / high-volume", "high-volume impact", "endurance impact"],
+    "intense-finale-set": ["progressive multi-stage session", "multi-stage session"],
+    "combined-retention-enema-block": ["длительный режим «упаковка + зд»", "упаковка + зд"],
+    "depth-controlled-thrusting": ["фрикции «метроном + глубина»", "метроном + глубина"],
+    "anal-depth-control": ["наездник + удержание", "наездник"],
+    "combined-sensory-play": ["лёд + воск", "лед + воск"],
+    "intense-fill-impact-hybrid": ["психо + физика «объектность»", "объектность"],
+    "scat-feeding": ["scat + service", "полный круг чистоты"],
+    "dietary-readiness-review": ["dietary preparation", "диета под консистенцию"],
+    "basic-anal-technique-practice": ["entrance warm-up", "lubrication protocol", "разработка входа"],
+    "hand-impact-counted-set": ["skin warm-up", "разминка кожи"],
+    "multi-cycle-enema": ["зд-модуль «двойной цикл»", "двойной цикл"],
+}
+
+
+def _normalize_tokens(text: str) -> set[str]:
+    """Tokenize and produce both raw and transliterated tokens (bilingual)."""
+    lowered = text.lower()
+    tokens = {t for t in re.findall(r"[а-яёa-z0-9]{3,}", lowered) if t not in STOPWORDS}
+    normalized: set[str] = set()
+    for token in tokens:
+        normalized.add(token)
+        translit = token.translate(CYR_TO_LAT)
+        if translit and translit != token:
+            normalized.add(translit)
+        if token in KINK_TERMS:
+            normalized.add(KINK_TERMS[token])
+        if translit in KINK_TERMS:
+            normalized.add(KINK_TERMS[translit])
+    return normalized
 
 
 def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
@@ -944,34 +1051,57 @@ def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str,
     (cards, matched_count)."""
     additional = load_json(ADDITIONAL_TITLES)
     titles = additional["titles"]
+    by_slug = {card["slug"]: card for card in cards}
     # Build a token index over card names.
     card_index: list[tuple[dict[str, Any], set[str]]] = []
     for card in cards:
         names = " ".join(
             [card["title"]["ru"], card["title"]["en"], card.get("summary", {}).get("ru", "")]
         )
-        card_index.append((card, tokenize(names)))
+        card_index.append((card, _normalize_tokens(names)))
+
+    def _attach(card: dict[str, Any], label: str) -> None:
+        card.setdefault("alternate_names", {"ru": [], "en": []})
+        lang = "en" if re.search(r"[a-z]{3,}", label) and not re.search(r"[а-яё]{3,}", label) else "ru"
+        if label not in card["alternate_names"][lang]:
+            card["alternate_names"][lang].append(label)
+
     matched = 0
     for title in titles:
         display = title.get("display_title", "")
         norm = title.get("normalized_title", "")
-        tokens = tokenize(f"{display} {norm}")
+        label = display if display else norm
+        haystack = f"{display} {norm}".lower()
+
+        # 1. Curated rules first (multi-word / bilingual / brand tools).
+        rule_card: dict[str, Any] | None = None
+        for slug, substrings in SYNONYM_RULES.items():
+            if any(sub in haystack for sub in substrings):
+                rule_card = by_slug.get(slug)
+                break
+        if rule_card is not None:
+            _attach(rule_card, label)
+            matched += 1
+            continue
+
+        # 2. Token-overlap fallback.
+        tokens = _normalize_tokens(haystack)
         if not tokens:
             continue
         best: tuple[float, dict[str, Any]] | None = None
         for card, card_tokens in card_index:
             overlap = len(tokens & card_tokens)
-            if overlap:
-                score = overlap / max(len(tokens), 1)
-                if best is None or score > best[0]:
-                    best = (score, card)
-        if best and best[0] >= 0.5:
-            card = best[1]
-            card.setdefault("alternate_names", {"ru": [], "en": []})
-            label = display if display else norm
-            lang = "en" if re.search(r"[a-z]{3,}", label) and not re.search(r"[а-яё]{3,}", label) else "ru"
-            if label not in card["alternate_names"][lang]:
-                card["alternate_names"][lang].append(label)
+            if not overlap:
+                continue
+            score = overlap / max(len(tokens), 1)
+            # A single long token is a strong signal (e.g. "rebreathing" vs
+            # "Ребризинг"); short-token-only matches need higher coverage.
+            if overlap == 1 and max(len(t) for t in (tokens & card_tokens)) < 5:
+                continue
+            if best is None or score > best[0]:
+                best = (score, card)
+        if best and best[0] >= 0.3:
+            _attach(best[1], label)
             matched += 1
     return cards, matched
 

@@ -5,7 +5,7 @@
  "promotion_target": "entities",
  "source_records_total": 163,
  "source_records_covered": 163,
- "additional_titles_matched": 85,
+ "additional_titles_matched": 202,
  "cards": [
   {
    "slug": "equipment-condition-check",
@@ -83,7 +83,7 @@
     "ru": [],
     "en": [
      "Skin preparation & sizing check",
-     "Skin warm-up"
+     "Skin & tool temperature/safety check"
     ]
    }
   },
@@ -199,7 +199,8 @@
    "alternate_names": {
     "ru": [],
     "en": [
-     "Decision removal"
+     "Decision removal",
+     "Dressing / undressing ritual"
     ]
    }
   },
@@ -238,6 +239,15 @@
      "min": 1,
      "max": 5
     }
+   },
+   "alternate_names": {
+    "ru": [
+     "Deepthroat with hold (фиксация на глубине)"
+    ],
+    "en": [
+     "Safety shears / quick-release check",
+     "Wrist bondage (front, back, to body)"
+    ]
    }
   },
   {
@@ -275,6 +285,15 @@
      "min": 1,
      "max": 5
     }
+   },
+   "alternate_names": {
+    "ru": [
+     "Подъем ног к рукам",
+     "Подъем ног и туловища"
+    ],
+    "en": [
+     "Ankle / knee / thigh bondage"
+    ]
    }
   },
   {
@@ -306,6 +325,13 @@
      "min": 1,
      "max": 20
     }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Blindfold / complete visual deprivation",
+     "Technique + Sensory + Control block"
+    ]
    }
   },
   {
@@ -342,6 +368,13 @@
      "min": 1,
      "max": 3
     }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Wartenberg wheel / spike wheel",
+     "Sensation play with different textures"
+    ]
    }
   },
   {
@@ -378,6 +411,12 @@
      "min": 1,
      "max": 3
     }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Vibrators — prolonged / intense (cock, balls, prostate, nipples, perineum)"
+    ]
    }
   },
   {
@@ -421,8 +460,10 @@
    "alternate_names": {
     "ru": [],
     "en": [
-     "Hand spanking",
+     "Skin warm-up",
      "Impact on buttocks",
+     "Impact on breasts & nipples",
+     "Mixed-zone impact",
      "Counted strokes"
     ]
    }
@@ -467,12 +508,6 @@
      "min": 30,
      "max": 90
     }
-   },
-   "alternate_names": {
-    "ru": [],
-    "en": [
-     "Rhythmic / metronome impact"
-    ]
    }
   },
   {
@@ -542,6 +577,12 @@
      "min": 1,
      "max": 3
     }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Basic face-fucking / oral stroking"
+    ]
    }
   },
   {
@@ -634,9 +675,12 @@
     }
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Entrance warm-up (пальцы, небольшие игрушки)",
+     "Короткая интенсивная «Разработка входа» (высокий)"
+    ],
     "en": [
-     "Basic anal fucking / thrusting"
+     "Lubrication protocol"
     ]
    }
   },
@@ -679,6 +723,7 @@
    "alternate_names": {
     "ru": [],
     "en": [
+     "Riding / cowgirl position control",
      "Position of exposure"
     ]
    }
@@ -717,6 +762,12 @@
      "min": 1,
      "max": 4
     }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Oral–anal alternating"
+    ]
    }
   },
   {
@@ -754,6 +805,16 @@
      "min": 1,
      "max": 15
     }
+   },
+   "alternate_names": {
+    "ru": [
+     "Metronome-paced fucking (оба отверстия)"
+    ],
+    "en": [
+     "Deepthroat to metronome / paced",
+     "Rhythmic / metronome impact",
+     "Metronome / voice command control"
+    ]
    }
   },
   {
@@ -847,6 +908,12 @@
      "min": 2,
      "max": 20
     }
+   },
+   "alternate_names": {
+    "ru": [
+     "Подготовка объёма и температуры клизмы"
+    ],
+    "en": []
    }
   },
   {
@@ -1004,6 +1071,12 @@
      "min": 1,
      "max": 10
     }
+   },
+   "alternate_names": {
+    "ru": [
+     "Dietary preparation (диета под консистенцию)"
+    ],
+    "en": []
    }
   },
   {
@@ -1103,7 +1176,13 @@
    "alternate_names": {
     "ru": [],
     "en": [
-     "Full toilet service ritual"
+     "Toilet licking / cleaning with tongue after use",
+     "Full toilet service ritual",
+     "Degradation through service",
+     "Basic domestic service",
+     "Toilet cleaning with tongue",
+     "Floor / body cleaning with tongue",
+     "Ritualized service sequence"
     ]
    }
   },
@@ -1198,6 +1277,13 @@
      "min": 1,
      "max": 10
     }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Tolerance testing",
+     "Breath control with hands bound"
+    ]
    }
   },
   {
@@ -1237,7 +1323,7 @@
     "category-chat-002"
    ],
    "title": {
-    "ru": "Удержание кала перед сессией (скат-холдинг)",
+    "ru": "Удержание кала перед сессией (scat holding)",
     "en": "Pre-session scat holding"
    },
    "summary": {
@@ -1272,7 +1358,12 @@
     "ru": [
      "Задержка мочеиспускания перед сессией (pre-session holding)"
     ],
-    "en": []
+    "en": [
+     "Coprophagia — holding in mouth",
+     "Medium structured session",
+     "Long endurance session",
+     "Aftercare-integrated session"
+    ]
    }
   },
   {
@@ -1314,6 +1405,8 @@
    },
    "alternate_names": {
     "ru": [
+     "Bladder holding (удержание мочи до сильного/предельного давления)",
+     "Intentional constipation / holding (накопление каловых масс)",
      "Накопление"
     ],
     "en": []
@@ -1393,6 +1486,17 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Watersports — drinking (слив мочи в рот / проглатывание)",
+     "Watersports — body marking (обливание / нанесение мочи на тело и лицо)"
+    ],
+    "en": [
+     "Full bladder release into container",
+     "Combined watersports + scat block",
+     "Post-scat / post-watersports cleanup service"
+    ]
    }
   },
   {
@@ -1543,10 +1647,11 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
-    "en": [
-     "Holding in bondage / stress position"
-    ]
+    "ru": [
+     "Enema retention (удержание клизмы стоя, на коленях, лёжа, в бондаже)",
+     "Гибрид «Удержание + поза + отчёт» (средний)"
+    ],
+    "en": []
    }
   },
   {
@@ -1588,9 +1693,12 @@
    },
    "alternate_names": {
     "ru": [
-     "Enema partial release + refill (частичный слив + повторное наполнение)"
+     "Enema partial release + refill (частичный слив + повторное наполнение)",
+     "ЗД-модуль «Контролируемый слив + приём» (средний)"
     ],
-    "en": []
+    "en": [
+     "Controlled partial defecation"
+    ]
    }
   },
   {
@@ -1629,6 +1737,16 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Enema filling (базовое / среднее / предельное наполнение)",
+     "Multiple enema cycles (двойной / тройной цикл)",
+     "ЗД-модуль «Двойной цикл» (высокий)"
+    ],
+    "en": [
+     "Training / challenge cycle"
+    ]
    }
   },
   {
@@ -1712,6 +1830,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Enema through funnel into mouth"
+    ]
    }
   },
   {
@@ -1756,7 +1880,9 @@
     "ru": [
      "Ice enema (клизма с добавлением льда)"
     ],
-    "en": []
+    "en": [
+     "Temperature contrast (ice ↔ warm)"
+    ]
    }
   },
   {
@@ -1801,7 +1927,9 @@
     "ru": [
      "Post-enema plug wearing (пробка сразу после слива/удержания)"
     ],
-    "en": []
+    "en": [
+     "Plug with secure harness / tape"
+    ]
    }
   },
   {
@@ -1842,10 +1970,10 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
-    "en": [
-     "Combined watersports + scat block"
-    ]
+    "ru": [
+     "Длительный режим «Упаковка + ЗД» (средний)"
+    ],
+    "en": []
    }
   },
   {
@@ -1854,7 +1982,7 @@
     "category-chat-022"
    ],
    "title": {
-    "ru": "Удержание кала (скат-холдинг)",
+    "ru": "Удержание кала (scat holding)",
     "en": "Fecal retention (scat holding)"
    },
    "summary": {
@@ -1925,7 +2053,10 @@
    },
    "alternate_names": {
     "ru": [
-     "Urge training (тренировка подавления позывов)"
+     "Bowel cleansing (очистительные клизмы заранее)",
+     "Urge training (тренировка подавления позывов)",
+     "Тренировка ягодиц. Увелицение ягодиц",
+     "Тренировка планки. Новичек"
     ],
     "en": []
    }
@@ -2005,6 +2136,15 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Chair / seated bondage",
+     "Bondage with added weights",
+     "Long-duration bondage",
+     "Chain & padlock bondage"
+    ]
    }
   },
   {
@@ -2045,9 +2185,11 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Controlled release (частичный сброс давления на несколько секунд)"
+    ],
     "en": [
-     "Controlled partial defecation"
+     "Defecation into container"
     ]
    }
   },
@@ -2089,10 +2231,10 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
-    "en": [
-     "Body writing"
-    ]
+    "ru": [
+     "Scat on body (дефекация на тело, особенно ягодицы, бёдра, живот, грудь, лицо)"
+    ],
+    "en": []
    }
   },
   {
@@ -2101,7 +2243,7 @@
     "category-chat-031"
    ],
    "title": {
-    "ru": "Скат-смазывание (smearing)",
+    "ru": "Scat smearing (размазывание)",
     "en": "Scat smearing"
    },
    "summary": {
@@ -2127,6 +2269,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Scat smearing (размазывание по телу и лицу)"
+    ],
+    "en": []
    }
   },
   {
@@ -2237,9 +2385,12 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Сервис «Полный круг чистоты» (высокий)"
+    ],
     "en": [
-     "Scat feeding with chewing"
+     "Scat feeding with chewing",
+     "Scat + Service + Humiliation block"
     ]
    }
   },
@@ -2317,6 +2468,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Multi-hour / daily bowel control regime"
+    ]
    }
   },
   {
@@ -2393,12 +2550,6 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
-   },
-   "alternate_names": {
-    "ru": [],
-    "en": [
-     "Technique + Sensory + Control block"
-    ]
    }
   },
   {
@@ -2466,6 +2617,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Hand over mouth and nose"
+    ]
    }
   },
   {
@@ -2499,6 +2656,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Light bagging (прозрачный пакет, лёгкая фиксация)"
+    ],
+    "en": []
    }
   },
   {
@@ -2532,6 +2695,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Tight bagging with air hole control"
+    ]
    }
   },
   {
@@ -2565,6 +2734,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Clingfilm / plastic wrap hood (многослойная плёнка)"
+    ],
+    "en": []
    }
   },
   {
@@ -2598,6 +2773,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Clingfilm with progressive occlusion cycles"
+    ]
    }
   },
   {
@@ -2606,7 +2787,7 @@
     "category-chat-050"
    ],
    "title": {
-    "ru": "Ребризинг (повторное дыхание)",
+    "ru": "Rebreathing (повторное дыхание)",
     "en": "Rebreathing"
    },
    "summary": {
@@ -2670,6 +2851,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Leather / latex hood with restricted airflow"
+    ]
    }
   },
   {
@@ -2783,6 +2970,13 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Wet bagging (пакет + жидкость внутри)",
+     "Breath «Мокрый пакет» (очень высокий)"
+    ],
+    "en": []
    }
   },
   {
@@ -2854,7 +3048,9 @@
     "ru": [
      "Chest restriction (тугая обмотка грудной клетки)"
     ],
-    "en": []
+    "en": [
+     "Prolonged moderate restriction"
+    ]
    }
   },
   {
@@ -2888,6 +3084,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Timed cyclic asphyxiation"
+    ]
    }
   },
   {
@@ -2957,6 +3159,7 @@
    },
    "alternate_names": {
     "ru": [
+     "Combined dry methods (плёнка + пакет + chest restriction)",
      "Breath «Сухой слойный» (высокий)"
     ],
     "en": [
@@ -3251,7 +3454,9 @@
     "ru": [
      "Фрикции"
     ],
-    "en": []
+    "en": [
+     "Oral with nose closed / restricted breathing"
+    ]
    }
   },
   {
@@ -3298,6 +3503,7 @@
    "alternate_names": {
     "ru": [],
     "en": [
+     "Basic anal fucking / thrusting",
      "Deep anal penetration"
     ]
    }
@@ -3346,7 +3552,9 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Анальная разработка «Наездник + удержание» (средний)"
+    ],
     "en": [
      "Anal with depth holds"
     ]
@@ -3487,6 +3695,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Фрикции «Метроном + глубина» (средний-высокий)"
+    ],
+    "en": []
    }
   },
   {
@@ -3569,6 +3783,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Weighted / challenged technique (прищепки, грузы, неудобная поза во время фрикций)"
+    ],
+    "en": []
    }
   },
   {
@@ -3709,6 +3929,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Anal plug wearing (short / long)"
+    ]
    }
   },
   {
@@ -3754,7 +3980,9 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Reinsertion / packing (обратное помещение + пробка)"
+    ],
     "en": [
      "Cage + plug simultaneous"
     ]
@@ -3801,6 +4029,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Gag wearing (ball, bit, penis, panel, inflatable)"
+    ]
    }
   },
   {
@@ -4031,6 +4265,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "CBT clamps (scrotum, shaft, foreskin, perineum)"
+    ]
    }
   },
   {
@@ -4119,6 +4359,13 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Panties / underwear in mouth (clean or used)",
+     "Used / dirty underwear wearing or in mouth"
+    ]
    }
   },
   {
@@ -4164,7 +4411,10 @@
    "alternate_names": {
     "ru": [],
     "en": [
-     "Clothing as bondage (very tight)"
+     "Tight pantyhose / compression wear as restriction",
+     "Tight pantyhose / stockings",
+     "Clothing as bondage (very tight)",
+     "Clothing denial / nudity control"
     ]
    }
   },
@@ -4272,7 +4522,7 @@
     "category-chat-107"
    ],
    "title": {
-    "ru": "Связывание рук и ног (хогтай)",
+    "ru": "Связывание рук и ног (hogtie)",
     "en": "Hogtie bondage"
    },
    "summary": {
@@ -4308,6 +4558,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Hogtie / elbows-to-knees variants"
+    ]
    }
   },
   {
@@ -4352,6 +4608,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Kneeling position bondage"
+    ]
    }
   },
   {
@@ -4360,7 +4622,7 @@
     "category-chat-109"
    ],
    "title": {
-    "ru": "Поза лёжа с растяжкой (стрэппод)",
+    "ru": "Поза лёжа с растяжкой (spread-eagle)",
     "en": "Spread-eagle strapdown"
    },
    "summary": {
@@ -4490,6 +4752,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Standing spread or wall bondage"
+    ]
    }
   },
   {
@@ -4578,6 +4846,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Mummification-style / full body restriction"
+    ]
    }
   },
   {
@@ -4618,7 +4892,9 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Forced depth (фиксация головы/тела)"
+    ],
     "en": [
      "Head & neck restraint (collar to point, posture collar)"
     ]
@@ -4630,7 +4906,7 @@
     "category-chat-115"
    ],
    "title": {
-    "ru": "Распорки для ног (спредер-бар)",
+    "ru": "Распорки для ног (spreader bar)",
     "en": "Spreader bar"
    },
    "summary": {
@@ -4666,6 +4942,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Spreader bars (wrists, ankles, both)"
+    ]
    }
   },
   {
@@ -4798,9 +5080,12 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Фиксация «Рабочая поза» (средний-высокий)"
+    ],
     "en": [
-     "Kneeling position bondage"
+     "Holding in bondage / stress position",
+     "Stress positions"
     ]
    }
   },
@@ -4810,7 +5095,7 @@
     "category-chat-119"
    ],
    "title": {
-    "ru": "Скотч-бондаж",
+    "ru": "Бондаж скотчем (tape bondage)",
     "en": "Tape bondage"
    },
    "summary": {
@@ -4848,7 +5133,9 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Объем под грудью"
+    ],
     "en": [
      "Tape / clingfilm bondage"
     ]
@@ -5030,6 +5317,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Ice play (nipples, genitals, anus, body)"
+    ]
    }
   },
   {
@@ -5072,12 +5365,6 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
-   },
-   "alternate_names": {
-    "ru": [],
-    "en": [
-     "Temperature contrast (ice ↔ warm)"
-    ]
    }
   },
   {
@@ -5156,6 +5443,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Wax play — trails / writing on body"
+    ]
    }
   },
   {
@@ -5198,6 +5491,13 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Clothespin / clover clamp pressure",
+     "Mass clothespin application"
+    ]
    }
   },
   {
@@ -5282,12 +5582,6 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
-   },
-   "alternate_names": {
-    "ru": [],
-    "en": [
-     "Mass clothespin application"
-    ]
    }
   },
   {
@@ -5324,6 +5618,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Electroplay (TENS / e-stim on genitals, nipples, body)"
+    ]
    }
   },
   {
@@ -5366,6 +5666,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Ear plugging / auditory deprivation"
+    ]
    }
   },
   {
@@ -5408,6 +5714,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Sensory overload (multiple strong stimuli at once)"
+    ]
    }
   },
   {
@@ -5498,6 +5810,13 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Compression / tight wrapping / vacuum",
+     "Compression wear / shapewear"
+    ]
    }
   },
   {
@@ -5534,6 +5853,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Vacuum pumping (nipples, cock, balls)"
+    ]
    }
   },
   {
@@ -5578,7 +5903,9 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Сенсорика «Лёд + воск дорожка» (средний)"
+    ],
     "en": [
      "Combined sensory sequence"
     ]
@@ -5668,8 +5995,11 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Порка «Пятиэтапная с рандомом» (высокий)"
+    ],
     "en": [
+     "Hand spanking",
      "Belt / strap"
     ]
    }
@@ -5723,7 +6053,7 @@
     "category-chat-148"
    ],
    "title": {
-    "ru": "Порка флоггером",
+    "ru": "Флоггинг (flogging)",
     "en": "Flogger impact"
    },
    "summary": {
@@ -5763,6 +6093,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Flogger (leather, rubber, heavy, light)"
+    ]
    }
   },
   {
@@ -5800,6 +6136,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Rope / cord / single-tail light"
+    ]
    }
   },
   {
@@ -5848,6 +6190,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Impact on thighs & sit-spots"
+    ]
    }
   },
   {
@@ -5928,6 +6276,12 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "CBT impact (cock, balls)"
+    ]
    }
   },
   {
@@ -6023,8 +6377,7 @@
    "alternate_names": {
     "ru": [],
     "en": [
-     "Multi-zone clamp wearing",
-     "Mixed-zone impact"
+     "Multi-zone clamp wearing"
     ]
    }
   },
@@ -6074,6 +6427,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Escalating intensity sets"
+    ]
    }
   },
   {
@@ -6233,6 +6592,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Endurance / high-volume impact"
+    ]
    }
   },
   {
@@ -6281,6 +6646,12 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Progressive multi-stage session"
+    ]
    }
   },
   {
@@ -6312,6 +6683,14 @@
    "promotion": {
     "source_outcome": "rewrite_required",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Психо + физика «Объектность» (средний)"
+    ],
+    "en": [
+     "Short hybrid protocol"
+    ]
    }
   }
  ]
