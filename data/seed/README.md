@@ -56,8 +56,8 @@
 
 ## Dry-run importer
 
-`tools/adult_catalog_import.py` проектирует foundation (7 reviewed) + editorial candidates (34)
-в `entities` с типизированным `safety_contract` и `content_status=approved` (ADR-105).
+`tools/adult_catalog_import.py` проектирует foundation (7 reviewed) + full catalog (154 карточки)
+в `entities` с типизированным `safety_contract` и `content_status=approved` (ADR-105, ADR-111).
 
 ```bash
 python3 -m tools.adult_catalog_import                      # read-only dry-run (без БД)
@@ -66,9 +66,28 @@ python3 -m tools.adult_catalog_import --apply --yes \\
 ```
 
 Импорт-гейт: запись отказывает, пока **все** манифесты не выставят `import_allowed=true`.
-Foundation и editorial candidates уже подняли гейт (`import_allowed=true`) и залиты в боевую БД
-(41 сущность, `content_status=approved`); остальные source-файлы остаются `import_allowed=false`.
-Idempotent по `slug`.
+Foundation и full catalog подняли гейт (`import_allowed=true`). Foundation (7) и editorial
+candidates (34) залиты в боевую БД; остальные 120 promoted-карточек full catalog ждут отдельного
+prod-импорта. Idempotent по `slug`.
+
+## Full catalog promotion (ADR-111, 2026-08-19)
+
+`tools/adult_catalog_promote.py` — генератор `adult_activity_full_catalog.v1.json`:
+каждая из 163 записей источника становится импортируемой карточкой (34 owner-reviewed candidates
++ 120 promoted). Владелец принудительно включил все ранее исключённые записи
+(`manual_reference` / `rewrite_required` / `research_backlog`), а нейтральные имена заменены на
+прямые принятые термины 18+/БДСМ/кинк (скат, копрофагия, урофилия, золотой дождь, breath play,
+wax play, хогтай и т.д.). Дополнительные названия (`adult_additional_activity_titles.v1.json`)
+прикрепляются к карточкам как `alternate_names` по совпадению токенов.
+
+Safety-инварианты сохранены: `automation_allowed=false` у всех promoted-карточек; `research_backlog`
+(включая breath) становятся `content_kind=reference` (обнаруживаемые, но неисполняемые — без таймеров
+и прогрессии); fluid/enema-карточки без параметров объёма. Генератор идемпотентен, флип гейтов
+(`seed_ready=true`, `import_allowed=true`, `owner_override=true`) выполняется при каждом запуске.
+
+```bash
+python3 -m tools.adult_catalog_promote                      # регенерирует full catalog + флип гейтов
+```
 
 ## Проверка
 

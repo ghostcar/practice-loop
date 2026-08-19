@@ -108,6 +108,7 @@
 | ADR-116 | 2026-08-19 | Шаг 24: Гендерно-Инклюзивные Профили Партнёров и ИИ-Консультант по Динамике и Границам | По решению владельца: расширение модуля Журнала до инклюзивных Профилей Партнёров (`sj_partners` + `roles`, `identity_notes`, `hard_limits`, `soft_limits`, `safewords`, `aftercare_preferences`, миграция 071) и внедрение LLM-Консультанта по динамике (`POST /api/v2/journal/partners/{id}/analyze`). | принято |
 | ADR-117 | 2026-08-19 | Шаги 25-26: Интерактивный Визуальный Конструктор Схем и Единый Кросс-Модульный ИИ-Агент | По решению владельца: создание Интерактивного Визуального Конструктора схем параметров (`app/templates/components/schema_builder.html` + `/admin/schema-builder`), внедрение Единого Персона-Движка ИИ (`app/llm/pipeline/persona.py`) с выбором ролей (Наблюдатель, Ключник, Ведущий/Верхний) и 1-Click экспортом медицинского/личного отчёта (`POST /api/v2/insights/export-report`). | принято |
 | ADR-118 | 2026-08-19 | Расширение Telegram-бота v3 (Chastity Keyholder, Aftercare Protocol & Medical Report) | По решению владельца: добавление интерактивных команд и inline-кнопок в Telegram-бот (`app/telegram/bot.py`): `/keyholder` (`/chastity`) с вызовом оценки ИИ-Ключника (`keyholder_eval`), `/aftercare` для мгновенной генерации Aftercare-протокола (`aftercare_gen`) и `/report` для 1-Click выгрузки медицинско-персонального отчёта. | принято |
+| ADR-119 | 2026-08-19 | P1g: полный каталог 18+ (принудительное продвижение всех 163 записей) | По решению владельца: все подготовленные данные приведены к seed-ready; исключённые (`manual_reference`/`rewrite_required`/`research_backlog`) принудительно включены; нейтральные имена заменены на прямые принятые термины 18+/БДСМ/кинк. `tools/adult_catalog_promote.py` генерирует `adult_activity_full_catalog.v1.json` (154 карточки = 34 candidates + 120 promoted), флип гейтов (`seed_ready=true`, `import_allowed=true`, `owner_override=true`), дополнительные названия как `alternate_names`. Safety-инварианты сохранены: `automation_allowed=false` у всех promoted, `research_backlog` (вкл. breath) → `content_kind=reference` (неисполняемые, без таймеров). Importer читает full catalog (161 сущность = 7 foundation + 154). | принято |
 | ADR-095 | 2026-08-17 | Шаг 17c: Reminders+Telegram, курсы процедур, авто-инсайты, Cycle-инсайты | По решению владельца «давай отложенное реализовывать, в том числе уведомления через телеграм» (все типы + курсы + авто-инсайты + Cycle). **Relief-only (PD-013)**: напоминания/курсы без очков/штрафов. (1) **Reminder engine** `app/reminders/` + `reminder_log` (миграция 052): коллекторы (медикаменты due/low/expiring; средства low-stock/expiring; процедуры по frequency_days; курсы next-session; таймер окна/задачи), дедуп unique (user,kind,key), доставка in-app + Telegram + push, discretion-нейтрализация; asyncio-планировщик (reminder_time/tz, REMINDER_ENABLED). (2) **Курсы процедур** `care_courses`+`care_course_sessions` (миграция 053): N сеансов с интервалом, прогресс, next-session reminder, секция /care + JSON /api/v2/care/courses. (3) **Авто-инсайты**: prefs.insights_auto/insights_auto_days + `app/insights/scheduler.run_auto_insights`. (4) **Cycle-инсайты**: раздел `cycle` в INSIGHT_SECTIONS + `_ctx_cycle` (фазы + агрегаты mood/satisfaction/skin по фазам, без причинности §9.4). 13/13 таргетных + 121 регрессионный ✅, ruff ✅, i18n 1206/1206, single head ✅. | принято |
 | ADR-094 | 2026-08-17 | Шаг 17b: Care Products — остатки/сроки/фото + кросс-модуль | По решению владельца «каталог средств дорабатывать и кросс-модульное взаимодействие» (8 направлений). **Relief-only (PD-013)**: без игровой интеграции. Доработка `care_products` (+quantity остаток, +expiry_date срок, +catalog_item_id FK activity_catalog SET NULL — связь с универсальным каталогом), фото средства (owner_type=care_product, POST /care/products/{id}/media), join `care_routine_products` (рекомендуемые средства для процедуры, CASCADE). Кросс-модульные мягкие ссылки JSON по ID (DATA_LIFECYCLE.md): `lock_slot_rules.care_product_ids` (средства окна таймера), `entities.care_product_ids` (средства для трекер-задачи), `sj_entries.care_product_ids` (использованные средства в журнале); средства в контексте Insights (расход/регулярность/low-stock). Валидация владельца во всех местах (чужое → 400); JSON-колонки хранят строки UUID. Миграция 051, single head. 12/12 таргетных + 97/97 регрессионных (care/journal/catalog/insights) + 100/100 locktimer ✅, ruff ✅, i18n 1197/1197. | принято |
 | ADR-093 | 2026-08-17 | Шаг 17: Personal Insights (ROADMAP §7 4E) | По решению владельца «сделать следующий модуль личного контура: 4E Personal Insights». Явно запрошенный кросс-модульный LLM-анализ личных данных (PRODUCT_OVERVIEW §12): тенденции и связи между активностями/таймером/журналом/здоровьем/уходом/тренировками/диетами. **Relief-only (PD-013)**: без игровой интеграции. 2 таблицы (`insight_runs` — запуск: period_start/end, sections JSON, status, summary, usage; `insight_findings` — находки по разделу: section, title, summary, used_data JSON), миграция 050, single head. LLM-пайплайн `app/llm/pipeline/insights.py` + `insights_prompts.py`: контекст только из выбранных разделов за период, промпт требует показывать использованные данные и **не объявляет корреляцию причиной**, режим llm_mode (ADR-087), usage на LLMProviderConfig. Страница /insights (пикер разделов/периода + результат + история с удалением), JSON /api/v2/insights (GET/POST/GET runs/{id}). Дашборд-блок dash-block-insights, nav «Инсайты» (иконка insights.svg), флаг insights_enabled. 11/11 таргетных + 164 регрессионных ✅, ruff ✅, i18n 1196/1196, single head ✅. | принято |
@@ -1036,3 +1037,32 @@ i18n parity 0, single head 062.
 
 **Status:** ✅ миграция применена на throwaway PG 15 (063→064→065→066), single head,
 `test_social_privacy_audit` ✅, settings-password 6/6 ✅, ruff ✅, i18n-паритет 1399/1399 ✅.
+
+
+### ADR-119 — P1g: полный каталог 18+ (принудительное продвижение всех 163 записей)
+**Date:** 2026-08-19
+**Decision:** По решению владельца: все подготовленные данные приведены к seed-ready;
+ранее исключённые записи (`manual_reference` / `rewrite_required` / `research_backlog`)
+принудительно переведены во включённые к загрузке; нейтральные/иносказательные имена заменены
+на прямые принятые термины 18+/БДСМ/кинк (скат, копрофагия, урофилия, золотой дождь,
+waterboarding, breath play, wax play, хогтай, спредер-бар и т.д.).
+
+**Инструмент:** `tools/adult_catalog_promote.py` — генератор `adult_activity_full_catalog.v1.json`
+(154 карточки = 34 owner-reviewed candidates + 120 promoted; 7 foundation отдельно). Идемпотентно
+флипует гейты: source inventory `seed_ready=true`, review-файлы `import_allowed=true` +
+`owner_override=true` + `user_discoverable_after_moderation=true`, additional titles
+`import_allowed=true` + `seed_ready=true`. Дополнительные названия прикрепляются к карточкам как
+`alternate_names` (совпадение токенов).
+
+**Safety-инварианты сохранены:** `automation_allowed=false` у всех promoted-карточек;
+`research_backlog` (включая breath restriction) → `content_kind=reference` — обнаруживаемые, но
+неисполняемые (без таймеров, прогрессии, исполняемых инструкций); fluid/enema без параметров
+объёма (`no_automatic_volume`/`no_medical_volume`).
+
+**Importer:** `tools/adult_catalog_import.py` читает foundation + full catalog (161 сущность =
+7 foundation + 154 promoted), `content_status=approved`, idempotent по slug. Lint-правила обновлены
+под owner-промоушн; `# ruff: noqa` per-file для C408/E501 в SPECS-таблице данных.
+
+**Status:** ✅ 154 карточки сгенерированы, все 163 записи покрыты, гейты флипнуты; 51/51 тестов
+manifest+import ✅, ruff ✅, dry-run импортёра `entities=161` (low 63 / elevated 98; auto 7 /
+manual 154). Прод не тронут — отдельный prod-импорт по подтверждению.

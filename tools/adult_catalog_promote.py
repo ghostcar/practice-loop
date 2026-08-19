@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import unicodedata
 from collections import Counter
 from pathlib import Path
@@ -1057,7 +1058,7 @@ def main() -> int:
         new_cards.append(build_card(records[source_id], reviews[source_id], SPECS[source_id]))
 
     if missing_specs:
-        print(f"ERROR: no spec for {len(missing_specs)} records: {missing_specs}", file=__import__("sys").stderr)
+        print(f"ERROR: no spec for {len(missing_specs)} records: {missing_specs}", file=sys.stderr)
         return 1
 
     cards.extend(new_cards)
@@ -1067,7 +1068,7 @@ def main() -> int:
     slugs = [c["slug"] for c in cards]
     dupes = [s for s, n in Counter(slugs).items() if n > 1]
     if dupes:
-        print(f"ERROR: duplicate slugs: {dupes}", file=__import__("sys").stderr)
+        print(f"ERROR: duplicate slugs: {dupes}", file=sys.stderr)
         return 1
 
     manifest: dict[str, Any] = {
