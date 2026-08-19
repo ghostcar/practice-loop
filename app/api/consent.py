@@ -112,6 +112,30 @@ async def consent_page(
     )
 
 
+@router.get("/consent/matrix", response_class=HTMLResponse)
+async def consent_matrix_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Interactive Consent & Limits Matrix page (Step 33)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="consent_matrix.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "consent",
+        },
+    )
+
+
 @router.post("/consent")
 async def add_consent_form(
     request: Request,

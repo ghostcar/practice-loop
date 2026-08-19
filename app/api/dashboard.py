@@ -656,6 +656,30 @@ async def sessions_page(
     )
 
 
+@router.get("/sessions/rules-builder", response_class=HTMLResponse)
+async def sessions_rules_builder_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Interactive Session Rules & Contracts Builder page (Step 32)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="sessions_rules_builder.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+        },
+    )
+
+
 @router.post("/sessions")
 async def create_session(
     request: Request,

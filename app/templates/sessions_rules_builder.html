@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                📜 Конструктор Правил и Контрактов Сессий
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Интерактивное создание правил сессий (Chastity, D/s контракты, штрафные триггеры, авто-переход в Aftercare).
+            </p>
+        </div>
+        <a href="/sessions" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
+            ← Вернуться к Сессиям
+        </a>
+    </div>
+
+    <!-- Builder Interactive Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Rule Template Palette -->
+        <div class="space-y-4">
+            <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">📦 Шаблоны Правил</h2>
+            <div class="space-y-2">
+                <button type="button" class="add-rule-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-type="chastity">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs text-[color:var(--text)]">🔒 Правило Чек-инов Chastity</span>
+                        <span class="text-[10px] pl-accent-soft px-1.5 py-0.5 rounded">Контроль</span>
+                    </div>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Контроль регулярных фото-отчётов и штраф при просрочке.</p>
+                </button>
+
+                <button type="button" class="add-rule-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-type="health_pause">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs text-[color:var(--text)]">🩺 Триггер Заботы (Health Pause)</span>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">Забота</span>
+                    </div>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Авто-приостановка или переключение на Aftercare при усталости.</p>
+                </button>
+
+                <button type="button" class="add-rule-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-type="task_quota">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs text-[color:var(--text)]">🎯 Квота Дисциплинарных Задач</span>
+                        <span class="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Дисциплина</span>
+                    </div>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Требование выполнения N задач в день с начислением XP.</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Active Rules List -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">🛠️ Активный Контракт Сессии</h2>
+                <button type="button" id="clear-rules-btn" class="text-xs text-[color:var(--danger)] hover:underline">Очистить всё</button>
+            </div>
+
+            <div id="rules-canvas" class="space-y-3 p-4 rounded-2xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] min-h-[300px]">
+                <p id="empty-canvas-msg" class="text-xs text-[color:var(--text-muted)] italic text-center py-10">
+                    Выберите шаблоны слева для сборки правил контракта.
+                </p>
+            </div>
+
+            <!-- Export JSON / Apply Form -->
+            <div class="p-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] space-y-3">
+                <h3 class="text-xs font-semibold text-[color:var(--text)]">Предпросмотр JSON Контракта</h3>
+                <textarea id="rules-json-output" readonly rows="4" class="w-full p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] font-mono text-[11px] text-[color:var(--text)]"></textarea>
+                <button type="button" id="copy-json-btn" class="w-full py-2.5 pl-accent-bg text-xs font-semibold rounded-lg hover:bg-[color:var(--accent-hover)]">
+                    📋 Скопировать Контракт для Сессии
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('rules-canvas');
+  const emptyMsg = document.getElementById('empty-canvas-msg');
+  const jsonOut = document.getElementById('rules-json-output');
+  const clearBtn = document.getElementById('clear-rules-btn');
+  const copyBtn = document.getElementById('copy-json-btn');
+
+  let activeRules = [];
+
+  document.querySelectorAll('.add-rule-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.getAttribute('data-type');
+      let ruleObj = {};
+      if (type === 'chastity') {
+        ruleObj = {
+          id: 'rule_' + Date.now(),
+          type: 'chastity_checkin',
+          title: 'Обязательный фото-чек-ин Chastity',
+          interval_hours: 12,
+          grace_period_mins: 30,
+          penalty_xp: 50
+        };
+      } else if (type === 'health_pause') {
+        ruleObj = {
+          id: 'rule_' + Date.now(),
+          type: 'health_trigger',
+          title: 'Защитный спад / Health Pause',
+          trigger_energy_min: 3,
+          action: 'convert_to_aftercare'
+        };
+      } else if (type === 'task_quota') {
+        ruleObj = {
+          id: 'rule_' + Date.now(),
+          type: 'task_quota',
+          title: 'Дневная квота активностей',
+          daily_count: 2,
+          bonus_xp: 100
+        };
+      }
+      activeRules.push(ruleObj);
+      renderCanvas();
+    });
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    activeRules = [];
+    renderCanvas();
+  });
+
+  copyBtn?.addEventListener('click', () => {
+    navigator.clipboard.writeText(jsonOut.value);
+    alert('Контракт скопирован!');
+  });
+
+  function renderCanvas() {
+    if (activeRules.length === 0) {
+      emptyMsg.classList.remove('hidden');
+      canvas.querySelectorAll('.rule-item').forEach(el => el.remove());
+      jsonOut.value = '{}';
+      return;
+    }
+    emptyMsg.classList.add('hidden');
+    canvas.querySelectorAll('.rule-item').forEach(el => el.remove());
+
+    activeRules.forEach((r, idx) => {
+      const div = document.createElement('div');
+      div.className = 'rule-item p-3 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] space-y-2 text-xs';
+      div.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="font-semibold text-[color:var(--text)]">${r.title}</span>
+          <button type="button" class="remove-rule text-red-400 font-bold" data-idx="${idx}">✕</button>
+        </div>
+        <pre class="text-[10px] text-[color:var(--text-secondary)] font-mono">${JSON.stringify(r, None, 2)}</pre>
+      `;
+      canvas.appendChild(div);
+    });
+
+    jsonOut.value = JSON.stringify({ session_rules: activeRules }, null, 2);
+
+    canvas.querySelectorAll('.remove-rule').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = parseInt(e.target.getAttribute('data-idx'));
+        activeRules.splice(i, 1);
+        renderCanvas();
+      });
+    });
+  }
+});
+</script>
+{% endblock %}
