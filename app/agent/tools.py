@@ -1,4 +1,4 @@
-"""Native Agent Tools Registry for PracticeLoop Agent (Step 44 / ADR-123)."""
+"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-45 / ADR-123)."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.llm.pipeline import generate_task
 from app.models.care import CareRoutine
 from app.models.health import HealthState
+from app.models.journal import JournalPartner
 from app.models.session import ActivitySession
 from app.timeutils import local_today
 
@@ -72,6 +73,30 @@ AGENT_TOOLS_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_partner_limits",
+            "description": "Retrieve partner profile safety limits, hard limits, soft limits, and safewords.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_health_context",
+            "description": "Retrieve recent health state, mood, energy, and cycle context for safety checks.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        },
+    },
 ]
 
 
@@ -117,7 +142,7 @@ async def execute_agent_tool(
         return {
             "status": "aftercare_launched",
             "routines_count": len(routines),
-            "advice": "Rest, hydrate, and maintain warmth.",
+            "advice": "Rest, hydrate, maintain warmth, and engage in gentle recovery.",
         }
 
     elif tool_name == "record_health_state":
@@ -139,5 +164,36 @@ async def execute_agent_tool(
 
         await db.commit()
         return {"status": "recorded", "event_date": str(today), "mood": state.mood, "energy": state.energy}
+
+    elif tool_name == "get_partner_limits":
+        partners = (
+            await db.execute(select(JournalPartner).where(JournalPartner.user_id == user_id))
+        ).scalars().all()
+        p_list = []
+        for p in partners:
+            p_list.append({
+                "alias": p.alias,
+                "hard_limits": p.hard_limits or [],
+                "soft_limits": p.soft_limits or [],
+                "safewords": p.safewords or [],
+            })
+        return {"status": "success", "partners_count": len(p_list), "partners": p_list}
+
+    elif tool_name == "get_health_context":
+        today = local_today()
+        recent_health = (
+            await db.execute(
+                select(HealthState)
+                .where(HealthState.user_id == user_id)
+                .order_by(HealthState.event_date.desc())
+                .limit(5)
+            )
+        ).scalars().all()
+
+        h_list = [
+            {"date": str(h.event_date), "mood": h.mood, "energy": h.energy, "notes": h.notes}
+            for h in recent_health
+        ]
+        return {"status": "success", "recent_entries_count": len(h_list), "entries": h_list}
 
     return {"status": "error", "message": f"Unknown tool '{tool_name}'"}

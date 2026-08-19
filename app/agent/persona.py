@@ -1,4 +1,4 @@
-"""Persona Manager for PracticeLoop Agent (Step 44 / ADR-123)."""
+"""Persona Manager for PracticeLoop Agent (Step 44-45 / ADR-123)."""
 
 from __future__ import annotations
 
@@ -25,14 +25,15 @@ PERSONA_PROMPTS = {
 
 
 def build_persona_system_prompt(persona_role: str, user_context: dict[str, Any] | None = None) -> str:
-    """Builds full system prompt for specified persona role."""
+    """Builds full system prompt for specified persona role with dynamic context injection."""
     base_prompt = PERSONA_PROMPTS.get(persona_role, PERSONA_PROMPTS["keyholder"])
 
-    extra = "\n\nДополнительные инструкции безопасности:"
+    extra = "\n\nДополнительные инструкции безопасности и границы:"
     extra += "\n- Строго соблюдай опт-ин задачи пользователя."
-    extra += "\n- В случае команды STOP немедленно запускай Aftercare."
+    extra += "\n- Никогда не переступай жесткие границы (Hard Limits) пользователя и партнёров."
+    extra += "\n- В случае любой стоп-команды или Safeword немедленно запускай Aftercare."
 
     if user_context:
-        extra += f"\n- Активный контекст: {user_context}"
+        extra += f"\n- Активный текущий контекст: {user_context}"
 
     return base_prompt + extra
