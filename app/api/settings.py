@@ -74,6 +74,7 @@ async def save_settings(
     reminder_time: str = Form(""),
     reminder_tz: str = Form(""),
     enabled_modules: list[str] = Form(default=[]),
+    display_name: str = Form(""),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
     raw = sanitize_prefs(
@@ -101,6 +102,9 @@ async def save_settings(
     # keep the legacy theme column in sync (pages resolve theme via detect_theme)
     user.theme = raw["theme_choice"]
     user.prefs = raw
+    # ADR-110: abstract display name (shown in the shell instead of the email).
+    # Empty input clears it back to the neutral fallback.
+    user.display_name = (display_name or "").strip()[:100] or None
     db.add(user)
 
     # Enabling a module is allowed only after its one-time consent. Save the

@@ -26,6 +26,8 @@ async def get_due_practices(
     """Return enabled practices that are due (next_due_at <= now) and not blocked by retry."""
     now = datetime.now(UTC)
 
+    # ADR-106: personal entities (owner_id == user.id) are approved by default
+    # and auto-opt-in at creation — the opt-in join already covers them.
     result = await db.execute(
         select(UserEntityOptIn, Entity)
         .join(Entity, UserEntityOptIn.entity_id == Entity.id)

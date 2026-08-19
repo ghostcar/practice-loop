@@ -19,6 +19,9 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    # ADR-110: abstract/anonymous display name shown in the shell instead of the
+    # email. Optional — falls back to a neutral placeholder (e.g. "User").
+    display_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     subscription_tier: Mapped[str] = mapped_column(String(50), default="free", nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)  # user / moderator / admin

@@ -291,6 +291,31 @@
         if (e.key === 'Escape' && !sheet.hidden) closeSheet();
       });
     }
+
+    // User Profile Dropdown toggle
+    var userMenuBtn = document.getElementById('user-menu-btn');
+    var userMenuDropdown = document.getElementById('user-menu-dropdown');
+    if (userMenuBtn && userMenuDropdown) {
+      userMenuBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isExpanded = userMenuBtn.getAttribute('aria-expanded') === 'true';
+        userMenuBtn.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+        userMenuDropdown.classList.toggle('hidden', isExpanded);
+      });
+      document.addEventListener('click', function (e) {
+        if (!userMenuDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
+          userMenuDropdown.classList.add('hidden');
+          userMenuBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !userMenuDropdown.classList.contains('hidden')) {
+          userMenuDropdown.classList.add('hidden');
+          userMenuBtn.setAttribute('aria-expanded', 'false');
+          userMenuBtn.focus();
+        }
+      });
+    }
   }
 
   if (document.readyState === 'loading') {

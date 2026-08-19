@@ -270,6 +270,13 @@ async def create_entity(
     db.add(entity)
     await db.flush()
 
+    # ADR-106: a personal entity is approved by the user by default — create an
+    # opt-in row automatically so the entity is immediately eligible for LLM
+    # generation, manual task creation and the scheduler (no separate opt-in
+    # step needed). Explicit opt-out later is still respected.
+    db.add(UserEntityOptIn(user_id=user.id, entity_id=entity.id, is_opted_in=True, desire_level="neutral"))
+    await db.flush()
+
     referer = request.headers.get("referer", "/entities/my")
     return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
 
@@ -312,6 +319,199 @@ async def delete_entity(
 
     referer = request.headers.get("referer", "/entities/my")
     return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/{entity_id}/edit", response_class=HTMLResponse)
+async def edit_entity_page(
+    request: Request,
+    entity_id: uuid.UUID,
+    error: str | None = Query(None),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Full-featured Entity Editor for params_schema and safety_contract (ADR-105/106)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    result = await db.execute(select(Entity).where(Entity.id == entity_id))
+    entity = result.scalar_one_or_none()
+    if entity is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+
+    # Only owner or admin can edit
+    if entity.owner_id != user.id and user.role != "admin":
+        raise HTTPException(status_code=403, detail="You do not have permission to edit this entity")
+
+    # Load categories
+    cat_result = await db.execute(select(ActivityCategory).where(ActivityCategory.is_active.is_(True)))
+    categories = list(cat_result.scalars().all())
+
+    # Load catalog items
+    catalog_items = await catalog_options(db, user.id, domain="tracker")
+
+    # Load care products
+    care_products: list[dict] = []
+    try:
+        from app.models.care import CareProduct
+
+        cp_result = await db.execute(
+            select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name).limit(200)
+        )
+        care_products = [{"id": str(p.id), "name": p.name} for p in cp_result.scalars().all()]
+    except Exception:
+        pass
+
+    import json
+
+    params_json = (
+        json.dumps(entity.params_schema, indent=2, ensure_ascii=False)
+        if entity.params_schema
+        else ""
+    )
+    safety_json = (
+        json.dumps(entity.safety_contract, indent=2, ensure_ascii=False)
+        if entity.safety_contract
+        else ""
+    )
+
+    tags_str = ", ".join(entity.tags) if entity.tags else ""
+    role_tags_str = ", ".join(entity.role_tags) if entity.role_tags else ""
+
+    return templates.TemplateResponse(
+        request=request,
+        name="entity_edit.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "entity": entity,
+            "categories": categories,
+            "catalog_items": catalog_items,
+            "care_products": care_products,
+            "params_json": params_json,
+            "safety_json": safety_json,
+            "tags_str": tags_str,
+            "role_tags_str": role_tags_str,
+            "error": error,
+            "active_nav": "catalog",
+        },
+    )
+
+
+@router.post("/{entity_id}/edit")
+async def update_entity(
+    request: Request,
+    entity_id: uuid.UUID,
+    real_name: str = Form(...),
+    short_title: str = Form(default=""),
+    type: str = Form(default="one_time"),
+    category_id: uuid.UUID | None = Form(default=None),
+    risk_level: str = Form(default="not_assessed"),
+    adult_only: bool = Form(default=False),
+    automation_allowed: bool = Form(default=False),
+    penalty_enabled: bool = Form(default=True),
+    is_public: bool = Form(default=False),
+    tags: str = Form(default=""),
+    role_tags: str = Form(default=""),
+    params_json: str = Form(default=""),
+    safety_json: str = Form(default=""),
+    catalog_item_id: str = Form(default=""),
+    care_product_ids: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Save updated Entity configuration."""
+    import json
+
+    result = await db.execute(select(Entity).where(Entity.id == entity_id))
+    entity = result.scalar_one_or_none()
+    if entity is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+
+    if entity.owner_id != user.id and user.role != "admin":
+        raise HTTPException(status_code=403, detail="You do not have permission to edit this entity")
+
+    # Validate type and risk_level
+    if type not in ("one_time", "series", "infinite"):
+        type = "one_time"
+    if risk_level not in ("not_assessed", "low", "elevated", "high"):
+        risk_level = "not_assessed"
+
+    # Resolve category string
+    category_str = entity.category
+    if category_id is not None:
+        cat_res = await db.execute(select(ActivityCategory).where(ActivityCategory.id == category_id))
+        cat = cat_res.scalar_one_or_none()
+        if cat is not None:
+            category_str = cat.title
+
+    # Parse params_schema JSON if provided
+    params_schema = None
+    if params_json.strip():
+        try:
+            params_schema = json.loads(params_json.strip())
+            if not isinstance(params_schema, dict):
+                raise ValueError("params_schema must be a JSON object")
+        except Exception as exc:
+            return RedirectResponse(
+                url=f"/entities/{entity_id}/edit?error=Invalid+params_schema+JSON:+{str(exc)}",
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+
+    # Parse safety_contract JSON if provided
+    safety_contract = None
+    if safety_json.strip():
+        try:
+            safety_contract = json.loads(safety_json.strip())
+            if not isinstance(safety_contract, dict):
+                raise ValueError("safety_contract must be a JSON object")
+        except Exception as exc:
+            return RedirectResponse(
+                url=f"/entities/{entity_id}/edit?error=Invalid+safety_contract+JSON:+{str(exc)}",
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+
+    # Resolve catalog_item_id
+    catalog_uuid = None
+    if catalog_item_id.strip():
+        try:
+            cid = uuid.UUID(catalog_item_id.strip())
+            catalog_uuid = cid
+        except ValueError:
+            pass
+
+    # Resolve care_product_ids
+    care_uuids: list[str] | None = None
+    if care_product_ids.strip():
+        raw = [x.strip() for x in care_product_ids.split(",") if x.strip()]
+        care_uuids = raw if raw else None
+
+    # Update entity fields
+    entity.real_name = real_name.strip()
+    entity.short_title = short_title.strip() or None
+    entity.slug = slugify(real_name)
+    entity.type = type
+    entity.category_id = category_id
+    entity.category = category_str
+    entity.risk_level = risk_level
+    entity.adult_only = adult_only
+    entity.automation_allowed = automation_allowed
+    entity.penalty_enabled = penalty_enabled
+    entity.is_public = is_public
+    entity.tags = [t.strip() for t in tags.split(",") if t.strip()] if tags else None
+    entity.role_tags = [r.strip() for r in role_tags.split(",") if r.strip()] if role_tags else None
+    entity.params_schema = params_schema
+    entity.safety_contract = safety_contract
+    entity.catalog_item_id = catalog_uuid
+    entity.care_product_ids = care_uuids
+
+    db.add(entity)
+    await db.flush()
+
+    return RedirectResponse(url="/entities/catalog", status_code=status.HTTP_303_SEE_OTHER)
 
 
 # --- Opt-in API ---

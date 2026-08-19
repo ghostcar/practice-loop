@@ -16,6 +16,19 @@
     <form method="post" action="/settings" id="settings-form" class="space-y-5">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
 
+        <!-- Profile (ADR-110: abstract display name instead of email in shell) -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="profile-h">
+            <h2 id="profile-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_profile }}</h2>
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.settings_display_name }}
+                <input type="text" name="display_name" maxlength="100"
+                       value="{{ user.display_name or '' }}"
+                       placeholder="{{ t.settings_display_name_ph }}"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+            </label>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_display_name_hint }}</p>
+        </section>
+
         <!-- Appearance -->
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="appearance-h">
             <h2 id="appearance-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_appearance }}</h2>

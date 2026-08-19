@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="flex items-center gap-2">
+                <a href="/entities/catalog" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--text)] transition-colors flex items-center gap-1">
+                    {{ icon('chevron-left', 'w-3.5 h-3.5') }} {{ t.catalog_title }}
+                </a>
+                <span class="text-xs text-[color:var(--text-muted)]">/</span>
+                <span class="text-xs text-[color:var(--text-muted)]">Конструктор параметров задачи</span>
+            </div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] mt-1">{{ entity.real_name }}</h1>
+            <p class="text-xs text-[color:var(--text-secondary)]">Визуальная настройка параметров выполнения и контракта безопасности (Safety Contract)</p>
+        </div>
+        <div class="flex items-center gap-2">
+            {% if entity.is_public %}
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Публичная</span>
+            {% else %}
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium pl-surface-soft text-[color:var(--text-secondary)]">Личная</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="p-4 rounded-xl border border-[color:var(--danger)] bg-[color:var(--accent-soft)] text-[color:var(--danger)] text-sm flex items-center gap-2">
+        {{ icon('error', 'w-4 h-4') }}
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form action="/entities/{{ entity.id }}/edit" method="post" id="entity-form" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <!-- Hidden inputs that store auto-generated JSON for backend submission -->
+        <input type="hidden" id="params_json" name="params_json" value="{{ params_json }}">
+        <input type="hidden" id="safety_json" name="safety_json" value="{{ safety_json }}">
+
+        <!-- Block 1: Base Information -->
+        <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 space-y-4">
+            <h2 class="text-base font-semibold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('activity', 'w-5 h-5 text-[color:var(--accent)]') }}
+                1. Основные данные задачи
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Полное название *</label>
+                    <input type="text" name="real_name" value="{{ entity.real_name }}" required
+                           class="w-full px-3.5 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Короткий заголовок карточки</label>
+                    <input type="text" name="short_title" value="{{ entity.short_title or '' }}" placeholder="например: Порка ремнём"
+                           class="w-full px-3.5 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Категория</label>
+                    <select name="category_id" id="category_select" class="w-full px-3.5 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                        <option value="">-- Выберите категорию --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if entity.category_id == cat.id %}selected{% endif %}>{{ cat.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Тип выполнения</label>
+                    <select name="type" class="w-full px-3.5 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                        <option value="one_time" {% if entity.type == 'one_time' %}selected{% endif %}>Разовое задание (one_time)</option>
+                        <option value="series" {% if entity.type == 'series' %}selected{% endif %}>Серия заданий (series)</option>
+                        <option value="infinite" {% if entity.type == 'infinite' %}selected{% endif %}>Регулярное / Рутина (infinite)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Теги активностей (через запятую)</label>
+                    <input type="text" name="tags" value="{{ tags_str }}" placeholder="spanking, impact, punishment"
+                           class="w-full px-3.5 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Ролевые теги (через запятую)</label>
+                    <input type="text" name="role_tags" value="{{ role_tags_str }}" placeholder="dominant, submissive, self"
+                           class="w-full px-3.5 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                </div>
+            </div>
+        </div>
+
+        <!-- Block 2: Visual Parameters Builder (Categorized) -->
+        <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 space-y-5">
+            <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
+                <div>
+                    <h2 class="text-base font-semibold text-[color:var(--text)] flex items-center gap-2">
+                        {{ icon('settings', 'w-5 h-5 text-[color:var(--accent)]') }}
+                        2. Визуальный конструктор параметров
+                    </h2>
+                    <p class="text-xs text-[color:var(--text-secondary)] mt-0.5">Выберите категорию для загрузки настроенного визуального набора полей</p>
+                </div>
+            </div>
+
+            <!-- Category Presets Selector Tabs -->
+            <div>
+                <label class="block text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider mb-2">Категорийные наборы полей:</label>
+                <div class="flex flex-wrap gap-2" id="category-tabs">
+                    <button type="button" data-preset="impact" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5 active">
+                        🔨 Ударное / Порка
+                    </button>
+                    <button type="button" data-preset="bondage" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
+                        🪢 Бондаж / Фиксация
+                    </button>
+                    <button type="button" data-preset="sensory" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
+                        ❄️ Сенсорика / Ощущения
+                    </button>
+                    <button type="button" data-preset="control" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
+                        👑 Контроль / Отказ
+                    </button>
+                    <button type="button" data-preset="general" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
+                        📝 Базовый настраиваемый
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Interactive Controls Container -->
+            <div id="visual-fields-container" class="space-y-4 pt-2 border-t border-[color:var(--border)]">
+                <!-- Injected dynamically by JS based on selected category tab -->
+            </div>
+        </div>
+
+        <!-- Block 3: Visual Safety Contract Builder (ADR-105) -->
+        <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 space-y-5">
+            <div class="border-b border-[color:var(--border)] pb-4">
+                <h2 class="text-base font-semibold text-[color:var(--text)] flex items-center gap-2">
+                    {{ icon('shield', 'w-5 h-5 text-[color:var(--accent)]') }}
+                    3. Контракт безопасности (Safety Contract Controls)
+                </h2>
+                <p class="text-xs text-[color:var(--text-secondary)] mt-0.5">Визуальные тумблеры и выбор правил безопасности сессии</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Safeword Requirement -->
+                <div class="p-4 rounded-xl pl-surface-soft border border-[color:var(--border)] space-y-2">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-xs font-semibold text-[color:var(--text)]">Обязательное стоп-слово (Safeword)</span>
+                        <input type="checkbox" id="v-safeword" checked class="w-4 h-4 rounded text-[color:var(--accent)] bg-[color:var(--surface)] border-[color:var(--border)] focus:ring-0">
+                    </label>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Приложение остановит задачу немедленно по сигналу стоп-слова без применения штрафов.</p>
+                </div>
+
+                <!-- Checkpoint Interval -->
+                <div class="p-4 rounded-xl pl-surface-soft border border-[color:var(--border)] space-y-2">
+                    <label class="block text-xs font-semibold text-[color:var(--text)]">Интервал проверок самочувствия (Checkpoints)</label>
+                    <select id="v-checkpoint" class="w-full px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] focus:outline-none">
+                        <option value="0">Без промежуточных проверок</option>
+                        <option value="10">Каждые 10 минут</option>
+                        <option value="15" selected>Каждые 15 минут</option>
+                        <option value="30">Каждые 30 минут</option>
+                    </select>
+                </div>
+
+                <!-- Mandatory Aftercare -->
+                <div class="p-4 rounded-xl pl-surface-soft border border-[color:var(--border)] space-y-2">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span class="text-xs font-semibold text-[color:var(--text)]">Обязательный послеуход (Aftercare)</span>
+                        <input type="checkbox" id="v-aftercare" checked class="w-4 h-4 rounded text-[color:var(--accent)] bg-[color:var(--surface)] border-[color:var(--border)] focus:ring-0">
+                    </label>
+                    <div class="flex items-center gap-2 pt-1">
+                        <span class="text-xs text-[color:var(--text-secondary)]">Длительность:</span>
+                        <select id="v-aftercare-min" class="px-2 py-1 rounded bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)]">
+                            <option value="10">10 минут</option>
+                            <option value="15" selected>15 минут</option>
+                            <option value="30">30 минут</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Evidence Verification Policy -->
+                <div class="p-4 rounded-xl pl-surface-soft border border-[color:var(--border)] space-y-2">
+                    <label class="block text-xs font-semibold text-[color:var(--text)]">Подтверждение отчетом / медиа</label>
+                    <select id="v-evidence" class="w-full px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] focus:outline-none">
+                        <option value="none">Без отчета</option>
+                        <option value="optional_photo" selected>Фото по желанию (optional_photo)</option>
+                        <option value="mandatory_photo">Обязательное фото (mandatory_photo)</option>
+                        <option value="mandatory_video">Обязательное видео (mandatory_video)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Risk Flags & Governance -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Уровень риска (Risk Level)</label>
+                    <select name="risk_level" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
+                        <option value="not_assessed" {% if entity.risk_level == 'not_assessed' %}selected{% endif %}>Не оценен (not_assessed)</option>
+                        <option value="low" {% if entity.risk_level == 'low' %}selected{% endif %}>Низкий (low)</option>
+                        <option value="elevated" {% if entity.risk_level == 'elevated' %}selected{% endif %}>Повышенный (elevated)</option>
+                        <option value="high" {% if entity.risk_level == 'high' %}selected{% endif %}>Высокий (high)</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2 pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="adult_only" value="true" {% if entity.adult_only %}checked{% endif %} class="w-4 h-4 rounded text-[color:var(--accent)] bg-[color:var(--surface-soft)] border-[color:var(--border)]">
+                        <span class="text-xs font-medium text-[color:var(--text)]">Только 18+ (Adult Content)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="automation_allowed" value="true" {% if entity.automation_allowed %}checked{% endif %} class="w-4 h-4 rounded text-[color:var(--accent)] bg-[color:var(--surface-soft)] border-[color:var(--border)]">
+                        <span class="text-xs font-medium text-[color:var(--text)]">Разрешить подбор ИИ (Automation Allowed)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="penalty_enabled" value="true" {% if entity.penalty_enabled %}checked{% endif %} class="w-4 h-4 rounded text-[color:var(--accent)] bg-[color:var(--surface-soft)] border-[color:var(--border)]">
+                        <span class="text-xs font-medium text-[color:var(--text)]">Включить штрафы при прерывании</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="is_public" value="true" {% if entity.is_public %}checked{% endif %} class="w-4 h-4 rounded text-[color:var(--accent)] bg-[color:var(--surface-soft)] border-[color:var(--border)]">
+                        <span class="text-xs font-medium text-[color:var(--text)]">Опубликовать в общем каталоге</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optional Expert Mode (Raw JSON Debug Section) -->
+        <details class="pl-surface rounded-2xl border border-[color:var(--border)] p-4">
+            <summary class="text-xs font-medium text-[color:var(--text-muted)] cursor-pointer hover:text-[color:var(--text)]">
+                🛠️ Экспертный режим (просмотр и ручная правка сырого JSON) ▾
+            </summary>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <div>
+                    <label class="block text-[11px] text-[color:var(--text-muted)] mb-1">Сырой params_schema JSON:</label>
+                    <textarea id="debug_params_json" rows="6" class="w-full font-mono text-xs p-2.5 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border)] text-[color:var(--text)]">{{ params_json }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-[11px] text-[color:var(--text-muted)] mb-1">Сырой safety_contract JSON:</label>
+                    <textarea id="debug_safety_json" rows="6" class="w-full font-mono text-xs p-2.5 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border)] text-[color:var(--text)]">{{ safety_json }}</textarea>
+                </div>
+            </div>
+        </details>
+
+        <!-- Submit Actions -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <a href="/entities/catalog" class="px-5 py-2.5 rounded-xl border border-[color:var(--border)] text-sm font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] transition-colors">
+                Отмена
+            </a>
+            <button type="submit" id="btn-save" class="px-6 py-2.5 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-semibold text-[color:var(--on-accent)] transition-colors shadow-lg flex items-center gap-2">
+                {{ icon('check-circle', 'w-4 h-4') }}
+                Сохранить задачу
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var container = document.getElementById('visual-fields-container');
+    var hiddenParams = document.getElementById('params_json');
+    var hiddenSafety = document.getElementById('safety_json');
+    var debugParams = document.getElementById('debug_params_json');
+    var debugSafety = document.getElementById('debug_safety_json');
+
+    // Preset Data Schemas
+    var PRESETS = {
+        impact: {
+            tools: ['hand', 'paddle', 'leather_belt', 'cane', 'flogger', 'crop'],
+            areas: ['buttocks', 'thighs', 'lower_back', 'palms'],
+            positions: ['standing', 'bent_over', 'kneeling', 'over_knee'],
+            countMin: 10, countMax: 100, intensityDefault: 3
+        },
+        bondage: {
+            tools: ['rope', 'handcuffs', 'leather_straps', 'medical_tape'],
+            positions: ['arms_behind', 'hogtie', 'spread_eagle', 'kneeling_fixation'],
+            durations: [15, 30, 45, 60, 90, 120],
+            hasGag: true, hasBlindfold: true
+        },
+        sensory: {
+            mediums: ['ice_cubes', 'warm_wax', 'feathers', 'massage_oil', 'glass_wand', 'electro_pad'],
+            areas: ['full_body', 'back', 'chest', 'inner_thighs'],
+            durations: [5, 10, 15, 30, 45]
+        },
+        control: {
+            themes: ['chastity_lock', 'permission_needed', 'mantra_writing', 'service_task'],
+            reports: ['text_summary', 'photo_evidence', 'voice_note'],
+            durations: [6, 12, 24, 48]
+        },
+        general: {
+            countMin: 1, countMax: 20, intensityDefault: 2
+        }
+    };
+
+    var currentPreset = 'impact';
+
+    function renderPresetFields(presetKey) {
+        currentPreset = presetKey;
+        var p = PRESETS[presetKey] || PRESETS.impact;
+        var html = '';
+
+        if (presetKey === 'impact') {
+            html = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1.5">Допустимые инструменты (Tools)</label>
+                        <div class="flex flex-wrap gap-2">
+                            ${p.tools.map(t => `<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs cursor-pointer"><input type="checkbox" name="vf_tools" value="${t}" checked class="rounded text-[color:var(--accent)]"> ${t}</label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1.5">Зоны воздействия (Target Areas)</label>
+                        <div class="flex flex-wrap gap-2">
+                            ${p.areas.map(a => `<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs cursor-pointer"><input type="checkbox" name="vf_areas" value="${a}" checked class="rounded text-[color:var(--accent)]"> ${a}</label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1">Диапазон ударов (Количество)</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-[color:var(--text-muted)]">Мин:</span>
+                            <input type="number" id="vf_count_min" value="10" min="1" max="500" class="w-20 px-2 py-1 text-xs rounded bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)]">
+                            <span class="text-xs text-[color:var(--text-muted)]">Макс:</span>
+                            <input type="number" id="vf_count_max" value="100" min="1" max="500" class="w-20 px-2 py-1 text-xs rounded bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)]">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1">Интенсивность по умолчанию (1-5)</label>
+                        <input type="range" id="vf_intensity" min="1" max="5" value="3" class="w-full">
+                        <div class="flex justify-between text-[10px] text-[color:var(--text-muted)] mt-0.5"><span>1 (Лёгкая)</span><span>3 (Средняя)</span><span>5 (Жёсткая)</span></div>
+                    </div>
+                </div>
+            `;
+        } else if (presetKey === 'bondage') {
+            html = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1.5">Средства фиксации</label>
+                        <div class="flex flex-wrap gap-2">
+                            ${p.tools.map(t => `<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs cursor-pointer"><input type="checkbox" name="vf_tools" value="${t}" checked class="rounded text-[color:var(--accent)]"> ${t}</label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1.5">Позы фиксации</label>
+                        <div class="flex flex-wrap gap-2">
+                            ${p.positions.map(pos => `<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs cursor-pointer"><input type="checkbox" name="vf_positions" value="${pos}" checked class="rounded text-[color:var(--accent)]"> ${pos}</label>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1">Максимальная длительность (мин)</label>
+                        <select id="vf_duration" class="w-full px-3 py-1.5 text-xs rounded bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)]">
+                            ${p.durations.map(d => `<option value="${d}">${d} минут</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="space-y-2 pt-2">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs"><input type="checkbox" id="vf_blindfold" checked class="rounded text-[color:var(--accent)]"> Допустима повязка на глаза (Blindfold)</label>
+                        <label class="flex items-center gap-2 cursor-pointer text-xs"><input type="checkbox" id="vf_gag" class="rounded text-[color:var(--accent)]"> Допустим кляп (Gag)</label>
+                    </div>
+                </div>
+            `;
+        } else if (presetKey === 'sensory') {
+            html = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1.5">Материал / Среда</label>
+                        <div class="flex flex-wrap gap-2">
+                            ${p.mediums.map(m => `<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs cursor-pointer"><input type="checkbox" name="vf_mediums" value="${m}" checked class="rounded text-[color:var(--accent)]"> ${m}</label>`).join('')}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-[color:var(--text)] mb-1">Длительность сеанса (мин)</label>
+                        <select id="vf_duration" class="w-full px-3 py-1.5 text-xs rounded bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)]">
+                            ${p.durations.map(d => `<option value="${d}">${d} минут</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="p-4 rounded-xl border border-[color:var(--border)] pl-surface-soft text-xs text-[color:var(--text-secondary)]">
+                    Стандартный настраиваемый набор параметров. Используйте чекбоксы и поля выше для формирования задачи.
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+        attachListeners();
+        syncFormToJSON();
+    }
+
+    function syncFormToJSON() {
+        // Compile params_schema
+        var tools = Array.from(document.querySelectorAll('input[name="vf_tools"]:checked')).map(el => el.value);
+        var areas = Array.from(document.querySelectorAll('input[name="vf_areas"]:checked')).map(el => el.value);
+        var positions = Array.from(document.querySelectorAll('input[name="vf_positions"]:checked')).map(el => el.value);
+        var countMinEl = document.getElementById('vf_count_min');
+        var countMaxEl = document.getElementById('vf_count_max');
+        var intensityEl = document.getElementById('vf_intensity');
+        var durationEl = document.getElementById('vf_duration');
+
+        var paramsObj = {};
+        if (tools.length > 0) paramsObj.tool = { type: "enum", options: tools, required: true };
+        if (areas.length > 0) paramsObj.target_area = { type: "enum", options: areas };
+        if (positions.length > 0) paramsObj.position = { type: "enum", options: positions };
+        if (countMinEl && countMaxEl) {
+            paramsObj.count = {
+                type: "integer",
+                min: parseInt(countMinEl.value, 10) || 10,
+                max: parseInt(countMaxEl.value, 10) || 100
+            };
+        }
+        if (intensityEl) {
+            paramsObj.intensity = { type: "integer", min: 1, max: 5, default: parseInt(intensityEl.value, 10) || 3 };
+        }
+        if (durationEl) {
+            paramsObj.duration_minutes = { type: "integer", max: parseInt(durationEl.value, 10) || 30 };
+        }
+
+        var paramsStr = JSON.stringify(paramsObj, null, 2);
+        hiddenParams.value = paramsStr;
+        if (debugParams) debugParams.value = paramsStr;
+
+        // Compile safety_contract
+        var safeword = document.getElementById('v-safeword').checked;
+        var checkpoint = parseInt(document.getElementById('v-checkpoint').value, 10) || 0;
+        var aftercare = document.getElementById('v-aftercare').checked;
+        var aftercareMin = parseInt(document.getElementById('v-aftercare-min').value, 10) || 15;
+        var evidence = document.getElementById('v-evidence').value;
+
+        var safetyObj = {
+            mandatory_safeword: safeword,
+            checkpoint_minutes: checkpoint,
+            aftercare_required: aftercare,
+            aftercare_min_minutes: aftercare ? aftercareMin : 0,
+            evidence_policy: evidence
+        };
+
+        var safetyStr = JSON.stringify(safetyObj, null, 2);
+        hiddenSafety.value = safetyStr;
+        if (debugSafety) debugSafety.value = safetyStr;
+    }
+
+    function attachListeners() {
+        container.querySelectorAll('input, select').forEach(function(el) {
+            el.addEventListener('change', syncFormToJSON);
+        });
+    }
+
+    // Safety contract listeners
+    ['v-safeword', 'v-checkpoint', 'v-aftercare', 'v-aftercare-min', 'v-evidence'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', syncFormToJSON);
+    });
+
+    // Category Tabs click handler
+    document.querySelectorAll('.preset-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active', 'border-[color:var(--accent)]', 'bg-[color:var(--surface-raised)]'));
+            btn.classList.add('active', 'border-[color:var(--accent)]', 'bg-[color:var(--surface-raised)]');
+            renderPresetFields(btn.getAttribute('data-preset'));
+        });
+    });
+
+    // Initial render
+    renderPresetFields('impact');
+})();
+</script>
+{% endblock %}

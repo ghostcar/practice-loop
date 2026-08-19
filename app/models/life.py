@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime, time
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Time, func
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Time, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -69,11 +69,12 @@ class BodyMeasurement(Base):
 
 
 class InventoryItem(Base):
-    """Equipment, clothing, cosmetics inventory with shopping list support.
+    """Equipment, clothing, cosmetics inventory with ERP Nomenklatura classification.
 
     ``status`` = shopping-list status (need / ordered / bought / built).
     ``inventory_status`` = operational availability (available / in_use /
     cleaning / charging / maintenance / unavailable / archived).
+    ``group_type`` = high-level group (equipment / wear / care_cosmetics / electronics / furniture / general).
     """
 
     __tablename__ = "inventory_items"
@@ -83,15 +84,19 @@ class InventoryItem(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    # legacy free string — kept; prefer inventory_category_id for new items
     inventory_category_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("inventory_categories.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
+    group_type: Mapped[str] = mapped_column(String(50), default="equipment", nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(300), nullable=False)
     description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+    manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    material: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    size_color: Mapped[str | None] = mapped_column(String(100), nullable=True)
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     quantity_needed: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     is_shopping_list: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -100,11 +105,12 @@ class InventoryItem(Base):
     inventory_status: Mapped[str] = mapped_column(
         String(20), default="available", nullable=False
     )  # available / in_use / cleaning / charging / maintenance / unavailable / archived
+    maintenance_interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_serviced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    extra_properties: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)  # /uploads/inventory/<uuid>.jpg
-    # One-time inventory→medicine migration marker (Шаг 12). Migrated items are
-    # hidden from the active inventory list but kept for provenance.
+    image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     migrated_to_medication: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

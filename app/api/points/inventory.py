@@ -193,3 +193,27 @@ async def delete_inventory_item(
     await db.delete(item)
     await db.commit()
     return {"status": "deleted"}
+
+
+@router.post("/inventory/{item_id}/service", response_model=InventoryItemOut)
+async def service_inventory_item(
+    item_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """1-click Service/Clean action — updates last_serviced_at and sets status to available."""
+    from datetime import UTC, datetime
+
+    result = await db.execute(
+        select(InventoryItem).where(InventoryItem.id == item_id, InventoryItem.user_id == user.id)
+    )
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(404, "Item not found")
+
+    item.last_serviced_at = datetime.now(UTC)
+    item.inventory_status = "available"
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return InventoryItemOut.model_validate(item)

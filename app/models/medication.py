@@ -48,15 +48,17 @@ class Medication(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     # medication | supplement | supply | device
     kind: Mapped[str] = mapped_column(String(20), default="medication", nullable=False)
-    active_ingredient: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    active_ingredient: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    analogues: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
     form: Mapped[str | None] = mapped_column(String(50), nullable=True)  # tablet/capsule/liquid/cream/...
     strength: Mapped[str | None] = mapped_column(String(50), nullable=True)  # "500 mg"
+    manufacturer: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    prescription_required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    storage_conditions: Mapped[str | None] = mapped_column(String(200), nullable=True)
     unit: Mapped[str | None] = mapped_column(String(20), nullable=True)  # mg / ml / tablet / pcs
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)  # как принимать
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    # Provenance for the one-time inventory→medicine migration (Шаг 12). Nullable
-    # FK — most medications are created directly, not migrated.
     source_inventory_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("inventory_items.id", ondelete="SET NULL"),

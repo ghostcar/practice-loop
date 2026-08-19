@@ -143,6 +143,54 @@
   }
   loadLogPhotos();
 
+  // ── Manual task creation (ADR-106, no LLM) ──
+  (function () {
+    const select = document.getElementById('training-manual-entity');
+    const box = document.getElementById('training-manual-params');
+    const errBox = document.getElementById('training-manual-params-error');
+    if (!select || !box) return;
+
+    function csrfToken() {
+      const m = document.querySelector('meta[name="csrf-token"]');
+      return m ? m.getAttribute('content') : '';
+    }
+
+    select.addEventListener('change', async () => {
+      const eid = select.value;
+      box.classList.remove('hidden');
+      errBox.classList.add('hidden');
+      if (!eid) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        return;
+      }
+      box.innerHTML =
+        '<div class="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">' +
+        '<span class="animate-pulse">●</span> Loading…</div>';
+      try {
+        const r = await fetch('/tasks/params-form?entity_id=' + encodeURIComponent(eid) + '&prefix=param_');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const html = await r.text();
+        box.innerHTML =
+          '<form id="training-manual-form" action="/training/tasks" method="post" class="space-y-3">' +
+          '<input type="hidden" name="csrf_token" value="' + csrfToken() + '">' +
+          '<input type="hidden" name="entity_id" value="' + eid + '">' +
+          '<div class="max-h-72 overflow-y-auto pr-1">' + html + '</div>' +
+          '<div>' +
+          '  <label for="training-manual-comment" class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Comment</label>' +
+          '  <input id="training-manual-comment" name="planned_comment" placeholder="Optional note"' +
+          '    class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">' +
+          '</div>' +
+          '<button type="submit" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium min-h-[44px]">Add to plan</button>' +
+          '</form>';
+      } catch (e) {
+        box.innerHTML = '';
+        errBox.textContent = 'Failed to load parameters (' + e.message + ')';
+        errBox.classList.remove('hidden');
+      }
+    });
+  })();
+
   // ── Day timeline rendering ──
   (function () {
     const dataEl = document.getElementById('timeline-data');

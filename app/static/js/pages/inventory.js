@@ -1,5 +1,4 @@
-// Inventory page: list, filters, DnD reorder, photos, chart (extracted from inventory.html, DESIGN.md 15.4).
-// i18n strings come from the <script type="application/json" id="page-i18n"> block.
+// Inventory page: 1C/ERP Nomenklatura Master Data catalog.
 (function () {
   'use strict';
   let T = {};
@@ -9,121 +8,188 @@
   } catch (e) {
     console.warn('Inventory page i18n:', e);
   }
-  const I18N = {
-    inv_qty_label: T.inv_qty_label || 'Qty',
-    inv_priority_label: T.inv_priority_label || 'Priority',
-    inv_empty: T.inv_empty || 'No items yet.',
-    inv_btn_delete: T.calendar_btn_delete || 'Delete',
-    inv_mark_shopping: T.inv_mark_shopping || 'Shopping',
-    inv_items_counter_suffix: T.inv_items_counter_suffix || 'items',
-    inv_status_need: T.inv_status_need || 'Need',
-    inv_status_ordered: T.inv_status_ordered || 'Ordered',
-    inv_status_bought: T.inv_status_bought || 'Bought',
-    inv_status_built: T.inv_status_built || 'Built',
-    inv_category_filter: T.inventory_filter_category || 'Category',
-    inv_status_filter: T.inventory_filter_status || 'Status',
-    inv_status_available: T.inventory_status_available || 'Available',
-    inv_status_in_use: T.inventory_status_in_use || 'In use',
-    inv_status_cleaning: T.inventory_status_cleaning || 'Cleaning',
-    inv_status_maintenance: T.inventory_status_maintenance || 'Maintenance',
-    inv_status_archived: T.inventory_status_archived || 'Archived',
-    inv_status_unavailable: T.inventory_status_unavailable || 'Unavailable',
-  };
-  const STATUS_LABEL = {
-    need: I18N.inv_status_need,
-    ordered: I18N.inv_status_ordered,
-    bought: I18N.inv_status_bought,
-    built: I18N.inv_status_built,
-  };
-  const INV_STATUS_LABEL = {
-    available: I18N.inv_status_available,
-    in_use: I18N.inv_status_in_use,
-    cleaning: I18N.inv_status_cleaning,
-    maintenance: I18N.inv_status_maintenance,
-    archived: I18N.inv_status_archived,
-    unavailable: I18N.inv_status_unavailable,
-  };
-  let invCategories = [];
 
+  const GROUP_LABELS = {
+    equipment: '⚙️ Снаряжение & Инвентарь',
+    wear: '👗 Экипировка & Одежда',
+    care_cosmetics: '🧴 Уход & Косметика',
+    electronics: '🔌 Девайсы & Электроника',
+    furniture: '🛋️ Мебель & Фиксация',
+    general: '📝 Общий справочник'
+  };
+
+  const INV_STATUS_LABEL = {
+    available: '🟢 В наличии (Готов)',
+    in_use: '🔵 В работе',
+    cleaning: '🟡 На дезинфекции',
+    charging: '⚡ На зарядке',
+    maintenance: '🔧 На обслуживании',
+    archived: '📦 В архиве',
+    unavailable: '🔴 Недоступен'
+  };
+
+  let invCategories = [];
   const root = document.getElementById('inv-list');
   if (!root) return;
 
-  let currentFilter = '';
+  let currentGroup = '';
+  let currentInvStatus = '';
   let currentCatId = '';
+  let currentShopOnly = false;
   let invItems = [];
   let dragItemId = null;
 
-  async function loadInventory(cat, shopOnly) {
-    let url = '/api/v2/inventory?';
-    if (cat) url += 'category=' + cat + '&';
-    if (shopOnly) url += 'shopping_list=true&';
-    const res = await fetch(url);
-    invItems = await res.json();
-    renderInventory();
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
-  // Category filter buttons
+  async function loadInventory() {
+    let url = '/api/v2/inventory?';
+    if (currentCatId) {
+      const r = await fetch(`/api/v2/inventory/available?inventory_category_id=${currentCatId}`);
+      invItems = await r.json();
+    } else {
+      if (currentShopOnly) url += 'shopping_list=true&';
+      const res = await fetch(url);
+      invItems = await res.json();
+    }
+
+    // Client-side group & status filter if needed
+    if (currentGroup) {
+      invItems = invItems.filter(i => (i.group_type || 'equipment') === currentGroup);
+    }
+    if (currentInvStatus) {
+      invItems = invItems.filter(i => i.inventory_status === currentInvStatus);
+    }
+
+    renderInventory();
+    updateCounter();
+  }
+
+  function updateCounter() {
+    const totalEl = document.getElementById('inv-total');
+    if (totalEl) {
+      totalEl.textContent = `Всего в справочнике: ${invItems.length} позиций`;
+    }
+  }
+
   async function loadCategories() {
     try {
       const r = await fetch('/api/v2/inventory-categories');
       invCategories = await r.json();
       renderCatFilters();
-    } catch (e) { /* no categories yet */ }
+    } catch (e) { /* no categories */ }
   }
 
   function renderCatFilters() {
     const container = document.getElementById('inv-cat-filters');
     if (!container) return;
     container.innerHTML = invCategories.map(c =>
-      `<button onclick="filterByCat('${c.id}')" data-cat="${c.id}" class="filter-btn px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition-colors">${escapeHtml(c.title)}</button>`
+      `<button onclick="filterByCat('${c.id}')" data-cat="${c.id}" class="filter-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] pl-surface-soft text-xs text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] font-medium transition-colors">${escapeHtml(c.title)}</button>`
     ).join('');
   }
 
   function filterByCat(catId) {
-    currentCatId = catId;
-    currentFilter = '';
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-indigo-600', 'text-white'));
-    const btn = document.querySelector(`[data-cat="${catId}"]`);
-    if (btn) btn.classList.add('bg-indigo-600', 'text-white');
-    loadByCat();
+    currentCatId = currentCatId === catId ? '' : catId;
+    currentGroup = '';
+    currentShopOnly = false;
+    loadInventory();
   }
 
-  async function loadByCat() {
-    if (!currentCatId) { loadInventory(currentFilter, false); return; }
-    const r = await fetch(`/api/v2/inventory/available?inventory_category_id=${currentCatId}`);
-    invItems = await r.json();
-    renderInventory();
+  function filterGroup(group) {
+    currentGroup = group;
+    currentCatId = '';
+    currentShopOnly = false;
+    document.querySelectorAll('#group-type-tabs .group-btn').forEach(b => {
+      b.classList.remove('active', 'border-[color:var(--accent)]', 'bg-[color:var(--surface-raised)]');
+    });
+    const activeBtn = document.querySelector(`[data-group="${group}"]`);
+    if (activeBtn) activeBtn.classList.add('active', 'border-[color:var(--accent)]', 'bg-[color:var(--surface-raised)]');
+    loadInventory();
+  }
+
+  function filterInvStatus(status) {
+    currentInvStatus = currentInvStatus === status ? '' : status;
+    loadInventory();
+  }
+
+  function filterShoppingList() {
+    currentShopOnly = !currentShopOnly;
+    currentGroup = '';
+    currentCatId = '';
+    loadInventory();
   }
 
   function renderInventory() {
     const el = document.getElementById('inv-list');
-    el.innerHTML =
-      invItems
-        .map(
-          (i) => `
-    <div class="pl-surface rounded-lg p-3 flex items-center gap-3 border border-[color:var(--border)] hover:border-[color:var(--border-strong)] transition-colors cursor-grab" draggable="true" data-id="${escapeHtml(String(i.id))}">
-      <span class="text-[color:var(--text-muted)] select-none flex items-center">⠿</span>
-      ${i.image_path ? `<img src="${escapeHtml(i.image_path)}" alt="" class="w-40 aspect-[4/3] rounded-lg object-cover flex-shrink-0 border border-[color:var(--border)]${window.__dscrBlurCls || ''}" loading="lazy">` : `<span class="inv-img-placeholder w-40 aspect-[4/3] rounded-lg bg-[color:var(--surface-soft)] flex items-center justify-center text-[color:var(--text-muted)] flex-shrink-0"></span>`}
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs px-2 py-0.5 rounded font-medium ${catBadge(escapeHtml(i.category))}">${escapeHtml(i.category)}</span>
-          <span class="font-medium text-[color:var(--text)]">${escapeHtml(i.name)}</span>
-          <span class="text-xs font-medium ${statusBadge(escapeHtml(i.status))}">${escapeHtml(STATUS_LABEL[i.status] || i.status)}</span>
-          ${i.inventory_status && i.inventory_status !== 'available' ? `<span class="text-[10px] px-1.5 py-0.5 rounded ${invStatusBadge(i.inventory_status)}">${escapeHtml(INV_STATUS_LABEL[i.inventory_status] || i.inventory_status)}</span>` : ''}
-          ${i.is_shopping_list ? `<span class="text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)] px-1.5 py-0.5 rounded font-medium">${escapeHtml(I18N.inv_mark_shopping)}</span>` : ''}
+
+    el.innerHTML = invItems.map(i => {
+      const groupTitle = GROUP_LABELS[i.group_type || 'equipment'] || i.group_type;
+      const statusTitle = INV_STATUS_LABEL[i.inventory_status || 'available'] || i.inventory_status;
+      const isServicedRecently = i.last_serviced_at ? true : false;
+      const lastServicedDate = i.last_serviced_at ? new Date(i.last_serviced_at).toLocaleDateString('ru-RU') : 'не проводилась';
+
+      return `
+        <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-4 hover:border-[color:var(--border-strong)] transition-all cursor-grab space-y-3" draggable="true" data-id="${escapeHtml(String(i.id))}">
+          <div class="flex items-start gap-4">
+            <span class="text-[color:var(--text-muted)] select-none pt-2 flex items-center">⠿</span>
+
+            ${i.image_path ? `
+              <img src="${escapeHtml(i.image_path)}" alt="" class="w-32 aspect-[4/3] rounded-xl object-cover flex-shrink-0 border border-[color:var(--border)]${window.__dscrBlurCls || ''}" loading="lazy">
+            ` : `
+              <div class="inv-img-placeholder w-32 aspect-[4/3] rounded-xl bg-[color:var(--surface-soft)] flex items-center justify-center text-[color:var(--text-muted)] flex-shrink-0 border border-[color:var(--border)]"></div>
+            `}
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-medium bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)]">
+                  ${escapeHtml(groupTitle)}
+                </span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${invStatusBadge(i.inventory_status)}">
+                  ${escapeHtml(statusTitle)}
+                </span>
+                ${i.is_shopping_list ? `<span class="text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)] px-2.5 py-0.5 rounded-full font-medium">🛒 Корзина закупок</span>` : ''}
+              </div>
+
+              <h3 class="text-base font-semibold text-[color:var(--text)]">${escapeHtml(i.name)}</h3>
+
+              <!-- ERP Specifications Drawer -->
+              <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-[color:var(--text-secondary)]">
+                ${i.category ? `<span>Категория: <strong class="text-[color:var(--text)]">${escapeHtml(i.category)}</strong></span>` : ''}
+                ${i.manufacturer ? `<span>Бренд: <strong class="text-[color:var(--text)]">${escapeHtml(i.manufacturer)}</strong></span>` : ''}
+                ${i.model_name ? `<span>Модель: <strong class="text-[color:var(--text)]">${escapeHtml(i.model_name)}</strong></span>` : ''}
+                ${i.material ? `<span>Материал: <strong class="text-[color:var(--text)]">${escapeHtml(i.material)}</strong></span>` : ''}
+                ${i.size_color ? `<span>Размер/Цвет: <strong class="text-[color:var(--text)]">${escapeHtml(i.size_color)}</strong></span>` : ''}
+              </div>
+
+              <div class="text-[11px] text-[color:var(--text-muted)] mt-2 flex items-center gap-3">
+                <span>Количество: <strong>${i.quantity}/${i.quantity_needed} шт</strong></span>
+                <span>ТО / Дезинфекция: <strong>${lastServicedDate}</strong></span>
+                ${i.maintenance_interval_days ? `<span>Интервал ТО: <strong>${i.maintenance_interval_days} дн.</strong></span>` : ''}
+              </div>
+            </div>
+
+            <!-- ERP Item Quick Action Toolbar -->
+            <div class="flex items-center gap-2 flex-shrink-0 self-start">
+              <button onclick="serviceItem('${escapeHtml(String(i.id))}')" class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-emerald-100 hover:text-emerald-700 text-xs font-medium transition-colors flex items-center gap-1" title="Отметить дезинфекцию / обслуживание сегодня">
+                🧹 ТО / Очистить
+              </button>
+              <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--accent)] text-xs" title="Загрузить фото" aria-label="Photo"></button>
+              ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--danger)] text-xs" title="Удалить фото" aria-label="Remove photo"></button>` : ''}
+              <button onclick="del('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--danger)] text-[color:var(--danger)] hover:bg-red-50 dark:hover:bg-red-900/30 text-xs font-medium">Удалить</button>
+            </div>
+          </div>
         </div>
-        <div class="text-xs text-[color:var(--text-muted)] mt-1">${escapeHtml(I18N.inv_qty_label)}: ${i.quantity}/${i.quantity_needed} &middot; ${escapeHtml(I18N.inv_priority_label)}: ${i.priority}</div>
-      </div>
-      <div class="flex items-center gap-1 flex-shrink-0">
-        <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="text-[color:var(--text-muted)] hover:text-[color:var(--accent)] text-sm px-2" title="Photo" aria-label="Photo"></button>
-        ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="text-[color:var(--text-muted)] hover:text-[color:var(--danger)] text-sm px-2" title="Remove photo" aria-label="Remove photo"></button>` : ''}
-        <button onclick="del('${escapeHtml(String(i.id))}')" class="text-[color:var(--danger)] hover:opacity-80 text-sm px-2">${escapeHtml(I18N.inv_btn_delete)}</button>
-      </div>
-    </div>
-  `
-        )
-        .join('') || '<p class="text-[color:var(--text-muted)] text-center py-8">' + escapeHtml(I18N.inv_empty) + '</p>';
-    // Icon pack pass: inject <svg><use> icons via DOM (never innerHTML — §6.7)
+      `;
+    }).join('') || '<div class="text-center py-12 pl-surface rounded-2xl border border-[color:var(--border)] text-[color:var(--text-muted)]"><p class="text-sm font-medium">Справочник номенклатуры пуст.</p><p class="text-xs mt-1">Добавьте первую позицию с помощью кнопки вверху.</p></div>';
+
+    // Inject SVG icons
     const rows = el.querySelectorAll('[data-id]');
     rows.forEach((row) => {
       const photoBtn = row.querySelector('button[aria-label="Photo"]');
@@ -143,12 +209,100 @@
       if (dragHandle) {
         dragHandle.textContent = '';
         dragHandle.appendChild(window.plIcon('more', 'w-4 h-4'));
-        dragHandle.className = 'text-[color:var(--text-muted)] select-none flex items-center';
       }
     });
   }
 
-  // Drag&drop reorder
+  function invStatusBadge(s) {
+    const m = {
+      available: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+      in_use: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+      cleaning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+      charging: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+      maintenance: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+      archived: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+      unavailable: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+    };
+    return m[s] || 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]';
+  }
+
+  // 1-Click Service Action
+  async function serviceItem(id) {
+    const res = await fetch(`/api/v2/inventory/${id}/service`, { method: 'POST' });
+    if (res.ok) loadInventory();
+  }
+
+  function showForm() {
+    document.getElementById('add-form').classList.remove('hidden');
+  }
+
+  function hideForm() {
+    document.getElementById('add-form').classList.add('hidden');
+  }
+
+  async function del(id) {
+    if (!confirm('Удалить эту позицию из номенклатуры?')) return;
+    await fetch('/api/v2/inventory/' + id, { method: 'DELETE' });
+    loadInventory();
+  }
+
+  // Handle Form Submit
+  const invForm = document.getElementById('inv-form');
+  if (invForm) {
+    invForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        group_type: document.getElementById('inv-group-type').value,
+        category: document.getElementById('inv-cat').value || 'Разное',
+        name: document.getElementById('inv-name').value,
+        manufacturer: document.getElementById('inv-manufacturer').value || null,
+        model_name: document.getElementById('inv-model-name').value || null,
+        material: document.getElementById('inv-material').value || null,
+        size_color: document.getElementById('inv-size-color').value || null,
+        quantity: parseInt(document.getElementById('inv-qty').value, 10) || 1,
+        quantity_needed: parseInt(document.getElementById('inv-qtyn').value, 10) || 1,
+        inventory_status: document.getElementById('inv-operational-status').value,
+        maintenance_interval_days: parseInt(document.getElementById('inv-maint-interval').value, 10) || null,
+        priority: parseInt(document.getElementById('inv-prio').value, 10) || 0,
+        is_shopping_list: document.getElementById('inv-shop').checked,
+      };
+      await fetch('/api/v2/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      hideForm();
+      invForm.reset();
+      loadInventory();
+    });
+  }
+
+  // Image Upload handlers
+  let imgTargetId = null;
+  function pickImage(id) {
+    imgTargetId = id;
+    document.getElementById('inv-img-input').click();
+  }
+  const imgInput = document.getElementById('inv-img-input');
+  if (imgInput) {
+    imgInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      e.target.value = '';
+      if (!file || !imgTargetId) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/v2/inventory/' + imgTargetId + '/image', { method: 'POST', body: fd });
+      imgTargetId = null;
+      if (res.ok) loadInventory();
+    });
+  }
+
+  async function delImage(id) {
+    await fetch('/api/v2/inventory/' + id + '/image', { method: 'DELETE' });
+    loadInventory();
+  }
+
+  // Drag and Drop reordering
   function bindDrag() {
     const list = document.getElementById('inv-list');
     list.addEventListener('dragstart', (e) => {
@@ -163,9 +317,7 @@
       if (row) row.classList.remove('opacity-50');
       dragItemId = null;
     });
-    list.addEventListener('dragover', (e) => {
-      e.preventDefault();
-    });
+    list.addEventListener('dragover', (e) => e.preventDefault());
     list.addEventListener('drop', async (e) => {
       e.preventDefault();
       const target = e.target.closest('[data-id]');
@@ -182,152 +334,23 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: ids }),
       });
-      loadInventory(currentFilter, false);
+      loadInventory();
     });
   }
 
-  // Image upload
-  let imgTargetId = null;
-  function pickImage(id) {
-    imgTargetId = id;
-    document.getElementById('inv-img-input').click();
-  }
-  const imgInput = document.getElementById('inv-img-input');
-  if (imgInput) {
-    imgInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      e.target.value = '';
-      if (!file || !imgTargetId) return;
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await fetch('/api/v2/inventory/' + imgTargetId + '/image', { method: 'POST', body: fd });
-      imgTargetId = null;
-      if (res.ok) loadInventory(currentFilter, false);
-    });
-  }
-  async function delImage(id) {
-    await fetch('/api/v2/inventory/' + id + '/image', { method: 'DELETE' });
-    loadInventory(currentFilter, false);
-  }
-  function catBadge(c) {
-    const m = {
-      clothing: 'pl-accent-soft',
-      equipment: 'bg-[color:var(--info-soft)] text-[color:var(--info)]',
-      cosmetics: 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]',
-      other: 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]',
-    };
-    return m[c] || 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]';
-  }
-  function statusBadge(s) {
-    const m = {
-      need: 'text-[color:var(--danger)]',
-      ordered: 'text-[color:var(--warning)]',
-      bought: 'text-[color:var(--success)]',
-      built: 'text-[color:var(--success)]',
-    };
-    return m[s] || 'text-[color:var(--text-muted)]';
-  }
-  function invStatusBadge(s) {
-    const m = {
-      available: 'bg-[color:var(--success-soft)] text-[color:var(--success)]',
-      in_use: 'bg-[color:var(--accent-soft)] text-[color:var(--accent)]',
-      cleaning: 'bg-[color:var(--warning-soft)] text-[color:var(--warning)]',
-      charging: 'bg-[color:var(--warning-soft)] text-[color:var(--warning)]',
-      maintenance: 'bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]',
-      archived: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
-      unavailable: 'bg-[color:var(--danger-soft)] text-[color:var(--danger)]',
-    };
-    return m[s] || 'text-[color:var(--text-muted)]';
-  }
-  function filter(c) {
-    currentFilter = c;
-    document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('bg-indigo-600'));
-    event.target.classList.add('bg-indigo-600');
-    loadInventory(c, false);
-  }
-  function filterShoppingList() {
-    document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('bg-indigo-600'));
-    event.target.classList.add('bg-indigo-600');
-    loadInventory('', true);
-  }
-  function showForm() {
-    document.getElementById('add-form').classList.toggle('hidden');
-  }
-  async function del(id) {
-    await fetch('/api/v2/inventory/' + id, { method: 'DELETE' });
-    loadInventory(currentFilter, false);
-  }
-  const invForm = document.getElementById('inv-form');
-  if (invForm) {
-    invForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const body = {
-        category: document.getElementById('inv-cat').value,
-        name: document.getElementById('inv-name').value,
-        quantity: parseInt(document.getElementById('inv-qty').value) || 1,
-        quantity_needed: parseInt(document.getElementById('inv-qtyn').value) || 1,
-        status: document.getElementById('inv-status').value,
-        priority: parseInt(document.getElementById('inv-prio').value) || 0,
-        is_shopping_list: document.getElementById('inv-shop').checked,
-      };
-      await fetch('/api/v2/inventory', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      document.getElementById('add-form').classList.add('hidden');
-      loadInventory(currentFilter, false);
-    });
-  }
   bindDrag();
-  loadInventory('', false);
+  loadInventory();
   loadCategories();
 
-  // Category chart
-  (async () => {
-    try {
-      const res = await fetch('/api/v2/inventory');
-      const items = await res.json();
-      document.getElementById('inv-total').textContent = items.length + ' ' + escapeHtml(I18N.inv_items_counter_suffix);
-      const cats = {};
-      items.forEach((i) => {
-        cats[i.category] = (cats[i.category] || 0) + 1;
-      });
-      const colors = { clothing: '#ec4899', equipment: '#3b82f6', cosmetics: '#a855f7', other: '#6b7280' };
-      const ctx = document.getElementById('inv-chart').getContext('2d');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(cats).map((c) => c.charAt(0).toUpperCase() + c.slice(1)),
-          datasets: [
-            {
-              data: Object.values(cats),
-              backgroundColor: Object.keys(cats).map((c) => colors[c] || '#6b7280'),
-              borderRadius: 6,
-            },
-          ],
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } },
-            y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
-          },
-        },
-      });
-    } catch (e) {
-      console.warn('Inv chart failed:', e);
-    }
-  })();
-
-  // Exposed for inline onclick handlers in the template.
+  // Global window functions for template buttons
   window.del = del;
   window.delImage = delImage;
-  window.filter = filter;
+  window.filterGroup = filterGroup;
+  window.filterInvStatus = filterInvStatus;
   window.filterShoppingList = filterShoppingList;
   window.filterByCat = filterByCat;
   window.pickImage = pickImage;
   window.showForm = showForm;
+  window.hideForm = hideForm;
+  window.serviceItem = serviceItem;
 })();

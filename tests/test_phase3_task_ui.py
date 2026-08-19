@@ -250,10 +250,17 @@ async def test_create_manual_task_cross_user_404(db_session, auth_client, test_u
 
 @pytest.mark.asyncio
 async def test_tasks_page_lists_create_entities(db_session, auth_client, test_user):
-    """Only opted-in entities appear in the manual creation select."""
+    """Opted-in AND personal entities appear in the manual creation select (ADR-106)."""
     ent = Entity(type="one_time", real_name="Opted", category="test", owner_id=test_user.id, is_public=True)
-    ent2 = Entity(type="one_time", real_name="NotOpted", category="test", owner_id=test_user.id)
-    db_session.add_all([ent, ent2])
+    ent2 = Entity(type="one_time", real_name="Personal", category="test", owner_id=test_user.id)
+    # A public entity the user did NOT opt into must not appear.
+    from app.models.user import User
+
+    other = User(email="other@example.com", password_hash="x", locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    ent3 = Entity(type="one_time", real_name="NotMine", category="test", owner_id=other.id, is_public=True)
+    db_session.add_all([ent, ent2, ent3])
     await db_session.flush()
     db_session.add(UserEntityOptIn(user_id=test_user.id, entity_id=ent.id, is_opted_in=True))
     await db_session.flush()
@@ -261,7 +268,10 @@ async def test_tasks_page_lists_create_entities(db_session, auth_client, test_us
     r = await auth_client.get("/tasks/")
     assert r.status_code == 200
     assert 'value="' + str(ent.id) + '">Opted' in r.text
-    assert "NotOpted" not in r.text
+    # Personal entity is eligible without opt-in (ADR-106)
+    assert 'value="' + str(ent2.id) + '">Personal' in r.text
+    # Not opted-in, not owned → excluded
+    assert "NotMine" not in r.text
 
 
 # ── Completion card: transition with actual parameters ──────────────────

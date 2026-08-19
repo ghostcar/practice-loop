@@ -59,6 +59,36 @@
  {% endif %}
  </div>
 
+ <!-- Manual task creation (ADR-106, no LLM) -->
+ {% if create_entities %}
+ <div class="pl-surface rounded-xl border border-[color:var(--border)] p-5">
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-1">{{ t.training_manual_title }}</h3>
+ <p class="text-sm text-[color:var(--text-secondary)] mb-4">{{ t.training_manual_subtitle }}</p>
+ <div class="flex flex-col sm:flex-row gap-3 items-start">
+ <div class="w-full sm:w-72">
+ <label for="training-manual-entity" class="block text-sm font-medium text-[color:var(--text)] mb-1">
+ {{ t.training_manual_entity }}
+ </label>
+ <select id="training-manual-entity"
+ class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ <option value="">{{ t.training_manual_choose }}</option>
+ {% for e in create_entities %}
+ <option value="{{ e.id }}">{{ e.real_name }}{% if e.category %} — {{ e.category }}{% endif %}</option>
+ {% endfor %}
+ </select>
+ </div>
+ <div class="flex-1 w-full">
+ <div id="training-manual-params" class="hidden">
+ <div class="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">
+ <span class="animate-pulse">●</span> {{ t.training_manual_loading }}
+ </div>
+ </div>
+ <div id="training-manual-params-error" class="hidden text-sm text-red-500 mb-2"></div>
+ </div>
+ </div>
+ </div>
+ {% endif %}
+
  <!-- Plan columns -->
  <div class="grid grid-cols-1 md:grid-cols-{{ [plans|length, 2]|min }} gap-4 items-start">
  {% for plan in plans %}

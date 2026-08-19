@@ -125,13 +125,17 @@ async def tasks_page(
     # Get due practices
     due_practices = await get_due_practices(db, user.id, limit=8)
 
-    # Entities for manual task creation (opted-in or owned, with normalized schemas)
+    # Entities for manual task creation (opted-in or owned, with normalized schemas).
+    # ADR-106: personal entities (owner_id == user.id) are approved by default.
     ent_result = await db.execute(
         select(Entity)
-        .join(UserEntityOptIn, UserEntityOptIn.entity_id == Entity.id)
+        .outerjoin(UserEntityOptIn, UserEntityOptIn.entity_id == Entity.id)
         .where(
-            UserEntityOptIn.user_id == user.id,
-            UserEntityOptIn.is_opted_in.is_(True),
+            (Entity.owner_id == user.id)
+            | (
+                (UserEntityOptIn.user_id == user.id)
+                & UserEntityOptIn.is_opted_in.is_(True)
+            ),
         )
         .order_by(Entity.category, Entity.real_name)
     )

@@ -219,26 +219,42 @@ class BodyMeasurementChart(BaseModel):
 class InventoryItemCreate(BaseModel):
     category: str
     name: str
+    group_type: str = "equipment"
     description: str | None = None
+    manufacturer: str | None = None
+    model_name: str | None = None
+    material: str | None = None
+    size_color: str | None = None
     quantity: int = 1
     quantity_needed: int = 1
     is_shopping_list: bool = False
     status: str = "need"
     inventory_category_id: uuid.UUID | None = None
     inventory_status: str = "available"
+    maintenance_interval_days: int | None = None
+    last_serviced_at: datetime | None = None
+    extra_properties: dict[str, Any] | None = None
     priority: int = 0
 
 
 class InventoryItemUpdate(BaseModel):
     category: str | None = None
     name: str | None = None
+    group_type: str | None = None
     description: str | None = None
+    manufacturer: str | None = None
+    model_name: str | None = None
+    material: str | None = None
+    size_color: str | None = None
     quantity: int | None = None
     quantity_needed: int | None = None
     is_shopping_list: bool | None = None
     status: str | None = None
     inventory_category_id: uuid.UUID | None = None
     inventory_status: str | None = None
+    maintenance_interval_days: int | None = None
+    last_serviced_at: datetime | None = None
+    extra_properties: dict[str, Any] | None = None
     priority: int | None = None
 
 
@@ -246,14 +262,22 @@ class InventoryItemOut(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     category: str
+    group_type: str = "equipment"
     name: str
-    description: str | None
+    description: str | None = None
+    manufacturer: str | None = None
+    model_name: str | None = None
+    material: str | None = None
+    size_color: str | None = None
     quantity: int
     quantity_needed: int
     is_shopping_list: bool
     status: str
     inventory_category_id: uuid.UUID | None = None
     inventory_status: str = "available"
+    maintenance_interval_days: int | None = None
+    last_serviced_at: datetime | None = None
+    extra_properties: dict[str, Any] | None = None
     priority: int
     sort_order: int = 0
     image_path: str | None = None

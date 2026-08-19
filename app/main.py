@@ -13,10 +13,12 @@ import logging
 import mimetypes
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import app.platform.composition as _comp
 from app.auth import get_optional_user
@@ -116,13 +118,13 @@ async def csrf_middleware(request: Request, call_next):
         return await call_next(request)
     try:
         await verify_csrf(request)
-    except Exception as e:
-        from fastapi import HTTPException
+    except HTTPException as e:
+        # CSRF failures: HTML error page for browsers, JSON for API clients.
+        if _wants_html(request):
+            return await _render_error_page(request, e.status_code, str(e.detail or ""))
         from fastapi.responses import JSONResponse
 
-        if isinstance(e, HTTPException):
-            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
-        raise
+        return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
     return await call_next(request)
 
 
@@ -398,6 +400,89 @@ if composition.social_operational:
 
     app.include_router(social_router)
     logger.info("Platform Social enabled")
+
+# ---------------------------------------------------------------------------
+# Error pages — HTML for browsers, JSON for API clients
+# ---------------------------------------------------------------------------
+
+
+def _wants_html(request: Request) -> bool:
+    """True for browser/HTMX requests (Accept includes text/html).
+
+    API clients (mobile/bearer) send application/json or */* and get JSON.
+    """
+    accept = request.headers.get("accept", "")
+    return "text/html" in accept or "application/xhtml+xml" in accept
+
+
+async def _render_error_page(request: Request, status_code: int, message: str | None = None):
+    """Render the HTML error page with a safe, minimal context."""
+    from app.auth import get_optional_user
+    from app.i18n import get_translations
+    from app.i18n.helpers import detect_locale, detect_theme
+
+    user = None
+    try:
+        user = await get_optional_user(request)
+    except Exception:
+        user = None
+    locale = detect_locale(request, user.locale if user else None)
+    theme = detect_theme(user.theme if user else None)
+    t = get_translations(locale)
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "composition": composition,
+            "error_code": status_code,
+            "error_message": message,
+        },
+        status_code=status_code,
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if _wants_html(request):
+        return await _render_error_page(request, exc.status_code, str(exc.detail or ""))
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(StarletteHTTPException)
+async def starlette_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Handle router-level 404/405 (Starlette raises these, not FastAPI HTTPException)."""
+    if _wants_html(request):
+        return await _render_error_page(request, exc.status_code, str(exc.detail or ""))
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    if _wants_html(request):
+        return await _render_error_page(request, 422, str(exc.errors()[0]["msg"]) if exc.errors() else None)
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled error on %s", request.url.path, exc_info=exc)
+    if _wants_html(request):
+        return await _render_error_page(request, 500)
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 
 # ---------------------------------------------------------------------------
 # Root page — adapts to variant

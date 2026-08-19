@@ -121,6 +121,12 @@
  <h3 class="font-semibold text-[color:var(--text)]">{{ entity.real_name }}</h3>
  </div>
  <div class="flex items-center gap-2">
+ <a href="/entities/{{ entity.id }}/edit"
+     class="px-3 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs font-medium hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] transition-colors inline-flex items-center gap-1"
+     title="Настроить параметры и контракт безопасности">
+    {{ icon('settings', 'w-3.5 h-3.5 text-[color:var(--accent)]') }}
+    <span>Edit / Safety</span>
+ </a>
  {% if not entity.is_public %}
  <form action="/entities/{{ entity.id }}/publish" method="post">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">

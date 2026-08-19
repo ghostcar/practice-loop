@@ -90,55 +90,42 @@
     {{ nav_item('catalog', '/entities/catalog', 'catalog', t.catalog_title) }}
     {{ nav_item('training', '/training', 'training', t.training_title) }}
     {{ nav_item('diets', '/diets', 'diet', t.nav_diets) }}
+    {% if composition and composition.timer_operational %}
+    {{ nav_item('locktimer', '/locktimer', 'timer', t.nav_timer) }}
+    {% endif %}
+    {% if composition and composition.social_operational %}
+    {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
+    {% endif %}
   </div>
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_data }}</div>
+    {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}
+    {{ nav_item('achievements', '/achievements', 'trophy', t.achievements_title) }}
+    {{ nav_item('points', '/api/v2/points/page', 'insights', t.nav_points) }}
     {{ nav_item('inventory', '/api/v2/inventory/page', 'inventory', t.nav_inventory) }}
-    {{ nav_item('measurements', '/api/v2/measurements/page', 'measurement', t.nav_measurements) }}
-    {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
-    {{ nav_item('health', '/health', 'health', t.nav_health) }}
-    {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
-    {{ nav_item('care', '/care', 'routine', t.nav_care) }}
-    {{ nav_item('aftercare', '/aftercare', 'aftercare', t.nav_aftercare) }}
-    {{ nav_item('activity_catalog', '/catalog', 'activity', t.nav_activity_catalog) }}
-    {{ nav_item('insights', '/insights', 'insights', t.nav_insights) }}
+    {{ nav_item('media', '/media', 'media-vault', t.nav_media) }}
     {{ nav_item('schedule', '/api/v2/schedule/page', 'schedule', t.nav_schedule) }}
     {{ nav_item('body_parts', '/api/v2/body-parts/page', 'body', t.nav_body_parts) }}
-    {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}
-    {{ nav_item('points', '/api/v2/points/page', 'insights', t.nav_points) }}
-    {{ nav_item('achievements', '/achievements', 'trophy', t.achievements_title) }}
-    {{ nav_item('media', '/media', 'media-vault', t.nav_media) }}
+    {{ nav_item('locations', '/locations', 'locations', t.nav_locations) }}
+    {{ nav_item('health', '/health', 'health', t.nav_health) }}
+    {{ nav_item('care', '/care', 'routine', t.nav_care) }}
+    {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
+    {{ nav_item('aftercare', '/aftercare', 'aftercare', t.nav_aftercare) }}
+    {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
+    {{ nav_item('measurements', '/api/v2/measurements/page', 'measurement', t.nav_measurements) }}
+    {{ nav_item('insights', '/insights', 'insights', t.nav_insights) }}
+    {{ nav_item('activity_catalog', '/catalog', 'activity', t.nav_activity_catalog) }}
     {{ nav_item('import', '/import', 'import', t.nav_import) }}
   </div>
-  <div class="pl-nav-group">
-    <div class="pl-nav-group-title">{{ t.nav_group_system }}</div>
-    {{ nav_item('notifications', '/notifications', 'bell', t.notifications_title) }}
-    {{ nav_item('llm', '/llm/templates', 'ai', t.nav_llm) }}
-    {{ nav_item('privacy', '/privacy', 'privacy', t.privacy_title) }}
-    {{ nav_item('consent', '/consent', 'shield', t.nav_consent) }}
-    {{ nav_item('account', '/account', 'profile', t.nav_account) }}
-    {% if user and user.role == 'admin' %}{{ nav_item('admin', '/admin', 'admin', t.admin_title_page) }}{% endif %}
-    {{ nav_item('settings', '/settings', 'settings', t.nav_settings) }}
-  </div>
-  {% endif %}
-  {% if composition and composition.timer_operational %}
+  {% elif composition and composition.timer_operational %}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_personal }}</div>
     {{ nav_item('locktimer', '/locktimer', 'timer', t.nav_timer) }}
   </div>
-  {% endif %}
-  {% if composition and composition.social_operational %}
+  {% elif composition and composition.social_operational %}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_social }}</div>
     {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
-  </div>
-  {% endif %}
-  {% if user and not (composition and composition.tracker_active) %}
-  {# Settings stays reachable in timer-only / social-only variants #}
-  <div class="pl-nav-group">
-    <div class="pl-nav-group-title">{{ t.nav_group_system }}</div>
-    {{ nav_item('account', '/account', 'profile', t.nav_account) }}
-    {{ nav_item('settings', '/settings', 'settings', t.nav_settings) }}
   </div>
   {% endif %}
 {%- endmacro %}
@@ -608,7 +595,7 @@
         <!-- Utility bar (desktop) -->
         <header class="pl-utility hidden md:flex" aria-label="{{ t.nav_group_now }}">
             <div class="pl-utility-title">{{ dscr_label(nav_key, context_titles.get(nav_key, t.app_title)) }}</div>
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-1.5">
                 <button type="button" id="pl-discretion-toggle" class="pl-icon-btn"
                         aria-label="{{ t.dscr_discretion_on if _discretion else t.dscr_discretion_off }}"
                         title="{{ t.dscr_discretion_on if _discretion else t.dscr_discretion_off }}">
@@ -631,12 +618,67 @@
                     {{ icon('bell', 'w-5 h-5') }}
                     {% if unread_notifs is defined and unread_notifs > 0 %}<span class="pl-badge">{{ unread_notifs }}</span>{% endif %}
                 </a>
-                <form action="/auth/logout" method="post" class="inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="pl-icon-btn" aria-label="{{ t.nav_logout }}" title="{{ t.nav_logout }}">
-                        {{ icon('logout', 'w-5 h-5') }}
+
+                <!-- User Profile Dropdown (Desktop) -->
+                <div class="relative inline-block text-left ml-1" id="user-menu-container">
+                    <button type="button" id="user-menu-btn"
+                            class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] hover:bg-[color:var(--surface-soft)] text-sm font-medium transition-colors"
+                            aria-expanded="false" aria-haspopup="true">
+                        <span class="w-6 h-6 rounded-full bg-[color:var(--accent-soft)] text-[color:var(--accent)] border border-[color:var(--border)] flex items-center justify-center font-bold text-xs">
+                            {{ ((user.display_name or t.user_display_fallback) if user else t.user_display_fallback)[0] | upper }}
+                        </span>
+                        <span class="truncate max-w-[130px] text-xs font-medium pl-text">{{ (user.display_name or t.user_display_fallback) if user else '' }}</span>
+                        {% if user and user.role == 'admin' %}
+                        <span class="px-1.5 py-0.5 text-[9px] uppercase font-extrabold tracking-wider rounded bg-[color:var(--accent-soft)] text-[color:var(--accent)] border border-[color:var(--border-strong)]">Admin</span>
+                        {% endif %}
+                        {{ icon('chevron-down', 'w-3.5 h-3.5 text-[color:var(--text-muted)]') }}
                     </button>
-                </form>
+                    <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 rounded-2xl pl-surface border border-[color:var(--border)] shadow-2xl z-50 py-1.5 divide-y divide-[color:var(--border)]" role="menu">
+                        <div class="px-4 py-2.5">
+                            <div class="text-xs font-semibold pl-text truncate">{{ (user.display_name or t.user_display_fallback) if user else '' }}</div>
+                            <div class="text-[11px] text-[color:var(--text-muted)] mt-0.5 capitalize">{{ user.role if user else 'user' }} role</div>
+                        </div>
+                        <div class="py-1">
+                            <a href="/account" class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium pl-text-secondary hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
+                                {{ icon('profile', 'w-4 h-4 text-[color:var(--accent)]') }}
+                                <span>{{ t.nav_account }}</span>
+                            </a>
+                            <a href="/settings" class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium pl-text-secondary hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
+                                {{ icon('settings', 'w-4 h-4') }}
+                                <span>{{ t.nav_settings }}</span>
+                            </a>
+                            {% if user and user.role == 'admin' %}
+                            <a href="/admin" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-[color:var(--accent)] hover:bg-[color:var(--surface-soft)] transition-colors" role="menuitem">
+                                {{ icon('admin', 'w-4 h-4') }}
+                                <span>{{ t.admin_title_page }}</span>
+                            </a>
+                            {% endif %}
+                            <a href="/llm/templates" class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium pl-text-secondary hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
+                                {{ icon('ai', 'w-4 h-4') }}
+                                <span>{{ t.nav_llm }}</span>
+                            </a>
+                        </div>
+                        <div class="py-1">
+                            <a href="/consent" class="flex items-center gap-2.5 px-4 py-2 text-xs text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
+                                {{ icon('shield', 'w-3.5 h-3.5') }}
+                                <span>{{ t.nav_consent }}</span>
+                            </a>
+                            <a href="/privacy" class="flex items-center gap-2.5 px-4 py-2 text-xs text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
+                                {{ icon('privacy', 'w-3.5 h-3.5') }}
+                                <span>{{ t.privacy_title }}</span>
+                            </a>
+                        </div>
+                        <div class="py-1">
+                            <form action="/auth/logout" method="post" class="block">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-[color:var(--danger)] hover:bg-[color:var(--surface-soft)] transition-colors" role="menuitem">
+                                    {{ icon('logout', 'w-4 h-4') }}
+                                    <span>{{ t.nav_logout }}</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -671,6 +713,41 @@
             </div>
             <nav class="py-3" aria-label="{{ t.nav_group_now }}">
                 {{ nav_groups() }}
+
+                <!-- Mobile User Links -->
+                <div class="border-t border-[color:var(--border)] pt-3 mt-3 px-3">
+                    <div class="text-xs font-semibold text-[color:var(--text-muted)] uppercase tracking-wider mb-2">
+                        {{ (user.display_name or t.user_display_fallback) if user else '' }}
+                    </div>
+                    <div class="space-y-1">
+                        <a href="/account" class="pl-nav-item">
+                            {{ icon('profile', 'w-4 h-4') }}
+                            <span class="pl-nav-label">{{ t.nav_account }}</span>
+                        </a>
+                        <a href="/settings" class="pl-nav-item">
+                            {{ icon('settings', 'w-4 h-4') }}
+                            <span class="pl-nav-label">{{ t.nav_settings }}</span>
+                        </a>
+                        {% if user and user.role == 'admin' %}
+                        <a href="/admin" class="pl-nav-item text-[color:var(--accent)] font-semibold">
+                            {{ icon('admin', 'w-4 h-4') }}
+                            <span class="pl-nav-label">{{ t.admin_title_page }}</span>
+                        </a>
+                        {% endif %}
+                        <a href="/llm/templates" class="pl-nav-item">
+                            {{ icon('ai', 'w-4 h-4') }}
+                            <span class="pl-nav-label">{{ t.nav_llm }}</span>
+                        </a>
+                        <a href="/consent" class="pl-nav-item">
+                            {{ icon('shield', 'w-4 h-4') }}
+                            <span class="pl-nav-label">{{ t.nav_consent }}</span>
+                        </a>
+                        <a href="/privacy" class="pl-nav-item">
+                            {{ icon('privacy', 'w-4 h-4') }}
+                            <span class="pl-nav-label">{{ t.privacy_title }}</span>
+                        </a>
+                    </div>
+                </div>
             </nav>
             <div class="pl-sheet-footer">
                 <div class="flex items-center gap-1">

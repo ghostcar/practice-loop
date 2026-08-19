@@ -74,18 +74,33 @@ async def build_context(
 
 
 async def _get_allowed_entities(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
-    """Return entities the user has opted into, with desire levels and intensity."""
+    """Return entities the user has opted into, PLUS their own personal entities.
+
+    ADR-106 (owner decision): everything the user creates themselves is
+    approved by default — a personal entity (``owner_id == user.id``) is
+    eligible for LLM selection without a separate opt-in. Explicit opt-outs
+    (``is_opted_in=False``) are still respected for both personal and public
+    entities.
+    """
+    # All opt-ins of the user (both opted-in and opted-out rows)
+    opt_result = await db.execute(
+        select(UserEntityOptIn).where(UserEntityOptIn.user_id == user_id)
+    )
+    opt_ins = {oi.entity_id: oi for oi in opt_result.scalars().all()}
+
+    # Opted-in public entities + ALL personal entities (owner = user).
     result = await db.execute(
-        select(UserEntityOptIn, Entity)
-        .join(Entity, UserEntityOptIn.entity_id == Entity.id)
-        .where(
-            UserEntityOptIn.user_id == user_id,
-            UserEntityOptIn.is_opted_in,
+        select(Entity).where(
+            (Entity.owner_id == user_id)
+            | (Entity.id.in_([eid for eid, oi in opt_ins.items() if oi.is_opted_in]))
         )
     )
-    rows = result.all()
     entities = []
-    for opt_in, entity in rows:
+    for entity in result.scalars().all():
+        oi = opt_ins.get(entity.id)
+        # Explicit opt-out is respected even for personal entities.
+        if oi is not None and not oi.is_opted_in:
+            continue
         entities.append(
             {
                 "id": str(entity.id),
@@ -96,8 +111,8 @@ async def _get_allowed_entities(db: AsyncSession, user_id: uuid.UUID) -> list[di
                 "intensity": entity.intensity or "active",
                 "params_schema": entity.params_schema,
                 "task_template": entity.task_template,
-                "desire_level": opt_in.desire_level,
-                "rating": opt_in.rating,
+                "desire_level": oi.desire_level if oi else "neutral",
+                "rating": oi.rating if oi else None,
                 "risk_level": entity.risk_level or "not_assessed",
                 # ADR-106: informational metadata — the user's opt-in is the
                 # approval boundary, risk/automation are shown, not enforced.

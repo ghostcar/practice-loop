@@ -117,12 +117,24 @@
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_active_ingredient }}
                     <input type="text" name="active_ingredient" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                <label class="text-xs pl-text-secondary">{{ t.med_active_ingredient if t.get('med_active_ingredient') else 'МНН / Действующее вещество' }}
+                    <input type="text" name="active_ingredient" placeholder="напр. Декспантенол" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_form }}
-                    <input type="text" name="form" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" name="form" placeholder="мазь, таблетки, гель…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_strength }}
-                    <input type="text" name="strength" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" name="strength" placeholder="500 мг, 5%…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">Производитель / Бренд
+                    <input type="text" name="manufacturer" placeholder="Bayer, Фармстандарт…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary">Условия хранения
+                    <input type="text" name="storage_conditions" placeholder="+2..+8°C, в сухом месте…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
+                    <input type="checkbox" name="prescription_required" value="1" class="w-4 h-4">
+                    По рецепту (Rx)
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_unit }}
                     <input type="text" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
@@ -172,15 +184,44 @@
                     <div class="min-w-0">
                         <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-2">
                             {{ m.name }}
+                            {% if m.prescription_required %}<span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-600 font-semibold border border-amber-500/20">Rx</span>{% endif %}
                             {% if not m.is_active %}<span class="text-xs pl-text-muted">({{ t.med_archive if t.get('med_archive') else 'inactive' }})</span>{% endif %}
                         </h3>
                         <p class="text-xs pl-text-muted">
                             {{ t['med_kind_' + m.kind] if t.get('med_kind_' + m.kind) else m.kind }}
+                            {% if m.active_ingredient %} · МНН: <strong class="text-[color:var(--text)]">{{ m.active_ingredient }}</strong>{% endif %}
                             {% if m.strength %} · {{ m.strength }}{% endif %}
-                            {% if m.active_ingredient %} · {{ m.active_ingredient }}{% endif %}
                             {% if m.form %} · {{ m.form }}{% endif %}
+                            {% if m.manufacturer %} · {{ m.manufacturer }}{% endif %}
+                            {% if m.storage_conditions %} · 🌡️ {{ m.storage_conditions }}{% endif %}
                         </p>
                         {% if m.instructions %}<p class="text-sm pl-text-secondary mt-1">{{ m.instructions }}</p>{% endif %}
+
+                        <!-- Analogues section -->
+                        <div class="mt-2">
+                            <form action="/medications/{{ m.id }}/find-analogs" method="post" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[32px]">
+                                    {{ icon('ai', 'w-3.5 h-3.5') }} Поиск аналогов ИИ
+                                </button>
+                            </form>
+                            {% if m.analogues and m.analogues.analogs %}
+                            <div class="mt-2 p-3 rounded-lg bg-[color:var(--surface-soft)] text-xs space-y-1.5 border border-[color:var(--border)]">
+                                <div class="font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
+                                    {{ icon('ai', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }} Аптечные аналоги по МНН ({{ m.analogues.active_ingredient }}):
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    {% for a in m.analogues.analogs %}
+                                    <div class="p-1.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
+                                        <div class="font-medium text-[color:var(--text)]">{{ a.name }}</div>
+                                        <div class="pl-text-muted text-[11px]">{{ a.manufacturer }} · {{ a.form }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% if m.analogues.disclaimer %}<p class="pl-text-muted text-[10px] italic mt-1">{{ m.analogues.disclaimer }}</p>{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                     <form action="/medications/{{ m.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.med_delete }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">

@@ -532,6 +532,167 @@ async def test_add_log_entry_keeps_valid_type(auth_client: AsyncClient, db_sessi
     assert entry.entry_type == "pressure_check"
 
 
+# --- Manual task creation in a training day (ADR-106) ---
+
+
+@pytest.mark.asyncio
+async def test_manual_training_task_creates_log(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+    """POST /training/tasks adds a task to today's training day without LLM."""
+    entity = await _make_allowed_entity(db_session, test_user.id)
+    td = TrainingDay(user_id=test_user.id, target_date=date.today(), status="active")
+    db_session.add(td)
+    await db_session.flush()
+
+    response = await auth_client.post(
+        "/training/tasks",
+        data={
+            "entity_id": str(entity.id),
+            "training_day_id": str(td.id),
+            "param_intensity": "2",
+            "planned_comment": "manual",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    logs = (
+        (await db_session.execute(select(ActivityLog).where(ActivityLog.training_day_id == td.id))).scalars().all()
+    )
+    assert len(logs) == 1
+    assert logs[0].entity_id == entity.id
+    assert logs[0].selected_params == {"intensity": 2}
+    assert logs[0].status == "planned"
+    assert logs[0].planned_comment == "manual"
+
+
+@pytest.mark.asyncio
+async def test_manual_training_task_creates_day_if_missing(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user
+):
+    """POST /training/tasks without training_day_id creates today's day on the fly."""
+    entity = await _make_allowed_entity(db_session, test_user.id)
+
+    response = await auth_client.post(
+        "/training/tasks",
+        data={"entity_id": str(entity.id), "param_intensity": "1"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    days = (await db_session.execute(select(TrainingDay).where(TrainingDay.user_id == test_user.id))).scalars().all()
+    assert len(days) == 1
+    assert days[0].target_date == date.today()
+    logs = (
+        (await db_session.execute(select(ActivityLog).where(ActivityLog.training_day_id == days[0].id))).scalars().all()
+    )
+    assert len(logs) == 1
+    assert logs[0].entity_id == entity.id
+
+
+@pytest.mark.asyncio
+async def test_manual_training_task_rejects_foreign_entity(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user
+):
+    """Manual training task must not accept another user's private entity."""
+    from app.auth import hash_password
+    from app.models.user import User
+
+    other = User(email="other2@x.com", password_hash=hash_password("secret123"), locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    foreign = Entity(
+        type="one_time",
+        real_name="Foreign private",
+        category="test",
+        owner_id=other.id,
+        is_public=False,
+    )
+    db_session.add(foreign)
+    await db_session.flush()
+
+    response = await auth_client.post(
+        "/training/tasks",
+        data={"entity_id": str(foreign.id)},
+        follow_redirects=False,
+    )
+    assert response.status_code == 404
+
+
+# --- Personal entities are eligible without opt-in (ADR-106) ---
+
+
+@pytest.mark.asyncio
+async def test_personal_entity_eligible_without_optin(db_session: AsyncSession, test_user):
+    """A personal entity (owner_id == user) appears in the LLM context without opt-in."""
+    from app.llm.context_builder import _get_allowed_entities
+
+    entity = Entity(
+        type="one_time",
+        real_name="My Personal",
+        category="test",
+        owner_id=test_user.id,
+        is_public=False,
+        params_schema={"intensity": {"type": "integer", "min": 1, "max": 3}},
+    )
+    db_session.add(entity)
+    await db_session.flush()
+    # No opt-in row — ADR-106: personal is approved by default.
+
+    allowed = await _get_allowed_entities(db_session, test_user.id)
+    assert any(e["name"] == "My Personal" for e in allowed)
+
+
+@pytest.mark.asyncio
+async def test_personal_entity_optout_respected(db_session: AsyncSession, test_user):
+    """An explicit opt-out still excludes a personal entity from the LLM context."""
+    from app.llm.context_builder import _get_allowed_entities
+
+    entity = Entity(
+        type="one_time",
+        real_name="My Opted-Out",
+        category="test",
+        owner_id=test_user.id,
+        is_public=False,
+    )
+    db_session.add(entity)
+    await db_session.flush()
+    db_session.add(UserEntityOptIn(user_id=test_user.id, entity_id=entity.id, is_opted_in=False))
+    await db_session.flush()
+
+    allowed = await _get_allowed_entities(db_session, test_user.id)
+    assert not any(e["name"] == "My Opted-Out" for e in allowed)
+
+
+@pytest.mark.asyncio
+async def test_create_entity_auto_optin(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+    """Creating a personal entity auto-creates an opt-in row (ADR-106)."""
+    response = await auth_client.post(
+        "/entities/",
+        data={
+            "real_name": "Auto Optin Task",
+            "type": "one_time",
+            "category": "Test",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    entity = (
+        (await db_session.execute(select(Entity).where(Entity.real_name == "Auto Optin Task"))).scalar_one_or_none()
+    )
+    assert entity is not None
+    opt_in = (
+        await db_session.execute(
+            select(UserEntityOptIn).where(
+                UserEntityOptIn.user_id == test_user.id,
+                UserEntityOptIn.entity_id == entity.id,
+            )
+        )
+    ).scalar_one_or_none()
+    assert opt_in is not None
+    assert opt_in.is_opted_in
+
+
 def test_render_log_entry_row_escapes_user_fields():
     """Audit: the HTMX row renderer escapes all user-controlled fields."""
     from app.api.training import _render_log_entry_row

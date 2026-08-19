@@ -5,7 +5,7 @@ import re
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,13 +19,17 @@ from app.i18n.helpers import detect_locale, detect_theme
 from app.llm.pipeline import analyze_training_day, generate_daily_plan, get_active_llm_config
 from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
+from app.models.entity import Entity
 from app.models.life import ScheduleRule
+from app.models.opt_in import UserEntityOptIn
 from app.models.training import TrainingDay
 from app.models.training_log import TrainingLogEntry
 from app.models.user import User
+from app.params import normalize_schema, validate_params
 from app.security import complete_once
 from app.templates_setup import templates
 from app.timeutils import local_today
+from app.title_gen import generate_title
 
 router = APIRouter(prefix="/training", tags=["training"])
 
@@ -159,6 +163,18 @@ async def training_page(
 
     active_config = await get_active_llm_config(db, user.id)
 
+    # Entities for manual task creation (ADR-106: opted-in + personal).
+    ent_result = await db.execute(
+        select(Entity)
+        .outerjoin(UserEntityOptIn, UserEntityOptIn.entity_id == Entity.id)
+        .where(
+            (Entity.owner_id == user.id)
+            | ((UserEntityOptIn.user_id == user.id) & UserEntityOptIn.is_opted_in.is_(True)),
+        )
+        .order_by(Entity.category, Entity.real_name)
+    )
+    create_entities = list(ent_result.scalars().all())
+
     return templates.TemplateResponse(
         request=request,
         name="training.html",
@@ -173,6 +189,7 @@ async def training_page(
             "active_config": active_config,
             "today": today,
             "timeline_blocks": timeline_blocks,
+            "create_entities": create_entities,
             "active_nav": "training",
         },
     )
@@ -225,6 +242,135 @@ async def generate_plan(
         # generate_daily_plan is transactional — nothing is persisted before
         # the LLM response is parsed and validated, so no rollback is needed.
         return RedirectResponse(url=f"/training?error={str(e)}", status_code=303)
+    return RedirectResponse(url="/training", status_code=303)
+
+
+# === Manual task creation in a training day (no LLM) ===
+
+
+def _coerce_param(value: str | None, d: dict) -> object:
+    """Coerce a form string into the typed value for a param definition."""
+    if value is None or value == "":
+        return None
+    t = d.get("type")
+    if t in ("integer", "decimal", "duration"):
+        try:
+            if t == "integer":
+                return int(value)
+            return float(value)
+        except ValueError:
+            return value  # let validator flag it
+    if t == "boolean":
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    if t == "multi_enum":
+        return value
+    return value
+
+
+@router.post("/tasks")
+async def create_manual_training_task(
+    request: Request,
+    entity_id: uuid.UUID = Form(...),
+    training_day_id: str = Form(default=""),
+    planned_comment: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a task manually inside a training day (ADR-106, no LLM).
+
+    Accepts the same dynamic params form as POST /tasks/create (prefix
+    ``param_``). The task is linked to the given ``training_day_id``; if the
+    id is empty, the first training day of today is used (creating one if
+    none exists).
+    """
+    locale = detect_locale(request, user.locale)
+    today = _get_today()
+
+    ent_result = await db.execute(
+        select(Entity).where(
+            Entity.id == entity_id,
+            Entity.is_public.is_(True) | (Entity.owner_id == user.id),
+        )
+    )
+    entity = ent_result.scalar_one_or_none()
+    if entity is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+
+    # Resolve the training day: explicit id, else today's first, else create one.
+    training_day = None
+    if training_day_id.strip():
+        try:
+            td_id = uuid.UUID(training_day_id.strip())
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid training_day_id") from None
+        td_result = await db.execute(select(TrainingDay).where(TrainingDay.id == td_id))
+        training_day = td_result.scalar_one_or_none()
+        if training_day is None or training_day.user_id != user.id:
+            raise HTTPException(status_code=404, detail="Training day not found")
+    else:
+        td_result = await db.execute(
+            select(TrainingDay)
+            .where(TrainingDay.user_id == user.id, TrainingDay.target_date == today)
+            .order_by(TrainingDay.created_at.asc())
+        )
+        training_day = td_result.scalars().first()
+        if training_day is None:
+            training_day = TrainingDay(user_id=user.id, target_date=today, status="active")
+            db.add(training_day)
+            await db.flush()
+
+    try:
+        defs = normalize_schema(entity.params_schema)
+    except ValueError as e:
+        return RedirectResponse(url=f"/training?error={str(e)}", status_code=303)
+
+    form = await request.form()
+    params: dict = {}
+    multi_keys: list[str] = []
+    for d in defs:
+        key = d["key"]
+        if d.get("type") == "multi_enum":
+            multi_keys.append(key)
+            continue
+        raw = form.get(f"param_{key}")
+        value = _coerce_param(raw, d)
+        if value is None and d.get("type") == "enum" and d.get("allow_custom_value"):
+            custom = form.get(f"param_{key}_custom")
+            if custom:
+                value = custom
+        if value is not None:
+            params[key] = value
+    for key in multi_keys:
+        values = form.getlist(f"param_{key}")
+        if values:
+            params[key] = values
+
+    errors = validate_params(entity.params_schema, params)
+    if errors:
+        return RedirectResponse(url=f"/training?error={errors[0]}", status_code=303)
+
+    title = generate_title(
+        entity.real_name,
+        params,
+        schema=entity.params_schema,
+        template=entity.task_template.get("template") if entity.task_template else None,
+        locale=locale,
+    )
+
+    log = ActivityLog(
+        user_id=user.id,
+        entity_id=entity.id,
+        status="planned",
+        selected_entity_name=entity.real_name,
+        selected_params=params,
+        planned_comment=planned_comment.strip() or None,
+        title_override=title if title != entity.real_name else None,
+        user_prompt="Manual creation in training day (no LLM)",
+        training_day_id=training_day.id,
+    )
+    db.add(log)
+    await db.flush()
+
     return RedirectResponse(url="/training", status_code=303)
 
 

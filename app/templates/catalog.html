@@ -103,28 +103,34 @@
  {% endif %}
  </div>
 
- <!-- Opt-in controls -->
- <div class="flex-shrink-0">
- <form action="/entities/{{ entity.id }}/opt-in" method="post" class="flex items-center gap-2">
- <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
- <select name="desire_level" aria-label="{{ entity.real_name }}: {{ t.catalog_desire_label }}" class="text-xs rounded-lg border border-[color:var(--border)] pl-surface-soft px-2 py-1.5
- {% if oi and oi.desire_level == 'want_very_much' %}text-emerald-700 dark:text-emerald-400 border-emerald-400 dark:border-emerald-800{% endif %}
- {% if oi and oi.desire_level == 'strong_aversion' %}text-red-700 dark:text-red-400 border-red-400 dark:border-red-800{% endif %}">
- <option value="want_very_much" {% if oi and oi.desire_level == 'want_very_much' %}selected{% endif %}>{{ t.desire_want_very_much }}</option>
- <option value="want" {% if oi and oi.desire_level == 'want' %}selected{% endif %}>{{ t.desire_want }}</option>
- <option value="neutral" {% if oi and oi.desire_level == 'neutral' or not oi %}selected{% endif %}>{{ t.desire_neutral }}</option>
- <option value="reluctant" {% if oi and oi.desire_level == 'reluctant' %}selected{% endif %}>{{ t.desire_reluctant }}</option>
- <option value="strong_aversion" {% if oi and oi.desire_level == 'strong_aversion' %}selected{% endif %}>{{ t.desire_strong_aversion }}</option>
- </select>
- <label class="flex items-center gap-1 text-xs text-[color:var(--text-secondary)] cursor-pointer">
- <input type="checkbox" name="is_opted_in" value="true"
- {% if not oi or oi.is_opted_in %}checked{% endif %}
- class="rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]">
- {{ t.opt_in_label }}
- </label>
- <button type="submit" class="sr-only">{{ t.opt_in_label }}</button>
- </form>
- </div>
+ <!-- Opt-in & Edit controls -->
+  <div class="flex-shrink-0 flex items-center gap-2">
+  {% if entity.owner_id == user.id or user.role == 'admin' %}
+  <a href="/entities/{{ entity.id }}/edit" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] font-medium transition-colors" title="Настроить параметры и контракт безопасности">
+  {{ icon('settings', 'w-3.5 h-3.5 text-[color:var(--accent)]') }}
+  <span>Правка / Safety</span>
+  </a>
+  {% endif %}
+  <form action="/entities/{{ entity.id }}/opt-in" method="post" class="flex items-center gap-2">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+  <select name="desire_level" aria-label="{{ entity.real_name }}: {{ t.catalog_desire_label }}" class="text-xs rounded-lg border border-[color:var(--border)] pl-surface-soft px-2 py-1.5
+  {% if oi and oi.desire_level == 'want_very_much' %}text-emerald-700 dark:text-emerald-400 border-emerald-400 dark:border-emerald-800{% endif %}
+  {% if oi and oi.desire_level == 'strong_aversion' %}text-red-700 dark:text-red-400 border-red-400 dark:border-red-800{% endif %}">
+  <option value="want_very_much" {% if oi and oi.desire_level == 'want_very_much' %}selected{% endif %}>{{ t.desire_want_very_much }}</option>
+  <option value="want" {% if oi and oi.desire_level == 'want' %}selected{% endif %}>{{ t.desire_want }}</option>
+  <option value="neutral" {% if oi and oi.desire_level == 'neutral' or not oi %}selected{% endif %}>{{ t.desire_neutral }}</option>
+  <option value="reluctant" {% if oi and oi.desire_level == 'reluctant' %}selected{% endif %}>{{ t.desire_reluctant }}</option>
+  <option value="strong_aversion" {% if oi and oi.desire_level == 'strong_aversion' %}selected{% endif %}>{{ t.desire_strong_aversion }}</option>
+  </select>
+  <label class="flex items-center gap-1 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+  <input type="checkbox" name="is_opted_in" value="true"
+  {% if not oi or oi.is_opted_in %}checked{% endif %}
+  class="rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]">
+  {{ t.opt_in_label }}
+  </label>
+  <button type="submit" class="sr-only">{{ t.opt_in_label }}</button>
+  </form>
+  </div>
  </div>
 
  <!-- Params schema preview -->
