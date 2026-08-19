@@ -172,14 +172,16 @@ async def dashboard(
     )
     recent_logs = result.scalars().all()
 
-    # Active session
+    # Active sessions (multiple may run in parallel — migration 063)
     sess_result = await db.execute(
-        select(ActivitySession).where(
+        select(ActivitySession)
+        .where(
             ActivitySession.owner_id == user.id,
             ActivitySession.status.in_(["created", "active"]),
         )
+        .order_by(ActivitySession.created_at.desc())
     )
-    active_session = sess_result.scalar_one_or_none()
+    active_sessions = sess_result.scalars().all()
 
     # Notifications count
     notif_count_result = await db.execute(
@@ -337,7 +339,7 @@ async def dashboard(
             "xp_next": xp_next,
             "xp_percent": int(xp_current / max(xp_next, 1) * 100),
             "recent_logs": recent_logs,
-            "active_session": active_session,
+            "active_sessions": active_sessions,
             "unread_notifs": unread_notifs,
             "tg_bot_username": settings.tg_bot_username,
             "active_nav": "dashboard",
@@ -575,31 +577,14 @@ async def sessions_page(
     )
 
 
-async def _open_session(db: AsyncSession, user_id: uuid.UUID) -> ActivitySession | None:
-    """Return the user's current non-ended session, if any.
-
-    Migration 013 enforces one session with status in (created, active) per
-    user via the partial unique index ``ix_activity_sessions_one_active`` —
-    creating a second one blindly raises a UniqueViolation (500).
-    """
-    result = await db.execute(
-        select(ActivitySession).where(
-            ActivitySession.owner_id == user_id,
-            ActivitySession.status.in_(["created", "active"]),
-        )
-    )
-    return result.scalar_one_or_none()
-
-
 @router.post("/sessions")
 async def create_session(
     request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new session (idempotent — one non-ended session per user)."""
-    if await _open_session(db, user.id) is not None:
-        return RedirectResponse(url="/sessions", status_code=303)
+    """Create a new session. Multiple sessions may run in parallel (migration 063
+    dropped the one-active-per-user index)."""
     session = ActivitySession(owner_id=user.id, status="created")
     db.add(session)
     await db.flush()
@@ -833,10 +818,8 @@ async def json_create_session(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new session (idempotent — one non-ended session per user)."""
-    existing = await _open_session(db, user.id)
-    if existing is not None:
-        return _session_json(existing)
+    """Create a new session. Multiple sessions may run in parallel (migration 063
+    dropped the one-active-per-user index)."""
     session = ActivitySession(
         owner_id=user.id,
         status="created",

@@ -97,6 +97,7 @@
 | ADR-105 | 2026-08-18 | P1 18+ каталог: хранение safety contract | По решению владельца — типизированный `safety_contract` JSONB + `automation_allowed`/`adult_only`/`content_status`/`content_version` на `Entity` (без пересмотра ADR-031). Foundation 7 карточек приняты как есть (`reviewed`); automation выключен у всех 34 editorial candidates до первого прод-прогона. | принято |
 | ADR-106 | 2026-08-19 | P1c: одобрение пользователя — граница автоматизации | По решению владельца: **опт-ин = одобрение по умолчанию** для всех активностей (каталог/профиль/привнесённые); `risk_level`/`automation_allowed` — информационные метаданные, не гейты. Отменяет риск-гейт REM §5.2 в рантайме (`filter_automation_eligible` → passthrough). Остаются жёсткими: stop/отказ всегда, медиа не обязательно, без штрафа за отказ, без обхода safety-фильтров, без авто-эскалации. | принято |
 | ADR-107 | 2026-08-19 | Care: место проведения процедуры | По решению владельца: в блоке ухода и процедур должно быть место проведения (салон, название, может быть адрес) и показываться пользователю. `place_name` + `place_address` на care_routines/care_entries/care_courses (миграция 062); формы, списки, JSON API, i18n EN/RU. | принято |
+| ADR-108 | 2026-08-19 | Множественные параллельные сессии | По решению владельца: сессий может быть запущено несколько одновременно; механизм дочерних сессий внутри длительной — отдельная задача, не реализуется. Снят partial unique index `ix_activity_sessions_one_active` (миграция 013 → 063); `create_session`/`json_create_session` всегда создают новую сессию; дашборд и `/today` показывают все активные сессии. | принято |
 | ADR-095 | 2026-08-17 | Шаг 17c: Reminders+Telegram, курсы процедур, авто-инсайты, Cycle-инсайты | По решению владельца «давай отложенное реализовывать, в том числе уведомления через телеграм» (все типы + курсы + авто-инсайты + Cycle). **Relief-only (PD-013)**: напоминания/курсы без очков/штрафов. (1) **Reminder engine** `app/reminders/` + `reminder_log` (миграция 052): коллекторы (медикаменты due/low/expiring; средства low-stock/expiring; процедуры по frequency_days; курсы next-session; таймер окна/задачи), дедуп unique (user,kind,key), доставка in-app + Telegram + push, discretion-нейтрализация; asyncio-планировщик (reminder_time/tz, REMINDER_ENABLED). (2) **Курсы процедур** `care_courses`+`care_course_sessions` (миграция 053): N сеансов с интервалом, прогресс, next-session reminder, секция /care + JSON /api/v2/care/courses. (3) **Авто-инсайты**: prefs.insights_auto/insights_auto_days + `app/insights/scheduler.run_auto_insights`. (4) **Cycle-инсайты**: раздел `cycle` в INSIGHT_SECTIONS + `_ctx_cycle` (фазы + агрегаты mood/satisfaction/skin по фазам, без причинности §9.4). 13/13 таргетных + 121 регрессионный ✅, ruff ✅, i18n 1206/1206, single head ✅. | принято |
 | ADR-094 | 2026-08-17 | Шаг 17b: Care Products — остатки/сроки/фото + кросс-модуль | По решению владельца «каталог средств дорабатывать и кросс-модульное взаимодействие» (8 направлений). **Relief-only (PD-013)**: без игровой интеграции. Доработка `care_products` (+quantity остаток, +expiry_date срок, +catalog_item_id FK activity_catalog SET NULL — связь с универсальным каталогом), фото средства (owner_type=care_product, POST /care/products/{id}/media), join `care_routine_products` (рекомендуемые средства для процедуры, CASCADE). Кросс-модульные мягкие ссылки JSON по ID (DATA_LIFECYCLE.md): `lock_slot_rules.care_product_ids` (средства окна таймера), `entities.care_product_ids` (средства для трекер-задачи), `sj_entries.care_product_ids` (использованные средства в журнале); средства в контексте Insights (расход/регулярность/low-stock). Валидация владельца во всех местах (чужое → 400); JSON-колонки хранят строки UUID. Миграция 051, single head. 12/12 таргетных + 97/97 регрессионных (care/journal/catalog/insights) + 100/100 locktimer ✅, ruff ✅, i18n 1197/1197. | принято |
 | ADR-093 | 2026-08-17 | Шаг 17: Personal Insights (ROADMAP §7 4E) | По решению владельца «сделать следующий модуль личного контура: 4E Personal Insights». Явно запрошенный кросс-модульный LLM-анализ личных данных (PRODUCT_OVERVIEW §12): тенденции и связи между активностями/таймером/журналом/здоровьем/уходом/тренировками/диетами. **Relief-only (PD-013)**: без игровой интеграции. 2 таблицы (`insight_runs` — запуск: period_start/end, sections JSON, status, summary, usage; `insight_findings` — находки по разделу: section, title, summary, used_data JSON), миграция 050, single head. LLM-пайплайн `app/llm/pipeline/insights.py` + `insights_prompts.py`: контекст только из выбранных разделов за период, промпт требует показывать использованные данные и **не объявляет корреляцию причиной**, режим llm_mode (ADR-087), usage на LLMProviderConfig. Страница /insights (пикер разделов/периода + результат + история с удалением), JSON /api/v2/insights (GET/POST/GET runs/{id}). Дашборд-блок dash-block-insights, nav «Инсайты» (иконка insights.svg), флаг insights_enabled. 11/11 таргетных + 164 регрессионных ✅, ruff ✅, i18n 1196/1196, single head ✅. | принято |
@@ -988,3 +989,24 @@ JSON `/api/v2/care` (routines/entries/courses) + i18n EN/RU (4 ключа).
 
 **Status:** ✅ реализовано. 2 новых теста (form+display, JSON) — 22/22 test_care ✅, ruff ✅,
 i18n parity 0, single head 062.
+
+### ADR-108 — Множественные параллельные сессии
+**Date:** 2026-08-19
+**Decision:** По решению владельца: сессий может быть запущено несколько одновременно.
+Механизм «внутри одной длительной сессии запускается много дочерних коротких» — отдельная
+задача, в этой итерации не реализуется.
+
+**Модель:** миграция 013 создала partial unique index `ix_activity_sessions_one_active`
+(`owner_id WHERE status IN ('created','active')`) — одна незавершённая сессия на пользователя.
+Миграция 063 (`9c8d7e6f5a4b`) удаляет индекс — теперь разрешено любое число параллельных
+сессий на пользователя.
+
+**API/UI:** `create_session` (POST /sessions) и `json_create_session` (POST /api/v2/sessions)
+больше не идемпотентны — каждый вызов создаёт новую сессию (303/201). Дашборд и `/today`
+показывают **все** активные сессии (счётчик + чипы), а не одну. Страница `/sessions` уже
+показывала все сессии.
+
+**Status:** ✅ реализовано и проверено на реальном PostgreSQL 15 (throwaway): 5 параллельных
+сессий созданы (303/303/303 + 201/201) и запущены (все `active`), индекс удалён, дашборд
+«Active session: 5», today «(5)». 12/12 test_sessions + 112 таргетных ✅, ruff ✅, single head
+`9c8d7e6f5a4b`.

@@ -471,12 +471,19 @@
     {% endif %}
     {% endfor %}
 
-    <!-- Active session alert (Tracker) -->
-    {% if active_session %}
-    <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex items-center gap-3 text-sm">
-        <span class="w-2 h-2 rounded-full pl-accent-bg animate-pulse"></span>
-        <span class="text-indigo-700 dark:text-indigo-300 font-medium">{{ t.dashboard_active_session }}: {{ active_session.status }}</span>
-        <a href="/sessions" class="ml-auto text-indigo-600 dark:text-indigo-400 underline text-xs">{{ t.dashboard_manage }}</a>
+    <!-- Active sessions alert (Tracker) — multiple sessions may run in parallel -->
+    {% if active_sessions %}
+    <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 text-sm">
+        <div class="flex items-center gap-3">
+            <span class="w-2 h-2 rounded-full pl-accent-bg animate-pulse"></span>
+            <span class="text-indigo-700 dark:text-indigo-300 font-medium">{{ t.dashboard_active_session }}: {{ active_sessions|length }}</span>
+            <a href="/sessions" class="ml-auto text-indigo-600 dark:text-indigo-400 underline text-xs">{{ t.dashboard_manage }}</a>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-2">
+        {% for s in active_sessions %}
+            <span class="px-2 py-0.5 rounded-full text-xs pl-surface-soft text-[color:var(--text-secondary)]">{{ s.status }}{% if s.title %} · {{ s.title }}{% endif %}</span>
+        {% endfor %}
+        </div>
     </div>
     {% endif %}
 

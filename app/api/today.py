@@ -85,14 +85,20 @@ async def today_page(
     )
     attention_tasks = list(attention_result.scalars().all())
 
-    active_session = (
-        await db.execute(
-            select(ActivitySession).where(
-                ActivitySession.owner_id == user.id,
-                ActivitySession.status.in_(["created", "active"]),
+    active_sessions = (
+        (
+            await db.execute(
+                select(ActivitySession)
+                .where(
+                    ActivitySession.owner_id == user.id,
+                    ActivitySession.status.in_(["created", "active"]),
+                )
+                .order_by(ActivitySession.created_at.desc())
             )
         )
-    ).scalar_one_or_none()
+        .scalars()
+        .all()
+    )
 
     # Training today
     training_result = await db.execute(
@@ -153,7 +159,7 @@ async def today_page(
             "today_label": _today_label(today, locale),
             "tasks": tasks,
             "attention_tasks": attention_tasks,
-            "active_session": active_session,
+            "active_sessions": active_sessions,
             "today_training": today_training,
             "active_diets": active_diets,
             "timer": timer,

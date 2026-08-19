@@ -26,8 +26,8 @@ async def test_create_session(auth_client: AsyncClient, db_session: AsyncSession
 
 
 @pytest.mark.asyncio
-async def test_create_session_is_idempotent(auth_client: AsyncClient, db_session: AsyncSession, test_user):
-    """A second create reuses the open session instead of 500 (migration 013 index)."""
+async def test_multiple_parallel_sessions_allowed(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+    """Any number of sessions may be created and run in parallel (migration 063)."""
     first = await auth_client.post("/sessions", follow_redirects=False)
     second = await auth_client.post("/sessions", follow_redirects=False)
     assert first.status_code == second.status_code == 303
@@ -36,29 +36,41 @@ async def test_create_session_is_idempotent(auth_client: AsyncClient, db_session
         .scalars()
         .all()
     )
-    assert len(sessions) == 1
-    assert sessions[0].status == "created"
+    assert len(sessions) == 2
+    assert {s.status for s in sessions} == {"created"}
+
+    # Both can be started independently and stay active side by side
+    for s in sessions:
+        resp = await auth_client.post(f"/sessions/{s.id}/start", follow_redirects=False)
+        assert resp.status_code == 303
+    refreshed = (
+        (await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id)))
+        .scalars()
+        .all()
+    )
+    assert {s.status for s in refreshed} == {"active"}
 
 
 @pytest.mark.asyncio
-async def test_json_create_session_reuses_open_session(
+async def test_json_create_multiple_sessions(
     auth_client: AsyncClient, db_session: AsyncSession, test_user
 ):
+    """JSON endpoint creates a fresh session each time (parallel sessions allowed)."""
     first = await auth_client.post("/api/v2/sessions", json={"title": "API session"})
     assert first.status_code == 201
-    session_id = first.json()["id"]
 
     second = await auth_client.post("/api/v2/sessions", json={"title": "Another"})
-    assert second.status_code == 200
-    assert second.json()["id"] == session_id
-    assert second.json()["title"] == "API session"  # existing session returned as-is
+    assert second.status_code == 201
+    assert second.json()["id"] != first.json()["id"]
+    assert second.json()["title"] == "Another"
 
     sessions = (
         (await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id)))
         .scalars()
         .all()
     )
-    assert len(sessions) == 1
+    assert len(sessions) == 2
+    assert {s.title for s in sessions} == {"API session", "Another"}
 
 
 @pytest.mark.asyncio
