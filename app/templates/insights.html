@@ -107,5 +107,144 @@
         <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('insights', 'w-4 h-4') }}{{ t.insights_no_runs }}</p>
         {% endif %}
     </section>
+
+    <!-- Interactive Correlation Matrix & Report Exporter (Step 27) -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-6 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
+            <div>
+                <h3 class="text-base font-semibold text-[color:var(--text)]">📊 Интерактивная Матрица Корреляций и Откликов</h3>
+                <p class="text-xs text-[color:var(--text-secondary)]">Анализ зависимостей ритмов здоровья, приёма ГТ, сессий ограничения доступа и откликов в паре.</p>
+            </div>
+            <button type="button" id="export-report-btn" class="px-3.5 py-2 pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-medium rounded-lg inline-flex items-center gap-1.5 min-h-[40px]">
+                📄 Выгрузить Медицинский Отчёт (1-Click)
+            </button>
+        </div>
+
+        <!-- Correlation Container Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Health & HRT Trends -->
+            <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
+                <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">🩺 Ритмы Здоровья & Приём ГТ</h4>
+                <div id="matrix-health-chart" class="space-y-2 text-xs">
+                    <p class="text-[color:var(--text-muted)] italic">Загрузка матрицы здоровья...</p>
+                </div>
+            </div>
+
+            <!-- Chastity & Lock Correlation -->
+            <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
+                <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">🔒 Ограничения Доступа (Chastity) & Отклики</h4>
+                <div id="matrix-lock-chart" class="space-y-2 text-xs">
+                    <p class="text-[color:var(--text-muted)] italic">Загрузка данных сессий...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Partner Satisfaction Matrix -->
+        <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
+            <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">💖 Матрица Удовлетворённости и Динамики в Паре</h4>
+            <div id="matrix-partner-chart" class="text-xs space-y-2">
+                <p class="text-[color:var(--text-muted)] italic">Загрузка профилей партнёров...</p>
+            </div>
+        </div>
+    </section>
 </div>
+
+<!-- Modal Report Container -->
+<div id="report-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[color:var(--surface)] border border-[color:var(--border)] rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
+            <h3 class="text-base font-bold text-[color:var(--text)]">📋 Выгрузка Персонального Отчёта</h3>
+            <button type="button" id="close-report-btn" class="text-sm pl-text-muted hover:text-[color:var(--text)]">✕ Закрыть</button>
+        </div>
+        <pre id="report-content" class="p-4 rounded-xl bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)] font-mono whitespace-pre-wrap leading-relaxed border border-[color:var(--border)]"></pre>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const healthEl = document.getElementById('matrix-health-chart');
+  const lockEl = document.getElementById('matrix-lock-chart');
+  const partnerEl = document.getElementById('matrix-partner-chart');
+  const reportBtn = document.getElementById('export-report-btn');
+  const modal = document.getElementById('report-modal');
+  const closeModal = document.getElementById('close-report-btn');
+  const reportContent = document.getElementById('report-content');
+
+  // Load correlation matrix JSON
+  try {
+    const res = await fetch('/api/v2/insights/correlation-matrix');
+    if (res.ok) {
+      const data = await res.json();
+
+      // Render Health Matrix
+      if (data.health_matrix && data.health_matrix.length > 0) {
+        healthEl.innerHTML = data.health_matrix.map(h => `
+          <div class="flex items-center justify-between p-2 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
+            <span>📅 ${h.date}</span>
+            <span>Настроение: ${'⭐'.repeat(h.mood || 1)}</span>
+            <span>${h.hrt_taken ? '💊 ГТ Принято' : ''}</span>
+            <span>${h.post_session_drop ? '⚠️ Drop' : ''}</span>
+          </div>
+        `).join('');
+      } else {
+        healthEl.innerHTML = '<p class="text-[color:var(--text-muted)] italic">Нет сохраненных отклик-записей.</p>';
+      }
+
+      // Render Lock Matrix
+      if (data.lock_matrix && data.lock_matrix.length > 0) {
+        lockEl.innerHTML = data.lock_matrix.map(l => `
+          <div class="flex items-center justify-between p-2 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
+            <span class="font-mono text-xs">🔒 ${l.lock_id}</span>
+            <span>${l.duration_hours} ч</span>
+            <span>Продлений: ${l.extensions_count}</span>
+            <span class="${l.health_paused ? 'text-amber-400 font-semibold' : ''}">${l.health_paused ? '⏸️ Пауза' : 'Активен'}</span>
+          </div>
+        `).join('');
+      } else {
+        lockEl.innerHTML = '<p class="text-[color:var(--text-muted)] italic">Нет активных или прошлых замков.</p>';
+      }
+
+      // Render Partner Matrix
+      if (data.partner_matrix && data.partner_matrix.length > 0) {
+        partnerEl.innerHTML = data.partner_matrix.map(p => `
+          <div class="flex items-center justify-between p-2.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
+            <span class="font-semibold text-[color:var(--text)]">👤 ${p.partner_name}</span>
+            <span class="text-xs pl-text-muted">${(p.roles || []).join(', ') || 'Партнёр'}</span>
+            <span class="pl-accent-text font-bold">⭐ ${p.avg_satisfaction} / 5</span>
+          </div>
+        `).join('');
+      } else {
+        partnerEl.innerHTML = '<p class="text-[color:var(--text-muted)] italic">Нет зарегистрированных профилей партнёров.</p>';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load correlation matrix:', err);
+  }
+
+  // 1-Click Exporter modal handler
+  if (reportBtn) {
+    reportBtn.addEventListener('click', async () => {
+      reportBtn.disabled = true;
+      reportBtn.innerText = '⏳ Генерация отчёта...';
+      try {
+        const res = await fetch('/api/v2/insights/export-report', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          reportContent.textContent = data.report_markdown;
+          modal.classList.remove('hidden');
+        }
+      } catch (err) {
+        alert('Ошибка при формировании отчёта.');
+      } finally {
+        reportBtn.disabled = false;
+        reportBtn.innerText = '📄 Выгрузить Медицинский Отчёт (1-Click)';
+      }
+    });
+  }
+
+  if (closeModal) {
+    closeModal.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+});
+</script>
 {% endblock %}

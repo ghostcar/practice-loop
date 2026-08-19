@@ -393,3 +393,75 @@ async def json_export_personal_report(
 
     report = await generate_personal_medical_report(db, user.id, days=days)
     return report
+
+
+@json_router.get("/correlation-matrix")
+async def json_correlation_matrix(
+    days: int = Query(default=30),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Returns aggregated correlation matrix data for charts (Step 27)."""
+    from app.models.health import HealthState
+    from app.models.journal import JournalEntry, JournalPartner
+    from app.models.locktimer import LockSession
+
+    # Fetch health states
+    h_stmt = (
+        select(HealthState)
+        .where(HealthState.user_id == user.id)
+        .order_by(HealthState.event_date.asc())
+        .limit(days)
+    )
+    health_states = (await db.execute(h_stmt)).scalars().all()
+
+    health_matrix = []
+    for h in health_states:
+        health_matrix.append({
+            "date": h.event_date.isoformat(),
+            "mood": h.mood or 0,
+            "energy": h.energy or 0,
+            "sleep_hours": h.sleep_hours or 0,
+            "post_session_drop": bool(h.post_session_drop),
+            "hrt_taken": bool(h.hrt_taken),
+        })
+
+    # Fetch lock sessions
+    locks_stmt = select(LockSession).where(LockSession.owner_id == user.id).limit(20)
+    locks = (await db.execute(locks_stmt)).scalars().all()
+
+    lock_matrix = []
+    for lock_sess in locks:
+        dur_h = 0.0
+        if lock_sess.started_at and lock_sess.ended_at:
+            dur_h = round((lock_sess.ended_at - lock_sess.started_at).total_seconds() / 3600.0, 1)
+        lock_matrix.append({
+            "lock_id": str(lock_sess.id)[:8],
+            "status": lock_sess.status,
+            "duration_hours": dur_h,
+            "extensions_count": len(lock_sess.extension_history or []),
+            "health_paused": lock_sess.is_health_paused,
+        })
+
+    # Fetch partner satisfaction
+    partners_stmt = select(JournalPartner).where(JournalPartner.user_id == user.id)
+    partners = (await db.execute(partners_stmt)).scalars().all()
+
+    partner_matrix = []
+    for p in partners:
+        entries_stmt = select(func.avg(JournalEntry.satisfaction)).where(
+            JournalEntry.user_id == user.id, JournalEntry.partner_id == p.id
+        )
+        avg_sat = (await db.execute(entries_stmt)).scalar() or 0.0
+        partner_matrix.append({
+            "partner_name": p.name,
+            "roles": p.roles or [],
+            "avg_satisfaction": round(float(avg_sat), 2),
+        })
+
+    return {
+        "days": days,
+        "health_matrix": health_matrix,
+        "lock_matrix": lock_matrix,
+        "partner_matrix": partner_matrix,
+    }
