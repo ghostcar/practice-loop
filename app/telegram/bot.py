@@ -1290,6 +1290,96 @@ if TG_BOT_TOKEN:
         ]
         await message.answer("\n".join(lines), parse_mode="Markdown")
 
+    @main_router.message(Command("sessions"))
+    async def cmd_sessions(message: types.Message):
+        """Active Sessions status with 1-Click Interactive Action Cards."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        async with async_session_factory() as db:
+            result = await db.execute(
+                select(ActivitySession)
+                .where(ActivitySession.owner_id == user.id)
+                .order_by(ActivitySession.created_at.desc())
+                .limit(5)
+            )
+            sessions = result.scalars().all()
+
+        lines = ["📜 *PracticeLoop Interactive Sessions*"]
+        if not sessions:
+            lines.append("У вас нет активных сессий.")
+        else:
+            for s in sessions:
+                status_icon = "🟢" if s.status == "active" else "⏳"
+                lines.append(f"{status_icon} *{s.title or 'Сессия'}* ({s.status})")
+
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🔒 Chastity Session", callback_data="tg_session:chastity"),
+                    InlineKeyboardButton(text="🏋️ Training Session", callback_data="tg_session:training"),
+                ],
+                [
+                    InlineKeyboardButton(text="🔴 Safeword STOP", callback_data="tg_safeword_stop"),
+                    InlineKeyboardButton(text="🧴 Launch Aftercare", callback_data="tg_launch_aftercare"),
+                ],
+            ]
+        )
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.callback_query(F.data.startswith("tg_session:"))
+    async def cb_tg_session_create(callback: types.CallbackQuery):
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        tpl_type = callback.data.split(":", 1)[1]
+        titles = {
+            "chastity": "Chastity & Keyholder Ritual Session",
+            "training": "Training & Posture Routine Session",
+        }
+        title = titles.get(tpl_type, "New Session")
+
+        async with async_session_factory() as db:
+            session = ActivitySession(owner_id=user.id, status="active", title=title)
+            db.add(session)
+            await db.commit()
+
+        await callback.answer(f"Сессия '{title}' создана и запущена!", show_alert=True)
+        await callback.message.edit_text(f"🚀 *Сессия запущенa:* {title}\nСтатус: active", parse_mode="Markdown")
+
+    @main_router.callback_query(F.data == "tg_safeword_stop")
+    async def cb_tg_safeword_stop(callback: types.CallbackQuery):
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        async with async_session_factory() as db:
+            result = await db.execute(
+                select(ActivitySession).where(
+                    ActivitySession.owner_id == user.id, ActivitySession.status == "active"
+                )
+            )
+            active_sessions = result.scalars().all()
+            for s in active_sessions:
+                s.status = "safety_stopped"
+            await db.commit()
+
+        await callback.answer("🔴 Safeword STOP исполнен! Сессии остановлены без штрафов.", show_alert=True)
+        await callback.message.edit_text(
+            "🔴 *Safeword STOP исполнен!*\nВсе активные сессии остановлены безопасности ради.", parse_mode="Markdown"
+        )
+
+    @main_router.callback_query(F.data == "tg_launch_aftercare")
+    async def cb_tg_launch_aftercare(callback: types.CallbackQuery):
+        await callback.answer("🧴 Aftercare Kit запущен! Отдохните и восстановите силы.", show_alert=True)
+        await callback.message.answer(
+            "🧴 *Aftercare Kit запущен:* Уход за кожей, гидратация и покой.", parse_mode="Markdown"
+        )
+
     @main_router.message(Command("care"))
     async def cmd_care(message: types.Message):
         """Care routines due today + course sessions, with inline 'Done' buttons."""
