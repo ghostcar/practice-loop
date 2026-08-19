@@ -686,6 +686,10 @@ def _serialize_task_occ(occ: LockTaskOccurrence, t) -> dict:
     }
 
 
+chastity_top_router = APIRouter(tags=["chastity-alias"])
+
+
+@chastity_top_router.get("/chastity")
 @router.get("/chastity")
 async def chastity_alias_redirect(
     current_user: User = Depends(get_current_user),

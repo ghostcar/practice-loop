@@ -310,6 +310,9 @@ if composition.tracker_active:
     ):
         app.include_router(_router)
 
+    from app.api.references.locations import page_router as locations_page_router  # noqa: E402
+    app.include_router(locations_page_router)
+
     if composition.medication_enabled:
         app.include_router(medication_router)
         app.include_router(medication_json_router)
@@ -363,11 +366,13 @@ if composition.timer_operational:
     from app.api.device_events import router as device_events_router  # noqa: E402
     from app.api.locktimer_commands import router as locktimer_commands_router  # noqa: E402
     from app.api.locktimer_proposals import router as locktimer_proposals_router  # noqa: E402
+    from app.api.locktimer_ui import chastity_top_router  # noqa: E402
     from app.api.locktimer_ui import router as locktimer_ui_router  # noqa: E402
 
     app.include_router(locktimer_commands_router)
     app.include_router(locktimer_proposals_router)
     app.include_router(locktimer_ui_router)
+    app.include_router(chastity_top_router)
     app.include_router(device_events_router)
     app.include_router(device_events_json_router)
     app.include_router(chastity_router)
@@ -449,6 +454,10 @@ async def _render_error_page(request: Request, status_code: int, message: str | 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if _wants_html(request):
+        if exc.status_code == 401:
+            from fastapi.responses import RedirectResponse
+
+            return RedirectResponse(url="/auth/login", status_code=303)
         return await _render_error_page(request, exc.status_code, str(exc.detail or ""))
     from fastapi.responses import JSONResponse
 

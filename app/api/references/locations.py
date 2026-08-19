@@ -193,6 +193,11 @@ async def delete_location(
     return {"status": "deleted"}
 
 
+page_router = APIRouter(tags=["locations-page"])
+
+
+@page_router.get("/locations", response_class=HTMLResponse)
+@page_router.get("/locations/page", response_class=HTMLResponse)
 @router.get("/locations/page", response_class=HTMLResponse)
 async def locations_page(
     request: Request,
@@ -212,6 +217,6 @@ async def locations_page(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "active_nav": "admin",
+            "active_nav": "locations",
         },
     )
