@@ -317,9 +317,12 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     source_ids = {record["source_id"] for record in source_inventory.get("records", [])}
+    # Extension cards reference additional-title IDs; accept both namespaces.
+    additional_titles = _load(args.manifest_dir / "adult_additional_activity_titles.v1.json")
+    known_ids = source_ids | {t["title_id"] for t in additional_titles.get("titles", [])}
     errors = (
         lint_manifest(foundation)
-        + lint_editorial_candidates(full_catalog, source_ids)
+        + lint_editorial_candidates(full_catalog, known_ids)
         + lint_source_inventory(source_inventory)
     )
     if errors:

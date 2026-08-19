@@ -37,6 +37,7 @@ OUTPUT = SEED_DIR / "adult_activity_full_catalog.v1.json"
 SOURCE_INVENTORY = SEED_DIR / "adult_activity_source_inventory.v1.json"
 CANDIDATES = SEED_DIR / "adult_activity_editorial_candidates.v1.json"
 ADDITIONAL_TITLES = SEED_DIR / "adult_additional_activity_titles.v1.json"
+EXTENSIONS = SEED_DIR / "adult_activity_extensions.v1.json"
 
 # The full catalog reuses the editorial-candidates schema so the existing
 # lint_editorial_candidates() covers it.
@@ -968,7 +969,9 @@ STOPWORDS = {
 # an additional title, attach that title as an alternate name. Covers matches the
 # token overlap misses (multi-word phrases, bilingual, brand tools).
 SYNONYM_RULES: dict[str, list[str]] = {
-    "golden-shower": ["full bladder release", "bladder release", "watersports", "body marking", "обливание"],
+    "golden-shower": ["full bladder release", "bladder release", "body marking", "обливание"],
+    "funnel-urine-pour": ["watersports — drinking", "слив мочи в рот"],
+    "mixed-control-block": ["combined watersports + scat block", "watersports + scat"],
     "controlled-partial-release": ["controlled release", "сброс давления", "defecation into container"],
     "scat-on-body": ["scat on body", "дефекация на тело"],
     "scat-smearing": ["scat smearing", "размазывание"],
@@ -1046,9 +1049,12 @@ def _normalize_tokens(text: str) -> set[str]:
     return normalized
 
 
-def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+def merge_additional_titles(
+    cards: list[dict[str, Any]], skip_ids: set[str] | None = None
+) -> tuple[list[dict[str, Any]], int, set[str]]:
     """Attach best-matching additional titles as alternate_names. Returns
-    (cards, matched_count)."""
+    (cards, matched_count, consumed_title_ids)."""
+    skip_ids = skip_ids or set()
     additional = load_json(ADDITIONAL_TITLES)
     titles = additional["titles"]
     by_slug = {card["slug"]: card for card in cards}
@@ -1067,7 +1073,10 @@ def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str,
             card["alternate_names"][lang].append(label)
 
     matched = 0
+    consumed: set[str] = set()
     for title in titles:
+        if title.get("title_id") in skip_ids:
+            continue
         display = title.get("display_title", "")
         norm = title.get("normalized_title", "")
         label = display if display else norm
@@ -1082,6 +1091,7 @@ def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str,
         if rule_card is not None:
             _attach(rule_card, label)
             matched += 1
+            consumed.add(title.get("title_id", ""))
             continue
 
         # 2. Token-overlap fallback.
@@ -1103,7 +1113,58 @@ def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str,
         if best and best[0] >= 0.3:
             _attach(best[1], label)
             matched += 1
-    return cards, matched
+            consumed.add(title.get("title_id", ""))
+    return cards, matched, consumed
+
+
+def build_extension_cards(consumed_ids: set[str]) -> tuple[list[dict[str, Any]], int, set[str]]:
+    """Build cards for the four categories not covered by the 163 source
+    records (humiliation/service/psychological/clothing), attaching remaining
+    additional titles as alternate_names + source_refs. Returns
+    (cards, matched_count, consumed_title_ids)."""
+    additional = load_json(ADDITIONAL_TITLES)
+    titles = additional["titles"]
+    extensions = load_json(EXTENSIONS)
+    cards: list[dict[str, Any]] = []
+    matched = 0
+    consumed = set(consumed_ids)
+    for spec in extensions.get("cards", []):
+        refs: list[str] = []
+        names_ru: list[str] = []
+        names_en: list[str] = []
+        for title in titles:
+            if title.get("title_id") in consumed:
+                continue
+            display = title.get("display_title", "")
+            norm = title.get("normalized_title", "")
+            haystack = f"{display} {norm}".lower()
+            if any(rule in haystack for rule in spec["rules"]):
+                refs.append(title["title_id"])
+                consumed.add(title["title_id"])
+                label = display or norm
+                if re.search(r"[a-z]{3,}", label) and not re.search(r"[а-яё]{3,}", label):
+                    names_en.append(label)
+                else:
+                    names_ru.append(label)
+                matched += 1
+        cards.append(
+            {
+                "slug": spec["slug"],
+                "source_refs": refs or [f"ext:{spec['slug']}"],
+                "title": spec["title"],
+                "summary": spec["summary"],
+                "category": spec["category"],
+                "content_kind": spec["content_kind"],
+                "risk_level": spec["risk_level"],
+                "automation_allowed": False,
+                "required_controls": spec["required_controls"],
+                "proposed_parameters": spec.get("proposed_parameters")
+                or {"duration_minutes": {"unit": "minutes", "min": 5, "max": 60}},
+                "promotion": {"source_outcome": "additional_title", "owner_override": True},
+                "alternate_names": {"ru": names_ru, "en": names_en},
+            }
+        )
+    return cards, matched, consumed
 
 
 def flip_gates() -> tuple[int, int, int]:
@@ -1192,7 +1253,11 @@ def main() -> int:
         return 1
 
     cards.extend(new_cards)
-    cards, matched = merge_additional_titles(cards)
+    # Extension categories take priority so their titles are not stolen by
+    # broad token overlap (e.g. "compression", "watersports").
+    extension_cards, ext_matched, ext_consumed = build_extension_cards(set())
+    cards, matched, consumed = merge_additional_titles(cards, skip_ids=ext_consumed)
+    cards.extend(extension_cards)
 
     # Dedupe slugs.
     slugs = [c["slug"] for c in cards]
@@ -1208,7 +1273,8 @@ def main() -> int:
         "promotion_target": "entities",
         "source_records_total": len(records),
         "source_records_covered": len(covered) + len(new_cards),
-        "additional_titles_matched": matched,
+        "additional_titles_matched": matched + ext_matched,
+        "extension_cards": len(extension_cards),
         "cards": cards,
     }
     OUTPUT.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -1216,11 +1282,11 @@ def main() -> int:
     by_kind = Counter(c["content_kind"] for c in cards)
     by_risk = Counter(c["risk_level"] for c in cards)
     by_cat = Counter(c["category"] for c in cards)
-    print(f"wrote {OUTPUT.name}: cards={len(cards)} (34 existing + {len(new_cards)} new)")
+    print(f"wrote {OUTPUT.name}: cards={len(cards)} (34 candidates + {len(new_cards)} promoted + {len(extension_cards)} extension)")
     print(f"  content_kind={dict(by_kind)}")
     print(f"  risk={dict(by_risk)}")
     print(f"  categories={dict(by_cat)}")
-    print(f"  additional titles merged={matched}/{len(load_json(ADDITIONAL_TITLES)['titles'])}")
+    print(f"  additional titles merged={matched}+{ext_matched}/{len(load_json(ADDITIONAL_TITLES)['titles'])}")
 
     fs, fr, ft = flip_gates()
     print(f"flipped gates: source_records={fs} review_records={fr} additional_titles={ft}")

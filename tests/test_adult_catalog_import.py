@@ -33,7 +33,7 @@ def plan():
 
 
 def test_plan_imports_everything(plan):
-    assert len(plan["entities"]) == 161  # 7 foundation + 154 promoted cards
+    assert len(plan["entities"]) == 194  # 7 foundation + 187 promoted cards
 
 
 def test_plan_is_valid(plan):
@@ -52,7 +52,7 @@ def test_plan_preserves_automation_and_risk(plan):
     # all 154 promoted cards stay manual.
     assert len(foundation) == 7
     assert all(e["automation_allowed"] for e in foundation)
-    assert len(promoted) == 154
+    assert len(promoted) == 187
     assert all(not e["automation_allowed"] for e in promoted)
     assert all(e["risk_level"] in {"low", "elevated"} for e in plan["entities"])
 
@@ -95,7 +95,7 @@ def test_candidate_contract_uses_safe_defaults():
 def test_render_plan_is_read_only_summary(plan):
     rendered = render_plan(plan)
 
-    assert "entities=161" in rendered
+    assert "entities=194" in rendered
     assert "content_status=approved" in rendered
     assert "gate.foundation_import_allowed=True" in rendered
 

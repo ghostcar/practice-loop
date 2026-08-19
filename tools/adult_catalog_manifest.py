@@ -673,6 +673,38 @@ def preview_vocabulary(manifest: dict[str, Any]) -> str:
     )
 
 
+EXTENSION_SCHEMA_VERSION = "adult-activity-extensions/v1alpha1"
+
+
+def lint_extensions(manifest: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if manifest.get("schema_version") != EXTENSION_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {EXTENSION_SCHEMA_VERSION}")
+    if manifest.get("import_allowed") is not True:
+        errors.append("extensions must set import_allowed=true (ADR-119)")
+    cards = manifest.get("cards")
+    if not isinstance(cards, list) or not cards:
+        return [*errors, "cards must be a non-empty array"]
+    slugs: set[str] = set()
+    for index, card in enumerate(cards):
+        prefix = f"cards[{index}]"
+        slug = card.get("slug")
+        if not isinstance(slug, str) or not slug or slug in slugs:
+            errors.append(f"{prefix}.slug must be non-empty and unique")
+        slugs.add(slug)
+        for locale in ("ru", "en"):
+            for field in ("title", "summary"):
+                if not str(card.get(field, {}).get(locale, "")).strip():
+                    errors.append(f"{prefix}.{field}.{locale} must be non-empty")
+        if card.get("risk_level") not in ALLOWED_RISKS:
+            errors.append(f"{prefix}.risk_level must be low or elevated")
+        if not card.get("required_controls"):
+            errors.append(f"{prefix}.required_controls must be non-empty")
+        if not card.get("rules"):
+            errors.append(f"{prefix}.rules must be non-empty")
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("manifest", type=Path)
@@ -696,7 +728,10 @@ def main() -> int:
     is_progression = schema_version == PROGRESSION_SCHEMA_VERSION
     is_timer = schema_version == TIMER_SCHEMA_VERSION
     is_evidence = schema_version == EVIDENCE_SCHEMA_VERSION
-    if is_source_inventory:
+    is_extensions = schema_version == EXTENSION_SCHEMA_VERSION
+    if is_extensions:
+        errors = lint_extensions(manifest)
+    elif is_source_inventory:
         errors = lint_source_inventory(manifest)
     elif is_editorial:
         errors = lint_editorial_candidates(manifest)

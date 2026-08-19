@@ -267,7 +267,7 @@
       "summary": {"ru": "Ношение компрессионной одежды с контролем кровообращения.", "en": "Wearing compression garments with circulation checks."},
       "category": "clothing_fetish", "content_kind": "activity", "risk_level": "low",
       "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "skin_check", "circulation_check"],
-      "rules": ["compression wear", "shapewear"]
+      "rules": ["compression wear / shapewear", "shapewear"]
     }
   ]
 }

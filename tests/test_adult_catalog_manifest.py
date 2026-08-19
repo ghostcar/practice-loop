@@ -8,6 +8,7 @@ from tools.adult_catalog_manifest import (
     lint_editorial_candidates,
     lint_editorial_review,
     lint_evidence_source,
+    lint_extensions,
     lint_inventory_source,
     lint_manifest,
     lint_parameter_vocabulary,
@@ -44,6 +45,7 @@ STANDALONE_REVIEW_PATH = Path("data/seed/adult_activity_standalone_review.v1.jso
 INVENTORY_SOURCE_PATH = Path("data/seed/adult_inventory_source.v1.json")
 TAXONOMY_PATH = Path("data/seed/adult_category_taxonomy_source.v1.json")
 ADDITIONAL_TITLES_PATH = Path("data/seed/adult_additional_activity_titles.v1.json")
+EXTENSIONS_PATH = Path("data/seed/adult_activity_extensions.v1.json")
 PARAMETER_VOCABULARY_PATH = Path("data/seed/adult_parameter_vocabulary.v1.json")
 BODY_ZONE_VOCABULARY_PATH = Path("data/seed/adult_body_zone_vocabulary.v1.json")
 SCENARIO_SOURCE_PATH = Path("data/seed/adult_scenario_source.v1.json")
@@ -122,16 +124,45 @@ def test_editorial_preview_reports_candidate_mix() -> None:
     assert "elevated:17" in result
 
 
+def test_extensions_are_valid_and_cover_four_categories() -> None:
+    extensions = load_manifest(EXTENSIONS_PATH)
+
+    assert lint_extensions(extensions) == []
+    assert extensions["import_allowed"] is True
+    assert len(extensions["cards"]) >= 30
+    categories = {card["category"] for card in extensions["cards"]}
+    assert categories == {
+        "humiliation_objectification",
+        "service_protocol",
+        "psychological_control",
+        "clothing_fetish",
+    }
+    assert all(card["rules"] for card in extensions["cards"])
+
+
 def test_full_catalog_covers_every_source_record() -> None:
     source = load_manifest(SOURCE_INVENTORY_PATH)
+    additional = load_manifest(ADDITIONAL_TITLES_PATH)
     full_catalog = load_manifest(FULL_CATALOG_PATH)
     source_ids = {record["source_id"] for record in source["records"]}
+    title_ids = {title["title_id"] for title in additional["titles"]}
+    known_ids = source_ids | title_ids
 
-    assert lint_editorial_candidates(full_catalog, source_ids) == []
+    assert lint_editorial_candidates(full_catalog, known_ids) == []
     assert full_catalog["import_allowed"] is True
     covered = {ref for card in full_catalog["cards"] for ref in card["source_refs"]}
-    assert covered == source_ids  # ADR-111: every prepared record is promoted
+    assert source_ids <= covered  # ADR-111: every prepared record is promoted
     assert all(card["automation_allowed"] is False for card in full_catalog["cards"])
+    # ADR-119 extension: four extra categories have cards too.
+    extension_categories = {
+        "humiliation_objectification",
+        "service_protocol",
+        "psychological_control",
+        "clothing_fetish",
+    }
+    extension_cards = [c for c in full_catalog["cards"] if c["category"] in extension_categories]
+    assert len(extension_cards) >= 30
+    assert full_catalog["extension_cards"] == len(extension_cards)
 
 
 def test_fluid_toilet_review_retains_and_covers_all_source_records() -> None:
