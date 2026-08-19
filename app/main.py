@@ -356,6 +356,9 @@ if composition.tracker_active:
     from app.api.quests import router as quests_router  # noqa: E402
     app.include_router(quests_router)
 
+    from app.api.agent import router as agent_router  # noqa: E402
+    app.include_router(agent_router)
+
     from app.api.today import router as today_router  # noqa: E402
 
     app.include_router(today_router)

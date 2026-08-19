@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                🤖 PracticeLoop Agent (Hermes / Autonomous Tool Loop)
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Специализированный автономный ИИ-Ассистент практик с вызовом нативных инструментов и персонами.
+            </p>
+        </div>
+    </div>
+
+    <!-- Agent Persona Selector & Form -->
+    <form method="POST" action="/agent/chat/message" class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-4 shadow-md">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-[color:var(--text)]">Роль Ассистента:</span>
+                <select name="persona_role" class="px-3 py-1.5 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] font-semibold">
+                    <option value="keyholder" {% if persona_role == 'keyholder' or not persona_role %}selected{% endif %}>🔒 Ключник (Keyholder Control)</option>
+                    <option value="controller" {% if persona_role == 'controller' %}selected{% endif %}>👑 Ведущий / Верхний (Controller)</option>
+                    <option value="care_guide" {% if persona_role == 'care_guide' %}selected{% endif %}>🧴 Заботливый Гид (Aftercare Guide)</option>
+                    <option value="observer" {% if persona_role == 'observer' %}selected{% endif %}>👁️ Наблюдатель (Observant Expert)</option>
+                </select>
+            </div>
+            <span class="text-[10px] text-[color:var(--text-muted)] font-mono">Tools Enabled: get_active_session, generate_optin_task, trigger_aftercare, record_health</span>
+        </div>
+
+        <div class="relative">
+            <textarea name="prompt" rows="3" placeholder="Задайте вопрос или попросите агента выполнить действие (например: 'Проверь активную сессию', 'Подбери допустимую задачу', 'Запусти Aftercare')..." required class="w-full p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)] resize-none"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center">
+            <a href="/sessions/ambient" class="text-xs text-[color:var(--text-muted)] hover:underline inline-flex items-center gap-1">
+                {{ icon('session', 'w-4 h-4') }} Открыть Аудио-Эмбиент
+            </a>
+            <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md inline-flex items-center gap-2">
+                🚀 Отправить Агенту
+            </button>
+        </div>
+    </form>
+
+    <!-- Interactive Chat History & Tool Execution Log -->
+    {% if messages %}
+    <div class="space-y-4">
+        {% for msg in messages %}
+        <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-3 shadow">
+            <!-- User Prompt -->
+            <div class="flex items-start gap-3 border-b border-[color:var(--border)] pb-3">
+                <div class="w-7 h-7 rounded-lg bg-[color:var(--surface-soft)] flex items-center justify-center font-bold text-xs">
+                    👤
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-[color:var(--text-muted)]">Запрос Пользователя</span>
+                    <p class="text-xs text-[color:var(--text)] mt-0.5">{{ msg.user }}</p>
+                </div>
+            </div>
+
+            <!-- Executed Tools Badge Log -->
+            {% if msg.tools %}
+            <div class="space-y-2 pl-3 border-l-2 border-[color:var(--accent)] my-2">
+                <span class="text-[10px] uppercase font-bold text-[color:var(--accent)] tracking-wider">🛠️ Выполненные Инструменты (Tool Calls):</span>
+                {% for t in msg.tools %}
+                <div class="p-2 rounded-lg bg-[color:var(--surface-soft)] text-[11px] font-mono space-y-1">
+                    <div class="flex items-center justify-between text-[color:var(--text)] font-semibold">
+                        <span>▶ {{ t.tool }}()</span>
+                        <span class="text-emerald-400">✓ Completed</span>
+                    </div>
+                    <div class="text-[10px] text-[color:var(--text-muted)] truncate">Result: {{ t.result }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Agent Synthesis Reply -->
+            <div class="flex items-start gap-3 pt-1">
+                <div class="w-7 h-7 rounded-lg pl-accent-soft flex items-center justify-center font-bold text-xs text-[color:var(--accent)]">
+                    🤖
+                </div>
+                <div class="space-y-1 flex-1">
+                    <span class="text-[10px] uppercase font-bold text-[color:var(--accent)]">Ответ PracticeLoop Agent</span>
+                    <div class="text-xs text-[color:var(--text)] whitespace-pre-line leading-relaxed">
+                        {{ msg.reply }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
