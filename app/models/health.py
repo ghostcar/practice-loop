@@ -30,7 +30,24 @@ if TYPE_CHECKING:
 # mood / energy / sleep_quality / recovery — 1..5
 SCALE_1_5 = (1, 2, 3, 4, 5)
 # event_type события Cycle
-CYCLE_EVENT_TYPES = ("bleeding", "symptom", "state", "sleep", "energy", "libido", "skin", "test", "note")
+CYCLE_EVENT_TYPES = (
+    "bleeding",
+    "symptom",
+    "state",
+    "sleep",
+    "energy",
+    "libido",
+    "skin",
+    "test",
+    "hrt_intake",
+    "post_session_response",
+    "bbt",
+    "ovulation_test",
+    "pregnancy_test",
+    "note",
+)
+# profile_type универсального цикла/ритма
+CYCLE_PROFILE_TYPES = ("natural_menstrual", "hrt_emulated", "biorhythm_custom", "disabled")
 # contraception
 CONTRACEPTION_TYPES = ("none", "hormonal", "non_hormonal", "iud", "other")
 
@@ -51,6 +68,9 @@ class HealthState(Base):
     sleep_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
     sleep_quality: Mapped[int | None] = mapped_column(Integer, nullable=True)
     recovery: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    skin_sensitivity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    post_session_drop: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    hrt_taken: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # список симптомов (строки), напр. ["headache", "back_pain"]
     symptoms: Mapped[list | None] = mapped_column(JSON, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -107,8 +127,12 @@ class CycleSettings(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
     )
+    profile_type: Mapped[str] = mapped_column(String(30), default="natural_menstrual", nullable=False)
     cycle_length: Mapped[int] = mapped_column(Integer, default=28, nullable=False)
     period_length: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    emulated_cycle_length: Mapped[int] = mapped_column(Integer, default=28, nullable=False)
+    emulated_period_length: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    hrt_regimen: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # none | hormonal | non_hormonal | iud | other
     contraception: Mapped[str] = mapped_column(String(20), default="none", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -120,7 +144,7 @@ class CycleSettings(Base):
     user: Mapped[User] = relationship("User", lazy="selectin")
 
     def __repr__(self) -> str:
-        return f"<CycleSettings(user_id={self.user_id}, cycle={self.cycle_length})>"
+        return f"<CycleSettings(user_id={self.user_id}, profile={self.profile_type})>"
 
 
 class CycleEvent(Base):
@@ -133,10 +157,13 @@ class CycleEvent(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     event_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    # bleeding | symptom | state | sleep | energy | libido | skin | test | note
-    event_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    # для bleeding: "light"|"medium"|"heavy"; для state: "good"|"ok"|"bad"; для test: "+"/"-"
+    # bleeding | symptom | state | sleep | energy | libido | skin | test | hrt_intake | post_session_response | bbt
+    event_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    # значение/интенсивность
     value: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    bbt: Mapped[float | None] = mapped_column(Float, nullable=True)
+    session_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    post_session_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

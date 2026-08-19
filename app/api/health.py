@@ -318,6 +318,9 @@ async def save_state(
     sleep_hours: str = Form(default=""),
     sleep_quality: str = Form(default=""),
     recovery: str = Form(default=""),
+    skin_sensitivity: str = Form(default=""),
+    post_session_drop: str = Form(default=""),
+    hrt_taken: str = Form(default=""),
     symptoms: str = Form(default=""),
     notes: str = Form(default=""),
     user: User = Depends(get_current_user),
@@ -345,6 +348,9 @@ async def save_state(
     row.sleep_hours = sleep
     row.sleep_quality = _parse_scale(sleep_quality, "sleep_quality")
     row.recovery = _parse_scale(recovery, "recovery")
+    row.skin_sensitivity = _parse_scale(skin_sensitivity, "skin_sensitivity")
+    row.post_session_drop = post_session_drop.strip().lower() in {"1", "on", "true", "yes"}
+    row.hrt_taken = hrt_taken.strip().lower() in {"1", "on", "true", "yes"}
     row.symptoms = symptom_list
     row.notes = (notes or "").strip() or None
     await db.flush()
@@ -392,30 +398,25 @@ async def add_lab(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    name = name.strip()[:200]
-    if not name:
-        raise HTTPException(400, "Name is required")
     try:
-        d = date.fromisoformat(measured_at.strip())
         val = float(value)
-    except (ValueError, TypeError):
-        raise HTTPException(400, "Invalid measured_at or value") from None
-    rmin = rmax = None
+        mdate = date.fromisoformat(measured_at.strip())
+    except ValueError:
+        raise HTTPException(400, "Invalid value or measured_at") from None
+    rmin = None
+    rmax = None
     if ref_range.strip():
-        # accept "120 – 160", "120-160", "120 160"
-        parts = [p for p in ref_range.replace("–", "-").replace("−", "-").split("-") if p.strip()]
-        try:
-            if len(parts) == 1:
-                rmin = float(parts[0])
-            elif len(parts) == 2:
+        parts = [p.strip() for p in ref_range.replace("–", "-").split("-") if p.strip()]
+        if len(parts) == 2:
+            try:
                 rmin = float(parts[0])
                 rmax = float(parts[1])
-        except ValueError:
-            raise HTTPException(400, "Invalid reference range") from None
+            except ValueError:
+                pass
     rec = LabRecord(
         user_id=user.id,
-        name=name,
-        measured_at=d,
+        name=name.strip()[:200],
+        measured_at=mdate,
         value=val,
         unit=(unit or "").strip()[:50] or None,
         ref_min=rmin,

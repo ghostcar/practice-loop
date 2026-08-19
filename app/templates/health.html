@@ -85,8 +85,23 @@
                 <label class="text-xs pl-text-secondary">{{ t.health_recovery }} (1-5)
                     <input type="number" name="recovery" min="1" max="5" value="{{ today_state.recovery if today_state and today_state.recovery else '' }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
-                <label class="text-xs pl-text-secondary">{{ t.health_symptoms }}
-                    <input type="text" name="symptoms" value="{{ today_state.symptoms | join(', ') if today_state and today_state.symptoms else '' }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                <label class="text-xs pl-text-secondary">Чувствительность кожи (1-5)
+                    <input type="number" name="skin_sensitivity" min="1" max="5" value="{{ today_state.skin_sensitivity if today_state and today_state.skin_sensitivity else '' }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+
+                <div class="col-span-2 sm:col-span-3 flex items-center gap-4 py-1">
+                    <label class="text-xs pl-text-secondary inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="post_session_drop" value="1" {% if today_state and today_state.post_session_drop %}checked{% endif %} class="w-4 h-4 rounded">
+                        📉 Post-session Drop (Эмоциональный спад)
+                    </label>
+                    <label class="text-xs pl-text-secondary inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="hrt_taken" value="1" {% if today_state and today_state.hrt_taken %}checked{% endif %} class="w-4 h-4 rounded">
+                        💊 Приём ГТ / HRT на сегодня
+                    </label>
+                </div>
+
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.health_symptoms }}
+                    <input type="text" name="symptoms" placeholder="спазмы, синяки, усталость…" value="{{ today_state.symptoms | join(', ') if today_state and today_state.symptoms else '' }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.health_notes }}
                     <input type="text" name="notes" value="{{ today_state.notes if today_state and today_state.notes else '' }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
@@ -100,7 +115,9 @@
             <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('cycle', 'w-4 h-4') }}{{ t.health_cycle }}</h2>
             {% if cycle_phase and day_of_cycle %}
             <div class="flex items-center gap-3 flex-wrap">
-                <span class="pl-accent-soft px-3 py-1.5 rounded-lg text-sm font-medium">{{ t['health_phase_' + cycle_phase] }}</span>
+                <span class="pl-accent-soft px-3 py-1.5 rounded-lg text-sm font-medium">
+                    {% if cycle_phase == 'hrt_emulated' %}💊 Эмулируемый цикл ГТ{% else %}{{ t['health_phase_' + cycle_phase] if t.get('health_phase_' + cycle_phase) else cycle_phase }}{% endif %}
+                </span>
                 <span class="pl-text-secondary text-sm">{{ t.health_cycle_day }}: {{ day_of_cycle }}</span>
                 <span class="text-xs pl-text-muted">{{ icon('info', 'w-3.5 h-3.5') }}{{ t.health_phase_estimated_hint }}</span>
             </div>
@@ -112,6 +129,14 @@
                 <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('settings', 'w-3.5 h-3.5') }}{{ t.health_cycle_settings }}</summary>
                 <form action="/health/cycle/settings" method="post" class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)]">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">Тип профиля цикла / ритма
+                        <select name="profile_type" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            <option value="natural_menstrual" {% if cycle_settings and cycle_settings.profile_type == 'natural_menstrual' %}selected{% endif %}>🌸 Естественный менструальный цикл</option>
+                            <option value="hrt_emulated" {% if cycle_settings and cycle_settings.profile_type == 'hrt_emulated' %}selected{% endif %}>💊 Эмулируемый цикл ГТ (HRT / ZHT)</option>
+                            <option value="biorhythm_custom" {% if cycle_settings and cycle_settings.profile_type == 'biorhythm_custom' %}selected{% endif %}>⚡ Индивидуальный кастомный биоритм</option>
+                            <option value="disabled" {% if cycle_settings and cycle_settings.profile_type == 'disabled' %}selected{% endif %}>⚪ Отключен (без циклического прогноза)</option>
+                        </select>
+                    </label>
                     <label class="text-xs pl-text-secondary">{{ t.health_cycle_length }}
                         <input type="number" name="cycle_length" min="1" max="120" value="{{ cycle_settings.cycle_length if cycle_settings else 28 }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                     </label>
@@ -134,14 +159,14 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <label class="text-xs pl-text-secondary">{{ t.health_cycle_event_type }}
                         <select name="event_type" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
-                            {% for et in cycle_event_types %}<option value="{{ et }}">{{ t['health_event_' + et] }}</option>{% endfor %}
+                            {% for et in cycle_event_types %}<option value="{{ et }}">{{ t['health_event_' + et] if t.get('health_event_' + et) else et }}</option>{% endfor %}
                         </select>
                     </label>
                     <label class="text-xs pl-text-secondary">{{ t.health_cycle_event_date }}
                         <input type="date" name="event_date" value="{{ today.isoformat() }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                     </label>
                     <label class="text-xs pl-text-secondary">{{ t.health_cycle_event_value }}
-                        <input type="text" name="value" placeholder="light / medium / heavy / + / -" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        <input type="text" name="value" placeholder="обильность / приём ГТ / + / -" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                     </label>
                     <label class="text-xs pl-text-secondary">{{ t.health_notes }}
                         <input type="text" name="notes" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
@@ -156,7 +181,7 @@
                 <li class="py-2 flex items-center justify-between gap-2">
                     <span class="text-[color:var(--text)]">
                         {{ e.event_date }}
-                        <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ t['health_event_' + e.event_type] }}</span>
+                        <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ t['health_event_' + e.event_type] if t.get('health_event_' + e.event_type) else e.event_type }}</span>
                         {% if e.value %}<span class="pl-text-secondary"> · {{ e.value }}</span>{% endif %}
                         {% if e.notes %}<span class="pl-text-muted text-xs"> · {{ e.notes }}</span>{% endif %}
                     </span>
