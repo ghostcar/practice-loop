@@ -116,3 +116,4 @@
 | [ADR-110](ADR-110.md) | 2026-08-19 | Абстрактное имя пользователя вместо email в шапке | accepted |
 | [ADR-111](ADR-111.md) | 2026-08-19 | Гендерно-инклюзивный Дневник Здоровья и Календарь Ритмов | accepted |
 | [ADR-112](ADR-112.md) | 2026-08-19 | Шаг 20: Оперативный Дашборд и Плашка Предупреждений (Alert Bar & Quick Actions) | accepted |
+| [ADR-113](ADR-113.md) | 2026-08-19 | Шаг 21: Chastity Suite & Keyholder Dynamics (Chaster.app paradigm) | accepted |

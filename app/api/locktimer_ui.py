@@ -684,3 +684,54 @@ def _serialize_task_occ(occ: LockTaskOccurrence, t) -> dict:
         "occurrence_snapshot": occ.occurrence_snapshot,
         "final_reason_code": occ.final_reason_code,
     }
+
+
+@router.get("/chastity")
+async def chastity_alias_redirect(
+    current_user: User = Depends(get_current_user),
+):
+    """Alias for /chastity redirecting to /locktimer."""
+    return RedirectResponse(url="/locktimer", status_code=307)
+
+
+@router.post("/keyholder/action")
+async def keyholder_action(
+    request: Request,
+    session_id: uuid.UUID = Form(...),
+    action_kind: str = Form(default="extension_request"),
+    reason: str = Form(default=""),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """AI Keyholder Bot action handler (Step 21 — Chaster.app paradigm)."""
+    _check_owner_allowlist(current_user)
+    from app.llm.pipeline.keyholder import evaluate_keyholder_action
+    from app.services.llm_provider import get_active_llm_config
+
+    llm_config = await get_active_llm_config(db, current_user.id)
+    if not llm_config:
+        return RedirectResponse(url=f"/locktimer/sessions/{session_id}?error=no_llm_config", status_code=303)
+
+    locale = detect_locale(request, current_user.locale)
+    res = await evaluate_keyholder_action(
+        db=db,
+        user_id=current_user.id,
+        session_id=session_id,
+        action_kind=action_kind,
+        reason=reason,
+        llm_config=llm_config,
+        locale=locale,
+    )
+
+    if res.get("decision") == "grant_extension" and res.get("added_duration_minutes"):
+        stmt = select(LockSession).where(LockSession.id == session_id, LockSession.owner_id == current_user.id)
+        sess = (await db.execute(stmt)).scalar_one_or_none()
+        if sess and sess.effective_end_at:
+            added = timedelta(minutes=res["added_duration_minutes"])
+            sess.effective_end_at = sess.effective_end_at + added
+            await db.flush()
+
+    import urllib.parse
+
+    msg_enc = urllib.parse.quote(res.get("keyholder_message", "Action processed."))
+    return RedirectResponse(url=f"/locktimer/sessions/{session_id}?keyholder_msg={msg_enc}", status_code=303)

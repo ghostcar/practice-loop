@@ -94,6 +94,13 @@ class LockSession(Base):
     safety_stop_reason_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Chaster.app Chastity & Keyholder Suite (Step 21, migration 068)
+    chastity_device_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True
+    )
+    keyholder_type: Mapped[str] = mapped_column(String(30), default="llm_bot", nullable=False)
+    is_health_paused: Mapped[bool] = mapped_column(default=False, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
