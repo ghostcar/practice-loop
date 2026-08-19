@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                📸 Динамика и Сравнение Фото-Прогресса
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Хронологический таймлайн и сравнение (Before/After) изменений: ГТ (HRT), физические упражнения, восстановление кожи и тэги Chastity.
+            </p>
+        </div>
+        <a href="/media" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
+            ← Вернуться в Медиа-Сейф
+        </a>
+    </div>
+
+    <!-- Side-by-Side Comparison Container -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--text)] inline-flex items-center gap-2">
+            🔍 Интерактивное Сравнение Снимков (Before / After)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Image 1 Pick -->
+            <div class="space-y-2">
+                <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Снимок A (Before / До):</label>
+                <select id="compare-select-a" class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)]">
+                    <option value="">-- Выберите первичное фото --</option>
+                    {% for item in items %}
+                    <option value="{{ item.file_path }}" data-date="{{ item.created_at }}">{{ item.created_at.strftime('%Y-%m-%d') }} — {{ item.caption or item.original_filename or 'Photo' }}</option>
+                    {% endfor %}
+                </select>
+                <div class="aspect-square rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-center justify-center overflow-hidden">
+                    <img id="compare-img-a" src="" alt="Comparison A" class="hidden w-full h-full object-cover">
+                    <span id="compare-placeholder-a" class="text-xs text-[color:var(--text-muted)] italic">Выберите фото слева</span>
+                </div>
+            </div>
+
+            <!-- Image 2 Pick -->
+            <div class="space-y-2">
+                <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Снимок B (After / После):</label>
+                <select id="compare-select-b" class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)]">
+                    <option value="">-- Выберите последующее фото --</option>
+                    {% for item in items %}
+                    <option value="{{ item.file_path }}" data-date="{{ item.created_at }}">{{ item.created_at.strftime('%Y-%m-%d') }} — {{ item.caption or item.original_filename or 'Photo' }}</option>
+                    {% endfor %}
+                </select>
+                <div class="aspect-square rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-center justify-center overflow-hidden">
+                    <img id="compare-img-b" src="" alt="Comparison B" class="hidden w-full h-full object-cover">
+                    <span id="compare-placeholder-b" class="text-xs text-[color:var(--text-muted)] italic">Выберите фото справа</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Timeline Grid -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--text)]">
+            📅 Хронологическая Лента Снимков (Timeline)
+        </h2>
+        {% if items %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {% for item in items %}
+            <div class="group relative rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] overflow-hidden space-y-2 p-2">
+                <div class="aspect-square rounded-lg overflow-hidden bg-[color:var(--surface)] border border-[color:var(--border)]">
+                    <img src="{{ item.file_path }}" alt="Progress Photo" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                </div>
+                <div class="text-[10px] space-y-0.5">
+                    <p class="font-medium text-[color:var(--text)] truncate">{{ item.caption or item.original_filename or 'Photo' }}</p>
+                    <p class="text-[color:var(--text-muted)]">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-[color:var(--text-muted)] italic">Загруженные снимки пока отсутствуют.</p>
+        {% endif %}
+    </section>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const selA = document.getElementById('compare-select-a');
+  const selB = document.getElementById('compare-select-b');
+  const imgA = document.getElementById('compare-img-a');
+  const imgB = document.getElementById('compare-img-b');
+  const phA = document.getElementById('compare-placeholder-a');
+  const phB = document.getElementById('compare-placeholder-b');
+
+  selA.addEventListener('change', () => {
+    if (selA.value) {
+      imgA.src = selA.value;
+      imgA.classList.remove('hidden');
+      phA.classList.add('hidden');
+    } else {
+      imgA.classList.add('hidden');
+      phA.classList.remove('hidden');
+    }
+  });
+
+  selB.addEventListener('change', () => {
+    if (selB.value) {
+      imgB.src = selB.value;
+      imgB.classList.remove('hidden');
+      phB.classList.add('hidden');
+    } else {
+      imgB.classList.add('hidden');
+      phB.classList.remove('hidden');
+    }
+  });
+});
+</script>
+{% endblock %}

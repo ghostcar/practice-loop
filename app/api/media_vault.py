@@ -145,3 +145,68 @@ async def media_vault_upload(
     db.add(asset)
     await db.flush()
     return RedirectResponse(url="/media", status_code=303)
+
+
+@router.get("/media/progress", response_class=HTMLResponse)
+async def media_progress_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Photo progress timeline & side-by-side comparison workbench (Step 28)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    stmt = (
+        select(MediaAsset)
+        .where(MediaAsset.owner_id == user.id, MediaAsset.state != "archived")
+        .order_by(MediaAsset.created_at.desc())
+    )
+    items = (await db.execute(stmt)).scalars().all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="media_progress.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "media",
+            "items": items,
+        },
+    )
+
+
+json_router = APIRouter(prefix="/api/v2/media", tags=["media-verify-llm"])
+
+
+@json_router.post("/verify-llm")
+async def json_verify_photo_llm(
+    media_id: uuid.UUID = Form(...),
+    verification_type: str = Form(default="code_match"),
+    expected_details: str = Form(default="Chastity seal tag verification"),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """LLM Photo Verification Engine (AI Controller / Keyholder / Top — Step 28)."""
+    from app.llm.pipeline.photo_verifier import verify_photo_with_llm
+    from app.services.llm_provider import get_active_llm_config
+
+    llm_config = await get_active_llm_config(db, user.id)
+    if not llm_config:
+        from fastapi import HTTPException
+        raise HTTPException(400, "LLM provider config required for AI Photo Verification")
+
+    res = await verify_photo_with_llm(
+        db=db,
+        user_id=user.id,
+        media_id=media_id,
+        verification_type=verification_type,
+        expected_details=expected_details,
+        llm_config=llm_config,
+        locale=user.locale or "ru",
+    )
+    return res

@@ -310,8 +310,10 @@ if composition.tracker_active:
     ):
         app.include_router(_router)
 
+    from app.api.media_vault import json_router as media_vault_json_router  # noqa: E402
     from app.api.references.locations import page_router as locations_page_router  # noqa: E402
     app.include_router(locations_page_router)
+    app.include_router(media_vault_json_router)
 
     if composition.medication_enabled:
         app.include_router(medication_router)

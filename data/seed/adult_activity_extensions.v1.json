@@ -1,0 +1,273 @@
+{
+  "schema_version": "adult-activity-extensions/v1alpha1",
+  "import_allowed": true,
+  "manifest_status": "owner_reviewed",
+  "promotion_target": "entities",
+  "note": "ADR-119 extension: humiliation/objectification, service, psychological control and clothing-fetish cards derived from the additional-titles bank. Each card's `rules` are lowercase substrings used to attach matching additional titles as alternate_names and source_refs.",
+  "cards": [
+    {
+      "slug": "forced-mantras",
+      "title": {"ru": "Принудительные мантры (forced mantras)", "en": "Forced mantras"},
+      "summary": {"ru": "Повторение заданных мантр и аффирмаций по согласованному сценарию.", "en": "Repeating assigned mantras and affirmations on an agreed script."},
+      "category": "humiliation_objectification", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "safeword_check"],
+      "rules": ["forced mantras", "mantras / affirmations"]
+    },
+    {
+      "slug": "objectification-language",
+      "title": {"ru": "Вербальная объективация (objectification)", "en": "Objectification language"},
+      "summary": {"ru": "Согласованное использование объективирующего языка по заранее оговорённым границам.", "en": "Agreed use of objectifying language within pre-negotiated limits."},
+      "category": "humiliation_objectification", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "safeword_check"],
+      "rules": ["objectification language"]
+    },
+    {
+      "slug": "body-writing",
+      "title": {"ru": "Надписи на теле (body writing)", "en": "Body writing"},
+      "summary": {"ru": "Нанесение временных надписей и пометок на тело по согласованным зонам.", "en": "Temporary writing and marking on agreed body zones."},
+      "category": "humiliation_objectification", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "skin_check"],
+      "rules": ["body writing"]
+    },
+    {
+      "slug": "ignoring-object-treatment",
+      "title": {"ru": "Игнорирование (object treatment)", "en": "Ignoring / object treatment"},
+      "summary": {"ru": "Согласованное обращение с участником как с предметом в заданных рамках.", "en": "Agreed treatment of a participant as an object within set bounds."},
+      "category": "humiliation_objectification", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "safeword_check"],
+      "rules": ["ignoring / object", "object treatment"]
+    },
+    {
+      "slug": "forced-comparison",
+      "title": {"ru": "Принудительное сравнение (forced comparison)", "en": "Forced comparison / ranking"},
+      "summary": {"ru": "Согласованное сравнение и ранжирование в рамках деградационного сценария.", "en": "Agreed comparison and ranking within a degradation scenario."},
+      "category": "humiliation_objectification", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "safeword_check"],
+      "rules": ["forced comparison", "ranking"]
+    },
+    {
+      "slug": "public-exposure-simulation",
+      "title": {"ru": "Публичное обнажение (приватная симуляция)", "en": "Public-style exposure (private simulation)"},
+      "summary": {"ru": "Приватная симуляция публичного обнажения без реальной публики.", "en": "Private simulation of public exposure, never with a real audience."},
+      "category": "humiliation_objectification", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "no_public_exposure", "safeword_check"],
+      "rules": ["public-style exposure", "public-style"]
+    },
+    {
+      "slug": "cum-humiliation-marker",
+      "title": {"ru": "Унижение спермой/жидкостью (cum marker)", "en": "Cum / fluid as humiliation marker"},
+      "summary": {"ru": "Использование жидкости как согласованного маркера унижения.", "en": "Using fluid as an agreed humiliation marker."},
+      "category": "humiliation_objectification", "content_kind": "reference", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "humiliation_prenegotiated", "biohazard_review"],
+      "rules": ["cum / fluid", "humiliation marker"]
+    },
+    {
+      "slug": "cleaning-on-knees",
+      "title": {"ru": "Уборка на коленях", "en": "Cleaning on knees"},
+      "summary": {"ru": "Согласованная уборка на коленях как сервисный ритуал.", "en": "Agreed kneeling cleaning as a service ritual."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated", "joint_range_limit"],
+      "rules": ["cleaning on knees"]
+    },
+    {
+      "slug": "serving-in-full-gear",
+      "title": {"ru": "Сервис в полной экипировке", "en": "Serving in full gear"},
+      "summary": {"ru": "Обслуживание в полной согласованной экипировке.", "en": "Serving while in a full agreed outfit or gear."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated", "combination_compatibility_review"],
+      "rules": ["serving in full gear"]
+    },
+    {
+      "slug": "body-service-food-drink",
+      "title": {"ru": "Сервис еды/напитков с тела", "en": "Food / drink service from body"},
+      "summary": {"ru": "Подача еды и напитков с тела по согласованному сценарию.", "en": "Serving food and drink from the body on an agreed script."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated", "hygiene_review"],
+      "rules": ["food / drink service", "service from body"]
+    },
+    {
+      "slug": "human-furniture",
+      "title": {"ru": "Человек-мебель (human furniture)", "en": "Ashtray / human furniture"},
+      "summary": {"ru": "Использование участника как мебели/пепельницы в согласованных рамках.", "en": "Using a participant as furniture or an ashtray within agreed bounds."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated", "position_mobility_review", "safeword_check"],
+      "rules": ["human furniture", "ashtray"]
+    },
+    {
+      "slug": "boot-worship",
+      "title": {"ru": "Поклонение обуви (boot worship)", "en": "Boot / shoe worship"},
+      "summary": {"ru": "Поклонение и чистка обуви по согласованному ритуалу.", "en": "Worshipping and cleaning boots/shoes as an agreed ritual."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated"],
+      "rules": ["boot / shoe worship", "shoe worship"]
+    },
+    {
+      "slug": "inspection-cleaning-service",
+      "title": {"ru": "Осмотр и чистка предметов Доминанта", "en": "Inspection & cleaning service"},
+      "summary": {"ru": "Подробный осмотр и чистка предметов по согласованному протоколу.", "en": "Detailed inspection and cleaning of agreed items."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated"],
+      "rules": ["inspection & cleaning", "cleaning of dominants"]
+    },
+    {
+      "slug": "endurance-service",
+      "title": {"ru": "Сервис на выносливость", "en": "Endurance service under load"},
+      "summary": {"ru": "Длительный сервис под нагрузкой без целевой выносливости, с паузами.", "en": "Extended service under load without an endurance target, with breaks."},
+      "category": "service_protocol", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated", "no_endurance_target", "repeat_checkin"],
+      "rules": ["endurance service"]
+    },
+    {
+      "slug": "post-scene-cleanup-service",
+      "title": {"ru": "Уборка после сцены (cleanup service)", "en": "Post-scene cleanup service"},
+      "summary": {"ru": "Согласованная уборка после сцены, включая гигиенические процедуры.", "en": "Agreed post-scene cleanup, including hygiene routines."},
+      "category": "service_protocol", "content_kind": "aftercare", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "service_prenegotiated", "hygiene_review"],
+      "rules": ["post-scat / post-watersports", "cleanup service"]
+    },
+    {
+      "slug": "permission-protocol",
+      "title": {"ru": "Протокол разрешений (permission-based)", "en": "Permission-based behaviour"},
+      "summary": {"ru": "Поведение по согласованному протоколу разрешений.", "en": "Behaviour governed by an agreed permission protocol."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "safeword_check"],
+      "rules": ["permission-based"]
+    },
+    {
+      "slug": "orgasm-control-denial",
+      "title": {"ru": "Контроль оргазма / отказ (orgasm denial)", "en": "Denial of pleasure / orgasm control"},
+      "summary": {"ru": "Согласованный контроль или отказ в оргазме без лишения базовых потребностей.", "en": "Agreed orgasm control or denial, never denying basic needs."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "safeword_check", "no_basic_need_denial"],
+      "rules": ["denial of pleasure", "orgasm control"]
+    },
+    {
+      "slug": "forced-waiting",
+      "title": {"ru": "Вынужденное ожидание (anticipation)", "en": "Forced waiting / anticipation"},
+      "summary": {"ru": "Согласованное ожидание и нарастание предвкушения в заданных рамках.", "en": "Agreed waiting and anticipation build within set bounds."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated"],
+      "rules": ["forced waiting", "anticipation"]
+    },
+    {
+      "slug": "rule-set-discipline",
+      "title": {"ru": "Набор правил с наказаниями", "en": "Rule set with punishments"},
+      "summary": {"ru": "Согласованный набор правил и заранее оговорённых последствий.", "en": "Agreed rule set with pre-negotiated consequences."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "no_automatic_escalation"],
+      "rules": ["rule set", "punishments"]
+    },
+    {
+      "slug": "hypnosis-trance",
+      "title": {"ru": "Гипноз / транс (hypnosis)", "en": "Hypnosis / trance protocols"},
+      "summary": {"ru": "Согласованные гипнотические и трансовые практики с безопасным выходом.", "en": "Agreed hypnosis/trance practices with a safe exit."},
+      "category": "psychological_control", "content_kind": "reference", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "hypnosis_safety_review", "safeword_check", "no_executable_instructions"],
+      "rules": ["hypnosis", "trance"]
+    },
+    {
+      "slug": "task-protocol",
+      "title": {"ru": "Очереди задач с отчётом (task protocol)", "en": "Task queues with reporting"},
+      "summary": {"ru": "Согласованные очереди задач с отчётом о выполнении.", "en": "Agreed task queues with completion reporting."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated"],
+      "rules": ["task queues", "reporting"]
+    },
+    {
+      "slug": "mindset-reinforcement",
+      "title": {"ru": "Закрепление мышления (mantras + posture)", "en": "Mindset reinforcement"},
+      "summary": {"ru": "Закрепление заданного мышления через мантры и позу.", "en": "Reinforcing an assigned mindset through mantras and posture."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "safeword_check"],
+      "rules": ["mindset reinforcement"]
+    },
+    {
+      "slug": "fear-consequence-framing",
+      "title": {"ru": "Фрейминг страха/последствий", "en": "Fear / consequence framing"},
+      "summary": {"ru": "Согласованное использование страха и последствий в заданных рамках.", "en": "Agreed use of fear and consequence framing within set bounds."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "safeword_check", "no_automatic_escalation"],
+      "rules": ["fear / consequence"]
+    },
+    {
+      "slug": "reward-punishment-protocol",
+      "title": {"ru": "Баланс наград и наказаний", "en": "Reward / punishment balance tracking"},
+      "summary": {"ru": "Согласованный учёт баланса наград и наказаний.", "en": "Agreed tracking of the reward/punishment balance."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated"],
+      "rules": ["reward / punishment"]
+    },
+    {
+      "slug": "full-day-protocol",
+      "title": {"ru": "Протокол на весь день", "en": "Full-day protocol"},
+      "summary": {"ru": "Согласованный протокол поведения на весь день с паузами и чек-инами.", "en": "Agreed full-day protocol with breaks and check-ins."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "repeat_checkin", "no_unattended_escalation"],
+      "rules": ["full-day protocol"]
+    },
+    {
+      "slug": "checkpoint-long-event",
+      "title": {"ru": "Длинное событие с чекпоинтами", "en": "Checkpoint-based long event"},
+      "summary": {"ru": "Длинное событие, разбитое на согласованные чекпоинты с проверками.", "en": "Long event split into agreed checkpoints with reviews."},
+      "category": "psychological_control", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "repeat_checkin"],
+      "rules": ["checkpoint-based long", "checkpoint"]
+    },
+    {
+      "slug": "pantyhose-layering",
+      "title": {"ru": "Многослойные колготки (pantyhose layering)", "en": "Multiple layers of pantyhose"},
+      "summary": {"ru": "Ношение нескольких слоёв колготок как фетиш-одежда.", "en": "Wearing multiple pantyhose layers as fetish clothing."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "skin_check", "circulation_check"],
+      "rules": ["multiple layers of pantyhose", "layers of pantyhose"]
+    },
+    {
+      "slug": "latex-rubber-catsuit",
+      "title": {"ru": "Латексный/резиновый костюм (catsuit)", "en": "Latex / rubber catsuit"},
+      "summary": {"ru": "Ношение латексного или резинового костюма с контролем состояния.", "en": "Wearing a latex or rubber catsuit with state checks."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "skin_check", "circulation_check", "airway_unobstructed", "quick_release_check"],
+      "rules": ["latex / rubber catsuit", "rubber catsuit"]
+    },
+    {
+      "slug": "high-heel-ballet-boot",
+      "title": {"ru": "Туфли на каблуке / балетные боты", "en": "High-heel / ballet boot wearing"},
+      "summary": {"ru": "Ношение высоких каблуков или балетных ботов с контролем стоп.", "en": "Wearing high heels or ballet boots with foot checks."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "circulation_check", "joint_range_limit"],
+      "rules": ["high-heel", "ballet boot"]
+    },
+    {
+      "slug": "forced-feminization",
+      "title": {"ru": "Принудительная феминизация (forced feminization)", "en": "Forced feminine / clothing set"},
+      "summary": {"ru": "Согласованная феминизация через одежду и образ.", "en": "Agreed feminization through clothing and presentation."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "protocol_prenegotiated", "safeword_check"],
+      "rules": ["forced feminine", "feminization"]
+    },
+    {
+      "slug": "public-wear-simulation",
+      "title": {"ru": "Симуляция ношения на публике", "en": "Public-wear simulation (private)"},
+      "summary": {"ru": "Приватная симуляция ношения фетиш-одежды на публике.", "en": "Private simulation of wearing fetish clothing in public."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "no_public_exposure"],
+      "rules": ["public-wear simulation"]
+    },
+    {
+      "slug": "fetish-clothing-restraint",
+      "title": {"ru": "Фетиш-одежда + ограничения", "en": "Fetish clothing + restrictions"},
+      "summary": {"ru": "Сочетание фетиш-одежды с лёгкими ограничениями.", "en": "Fetish clothing combined with light restrictions."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "elevated",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "quick_release_check", "combination_compatibility_review", "one_change_at_a_time"],
+      "rules": ["fetish clothing"]
+    },
+    {
+      "slug": "compression-shapewear",
+      "title": {"ru": "Компрессионная одежда (shapewear)", "en": "Compression wear / shapewear"},
+      "summary": {"ru": "Ношение компрессионной одежды с контролем кровообращения.", "en": "Wearing compression garments with circulation checks."},
+      "category": "clothing_fetish", "content_kind": "activity", "risk_level": "low",
+      "required_controls": ["adult_explicit_opt_in", "session_checkin", "stop_signal_check", "no_stop_penalty", "aftercare_option", "skin_check", "circulation_check"],
+      "rules": ["compression wear", "shapewear"]
+    }
+  ]
+}
