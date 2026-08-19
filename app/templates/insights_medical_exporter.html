@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                📄 Селективный Врачебный Отчёт & Права Приватности
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Экспорт медицинских данных для врачей и специалистов с возможностью точечного исключения препаратов и курсов.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/insights" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
+                ← Назад к Инсайтам
+            </a>
+        </div>
+    </div>
+
+    <!-- Interactive Exclusion Filter Form -->
+    <form method="POST" action="/insights/export-medical/generate" class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-5 shadow-md">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Medication Exclusions -->
+            <div class="space-y-3">
+                <h3 class="font-bold text-xs text-[color:var(--text)] flex items-center justify-between">
+                    <span>💊 Препараты в Отчёте:</span>
+                    <span class="text-[10px] text-[color:var(--text-muted)] font-normal">Снимите галочки для скрытия</span>
+                </h3>
+                <div class="space-y-2 max-h-48 overflow-y-auto p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+                    {% if medications %}
+                        {% for med in medications %}
+                        <label class="flex items-center justify-between text-xs cursor-pointer p-1.5 hover:bg-[color:var(--surface)] rounded-lg">
+                            <span class="font-medium text-[color:var(--text)]">{{ med.name }} <span class="text-[10px] text-[color:var(--text-muted)]">({{ med.dosage or 'доза не указана' }})</span></span>
+                            <input type="checkbox" name="include_meds" value="{{ med.id }}" checked class="rounded accent-[color:var(--accent)] w-4 h-4">
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-xs text-[color:var(--text-muted)]">Нет сохранённых медикаментов.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Care Course Exclusions -->
+            <div class="space-y-3">
+                <h3 class="font-bold text-xs text-[color:var(--text)] flex items-center justify-between">
+                    <span>🧴 Курсы Ухода & Процедуры:</span>
+                    <span class="text-[10px] text-[color:var(--text-muted)] font-normal">Снимите галочки для скрытия</span>
+                </h3>
+                <div class="space-y-2 max-h-48 overflow-y-auto p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+                    {% if courses %}
+                        {% for course in courses %}
+                        <label class="flex items-center justify-between text-xs cursor-pointer p-1.5 hover:bg-[color:var(--surface)] rounded-lg">
+                            <span class="font-medium text-[color:var(--text)]">{{ course.title }}</span>
+                            <input type="checkbox" name="include_courses" value="{{ course.id }}" checked class="rounded accent-[color:var(--accent)] w-4 h-4">
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-xs text-[color:var(--text-muted)]">Нет активных курсов ухода.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy Settings -->
+        <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="anonymize" value="true" class="rounded accent-[color:var(--accent)] w-4 h-4">
+                <span class="font-semibold text-[color:var(--text)]">Обезличить отчёт (скрыть e-mail и личные данные)</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <span class="text-[color:var(--text-muted)]">Период:</span>
+                <select name="period_days" class="px-3 py-1 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)]">
+                    <option value="30" selected>Последние 30 дней</option>
+                    <option value="90">Последние 90 дней</option>
+                    <option value="365">За год</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md inline-flex items-center gap-2">
+                📄 Сформировать Клинический Отчёт
+            </button>
+        </div>
+    </form>
+
+    <!-- Rendered Report Result -->
+    {% if report %}
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-6 shadow-lg bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans">
+        <div class="flex justify-between items-start border-b border-zinc-200 dark:border-zinc-800 pb-4">
+            <div>
+                <h2 class="text-xl font-bold">Клинический Отчёт Наблюдения</h2>
+                <p class="text-xs text-zinc-500">Пациент: {{ report.patient_name }} | Сформирован: {{ report.generated_date }}</p>
+            </div>
+            <button type="button" onclick="window.print()" class="px-3.5 py-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-xs font-semibold hover:bg-zinc-300">
+                🖨️ Печать / Сохранить PDF
+            </button>
+        </div>
+
+        <!-- Included Medications Table -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Включённые Препараты:</h3>
+            <table class="w-full text-left text-xs border-collapse border border-zinc-200 dark:border-zinc-800">
+                <thead class="bg-zinc-100 dark:bg-zinc-900">
+                    <tr>
+                        <th class="p-2 border border-zinc-200 dark:border-zinc-800">Препарат</th>
+                        <th class="p-2 border border-zinc-200 dark:border-zinc-800">Дозировка</th>
+                        <th class="p-2 border border-zinc-200 dark:border-zinc-800">Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in report.medications %}
+                    <tr>
+                        <td class="p-2 border border-zinc-200 dark:border-zinc-800 font-semibold">{{ m.name }}</td>
+                        <td class="p-2 border border-zinc-200 dark:border-zinc-800">{{ m.dosage or 'Не указана' }}</td>
+                        <td class="p-2 border border-zinc-200 dark:border-zinc-800 text-emerald-600 font-medium">Активен</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="p-2 text-center text-zinc-400">Препараты не выбраны или отсутствуют.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Included Courses -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Курсы Ухода и Процедуры:</h3>
+            <ul class="list-disc list-inside text-xs space-y-1">
+                {% for c in report.courses %}
+                <li><span class="font-semibold">{{ c.title }}</span></li>
+                {% else %}
+                <li class="text-zinc-400">Курсы не выбраны.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

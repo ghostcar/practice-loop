@@ -248,20 +248,115 @@ async def run_insights(
 
 
 @router.post("/insights/runs/{run_id}/delete")
-async def delete_run(
-    request: Request,
+async def delete_run_page(
     run_id: uuid.UUID,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """Delete a past run + its findings."""
     run = (
         await db.execute(select(InsightRun).where(InsightRun.id == run_id, InsightRun.user_id == user.id))
     ).scalar_one_or_none()
-    if run is None:
-        raise HTTPException(404, "Insight run not found")
-    await db.delete(run)  # findings — CASCADE
-    await db.flush()
+    if run is not None:
+        await db.delete(run)
+        await db.flush()
     return RedirectResponse(url="/insights", status_code=303)
+
+
+@router.get("/insights/export-medical", response_class=HTMLResponse)
+async def export_medical_report_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Selective Medical & Care Report Exporter (Step 42 / ADR-121)."""
+    from app.models.care import CareCourse
+    from app.models.medication import Medication
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    medications = (
+        await db.execute(select(Medication).where(Medication.user_id == user.id))
+    ).scalars().all()
+
+    courses = (
+        await db.execute(select(CareCourse).where(CareCourse.user_id == user.id))
+    ).scalars().all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="insights_medical_exporter.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "insights",
+            "medications": medications,
+            "courses": courses,
+            "report": None,
+        },
+    )
+
+
+@router.post("/insights/export-medical/generate", response_class=HTMLResponse)
+async def export_medical_report_generate(
+    request: Request,
+    include_meds: list[str] = Form(default=[]),
+    include_courses: list[str] = Form(default=[]),
+    anonymize: bool = Form(default=False),
+    period_days: int = Form(default=30),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generates filtered medical report based on selected privacy inclusions/exclusions."""
+    from app.models.care import CareCourse
+    from app.models.medication import Medication
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    all_meds = (
+        await db.execute(select(Medication).where(Medication.user_id == user.id))
+    ).scalars().all()
+
+    all_courses = (
+        await db.execute(select(CareCourse).where(CareCourse.user_id == user.id))
+    ).scalars().all()
+
+    filtered_meds = [m for m in all_meds if str(m.id) in include_meds]
+    filtered_courses = [c for c in all_courses if str(c.id) in include_courses]
+
+    today_str = date.today().strftime("%Y-%m-%d")
+    patient_name = "Анонимный Пациент (Private Record)" if anonymize else (user.email or "Пользователь")
+
+    report_data = {
+        "patient_name": patient_name,
+        "generated_date": today_str,
+        "medications": filtered_meds,
+        "courses": filtered_courses,
+        "period_days": period_days,
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="insights_medical_exporter.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "insights",
+            "medications": all_meds,
+            "courses": all_courses,
+            "report": report_data,
+        },
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
