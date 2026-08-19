@@ -69,8 +69,39 @@ async def generate_daily_plan(
     is_abstract = getattr(llm_config, "llm_mode", "full") == "abstract"
     context_text = format_context_abstract(context) if is_abstract else format_context_for_prompt(context)
 
+    # Equipment from Inventory & Health Recovery Status (Step 22)
+    from app.models.health import HealthState
+    from app.models.inventory import InventoryItem
+
+    inventory_items = (
+        (await db.execute(select(InventoryItem).where(InventoryItem.user_id == user_id))).scalars().all()
+    )
+    equip_names = [f"{i.name} ({i.category})" for i in inventory_items]
+    equip_str = ", ".join(equip_names) if equip_names else "Bodyweight / None"
+
+    stmt = select(HealthState).where(HealthState.user_id == user_id, HealthState.event_date == target_date)
+    health_state = (await db.execute(stmt)).scalar_one_or_none()
+
+    health_note = "Normal recovery"
+    is_health_adapted = False
+    if health_state:
+        if health_state.post_session_drop or (health_state.recovery and health_state.recovery <= 2):
+            health_note = (
+                "LOW RECOVERY / POST-SESSION DROP ACTIVE! Adapt plan to light stretching, "
+                "mobility, and gentle restoration."
+            )
+            is_health_adapted = True
+        elif health_state.skin_sensitivity and health_state.skin_sensitivity >= 4:
+            health_note = "HIGH SKIN SENSITIVITY! Avoid harsh friction or tight straps."
+            is_health_adapted = True
+
     system_prompt = PLAN_DAY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
-    user_message = f"Context:\n{context_text}\n\nGenerate a daily training plan for {target_date}."
+    user_message = (
+        f"Context:\n{context_text}\n"
+        f"Available Equipment: {equip_str}\n"
+        f"Health Condition Note: {health_note}\n\n"
+        f"Generate a daily training plan for {target_date}."
+    )
 
     result = await client.call_llm(
         config=llm_config,
@@ -133,6 +164,9 @@ async def generate_daily_plan(
         name=(name or "").strip()[:200] or None,
         status="active",
         plan_summary=plan_summary,
+        equipment_item_ids=[str(i.id) for i in inventory_items],
+        adapted_for_health=is_health_adapted,
+        discipline_notes=f"Health note: {health_note}" if is_health_adapted else None,
     )
     db.add(training_day)
     await db.flush()

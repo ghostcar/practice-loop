@@ -32,6 +32,12 @@ class TrainingDay(Base):
     plan_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     analysis_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     next_day_suggestion: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # JSON — LLM's plan for tomorrow
+
+    # Step 22: Equipment & Health-adaptive discipline (migration 069)
+    equipment_item_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    discipline_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    adapted_for_health: Mapped[bool] = mapped_column(default=False, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
