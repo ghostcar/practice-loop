@@ -123,3 +123,5 @@
 | [ADR-117](ADR-117.md) | 2026-08-19 | Шаги 25-26: Интерактивный Визуальный Конструктор Схем и Единый Кросс-Модульный ИИ-Агент | accepted |
 | [ADR-118](ADR-118.md) | 2026-08-19 | Расширение Telegram-бота v3 (Chastity Keyholder, Aftercare Protocol & Medical Report) | accepted |
 | [ADR-119](ADR-119.md) | 2026-08-19 | P1g: полный каталог 18+ (принудительное продвижение всех 163 записей) | accepted |
+| [ADR-122](ADR-122.md) | 2026-08-19 | Отложенный Бэклог Социальных и Межпользовательских Фич (Deferred Social Scope) | accepted |
+| [ADR-123](ADR-123.md) | 2026-08-19 | Стратегическое Видение: Специализированный ИИ-Ассистент PracticeLoop (Autonomous Practice Agent) | accepted |
