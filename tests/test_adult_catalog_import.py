@@ -28,12 +28,12 @@ MANIFEST_DIR = Path("data/seed")
 @pytest.fixture(scope="module")
 def plan():
     foundation = load_manifest(MANIFEST_DIR / "adult_activity_foundation.v1.json")
-    candidates = load_manifest(MANIFEST_DIR / "adult_activity_editorial_candidates.v1.json")
-    return build_plan(foundation, candidates)
+    full_catalog = load_manifest(MANIFEST_DIR / "adult_activity_full_catalog.v1.json")
+    return build_plan(foundation, full_catalog)
 
 
 def test_plan_imports_everything(plan):
-    assert len(plan["entities"]) == 41  # 7 foundation + 34 candidates
+    assert len(plan["entities"]) == 161  # 7 foundation + 154 promoted cards
 
 
 def test_plan_is_valid(plan):
@@ -42,18 +42,18 @@ def test_plan_is_valid(plan):
 
 def test_plan_gate_is_open(plan):
     assert plan["gate"]["foundation_import_allowed"] is True
-    assert plan["gate"]["candidates_import_allowed"] is True
+    assert plan["gate"]["full_catalog_import_allowed"] is True
 
 
 def test_plan_preserves_automation_and_risk(plan):
     foundation = [e for e in plan["entities"] if e["safety_contract"]["kind"] == "foundation"]
-    candidates = [e for e in plan["entities"] if e["safety_contract"]["kind"] == "editorial_candidate"]
+    promoted = [e for e in plan["entities"] if e["safety_contract"]["kind"] == "editorial_candidate"]
     # owner decision: foundation keeps its manifest automation (7 low auto=true),
-    # all 34 candidates stay manual.
+    # all 154 promoted cards stay manual.
     assert len(foundation) == 7
     assert all(e["automation_allowed"] for e in foundation)
-    assert len(candidates) == 34
-    assert all(not e["automation_allowed"] for e in candidates)
+    assert len(promoted) == 154
+    assert all(not e["automation_allowed"] for e in promoted)
     assert all(e["risk_level"] in {"low", "elevated"} for e in plan["entities"])
 
 
@@ -95,15 +95,15 @@ def test_candidate_contract_uses_safe_defaults():
 def test_render_plan_is_read_only_summary(plan):
     rendered = render_plan(plan)
 
-    assert "entities=41" in rendered
+    assert "entities=161" in rendered
     assert "content_status=approved" in rendered
     assert "gate.foundation_import_allowed=True" in rendered
 
 
 def test_validate_rejects_elevated_automation():
     foundation = load_manifest(MANIFEST_DIR / "adult_activity_foundation.v1.json")
-    candidates = load_manifest(MANIFEST_DIR / "adult_activity_editorial_candidates.v1.json")
-    plan = build_plan(foundation, candidates)
+    full_catalog = load_manifest(MANIFEST_DIR / "adult_activity_full_catalog.v1.json")
+    plan = build_plan(foundation, full_catalog)
     # flip an elevated candidate to automation on
     elevated = next(e for e in plan["entities"] if e["risk_level"] == "elevated")
     elevated["automation_allowed"] = True
@@ -119,8 +119,8 @@ async def test_apply_plan_slug_idempotent_roundtrip(db_session: AsyncSession):
     from app.models.entity import Entity
 
     foundation = load_manifest(MANIFEST_DIR / "adult_activity_foundation.v1.json")
-    candidates = load_manifest(MANIFEST_DIR / "adult_activity_editorial_candidates.v1.json")
-    plan = build_plan(foundation, candidates)
+    full_catalog = load_manifest(MANIFEST_DIR / "adult_activity_full_catalog.v1.json")
+    plan = build_plan(foundation, full_catalog)
 
     # Simulate the gated apply against the test session (import only 2 rows to keep
     # the fixture light, then re-apply to prove idempotency).

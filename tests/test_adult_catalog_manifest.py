@@ -32,6 +32,7 @@ from tools.adult_catalog_manifest import (
 MANIFEST_PATH = Path("data/seed/adult_activity_foundation.v1.json")
 SOURCE_INVENTORY_PATH = Path("data/seed/adult_activity_source_inventory.v1.json")
 EDITORIAL_PATH = Path("data/seed/adult_activity_editorial_candidates.v1.json")
+FULL_CATALOG_PATH = Path("data/seed/adult_activity_full_catalog.v1.json")
 FLUID_TOILET_REVIEW_PATH = Path("data/seed/adult_activity_fluid_toilet_review.v1.json")
 BREATH_REVIEW_PATH = Path("data/seed/adult_activity_breath_review.v1.json")
 SEXUAL_TECHNIQUE_REVIEW_PATH = Path("data/seed/adult_activity_sexual_technique_review.v1.json")
@@ -119,6 +120,18 @@ def test_editorial_preview_reports_candidate_mix() -> None:
 
     assert "cards=34" in result
     assert "elevated:17" in result
+
+
+def test_full_catalog_covers_every_source_record() -> None:
+    source = load_manifest(SOURCE_INVENTORY_PATH)
+    full_catalog = load_manifest(FULL_CATALOG_PATH)
+    source_ids = {record["source_id"] for record in source["records"]}
+
+    assert lint_editorial_candidates(full_catalog, source_ids) == []
+    assert full_catalog["import_allowed"] is True
+    covered = {ref for card in full_catalog["cards"] for ref in card["source_refs"]}
+    assert covered == source_ids  # ADR-111: every prepared record is promoted
+    assert all(card["automation_allowed"] is False for card in full_catalog["cards"])
 
 
 def test_fluid_toilet_review_retains_and_covers_all_source_records() -> None:

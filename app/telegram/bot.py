@@ -1435,6 +1435,179 @@ async def send_telegram_notification(chat_id: int, text: str, parse_mode: str = 
         logger.warning(f"Failed to send TG notification to chat {chat_id}", exc_info=True)
         return False
 
+    # ── Telegram Bot v3: Keyholder, Aftercare & Report ───────────────
+
+    @main_router.message(Command("keyholder"))
+    @main_router.message(Command("chastity"))
+    async def cmd_chastity_keyholder(message: types.Message):
+        """Telegram v3 Chastity & Keyholder status with inline action buttons."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.models.locktimer import LockSession
+
+        async with async_session_factory() as db:
+            session = (
+                await db.execute(
+                    select(LockSession)
+                    .where(LockSession.owner_id == user.id, LockSession.status == "active")
+                    .order_by(LockSession.started_at.desc())
+                )
+            ).scalar_one_or_none()
+
+            if not session:
+                await message.answer("🔒 *Chastity Suite*: No active lock session.", parse_mode="Markdown")
+                return
+
+            ext_count = len(session.extension_history or [])
+            lines = [
+                "🔒 *Chastity & Keyholder Status*",
+                f"Session ID: `{str(session.id)[:8]}`",
+                f"Status: *{session.status.upper()}*",
+                f"Keyholder Type: *{session.keyholder_type or 'ai'}*",
+                f"Extensions Granted: {ext_count}",
+                f"Health Paused: {'YES ⏸️' if session.is_health_paused else 'No'}",
+            ]
+
+            kb = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="🤖 AI Keyholder Evaluation",
+                            callback_data=f"keyholder_eval:{session.id}",
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="🧴 Request Aftercare",
+                            callback_data="aftercare_gen",
+                        )
+                    ],
+                ]
+            )
+
+            await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.callback_query(F.data.startswith("keyholder_eval:"))
+    async def inline_keyholder_eval(callback: types.CallbackQuery):
+        session_id = uuid.UUID(callback.data.split(":", 1)[1])
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.llm.pipeline.keyholder import evaluate_keyholder_action
+        from app.services.llm_provider import get_active_llm_config
+
+        async with async_session_factory() as db:
+            llm_config = await get_active_llm_config(db, user.id)
+            if not llm_config:
+                await callback.answer("LLM provider config required for AI Keyholder.", show_alert=True)
+                return
+
+            eval_res = await evaluate_keyholder_action(
+                db=db,
+                user_id=user.id,
+                session_id=session_id,
+                action_type="extension_request",
+                user_note="Requested via Telegram Bot",
+                llm_config=llm_config,
+                locale=user.locale or "ru",
+            )
+
+        decision = eval_res.get("decision", "rejected").upper()
+        reason = eval_res.get("reasoning", "Action processed.")
+        lines = [
+            f"🤖 *AI Keyholder Verdict: {decision}*",
+            f"📝 *Reasoning*: {reason}",
+        ]
+        if eval_res.get("extension_minutes"):
+            lines.append(f"⏳ *Extension*: +{eval_res['extension_minutes']} minutes")
+
+        await callback.message.answer("\n".join(lines), parse_mode="Markdown")
+        await callback.answer("Keyholder evaluation complete.")
+
+    @main_router.message(Command("aftercare"))
+    async def cmd_aftercare(message: types.Message):
+        """Generates step-by-step Aftercare guidance."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.llm.pipeline.aftercare import generate_aftercare_guidance
+        from app.services.llm_provider import get_active_llm_config
+
+        async with async_session_factory() as db:
+            llm_config = await get_active_llm_config(db, user.id)
+            if not llm_config:
+                await message.answer("LLM provider config required for Aftercare AI.")
+                return
+
+            res = await generate_aftercare_guidance(
+                db=db,
+                user_id=user.id,
+                llm_config=llm_config,
+                locale=user.locale or "ru",
+            )
+
+        steps = res.get("aftercare_steps", [])
+        lines = [
+            "🧴 *Personalized Aftercare Protocol*",
+            f"Summary: {res.get('summary', 'Rest and hydration.')}",
+            "",
+            "*Recommended Steps:*",
+        ]
+        for idx, step in enumerate(steps, 1):
+            lines.append(f"{idx}. {step}")
+
+        await message.answer("\n".join(lines), parse_mode="Markdown")
+
+    @main_router.callback_query(F.data == "aftercare_gen")
+    async def inline_aftercare_gen(callback: types.CallbackQuery):
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None:
+            await callback.answer("Account not linked.", show_alert=True)
+            return
+
+        from app.llm.pipeline.aftercare import generate_aftercare_guidance
+        from app.services.llm_provider import get_active_llm_config
+
+        async with async_session_factory() as db:
+            llm_config = await get_active_llm_config(db, user.id)
+            if not llm_config:
+                await callback.answer("LLM provider required.", show_alert=True)
+                return
+
+            res = await generate_aftercare_guidance(
+                db=db,
+                user_id=user.id,
+                llm_config=llm_config,
+                locale=user.locale or "ru",
+            )
+
+        steps = res.get("aftercare_steps", [])
+        lines = ["🧴 *Aftercare Plan:*"]
+        for idx, step in enumerate(steps, 1):
+            lines.append(f"{idx}. {step}")
+
+        await callback.message.answer("\n".join(lines), parse_mode="Markdown")
+        await callback.answer("Aftercare protocol generated.")
+
+    @main_router.message(Command("report"))
+    async def cmd_report(message: types.Message):
+        """Generates a 1-Click Medical & Personal Summary Report."""
+        user = await _require_user(message)
+        if user is None:
+            return
+
+        from app.llm.pipeline.persona import generate_personal_medical_report
+
+        async with async_session_factory() as db:
+            rep = await generate_personal_medical_report(db, user.id, days=30)
+
+        await message.answer(rep["report_markdown"], parse_mode="Markdown")
+
 
 # ── Webhook endpoint ───────────────────────────────────────────────
 
