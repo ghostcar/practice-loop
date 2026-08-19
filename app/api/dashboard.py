@@ -324,6 +324,84 @@ async def dashboard(
     today_items.sort(key=lambda x: x["at"] or _FAR_FUTURE)
     today_items = today_items[:10]
 
+    # Dashboard Alert Bar & Cockpit collector (Step 20)
+    dashboard_alerts: list[dict] = []
+    try:
+        from app.models.health import CycleSettings, HealthState
+
+        today_state = (
+            await db.execute(select(HealthState).where(HealthState.user_id == user.id, HealthState.event_date == today))
+        ).scalar_one_or_none()
+        c_settings = (
+            await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))
+        ).scalar_one_or_none()
+
+        if today_state and today_state.post_session_drop:
+            dashboard_alerts.append(
+                {
+                    "type": "warning",
+                    "icon": "heart",
+                    "title": "📉 Post-session Drop (Эмоциональный спад)",
+                    "message": (
+                        "Активирован режим бережного восстановления. "
+                        "Рекомендуются расслабляющие процедуры Ухода и Aftercare."
+                    ),
+                    "action_url": "/care",
+                    "action_label": "Протоколы Ухода",
+                }
+            )
+        elif today_state and today_state.recovery is not None and today_state.recovery <= 2:
+            dashboard_alerts.append(
+                {
+                    "type": "warning",
+                    "icon": "today",
+                    "title": f"⚡ Низкий уровень восстановления ({today_state.recovery}/5)",
+                    "message": "ИИ-Наблюдатель рекомендует снизить интенсивность физических тренировок и нагрузок.",
+                    "action_url": "/health",
+                    "action_label": "Дневник Здоровья",
+                }
+            )
+
+        if c_settings and c_settings.profile_type == "hrt_emulated" and (not today_state or not today_state.hrt_taken):
+            dashboard_alerts.append(
+                {
+                    "type": "info",
+                    "icon": "sparkles",
+                    "title": "💊 Напоминание ГТ / HRT",
+                    "message": "Не забудьте отметить сегодняшний приём гормональной терапии в Дневнике Здоровья.",
+                    "action_url": "/health",
+                    "action_label": "Отметить ГТ",
+                }
+            )
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).warning("failed building dashboard alerts: %s", exc)
+
+    if med_summary and med_summary.get("due"):
+        dashboard_alerts.append(
+            {
+                "type": "info",
+                "icon": "medication",
+                "title": "💊 Запланированный приём медикаментов",
+                "message": f"Ожидают приёма {len(med_summary['due'])} поз. на сегодня.",
+                "action_url": "/medications",
+                "action_label": "Принять",
+            }
+        )
+
+    if locktimer_session:
+        dashboard_alerts.append(
+            {
+                "type": "lock",
+                "icon": "lock",
+                "title": "🔒 Активен Контроль Доступа (Замок)",
+                "message": f"Режим: {locktimer_session['state']}. Ограничения активны.",
+                "action_url": "/timer/dashboard",
+                "action_label": "Статус замка",
+            }
+        )
+
     response = templates.TemplateResponse(
         request=request,
         name="dashboard_v2.html",
@@ -348,6 +426,7 @@ async def dashboard(
             "locktimer_tasks_count": locktimer_tasks_count,
             "today_tasks": today_tasks,
             "today_items": today_items,
+            "dashboard_alerts": dashboard_alerts,
             "active_diets": active_diets,
             "today_training": today_training,
             "training_task_counts": training_task_counts,
