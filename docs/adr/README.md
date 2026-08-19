@@ -119,3 +119,4 @@
 | [ADR-113](ADR-113.md) | 2026-08-19 | Шаг 21: Chastity Suite & Keyholder Dynamics (Chaster.app paradigm) | accepted |
 | [ADR-114](ADR-114.md) | 2026-08-19 | Шаг 22: Тренировки, Дисциплина и Оборудование (Training & Equipment) | accepted |
 | [ADR-115](ADR-115.md) | 2026-08-19 | Шаг 23: Настройка Отключения Авто-Снижения Нагрузок и Автоматизация Aftercare | accepted |
+| [ADR-116](ADR-116.md) | 2026-08-19 | Шаг 24: Гендерно-Инклюзивные Профили Партнёров и ИИ-Консультант по Динамике и Границам | accepted |

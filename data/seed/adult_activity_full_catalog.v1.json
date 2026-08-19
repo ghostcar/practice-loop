@@ -1,0 +1,6324 @@
+{
+ "schema_version": "1.0",
+ "manifest_status": "owner_reviewed",
+ "import_allowed": true,
+ "promotion_target": "entities",
+ "source_records_total": 163,
+ "source_records_covered": 163,
+ "additional_titles_matched": 86,
+ "cards": [
+  {
+   "slug": "equipment-condition-check",
+   "source_refs": [
+    "category-chat-084",
+    "category-chat-103",
+    "category-chat-104",
+    "category-chat-124",
+    "category-chat-144"
+   ],
+   "title": {
+    "ru": "Проверить оборудование перед активностью",
+    "en": "Check equipment before an activity"
+   },
+   "summary": {
+    "ru": "Проверить исправность, чистоту, совместимость и возможность быстрого прекращения использования выбранного оборудования.",
+    "en": "Check selected equipment for condition, cleanliness, compatibility, and quick removal."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "equipment_allowlist",
+    "quick_release_check",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 15
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Anchor point & equipment check",
+     "Implement check"
+    ]
+   }
+  },
+  {
+   "slug": "skin-and-contact-zone-check",
+   "source_refs": [
+    "category-chat-083",
+    "category-chat-123",
+    "category-chat-143"
+   ],
+   "title": {
+    "ru": "Проверить кожу и согласованные зоны",
+    "en": "Check skin and agreed contact areas"
+   },
+   "summary": {
+    "ru": "До начала проверить состояние кожи и ещё раз подтвердить разрешённые и исключённые зоны воздействия.",
+    "en": "Before starting, check skin condition and reconfirm allowed and excluded contact areas."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "body_zone_allowlist",
+    "pre_session_checkin",
+    "stop_conditions"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 10
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Skin preparation & sizing check",
+     "Skin warm-up"
+    ]
+   }
+  },
+  {
+   "slug": "timed-chastity-device-wear",
+   "source_refs": [
+    "category-chat-085"
+   ],
+   "title": {
+    "ru": "Ограниченное по времени ношение устройства целомудрия",
+    "en": "Time-limited chastity device wear"
+   },
+   "summary": {
+    "ru": "Добровольное ношение заранее проверенного устройства в пределах выбранного времени с доступным самостоятельным снятием.",
+    "en": "Voluntary wear of a checked device for a selected duration with self-removal always available."
+   },
+   "category": "device_timer",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "per_session_confirmation",
+    "local_emergency_exit",
+    "skin_check",
+    "circulation_check",
+    "duration_cap"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 120
+    },
+    "checkin_interval_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 30
+    }
+   },
+   "alternate_names": {
+    "ru": [
+     "Ношение"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "timed-plug-wear",
+   "source_refs": [
+    "category-chat-088"
+   ],
+   "title": {
+    "ru": "Ограниченное по времени ношение пробки",
+    "en": "Time-limited plug wear"
+   },
+   "summary": {
+    "ru": "Добровольное ношение индивидуально выбранного устройства с ограничением времени, периодической проверкой состояния и свободным прекращением.",
+    "en": "Voluntary wear of an individually selected device with a time cap, periodic checks, and unrestricted stopping."
+   },
+   "category": "device_timer",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "per_session_confirmation",
+    "equipment_allowlist",
+    "local_emergency_exit",
+    "duration_cap",
+    "aftercare_plan"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "checkin_interval_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 20
+    }
+   }
+  },
+  {
+   "slug": "ritual-device-removal",
+   "source_refs": [
+    "category-chat-102"
+   ],
+   "title": {
+    "ru": "Ритуал безопасного снятия устройства",
+    "en": "Safe device removal ritual"
+   },
+   "summary": {
+    "ru": "Спокойно завершить ношение, снять устройство и выполнить согласованную проверку состояния без штрафов за досрочное окончание.",
+    "en": "Calmly end wear, remove the device, and complete an agreed wellbeing check without penalties for ending early."
+   },
+   "category": "connection_aftercare",
+   "content_kind": "aftercare",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "no_stop_penalty",
+    "skin_check",
+    "wellbeing_check"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 15
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Decision removal"
+    ]
+   }
+  },
+  {
+   "slug": "quick-release-wrist-restraint",
+   "source_refs": [
+    "category-chat-105"
+   ],
+   "title": {
+    "ru": "Фиксация рук с быстрым освобождением",
+    "en": "Quick-release wrist restraint"
+   },
+   "summary": {
+    "ru": "Короткая добровольная фиксация рук с заранее проверенным быстрым освобождением и регулярной проверкой состояния.",
+    "en": "Brief voluntary wrist restraint with verified quick release and regular wellbeing checks."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "per_session_confirmation",
+    "quick_release_required",
+    "circulation_check",
+    "no_neck_or_breath",
+    "duration_cap"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 15
+    },
+    "checkin_interval_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 5
+    }
+   }
+  },
+  {
+   "slug": "quick-release-ankle-restraint",
+   "source_refs": [
+    "category-chat-106"
+   ],
+   "title": {
+    "ru": "Фиксация ног с быстрым освобождением",
+    "en": "Quick-release ankle restraint"
+   },
+   "summary": {
+    "ru": "Короткая добровольная фиксация ног без опасной позы, с быстрым освобождением и проверкой кровообращения.",
+    "en": "Brief voluntary ankle restraint without a hazardous position, with quick release and circulation checks."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "per_session_confirmation",
+    "quick_release_required",
+    "circulation_check",
+    "stable_position",
+    "duration_cap"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 15
+    },
+    "checkin_interval_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 5
+    }
+   }
+  },
+  {
+   "slug": "blindfold-sensory-focus",
+   "source_refs": [
+    "category-chat-135"
+   ],
+   "title": {
+    "ru": "Сенсорный фокус с повязкой на глаза",
+    "en": "Blindfold sensory focus"
+   },
+   "summary": {
+    "ru": "Короткая активность с добровольным ограничением зрения, знакомой обстановкой и возможностью снять повязку самостоятельно.",
+    "en": "A brief activity with voluntary sight restriction, familiar surroundings, and independent blindfold removal."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "clear_space",
+    "self_release",
+    "stop_signal_check",
+    "duration_cap"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    }
+   }
+  },
+  {
+   "slug": "texture-exploration",
+   "source_refs": [
+    "category-chat-134"
+   ],
+   "title": {
+    "ru": "Исследование текстур",
+    "en": "Texture exploration"
+   },
+   "summary": {
+    "ru": "Исследовать заранее выбранные безопасные текстуры на согласованных участках тела, отмечая комфортные и нежелательные ощущения.",
+    "en": "Explore preselected safe textures on agreed body areas and note comfortable or unwanted sensations."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "material_allowlist",
+    "body_zone_allowlist",
+    "skin_check",
+    "stop_conditions"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    }
+   }
+  },
+  {
+   "slug": "external-vibration-focus",
+   "source_refs": [
+    "category-chat-132"
+   ],
+   "title": {
+    "ru": "Сенсорный фокус с внешней вибрацией",
+    "en": "External vibration sensory focus"
+   },
+   "summary": {
+    "ru": "Использовать проверенное внешнее устройство на согласованных зонах в пределах выбранной интенсивности и времени.",
+    "en": "Use a checked external device on agreed areas within selected intensity and time limits."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "duration_cap",
+    "stop_conditions"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    }
+   }
+  },
+  {
+   "slug": "hand-impact-counted-set",
+   "source_refs": [
+    "category-chat-145",
+    "category-chat-150",
+    "category-chat-156"
+   ],
+   "title": {
+    "ru": "Согласованная серия ударов ладонью",
+    "en": "Agreed counted hand-impact set"
+   },
+   "summary": {
+    "ru": "Выполнить заранее согласованное ограниченное число ударов ладонью только по разрешённой безопасной зоне с промежуточной проверкой.",
+    "en": "Complete a pre-agreed capped number of hand impacts on an allowed safer area with an interim check-in."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "per_session_confirmation",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "repetition_cap",
+    "midpoint_checkin"
+   ],
+   "proposed_parameters": {
+    "repetitions": {
+     "unit": "count",
+     "min": 1,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Hand spanking",
+     "Impact on buttocks",
+     "Counted strokes"
+    ]
+   }
+  },
+  {
+   "slug": "rhythmic-impact-counted-set",
+   "source_refs": [
+    "category-chat-158"
+   ],
+   "title": {
+    "ru": "Ритмичная ограниченная серия ударов",
+    "en": "Capped rhythmic impact set"
+   },
+   "summary": {
+    "ru": "Короткая серия в заранее согласованном ритме, числе повторов, интенсивности и разрешённой зоне с возможностью остановки в любой момент.",
+    "en": "A brief set with agreed rhythm, repetition count, intensity, and allowed area, stoppable at any moment."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "per_session_confirmation",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "repetition_cap",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "repetitions": {
+     "unit": "count",
+     "min": 1,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    },
+    "tempo_bpm": {
+     "unit": "bpm",
+     "min": 30,
+     "max": 90
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Rhythmic / metronome impact"
+    ]
+   }
+  },
+  {
+   "slug": "intimate-equipment-preparation",
+   "source_refs": [
+    "category-chat-063",
+    "category-chat-064"
+   ],
+   "title": {
+    "ru": "Подготовить интимную активность и оборудование",
+    "en": "Prepare an intimate activity and equipment"
+   },
+   "summary": {
+    "ru": "Заранее проверить согласованные границы, гигиену, совместимость и доступность необходимых средств для выбранной взрослой активности.",
+    "en": "Check agreed boundaries, hygiene, compatibility, and necessary supplies for the selected adult activity."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "equipment_allowlist",
+    "hygiene_check",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 15
+    }
+   }
+  },
+  {
+   "slug": "basic-oral-technique-practice",
+   "source_refs": [
+    "category-chat-065"
+   ],
+   "title": {
+    "ru": "Практика базовой оральной техники",
+    "en": "Basic oral technique practice"
+   },
+   "summary": {
+    "ru": "Добровольная взрослая практика в заранее согласованных пределах длительности и интенсивности с постоянной возможностью остановки.",
+    "en": "A voluntary adult practice within agreed duration and intensity limits, stoppable at any moment."
+   },
+   "category": "sexual_connection",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "no_breath_restriction",
+    "duration_cap",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    }
+   }
+  },
+  {
+   "slug": "paced-oral-technique-practice",
+   "source_refs": [
+    "category-chat-068"
+   ],
+   "title": {
+    "ru": "Оральная техника в согласованном темпе",
+    "en": "Oral technique at an agreed pace"
+   },
+   "summary": {
+    "ru": "Практика с заранее выбранным комфортным темпом, короткими интервалами и обязательными паузами для проверки состояния.",
+    "en": "Practice at a preselected comfortable pace with brief intervals and mandatory wellbeing pauses."
+   },
+   "category": "sexual_connection",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "no_breath_restriction",
+    "interval_cap",
+    "mandatory_pause"
+   ],
+   "proposed_parameters": {
+    "active_seconds": {
+     "unit": "seconds",
+     "min": 5,
+     "max": 60
+    },
+    "pause_seconds": {
+     "unit": "seconds",
+     "min": 15,
+     "max": 120
+    },
+    "repetitions": {
+     "unit": "count",
+     "min": 1,
+     "max": 5
+    }
+   },
+   "alternate_names": {
+    "ru": [
+     "Оральная техника",
+     "Оральная техника глубокого горла",
+     "Анальная техника"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "basic-anal-technique-practice",
+   "source_refs": [
+    "category-chat-063",
+    "category-chat-064",
+    "category-chat-071"
+   ],
+   "title": {
+    "ru": "Практика базовой анальной техники",
+    "en": "Basic anal technique practice"
+   },
+   "summary": {
+    "ru": "Добровольная взрослая практика с подготовкой, индивидуально выбранным оборудованием и заранее ограниченными длительностью и интенсивностью.",
+    "en": "A voluntary adult practice with preparation, individually selected equipment, and preset duration and intensity limits."
+   },
+   "category": "sexual_connection",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "equipment_allowlist",
+    "hygiene_check",
+    "duration_cap",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Basic anal fucking / thrusting"
+    ]
+   }
+  },
+  {
+   "slug": "partner-led-position-practice",
+   "source_refs": [
+    "category-chat-074"
+   ],
+   "title": {
+    "ru": "Практика в выбранной партнёрской позиции",
+    "en": "Practice in a selected partner position"
+   },
+   "summary": {
+    "ru": "Выбрать устойчивую позицию, в которой участник сохраняет контроль движения и может немедленно остановиться.",
+    "en": "Choose a stable position where the participant retains movement control and can stop immediately."
+   },
+   "category": "sexual_connection",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "stable_position",
+    "participant_retains_control",
+    "duration_cap"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    },
+    "intensity": {
+     "unit": "scale_1_3",
+     "min": 1,
+     "max": 3
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Position of exposure"
+    ]
+   }
+  },
+  {
+   "slug": "alternating-intimate-activities",
+   "source_refs": [
+    "category-chat-077"
+   ],
+   "title": {
+    "ru": "Чередование согласованных интимных активностей",
+    "en": "Alternate agreed intimate activities"
+   },
+   "summary": {
+    "ru": "Чередовать две отдельно подключённые пользователем взрослые активности с явной проверкой перед каждым переходом.",
+    "en": "Alternate two adult activities separately enabled by the user, with an explicit check before each transition."
+   },
+   "category": "sexual_connection",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_opt_in_for_each_activity",
+    "per_transition_checkin",
+    "duration_cap",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "block_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    },
+    "repetitions": {
+     "unit": "count",
+     "min": 1,
+     "max": 4
+    }
+   }
+  },
+  {
+   "slug": "paced-intimate-technique-practice",
+   "source_refs": [
+    "category-chat-078"
+   ],
+   "title": {
+    "ru": "Интимная техника в выбранном ритме",
+    "en": "Intimate technique at a selected rhythm"
+   },
+   "summary": {
+    "ru": "Практика в заранее выбранном комфортном ритме с ограничением времени и промежуточной проверкой состояния.",
+    "en": "Practice at a preselected comfortable rhythm with a time cap and an interim wellbeing check."
+   },
+   "category": "sexual_connection",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "tempo_cap",
+    "midpoint_checkin",
+    "stop_signal_check"
+   ],
+   "proposed_parameters": {
+    "tempo_bpm": {
+     "unit": "bpm",
+     "min": 30,
+     "max": 90
+    },
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 15
+    }
+   }
+  },
+  {
+   "slug": "intentional-intimate-practice-stop",
+   "source_refs": [
+    "category-chat-082"
+   ],
+   "title": {
+    "ru": "Осознанно завершить интимную практику",
+    "en": "Intentionally stop an intimate practice"
+   },
+   "summary": {
+    "ru": "Остановить текущую практику по собственному решению, отметить состояние и перейти к выбранному восстановлению без штрафа.",
+    "en": "Stop the current practice by personal choice, note current wellbeing, and move to selected recovery without penalty."
+   },
+   "category": "connection_aftercare",
+   "content_kind": "aftercare",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "no_stop_penalty",
+    "wellbeing_check",
+    "aftercare_choice"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 15
+    }
+   }
+  },
+  {
+   "slug": "session-hydration-readiness",
+   "source_refs": [
+    "category-chat-001"
+   ],
+   "title": {
+    "ru": "Проверить готовность по гидратации",
+    "en": "Check hydration readiness"
+   },
+   "summary": {
+    "ru": "Перед сессией самостоятельно оценить обычную гидратацию и отказаться от заранее заданного системой объёма жидкости.",
+    "en": "Before a session, assess ordinary hydration and avoid any system-prescribed fluid volume."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "no_automatic_volume",
+    "medical_boundary",
+    "session_checkin"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    }
+   }
+  },
+  {
+   "slug": "enema-equipment-preparation-review",
+   "source_refs": [
+    "category-chat-003"
+   ],
+   "title": {
+    "ru": "Проверить подготовку оборудования для клизмы",
+    "en": "Review enema equipment preparation"
+   },
+   "summary": {
+    "ru": "Проверить гигиену, исправность и индивидуальную совместимость оборудования без назначения системой состава или объёма.",
+    "en": "Check equipment hygiene, condition, and individual compatibility without system-prescribed contents or volume."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "stop_conditions"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 20
+    }
+   }
+  },
+  {
+   "slug": "fluid-collection-plan",
+   "source_refs": [
+    "category-chat-007"
+   ],
+   "title": {
+    "ru": "Подготовить план сбора жидкости",
+    "en": "Prepare a fluid collection plan"
+   },
+   "summary": {
+    "ru": "Заранее выбрать подходящую ёмкость, приватное место и способ последующей гигиенической обработки.",
+    "en": "Choose a suitable container, private setting, and subsequent hygienic cleanup plan."
+   },
+   "category": "control_protocol",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "container_hygiene",
+    "private_setting",
+    "cleanup_plan"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 15
+    }
+   }
+  },
+  {
+   "slug": "external-fluid-contact-plan",
+   "source_refs": [
+    "category-chat-009"
+   ],
+   "title": {
+    "ru": "Согласовать внешний контакт с жидкостью",
+    "en": "Agree external fluid contact"
+   },
+   "summary": {
+    "ru": "Отдельно согласовать допустимые внешние зоны контакта, исключённые зоны и немедленную гигиеническую обработку.",
+    "en": "Separately agree allowed external contact areas, excluded areas, and immediate hygienic cleanup."
+   },
+   "category": "sexual_connection",
+   "content_kind": "preparation",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "body_zone_allowlist",
+    "biohazard_review",
+    "cleanup_plan"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    }
+   }
+  },
+  {
+   "slug": "fluid-control-completion-check",
+   "source_refs": [
+    "category-chat-020"
+   ],
+   "title": {
+    "ru": "Завершить активность контроля жидкости",
+    "en": "Complete a fluid-control activity"
+   },
+   "summary": {
+    "ru": "Зафиксировать окончание, проверить самочувствие и перейти к выбранной гигиене и восстановлению без штрафа.",
+    "en": "Record completion, check wellbeing, and move to selected hygiene and recovery without penalty."
+   },
+   "category": "connection_aftercare",
+   "content_kind": "aftercare",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "no_stop_penalty",
+    "wellbeing_check",
+    "hygiene_plan",
+    "seek_help_if_needed"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 20
+    }
+   }
+  },
+  {
+   "slug": "bowel-hygiene-preparation-review",
+   "source_refs": [
+    "category-chat-021"
+   ],
+   "title": {
+    "ru": "Проверить гигиеническую подготовку",
+    "en": "Review hygiene preparation"
+   },
+   "summary": {
+    "ru": "Проверить приватность, доступность гигиены и готовность отказаться от активности при сомнениях в состоянии.",
+    "en": "Check privacy, hygiene access, and readiness to decline the activity if wellbeing is uncertain."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "session_checkin",
+    "stop_conditions"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 15
+    }
+   }
+  },
+  {
+   "slug": "dietary-readiness-review",
+   "source_refs": [
+    "category-chat-023"
+   ],
+   "title": {
+    "ru": "Проверить пищевую готовность без назначения диеты",
+    "en": "Review dietary readiness without prescribing a diet"
+   },
+   "summary": {
+    "ru": "Отметить индивидуальные ограничения и не использовать автоматически назначенную диету или лишение пищи как часть активности.",
+    "en": "Note individual limitations and avoid system-prescribed diets or food deprivation as part of an activity."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "no_diet_prescription",
+    "no_basic_need_denial",
+    "medical_boundary"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    }
+   }
+  },
+  {
+   "slug": "toilet-collection-plan",
+   "source_refs": [
+    "category-chat-028"
+   ],
+   "title": {
+    "ru": "Подготовить план туалетного сбора",
+    "en": "Prepare a toilet collection plan"
+   },
+   "summary": {
+    "ru": "Заранее согласовать приватную организацию, барьерную гигиену и безопасную последующую утилизацию.",
+    "en": "Agree private setup, barrier hygiene, and safe subsequent disposal in advance."
+   },
+   "category": "control_protocol",
+   "content_kind": "preparation",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "biohazard_review",
+    "barrier_hygiene",
+    "private_setting",
+    "disposal_plan"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 20
+    }
+   }
+  },
+  {
+   "slug": "toilet-hygiene-completion",
+   "source_refs": [
+    "category-chat-030"
+   ],
+   "title": {
+    "ru": "Завершить туалетную активность гигиеной",
+    "en": "Complete a toilet activity with hygiene"
+   },
+   "summary": {
+    "ru": "Перейти к заранее выбранной уборке и личной гигиене, затем проверить состояние участников.",
+    "en": "Move to preselected cleanup and personal hygiene, then check participant wellbeing."
+   },
+   "category": "connection_aftercare",
+   "content_kind": "aftercare",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "hygiene_plan",
+    "disposal_plan",
+    "wellbeing_check",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 2,
+     "max": 30
+    }
+   }
+  },
+  {
+   "slug": "consensual-toilet-service-ritual",
+   "source_refs": [
+    "category-chat-036"
+   ],
+   "title": {
+    "ru": "Согласованный туалетный сервисный ритуал",
+    "en": "Agreed toilet service ritual"
+   },
+   "summary": {
+    "ru": "Выполнить заранее описанный пользователем приватный сервисный ритуал с отдельным согласием, гигиеной и свободной остановкой.",
+    "en": "Perform a user-authored private service ritual with separate consent, hygiene controls, and unrestricted stopping."
+   },
+   "category": "service_care",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "per_session_confirmation",
+    "user_authored_steps_only",
+    "biohazard_review",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    }
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Full toilet service ritual"
+    ]
+   }
+  },
+  {
+   "slug": "toilet-control-opening-ritual",
+   "source_refs": [
+    "category-chat-039"
+   ],
+   "title": {
+    "ru": "Открывающий ритуал туалетного контроля",
+    "en": "Toilet-control opening ritual"
+   },
+   "summary": {
+    "ru": "Перед началом подтвердить выбранную пользователем рамку, приватность, стоп-сигнал и доступность обычных потребностей.",
+    "en": "Before starting, confirm the user-selected frame, privacy, stop signal, and access to ordinary needs."
+   },
+   "category": "control_protocol",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "explicit_activity_opt_in",
+    "private_setting",
+    "stop_signal_check",
+    "no_basic_need_denial"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    }
+   }
+  },
+  {
+   "slug": "toilet-control-completion-check",
+   "source_refs": [
+    "category-chat-040"
+   ],
+   "title": {
+    "ru": "Завершить туалетный контроль",
+    "en": "Complete toilet control"
+   },
+   "summary": {
+    "ru": "Явно завершить рамку контроля, восстановить обычный доступ к потребностям и выполнить согласованную проверку состояния.",
+    "en": "Explicitly end the control frame, restore ordinary access to needs, and complete an agreed wellbeing check."
+   },
+   "category": "connection_aftercare",
+   "content_kind": "aftercare",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "end_control_state",
+    "restore_basic_needs",
+    "wellbeing_check",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 20
+    }
+   }
+  },
+  {
+   "slug": "breath-risk-readiness-decision",
+   "source_refs": [
+    "category-chat-043"
+   ],
+   "title": {
+    "ru": "Принять решение по breath-related активности",
+    "en": "Make a breath-related activity decision"
+   },
+   "summary": {
+    "ru": "Без пробного воздействия проверить наличие сомнений или противопоказаний и выбрать отказ либо отдельную консультацию.",
+    "en": "Without trial exposure, check for uncertainty or contraindications and choose to decline or seek separate advice."
+   },
+   "category": "consent_communication",
+   "content_kind": "checkin",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "no_trial_exposure",
+    "decline_by_default_on_uncertainty",
+    "no_stop_penalty",
+    "specialist_advice_option"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    }
+   }
+  },
+  {
+   "slug": "breath-related-equipment-exclusion-check",
+   "source_refs": [
+    "category-chat-044"
+   ],
+   "title": {
+    "ru": "Проверить исключения для breath-related оборудования",
+    "en": "Check breath-related equipment exclusions"
+   },
+   "summary": {
+    "ru": "Зафиксировать недопустимые предметы и сочетания без описания их применения и без запуска активности.",
+    "en": "Record prohibited equipment and combinations without describing their use or starting an activity."
+   },
+   "category": "consent_communication",
+   "content_kind": "preparation",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "denylist_only",
+    "no_usage_instructions",
+    "no_timing_or_progression",
+    "no_automation"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 1,
+     "max": 10
+    }
+   }
+  },
+  {
+   "slug": "pre-session-scat-holding",
+   "source_refs": [
+    "category-chat-002"
+   ],
+   "title": {
+    "ru": "Удержание кала перед сессией (скат-холдинг)",
+    "en": "Pre-session scat holding"
+   },
+   "summary": {
+    "ru": "Согласованное удержание кала в заданный период до сессии.",
+    "en": "Agreed scat-holding window before a session."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "preparation",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Задержка мочеиспускания перед сессией (pre-session holding)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "basic-urine-retention",
+   "source_refs": [
+    "category-chat-004"
+   ],
+   "title": {
+    "ru": "Удержание мочи (урофилия)",
+    "en": "Urine retention (urophilia)"
+   },
+   "summary": {
+    "ru": "Контролируемое накопление мочи до согласованного объёма без предельных режимов.",
+    "en": "Controlled urine retention up to an agreed point, no extreme modes."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Накопление"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "controlled-urine-holding",
+   "source_refs": [
+    "category-chat-005"
+   ],
+   "title": {
+    "ru": "Удержание мочи до предела",
+    "en": "Urine holding to limit"
+   },
+   "summary": {
+    "ru": "Удержание мочи с заранее заданным пределом и возможностью остановки в любой момент.",
+    "en": "Urine holding with a preset limit and instant stop available."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "golden-shower",
+   "source_refs": [
+    "category-chat-006"
+   ],
+   "title": {
+    "ru": "Золотой дождь (сброс мочи)",
+    "en": "Golden shower (urine release)"
+   },
+   "summary": {
+    "ru": "Осознанный контролируемый сброс накопленной мочи по согласованному сценарию.",
+    "en": "Conscious controlled urine release over a partner as agreed."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "funnel-urine-pour",
+   "source_refs": [
+    "category-chat-008"
+   ],
+   "title": {
+    "ru": "Слив мочи через воронку",
+    "en": "Funnel urine pour"
+   },
+   "summary": {
+    "ru": "Справочная карточка: идея слива мочи через воронку; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: funnel urine pour concept; no executable instruction."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "specialist_editorial_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "basic-enema",
+   "source_refs": [
+    "category-chat-010"
+   ],
+   "title": {
+    "ru": "Клизма базового объёма",
+    "en": "Basic enema"
+   },
+   "summary": {
+    "ru": "Клизма малого согласованного объёма с гигиенической подготовкой и контролем ощущений.",
+    "en": "Small agreed-volume enema with hygiene prep and sensation control."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "enema-controlled-fill",
+   "source_refs": [
+    "category-chat-011"
+   ],
+   "title": {
+    "ru": "Клизма с контролем наполнения",
+    "en": "Enema with controlled fill"
+   },
+   "summary": {
+    "ru": "Клизма с постепенным наполнением до заранее согласованного комфортного уровня.",
+    "en": "Enema filled gradually to an agreed comfortable level."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "enema-holding-position",
+   "source_refs": [
+    "category-chat-012"
+   ],
+   "title": {
+    "ru": "Удержание клизмы в позе",
+    "en": "Enema holding in position"
+   },
+   "summary": {
+    "ru": "Удержание клизмы в согласованной позе с возможностью немедленного прекращения.",
+    "en": "Enema holding in an agreed position with instant stop."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Holding in bondage / stress position"
+    ]
+   }
+  },
+  {
+   "slug": "partial-enema-release",
+   "source_refs": [
+    "category-chat-013"
+   ],
+   "title": {
+    "ru": "Частичный слив клизмы",
+    "en": "Partial enema release"
+   },
+   "summary": {
+    "ru": "Частичный контролируемый слив клизмы с последующим продолжением по согласованию.",
+    "en": "Controlled partial enema release, optionally continuing by agreement."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Enema partial release + refill (частичный слив + повторное наполнение)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "multi-cycle-enema",
+   "source_refs": [
+    "category-chat-014"
+   ],
+   "title": {
+    "ru": "Многократный цикл клизмы",
+    "en": "Multi-cycle enema"
+   },
+   "summary": {
+    "ru": "Повторный цикл «наполнение — удержание — слив» с паузами между циклами.",
+    "en": "Repeated fill-hold-release cycles with breaks between them."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "enema-self-release",
+   "source_refs": [
+    "category-chat-015"
+   ],
+   "title": {
+    "ru": "Слив клизмы на себя",
+    "en": "Enema self-release"
+   },
+   "summary": {
+    "ru": "Слив клизмы на собственное тело в согласованной обстановке с гигиенической подготовкой.",
+    "en": "Enema release onto one's own body, agreed and hygienically prepared."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Enema expulsion on self (слив на собственное тело)",
+     "Тело"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "enema-funnel-release",
+   "source_refs": [
+    "category-chat-016"
+   ],
+   "title": {
+    "ru": "Слив клизмы через воронку",
+    "en": "Enema funnel release"
+   },
+   "summary": {
+    "ru": "Слив клизмы через воронку в ёмкость по согласованному сценарию.",
+    "en": "Enema release through a funnel into a container."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "ice-enema",
+   "source_refs": [
+    "category-chat-017"
+   ],
+   "title": {
+    "ru": "Ледяная клизма",
+    "en": "Ice enema"
+   },
+   "summary": {
+    "ru": "Клизма с охлаждённой водой; температура и объём согласовываются заранее.",
+    "en": "Enema with chilled water; temperature and volume agreed in advance."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "temperature_safety_review"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Ice enema (клизма с добавлением льда)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "post-enema-plug-wear",
+   "source_refs": [
+    "category-chat-018"
+   ],
+   "title": {
+    "ru": "Ношение пробки после клизмы",
+    "en": "Post-enema plug wearing"
+   },
+   "summary": {
+    "ru": "Ношение анальной пробки после слива клизмы с контролем состояния и снятием по сигналу.",
+    "en": "Wearing an anal plug after an enema release, with check-ins and on-signal removal."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "device_safety_review"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Post-enema plug wearing (пробка сразу после слива/удержания)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "combined-retention-enema-block",
+   "source_refs": [
+    "category-chat-019"
+   ],
+   "title": {
+    "ru": "Комбинированный блок удержания и клизмы",
+    "en": "Combined retention and enema block"
+   },
+   "summary": {
+    "ru": "Комбинация согласованных практик удержания в рамках одной сессии с паузами и контролем.",
+    "en": "Combination of agreed retention practices in one session with pauses and control."
+   },
+   "category": "fluid_enema_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "medical_risk_review",
+    "hygiene_review",
+    "no_automatic_volume",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Combined watersports + scat block"
+    ]
+   }
+  },
+  {
+   "slug": "fecal-retention",
+   "source_refs": [
+    "category-chat-022"
+   ],
+   "title": {
+    "ru": "Удержание кала (скат-холдинг)",
+    "en": "Fecal retention (scat holding)"
+   },
+   "summary": {
+    "ru": "Контролируемое удержание кала до согласованного момента с гигиеническими мерами.",
+    "en": "Controlled scat holding up to an agreed point, with hygiene measures."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "bowel-urge-control",
+   "source_refs": [
+    "category-chat-024"
+   ],
+   "title": {
+    "ru": "Контроль позывов (toilet control)",
+    "en": "Bowel urge control (toilet control)"
+   },
+   "summary": {
+    "ru": "Тренировка контроля позывов в согласованных рамках без лишения базовой потребности.",
+    "en": "Bowel-urge control practice within agreed bounds, never denying basic needs."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Urge training (тренировка подавления позывов)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "controlled-urge-holding",
+   "source_refs": [
+    "category-chat-025"
+   ],
+   "title": {
+    "ru": "Удержание до сильного позыва",
+    "en": "Holding to a strong urge"
+   },
+   "summary": {
+    "ru": "Удержание до сильного позыва с заранее заданным пределом и немедленной остановкой.",
+    "en": "Holding up to a strong urge with a preset limit and instant stop."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "holding-in-bondage",
+   "source_refs": [
+    "category-chat-026"
+   ],
+   "title": {
+    "ru": "Удержание в бондаже",
+    "en": "Holding in bondage"
+   },
+   "summary": {
+    "ru": "Удержание позыва в лёгкой фиксации с быстрым освобождением и без отказа в базовой потребности.",
+    "en": "Urge holding in light bondage with quick release and no basic-need denial."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "quick_release_check"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "controlled-partial-release",
+   "source_refs": [
+    "category-chat-027"
+   ],
+   "title": {
+    "ru": "Контролируемый частичный выпуск",
+    "en": "Controlled partial release"
+   },
+   "summary": {
+    "ru": "Частичный контролируемый выпуск в согласованной обстановке.",
+    "en": "Controlled partial release in an agreed setting."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Controlled partial defecation"
+    ]
+   }
+  },
+  {
+   "slug": "scat-on-body",
+   "source_refs": [
+    "category-chat-029"
+   ],
+   "title": {
+    "ru": "Скат на тело (scat play)",
+    "en": "Scat on body (scat play)"
+   },
+   "summary": {
+    "ru": "Выпуск кала на собственное тело в согласованной обстановке с гигиенической подготовкой.",
+    "en": "Scat release onto one's own body, agreed and hygienically prepared."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Body writing"
+    ]
+   }
+  },
+  {
+   "slug": "scat-smearing",
+   "source_refs": [
+    "category-chat-031"
+   ],
+   "title": {
+    "ru": "Скат-смазывание (smearing)",
+    "en": "Scat smearing"
+   },
+   "summary": {
+    "ru": "Справочная карточка: идея размазывания; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: smearing concept; no executable instruction."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "specialist_editorial_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "oral-use-no-swallow",
+   "source_refs": [
+    "category-chat-032"
+   ],
+   "title": {
+    "ru": "Копро орально (без проглатывания)",
+    "en": "Coprophagia oral (no swallowing)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: копро орально без проглатывания; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: coprophagia oral without swallowing; no executable instruction."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "specialist_editorial_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Coprophagia — swallowing"
+    ]
+   }
+  },
+  {
+   "slug": "coprophagia-swallowing",
+   "source_refs": [
+    "category-chat-033"
+   ],
+   "title": {
+    "ru": "Копрофагия (с проглатыванием)",
+    "en": "Coprophagia (swallowing)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: копрофагия с проглатыванием; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: coprophagia with swallowing; no executable instruction."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "specialist_editorial_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "scat-feeding",
+   "source_refs": [
+    "category-chat-034"
+   ],
+   "title": {
+    "ru": "Копро-кормление (feeding)",
+    "en": "Scat feeding"
+   },
+   "summary": {
+    "ru": "Справочная карточка: идея кормления с уминанием; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: mashing-feeding concept; no executable instruction."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "specialist_editorial_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Scat feeding with chewing"
+    ]
+   }
+  },
+  {
+   "slug": "post-release-internal-wear",
+   "source_refs": [
+    "category-chat-035"
+   ],
+   "title": {
+    "ru": "Ношение внутри после выпуска",
+    "en": "Post-release internal wear"
+   },
+   "summary": {
+    "ru": "Ношение внутри после выпуска с контролем состояния и гигиеническими мерами.",
+    "en": "Internal wear after release, with check-ins and hygiene measures."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "extended-bowel-control",
+   "source_refs": [
+    "category-chat-037"
+   ],
+   "title": {
+    "ru": "Длительный контроль дефекации (toilet control)",
+    "en": "Extended toilet control"
+   },
+   "summary": {
+    "ru": "Длительный контроль дефекации в согласованных рамках с регулярными проверками.",
+    "en": "Extended bowel control within agreed bounds with regular check-ins."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "combined-toilet-block",
+   "source_refs": [
+    "category-chat-038"
+   ],
+   "title": {
+    "ru": "Комбинированный туалетный блок",
+    "en": "Combined toilet block"
+   },
+   "summary": {
+    "ru": "Комбинация согласованных туалетных практик в рамках одной сессии.",
+    "en": "Combination of agreed toilet practices in one session."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "mixed-control-block",
+   "source_refs": [
+    "category-chat-041"
+   ],
+   "title": {
+    "ru": "Смешанный блок удержания и контроля",
+    "en": "Mixed holding and control block"
+   },
+   "summary": {
+    "ru": "Смешанный блок удержания и контроля в согласованных рамках.",
+    "en": "Mixed retention-and-control block within agreed bounds."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Technique + Sensory + Control block"
+    ]
+   }
+  },
+  {
+   "slug": "prepared-volume-play",
+   "source_refs": [
+    "category-chat-042"
+   ],
+   "title": {
+    "ru": "Подготовка и использование готового объёма",
+    "en": "Prepared-volume play"
+   },
+   "summary": {
+    "ru": "Справочная карточка: использование заранее подготовленного объёма; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: prepared-volume concept; no executable instruction."
+   },
+   "category": "toilet_bowel_control",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "biohazard_review",
+    "hygiene_review",
+    "no_ingestion_automation",
+    "hard_caps",
+    "session_checkin",
+    "no_stop_penalty",
+    "specialist_editorial_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Подготовка"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "manual-breath-occlusion",
+   "source_refs": [
+    "category-chat-045"
+   ],
+   "title": {
+    "ru": "Ручное перекрытие дыхания",
+    "en": "Manual breath occlusion"
+   },
+   "summary": {
+    "ru": "Справочная карточка: ручное перекрытие дыхания; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: manual breath occlusion; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "breathplay-bag-light",
+   "source_refs": [
+    "category-chat-046"
+   ],
+   "title": {
+    "ru": "Дыхательный пакет (лёгкий)",
+    "en": "Breathplay bag (light)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: лёгкий дыхательный пакет; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: light breathplay bag; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "breathplay-bag-tight",
+   "source_refs": [
+    "category-chat-047"
+   ],
+   "title": {
+    "ru": "Дыхательный пакет (плотный, с контролем)",
+    "en": "Breathplay bag (tight, controlled)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: плотный дыхательный пакет; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: tight breathplay bag; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "multi-layer-breath-film",
+   "source_refs": [
+    "category-chat-048"
+   ],
+   "title": {
+    "ru": "Многослойная плёнка для дыхания",
+    "en": "Multi-layer breath film"
+   },
+   "summary": {
+    "ru": "Справочная карточка: многослойная плёнка; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: multi-layer breath film; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "progressive-breath-film",
+   "source_refs": [
+    "category-chat-049"
+   ],
+   "title": {
+    "ru": "Плёнка с прогрессией перекрытий",
+    "en": "Progressive breath film"
+   },
+   "summary": {
+    "ru": "Справочная карточка: прогрессия перекрытий; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: progressive breath film; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "rebreathing",
+   "source_refs": [
+    "category-chat-050"
+   ],
+   "title": {
+    "ru": "Ребризинг (повторное дыхание)",
+    "en": "Rebreathing"
+   },
+   "summary": {
+    "ru": "Справочная карточка: повторное дыхание; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: rebreathing; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Rebreathing (дыхание в закрытый объём)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "breath-restricting-hood",
+   "source_refs": [
+    "category-chat-051"
+   ],
+   "title": {
+    "ru": "Капюшон с ограничением дыхания",
+    "en": "Breath-restricting hood"
+   },
+   "summary": {
+    "ru": "Справочная карточка: капюшон с ограничением дыхания; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: breath-restricting hood; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "gas-mask-flow-control",
+   "source_refs": [
+    "category-chat-052"
+   ],
+   "title": {
+    "ru": "Газовая маска с контролем потока",
+    "en": "Gas mask flow control"
+   },
+   "summary": {
+    "ru": "Справочная карточка: газовая маска с контролем потока; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: gas mask flow control; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Gas mask with controlled intake"
+    ]
+   }
+  },
+  {
+   "slug": "waterboarding",
+   "source_refs": [
+    "category-chat-053"
+   ],
+   "title": {
+    "ru": "Waterboarding (лицо в воде)",
+    "en": "Waterboarding (face in water)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: водное ограничение; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: water immersion; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Водное нагружение (water loading)"
+    ],
+    "en": [
+     "Face in water / waterboarding-style"
+    ]
+   }
+  },
+  {
+   "slug": "wet-breathplay-bag",
+   "source_refs": [
+    "category-chat-054"
+   ],
+   "title": {
+    "ru": "Мокрый дыхательный пакет",
+    "en": "Wet breathplay bag"
+   },
+   "summary": {
+    "ru": "Справочная карточка: мокрый дыхательный пакет; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: wet breathplay bag; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "breath-occlusion-with-restraint",
+   "source_refs": [
+    "category-chat-055"
+   ],
+   "title": {
+    "ru": "Перекрытие дыхания с фиксацией",
+    "en": "Breath occlusion with restraint"
+   },
+   "summary": {
+    "ru": "Справочная карточка: перекрытие дыхания с фиксацией; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: breath occlusion with restraint; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "chest-restriction",
+   "source_refs": [
+    "category-chat-056"
+   ],
+   "title": {
+    "ru": "Ограничение грудной клетки",
+    "en": "Chest restriction"
+   },
+   "summary": {
+    "ru": "Справочная карточка: ограничение грудной клетки; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: chest restriction; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Chest restriction (тугая обмотка грудной клетки)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "cyclic-breath-occlusion",
+   "source_refs": [
+    "category-chat-057"
+   ],
+   "title": {
+    "ru": "Циклическое перекрытие дыхания",
+    "en": "Cyclic breath occlusion"
+   },
+   "summary": {
+    "ru": "Справочная карточка: циклическое перекрытие дыхания; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: cyclic breath occlusion; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "extended-mild-breath-restriction",
+   "source_refs": [
+    "category-chat-058"
+   ],
+   "title": {
+    "ru": "Длительное умеренное ограничение дыхания",
+    "en": "Extended mild breath restriction"
+   },
+   "summary": {
+    "ru": "Справочная карточка: длительное умеренное ограничение дыхания; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: extended mild breath restriction; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "combined-dry-breath-block",
+   "source_refs": [
+    "category-chat-059"
+   ],
+   "title": {
+    "ru": "Комбинированный сухой блок",
+    "en": "Combined dry breath block"
+   },
+   "summary": {
+    "ru": "Справочная карточка: комбинированный сухой блок; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: combined dry breath block; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Breath «Сухой слойный» (высокий)"
+    ],
+    "en": [
+     "ZD + Breath core block"
+    ]
+   }
+  },
+  {
+   "slug": "combined-wet-breath-block",
+   "source_refs": [
+    "category-chat-060"
+   ],
+   "title": {
+    "ru": "Комбинированный мокрый блок",
+    "en": "Combined wet breath block"
+   },
+   "summary": {
+    "ru": "Справочная карточка: комбинированный мокрый блок; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: combined wet breath block; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Combined wet methods"
+    ]
+   }
+  },
+  {
+   "slug": "breathplay-in-position",
+   "source_refs": [
+    "category-chat-061"
+   ],
+   "title": {
+    "ru": "Breath-play в позе",
+    "en": "Breathplay in position"
+   },
+   "summary": {
+    "ru": "Справочная карточка: breath-play в позе; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: breathplay in position; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Breath play in strict bondage position"
+    ]
+   }
+  },
+  {
+   "slug": "controlled-edge-breathplay",
+   "source_refs": [
+    "category-chat-062"
+   ],
+   "title": {
+    "ru": "Контролируемое доведение до края",
+    "en": "Controlled edge breathplay"
+   },
+   "summary": {
+    "ru": "Справочная карточка: контролируемое доведение до края; исполняемая инструкция и таймеры не предоставляются.",
+    "en": "Reference card: controlled edge breathplay; no executable instruction or timers."
+   },
+   "category": "breath_restriction",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "specialist_safety_review",
+    "no_executable_instructions",
+    "no_timing_or_progression",
+    "no_automation",
+    "no_restraint_combination",
+    "no_loss_of_consciousness_target",
+    "emergency_help_guidance"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "deepthroat-practice",
+   "source_refs": [
+    "category-chat-066"
+   ],
+   "title": {
+    "ru": "Глубокое горло — освоение",
+    "en": "Deepthroat practice"
+   },
+   "summary": {
+    "ru": "Постепенное освоение глубокого горла с контролем интенсивности и сигналом остановки.",
+    "en": "Gradual deepthroat practice with intensity control and a stop signal."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "no_breath_restriction"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Deepthroat training"
+    ]
+   }
+  },
+  {
+   "slug": "deepthroat-with-restraint",
+   "source_refs": [
+    "category-chat-067"
+   ],
+   "title": {
+    "ru": "Глубокое горло с фиксацией",
+    "en": "Deepthroat with restraint"
+   },
+   "summary": {
+    "ru": "Глубокое горло с лёгкой фиксацией, быстрым освобождением и сохранением контроля остановки.",
+    "en": "Deepthroat with light restraint, quick release and retained stop control."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "no_breath_restriction",
+    "quick_release_check",
+    "participant_retains_stop_control"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "extended-oral-session",
+   "source_refs": [
+    "category-chat-069"
+   ],
+   "title": {
+    "ru": "Длительная оральная нагрузка",
+    "en": "Extended oral session"
+   },
+   "summary": {
+    "ru": "Длительная оральная нагрузка без целевой выносливости, с паузами и сигналом остановки.",
+    "en": "Extended oral session without an endurance target, with breaks and a stop signal."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "no_breath_restriction",
+    "no_endurance_target"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Endurance oral session"
+    ]
+   }
+  },
+  {
+   "slug": "oral-with-breath-restriction",
+   "source_refs": [
+    "category-chat-070"
+   ],
+   "title": {
+    "ru": "Оральные фрикции с ограничением дыхания",
+    "en": "Oral with breath restriction"
+   },
+   "summary": {
+    "ru": "Справочная карточка: оральные фрикции с ограничением дыхания; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: oral with breath restriction; no executable instruction."
+   },
+   "category": "sexual_technique",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "no_breath_restriction"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Фрикции"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "deep-anal-thrusting",
+   "source_refs": [
+    "category-chat-072"
+   ],
+   "title": {
+    "ru": "Глубокие анальные фрикции",
+    "en": "Deep anal thrusting"
+   },
+   "summary": {
+    "ru": "Глубокие анальные фрикции с контролем глубины самим участником.",
+    "en": "Deep anal thrusting with participant-controlled depth."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "participant_controlled_depth",
+    "no_forced_depth"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Deep anal penetration"
+    ]
+   }
+  },
+  {
+   "slug": "anal-depth-control",
+   "source_refs": [
+    "category-chat-073"
+   ],
+   "title": {
+    "ru": "Анальные фрикции с контролем глубины",
+    "en": "Anal with depth control"
+   },
+   "summary": {
+    "ru": "Анальные фрикции с фиксацией глубины и сохранением контроля остановки.",
+    "en": "Anal thrusting with depth control and retained stop control."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "quick_release_check",
+    "participant_retains_stop_control",
+    "participant_controlled_depth",
+    "no_forced_depth"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Anal with depth holds"
+    ]
+   }
+  },
+  {
+   "slug": "anal-in-bondage",
+   "source_refs": [
+    "category-chat-075"
+   ],
+   "title": {
+    "ru": "Анальная работа в фиксации",
+    "en": "Anal in bondage"
+   },
+   "summary": {
+    "ru": "Анальная работа в лёгкой фиксации с быстрым освобождением и контролем остановки.",
+    "en": "Anal play in light bondage with quick release and stop control."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "quick_release_check",
+    "participant_retains_stop_control"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Anal in bondage (получающий обездвижен)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "extended-anal-session",
+   "source_refs": [
+    "category-chat-076"
+   ],
+   "title": {
+    "ru": "Длительная анальная нагрузка",
+    "en": "Extended anal session"
+   },
+   "summary": {
+    "ru": "Длительная анальная нагрузка без целевой выносливости, с паузами и сигналом остановки.",
+    "en": "Extended anal session without an endurance target, with breaks and a stop signal."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "no_endurance_target"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Long endurance anal session"
+    ]
+   }
+  },
+  {
+   "slug": "depth-controlled-thrusting",
+   "source_refs": [
+    "category-chat-079"
+   ],
+   "title": {
+    "ru": "Фрикции с контролем глубины",
+    "en": "Depth-controlled thrusting"
+   },
+   "summary": {
+    "ru": "Фрикции с согласованным контролем глубины и сохранением контроля остановки.",
+    "en": "Thrusting with agreed depth control and retained stop control."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "participant_controlled_depth",
+    "no_forced_depth"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "endurance-set",
+   "source_refs": [
+    "category-chat-080"
+   ],
+   "title": {
+    "ru": "Выносливостный комплекс",
+    "en": "Endurance set"
+   },
+   "summary": {
+    "ru": "Выносливостный комплекс без целевой выносливости, с паузами и контролем.",
+    "en": "Endurance set without an endurance target, with breaks and control."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "no_endurance_target"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "weighted-technique",
+   "source_refs": [
+    "category-chat-081"
+   ],
+   "title": {
+    "ru": "Техника с отягощением",
+    "en": "Weighted technique"
+   },
+   "summary": {
+    "ru": "Техника с небольшим согласованным отягощением и проверкой веса оборудования.",
+    "en": "Technique with a small agreed weight and equipment-weight review."
+   },
+   "category": "sexual_technique",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "no_automatic_escalation",
+    "duration_cap",
+    "intensity_cap",
+    "stop_signal_check",
+    "no_stop_penalty",
+    "aftercare_option",
+    "equipment_weight_review"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "long-term-chastity-wear",
+   "source_refs": [
+    "category-chat-086"
+   ],
+   "title": {
+    "ru": "Длительное ношение клетки целомудрия",
+    "en": "Long-term chastity wear"
+   },
+   "summary": {
+    "ru": "Длительное ношение клетки целомудрия с ежедневными проверками кожи, кровообращения и локальным экстренным снятием.",
+    "en": "Long-term chastity cage wear with daily skin/circulation checks and local emergency removal."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "repeat_checkin",
+    "no_unattended_escalation"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Long-term bowel holding",
+     "Chastity cage — short term",
+     "Chastity cage — long term / multi-day",
+     "Long-term gag",
+     "Long-term object status",
+     "Long-term protocol living"
+    ]
+   }
+  },
+  {
+   "slug": "chastity-cage-added-stimulation",
+   "source_refs": [
+    "category-chat-087"
+   ],
+   "title": {
+    "ru": "Клетка целомудрия с доп. воздействием",
+    "en": "Chastity cage with added stimulation"
+   },
+   "summary": {
+    "ru": "Ношение клетки с одним дополнительным воздействием за раз и проверкой совместимости.",
+    "en": "Cage wear with one added stimulation at a time and compatibility check."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "combination_compatibility_review",
+    "one_change_at_a_time"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "long-term-plug-wear",
+   "source_refs": [
+    "category-chat-089"
+   ],
+   "title": {
+    "ru": "Длительное ношение анальной пробки",
+    "en": "Long-term plug wear"
+   },
+   "summary": {
+    "ru": "Длительное ношение анальной пробки с регулярными проверками и снятием по сигналу.",
+    "en": "Long-term anal plug wear with regular check-ins and on-signal removal."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "repeat_checkin",
+    "no_unattended_escalation"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "plug-plus-cage-combination",
+   "source_refs": [
+    "category-chat-090"
+   ],
+   "title": {
+    "ru": "Пробка и клетка одновременно",
+    "en": "Plug plus cage combination"
+   },
+   "summary": {
+    "ru": "Одновременное ношение пробки и клетки с проверкой совместимости и одним изменением за раз.",
+    "en": "Simultaneous plug and cage wear with compatibility check and one change at a time."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "combination_compatibility_review",
+    "one_change_at_a_time"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Cage + plug simultaneous"
+    ]
+   }
+  },
+  {
+   "slug": "gag-wearing",
+   "source_refs": [
+    "category-chat-091"
+   ],
+   "title": {
+    "ru": "Ношение кляпа",
+    "en": "Gag wearing"
+   },
+   "summary": {
+    "ru": "Ношение кляпа с открытыми дыхательными путями и условленным сигналом остановки.",
+    "en": "Gag wearing with unobstructed airway and an agreed stop signal."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "airway_unobstructed",
+    "communication_signal_required"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "extended-gag-wear",
+   "source_refs": [
+    "category-chat-092"
+   ],
+   "title": {
+    "ru": "Длительное ношение кляпа",
+    "en": "Extended gag wear"
+   },
+   "summary": {
+    "ru": "Длительное ношение кляпа с регулярными проверками, сигналом остановки и снятием по требованию.",
+    "en": "Extended gag wear with regular check-ins, a stop signal and on-demand removal."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "airway_unobstructed",
+    "communication_signal_required",
+    "repeat_checkin",
+    "no_unattended_escalation"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "nipple-clamps-wearing",
+   "source_refs": [
+    "category-chat-093"
+   ],
+   "title": {
+    "ru": "Прищепки на соски (ношение)",
+    "en": "Nipple clamps wearing"
+   },
+   "summary": {
+    "ru": "Ношение прищепок на сосках с ограничением давления и проверкой кожи.",
+    "en": "Nipple clamps wearing with a pressure cap and skin checks."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "pressure_cap",
+    "body_zone_allowlist",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Nipple clamps — basic",
+     "Nipple clamps with tension / pull",
+     "Nipple clamps with weights"
+    ]
+   }
+  },
+  {
+   "slug": "clamps-with-tension",
+   "source_refs": [
+    "category-chat-094"
+   ],
+   "title": {
+    "ru": "Прищепки с натяжением",
+    "en": "Clamps with tension"
+   },
+   "summary": {
+    "ru": "Прищепки с согласованным натяжением и ограничением силы без автоматического веса.",
+    "en": "Clamps with agreed tension and a force cap, no automatic weight."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "pressure_cap",
+    "body_zone_allowlist",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "clamps-with-weights",
+   "source_refs": [
+    "category-chat-095"
+   ],
+   "title": {
+    "ru": "Прищепки с грузом",
+    "en": "Clamps with weights"
+   },
+   "summary": {
+    "ru": "Прищепки с небольшим согласованным грузом и ограничением силы.",
+    "en": "Clamps with a small agreed weight and a force cap."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "pressure_cap",
+    "body_zone_allowlist",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Cage + weights / electro / clamps",
+     "Clamps with swinging weights"
+    ]
+   }
+  },
+  {
+   "slug": "genital-clamps",
+   "source_refs": [
+    "category-chat-096"
+   ],
+   "title": {
+    "ru": "Прищепки на гениталии",
+    "en": "Genital clamps"
+   },
+   "summary": {
+    "ru": "Справочная карточка: прищепки на гениталиях; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: genital clamps; no executable instruction."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "pressure_cap",
+    "body_zone_allowlist",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "full-clamps-set-wearing",
+   "source_refs": [
+    "category-chat-097"
+   ],
+   "title": {
+    "ru": "Комплексное ношение прищепок",
+    "en": "Full clamps set wearing"
+   },
+   "summary": {
+    "ru": "Комплексное ношение набора прищепок с ограничением давления и проверкой состояния.",
+    "en": "Full clamps set wearing with a pressure cap and state checks."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "pressure_cap",
+    "body_zone_allowlist",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Full chastity & wearing set (cage + plug + gag + clamps)"
+    ]
+   }
+  },
+  {
+   "slug": "underwear-gag",
+   "source_refs": [
+    "category-chat-098"
+   ],
+   "title": {
+    "ru": "Ношение белья во рту",
+    "en": "Underwear gag"
+   },
+   "summary": {
+    "ru": "Справочная карточка: ношение белья во рту; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: underwear gag; no executable instruction."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "airway_unobstructed",
+    "communication_signal_required",
+    "biohazard_review"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "tight-clothing-restraint",
+   "source_refs": [
+    "category-chat-099"
+   ],
+   "title": {
+    "ru": "Тугое бельё и колготки (ограничение)",
+    "en": "Tight clothing restraint"
+   },
+   "summary": {
+    "ru": "Тугое бельё и колготки как лёгкое ограничение с проверкой состояния.",
+    "en": "Tight clothing as light restraint with state checks."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Clothing as bondage (very tight)"
+    ]
+   }
+  },
+  {
+   "slug": "full-wearing-set",
+   "source_refs": [
+    "category-chat-100"
+   ],
+   "title": {
+    "ru": "Полный комплект ношения",
+    "en": "Full wearing set"
+   },
+   "summary": {
+    "ru": "Полный комплект ношения с проверкой совместимости и одним изменением за раз.",
+    "en": "Full wearing set with compatibility check and one change at a time."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "combination_compatibility_review",
+    "one_change_at_a_time"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Ношение «Полный комплект» (средний)"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "wearing-during-daily-tasks",
+   "source_refs": [
+    "category-chat-101"
+   ],
+   "title": {
+    "ru": "Ношение в повседневных делах",
+    "en": "Wearing during daily tasks"
+   },
+   "summary": {
+    "ru": "Ношение устройства во время повседневных дел с регулярными проверками и снятием по сигналу.",
+    "en": "Device wearing during daily tasks with regular check-ins and on-signal removal."
+   },
+   "category": "wearing_chastity",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "skin_and_circulation_check",
+    "duration_cap",
+    "local_emergency_exit",
+    "independent_removal",
+    "no_stop_penalty",
+    "aftercare_option",
+    "repeat_checkin",
+    "no_unattended_escalation"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Wearing during daily tasks"
+    ]
+   }
+  },
+  {
+   "slug": "hogtie-bondage",
+   "source_refs": [
+    "category-chat-107"
+   ],
+   "title": {
+    "ru": "Связывание рук и ног (хогтай)",
+    "en": "Hogtie bondage"
+   },
+   "summary": {
+    "ru": "Хогтай-фиксация рук и ног с быстрым освобождением и проверкой кровообращения.",
+    "en": "Hogtie hands-and-feet bondage with quick release and circulation checks."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "limited_restraint_points",
+    "one_change_at_a_time"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "kneeling-submission-pose",
+   "source_refs": [
+    "category-chat-108"
+   ],
+   "title": {
+    "ru": "Поза подчинения на коленях",
+    "en": "Kneeling submission pose"
+   },
+   "summary": {
+    "ru": "Поза подчинения на коленях с ограничением подвижности суставов в безопасном диапазоне.",
+    "en": "Kneeling submission pose with joint mobility kept in a safe range."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "position_mobility_review",
+    "joint_range_limit"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "spread-eagle-strapdown",
+   "source_refs": [
+    "category-chat-109"
+   ],
+   "title": {
+    "ru": "Поза лёжа с растяжкой (стрэппод)",
+    "en": "Spread-eagle strapdown"
+   },
+   "summary": {
+    "ru": "Лёжа с растяжкой конечностей и быстрым освобождением.",
+    "en": "Spread-eagle strapdown with quick release."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "position_mobility_review",
+    "joint_range_limit"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Spread-eagle (lying)"
+    ]
+   }
+  },
+  {
+   "slug": "seated-arms-bound-pose",
+   "source_refs": [
+    "category-chat-110"
+   ],
+   "title": {
+    "ru": "Поза сидя со связанными руками",
+    "en": "Seated arms-bound pose"
+   },
+   "summary": {
+    "ru": "Поза сидя со связанными руками и стабильной опорой.",
+    "en": "Seated pose with bound arms and stable support."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "position_mobility_review",
+    "joint_range_limit"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "vertical-post-restraint",
+   "source_refs": [
+    "category-chat-111"
+   ],
+   "title": {
+    "ru": "Вертикальная фиксация к столбу",
+    "en": "Vertical post restraint"
+   },
+   "summary": {
+    "ru": "Вертикальная фиксация к столбу с проверкой устойчивости и быстрым освобождением.",
+    "en": "Vertical post restraint with stability check and quick release."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "position_mobility_review",
+    "joint_range_limit"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "partial-suspension",
+   "source_refs": [
+    "category-chat-112"
+   ],
+   "title": {
+    "ru": "Частичное подвешивание",
+    "en": "Partial suspension"
+   },
+   "summary": {
+    "ru": "Справочная карточка: частичное подвешивание; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: partial suspension; no executable instruction."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "specialist_safety_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Partial suspension"
+    ]
+   }
+  },
+  {
+   "slug": "mummification-restraint",
+   "source_refs": [
+    "category-chat-113"
+   ],
+   "title": {
+    "ru": "Полное ограничение подвижности (мумификация)",
+    "en": "Mummification restraint"
+   },
+   "summary": {
+    "ru": "Полное ограничение подвижности с ограниченным числом точек фиксации и быстрым освобождением.",
+    "en": "Full mobility restriction with limited restraint points and quick release."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "limited_restraint_points",
+    "one_change_at_a_time"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "head-neck-restraint",
+   "source_refs": [
+    "category-chat-114"
+   ],
+   "title": {
+    "ru": "Фиксация головы и шеи",
+    "en": "Head and neck restraint"
+   },
+   "summary": {
+    "ru": "Справочная карточка: фиксация головы и шеи; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: head and neck restraint; no executable instruction."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "specialist_safety_review",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Head & neck restraint (collar to point, posture collar)"
+    ]
+   }
+  },
+  {
+   "slug": "spreader-bar",
+   "source_refs": [
+    "category-chat-115"
+   ],
+   "title": {
+    "ru": "Распорки для ног (спредер-бар)",
+    "en": "Spreader bar"
+   },
+   "summary": {
+    "ru": "Распорка для ног с ограничением силы и без автоматического веса.",
+    "en": "Spreader bar with a force cap and no automatic weight."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "equipment_force_review",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "weighted-bondage",
+   "source_refs": [
+    "category-chat-116"
+   ],
+   "title": {
+    "ru": "Бондаж с отягощением",
+    "en": "Weighted bondage"
+   },
+   "summary": {
+    "ru": "Бондаж с небольшим согласованным отягощением и ограничением силы.",
+    "en": "Bondage with a small agreed weight and a force cap."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "equipment_force_review",
+    "no_automatic_weight"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "extended-bondage",
+   "source_refs": [
+    "category-chat-117"
+   ],
+   "title": {
+    "ru": "Длительная фиксация",
+    "en": "Extended bondage"
+   },
+   "summary": {
+    "ru": "Длительная фиксация с регулярными проверками кровообращения и нервов.",
+    "en": "Extended bondage with regular circulation and nerve checks."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "uncomfortable-position-bondage",
+   "source_refs": [
+    "category-chat-118"
+   ],
+   "title": {
+    "ru": "Фиксация в неудобной позе",
+    "en": "Uncomfortable position bondage"
+   },
+   "summary": {
+    "ru": "Фиксация в неудобной позе с ограничением диапазона суставов и стабильной опорой.",
+    "en": "Bondage in an uncomfortable pose with joint-range limits and stable support."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "position_mobility_review",
+    "joint_range_limit"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Kneeling position bondage"
+    ]
+   }
+  },
+  {
+   "slug": "tape-bondage",
+   "source_refs": [
+    "category-chat-119"
+   ],
+   "title": {
+    "ru": "Скотч-бондаж",
+    "en": "Tape bondage"
+   },
+   "summary": {
+    "ru": "Скотч и плёнка как фиксация с кожей-безопасными материалами и под рукой аварийным инструментом.",
+    "en": "Tape and film bondage with skin-safe materials and an emergency tool at hand."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "skin_safe_material_review",
+    "emergency_tool_available"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Tape / clingfilm bondage"
+    ]
+   }
+  },
+  {
+   "slug": "chains-and-locks",
+   "source_refs": [
+    "category-chat-120"
+   ],
+   "title": {
+    "ru": "Цепи и замки",
+    "en": "Chains and locks"
+   },
+   "summary": {
+    "ru": "Цепи и замки как фиксация с ключом и аварийным инструментом под рукой.",
+    "en": "Chains and locks as restraint with a key and emergency tool at hand."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "skin_safe_material_review",
+    "emergency_tool_available"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "multi-point-bondage",
+   "source_refs": [
+    "category-chat-121"
+   ],
+   "title": {
+    "ru": "Многоточечная фиксация",
+    "en": "Multi-point bondage"
+   },
+   "summary": {
+    "ru": "Многоточечная фиксация с ограниченным числом точек и одним изменением за раз.",
+    "en": "Multi-point bondage with a limited number of points and one change at a time."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty",
+    "limited_restraint_points",
+    "one_change_at_a_time"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Multi-point integrated bondage"
+    ]
+   }
+  },
+  {
+   "slug": "release-control-bondage",
+   "source_refs": [
+    "category-chat-122"
+   ],
+   "title": {
+    "ru": "Фиксация с контролем высвобождения",
+    "en": "Release-control bondage"
+   },
+   "summary": {
+    "ru": "Фиксация с контролем высвобождения и быстрым освобождением в любой момент.",
+    "en": "Release-control bondage with quick release available at any time."
+   },
+   "category": "restraint_bondage",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "quick_release_check",
+    "circulation_check",
+    "nerve_pressure_check",
+    "stable_position",
+    "duration_cap",
+    "repeat_checkin",
+    "no_neck_or_breath",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "ice-play",
+   "source_refs": [
+    "category-chat-125"
+   ],
+   "title": {
+    "ru": "Ледяная игра",
+    "en": "Ice play"
+   },
+   "summary": {
+    "ru": "Воздействие льдом по согласованным зонам с контролем интенсивности и проверкой кожи.",
+    "en": "Ice play on agreed zones with intensity control and skin checks."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "temperature-contrast-play",
+   "source_refs": [
+    "category-chat-126"
+   ],
+   "title": {
+    "ru": "Контраст температур",
+    "en": "Temperature contrast play"
+   },
+   "summary": {
+    "ru": "Контраст тепла и холода с контролем интенсивности и проверкой кожи.",
+    "en": "Hot-cold contrast play with intensity control and skin checks."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Temperature contrast (ice ↔ warm)"
+    ]
+   }
+  },
+  {
+   "slug": "wax-play-dripping",
+   "source_refs": [
+    "category-chat-127"
+   ],
+   "title": {
+    "ru": "Wax play (капание воском)",
+    "en": "Wax play (dripping)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: wax play (капание воском); исполняемая инструкция не предоставляется.",
+    "en": "Reference card: wax play dripping; no executable instruction."
+   },
+   "category": "sensory_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Wax play — dripping"
+    ]
+   }
+  },
+  {
+   "slug": "wax-play-trail",
+   "source_refs": [
+    "category-chat-128"
+   ],
+   "title": {
+    "ru": "Wax play — дорожка",
+    "en": "Wax play trail"
+   },
+   "summary": {
+    "ru": "Справочная карточка: wax play — дорожка; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: wax play trail; no executable instruction."
+   },
+   "category": "sensory_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "clamps-sensory-pressure",
+   "source_refs": [
+    "category-chat-129"
+   ],
+   "title": {
+    "ru": "Прищепки — сенсорное давление",
+    "en": "Clamps sensory pressure"
+   },
+   "summary": {
+    "ru": "Прищепки для сенсорного давления с ограничением интенсивности и проверкой кожи.",
+    "en": "Clamps for sensory pressure with an intensity cap and skin checks."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "clamps-weight-movement",
+   "source_refs": [
+    "category-chat-130"
+   ],
+   "title": {
+    "ru": "Прищепки с грузом и движением",
+    "en": "Clamps with weight and movement"
+   },
+   "summary": {
+    "ru": "Прищепки с небольшим грузом и движением с ограничением силы.",
+    "en": "Clamps with a small weight and movement, with a force cap."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "mass-clamps-application",
+   "source_refs": [
+    "category-chat-131"
+   ],
+   "title": {
+    "ru": "Массовая установка прищепок",
+    "en": "Mass clamps application"
+   },
+   "summary": {
+    "ru": "Массовая установка прищепок с ограничением числа и проверкой кожи.",
+    "en": "Mass clamps application with a count cap and skin checks."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Mass clothespin application"
+    ]
+   }
+  },
+  {
+   "slug": "electrical-stimulation-tens",
+   "source_refs": [
+    "category-chat-133"
+   ],
+   "title": {
+    "ru": "Электростимуляция (TENS)",
+    "en": "Electrical stimulation (TENS)"
+   },
+   "summary": {
+    "ru": "Справочная карточка: электростимуляция; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: electrical stimulation; no executable instruction."
+   },
+   "category": "sensory_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "hearing-deprivation",
+   "source_refs": [
+    "category-chat-136"
+   ],
+   "title": {
+    "ru": "Лишение слуха (беруши)",
+    "en": "Hearing deprivation"
+   },
+   "summary": {
+    "ru": "Лишение слуха с помощью берушей с сохранением сигнала остановки.",
+    "en": "Hearing deprivation with earplugs while keeping a stop signal."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "sensory-overload",
+   "source_refs": [
+    "category-chat-137"
+   ],
+   "title": {
+    "ru": "Сенсорная перегрузка",
+    "en": "Sensory overload"
+   },
+   "summary": {
+    "ru": "Сенсорная перегрузка с контролем интенсивности и сигналом остановки.",
+    "en": "Sensory overload with intensity control and a stop signal."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "sensory-deprivation",
+   "source_refs": [
+    "category-chat-138"
+   ],
+   "title": {
+    "ru": "Сенсорная депривация",
+    "en": "Sensory deprivation"
+   },
+   "summary": {
+    "ru": "Сенсорная депривация с регулярными проверками и сигналом остановки.",
+    "en": "Sensory deprivation with regular check-ins and a stop signal."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Sensory deprivation (multi-sense)"
+    ]
+   }
+  },
+  {
+   "slug": "pressure-compression",
+   "source_refs": [
+    "category-chat-139"
+   ],
+   "title": {
+    "ru": "Давление и сжатие",
+    "en": "Pressure and compression"
+   },
+   "summary": {
+    "ru": "Давление и сжатие с контролем интенсивности и проверкой состояния.",
+    "en": "Pressure and compression with intensity control and state checks."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "vacuum-play",
+   "source_refs": [
+    "category-chat-140"
+   ],
+   "title": {
+    "ru": "Вакуумное воздействие",
+    "en": "Vacuum play"
+   },
+   "summary": {
+    "ru": "Справочная карточка: вакуумное воздействие; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: vacuum play; no executable instruction."
+   },
+   "category": "sensory_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "combined-sensory-play",
+   "source_refs": [
+    "category-chat-141"
+   ],
+   "title": {
+    "ru": "Комбинированная сенсорика",
+    "en": "Combined sensory play"
+   },
+   "summary": {
+    "ru": "Комбинация согласованных сенсорных практик с контролем интенсивности.",
+    "en": "Combination of agreed sensory practices with intensity control."
+   },
+   "category": "sensory_play",
+   "content_kind": "activity",
+   "risk_level": "low",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Combined sensory sequence"
+    ]
+   }
+  },
+  {
+   "slug": "sensory-edging",
+   "source_refs": [
+    "category-chat-142"
+   ],
+   "title": {
+    "ru": "Сенсорный край",
+    "en": "Sensory edging"
+   },
+   "summary": {
+    "ru": "Справочная карточка: сенсорный край; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: sensory edging; no executable instruction."
+   },
+   "category": "sensory_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "intensity_cap",
+    "duration_cap",
+    "skin_check",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "belt-spanking",
+   "source_refs": [
+    "category-chat-146"
+   ],
+   "title": {
+    "ru": "Порка ремнём",
+    "en": "Belt spanking"
+   },
+   "summary": {
+    "ru": "Порка ремнём по согласованным зонам с ограничением силы и числа ударов.",
+    "en": "Belt spanking on agreed zones with intensity and repetition caps."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Belt / strap"
+    ]
+   }
+  },
+  {
+   "slug": "cane-whip-impact",
+   "source_refs": [
+    "category-chat-147"
+   ],
+   "title": {
+    "ru": "Порка стеком / хлыстом",
+    "en": "Cane / whip impact"
+   },
+   "summary": {
+    "ru": "Справочная карточка: порка стеком и хлыстом; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: cane and whip impact; no executable instruction."
+   },
+   "category": "impact_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Cane / stick"
+    ]
+   }
+  },
+  {
+   "slug": "flogger-impact",
+   "source_refs": [
+    "category-chat-148"
+   ],
+   "title": {
+    "ru": "Порка флоггером",
+    "en": "Flogger impact"
+   },
+   "summary": {
+    "ru": "Порка флоггером по согласованным зонам с ограничением силы и числа ударов.",
+    "en": "Flogger impact on agreed zones with intensity and repetition caps."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "cord-rope-impact",
+   "source_refs": [
+    "category-chat-149"
+   ],
+   "title": {
+    "ru": "Порка шнуром / верёвкой",
+    "en": "Cord / rope impact"
+   },
+   "summary": {
+    "ru": "Справочная карточка: порка шнуром и верёвкой; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: cord and rope impact; no executable instruction."
+   },
+   "category": "impact_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "thigh-hamstring-impact",
+   "source_refs": [
+    "category-chat-151"
+   ],
+   "title": {
+    "ru": "Порка бёдер и задней поверхности ног",
+    "en": "Thigh and hamstring impact"
+   },
+   "summary": {
+    "ru": "Порка бёдер и задней поверхности ног с ограничением силы и числа ударов.",
+    "en": "Thigh and hamstring impact with intensity and repetition caps."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "chest-nipple-impact",
+   "source_refs": [
+    "category-chat-152"
+   ],
+   "title": {
+    "ru": "Порка груди и сосков",
+    "en": "Chest and nipple impact"
+   },
+   "summary": {
+    "ru": "Справочная карточка: порка груди и сосков; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: chest and nipple impact; no executable instruction."
+   },
+   "category": "impact_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Объем груди"
+    ],
+    "en": []
+   }
+  },
+  {
+   "slug": "genital-impact",
+   "source_refs": [
+    "category-chat-153"
+   ],
+   "title": {
+    "ru": "Порка гениталий",
+    "en": "Genital impact"
+   },
+   "summary": {
+    "ru": "Справочная карточка: порка гениталий; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: genital impact; no executable instruction."
+   },
+   "category": "impact_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "back-shoulder-impact",
+   "source_refs": [
+    "category-chat-154"
+   ],
+   "title": {
+    "ru": "Порка спины и плеч",
+    "en": "Back and shoulder impact"
+   },
+   "summary": {
+    "ru": "Справочная карточка: порка спины и плеч; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: back and shoulder impact; no executable instruction."
+   },
+   "category": "impact_play",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "research_backlog",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Impact on back & shoulders"
+    ]
+   }
+  },
+  {
+   "slug": "multi-zone-impact",
+   "source_refs": [
+    "category-chat-155"
+   ],
+   "title": {
+    "ru": "Смешанная порка нескольких зон",
+    "en": "Multi-zone impact"
+   },
+   "summary": {
+    "ru": "Порка нескольких согласованных зон с ограничением силы и числа ударов.",
+    "en": "Impact across several agreed zones with intensity and repetition caps."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Multi-zone clamp wearing",
+     "Mixed-zone impact"
+    ]
+   }
+  },
+  {
+   "slug": "escalating-impact-spanking",
+   "source_refs": [
+    "category-chat-157"
+   ],
+   "title": {
+    "ru": "Порка с нарастающей силой",
+    "en": "Escalating-impact spanking"
+   },
+   "summary": {
+    "ru": "Порка с постепенным нарастанием силы в согласованных пределах и проверкой на середине.",
+    "en": "Spanking with gradual intensity build within agreed limits and a midpoint check-in."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "impact-in-bondage",
+   "source_refs": [
+    "category-chat-159"
+   ],
+   "title": {
+    "ru": "Порка в фиксации",
+    "en": "Impact in bondage"
+   },
+   "summary": {
+    "ru": "Порка в лёгкой фиксации с быстрым освобождением и контролем силы.",
+    "en": "Impact in light bondage with quick release and intensity control."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Impact in full bondage",
+     "Chastity + Bondage + Impact block"
+    ]
+   }
+  },
+  {
+   "slug": "humiliation-impact-play",
+   "source_refs": [
+    "category-chat-160"
+   ],
+   "title": {
+    "ru": "Порка с элементами унижения",
+    "en": "Humiliation impact play"
+   },
+   "summary": {
+    "ru": "Порка с согласованными элементами унижения и ограничением силы.",
+    "en": "Impact with agreed humiliation elements and an intensity cap."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "manual_reference",
+    "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [],
+    "en": [
+     "Impact combined with verbal humiliation",
+     "Verbal humiliation",
+     "Mirror humiliation"
+    ]
+   }
+  },
+  {
+   "slug": "endurance-spanking",
+   "source_refs": [
+    "category-chat-161"
+   ],
+   "title": {
+    "ru": "Длительная выносливостная порка",
+    "en": "Endurance spanking"
+   },
+   "summary": {
+    "ru": "Длительная порка без целевой выносливости, с паузами и проверкой на середине.",
+    "en": "Extended spanking without an endurance target, with breaks and midpoint check-ins."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "intense-finale-set",
+   "source_refs": [
+    "category-chat-162"
+   ],
+   "title": {
+    "ru": "Интенсивный финальный блок",
+    "en": "Intense finale set"
+   },
+   "summary": {
+    "ru": "Интенсивный финальный блок с согласованными пределами и проверкой на середине.",
+    "en": "Intense finale set with agreed limits and a midpoint check-in."
+   },
+   "category": "impact_play",
+   "content_kind": "activity",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "adult_explicit_opt_in",
+    "per_session_confirmation",
+    "manual_selection_only",
+    "equipment_allowlist",
+    "body_zone_allowlist",
+    "vulnerable_zone_denylist",
+    "intensity_cap",
+    "repetition_cap",
+    "midpoint_checkin",
+    "stop_signal_check",
+    "no_automatic_escalation",
+    "no_stop_penalty"
+   ],
+   "proposed_parameters": {
+    "duration_minutes": {
+     "unit": "minutes",
+     "min": 5,
+     "max": 60
+    },
+    "repetitions": {
+     "unit": "repetitions",
+     "min": 20,
+     "max": 120
+    }
+   },
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  },
+  {
+   "slug": "intense-fill-impact-hybrid",
+   "source_refs": [
+    "category-chat-163"
+   ],
+   "title": {
+    "ru": "Интенсивный гибрид наполнения и порки",
+    "en": "Intense fill-and-impact hybrid"
+   },
+   "summary": {
+    "ru": "Справочная карточка: гибрид наполнения и порки; исполняемая инструкция не предоставляется.",
+    "en": "Reference card: fill-and-impact hybrid; no executable instruction."
+   },
+   "category": "session_hybrid",
+   "content_kind": "reference",
+   "risk_level": "elevated",
+   "automation_allowed": false,
+   "required_controls": [
+    "recover_source_context",
+    "adult_explicit_opt_in",
+    "manual_selection_only",
+    "no_medical_volume",
+    "no_automatic_escalation",
+    "no_executable_instructions"
+   ],
+   "proposed_parameters": null,
+   "promotion": {
+    "source_outcome": "rewrite_required",
+    "owner_override": true
+   }
+  }
+ ]
+}

@@ -1095,3 +1095,23 @@ async def json_delete_partner(
     await db.delete(partner)
     await db.flush()
     return None
+
+
+@json_router.post("/partners/{partner_id}/analyze")
+async def json_analyze_partner_dynamics(
+    request: Request,
+    partner_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """LLM Partner Dynamics & Boundaries Consultant (Step 24)."""
+    from app.llm.pipeline.journal_consultant import analyze_partner_dynamics
+    from app.services.llm_provider import get_active_llm_config
+
+    llm_config = await get_active_llm_config(db, user.id)
+    if not llm_config:
+        raise HTTPException(400, "LLM provider config is required for Partner Dynamics Consultant")
+
+    locale = detect_locale(request, user.locale)
+    res = await analyze_partner_dynamics(db, user.id, partner_id, llm_config, locale=locale)
+    return res

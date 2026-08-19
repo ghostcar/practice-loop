@@ -54,6 +54,15 @@ class JournalPartner(Base):
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Step 24: Inclusive Partner Profile fields (migration 071)
+    roles: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    identity_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    hard_limits: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    soft_limits: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    safewords: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    aftercare_preferences: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
