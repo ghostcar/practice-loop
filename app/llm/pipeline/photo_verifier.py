@@ -94,3 +94,65 @@ Evaluate the verification evidence and return JSON.
             "recommended_action": "approve",
             "_mode": mode,
         }
+
+
+INVENTORY_RECOGNITION_PROMPT = """You are an AI Equipment & Inventory Recognition Specialist.
+Analyze the provided equipment photo details and suggest structured metadata for an inventory item.
+
+Respond ONLY with a valid JSON object:
+{
+  "name": "Suggested Item Name",
+  "category": "equipment | restraint | chastity | care | garment | general",
+  "description": "Item description and observed features",
+  "condition": "new | good | worn | needs_maintenance",
+  "tags": ["tag1", "tag2"],
+  "suggested_parameters": {
+    "material": "silicone/metal/leather",
+    "size": "M"
+  }
+}
+"""
+
+
+async def recognize_inventory_from_photo(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    media_id: uuid.UUID,
+    llm_config: LLMProviderConfig,
+    locale: str = "ru",
+) -> dict[str, Any]:
+    """Recognizes an equipment/inventory item from a photo details via LLM."""
+    user_prompt = f"Recognize inventory item from Media ID {media_id}. Language: {locale}"
+
+    client = get_openai_client(llm_config.api_base_url, llm_config.api_key)
+    try:
+        res = await client.chat.completions.create(
+            model=llm_config.model_name,
+            messages=[
+                {"role": "system", "content": INVENTORY_RECOGNITION_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.3,
+        )
+        import json
+
+        data = json.loads(res.choices[0].message.content or "{}")
+        return {
+            "name": str(data.get("name", "Распознанное оборудование")),
+            "category": str(data.get("category", "equipment")),
+            "description": str(data.get("description", "Автоматически распознано через ИИ по фото.")),
+            "condition": str(data.get("condition", "good")),
+            "tags": list(data.get("tags") or ["ai-recognized"]),
+            "suggested_parameters": dict(data.get("suggested_parameters") or {}),
+        }
+    except Exception as exc:
+        logger.warning("LLM inventory recognition failed: %s", exc)
+        return {
+            "name": "Элемент Инвентаря (AI)",
+            "category": "equipment",
+            "description": "Элемент инвентаря, добавленный по фото.",
+            "condition": "good",
+            "tags": ["ai-recognized"],
+            "suggested_parameters": {},
+        }

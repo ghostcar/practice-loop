@@ -192,8 +192,8 @@ async def json_verify_photo_llm(
     user: User = Depends(get_current_user),
 ):
     """LLM Photo Verification Engine (AI Controller / Keyholder / Top — Step 28)."""
+    from app.llm.pipeline import get_active_llm_config
     from app.llm.pipeline.photo_verifier import verify_photo_with_llm
-    from app.services.llm_provider import get_active_llm_config
 
     llm_config = await get_active_llm_config(db, user.id)
     if not llm_config:
@@ -210,3 +210,28 @@ async def json_verify_photo_llm(
         locale=user.locale or "ru",
     )
     return res
+
+
+@json_router.post("/recognize-inventory")
+async def json_recognize_inventory_photo(
+    media_id: uuid.UUID = Form(...),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """AI Inventory Auto-Recognition & Auto-Fill from Photo (Step 29)."""
+    from app.llm.pipeline import get_active_llm_config
+    from app.llm.pipeline.photo_verifier import recognize_inventory_from_photo
+
+    llm_config = await get_active_llm_config(db, user.id)
+    if not llm_config:
+        from fastapi import HTTPException
+        raise HTTPException(400, "LLM provider config required for AI Inventory Recognition")
+
+    item_data = await recognize_inventory_from_photo(
+        db=db,
+        user_id=user.id,
+        media_id=media_id,
+        llm_config=llm_config,
+        locale=user.locale or "ru",
+    )
+    return item_data

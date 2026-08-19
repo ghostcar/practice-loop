@@ -33,7 +33,10 @@ def _estimate_cost(model_name: str, prompt_tokens: int, completion_tokens: int) 
     for key, (prompt_rate, comp_rate) in DEFAULT_COST_PER_1K.items():
         if key in model_lower:
             return (prompt_tokens / 1000) * prompt_rate + (completion_tokens / 1000) * comp_rate
-    return 0.0
+def get_openai_client(base_url: str, api_key: str | None = None) -> AsyncOpenAI:
+    """Helper to instantiate an AsyncOpenAI client for pipeline calls."""
+    key = api_key or "not-needed"
+    return AsyncOpenAI(base_url=base_url, api_key=key, timeout=60.0)
 
 
 async def call_llm(
