@@ -68,11 +68,12 @@ async def test_seed_entities_default_to_low(db_session: AsyncSession, test_user)
         pytest.skip("catalog already seeded")
 
 
-# ── risk_level: automation gate ──
+# ── risk_level: informational metadata (ADR-106) ──
 
 
 @pytest.mark.asyncio
-async def test_filter_automation_eligible_defaults_unassessed_out():
+async def test_filter_automation_eligible_opted_in_is_approved():
+    """ADR-106: opt-in is the approval boundary — nothing is filtered by risk."""
     from app.llm.context_builder import filter_automation_eligible
 
     ents = [
@@ -81,12 +82,14 @@ async def test_filter_automation_eligible_defaults_unassessed_out():
         {"id": "c", "risk_level": "high"},
         {"id": "d", "risk_level": "elevated"},
         {"id": "e"},  # missing → not_assessed
+        {"id": "f", "automation_allowed": False, "adult_only": True},
     ]
     allowed = filter_automation_eligible(ents)
-    assert [e["id"] for e in allowed] == ["a"]
+    assert [e["id"] for e in allowed] == ["a", "b", "c", "d", "e", "f"]
 
+    # allow_elevated kept for backward compatibility — no-op under ADR-106.
     with_consent = filter_automation_eligible(ents, allow_elevated=True)
-    assert [e["id"] for e in with_consent] == ["a", "d"]
+    assert [e["id"] for e in with_consent] == ["a", "b", "c", "d", "e", "f"]
 
 
 # ── Typed gamification DSL ──

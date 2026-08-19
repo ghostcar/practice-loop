@@ -44,8 +44,9 @@
 ## Значение статусов источника
 
 - `candidate` — можно готовить производную карточку.
-- `manual_only` — пользователь может выбрать отредактированную карточку вручную; планировщик и
-  LLM не назначают её автоматически.
+- `manual_only` — disposition источника: карточка требует ручной редактуры перед переносом в
+  каталог; в рантайме опт-ин пользователя является границей одобрения (ADR-106),
+  `automation_allowed` — информационные метаданные.
 - `needs_safe_rewrite` — идея сохранена, но требует новых hard caps, stop/check-in и описания.
 - `research_only` — идея сохранена для отдельной проработки; исходная запись не является
   пользовательской инструкцией или исполняемой карточкой.
@@ -106,7 +107,7 @@ python3 -m tools.adult_catalog_manifest data/seed/adult_evidence_source.v1.json 
 1. Проверить provenance и отсутствие механического переноса опасной инструкции.
 2. Добавить RU/EN title и summary.
 3. Указать adult-only, explicit opt-in и необходимость актуального session check-in.
-4. Определить `risk_level` и отдельно `automation_allowed`.
+4. Определить `risk_level` и отдельно `automation_allowed` (информационные метаданные, ADR-106).
 5. Добавить типизированные параметры с units/min/max и без автоматической эскалации.
 6. Добавить prerequisites, stop conditions, quick release, checkpoints и aftercare.
 7. Запретить обязательное медиа-подтверждение и штраф за safety stop.

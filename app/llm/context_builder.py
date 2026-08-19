@@ -99,32 +99,32 @@ async def _get_allowed_entities(db: AsyncSession, user_id: uuid.UUID) -> list[di
                 "desire_level": opt_in.desire_level,
                 "rating": opt_in.rating,
                 "risk_level": entity.risk_level or "not_assessed",
+                # ADR-106: informational metadata — the user's opt-in is the
+                # approval boundary, risk/automation are shown, not enforced.
+                "automation_allowed": entity.automation_allowed,
+                "adult_only": entity.adult_only,
             }
         )
     return entities
 
 
-# REM §5.2 automation gate: entities that may be picked by the LLM without
-# extra confirmation. not_assessed (never reviewed) and high (too risky) are
-# excluded; elevated requires confirmation, so it is included only when the
-# caller opts in (e.g. explicit user request).
+# ADR-106 (owner decision, supersedes the REM §5.2 risk gate): the user's
+# explicit opt-in IS the approval boundary. `_get_allowed_entities` returns
+# only entities the user has opted into, so every entity reaching this point is
+# approved by default — regardless of risk_level or automation_allowed. Both
+# stay as informational metadata the user can use to set their own boundaries.
 def filter_automation_eligible(
     entities: list[dict],
     allow_elevated: bool = False,
 ) -> list[dict]:
-    """Keep only entities the LLM may auto-select (REM §5.2 safety gate).
+    """Return auto-eligible entities (ADR-106).
 
-    - not_assessed / high → always excluded from automatic selection;
-    - elevated → excluded unless ``allow_elevated=True`` (explicit confirmation);
-    - low → always allowed.
+    Opted-in entities are approved by the user by default, so nothing is
+    filtered here. ``risk_level`` / ``automation_allowed`` are informational
+    and no longer gate automatic selection. ``allow_elevated`` is kept for
+    backward compatibility and is a no-op.
     """
-    result = []
-    for e in entities:
-        level = e.get("risk_level") or "not_assessed"
-        if level == "low" or level == "elevated" and allow_elevated:
-            result.append(e)
-        # not_assessed / high / elevated-without-consent → skip
-    return result
+    return entities
 
 
 async def _get_recent_history(db: AsyncSession, user_id: uuid.UUID, limit: int = 10) -> list[dict]:

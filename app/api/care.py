@@ -226,6 +226,8 @@ async def care_page(
             "id": str(c.id),
             "name": c.name,
             "area": c.area,
+            "place_name": c.place_name,
+            "place_address": c.place_address,
             "total_sessions": c.total_sessions,
             "interval_days": c.interval_days,
             "start_date": c.start_date.isoformat() if c.start_date else None,
@@ -271,6 +273,8 @@ async def care_page(
                     "name": r.name,
                     "area": r.area,
                     "kind": r.kind,
+                    "place_name": r.place_name,
+                    "place_address": r.place_address,
                     "frequency_days": r.frequency_days,
                     "notes": r.notes,
                     "entries_count": sum(1 for e in entries if e.routine_id == r.id),
@@ -347,6 +351,8 @@ def _entry_view(
         "entry_date": e.entry_date.isoformat(),
         "routine_id": str(e.routine_id) if e.routine_id else None,
         "routine_name": routine_names.get(str(e.routine_id)) if e.routine_id else None,
+        "place_name": e.place_name,
+        "place_address": e.place_address,
         "duration_minutes": e.duration_minutes,
         "skin_reaction": e.skin_reaction,
         "notes": e.notes,
@@ -519,6 +525,8 @@ async def add_routine(
     name: str = Form(...),
     area: str = Form(default="other"),
     kind: str = Form(default="home"),
+    place_name: str = Form(default=""),
+    place_address: str = Form(default=""),
     frequency_days: str = Form(default=""),
     notes: str = Form(default=""),
     catalog_item_id: str = Form(default=""),
@@ -541,6 +549,8 @@ async def add_routine(
         catalog_item_id=catalog_item.id if catalog_item else None,
         area=area,
         kind=kind,
+        place_name=(place_name or "").strip()[:200] or None,
+        place_address=(place_address or "").strip()[:300] or None,
         frequency_days=_parse_int(frequency_days, "frequency_days", minimum=1, maximum=3650),
         notes=(notes or "").strip() or None,
     )
@@ -645,6 +655,8 @@ async def add_entry(
     request: Request,
     entry_date: str = Form(...),
     routine_id: str = Form(default=""),
+    place_name: str = Form(default=""),
+    place_address: str = Form(default=""),
     duration_minutes: str = Form(default=""),
     skin_reaction: str = Form(default=""),
     notes: str = Form(default=""),
@@ -667,6 +679,8 @@ async def add_entry(
         user_id=user.id,
         routine_id=rid,
         entry_date=d,
+        place_name=(place_name or "").strip()[:200] or None,
+        place_address=(place_address or "").strip()[:300] or None,
         duration_minutes=_parse_int(duration_minutes, "duration_minutes"),
         skin_reaction=reaction,
         notes=(notes or "").strip() or None,
@@ -824,6 +838,8 @@ def _routine_json(r: CareRoutine) -> dict:
         "catalog_item_id": str(r.catalog_item_id) if r.catalog_item_id else None,
         "area": r.area,
         "kind": r.kind,
+        "place_name": r.place_name,
+        "place_address": r.place_address,
         "frequency_days": r.frequency_days,
         "notes": r.notes,
         "product_ids": [str(pr.id) for pr in r.products],
@@ -849,6 +865,8 @@ def _entry_json(e: CareEntry, product_ids_by_entry: dict[str, list[str]] | None 
         "id": str(e.id),
         "entry_date": e.entry_date.isoformat(),
         "routine_id": str(e.routine_id) if e.routine_id else None,
+        "place_name": e.place_name,
+        "place_address": e.place_address,
         "duration_minutes": e.duration_minutes,
         "skin_reaction": e.skin_reaction,
         "notes": e.notes,
@@ -863,6 +881,8 @@ class RoutineBody(BaseModel):
     catalog_item_id: uuid.UUID | None = None
     area: str = "other"
     kind: str = "home"
+    place_name: str | None = Field(default=None, max_length=200)
+    place_address: str | None = Field(default=None, max_length=300)
     frequency_days: int | None = Field(default=None, ge=1, le=3650)
     notes: str | None = None
     product_ids: list[uuid.UUID] = Field(default_factory=list)
@@ -887,6 +907,8 @@ async def json_add_routine(
         catalog_item_id=catalog_item.id if catalog_item else None,
         area=area,
         kind=kind,
+        place_name=(body.place_name or "").strip()[:200] or None,
+        place_address=(body.place_address or "").strip()[:300] or None,
         frequency_days=body.frequency_days,
         notes=(body.notes or "").strip() or None,
     )
@@ -903,6 +925,8 @@ async def json_add_routine(
 class EntryBody(BaseModel):
     entry_date: date
     routine_id: uuid.UUID | None = None
+    place_name: str | None = Field(default=None, max_length=200)
+    place_address: str | None = Field(default=None, max_length=300)
     duration_minutes: int | None = Field(default=None, ge=0, le=10000)
     skin_reaction: int | None = Field(default=None, ge=1, le=5)
     notes: str | None = None
@@ -934,6 +958,8 @@ async def json_add_entry(
         user_id=user.id,
         routine_id=rid,
         entry_date=body.entry_date,
+        place_name=(body.place_name or "").strip()[:200] or None,
+        place_address=(body.place_address or "").strip()[:300] or None,
         duration_minutes=body.duration_minutes,
         skin_reaction=body.skin_reaction,
         notes=(body.notes or "").strip() or None,
@@ -1082,6 +1108,8 @@ def _course_json(c: CareCourse) -> dict:
         "name": c.name,
         "catalog_item_id": str(c.catalog_item_id) if c.catalog_item_id else None,
         "area": c.area,
+        "place_name": c.place_name,
+        "place_address": c.place_address,
         "total_sessions": c.total_sessions,
         "interval_days": c.interval_days,
         "start_date": c.start_date.isoformat() if c.start_date else None,
@@ -1106,6 +1134,8 @@ async def add_course(
     request: Request,
     name: str = Form(...),
     area: str = Form(default="other"),
+    place_name: str = Form(default=""),
+    place_address: str = Form(default=""),
     total_sessions: str = Form(default="1"),
     interval_days: str = Form(default=""),
     start_date: str = Form(default=""),
@@ -1137,6 +1167,8 @@ async def add_course(
         name=name,
         catalog_item_id=catalog_item.id if catalog_item else None,
         area=area,
+        place_name=(place_name or "").strip()[:200] or None,
+        place_address=(place_address or "").strip()[:300] or None,
         total_sessions=total,
         interval_days=interval,
         start_date=start,
@@ -1239,6 +1271,8 @@ async def json_list_courses(
 class CourseBody(BaseModel):
     name: str
     area: str = "other"
+    place_name: str | None = Field(default=None, max_length=200)
+    place_address: str | None = Field(default=None, max_length=300)
     total_sessions: int = Field(default=1, ge=1, le=200)
     interval_days: int | None = Field(default=None, ge=1, le=3650)
     start_date: date | None = None
@@ -1263,6 +1297,8 @@ async def json_add_course(
         name=name,
         catalog_item_id=catalog_item.id if catalog_item else None,
         area=area,
+        place_name=(body.place_name or "").strip()[:200] or None,
+        place_address=(body.place_address or "").strip()[:300] or None,
         total_sessions=body.total_sessions,
         interval_days=body.interval_days,
         start_date=start,

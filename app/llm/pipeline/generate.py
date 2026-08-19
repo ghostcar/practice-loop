@@ -114,8 +114,8 @@ async def generate_task(
 ) -> ActivityLog:
     """Generate a task via LLM and save to ActivityLog."""
     context = await context_builder.build_context(db, user_id, session_id=session_id, locale=locale)
-    # REM §5.2 automation gate: not_assessed/high (and elevated without consent)
-    # are never auto-selected — they must not even appear in the prompt.
+    # ADR-106: the user's opt-in is the approval boundary. Opted-in entities are
+    # auto-eligible regardless of risk_level/automation_allowed (informational).
     context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
     allowed_ids = validator.get_allowed_ids(context)
 

@@ -79,6 +79,9 @@ class CareRoutine(Base):
     area: Mapped[str] = mapped_column(String(20), default="other", nullable=False)
     # home | salon
     kind: Mapped[str] = mapped_column(String(20), default="home", nullable=False)
+    # место проведения (салон и т.п., может быть адрес) — необязательно (2026-08-19)
+    place_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    place_address: Mapped[str | None] = mapped_column(String(300), nullable=True)
     # частота в днях (например 7 = раз в неделю) — необязательно
     frequency_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -117,6 +120,9 @@ class CareEntry(Base):
     duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # реакция кожи — 1..5 (1 = хуже, 5 = лучше)
     skin_reaction: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # место проведения процедуры (салон и т.п.) — необязательно (2026-08-19)
+    place_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    place_address: Mapped[str | None] = mapped_column(String(300), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     # снимок расчётной фазы Cycle (не выдаётся за факт, §9.4)
     cycle_phase: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -231,6 +237,9 @@ class CareCourse(Base):
     )
     # face | body | hair | hands | feet | other
     area: Mapped[str] = mapped_column(String(20), default="other", nullable=False)
+    # место проведения курса (салон и т.п.) — необязательно (2026-08-19)
+    place_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    place_address: Mapped[str | None] = mapped_column(String(300), nullable=True)
     total_sessions: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     # интервал между сеансами в днях (напр. 30 для лазера)
     interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)

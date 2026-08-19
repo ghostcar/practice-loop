@@ -114,6 +114,89 @@ async def test_add_entry_and_list(auth_client, test_user, db_session):
 
 
 @pytest.mark.asyncio
+async def test_place_fields_form_and_display(auth_client, test_user, db_session):
+    """Место проведения (салон, адрес) сохраняется и показывается на /care (2026-08-19)."""
+    resp = await auth_client.post(
+        "/care/routines",
+        data={
+            "name": "Laser hair removal",
+            "area": "body",
+            "kind": "salon",
+            "place_name": "Lotus salon",
+            "place_address": "12 Tverskaya St",
+        },
+    )
+    assert resp.status_code == 303, resp.text
+    routine = (await db_session.execute(select(CareRoutine).where(CareRoutine.user_id == test_user.id))).scalar_one()
+    assert routine.place_name == "Lotus salon"
+    assert routine.place_address == "12 Tverskaya St"
+
+    resp = await auth_client.post(
+        "/care/entries",
+        data={
+            "entry_date": TODAY.isoformat(),
+            "routine_id": str(routine.id),
+            "place_name": "Lotus salon",
+            "place_address": "12 Tverskaya St",
+        },
+    )
+    assert resp.status_code == 303, resp.text
+    entry = (await db_session.execute(select(CareEntry).where(CareEntry.user_id == test_user.id))).scalar_one()
+    assert entry.place_name == "Lotus salon"
+    assert entry.place_address == "12 Tverskaya St"
+
+    resp = await auth_client.post(
+        "/care/courses",
+        data={
+            "name": "Laser course",
+            "place_name": "Lotus salon",
+            "place_address": "12 Tverskaya St",
+            "total_sessions": "3",
+        },
+    )
+    assert resp.status_code == 303, resp.text
+
+    page = await auth_client.get("/care")
+    assert page.status_code == 200
+    assert "Lotus salon" in page.text
+    assert "12 Tverskaya St" in page.text
+
+
+@pytest.mark.asyncio
+async def test_json_place_fields(auth_client, test_user, db_session):
+    """Место проведения доступно в JSON API (routine/entry/course)."""
+    resp = await auth_client.post(
+        "/api/v2/care/routines",
+        json={
+            "name": "Manicure",
+            "area": "hands",
+            "kind": "salon",
+            "place_name": "Nail bar",
+            "place_address": "5 Arbat St",
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["place_name"] == "Nail bar"
+    assert resp.json()["place_address"] == "5 Arbat St"
+
+    resp = await auth_client.post(
+        "/api/v2/care/entries",
+        json={"entry_date": TODAY.isoformat(), "place_name": "Nail bar", "place_address": "5 Arbat St"},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["place_name"] == "Nail bar"
+    assert resp.json()["place_address"] == "5 Arbat St"
+
+    resp = await auth_client.post(
+        "/api/v2/care/courses",
+        json={"name": "Pedicure course", "place_name": "Nail bar", "place_address": "5 Arbat St", "total_sessions": 4},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["place_name"] == "Nail bar"
+    assert resp.json()["place_address"] == "5 Arbat St"
+
+
+@pytest.mark.asyncio
 async def test_invalid_reaction_rejected(auth_client, test_user, db_session):
     resp = await auth_client.post("/care/entries", data={"entry_date": TODAY.isoformat(), "skin_reaction": "9"})
     assert resp.status_code == 400

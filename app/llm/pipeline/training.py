@@ -58,7 +58,7 @@ async def generate_daily_plan(
       and validated, so a failed attempt never leaves a partial plan behind.
     """
     context = await context_builder.build_context(db, user_id, locale=locale)
-    # REM §5.2 automation gate for training plans too.
+    # ADR-106: opted-in entities are approved by default (risk/automation informational).
     context["allowed_entities"] = filter_automation_eligible(context.get("allowed_entities", []))
     allowed_ids = validator.get_allowed_ids(context)
     entities_by_id = {e["id"]: e for e in context.get("allowed_entities", [])}

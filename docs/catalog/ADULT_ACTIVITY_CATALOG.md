@@ -45,8 +45,10 @@
 Каждая запись должна иметь:
 
 - стабильный `slug`, RU/EN title, category/subcategory, adult-only tags и role tags;
-- `risk_level`: `low` или `elevated`; `not_assessed/high` не попадают в automation;
-- `automation_allowed`, `penalty_enabled` (для consent/check-in/aftercare всегда false);
+- `risk_level`: `low` или `elevated`; информационные метаданные — опт-ин пользователя является
+  границей одобрения (ADR-106), риск не блокирует автоматический выбор;
+- `automation_allowed` — информационные метаданные (ADR-106); `penalty_enabled` (для
+  consent/check-in/aftercare всегда false);
 - типизированный `params_schema`: duration cap, intensity scale, repetitions, body zones,
   equipment allowlist, check-in interval и aftercare choices — только когда применимо;
 - prerequisites и contraindication prompts как предупреждения, не медицинские диагнозы;

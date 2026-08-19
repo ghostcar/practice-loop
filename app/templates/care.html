@@ -43,6 +43,12 @@
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_notes }}
                     <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_place_name }}
+                    <input type="text" name="place_name" placeholder="{{ t.care_place_name_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_place_address }}
+                    <input type="text" name="place_address" placeholder="{{ t.care_place_address_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
                 <button type="submit" class="col-span-2 sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.care_save }}</button>
             </form>
         </section>
@@ -74,6 +80,12 @@
                 <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_notes }}
                     <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_place_name }}
+                    <input type="text" name="place_name" placeholder="{{ t.care_place_name_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">{{ t.care_place_address }}
+                    <input type="text" name="place_address" placeholder="{{ t.care_place_address_ph }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
                 {% if products %}
                 <fieldset class="col-span-2 sm:col-span-3">
                     <legend class="text-xs pl-text-secondary mb-1.5">{{ t.care_products_used }}</legend>
@@ -104,6 +116,7 @@
                         <span class="font-medium text-[color:var(--text)]">{{ r.name }}</span>
                         <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ t['care_area_' + r.area] }}</span>
                         <span class="pl-text-muted text-xs">{{ t['care_kind_' + r.kind] }}</span>
+                        {% if r.place_name %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('location', 'w-3.5 h-3.5') }}{{ r.place_name }}{% if r.place_address %} · {{ r.place_address }}{% endif %}</span>{% endif %}
                         {% if r.frequency_days %}<span class="pl-text-muted text-xs">{{ t.care_frequency_days }}: {{ r.frequency_days }}</span>{% endif %}
                         <span class="pl-text-muted text-xs">{{ r.entries_count }} {{ t.care_entries_count }}</span>
                     </div>
@@ -187,6 +200,8 @@
             <input name="total_sessions" type="number" min="1" max="200" value="4" aria-label="{{ t.care_course_sessions }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             <input name="interval_days" type="number" min="1" max="3650" placeholder="{{ t.care_course_interval_ph }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             <input name="start_date" type="date" aria-label="{{ t.care_course_start }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <input name="place_name" placeholder="{{ t.care_place_name }}" aria-label="{{ t.care_place_name }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <input name="place_address" placeholder="{{ t.care_place_address }}" aria-label="{{ t.care_place_address }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm min-h-[44px] col-span-2">{{ t.care_course_add }}</button>
         </form>
         {% if courses %}
@@ -197,6 +212,7 @@
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="font-medium text-[color:var(--text)]">{{ c.name }}</span>
                         <span class="pl-accent-soft px-2 py-0.5 rounded-md text-xs">{{ c.done }}/{{ c.total_sessions }}</span>
+                        {% if c.place_name %}<span class="pl-text-muted text-xs inline-flex items-center gap-1">{{ icon('location', 'w-3.5 h-3.5') }}{{ c.place_name }}{% if c.place_address %} · {{ c.place_address }}{% endif %}</span>{% endif %}
                         {% if c.next_date %}<span class="pl-text-muted text-xs">{{ t.care_course_next }}: {{ c.next_date }}</span>{% endif %}
                     </div>
                     {% if c.sessions %}
@@ -242,6 +258,7 @@
                     <div class="pl-text-secondary text-xs flex items-center gap-3 flex-wrap">
                         {% if e.duration_minutes is not none %}<span>{{ t.care_duration }}: {{ e.duration_minutes }}</span>{% endif %}
                         {% if e.skin_reaction %}<span>{{ t.care_skin_reaction }}: {{ e.skin_reaction }}</span>{% endif %}
+                        {% if e.place_name %}<span class="inline-flex items-center gap-1">{{ icon('location', 'w-3.5 h-3.5') }}{{ e.place_name }}{% if e.place_address %} · {{ e.place_address }}{% endif %}</span>{% endif %}
                     </div>
                     {% if e.notes %}<div class="text-xs pl-text-muted">{{ e.notes }}</div>{% endif %}
                     {% set photos = media[e.id] if media and media[e.id] else [] %}

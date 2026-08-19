@@ -109,3 +109,5 @@
 | [ADR-103](ADR-103.md) | 2026-08-17 | Шаг C4: Today projection (единый экран дня) | accepted |
 | [ADR-104](ADR-104.md) | 2026-08-18 | Durable purpose/version consent + BYOK disclosure | accepted |
 | [ADR-105](ADR-105.md) | 2026-08-18 | P1 18+ каталог: хранение safety contract | accepted |
+| [ADR-106](ADR-106.md) | 2026-08-19 | P1c: одобрение пользователя — граница автоматизации | accepted |
+| [ADR-107](ADR-107.md) | 2026-08-19 | Care: место проведения процедуры | accepted |

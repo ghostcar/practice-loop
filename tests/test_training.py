@@ -41,7 +41,7 @@ async def _make_allowed_entity(db_session: AsyncSession, user_id, owner_id=None)
         category="test",
         owner_id=owner_id or user_id,
         is_public=False,
-        # low risk → eligible for LLM automation (REM §5.2 gate)
+        # risk_level is informational metadata (ADR-106); opt-in is the approval
         risk_level="low",
         params_schema={"intensity": {"type": "integer", "min": 1, "max": 3}},
     )
@@ -344,10 +344,10 @@ async def test_generate_plan_sanitizes_subtasks(
 
 
 @pytest.mark.asyncio
-async def test_generate_plan_risk_gate_blocks_unassessed(
+async def test_generate_plan_opted_in_not_assessed_is_planned(
     auth_client: AsyncClient, db_session: AsyncSession, test_user, monkeypatch
 ):
-    """REM §5.2: an entity with risk_level not_assessed/high is not auto-selected."""
+    """ADR-106: an opted-in entity is approved by default — risk_level is informational."""
     from app.llm.pipeline import filter_automation_eligible
 
     low = {"id": "a", "risk_level": "low"}
@@ -356,13 +356,9 @@ async def test_generate_plan_risk_gate_blocks_unassessed(
     elev = {"id": "d", "risk_level": "elevated"}
 
     eligible = filter_automation_eligible([low, na, high, elev])
-    assert [e["id"] for e in eligible] == ["a"]
+    assert [e["id"] for e in eligible] == ["a", "b", "c", "d"]
 
-    # Explicit consent unlocks elevated only.
-    eligible2 = filter_automation_eligible([low, na, high, elev], allow_elevated=True)
-    assert [e["id"] for e in eligible2] == ["a", "d"]
-
-    # Pipeline gate: a plan referencing only a not_assessed entity is rejected.
+    # Pipeline: an opted-in entity with risk_level not_assessed is auto-planned.
     entity = await _make_allowed_entity(db_session, test_user.id)
     entity.risk_level = "not_assessed"
     await db_session.flush()
@@ -383,9 +379,9 @@ async def test_generate_plan_risk_gate_blocks_unassessed(
 
     response = await auth_client.post("/training/plan", follow_redirects=False)
     assert response.status_code == 303
-    assert "error=" in response.headers["location"]
     days = (await db_session.execute(select(TrainingDay).where(TrainingDay.user_id == test_user.id))).scalars().all()
-    assert days == []  # not_assessed entity must NOT be auto-planned
+    assert len(days) == 1
+    assert days[0].status == "active"  # opted-in not_assessed entity is auto-planned (ADR-106)
 
 
 @pytest.mark.asyncio
