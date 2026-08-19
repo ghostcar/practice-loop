@@ -802,6 +802,30 @@ async def delete_entry(
 json_router = APIRouter(prefix="/api/v2/care", tags=["care"])
 
 
+@router.get("/care/builder", response_class=HTMLResponse)
+async def care_builder_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Interactive Care & Aftercare Kit Builder page (Step 36)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="care_builder.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "care",
+        },
+    )
+
+
 @json_router.get("")
 async def json_summary(
     db: AsyncSession = Depends(get_db),
