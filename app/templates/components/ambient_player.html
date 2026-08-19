@@ -1,0 +1,134 @@
+{% from "components/icon.html" import icon %}
+
+<div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-4 shadow-md">
+    <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
+        <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl pl-accent-soft flex items-center justify-center font-bold text-sm">🔊</span>
+            <div>
+                <h3 class="font-bold text-sm text-[color:var(--text)]">Аудио-Ассистент и Эмбиент Сессий</h3>
+                <p class="text-[11px] text-[color:var(--text-muted)]">Звуковое сопровождение (432Гц Aftercare, ритм дыхания, фокусирующий фон)</p>
+            </div>
+        </div>
+        <button type="button" id="ambient-toggle-btn" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold transition-all duration-200">
+            ▶ Запустить Звук
+        </button>
+    </div>
+
+    <!-- Presets Selector -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button type="button" class="ambient-preset-btn p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--accent)] text-left space-y-1" data-preset="aftercare">
+            <div class="font-semibold text-xs text-[color:var(--text)]">🧘 432Гц Aftercare</div>
+            <div class="text-[10px] text-[color:var(--text-muted)]">Успокаивающий эмбиент для восстановления.</div>
+        </button>
+
+        <button type="button" class="ambient-preset-btn p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] text-left space-y-1" data-preset="pacing">
+            <div class="font-semibold text-xs text-[color:var(--text)]">⏱️ Ритм Дыхания и Поз</div>
+            <div class="text-[10px] text-[color:var(--text-muted)]">Импульсный метроном для упражнений.</div>
+        </button>
+
+        <button type="button" class="ambient-preset-btn p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] text-left space-y-1" data-preset="focus">
+            <div class="font-semibold text-xs text-[color:var(--text)]">🔒 Атмосфера Фокуса</div>
+            <div class="text-[10px] text-[color:var(--text-muted)]">Глубокий розовый шум для Keyholder-сессий.</div>
+        </button>
+    </div>
+
+    <!-- Volume Control -->
+    <div class="flex items-center gap-3 pt-2">
+        <span class="text-xs font-medium text-[color:var(--text-secondary)]">Громкость:</span>
+        <input type="range" id="ambient-volume" min="0" max="1" step="0.05" value="0.3" class="w-full accent-[color:var(--accent)] h-1.5 rounded-lg bg-[color:var(--surface-soft)] cursor-pointer">
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('ambient-toggle-btn');
+  const volumeSlider = document.getElementById('ambient-volume');
+  const presetBtns = document.querySelectorAll('.ambient-preset-btn');
+
+  let audioCtx = null;
+  let osc = null;
+  let gainNode = null;
+  let isPlaying = false;
+  let currentPreset = 'aftercare';
+
+  function initAudio() {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = parseFloat(volumeSlider.value);
+      gainNode.connect(audioCtx.destination);
+    }
+  }
+
+  function playPreset(preset) {
+    initAudio();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    if (osc) {
+      try { osc.stop(); } catch(e) {}
+      osc.disconnect();
+      osc = null;
+    }
+
+    osc = audioCtx.createOscillator();
+    if (preset === 'aftercare') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(432, audioCtx.currentTime);
+    } else if (preset === 'pacing') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+    } else if (preset === 'focus') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(110, audioCtx.currentTime);
+    }
+    osc.connect(gainNode);
+    osc.start();
+    isPlaying = true;
+    toggleBtn.textContent = '⏹ Остановить Звук';
+    toggleBtn.className = 'px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-all duration-200';
+  }
+
+  function stopAudio() {
+    if (osc) {
+      try { osc.stop(); } catch(e) {}
+      osc = null;
+    }
+    isPlaying = false;
+    toggleBtn.textContent = '▶ Запустить Звук';
+    toggleBtn.className = 'px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold transition-all duration-200';
+  }
+
+  toggleBtn?.addEventListener('click', () => {
+    if (isPlaying) {
+      stopAudio();
+    } else {
+      playPreset(currentPreset);
+    }
+  });
+
+  volumeSlider?.addEventListener('input', (e) => {
+    if (gainNode) {
+      gainNode.gain.value = parseFloat(e.target.value);
+    }
+  });
+
+  presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      presetBtns.forEach(b => {
+        b.classList.remove('border-[color:var(--accent)]');
+        b.classList.add('border-[color:var(--border)]');
+      });
+      btn.classList.remove('border-[color:var(--border)]');
+      btn.classList.add('border-[color:var(--accent)]');
+
+      currentPreset = btn.getAttribute('data-preset');
+      if (isPlaying) {
+        playPreset(currentPreset);
+      }
+    });
+  });
+});
+</script>

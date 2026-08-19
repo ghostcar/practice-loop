@@ -704,6 +704,30 @@ async def sessions_wizard_page(
     )
 
 
+@router.get("/sessions/ambient", response_class=HTMLResponse)
+async def sessions_ambient_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Interactive Session Soundscape & Ambient Assistant page (Step 38)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="sessions_ambient.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+        },
+    )
+
+
 @router.post("/sessions/create-from-template")
 async def create_session_from_template(
     request: Request,
