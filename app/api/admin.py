@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -18,6 +19,7 @@ from app.seed_inventory_categories import seed_inventory_categories
 from app.seed_locations import seed_locations
 from app.templates_setup import templates
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
 USER_ROLES = ("user", "moderator", "admin")
 
@@ -222,5 +224,87 @@ async def admin_catalog_editor(
             "theme": theme,
             "active_nav": "admin",
             "items": entities,
+        },
+    )
+
+
+@router.get("/ai-generator", response_class=HTMLResponse)
+async def admin_ai_generator_page(
+    request: Request,
+    admin: User = Depends(require_admin),
+):
+    """AI Portal Content Generator & Conscious Prompt Workbench (Step 40)."""
+    locale = detect_locale(request, admin.locale)
+    theme = detect_theme(admin.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_ai_generator.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": admin,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+            "generated_items": [],
+        },
+    )
+
+
+@router.post("/ai-generator/generate", response_class=HTMLResponse)
+async def admin_ai_generator_execute(
+    request: Request,
+    mode: str = Form(default="expanded"),
+    explicit_level: int = Form(default=4),
+    remove_filters: bool = Form(default=False),
+    custom_directives: str = Form(default=""),
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Executes AI Content Generation with conscious filter/prompt overrides."""
+    from app.llm.pipeline import get_active_llm_config
+    from app.llm.pipeline.content_generator import (
+        build_catalog_generation_prompt,
+        generate_catalog_proposals,
+    )
+
+    locale = detect_locale(request, admin.locale)
+    theme = detect_theme(admin.theme)
+    t = get_translations(locale)
+
+    llm_config = await get_active_llm_config(db, admin.id)
+    generated_items = []
+
+    if llm_config:
+        sys_prompt, usr_prompt = build_catalog_generation_prompt(
+            mode=mode,
+            explicit_level=explicit_level,
+            custom_directives=custom_directives,
+            remove_filters=remove_filters,
+        )
+        try:
+            generated_items = await generate_catalog_proposals(
+                db=db,
+                user_id=admin.id,
+                llm_config=llm_config,
+                system_prompt=sys_prompt,
+                user_prompt=usr_prompt,
+            )
+        except Exception as e:
+            logger.error(f"AI Catalog Generation failed: {e}")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_ai_generator.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": admin,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+            "generated_items": generated_items,
         },
     )

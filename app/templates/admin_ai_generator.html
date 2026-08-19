@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                {{ icon('ai', 'w-6 h-6 text-[color:var(--accent)]') }} ИИ-Генератор Наполнения & Промпт-Воркбенч
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Генерация карточек активностей с осознанным управлением фильтрами, уровнем откровенности и пользовательскими директивами.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/admin/catalog-editor" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
+                ← Редактор Каталога
+            </a>
+        </div>
+    </div>
+
+    <!-- Generation Form / Workbench -->
+    <form method="POST" action="/admin/ai-generator/generate" class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-5 shadow-md">
+        <!-- Controls Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Mode Selector -->
+            <div>
+                <label class="block text-xs font-bold text-[color:var(--text)] mb-1">Режим работы ИИ:</label>
+                <select name="mode" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)]">
+                    <option value="expanded" selected>Расширенный режим (Expanded 18+)</option>
+                    <option value="safe">Безопасный режим (Safe)</option>
+                </select>
+            </div>
+
+            <!-- Explicit Level Slider -->
+            <div>
+                <label class="block text-xs font-bold text-[color:var(--text)] mb-1">Уровень откровенности (1-5):</label>
+                <div class="flex items-center gap-3">
+                    <input type="range" name="explicit_level" min="1" max="5" value="4" class="w-full accent-[color:var(--accent)] h-2 rounded-lg bg-[color:var(--surface-soft)] cursor-pointer">
+                    <span class="font-bold text-xs text-[color:var(--accent)]">Level 4</span>
+                </div>
+            </div>
+
+            <!-- Remove Developer Filters Toggle -->
+            <div>
+                <label class="block text-xs font-bold text-[color:var(--text)] mb-1">Осознанное отключение фильтров:</label>
+                <label class="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input type="checkbox" name="remove_filters" value="true" class="rounded accent-[color:var(--accent)] w-4 h-4">
+                    <span class="text-xs text-[color:var(--text-secondary)] font-medium">Убрать стандартные дисклеймеры</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Custom Directives -->
+        <div>
+            <label class="block text-xs font-bold text-[color:var(--text)] mb-1">Пользовательские директивы и предпочтения к промпту:</label>
+            <textarea name="custom_directives" rows="2" placeholder="Например: Сделай упор на позы дисциплины и уход за кожей aftercare..." class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] resize-none"></textarea>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+            <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md inline-flex items-center gap-2">
+                🚀 Сгенерировать Карточки Активностей
+            </button>
+        </div>
+    </form>
+
+    <!-- Proposals List -->
+    {% if generated_items %}
+    <div class="space-y-4">
+        <h3 class="font-bold text-sm text-[color:var(--text)] border-b border-[color:var(--border)] pb-2">
+            ✨ Сгенерированные Карточки (Ожидают проверки / Review Needed)
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {% for item in generated_items %}
+            <div class="p-4 rounded-xl pl-surface border border-[color:var(--border)] space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-xs text-[color:var(--text)]">{{ item.name }}</span>
+                    <span class="text-[10px] font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded">{{ item.status }}</span>
+                </div>
+                <div class="text-[11px] font-mono text-[color:var(--text-muted)]">{{ item.slug }}</div>
+                <div class="text-[11px] text-[color:var(--text-secondary)]">Категория: {{ item.category }} | Риск: {{ item.risk_level }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
