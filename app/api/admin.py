@@ -194,3 +194,33 @@ async def admin_schema_builder(
             "entities": entities,
         },
     )
+
+
+@router.get("/catalog-editor", response_class=HTMLResponse)
+async def admin_catalog_editor(
+    request: Request,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Interactive Catalog & Seed Editor workbench."""
+    from app.models.entity import Entity
+
+    locale = detect_locale(request, admin.locale)
+    theme = detect_theme(admin.theme)
+    t = get_translations(locale)
+
+    entities = (await db.execute(select(Entity).order_by(Entity.created_at.desc()))).scalars().all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_catalog_editor.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": admin,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+            "items": entities,
+        },
+    )

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                {{ icon('admin', 'w-6 h-6') }} Интерактивный Редактор Каталога Активностей
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Управление 187+ карточками справочника: редактирование описаний, категорий, уровня риска, диапазонов параметров и договоров безопасности.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/admin" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
+                ← Админ-панель
+            </a>
+            <a href="/catalog" class="px-3.5 py-2 pl-accent-bg text-xs font-semibold rounded-lg hover:bg-[color:var(--accent-hover)]">
+                Каталог Активностей
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
+            <span class="text-[color:var(--text-muted)]">🔍 Поиск:</span>
+            <input type="text" id="catalog-search-input" placeholder="Поиск по названию или slug..." class="w-full sm:w-64 px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[38px]">
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[color:var(--text-muted)]">Категория:</span>
+            <select id="catalog-category-filter" class="px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[38px]">
+                <option value="all">Все Категории</option>
+                <option value="consent_communication">Consent & Communication</option>
+                <option value="wearing_chastity">Chastity & Lock Control</option>
+                <option value="restraint_bondage">Bondage & Restraint</option>
+                <option value="impact_play">Impact Play</option>
+                <option value="sensory_play">Sensory Play</option>
+                <option value="connection_aftercare">Aftercare & Recovery</option>
+                <option value="humiliation_objectification">Humiliation & Objectification</option>
+                <option value="service_protocol">Service Protocol</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Catalog Table -->
+    <div class="overflow-x-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <table class="w-full text-left text-xs text-[color:var(--text)]">
+            <thead class="bg-[color:var(--surface-soft)] border-b border-[color:var(--border)] text-[color:var(--text-secondary)] uppercase font-semibold">
+                <tr>
+                    <th class="p-3.5">Карточка / Slug</th>
+                    <th class="p-3.5">Категория</th>
+                    <th class="p-3.5">Уровень Риска</th>
+                    <th class="p-3.5">Статус</th>
+                    <th class="p-3.5 text-right">Действия</th>
+                </tr>
+            </thead>
+            <tbody id="catalog-table-body" class="divide-y divide-[color:var(--border)]">
+                {% for item in items %}
+                <tr class="catalog-row hover:bg-[color:var(--surface-soft)] transition-colors" data-slug="{{ item.slug }}" data-title="{{ item.real_name }}" data-category="{{ item.category or 'other' }}">
+                    <td class="p-3.5 font-medium space-y-0.5">
+                        <div class="font-bold text-[color:var(--text)]">{{ item.real_name }}</div>
+                        <div class="font-mono text-[10px] text-[color:var(--text-muted)]">{{ item.slug }}</div>
+                    </td>
+                    <td class="p-3.5">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+                            {{ item.category or 'Общая' }}
+                        </span>
+                    </td>
+                    <td class="p-3.5">
+                        {% if item.risk_level == 'high' %}
+                        <span class="text-[10px] font-bold text-red-400 bg-red-500/20 px-2 py-0.5 rounded">High Risk</span>
+                        {% elif item.risk_level == 'elevated' %}
+                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded">Elevated</span>
+                        {% else %}
+                        <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">Low Risk</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-3.5">
+                        <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            {{ item.content_status or 'approved' }}
+                        </span>
+                    </td>
+                    <td class="p-3.5 text-right">
+                        <button type="button" class="edit-entity-btn px-3 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)]" data-id="{{ item.id }}" data-slug="{{ item.slug }}" data-name="{{ item.real_name }}">
+                            ✏️ Редактировать
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('catalog-search-input');
+  const catFilter = document.getElementById('catalog-category-filter');
+  const rows = document.querySelectorAll('.catalog-row');
+
+  function filterTable() {
+    const q = (searchInput.value || '').toLowerCase().trim();
+    const cat = catFilter.value;
+
+    rows.forEach(row => {
+      const title = row.getAttribute('data-title').toLowerCase();
+      const slug = row.getAttribute('data-slug').toLowerCase();
+      const category = row.getAttribute('data-category');
+
+      const matchesQ = !q || title.includes(q) || slug.includes(q);
+      const matchesCat = cat === 'all' || category === cat;
+
+      if (matchesQ && matchesCat) {
+        row.classList.remove('hidden');
+      } else {
+        row.classList.add('hidden');
+      }
+    });
+  }
+
+  searchInput?.addEventListener('input', filterTable);
+  catFilter?.addEventListener('change', filterTable);
+});
+</script>
+{% endblock %}
