@@ -37,6 +37,10 @@ SOURCE_INVENTORY = SEED_DIR / "adult_activity_source_inventory.v1.json"
 CANDIDATES = SEED_DIR / "adult_activity_editorial_candidates.v1.json"
 ADDITIONAL_TITLES = SEED_DIR / "adult_additional_activity_titles.v1.json"
 
+# The full catalog reuses the editorial-candidates schema so the existing
+# lint_editorial_candidates() covers it.
+FULL_CATALOG_SCHEMA = "adult-activity-editorial-candidates/v1alpha1"
+
 # source_area -> taxonomy category slug
 AREA_CATEGORY = {
     "fluid_enema_control": "fluid_enema_control",
@@ -371,7 +375,7 @@ SPECS: dict[str, dict[str, Any]] = {
     ),
     "category-chat-035": dict(
         slug="post-release-internal-wear",
-        ru="Ношение внутри после выпуска", en="Post-release internal wear",
+        ru="Ношение внутри после выпуска (scat)", en="Internal scat wear after release",
         kind="activity",
         summary_ru="Ношение внутри после выпуска с контролем состояния и гигиеническими мерами.",
         summary_en="Internal wear after release, with check-ins and hygiene measures.",
@@ -399,7 +403,7 @@ SPECS: dict[str, dict[str, Any]] = {
     ),
     "category-chat-042": dict(
         slug="prepared-volume-play",
-        ru="Подготовка и использование готового объёма", en="Prepared-volume play",
+        ru="Использование готового объёма (scat)", en="Prepared-volume scat play",
         kind="reference",
         summary_ru="Справочная карточка: использование заранее подготовленного объёма; исполняемая инструкция не предоставляется.",
         summary_en="Reference card: prepared-volume concept; no executable instruction.",
@@ -971,6 +975,59 @@ def merge_additional_titles(cards: list[dict[str, Any]]) -> tuple[list[dict[str,
     return cards, matched
 
 
+def flip_gates() -> tuple[int, int, int]:
+    """Owner override (ADR-111): force every prepared record to seed-ready.
+
+    - source inventory: every record ``seed_ready=true``
+    - review files: ``import_allowed=true``, each record ``owner_override=true``
+      and ``user_discoverable_after_moderation=true`` (research backlog too)
+    - additional titles: ``import_allowed=true``, records and titles ``seed_ready=true``
+
+    Returns (flipped_source_records, flipped_review_records, flipped_titles).
+    """
+    source = load_json(SOURCE_INVENTORY)
+    flipped_source = 0
+    for record in source["records"]:
+        if record.get("seed_ready") is not True:
+            record["seed_ready"] = True
+            flipped_source += 1
+    SOURCE_INVENTORY.write_text(json.dumps(source, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    flipped_review = 0
+    for path in sorted(SEED_DIR.glob("adult_activity_*_review.v1.json")):
+        manifest = load_json(path)
+        changed = manifest.get("import_allowed") is not True
+        manifest["import_allowed"] = True
+        for record in manifest.get("records", []):
+            if record.get("owner_override") is not True:
+                record["owner_override"] = True
+                changed = True
+            if record.get("user_discoverable_after_moderation") is not True:
+                record["user_discoverable_after_moderation"] = True
+                changed = True
+            if record.get("automation_allowed") is not False:
+                record["automation_allowed"] = False
+                changed = True
+            if changed:
+                flipped_review += 1
+        path.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    additional = load_json(ADDITIONAL_TITLES)
+    flipped_titles = 0
+    changed = additional.get("import_allowed") is not True
+    additional["import_allowed"] = True
+    for record in additional.get("records", []):
+        if record.get("seed_ready") is not True:
+            record["seed_ready"] = True
+            flipped_titles += 1
+    for title in additional.get("titles", []):
+        if title.get("seed_ready") is not True:
+            title["seed_ready"] = True
+            flipped_titles += 1
+    ADDITIONAL_TITLES.write_text(json.dumps(additional, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return flipped_source, flipped_review, flipped_titles
+
+
 def main() -> int:
     source = load_json(SOURCE_INVENTORY)
     records = {r["source_id"]: r for r in source["records"]}
@@ -1014,7 +1071,7 @@ def main() -> int:
         return 1
 
     manifest: dict[str, Any] = {
-        "schema_version": "1.0",
+        "schema_version": FULL_CATALOG_SCHEMA,
         "manifest_status": "owner_reviewed",
         "import_allowed": True,  # ADR-111 owner override
         "promotion_target": "entities",
@@ -1033,6 +1090,9 @@ def main() -> int:
     print(f"  risk={dict(by_risk)}")
     print(f"  categories={dict(by_cat)}")
     print(f"  additional titles merged={matched}/{len(load_json(ADDITIONAL_TITLES)['titles'])}")
+
+    fs, fr, ft = flip_gates()
+    print(f"flipped gates: source_records={fs} review_records={fr} additional_titles={ft}")
     return 0
 
 

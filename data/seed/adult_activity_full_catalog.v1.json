@@ -1,11 +1,11 @@
 {
- "schema_version": "1.0",
+ "schema_version": "adult-activity-editorial-candidates/v1alpha1",
  "manifest_status": "owner_reviewed",
  "import_allowed": true,
  "promotion_target": "entities",
  "source_records_total": 163,
  "source_records_covered": 163,
- "additional_titles_matched": 86,
+ "additional_titles_matched": 85,
  "cards": [
   {
    "slug": "equipment-condition-check",
@@ -2249,8 +2249,8 @@
     "category-chat-035"
    ],
    "title": {
-    "ru": "Ношение внутри после выпуска",
-    "en": "Post-release internal wear"
+    "ru": "Ношение внутри после выпуска (scat)",
+    "en": "Internal scat wear after release"
    },
    "summary": {
     "ru": "Ношение внутри после выпуска с контролем состояния и гигиеническими мерами.",
@@ -2407,8 +2407,8 @@
     "category-chat-042"
    ],
    "title": {
-    "ru": "Подготовка и использование готового объёма",
-    "en": "Prepared-volume play"
+    "ru": "Использование готового объёма (scat)",
+    "en": "Prepared-volume scat play"
    },
    "summary": {
     "ru": "Справочная карточка: использование заранее подготовленного объёма; исполняемая инструкция не предоставляется.",
@@ -2433,12 +2433,6 @@
    "promotion": {
     "source_outcome": "research_backlog",
     "owner_override": true
-   },
-   "alternate_names": {
-    "ru": [
-     "Подготовка"
-    ],
-    "en": []
    }
   },
   {

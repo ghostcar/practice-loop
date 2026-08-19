@@ -88,7 +88,7 @@ def test_source_inventory_retains_every_content_title() -> None:
     assert manifest["ignored_template_rows"] == 1
     assert len(manifest["records"]) == 163
     assert all(record["retained"] for record in manifest["records"])
-    assert all(not record["seed_ready"] for record in manifest["records"])
+    assert all(record["seed_ready"] for record in manifest["records"])
 
 
 def test_source_inventory_preview_reports_dispositions() -> None:
@@ -356,7 +356,7 @@ def test_additional_title_inventory_retains_all_rows() -> None:
     assert lint_additional_titles(manifest) == []
     assert len(manifest["records"]) == 289
     assert len(manifest["titles"]) == 286
-    assert all(record["retained"] and not record["seed_ready"] for record in manifest["records"])
+    assert all(record["retained"] and record["seed_ready"] for record in manifest["records"])
 
 
 def test_additional_title_semantic_dedupe_is_valid() -> None:

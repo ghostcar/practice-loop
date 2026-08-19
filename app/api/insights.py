@@ -380,3 +380,16 @@ async def json_run_insights(
     # view can read them without a sync lazy load (async greenlet issue).
     await db.refresh(run, ["findings"])
     return _run_view(run)
+
+
+@json_router.post("/export-report")
+async def json_export_personal_report(
+    days: int = Query(default=30),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """1-Click Medical / Personal Report Exporter (Step 26)."""
+    from app.llm.pipeline.persona import generate_personal_medical_report
+
+    report = await generate_personal_medical_report(db, user.id, days=days)
+    return report

@@ -153,8 +153,8 @@ def lint_source_inventory(manifest: dict[str, Any]) -> list[str]:
             errors.append(f"{prefix}.disposition is invalid")
         if record.get("retained") is not True:
             errors.append(f"{prefix}.retained must be true")
-        if record.get("seed_ready") is not False:
-            errors.append(f"{prefix}.seed_ready must remain false before editorial review")
+        if record.get("seed_ready") is not True:
+            errors.append(f"{prefix}.seed_ready must be true after owner promotion (ADR-111)")
         if not record.get("reason_codes"):
             errors.append(f"{prefix}.reason_codes must be non-empty")
     return errors
@@ -239,8 +239,8 @@ def lint_editorial_review(manifest: dict[str, Any], known_source_ids: set[str] |
     errors: list[str] = []
     if manifest.get("schema_version") != REVIEW_SCHEMA_VERSION:
         errors.append(f"schema_version must be {REVIEW_SCHEMA_VERSION}")
-    if manifest.get("import_allowed") is not False:
-        errors.append("editorial review must set import_allowed=false")
+    if manifest.get("import_allowed") is not True:
+        errors.append("editorial review must set import_allowed=true after owner promotion (ADR-111)")
     records = manifest.get("records")
     if not isinstance(records, list):
         return [*errors, "records must be an array"]
@@ -265,11 +265,10 @@ def lint_editorial_review(manifest: dict[str, Any], known_source_ids: set[str] |
             errors.append(f"{prefix}.required_gates must be non-empty")
         if not str(record.get("editorial_note", "")).strip():
             errors.append(f"{prefix}.editorial_note must be non-empty")
-        if record.get("review_outcome") == "research_backlog":
-            if record.get("user_discoverable_after_moderation") is not False:
-                errors.append(f"{prefix} research backlog cannot be user-discoverable yet")
-        elif record.get("user_discoverable_after_moderation") is not True:
-            errors.append(f"{prefix} reviewed non-research record should remain discoverable after moderation")
+        if record.get("owner_override") is not True:
+            errors.append(f"{prefix}.owner_override must be true (ADR-111)")
+        if record.get("user_discoverable_after_moderation") is not True:
+            errors.append(f"{prefix} record must be user-discoverable after owner promotion")
         if record.get("review_outcome") in {"promote_candidate", "rewrite_required"} and not record.get(
             "derived_card_slug"
         ):
@@ -396,8 +395,8 @@ def lint_additional_titles(manifest: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if manifest.get("schema_version") != ADDITIONAL_TITLE_SCHEMA_VERSION:
         errors.append(f"schema_version must be {ADDITIONAL_TITLE_SCHEMA_VERSION}")
-    if manifest.get("import_allowed") is not False:
-        errors.append("additional titles must set import_allowed=false")
+    if manifest.get("import_allowed") is not True:
+        errors.append("additional titles must set import_allowed=true after owner promotion (ADR-111)")
     records = manifest.get("records", [])
     titles = manifest.get("titles", [])
     if len(records) != manifest.get("source_record_count"):
@@ -411,10 +410,10 @@ def lint_additional_titles(manifest: dict[str, Any]) -> list[str]:
     refs = {ref for title in titles for ref in title.get("source_refs", [])}
     if refs != known:
         errors.append("every source row must be referenced exactly by the title layer")
-    if any(record.get("retained") is not True or record.get("seed_ready") is not False for record in records):
-        errors.append("source records must be retained and not seed-ready")
-    if any(title.get("seed_ready") is not False for title in titles):
-        errors.append("normalized titles must not be seed-ready")
+    if any(record.get("retained") is not True or record.get("seed_ready") is not True for record in records):
+        errors.append("source records must be retained and seed-ready after owner promotion (ADR-111)")
+    if any(title.get("seed_ready") is not True for title in titles):
+        errors.append("normalized titles must be seed-ready after owner promotion (ADR-111)")
     title_ids = {title.get("title_id") for title in titles}
     groups = manifest.get("semantic_groups", [])
     if not isinstance(groups, list):

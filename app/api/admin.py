@@ -164,3 +164,33 @@ async def admin_reset_user_password(
     await db.execute(delete(ApiToken).where(ApiToken.user_id == target.id))
     await db.flush()
     return RedirectResponse(url="/admin/users?status=password", status_code=303)
+
+
+@router.get("/schema-builder", response_class=HTMLResponse)
+async def admin_schema_builder(
+    request: Request,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Interactive Parameter Schema Builder workbench (Step 25)."""
+    from app.models.entity import Entity
+
+    locale = detect_locale(request, admin.locale)
+    theme = detect_theme(admin.theme)
+    t = get_translations(locale)
+
+    entities = (await db.execute(select(Entity))).scalars().all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_schema_builder.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": admin,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+            "entities": entities,
+        },
+    )

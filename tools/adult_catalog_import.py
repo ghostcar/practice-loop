@@ -1,13 +1,14 @@
-"""Dry-run importer for the P1 18+ catalog (ADR-105).
+"""Dry-run importer for the P1 18+ catalog (ADR-105 / ADR-111).
 
-Projects the owner-reviewed foundation manifest (7 cards) and the editorial
-candidates manifest (34 cards) into ``entities`` rows with a typed
-``safety_contract`` JSONB and ``content_status``, then either prints a read-only
-plan (default) or applies it behind an explicit import gate.
+Projects the owner-reviewed foundation manifest (7 cards) and the full catalog
+manifest (~154 cards) into ``entities`` rows with a typed ``safety_contract``
+JSONB and ``content_status``, then either prints a read-only plan (default) or
+applies it behind an explicit import gate.
 
-Owner decisions (2026-08-18):
-- import **everything** (foundation + all 34 candidates), preserving each
+Owner decisions (2026-08-18 / 2026-08-19):
+- import **everything** (foundation + all promoted cards), preserving each
   card's own ``automation_allowed``/``risk_level``;
+- every prepared source record is promoted to an importable card (ADR-111);
 - ``content_status`` stamped on every imported entity is ``approved``.
 
 Gate (ADR-105): a production write is refused unless **every** source manifest
@@ -36,7 +37,7 @@ from typing import Any
 
 DEFAULT_MANIFEST_DIR = Path("data/seed")
 FOUNDATION_FILENAME = "adult_activity_foundation.v1.json"
-CANDIDATES_FILENAME = "adult_activity_editorial_candidates.v1.json"
+FULL_CATALOG_FILENAME = "adult_activity_full_catalog.v1.json"
 SOURCE_INVENTORY_FILENAME = "adult_activity_source_inventory.v1.json"
 
 SAFETY_CONTRACT_VERSION = "adult-safety-contract/v1"
@@ -159,17 +160,17 @@ def _candidate_entity(card: dict[str, Any]) -> dict[str, Any]:
 
 def build_plan(
     foundation: dict[str, Any],
-    candidates: dict[str, Any],
+    full_catalog: dict[str, Any],
 ) -> dict[str, Any]:
     """Build the full import plan: gate status + normalized entity rows."""
     entities: list[dict[str, Any]] = [
         _foundation_entity(card) for card in foundation.get("cards", [])
-    ] + [_candidate_entity(card) for card in candidates.get("cards", [])]
+    ] + [_candidate_entity(card) for card in full_catalog.get("cards", [])]
 
     return {
         "gate": {
             "foundation_import_allowed": foundation.get("import_allowed"),
-            "candidates_import_allowed": candidates.get("import_allowed"),
+            "full_catalog_import_allowed": full_catalog.get("import_allowed"),
         },
         "entities": entities,
     }
@@ -231,7 +232,7 @@ def render_plan(plan: dict[str, Any]) -> str:
     lines = [
         "P1 18+ catalog import — dry-run",
         f"gate.foundation_import_allowed={gate['foundation_import_allowed']}",
-        f"gate.candidates_import_allowed={gate['candidates_import_allowed']}",
+        f"gate.full_catalog_import_allowed={gate['full_catalog_import_allowed']}",
         _plan_summary(plan),
         f"content_status={IMPORT_CONTENT_STATUS}",
         "",
@@ -305,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     foundation = _load(args.manifest_dir / FOUNDATION_FILENAME)
-    candidates = _load(args.manifest_dir / CANDIDATES_FILENAME)
+    full_catalog = _load(args.manifest_dir / FULL_CATALOG_FILENAME)
     source_inventory = _load(args.manifest_dir / SOURCE_INVENTORY_FILENAME)
 
     # Lint first — refuse to plan from invalid manifests.
@@ -318,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
     source_ids = {record["source_id"] for record in source_inventory.get("records", [])}
     errors = (
         lint_manifest(foundation)
-        + lint_editorial_candidates(candidates, source_ids)
+        + lint_editorial_candidates(full_catalog, source_ids)
         + lint_source_inventory(source_inventory)
     )
     if errors:
@@ -326,7 +327,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
-    plan = build_plan(foundation, candidates)
+    plan = build_plan(foundation, full_catalog)
     plan_errors = validate_plan(plan)
     if plan_errors:
         for error in plan_errors:

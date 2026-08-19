@@ -17,6 +17,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    sj_entries_cols = [c["name"] for c in inspector.get_columns("sj_entries")]
+
     # Upgrade sj_partners
     op.add_column("sj_partners", sa.Column("roles", JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column("sj_partners", sa.Column("identity_notes", sa.Text(), nullable=True))
@@ -25,17 +29,18 @@ def upgrade() -> None:
     op.add_column("sj_partners", sa.Column("safewords", JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column("sj_partners", sa.Column("aftercare_preferences", sa.Text(), nullable=True))
 
-    # Upgrade sj_entries
-    op.add_column(
-        "sj_entries",
-        sa.Column(
-            "partner_id",
-            UUID(as_uuid=True),
-            sa.ForeignKey("sj_partners.id", ondelete="SET NULL"),
-            nullable=True,
-            index=True,
-        ),
-    )
+    # Upgrade sj_entries if partner_id does not already exist
+    if "partner_id" not in sj_entries_cols:
+        op.add_column(
+            "sj_entries",
+            sa.Column(
+                "partner_id",
+                UUID(as_uuid=True),
+                sa.ForeignKey("sj_partners.id", ondelete="SET NULL"),
+                nullable=True,
+                index=True,
+            ),
+        )
 
 
 def downgrade() -> None:
