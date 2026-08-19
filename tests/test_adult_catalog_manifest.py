@@ -453,6 +453,21 @@ def test_additional_titles_filter_fitness_and_tracker_noise() -> None:
             assert not (noise_labels & names)
 
 
+def test_single_word_kink_terms_attach_via_direct_map() -> None:
+    full = load_manifest(FULL_CATALOG_PATH)
+    by_slug = {card["slug"]: card for card in full["cards"]}
+    expectations = {
+        "post-release-internal-wear": "Упаковка",  # packing
+        "funnel-urine-pour": "Питьё",  # urine drinking
+        "fecal-retention": "ЗД",  # scat retention
+        "controlled-partial-release": "Опорожнение",  # evacuation
+        "post-scene-cleanup-service": "Уборка",  # cleanup
+    }
+    for slug, label in expectations.items():
+        names = by_slug[slug].get("alternate_names", {}).get("ru", [])
+        assert label in names, f"{slug} should carry alternate name {label!r}"
+
+
 def test_parameter_and_body_zone_vocabularies_are_safe_overlays() -> None:
     parameters = load_manifest(PARAMETER_VOCABULARY_PATH)
     body_zones = load_manifest(BODY_ZONE_VOCABULARY_PATH)

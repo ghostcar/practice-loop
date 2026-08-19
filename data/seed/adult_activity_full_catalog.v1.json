@@ -5,7 +5,7 @@
  "promotion_target": "entities",
  "source_records_total": 163,
  "source_records_covered": 163,
- "additional_titles_matched": 226,
+ "additional_titles_matched": 231,
  "extension_cards": 33,
  "cards": [
   {
@@ -1528,7 +1528,8 @@
    },
    "alternate_names": {
     "ru": [
-     "Watersports — drinking (слив мочи в рот / проглатывание)"
+     "Watersports — drinking (слив мочи в рот / проглатывание)",
+     "Питьё"
     ],
     "en": []
    }
@@ -2011,6 +2012,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "ЗД"
+    ],
+    "en": []
    }
   },
   {
@@ -2183,7 +2190,8 @@
    },
    "alternate_names": {
     "ru": [
-     "Controlled release (частичный сброс давления на несколько секунд)"
+     "Controlled release (частичный сброс давления на несколько секунд)",
+     "Опорожнение"
     ],
     "en": [
      "Defecation into container"
@@ -2427,6 +2435,12 @@
    "promotion": {
     "source_outcome": "manual_reference",
     "owner_override": true
+   },
+   "alternate_names": {
+    "ru": [
+     "Упаковка"
+    ],
+    "en": []
    }
   },
   {
@@ -7342,7 +7356,9 @@
     "owner_override": true
    },
    "alternate_names": {
-    "ru": [],
+    "ru": [
+     "Уборка"
+    ],
     "en": [
      "Post-scat / post-watersports cleanup service"
     ]

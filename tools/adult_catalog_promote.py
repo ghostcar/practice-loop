@@ -1031,6 +1031,18 @@ SYNONYM_RULES: dict[str, list[str]] = {
     "multi-cycle-enema": ["зд-модуль «двойной цикл»", "двойной цикл"],
 }
 
+# Exact title_id -> card slug for single-word kink terms that substring/token
+# matching cannot place safely ("зд" collides with "ЗД-модуль…", "уборка" is
+# generic). Applied after all cards are assembled so it can target extension
+# cards too. Each label is attached verbatim as an alternate name.
+DIRECT_SYNONYM_MAP: dict[str, str] = {
+    "additional-candidate-266": "post-release-internal-wear",  # Упаковка (packing)
+    "additional-candidate-267": "funnel-urine-pour",  # Питьё (urine drinking)
+    "additional-candidate-275": "fecal-retention",  # ЗД (scat retention)
+    "additional-candidate-277": "controlled-partial-release",  # Опорожнение (evacuation)
+    "additional-candidate-286": "post-scene-cleanup-service",  # Уборка (cleanup)
+}
+
 
 # Fitness / tracker noise. These source titles are not 18+/BDSM activities and
 # must never become card alternate_names. Owner decision (ADR-119 follow-up):
@@ -1202,6 +1214,30 @@ def build_extension_cards(consumed_ids: set[str]) -> tuple[list[dict[str, Any]],
     return cards, matched, consumed
 
 
+def apply_direct_synonyms(cards: list[dict[str, Any]]) -> int:
+    """Attach the single-word kink terms from DIRECT_SYNONYM_MAP to their exact
+    target cards. Runs after extension cards are merged so any card slug is
+    addressable. Idempotent. Returns the number of labels attached."""
+    additional = load_json(ADDITIONAL_TITLES)
+    by_title_id = {t["title_id"]: t for t in additional["titles"]}
+    by_slug = {card["slug"]: card for card in cards}
+    attached = 0
+    for title_id, slug in DIRECT_SYNONYM_MAP.items():
+        title = by_title_id.get(title_id)
+        card = by_slug.get(slug)
+        if title is None or card is None or is_noise_title(title):
+            continue
+        label = title.get("display_title") or title.get("normalized_title", "")
+        if not label:
+            continue
+        card.setdefault("alternate_names", {"ru": [], "en": []})
+        lang = "en" if re.search(r"[a-z]{3,}", label) and not re.search(r"[а-яё]{3,}", label) else "ru"
+        if label not in card["alternate_names"][lang]:
+            card["alternate_names"][lang].append(label)
+            attached += 1
+    return attached
+
+
 def flip_gates() -> tuple[int, int, int]:
     """Owner override (ADR-111): force every prepared record to seed-ready.
 
@@ -1303,6 +1339,7 @@ def main() -> int:
     extension_cards, ext_matched, ext_consumed = build_extension_cards(set())
     cards, matched, consumed = merge_additional_titles(cards, skip_ids=ext_consumed)
     cards.extend(extension_cards)
+    direct_matched = apply_direct_synonyms(cards)
 
     # Dedupe slugs.
     slugs = [c["slug"] for c in cards]
@@ -1318,7 +1355,7 @@ def main() -> int:
         "promotion_target": "entities",
         "source_records_total": len(records),
         "source_records_covered": len(covered) + len(new_cards),
-        "additional_titles_matched": matched + ext_matched,
+        "additional_titles_matched": matched + ext_matched + direct_matched,
         "extension_cards": len(extension_cards),
         "cards": cards,
     }
@@ -1331,7 +1368,7 @@ def main() -> int:
     print(f"  content_kind={dict(by_kind)}")
     print(f"  risk={dict(by_risk)}")
     print(f"  categories={dict(by_cat)}")
-    print(f"  additional titles merged={matched}+{ext_matched}/{len(load_json(ADDITIONAL_TITLES)['titles'])}")
+    print(f"  additional titles merged={matched}+{ext_matched}+{direct_matched}/{len(load_json(ADDITIONAL_TITLES)['titles'])}")
 
     fs, fr, ft = flip_gates()
     print(f"flipped gates: source_records={fs} review_records={fr} additional_titles={ft}")
