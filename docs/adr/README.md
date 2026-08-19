@@ -118,3 +118,4 @@
 | [ADR-112](ADR-112.md) | 2026-08-19 | Шаг 20: Оперативный Дашборд и Плашка Предупреждений (Alert Bar & Quick Actions) | accepted |
 | [ADR-113](ADR-113.md) | 2026-08-19 | Шаг 21: Chastity Suite & Keyholder Dynamics (Chaster.app paradigm) | accepted |
 | [ADR-114](ADR-114.md) | 2026-08-19 | Шаг 22: Тренировки, Дисциплина и Оборудование (Training & Equipment) | accepted |
+| [ADR-115](ADR-115.md) | 2026-08-19 | Шаг 23: Настройка Отключения Авто-Снижения Нагрузок и Автоматизация Aftercare | accepted |

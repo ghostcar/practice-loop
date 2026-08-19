@@ -1,20 +1,20 @@
 {
   "alembic": {
-    "checked_at": "2026-08-19T08:08:11Z",
+    "checked_at": "2026-08-19T08:10:15Z",
     "command": "alembic heads",
     "heads": [
-      "069_training_discipline_equipment"
+      "070_health_adapt_aftercare"
     ]
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-19T08:08:11Z",
+  "generated_at": "2026-08-19T08:10:15Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:700a7d0d57d2c3709989c3f8a9c8447f691807dbcb212c383390619cbda6962b",
+    "diff_hash": "sha256:d4e45c2d1fdfa268b400f9f02bac0fe21af2c8d365de652d49b64cc1105d2202",
     "dirty": true,
-    "head": "a2d39c49bc5e31545ac01265e40f797522cd5ed3"
+    "head": "8cf9ac48d6cbe0292d79aa547b37bdd51dc499bb"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",

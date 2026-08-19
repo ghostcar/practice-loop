@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
-revision: str = "069_training_discipline_equipment"
+revision: str = "069_train_discipline_equip"
 down_revision: str | None = "068_chastity_keyholder_suite"
 branch_labels = None
 depends_on = None

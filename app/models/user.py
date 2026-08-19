@@ -31,6 +31,10 @@ class User(Base):
     # Step 9e (DESIGN_V2 §16): customization + discretion prefs (see app/prefs.py).
     # Generic JSON keeps SQLite-based tests green; the migration uses PG JSONB.
     prefs: Mapped[dict] = mapped_column(JSON, default=dict, server_default=text("'{}'"), nullable=False)
+    # Step 23: Health adaptation user control preferences (migration 070)
+    health_adaptation_mode: Mapped[str] = mapped_column(String(30), default="auto_reduce", nullable=False)
+    health_adaptation_sensitivity: Mapped[str] = mapped_column(String(30), default="moderate", nullable=False)
+
     timezone_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

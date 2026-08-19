@@ -82,13 +82,26 @@ async def generate_daily_plan(
     stmt = select(HealthState).where(HealthState.user_id == user_id, HealthState.event_date == target_date)
     health_state = (await db.execute(stmt)).scalar_one_or_none()
 
+    from app.models.user import User
+
+    user_obj = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    adapt_mode = getattr(user_obj, "health_adaptation_mode", "auto_reduce")
+    sensitivity = getattr(user_obj, "health_adaptation_sensitivity", "moderate")
+
     health_note = "Normal recovery"
     is_health_adapted = False
-    if health_state:
-        if health_state.post_session_drop or (health_state.recovery and health_state.recovery <= 2):
+
+    if adapt_mode == "strict_no_reduction":
+        health_note = (
+            "User explicitly disabled intensity reduction (Conscious Choice). "
+            "Maintain standard planned intensity."
+        )
+    elif health_state:
+        rec_thresh = 1 if sensitivity == "gentle" else (3 if sensitivity == "strict" else 2)
+        if health_state.post_session_drop or (health_state.recovery and health_state.recovery <= rec_thresh):
             health_note = (
-                "LOW RECOVERY / POST-SESSION DROP ACTIVE! Adapt plan to light stretching, "
-                "mobility, and gentle restoration."
+                f"LOW RECOVERY / POST-SESSION DROP ACTIVE! Adapt plan to light stretching, "
+                f"mobility, and gentle restoration (sensitivity: {sensitivity})."
             )
             is_health_adapted = True
         elif health_state.skin_sensitivity and health_state.skin_sensitivity >= 4:

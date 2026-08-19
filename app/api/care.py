@@ -1382,3 +1382,22 @@ def _now_utc():
     from datetime import datetime as _dt
 
     return _dt.now(UTC)
+
+
+@json_router.post("/aftercare/generate")
+async def json_generate_aftercare(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Generates Aftercare recovery protocol via LLM Assistant (Step 23)."""
+    from app.llm.pipeline.aftercare import generate_aftercare_guidance
+    from app.services.llm_provider import get_active_llm_config
+
+    llm_config = await get_active_llm_config(db, user.id)
+    if not llm_config:
+        raise HTTPException(400, "LLM provider config is required for Aftercare AI Assistant")
+
+    locale = detect_locale(request, user.locale)
+    res = await generate_aftercare_guidance(db, user.id, llm_config, locale=locale)
+    return res
