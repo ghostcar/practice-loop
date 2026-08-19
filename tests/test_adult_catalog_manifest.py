@@ -424,9 +424,33 @@ def test_additional_title_preview_reports_sources() -> None:
 
     assert "source_records=289" in result
     assert "unique_titles=286" in result
+    assert "noise_titles=55" in result
     assert "semantic_titles=277" in result
     assert "semantic_groups=9" in result
     assert "examples/Книга1.xlsx:" in result
+
+
+def test_additional_titles_filter_fitness_and_tracker_noise() -> None:
+    manifest = load_manifest(ADDITIONAL_TITLES_PATH)
+    titles = {title["title_id"]: title for title in manifest["titles"]}
+    noise = {tid: title for tid, title in titles.items() if title.get("noise") is True}
+
+    # Fitness and tracker noise is flagged, borderline kink terms are not.
+    assert "additional-candidate-221" in noise  # Планка
+    assert "additional-candidate-258" in noise  # Йога
+    assert "additional-candidate-268" in noise  # Вес утро
+    assert "additional-candidate-278" in noise  # Бонус
+    assert "additional-candidate-263" not in noise  # оральная техника (kink)
+    assert "additional-candidate-265" not in noise  # анальная техника (kink)
+    assert all(title.get("seed_ready") is False for title in noise.values())
+
+    # Noise titles never leak into card alternate_names.
+    full = load_manifest(FULL_CATALOG_PATH)
+    noise_labels = {title.get("display_title", "") for title in noise.values()}
+    for card in full["cards"]:
+        for lang in ("ru", "en"):
+            names = set(card.get("alternate_names", {}).get(lang, []))
+            assert not (noise_labels & names)
 
 
 def test_parameter_and_body_zone_vocabularies_are_safe_overlays() -> None:

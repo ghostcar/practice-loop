@@ -1032,6 +1032,37 @@ SYNONYM_RULES: dict[str, list[str]] = {
 }
 
 
+# Fitness / tracker noise. These source titles are not 18+/BDSM activities and
+# must never become card alternate_names. Owner decision (ADR-119 follow-up):
+# filter them out of the synonym pool instead of letting token overlap attach
+# them to unrelated cards (e.g. "Тренировка ягодиц" -> bowel control,
+# "Объем груди" -> chest impact).
+_FITNESS_NOISE = {f"additional-candidate-{i}" for i in range(221, 263)}
+_TRACKER_NOISE = {
+    "additional-candidate-268",  # вес утро
+    "additional-candidate-269",  # вес вечер
+    "additional-candidate-270",  # объем груди
+    "additional-candidate-271",  # объем под грудью
+    "additional-candidate-272",  # объем в талии
+    "additional-candidate-273",  # объем в бедрах
+    "additional-candidate-274",  # объем бедра
+    "additional-candidate-278",  # бонус
+    "additional-candidate-279",  # штраф
+    "additional-candidate-280",  # кп
+    "additional-candidate-281",  # подготовка
+    "additional-candidate-282",  # общий бонус
+    "additional-candidate-283",  # тело
+}
+NOISE_TITLE_IDS: frozenset[str] = frozenset(_FITNESS_NOISE | _TRACKER_NOISE)
+
+
+def is_noise_title(title: dict[str, Any]) -> bool:
+    """True when a title is fitness/tracker noise and must be excluded from
+    synonym merging. The persisted ``noise`` flag (written by flip_gates) takes
+    precedence over the in-memory ID set so the JSON stays the source of truth."""
+    return title.get("noise") is True or title.get("title_id") in NOISE_TITLE_IDS
+
+
 def _normalize_tokens(text: str) -> set[str]:
     """Tokenize and produce both raw and transliterated tokens (bilingual)."""
     lowered = text.lower()
@@ -1076,6 +1107,8 @@ def merge_additional_titles(
     consumed: set[str] = set()
     for title in titles:
         if title.get("title_id") in skip_ids:
+            continue
+        if is_noise_title(title):
             continue
         display = title.get("display_title", "")
         norm = title.get("normalized_title", "")
@@ -1134,6 +1167,8 @@ def build_extension_cards(consumed_ids: set[str]) -> tuple[list[dict[str, Any]],
         names_en: list[str] = []
         for title in titles:
             if title.get("title_id") in consumed:
+                continue
+            if is_noise_title(title):
                 continue
             display = title.get("display_title", "")
             norm = title.get("normalized_title", "")
@@ -1213,9 +1248,19 @@ def flip_gates() -> tuple[int, int, int]:
             record["seed_ready"] = True
             flipped_titles += 1
     for title in additional.get("titles", []):
-        if title.get("seed_ready") is not True:
-            title["seed_ready"] = True
-            flipped_titles += 1
+        if is_noise_title(title):
+            if title.get("noise") is not True:
+                title["noise"] = True
+                flipped_titles += 1
+            if title.get("seed_ready") is not False:
+                title["seed_ready"] = False
+                flipped_titles += 1
+        else:
+            if title.get("seed_ready") is not True:
+                title["seed_ready"] = True
+                flipped_titles += 1
+            if title.get("noise") is not False:
+                title.pop("noise", None)
     ADDITIONAL_TITLES.write_text(json.dumps(additional, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return flipped_source, flipped_review, flipped_titles
 

@@ -412,8 +412,12 @@ def lint_additional_titles(manifest: dict[str, Any]) -> list[str]:
         errors.append("every source row must be referenced exactly by the title layer")
     if any(record.get("retained") is not True or record.get("seed_ready") is not True for record in records):
         errors.append("source records must be retained and seed-ready after owner promotion (ADR-111)")
-    if any(title.get("seed_ready") is not True for title in titles):
-        errors.append("normalized titles must be seed-ready after owner promotion (ADR-111)")
+    for title in titles:
+        if title.get("noise") is True:
+            if title.get("seed_ready") is not False:
+                errors.append("noise titles must be seed_ready=false (owner filter)")
+        elif title.get("seed_ready") is not True:
+            errors.append("normalized titles must be seed-ready after owner promotion (ADR-111)")
     title_ids = {title.get("title_id") for title in titles}
     groups = manifest.get("semantic_groups", [])
     if not isinstance(groups, list):
@@ -452,12 +456,14 @@ def lint_additional_titles(manifest: dict[str, Any]) -> list[str]:
 def preview_additional_titles(manifest: dict[str, Any]) -> str:
     sources = Counter(record["source"] for record in manifest["records"])
     routing = Counter(title["review_routing"] for title in manifest["titles"])
+    noise = sum(1 for title in manifest["titles"] if title.get("noise") is True)
     return "\n".join(
         [
             f"schema={manifest['schema_version']}",
             f"import_allowed={manifest.get('import_allowed')}",
             f"source_records={len(manifest['records'])}",
             f"unique_titles={len(manifest['titles'])}",
+            f"noise_titles={noise}",
             f"semantic_titles={manifest.get('semantic_title_count')}",
             f"semantic_groups={len(manifest.get('semantic_groups', []))}",
             "sources=" + ", ".join(f"{key}:{value}" for key, value in sorted(sources.items())),
