@@ -4,20 +4,17 @@
 <div class="space-y-5">
  <div class="flex items-center justify-between">
  <div>
- <h1 class="text-2xl font-bold text-[color:var(--text)]">Sessions</h1>
- <p class="text-sm text-[color:var(--text-secondary)]">Create and manage activity sessions</p>
+ <h1 class="text-2xl font-bold text-[color:var(--text)]">Сессии Активностей</h1>
+ <p class="text-sm text-[color:var(--text-secondary)]">Управление и запуск сценариев сессий</p>
  </div>
- <form action="/sessions" method="post">
- <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
- <button class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-medium transition-colors">
- + New Session
- </button>
- </form>
+ <a href="/sessions/wizard" class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-semibold transition-colors inline-flex items-center gap-1.5 min-h-[44px]">
+ ✨ Конструктор & Шаблоны Сессий
+ </a>
  </div>
 
  <!-- Session Timeline Chart -->
  <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
- <h3 class="text-sm font-semibold text-[color:var(--text)] mb-3">Activity Timeline (14 days)</h3>
+ <h3 class="text-sm font-semibold text-[color:var(--text)] mb-3">Хронология Активностей (14 дней)</h3>
  <div class="h-44"><canvas id="session-timeline"></canvas></div>
  </div>
 
@@ -34,8 +31,12 @@
  {% else %}pl-surface-soft text-[color:var(--text-secondary)]{% endif %}">
  {{ s.status }}
  </span>
+ <span class="font-bold text-sm text-[color:var(--text)]">{{ s.title or 'Безымянная сессия' }}</span>
  <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(s.created_at, '%Y-%m-%d %H:%M') }}</span>
  </div>
+ {% if s.notes %}
+ <p class="text-xs text-[color:var(--text-secondary)] mb-1 italic">{{ s.notes }}</p>
+ {% endif %}
  {% if s.started_at %}
  <p class="text-xs text-[color:var(--text-muted)]">Started: {{ localtime(s.started_at, '%H:%M') }}</p>
  {% endif %}

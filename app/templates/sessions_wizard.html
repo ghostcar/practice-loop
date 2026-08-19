@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                ✨ Интерактивный Конструктор и Галерея Шаблонов Сессий
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Выберите готовый сценарий сессии или сконструируйте собственную сессию с правилами, ИИ-ролью и привязанными задачами.
+            </p>
+        </div>
+        <a href="/sessions" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
+            ← К Списку Сессий
+        </a>
+    </div>
+
+    <!-- Ready Templates Gallery -->
+    <section class="space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
+            🌟 Готовые Шаблоны Сессий (1-Click Запуск)
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Template 1: Chastity -->
+            <form action="/sessions/create-from-template" method="post" class="pl-surface border border-[color:var(--border)] hover:border-[color:var(--accent)] rounded-2xl p-5 space-y-3 flex flex-col justify-between transition-all duration-200 shadow-md">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <input type="hidden" name="template_type" value="chastity">
+                <div class="space-y-2">
+                    <div class="w-9 h-9 rounded-xl pl-accent-soft flex items-center justify-center font-bold text-base">
+                        🔒
+                    </div>
+                    <h3 class="font-bold text-sm text-[color:var(--text)]">Chastity & Keyholder Ritual</h3>
+                    <p class="text-xs text-[color:var(--text-secondary)]">Сессия контроля доступа, регулярных фото-чек-инов пломб и оценки ИИ-Keyholder.</p>
+                </div>
+                <div class="pt-2 border-t border-[color:var(--border)] space-y-2">
+                    <span class="text-[10px] pl-accent-soft px-2 py-0.5 rounded font-medium">ИИ-Роль: Keyholder / Controller</span>
+                    <button type="submit" class="w-full py-2 pl-accent-bg text-xs font-semibold rounded-lg hover:bg-[color:var(--accent-hover)]">
+                        🚀 Запустить по Шаблону
+                    </button>
+                </div>
+            </form>
+
+            <!-- Template 2: Training -->
+            <form action="/sessions/create-from-template" method="post" class="pl-surface border border-[color:var(--border)] hover:border-amber-500 rounded-2xl p-5 space-y-3 flex flex-col justify-between transition-all duration-200 shadow-md">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <input type="hidden" name="template_type" value="training">
+                <div class="space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-base">
+                        🏋️
+                    </div>
+                    <h3 class="font-bold text-sm text-[color:var(--text)]">Training & Posture Routine</h3>
+                    <p class="text-xs text-[color:var(--text-secondary)]">Дисциплинарная сессия физических тренировок, удержания поз и отслеживания выносливости.</p>
+                </div>
+                <div class="pt-2 border-t border-[color:var(--border)] space-y-2">
+                    <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-medium">ИИ-Роль: AI Trainer / Observer</span>
+                    <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold rounded-lg">
+                        🚀 Запустить по Шаблону
+                    </button>
+                </div>
+            </form>
+
+            <!-- Template 3: Aftercare -->
+            <form action="/sessions/create-from-template" method="post" class="pl-surface border border-[color:var(--border)] hover:border-emerald-500 rounded-2xl p-5 space-y-3 flex flex-col justify-between transition-all duration-200 shadow-md">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <input type="hidden" name="template_type" value="aftercare">
+                <div class="space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base">
+                        🧴
+                    </div>
+                    <h3 class="font-bold text-sm text-[color:var(--text)]">Aftercare & Health Recovery</h3>
+                    <p class="text-xs text-[color:var(--text-secondary)]">Мягкая сессия восстановления: уход за кожей, гидратация, стабилизация и Health Pause.</p>
+                </div>
+                <div class="pt-2 border-t border-[color:var(--border)] space-y-2">
+                    <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-medium">ИИ-Роль: Care Assistant</span>
+                    <button type="submit" class="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-semibold rounded-lg">
+                        🚀 Запустить по Шаблону
+                    </button>
+                </div>
+            </form>
+
+            <!-- Template 4: Custom BDSM Contract -->
+            <form action="/sessions/create-from-template" method="post" class="pl-surface border border-[color:var(--border)] hover:border-purple-500 rounded-2xl p-5 space-y-3 flex flex-col justify-between transition-all duration-200 shadow-md">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <input type="hidden" name="template_type" value="contract">
+                <div class="space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-base">
+                        📜
+                    </div>
+                    <h3 class="font-bold text-sm text-[color:var(--text)]">Pair BDSM Contract Session</h3>
+                    <p class="text-xs text-[color:var(--text-secondary)]">Полная контрактная сессия с правилами, стоп-словами, эскалациями и заданиями.</p>
+                </div>
+                <div class="pt-2 border-t border-[color:var(--border)] space-y-2">
+                    <span class="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded font-medium">ИИ-Роль: Observer / Top</span>
+                    <button type="submit" class="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg">
+                        🚀 Запустить по Шаблону
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Custom Interactive Session Form -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--text)]">
+            🛠️ Интерактивная Конфигурация Персональной Сессии
+        </h2>
+
+        <form action="/sessions/create-custom" method="post" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Название Сессии:</label>
+                    <input type="text" name="title" required placeholder="Например: Вечерняя парная сессия" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[44px]">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">ИИ-Роль в Сессии:</label>
+                    <select name="ai_role" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[44px]">
+                        <option value="keyholder">🤖 Keyholder / Controller (Контроль доступа)</option>
+                        <option value="observer">👁️ Observer / Top (Наблюдатель & Контракты)</option>
+                        <option value="care">🧴 Care Assistant (Послесессионная забота)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Заметки и Пожелания к Сессии:</label>
+                <textarea name="notes" rows="3" placeholder="Укажите особые условия, задействованное оборудование или пожелания..." class="w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)]"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2 border-t border-[color:var(--border)]">
+                <a href="/sessions" class="px-4 py-2 text-xs font-medium pl-text-muted hover:text-[color:var(--text)]">Отмена</a>
+                <button type="submit" class="px-5 py-2.5 pl-accent-bg text-xs font-semibold rounded-xl hover:bg-[color:var(--accent-hover)]">
+                    ✨ Создать и Настроить Сессию
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

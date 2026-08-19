@@ -680,19 +680,109 @@ async def sessions_rules_builder_page(
     )
 
 
+@router.get("/sessions/wizard", response_class=HTMLResponse)
+async def sessions_wizard_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Interactive Session Wizard & Templates Gallery page (Step 34)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="sessions_wizard.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+        },
+    )
+
+
+@router.post("/sessions/create-from-template")
+async def create_session_from_template(
+    request: Request,
+    template_type: str = Form(default="chastity"),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Creates a pre-configured session from a ready template (Step 34)."""
+    templates_dict = {
+        "chastity": {
+            "title": "Chastity & Keyholder Ritual Session",
+            "notes": "Сессия контроля доступа, регулярных фото-чек-инов пломб и оценки ИИ-Keyholder.",
+            "rules": {"rules": [{"type": "chastity_checkin", "interval_hours": 12}], "ai_role": "keyholder"},
+        },
+        "training": {
+            "title": "Training & Posture Routine Session",
+            "notes": "Дисциплинарная сессия физических тренировок, удержания поз и отслеживания выносливости.",
+            "rules": {"rules": [{"type": "task_quota", "daily_count": 3}], "ai_role": "observer"},
+        },
+        "aftercare": {
+            "title": "Aftercare & Health Recovery Session",
+            "notes": "Мягкая сессия восстановления: уход за кожей, гидратация, стабилизация и Health Pause.",
+            "rules": {"rules": [{"type": "health_trigger", "action": "convert_to_aftercare"}], "ai_role": "care"},
+        },
+        "contract": {
+            "title": "Pair BDSM Contract Session",
+            "notes": "Полная контрактная сессия с правилами, стоп-словами, эскалациями и заданиями.",
+            "rules": {
+                "rules": [{"type": "contract_compliance", "safewords": ["RED", "YELLOW"]}],
+                "ai_role": "observer",
+            },
+        },
+    }
+    cfg = templates_dict.get(template_type, templates_dict["chastity"])
+
+    session = ActivitySession(
+        owner_id=user.id,
+        status="created",
+        title=cfg["title"],
+        notes=cfg["notes"],
+        session_rules=cfg["rules"],
+    )
+    db.add(session)
+    await db.flush()
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
+    return RedirectResponse(url="/sessions", status_code=303)
+
+
+@router.post("/sessions/create-custom")
+async def create_custom_session(
+    request: Request,
+    title: str = Form(...),
+    ai_role: str = Form(default="keyholder"),
+    notes: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Creates a custom configured session from interactive form."""
+    session = ActivitySession(
+        owner_id=user.id,
+        status="created",
+        title=title.strip()[:200],
+        notes=notes.strip()[:1000] or None,
+        session_rules={"ai_role": ai_role, "custom_session": True},
+    )
+    db.add(session)
+    await db.flush()
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
+    return RedirectResponse(url="/sessions", status_code=303)
+
+
 @router.post("/sessions")
 async def create_session(
     request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new session. Multiple sessions may run in parallel (migration 063
-    dropped the one-active-per-user index)."""
-    session = ActivitySession(owner_id=user.id, status="created")
-    db.add(session)
-    await db.flush()
-    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
-    return RedirectResponse(url="/sessions", status_code=303)
+    """Redirect blank session creation to interactive wizard."""
+    return RedirectResponse(url="/sessions/wizard", status_code=303)
 
 
 async def _owned_session(db: AsyncSession, session_id: uuid.UUID, user: User) -> ActivitySession:
