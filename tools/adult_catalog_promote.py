@@ -200,7 +200,7 @@ SPECS: dict[str, dict[str, Any]] = {
     # ---- fluid_enema_control -------------------------------------------
     "category-chat-002": dict(
         slug="pre-session-scat-holding",
-        ru="Удержание кала перед сессией (скат-холдинг)", en="Pre-session scat holding",
+        ru="Удержание кала перед сессией (scat holding)", en="Pre-session scat holding",
         kind="preparation",
         summary_ru="Согласованное удержание кала в заданный период до сессии.",
         summary_en="Agreed scat-holding window before a session.",
@@ -306,7 +306,7 @@ SPECS: dict[str, dict[str, Any]] = {
     # ---- toilet_control ------------------------------------------------
     "category-chat-022": dict(
         slug="fecal-retention",
-        ru="Удержание кала (скат-холдинг)", en="Fecal retention (scat holding)",
+        ru="Удержание кала (scat holding)", en="Fecal retention (scat holding)",
         kind="activity",
         summary_ru="Контролируемое удержание кала до согласованного момента с гигиеническими мерами.",
         summary_en="Controlled scat holding up to an agreed point, with hygiene measures.",
@@ -348,7 +348,7 @@ SPECS: dict[str, dict[str, Any]] = {
     ),
     "category-chat-031": dict(
         slug="scat-smearing",
-        ru="Скат-смазывание (smearing)", en="Scat smearing",
+        ru="Scat smearing (размазывание)", en="Scat smearing",
         kind="reference",
         summary_ru="Справочная карточка: идея размазывания; исполняемая инструкция не предоставляется.",
         summary_en="Reference card: smearing concept; no executable instruction.",
@@ -425,7 +425,7 @@ SPECS: dict[str, dict[str, Any]] = {
     "category-chat-049": dict(slug="progressive-breath-film", ru="Плёнка с прогрессией перекрытий", en="Progressive breath film", kind="reference",
                               summary_ru="Справочная карточка: прогрессия перекрытий; исполняемая инструкция и таймеры не предоставляются.",
                               summary_en="Reference card: progressive breath film; no executable instruction or timers."),
-    "category-chat-050": dict(slug="rebreathing", ru="Ребризинг (повторное дыхание)", en="Rebreathing", kind="reference",
+    "category-chat-050": dict(        slug="rebreathing", ru="Rebreathing (повторное дыхание)", en="Rebreathing", kind="reference",
                               summary_ru="Справочная карточка: повторное дыхание; исполняемая инструкция и таймеры не предоставляются.",
                               summary_en="Reference card: rebreathing; no executable instruction or timers."),
     "category-chat-051": dict(slug="breath-restricting-hood", ru="Капюшон с ограничением дыхания", en="Breath-restricting hood", kind="reference",
@@ -557,7 +557,7 @@ SPECS: dict[str, dict[str, Any]] = {
     ),
     # ---- restraint_bondage ------------------------------------------------
     "category-chat-107": dict(
-        slug="hogtie-bondage", ru="Связывание рук и ног (хогтай)", en="Hogtie bondage",
+        slug="hogtie-bondage", ru="Связывание рук и ног (hogtie)", en="Hogtie bondage",
         kind="activity",
         summary_ru="Хогтай-фиксация рук и ног с быстрым освобождением и проверкой кровообращения.",
         summary_en="Hogtie hands-and-feet bondage with quick release and circulation checks.",
@@ -569,7 +569,7 @@ SPECS: dict[str, dict[str, Any]] = {
         summary_en="Kneeling submission pose with joint mobility kept in a safe range.",
     ),
     "category-chat-109": dict(
-        slug="spread-eagle-strapdown", ru="Поза лёжа с растяжкой (стрэппод)", en="Spread-eagle strapdown",
+        slug="spread-eagle-strapdown", ru="Поза лёжа с растяжкой (spread-eagle)", en="Spread-eagle strapdown",
         kind="activity",
         summary_ru="Лёжа с растяжкой конечностей и быстрым освобождением.",
         summary_en="Spread-eagle strapdown with quick release.",
@@ -605,7 +605,7 @@ SPECS: dict[str, dict[str, Any]] = {
         summary_en="Reference card: head and neck restraint; no executable instruction.",
     ),
     "category-chat-115": dict(
-        slug="spreader-bar", ru="Распорки для ног (спредер-бар)", en="Spreader bar",
+        slug="spreader-bar", ru="Распорки для ног (spreader bar)", en="Spreader bar",
         kind="activity",
         summary_ru="Распорка для ног с ограничением силы и без автоматического веса.",
         summary_en="Spreader bar with a force cap and no automatic weight.",
@@ -629,7 +629,7 @@ SPECS: dict[str, dict[str, Any]] = {
         summary_en="Bondage in an uncomfortable pose with joint-range limits and stable support.",
     ),
     "category-chat-119": dict(
-        slug="tape-bondage", ru="Скотч-бондаж", en="Tape bondage",
+        slug="tape-bondage", ru="Бондаж скотчем (tape bondage)", en="Tape bondage",
         kind="activity",
         summary_ru="Скотч и плёнка как фиксация с кожей-безопасными материалами и под рукой аварийным инструментом.",
         summary_en="Tape and film bondage with skin-safe materials and an emergency tool at hand.",
@@ -757,7 +757,7 @@ SPECS: dict[str, dict[str, Any]] = {
         summary_en="Reference card: cane and whip impact; no executable instruction.",
     ),
     "category-chat-148": dict(
-        slug="flogger-impact", ru="Порка флоггером", en="Flogger impact",
+        slug="flogger-impact", ru="Флоггинг (flogging)", en="Flogger impact",
         kind="activity",
         summary_ru="Порка флоггером по согласованным зонам с ограничением силы и числа ударов.",
         summary_en="Flogger impact on agreed zones with intensity and repetition caps.",

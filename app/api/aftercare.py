@@ -110,11 +110,15 @@ async def aftercare_page(
     )
 
     return templates.TemplateResponse(
-        request,
-        "aftercare.html",
-        {
+        request=request,
+        name="aftercare.html",
+        context={
+            "request": request,
             "t": t,
+            "user": user,
+            "locale": locale,
             "theme": theme,
+            "active_nav": "aftercare",
             "nav_key": "aftercare",
             "entries": [_entry_json(e) for e in entries],
             "journal_entries": journal_entries,
