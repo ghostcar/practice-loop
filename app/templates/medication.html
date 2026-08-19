@@ -105,42 +105,45 @@
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <details class="pl-surface border border-[color:var(--border)] rounded-xl p-4 group">
             <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add }}</summary>
-            <form action="/medications" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form id="med-create-form" action="/medications" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                <label class="text-xs pl-text-secondary">* {{ t.med_name }}
-                    <input type="text" name="name" required class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
+                <div class="sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
+                    <label class="text-xs pl-text-secondary flex-1">* {{ t.med_name }}
+                        <input type="text" id="med-name-input" name="name" required placeholder="напр. Бепантен, Прогинова, Хлоргексидин…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    </label>
+                    <button type="button" id="btn-autofill-pharma" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center justify-center gap-1.5 min-h-[44px]">
+                        {{ icon('ai', 'w-4 h-4') }} 🔍 Автозаполнить
+                    </button>
+                </div>
                 <label class="text-xs pl-text-secondary">{{ t.med_kind }}
-                    <select name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <select id="med-kind-select" name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                         {% for k in kinds %}<option value="{{ k }}">{{ t['med_kind_' + k] }}</option>{% endfor %}
                     </select>
                 </label>
-                <label class="text-xs pl-text-secondary">{{ t.med_active_ingredient }}
-                    <input type="text" name="active_ingredient" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                <label class="text-xs pl-text-secondary">{{ t.med_active_ingredient if t.get('med_active_ingredient') else 'МНН / Действующее вещество' }}
-                    <input type="text" name="active_ingredient" placeholder="напр. Декспантенол" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                <label class="text-xs pl-text-secondary">МНН / Действующее вещество
+                    <input type="text" id="med-active-ing" name="active_ingredient" placeholder="напр. Декспантенол" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_form }}
-                    <input type="text" name="form" placeholder="мазь, таблетки, гель…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" id="med-form-input" name="form" placeholder="мазь, таблетки, гель…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_strength }}
-                    <input type="text" name="strength" placeholder="500 мг, 5%…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" id="med-strength-input" name="strength" placeholder="500 мг, 5%…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary">Производитель / Бренд
-                    <input type="text" name="manufacturer" placeholder="Bayer, Фармстандарт…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" id="med-manufacturer-input" name="manufacturer" placeholder="Bayer, Фармстандарт…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary">Условия хранения
-                    <input type="text" name="storage_conditions" placeholder="+2..+8°C, в сухом месте…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" id="med-storage-input" name="storage_conditions" placeholder="+2..+8°C, в сухом месте…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
-                    <input type="checkbox" name="prescription_required" value="1" class="w-4 h-4">
+                    <input type="checkbox" id="med-prescription-cb" name="prescription_required" value="1" class="w-4 h-4">
                     По рецепту (Rx)
                 </label>
                 <label class="text-xs pl-text-secondary">{{ t.med_unit }}
-                    <input type="text" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" id="med-unit-input" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_instructions }}
-                    <input type="text" name="instructions" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <input type="text" id="med-instructions-input" name="instructions" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 </label>
                 <button type="submit" class="sm:col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
             </form>
@@ -328,13 +331,62 @@
             </article>
             {% endfor %}
         </div>
-        {% else %}
-        <section class="pl-surface border border-[color:var(--border)] rounded-xl p-12 text-center">
-            <div class="flex justify-center mb-3">{{ icon('medication', 'w-12 h-12 text-[color:var(--text-muted)]') }}</div>
-            <p class="pl-text-secondary">{{ t.med_add }}</p>
-            <p class="pl-text-muted text-sm mt-1">{{ t.med_subtitle }}</p>
-        </section>
         {% endif %}
     </section>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const autofillBtn = document.getElementById('btn-autofill-pharma');
+    if (!autofillBtn) return;
+
+    autofillBtn.addEventListener('click', async function() {
+        const nameInput = document.getElementById('med-name-input');
+        const name = nameInput ? nameInput.value.trim() : '';
+        if (!name) {
+            alert('Введите название препарата для автозаполнения!');
+            return;
+        }
+
+        const originalText = autofillBtn.innerHTML;
+        autofillBtn.disabled = true;
+        autofillBtn.innerText = '🔍 Поиск...';
+
+        try {
+            const formData = new FormData();
+            formData.append('name', name);
+            const csrfInput = document.querySelector('input[name="csrf_token"]');
+            if (csrfInput) formData.append('csrf_token', csrfInput.value);
+
+            const res = await fetch('/medications/autofill-info', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.status === 'ok' && data.data) {
+                const info = data.data;
+                if (info.active_ingredient) document.getElementById('med-active-ing').value = info.active_ingredient;
+                if (info.form) document.getElementById('med-form-input').value = info.form;
+                if (info.strength) document.getElementById('med-strength-input').value = info.strength;
+                if (info.manufacturer) document.getElementById('med-manufacturer-input').value = info.manufacturer;
+                if (info.storage_conditions) document.getElementById('med-storage-input').value = info.storage_conditions;
+                if (info.instructions) document.getElementById('med-instructions-input').value = info.instructions;
+                if (info.prescription_required) {
+                    const cb = document.getElementById('med-prescription-cb');
+                    if (cb) cb.checked = true;
+                }
+                if (info.kind) {
+                    const kindSelect = document.getElementById('med-kind-select');
+                    if (kindSelect) kindSelect.value = info.kind;
+                }
+            }
+        } catch (e) {
+            console.error('Autofill error:', e);
+        } finally {
+            autofillBtn.disabled = false;
+            autofillBtn.innerHTML = originalText;
+        }
+    });
+});
+</script>
 {% endblock %}

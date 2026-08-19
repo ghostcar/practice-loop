@@ -431,6 +431,19 @@ async def find_medication_analogs(
     return {"status": "ok", "analogues": analogs_data}
 
 
+@router.post("/medications/autofill-info")
+async def autofill_medication_info(
+    name: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Auto-fill medication/pharma attributes by drug name (seed registry + LLM)."""
+    from app.services.pharma_enricher import enrich_medication_info
+
+    info = await enrich_medication_info(db, user.id, name)
+    return {"status": "ok", "data": info}
+
+
 @router.post("/medications/{medication_id}/delete")
 async def delete_medication(
     request: Request,
