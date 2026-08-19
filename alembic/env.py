@@ -55,6 +55,7 @@ from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.prompt_template import PromptTemplate  # noqa: F401
 from app.models.push_device import PushDevice  # noqa: F401
+from app.models.quest import Quest, UserQuest  # noqa: F401
 from app.models.reminder_log import ReminderLog  # noqa: F401
 from app.models.session import ActivitySession  # noqa: F401
 from app.models.session_history import ActivitySessionHistory  # noqa: F401
