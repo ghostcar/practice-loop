@@ -4,7 +4,7 @@
 
 - **HEAD**: `5c0a0836b0de` (5c0a0836b0ded4e2fa68371f2e827f7aaf4e562f)
 - **Branch**: main
-- **Dirty**: no
+- **Dirty**: yes
 - **Generated at (source)**: 2026-08-19T02:02:57Z
 - **Repository**: ghostcar/practice-loop
 - **Alembic heads**: 1 (f0e1d2c3)

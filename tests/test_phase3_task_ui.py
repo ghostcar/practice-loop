@@ -80,6 +80,48 @@ async def test_catalog_legacy_category_filter_still_works(db_session, auth_clien
     assert "Legacy</h3>" in r.text
 
 
+@pytest.mark.asyncio
+async def test_catalog_shows_adult_and_safety_contract(db_session, auth_client, test_user):
+    """ADR-105/106: adult_only badge and safety contract metadata shown in the catalog."""
+    adult = Entity(
+        type="one_time",
+        real_name="Boundary talk",
+        category="Consent",
+        owner_id=test_user.id,
+        adult_only=True,
+        automation_allowed=False,
+        safety_contract={
+            "schema_version": "adult-safety-contract/v1",
+            "kind": "editorial_candidate",
+            "content_kind": "preparation",
+            "eligibility": {
+                "adult_only": True,
+                "explicit_opt_in_required": True,
+                "session_checkin_required": True,
+            },
+            "risk": {"level": "low", "automation_allowed": False},
+            "evidence_policy": {"media_required": False},
+            "gamification": {"penalty_enabled": False},
+            "required_controls": ["equipment_allowlist", "quick_release_check"],
+        },
+    )
+    plain = Entity(type="one_time", real_name="Plain walk", category="Other", owner_id=test_user.id)
+    db_session.add_all([adult, plain])
+    await db_session.flush()
+
+    r = await auth_client.get("/entities/catalog")
+    assert r.status_code == 200
+    # 18+ chip appears exactly once (only for the adult entity)
+    assert r.text.count("18+") == 1
+    # safety contract block with key flags (informational metadata, ADR-106)
+    assert "Safety contract" in r.text
+    assert "explicit opt-in" in r.text
+    assert "session check-in" in r.text
+    assert "not required" in r.text  # media never required
+    assert "quick_release_check" in r.text  # required controls listed
+    assert "AI auto-selection" in r.text
+
+
 # ── Manual task creation: params form ───────────────────────────────────
 
 

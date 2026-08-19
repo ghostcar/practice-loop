@@ -83,6 +83,9 @@
  {% elif risk == 'high' %}{{ t.risk_high }}
  {% else %}{{ t.risk_not_assessed }}{% endif %}
  </span>
+ {% if entity.adult_only %}
+ <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" title="{{ t.catalog_adult_hint }}">18+</span>
+ {% endif %}
  <span class="text-xs text-[color:var(--text-muted)]">{{ entity.category_rel.title if entity.category_rel else entity.category }}</span>
  {% if entity.is_public and entity.author %}
  <span class="text-xs text-[color:var(--text-muted)]">
@@ -131,6 +134,33 @@
  {{ t.catalog_parameters_label }} ▾
  </summary>
  <pre class="mt-2 text-xs text-[color:var(--text-secondary)] pl-surface-soft p-3 rounded-xl overflow-x-auto">{{ entity.params_schema | tojson(indent=2) }}</pre>
+ </details>
+ {% endif %}
+
+ <!-- Safety contract (ADR-105/106: informational metadata — opt-in is the approval boundary) -->
+ {% if entity.safety_contract %}
+ {% set sc = entity.safety_contract %}
+ <details class="mt-3">
+ <summary class="text-xs text-[color:var(--text-muted)] cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
+ {{ t.catalog_safety_label }} ▾
+ </summary>
+ <div class="mt-2 text-xs text-[color:var(--text-secondary)] pl-surface-soft p-3 rounded-xl space-y-1">
+ {% if sc.content_kind %}<div>{{ t.catalog_safety_content_kind }}: {{ sc.content_kind }}</div>{% endif %}
+ {% if sc.eligibility %}
+ <div>{{ t.catalog_safety_eligibility }}:
+ {% if sc.eligibility.explicit_opt_in_required %}{{ t.catalog_safety_opt_in }}{% endif %}
+ {% if sc.eligibility.session_checkin_required %}{{ t.catalog_safety_checkin }}{% endif %}
+ </div>
+ {% endif %}
+ {% if sc.risk %}<div>{{ t.catalog_safety_automation }}: {{ t.catalog_safety_on if sc.risk.automation_allowed else t.catalog_safety_off }}</div>{% endif %}
+ {% if sc.evidence_policy %}<div>{{ t.catalog_safety_media }}: {{ t.catalog_safety_required if sc.evidence_policy.media_required else t.catalog_safety_not_required }}</div>{% endif %}
+ {% if sc.gamification %}<div>{{ t.catalog_safety_penalty }}: {{ t.catalog_safety_on if sc.gamification.penalty_enabled else t.catalog_safety_off }}</div>{% endif %}
+ {% if sc.required_controls %}<div>{{ t.catalog_safety_controls }}: {{ sc.required_controls | join(', ') }}</div>{% endif %}
+ {% if sc.safety %}
+ {% if sc.safety.stop_conditions %}<div>{{ t.catalog_safety_stops }}: {{ sc.safety.stop_conditions | join(', ') }}</div>{% endif %}
+ {% if sc.safety.checkpoints %}<div>{{ t.catalog_safety_checkpoints }}: {{ sc.safety.checkpoints | join(', ') }}</div>{% endif %}
+ {% endif %}
+ </div>
  </details>
  {% endif %}
  </div>
