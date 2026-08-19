@@ -26,6 +26,61 @@ async def test_create_session(auth_client: AsyncClient, db_session: AsyncSession
 
 
 @pytest.mark.asyncio
+async def test_create_session_is_idempotent(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+    """A second create reuses the open session instead of 500 (migration 013 index)."""
+    first = await auth_client.post("/sessions", follow_redirects=False)
+    second = await auth_client.post("/sessions", follow_redirects=False)
+    assert first.status_code == second.status_code == 303
+    sessions = (
+        (await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id)))
+        .scalars()
+        .all()
+    )
+    assert len(sessions) == 1
+    assert sessions[0].status == "created"
+
+
+@pytest.mark.asyncio
+async def test_json_create_session_reuses_open_session(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user
+):
+    first = await auth_client.post("/api/v2/sessions", json={"title": "API session"})
+    assert first.status_code == 201
+    session_id = first.json()["id"]
+
+    second = await auth_client.post("/api/v2/sessions", json={"title": "Another"})
+    assert second.status_code == 200
+    assert second.json()["id"] == session_id
+    assert second.json()["title"] == "API session"  # existing session returned as-is
+
+    sessions = (
+        (await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id)))
+        .scalars()
+        .all()
+    )
+    assert len(sessions) == 1
+
+
+@pytest.mark.asyncio
+async def test_create_after_ending_previous(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+    """Ending the open session frees the slot for a new one."""
+    await auth_client.post("/sessions", follow_redirects=False)
+    session = (
+        await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id))
+    ).scalar_one()
+    await auth_client.post(f"/sessions/{session.id}/end", follow_redirects=False)
+
+    resp = await auth_client.post("/sessions", follow_redirects=False)
+    assert resp.status_code == 303
+    sessions = (
+        (await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id)))
+        .scalars()
+        .all()
+    )
+    assert {s.status for s in sessions} == {"ended", "created"}
+
+
+@pytest.mark.asyncio
 async def test_start_session(auth_client: AsyncClient, db_session: AsyncSession, test_user):
     """Start a created session."""
     session = ActivitySession(owner_id=test_user.id, status="created")

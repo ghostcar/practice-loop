@@ -575,13 +575,31 @@ async def sessions_page(
     )
 
 
+async def _open_session(db: AsyncSession, user_id: uuid.UUID) -> ActivitySession | None:
+    """Return the user's current non-ended session, if any.
+
+    Migration 013 enforces one session with status in (created, active) per
+    user via the partial unique index ``ix_activity_sessions_one_active`` —
+    creating a second one blindly raises a UniqueViolation (500).
+    """
+    result = await db.execute(
+        select(ActivitySession).where(
+            ActivitySession.owner_id == user_id,
+            ActivitySession.status.in_(["created", "active"]),
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 @router.post("/sessions")
 async def create_session(
     request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new session."""
+    """Create a new session (idempotent — one non-ended session per user)."""
+    if await _open_session(db, user.id) is not None:
+        return RedirectResponse(url="/sessions", status_code=303)
     session = ActivitySession(owner_id=user.id, status="created")
     db.add(session)
     await db.flush()
@@ -809,12 +827,16 @@ async def json_sessions(user: User = Depends(get_current_user), db: AsyncSession
     return [_session_json(session) for session in rows]
 
 
-@session_json_router.post("", status_code=201)
+@session_json_router.post("")
 async def json_create_session(
     data: SessionCreateIn,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """Create a new session (idempotent — one non-ended session per user)."""
+    existing = await _open_session(db, user.id)
+    if existing is not None:
+        return _session_json(existing)
     session = ActivitySession(
         owner_id=user.id,
         status="created",
@@ -826,7 +848,7 @@ async def json_create_session(
     await db.flush()
     db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
     await db.flush()
-    return _session_json(session)
+    return JSONResponse(_session_json(session), status_code=201)
 
 
 @session_json_router.post("/{session_id}/accept")
