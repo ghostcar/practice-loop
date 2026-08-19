@@ -41,6 +41,30 @@ def _get_today() -> date:
     return local_today()
 
 
+@router.get("/builder", response_class=HTMLResponse)
+async def training_builder_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Interactive Training Routine & Posture Builder page (Step 35)."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="training_builder.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "training",
+        },
+    )
+
+
 # === Page ===
 
 _TIME_LABEL_RE = re.compile(r"(\d{1,2}):(\d{2})\s*(?:[–-]|до)\s*(\d{1,2}):(\d{2})")

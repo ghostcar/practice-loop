@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                {{ icon('training', 'w-6 h-6') }} Интерактивный Конструктор Тренировок и Поз
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Составление персональных комплексов (выносливость, удержание поз, гибкость) с привязкой к частям тела и ИИ-фотопроверкой.
+            </p>
+        </div>
+        <a href="/training" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)] inline-flex items-center gap-1.5">
+            {{ icon('arrow-left', 'w-3.5 h-3.5') }} К Дневнику Тренировок
+        </a>
+    </div>
+
+    <!-- Workout Builder Workspace -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Exercise Palette -->
+        <div class="space-y-4">
+            <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider inline-flex items-center gap-1.5">
+                {{ icon('catalog', 'w-4 h-4') }} Каталог Упражнений
+            </h2>
+
+            <div class="space-y-2">
+                <button type="button" class="add-exercise-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Удержание Позы (Posture Hold)" data-cat="posture" data-body="core">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs text-[color:var(--text)]">🧘 Удержание Позы (Posture Hold)</span>
+                        <span class="text-[10px] pl-accent-soft px-1.5 py-0.5 rounded">Поза</span>
+                    </div>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Статическое удержание осанки и баланса на время.</p>
+                </button>
+
+                <button type="button" class="add-exercise-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Приседания / Squats" data-cat="strength" data-body="legs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs text-[color:var(--text)]">🦵 Приседания / Squats</span>
+                        <span class="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Силовое</span>
+                    </div>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Упражнения для ног и кора с отслеживанием подходов.</p>
+                </button>
+
+                <button type="button" class="add-exercise-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Растяжка и Гибкость" data-cat="flexibility" data-body="full_body">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-xs text-[color:var(--text)]">🤸 Растяжка и Гибкость</span>
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">Гибкость</span>
+                    </div>
+                    <p class="text-[11px] text-[color:var(--text-muted)]">Комплекс на гибкость спины, бёдер и плечевого пояса.</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Routine Canvas -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider inline-flex items-center gap-1.5">
+                    {{ icon('routine', 'w-4 h-4') }} Составляемый Программный Комплекс
+                </h2>
+                <button type="button" id="clear-routine-btn" class="text-xs text-[color:var(--danger)] hover:underline">Очистить</button>
+            </div>
+
+            <div id="routine-canvas" class="space-y-3 p-4 rounded-2xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] min-h-[300px]">
+                <p id="empty-routine-msg" class="text-xs text-[color:var(--text-muted)] italic text-center py-10">
+                    Добавьте упражнения из каталога слева для сборки комплекса.
+                </p>
+            </div>
+
+            <form action="/training" method="get" class="p-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-[color:var(--text)]">Настройки ИИ-Верификации:</span>
+                    <label class="flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+                        <input type="checkbox" checked class="accent-[color:var(--accent)]">
+                        <span>Требовать ИИ-фотопроверку выполнения позы</span>
+                    </label>
+                </div>
+                <button type="submit" class="w-full py-2.5 pl-accent-bg text-xs font-semibold rounded-lg hover:bg-[color:var(--accent-hover)] inline-flex items-center justify-center gap-1.5">
+                    {{ icon('confirm', 'w-4 h-4') }} Сохранить Тренировочный Комплекс
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('routine-canvas');
+  const emptyMsg = document.getElementById('empty-routine-msg');
+  const clearBtn = document.getElementById('clear-routine-btn');
+
+  let exercises = [];
+
+  document.querySelectorAll('.add-exercise-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-name');
+      const cat = btn.getAttribute('data-cat');
+      const body = btn.getAttribute('data-body');
+
+      exercises.push({
+        id: 'ex_' + Date.now(),
+        name: name,
+        category: cat,
+        target_body_part: body,
+        sets: 3,
+        reps_or_sec: 45
+      });
+      renderCanvas();
+    });
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    exercises = [];
+    renderCanvas();
+  });
+
+  function renderCanvas() {
+    if (exercises.length === 0) {
+      emptyMsg.classList.remove('hidden');
+      canvas.querySelectorAll('.ex-item').forEach(el => el.remove());
+      return;
+    }
+    emptyMsg.classList.add('hidden');
+    canvas.querySelectorAll('.ex-item').forEach(el => el.remove());
+
+    exercises.forEach((ex, idx) => {
+      const div = document.createElement('div');
+      div.className = 'ex-item p-3.5 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] space-y-2 text-xs';
+      div.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-[color:var(--text)]">${ex.name}</span>
+          <button type="button" class="remove-ex text-red-400 font-bold" data-idx="${idx}">✕</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-[11px] text-[color:var(--text-secondary)]">
+          <div>Категория: <span class="font-medium text-[color:var(--text)]">${ex.category}</span></div>
+          <div>Зона: <span class="font-medium text-[color:var(--text)]">${ex.target_body_part}</span></div>
+          <div>Подходы: <span class="font-medium text-[color:var(--text)]">${ex.sets} × ${ex.reps_or_sec} сек/повторов</span></div>
+        </div>
+      `;
+      canvas.appendChild(div);
+    });
+
+    canvas.querySelectorAll('.remove-ex').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const i = parseInt(e.target.getAttribute('data-idx'));
+        exercises.splice(i, 1);
+        renderCanvas();
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

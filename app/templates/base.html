@@ -113,8 +113,9 @@
     {{ nav_item('aftercare', '/aftercare', 'aftercare', t.nav_aftercare) }}
     {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
     {{ nav_item('measurements', '/api/v2/measurements/page', 'measurement', t.nav_measurements) }}
-    {{ nav_item('insights', '/insights', 'insights', t.nav_insights) }}
-    {{ nav_item('activity_catalog', '/catalog', 'activity', t.nav_activity_catalog) }}
+    {{ nav_item('consent_matrix', '/consent/matrix', 'consent', 'Матрица Согласий') }}
+    {{ nav_item('media_progress', '/media/progress', 'camera', 'Динамика Снимков') }}
+    {{ nav_item('training_builder', '/training/builder', 'training', 'Конструктор Тренировок') }}
     {{ nav_item('import', '/import', 'import', t.nav_import) }}
   </div>
   {% elif composition and composition.timer_operational %}
