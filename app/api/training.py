@@ -546,7 +546,6 @@ async def update_log_entry(
     entry.actual_value = (form.get("actual_value", "").strip()) or None
     entry.notes = (form.get("notes", "").strip()) or None
     db.add(entry)
-    await db.commit()
     return HTMLResponse(_render_log_entry_row(entry))
 
 
@@ -595,7 +594,6 @@ async def add_extra_log_entry(
         is_extra=True,
     )
     db.add(entry)
-    await db.commit()
     return HTMLResponse(_render_log_entry_row(entry))
 
 
@@ -615,7 +613,6 @@ async def delete_log_entry(
     if not entry.is_extra:
         raise HTTPException(status_code=400, detail="Only extra entries can be deleted")
     await db.delete(entry)
-    await db.commit()
     return HTMLResponse("")
 
 
