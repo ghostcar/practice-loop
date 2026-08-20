@@ -7,6 +7,12 @@ class Base(DeclarativeBase):
 
 from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: E402
 from app.models.body_cycle import BodyCycleLog  # noqa: E402
+from app.models.community_agent import (  # noqa: E402
+    CommunityMemberDelegation,
+    CommunityTopAgent,
+    CommunityTournament,
+    CommunityTournamentEntry,
+)
 from app.models.ds_suite import (  # noqa: E402
     AssignedDuty,
     CapabilityGrant,
@@ -28,6 +34,10 @@ __all__ = [
     "CapabilityGrant",
     "CapabilityGrantClaimAttempt",
     "ChastityLockLog",
+    "CommunityMemberDelegation",
+    "CommunityTopAgent",
+    "CommunityTournament",
+    "CommunityTournamentEntry",
     "EquipmentMaintenanceLog",
     "ManagedSubmissive",
     "PromptLibraryItem",

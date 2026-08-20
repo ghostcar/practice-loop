@@ -7,14 +7,14 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
         <div>
             <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
-                🛡️ Матрица Согласий, Стоп-слов и Личных Границ
+                {{ icon('shield', 'w-6 h-6') }} Матрица Согласий, Стоп-слов и Личных Границ
             </h1>
             <p class="text-xs text-[color:var(--text-secondary)] mt-1">
                 Настройка жестких рамок (Hard Limits), допустимых границ (Soft Limits) и стоп-слов (Safewords) для ИИ-ассистента и сессий в паре.
             </p>
         </div>
         <a href="/consent" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
-            ← Журнал Согласий
+            {{ icon('arrow-left', 'w-3.5 h-3.5') }} Журнал Согласий
         </a>
     </div>
 
@@ -24,7 +24,7 @@
         <div class="p-5 rounded-2xl bg-[color:var(--surface-soft)] border border-red-500/30 space-y-4">
             <div class="flex items-center justify-between border-b border-red-500/20 pb-3">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-red-400 inline-flex items-center gap-1.5">
-                    🚫 Hard Limits (Жёсткое Табу)
+                    {{ icon('block', 'w-4 h-4') }} Hard Limits (Жёсткое Табу)
                 </h2>
                 <span class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-bold">100% Фильтр</span>
             </div>
@@ -51,7 +51,7 @@
         <div class="p-5 rounded-2xl bg-[color:var(--surface-soft)] border border-amber-500/30 space-y-4">
             <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400 inline-flex items-center gap-1.5">
-                    ⚠️ Soft Limits (С Предосторожностью)
+                    {{ icon('warning', 'w-4 h-4') }} Soft Limits (С Предосторожностью)
                 </h2>
                 <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">Опт-ин</span>
             </div>
@@ -78,7 +78,7 @@
         <div class="p-5 rounded-2xl bg-[color:var(--surface-soft)] border border-emerald-500/30 space-y-4">
             <div class="flex items-center justify-between border-b border-emerald-500/20 pb-3">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400 inline-flex items-center gap-1.5">
-                    🟢 Стоп-слова и Сигналы (Safewords)
+                    {{ icon('stop', 'w-4 h-4') }} Стоп-слова и Сигналы (Safewords)
                 </h2>
                 <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">Мгновенный Стоп</span>
             </div>
@@ -87,11 +87,11 @@
             </p>
             <div class="space-y-2 text-xs">
                 <div class="p-2.5 rounded-lg bg-[color:var(--surface)] border border-red-500/40 text-red-400 font-bold flex items-center justify-between">
-                    <span>🔴 RED / КРАСНЫЙ</span>
+                    <span>{{ icon('stop', 'w-4 h-4') }} RED / КРАСНЫЙ</span>
                     <span class="text-[10px] font-normal text-[color:var(--text-muted)]">Мгновенный стоп и снятие</span>
                 </div>
                 <div class="p-2.5 rounded-lg bg-[color:var(--surface)] border border-amber-500/40 text-amber-400 font-bold flex items-center justify-between">
-                    <span>🟡 YELLOW / ЖЕЛТЫЙ</span>
+                    <span>{{ icon('warning', 'w-4 h-4') }} YELLOW / ЖЕЛТЫЙ</span>
                     <span class="text-[10px] font-normal text-[color:var(--text-muted)]">Снижение интенсивности</span>
                 </div>
             </div>

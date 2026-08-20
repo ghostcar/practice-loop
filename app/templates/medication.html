@@ -112,7 +112,7 @@
                         <input type="text" id="med-name-input" name="name" required placeholder="напр. Бепантен, Прогинова, Хлоргексидин…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                     </label>
                     <button type="button" id="btn-autofill-pharma" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center justify-center gap-1.5 min-h-[44px]">
-                        {{ icon('ai', 'w-4 h-4') }} 🔍 Автозаполнить
+                        {{ icon('search', 'w-4 h-4') }} Автозаполнить
                     </button>
                 </div>
                 <label class="text-xs pl-text-secondary">{{ t.med_kind }}
@@ -196,7 +196,7 @@
                             {% if m.strength %} · {{ m.strength }}{% endif %}
                             {% if m.form %} · {{ m.form }}{% endif %}
                             {% if m.manufacturer %} · {{ m.manufacturer }}{% endif %}
-                            {% if m.storage_conditions %} · 🌡️ {{ m.storage_conditions }}{% endif %}
+                            {% if m.storage_conditions %} · {{ m.storage_conditions }}{% endif %}
                         </p>
                         {% if m.instructions %}<p class="text-sm pl-text-secondary mt-1">{{ m.instructions }}</p>{% endif %}
 
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const originalText = autofillBtn.innerHTML;
         autofillBtn.disabled = true;
-        autofillBtn.innerText = '🔍 Поиск...';
+        autofillBtn.innerText = 'Поиск...';
 
         try {
             const formData = new FormData();

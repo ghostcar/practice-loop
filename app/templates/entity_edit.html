@@ -108,19 +108,19 @@
                 <label class="block text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider mb-2">Категорийные наборы полей:</label>
                 <div class="flex flex-wrap gap-2" id="category-tabs">
                     <button type="button" data-preset="impact" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5 active">
-                        🔨 Ударное / Порка
+                        {{ icon('warning', 'w-3.5 h-3.5') }} Ударное / Порка
                     </button>
                     <button type="button" data-preset="bondage" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-                        🪢 Бондаж / Фиксация
+                        {{ icon('link', 'w-3.5 h-3.5') }} Бондаж / Фиксация
                     </button>
                     <button type="button" data-preset="sensory" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-                        ❄️ Сенсорика / Ощущения
+                        {{ icon('symptoms', 'w-3.5 h-3.5') }} Сенсорика / Ощущения
                     </button>
                     <button type="button" data-preset="control" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-                        👑 Контроль / Отказ
+                        {{ icon('key', 'w-3.5 h-3.5') }} Контроль / Отказ
                     </button>
                     <button type="button" data-preset="general" class="preset-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-                        📝 Базовый настраиваемый
+                        {{ icon('edit', 'w-3.5 h-3.5') }} Базовый настраиваемый
                     </button>
                 </div>
             </div>
@@ -226,7 +226,7 @@
         <!-- Optional Expert Mode (Raw JSON Debug Section) -->
         <details class="pl-surface rounded-2xl border border-[color:var(--border)] p-4">
             <summary class="text-xs font-medium text-[color:var(--text-muted)] cursor-pointer hover:text-[color:var(--text)]">
-                🛠️ Экспертный режим (просмотр и ручная правка сырого JSON) ▾
+                {{ icon('settings', 'w-3.5 h-3.5') }} Экспертный режим (просмотр и ручная правка сырого JSON) ▾
             </summary>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                 <div>

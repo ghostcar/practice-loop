@@ -7,7 +7,7 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
         <div>
             <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
-                🎯 Квесты, Челленджи & Серии Практик
+                {{ icon('trophy', 'w-6 h-6') }} Квесты, Челленджи & Серии Практик
             </h1>
             <p class="text-xs text-[color:var(--text-secondary)] mt-1">
                 Интерактивные задания дисциплины, регулярности ухода и поз. Выполняйте задачи и получайте бонусы XP и бейджи!
@@ -15,7 +15,7 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/achievements" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
-                ← Витрина Достижений
+                {{ icon('arrow-left', 'w-3.5 h-3.5') }} Витрина Достижений
             </a>
         </div>
     </div>
@@ -39,12 +39,12 @@
 
                 {% if uq.status == 'claimed' %}
                 <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
-                    ✓ Получено
+                    {{ icon('check', 'w-3.5 h-3.5') }} Получено
                 </span>
                 {% elif uq.current_progress >= uq.quest.target_count %}
                 <form method="POST" action="/achievements/quests/{{ uq.id }}/claim">
                     <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold transition-all shadow">
-                        🎁 Забрать +{{ uq.quest.reward_xp }} XP
+                        {{ icon('points', 'w-3.5 h-3.5') }} Забрать +{{ uq.quest.reward_xp }} XP
                     </button>
                 </form>
                 {% else %}

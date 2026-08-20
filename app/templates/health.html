@@ -11,7 +11,7 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             <a href="/health/body-cycle" class="px-3.5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 text-white text-xs font-semibold rounded-lg shadow hover:opacity-90 inline-flex items-center gap-1.5 min-h-[44px]">
-                🩸 Трекер Цикла & Состояния
+                {{ icon('cycle', 'w-3.5 h-3.5') }} Трекер Цикла & Состояния
             </a>
             <form action="/health/analyze" method="post" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -95,11 +95,11 @@
                 <div class="col-span-2 sm:col-span-3 flex items-center gap-4 py-1">
                     <label class="text-xs pl-text-secondary inline-flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="post_session_drop" value="1" {% if today_state and today_state.post_session_drop %}checked{% endif %} class="w-4 h-4 rounded">
-                        📉 Post-session Drop (Эмоциональный спад)
+                        {{ icon('chart', 'w-3.5 h-3.5') }} Post-session Drop (Эмоциональный спад)
                     </label>
                     <label class="text-xs pl-text-secondary inline-flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="hrt_taken" value="1" {% if today_state and today_state.hrt_taken %}checked{% endif %} class="w-4 h-4 rounded">
-                        💊 Приём ГТ / HRT на сегодня
+                        {{ icon('medication', 'w-3.5 h-3.5') }} Приём ГТ / HRT на сегодня
                     </label>
                 </div>
 
@@ -119,7 +119,7 @@
             {% if cycle_phase and day_of_cycle %}
             <div class="flex items-center gap-3 flex-wrap">
                 <span class="pl-accent-soft px-3 py-1.5 rounded-lg text-sm font-medium">
-                    {% if cycle_phase == 'hrt_emulated' %}💊 Эмулируемый цикл ГТ{% else %}{{ t['health_phase_' + cycle_phase] if t.get('health_phase_' + cycle_phase) else cycle_phase }}{% endif %}
+                    {% if cycle_phase == 'hrt_emulated' %}{{ icon('medication', 'w-3.5 h-3.5') }} Эмулируемый цикл ГТ{% else %}{{ t['health_phase_' + cycle_phase] if t.get('health_phase_' + cycle_phase) else cycle_phase }}{% endif %}
                 </span>
                 <span class="pl-text-secondary text-sm">{{ t.health_cycle_day }}: {{ day_of_cycle }}</span>
                 <span class="text-xs pl-text-muted">{{ icon('info', 'w-3.5 h-3.5') }}{{ t.health_phase_estimated_hint }}</span>
@@ -134,10 +134,10 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <label class="text-xs pl-text-secondary col-span-2 sm:col-span-3">Тип профиля цикла / ритма
                         <select name="profile_type" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
-                            <option value="natural_menstrual" {% if cycle_settings and cycle_settings.profile_type == 'natural_menstrual' %}selected{% endif %}>🌸 Естественный менструальный цикл</option>
-                            <option value="hrt_emulated" {% if cycle_settings and cycle_settings.profile_type == 'hrt_emulated' %}selected{% endif %}>💊 Эмулируемый цикл ГТ (HRT / ZHT)</option>
-                            <option value="biorhythm_custom" {% if cycle_settings and cycle_settings.profile_type == 'biorhythm_custom' %}selected{% endif %}>⚡ Индивидуальный кастомный биоритм</option>
-                            <option value="disabled" {% if cycle_settings and cycle_settings.profile_type == 'disabled' %}selected{% endif %}>⚪ Отключен (без циклического прогноза)</option>
+                            <option value="natural_menstrual" {% if cycle_settings and cycle_settings.profile_type == 'natural_menstrual' %}selected{% endif %}>Естественный менструальный цикл</option>
+                            <option value="hrt_emulated" {% if cycle_settings and cycle_settings.profile_type == 'hrt_emulated' %}selected{% endif %}>Эмулируемый цикл ГТ (HRT / ZHT)</option>
+                            <option value="biorhythm_custom" {% if cycle_settings and cycle_settings.profile_type == 'biorhythm_custom' %}selected{% endif %}>Индивидуальный кастомный биоритм</option>
+                            <option value="disabled" {% if cycle_settings and cycle_settings.profile_type == 'disabled' %}selected{% endif %}>Отключен (без циклического прогноза)</option>
                         </select>
                     </label>
                     <label class="text-xs pl-text-secondary">{{ t.health_cycle_length }}

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}ИИ-Верхний Сообщества {{ community.name }} — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header & Persona Badge -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-3xl font-bold tracking-tight text-archive-100 flex items-center gap-2">
+                    {{ icon('ai', 'w-8 h-8 text-amber-400') }}
+                    <span>{{ agent.persona_name }}</span>
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-400 border border-amber-800">
+                    ИИ-Верхний Сообщества (Строгость {{ agent.strictness_level }}/5)
+                </span>
+            </div>
+            <p class="text-archive-400 text-sm">
+                Сообщество: <strong class="text-archive-200">{{ community.name }}</strong>. Автономное управление делегированными профилями, групповые челленджи и турниры.
+            </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <form action="/communities/{{ community.id }}/agent/delegate" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                {% if user_delegation %}
+                <button type="submit" class="py-2.5 px-4 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 font-semibold text-xs rounded-lg border border-emerald-800 transition flex items-center gap-2">
+                    {{ icon('check', 'w-4 h-4') }}
+                    <span>Делегировано ИИ-Верхнему</span>
+                </button>
+                {% else %}
+                <button type="submit" class="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition flex items-center gap-2">
+                    {{ icon('lock', 'w-4 h-4') }}
+                    <span>Делегировать Профиль</span>
+                </button>
+                {% endif %}
+            </form>
+
+            <form action="/communities/{{ community.id }}/agent/quest/generate" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                <button type="submit" class="py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-archive-950 font-semibold text-xs rounded-lg transition flex items-center gap-2">
+                    {{ icon('trophy', 'w-4 h-4') }}
+                    <span>Групповой Квест</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Public Tournaments Deck -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-archive-800 pb-4">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('trophy', 'w-5 h-5 text-amber-400') }}
+                <span>Публичные Турниры Сообщества</span>
+            </h2>
+
+            <form action="/communities/{{ community.id }}/agent/tournaments/create" method="POST" class="flex items-center gap-2">
+                <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                <input type="text" name="title" placeholder="Название турнира..." required class="bg-archive-950 border border-archive-800 text-xs text-archive-200 rounded-lg p-2">
+                <button type="submit" class="py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition">
+                    + Создать Турнир
+                </button>
+            </form>
+        </div>
+
+        {% if tournaments %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for t in tournaments %}
+            <div class="bg-archive-950 border border-archive-800 rounded-lg p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-semibold text-sm text-archive-100">{{ t.title }}</span>
+                    <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-archive-800 text-archive-300 uppercase">{{ t.status }}</span>
+                </div>
+                <p class="text-xs text-archive-400">{{ t.description }}</p>
+
+                <div class="flex items-center justify-between pt-2 border-t border-archive-850 text-xs">
+                    <span class="text-archive-500 font-mono">Метрика: {{ t.metric_type }}</span>
+                    <form action="/communities/{{ community.id }}/agent/tournaments/{{ t.id }}/join" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                        <button type="submit" class="py-1 px-3 bg-amber-500 hover:bg-amber-600 text-archive-950 font-semibold text-[11px] rounded transition">
+                            Участвовать
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-archive-400">Активные турниры пока не проводились.</p>
+        {% endif %}
+    </div>
+
+    <!-- Delegated Members & Recent Feed Announcements Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Delegated Submissives List -->
+        <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-4">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('users', 'w-5 h-5 text-amber-400') }}
+                <span>Делегированные Подконтрольные ({{ delegations|length }})</span>
+            </h2>
+
+            {% if delegations %}
+            <div class="space-y-2">
+                {% for d in delegations %}
+                <div class="bg-archive-950 border border-archive-800 p-3 rounded-lg flex items-center justify-between">
+                    <span class="text-xs font-mono text-archive-200">ID: {{ d.user_id }}</span>
+                    <span class="text-xs font-bold text-emerald-400 font-mono">Compliance: {{ d.compliance_score }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-archive-400">Нет подконтрольных участников, делегировавших профиль.</p>
+            {% endif %}
+        </div>
+
+        <!-- Recent Announcements -->
+        <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-4">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('journal', 'w-5 h-5 text-amber-400') }}
+                <span>Объявления в Ленте Сообщества</span>
+            </h2>
+
+            {% if recent_posts %}
+            <div class="space-y-3">
+                {% for p in recent_posts %}
+                <div class="bg-archive-950 border border-archive-800 p-3 rounded-lg space-y-1">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-semibold text-amber-400">{{ p.author_name or 'ИИ-Верхний' }}</span>
+                        <span class="text-[10px] text-archive-500 font-mono">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '' }}</span>
+                    </div>
+                    <p class="text-xs text-archive-200 font-medium">{{ p.title }}</p>
+                    <p class="text-[11px] text-archive-400">{{ p.content }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-archive-400">Публикаций в ленте пока нет.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

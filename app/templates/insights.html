@@ -11,10 +11,10 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/insights/trajectory" class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 text-white text-xs font-semibold rounded-lg shadow hover:opacity-90 inline-flex items-center gap-1.5">
-                📊 Радар Мастерства & Траектория
+                {{ icon('chart', 'w-3.5 h-3.5') }} Радар Мастерства & Траектория
             </a>
             <a href="/insights/export-medical" class="px-3.5 py-2 pl-accent-bg text-xs font-semibold rounded-lg hover:bg-[color:var(--accent-hover)] inline-flex items-center gap-1.5 shadow">
-                📄 Селективный Врачебный Выгрузчик
+                {{ icon('report', 'w-3.5 h-3.5') }} Селективный Врачебный Выгрузчик
             </a>
         </div>
     </div>
@@ -120,11 +120,11 @@
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
             <div>
-                <h3 class="text-base font-semibold text-[color:var(--text)]">📊 Интерактивная Матрица Корреляций и Откликов</h3>
+                <h3 class="text-base font-semibold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('chart', 'w-4 h-4') }} Интерактивная Матрица Корреляций и Откликов</h3>
                 <p class="text-xs text-[color:var(--text-secondary)]">Анализ зависимостей ритмов здоровья, приёма ГТ, сессий ограничения доступа и откликов в паре.</p>
             </div>
             <button type="button" id="export-report-btn" class="px-3.5 py-2 pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-medium rounded-lg inline-flex items-center gap-1.5 min-h-[40px]">
-                📄 Выгрузить Медицинский Отчёт (1-Click)
+                {{ icon('report', 'w-3.5 h-3.5') }} Выгрузить Медицинский Отчёт (1-Click)
             </button>
         </div>
 
@@ -132,7 +132,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Health & HRT Trends -->
             <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
-                <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">🩺 Ритмы Здоровья & Приём ГТ</h4>
+                <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider inline-flex items-center gap-1.5">{{ icon('health', 'w-3.5 h-3.5') }} Ритмы Здоровья & Приём ГТ</h4>
                 <div id="matrix-health-chart" class="space-y-2 text-xs">
                     <p class="text-[color:var(--text-muted)] italic">Загрузка матрицы здоровья...</p>
                 </div>
@@ -140,7 +140,7 @@
 
             <!-- Chastity & Lock Correlation -->
             <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
-                <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">🔒 Ограничения Доступа (Chastity) & Отклики</h4>
+                <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider inline-flex items-center gap-1.5">{{ icon('lock', 'w-3.5 h-3.5') }} Ограничения Доступа (Chastity) & Отклики</h4>
                 <div id="matrix-lock-chart" class="space-y-2 text-xs">
                     <p class="text-[color:var(--text-muted)] italic">Загрузка данных сессий...</p>
                 </div>
@@ -149,7 +149,7 @@
 
         <!-- Partner Satisfaction Matrix -->
         <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
-            <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">💖 Матрица Удовлетворённости и Динамики в Паре</h4>
+            <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider inline-flex items-center gap-1.5">{{ icon('heart', 'w-3.5 h-3.5') }} Матрица Удовлетворённости и Динамики в Паре</h4>
             <div id="matrix-partner-chart" class="text-xs space-y-2">
                 <p class="text-[color:var(--text-muted)] italic">Загрузка профилей партнёров...</p>
             </div>
@@ -161,8 +161,8 @@
 <div id="report-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[color:var(--surface)] border border-[color:var(--border)] rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
-            <h3 class="text-base font-bold text-[color:var(--text)]">📋 Выгрузка Персонального Отчёта</h3>
-            <button type="button" id="close-report-btn" class="text-sm pl-text-muted hover:text-[color:var(--text)]">✕ Закрыть</button>
+            <h3 class="text-base font-bold text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('report', 'w-4 h-4') }} Выгрузка Персонального Отчёта</h3>
+            <button type="button" id="close-report-btn" class="text-sm pl-text-muted hover:text-[color:var(--text)] inline-flex items-center gap-1">{{ icon('close', 'w-3.5 h-3.5') }} Закрыть</button>
         </div>
         <pre id="report-content" class="p-4 rounded-xl bg-[color:var(--surface-soft)] text-xs text-[color:var(--text)] font-mono whitespace-pre-wrap leading-relaxed border border-[color:var(--border)]"></pre>
     </div>
@@ -188,10 +188,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.health_matrix && data.health_matrix.length > 0) {
         healthEl.innerHTML = data.health_matrix.map(h => `
           <div class="flex items-center justify-between p-2 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
-            <span>📅 ${h.date}</span>
-            <span>Настроение: ${'⭐'.repeat(h.mood || 1)}</span>
-            <span>${h.hrt_taken ? '💊 ГТ Принято' : ''}</span>
-            <span>${h.post_session_drop ? '⚠️ Drop' : ''}</span>
+            <span>${window.plIcon('calendar', 'w-3 h-3').outerHTML} ${h.date}</span>
+            <span>Настроение: ${h.mood || 1}/5</span>
+            <span>${h.hrt_taken ? window.plIcon('medication', 'w-3 h-3').outerHTML + ' ГТ Принято' : ''}</span>
+            <span>${h.post_session_drop ? window.plIcon('warning', 'w-3 h-3').outerHTML + ' Drop' : ''}</span>
           </div>
         `).join('');
       } else {
@@ -202,10 +202,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.lock_matrix && data.lock_matrix.length > 0) {
         lockEl.innerHTML = data.lock_matrix.map(l => `
           <div class="flex items-center justify-between p-2 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
-            <span class="font-mono text-xs">🔒 ${l.lock_id}</span>
+            <span class="font-mono text-xs">${window.plIcon('lock', 'w-3 h-3').outerHTML} ${l.lock_id}</span>
             <span>${l.duration_hours} ч</span>
             <span>Продлений: ${l.extensions_count}</span>
-            <span class="${l.health_paused ? 'text-amber-400 font-semibold' : ''}">${l.health_paused ? '⏸️ Пауза' : 'Активен'}</span>
+            <span class="${l.health_paused ? 'text-amber-400 font-semibold' : ''}">${l.health_paused ? window.plIcon('pause', 'w-3 h-3').outerHTML + ' Пауза' : 'Активен'}</span>
           </div>
         `).join('');
       } else {
@@ -216,9 +216,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.partner_matrix && data.partner_matrix.length > 0) {
         partnerEl.innerHTML = data.partner_matrix.map(p => `
           <div class="flex items-center justify-between p-2.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
-            <span class="font-semibold text-[color:var(--text)]">👤 ${p.partner_name}</span>
+            <span class="font-semibold text-[color:var(--text)]">${window.plIcon('profile', 'w-3 h-3').outerHTML} ${p.partner_name}</span>
             <span class="text-xs pl-text-muted">${(p.roles || []).join(', ') || 'Партнёр'}</span>
-            <span class="pl-accent-text font-bold">⭐ ${p.avg_satisfaction} / 5</span>
+            <span class="pl-accent-text font-bold">${p.avg_satisfaction} / 5</span>
           </div>
         `).join('');
       } else {
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (reportBtn) {
     reportBtn.addEventListener('click', async () => {
       reportBtn.disabled = true;
-      reportBtn.innerText = '⏳ Генерация отчёта...';
+      reportBtn.innerHTML = window.plIcon('clock', 'w-3.5 h-3.5').outerHTML + ' Генерация отчёта...';
       try {
         const res = await fetch('/api/v2/insights/export-report', { method: 'POST' });
         if (res.ok) {
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert('Ошибка при формировании отчёта.');
       } finally {
         reportBtn.disabled = false;
-        reportBtn.innerText = '📄 Выгрузить Медицинский Отчёт (1-Click)';
+        reportBtn.innerHTML = window.plIcon('report', 'w-3.5 h-3.5').outerHTML + ' Выгрузить Медицинский Отчёт (1-Click)';
       }
     });
   }

@@ -10,22 +10,22 @@
   }
 
   const GROUP_LABELS = {
-    equipment: '⚙️ Снаряжение & Инвентарь',
-    wear: '👗 Экипировка & Одежда',
-    care_cosmetics: '🧴 Уход & Косметика',
-    electronics: '🔌 Девайсы & Электроника',
-    furniture: '🛋️ Мебель & Фиксация',
-    general: '📝 Общий справочник'
+    equipment: 'Снаряжение & Инвентарь',
+    wear: 'Экипировка & Одежда',
+    care_cosmetics: 'Уход & Косметика',
+    electronics: 'Девайсы & Электроника',
+    furniture: 'Мебель & Фиксация',
+    general: 'Общий справочник'
   };
 
   const INV_STATUS_LABEL = {
-    available: '🟢 В наличии (Готов)',
-    in_use: '🔵 В работе',
-    cleaning: '🟡 На дезинфекции',
-    charging: '⚡ На зарядке',
-    maintenance: '🔧 На обслуживании',
-    archived: '📦 В архиве',
-    unavailable: '🔴 Недоступен'
+    available: 'В наличии (Готов)',
+    in_use: 'В работе',
+    cleaning: 'На дезинфекции',
+    charging: 'На зарядке',
+    maintenance: 'На обслуживании',
+    archived: 'В архиве',
+    unavailable: 'Недоступен'
   };
 
   let invCategories = [];
@@ -154,7 +154,7 @@
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${invStatusBadge(i.inventory_status)}">
                   ${escapeHtml(statusTitle)}
                 </span>
-                ${i.is_shopping_list ? `<span class="text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)] px-2.5 py-0.5 rounded-full font-medium">🛒 Корзина закупок</span>` : ''}
+                ${i.is_shopping_list ? `<span class="text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)] px-2.5 py-0.5 rounded-full font-medium">Корзина закупок</span>` : ''}
               </div>
 
               <h3 class="text-base font-semibold text-[color:var(--text)]">${escapeHtml(i.name)}</h3>
@@ -178,7 +178,7 @@
             <!-- ERP Item Quick Action Toolbar -->
             <div class="flex items-center gap-2 flex-shrink-0 self-start">
               <button onclick="serviceItem('${escapeHtml(String(i.id))}')" class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-emerald-100 hover:text-emerald-700 text-xs font-medium transition-colors flex items-center gap-1" title="Отметить дезинфекцию / обслуживание сегодня">
-                🧹 ТО / Очистить
+                ТО / Очистить
               </button>
               <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--accent)] text-xs" title="Загрузить фото" aria-label="Photo"></button>
               ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--danger)] text-xs" title="Удалить фото" aria-label="Remove photo"></button>` : ''}
