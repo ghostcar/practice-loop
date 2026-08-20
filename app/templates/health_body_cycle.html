@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ energy: 3, soreness: 1 }">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#health"></use>
+        Трекер Цикла и Физического Состояния (Body & Cycle Hub)
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Мониторинг фаз цикла, уровня энергии и мышечной усталости для адаптации физических нагрузок ИИ-Ассистентом.
+      </p>
+    </div>
+
+    <a href="/health" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-semibold rounded-xl border border-surface-700 transition-colors">
+      ← Общий Мониторинг Здоровья
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Log Form Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+        Зафиксировать Текущее Состояние
+      </h2>
+
+      <form action="/health/body-cycle/log" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Фаза Цикла / Состояние:</label>
+          <select name="cycle_phase" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
+            <option value="follicular">🌱 Фолликулярная Фаза (Рост энергии)</option>
+            <option value="ovulatory">⚡ Овуляторная Фаза (Пик выносливости)</option>
+            <option value="luteal">🍂 Лютеиновая Фаза (Снижение энергии)</option>
+            <option value="menstrual">🩸 Менструальная Фаза / Отдых (Режим Aftercare)</option>
+            <option value="recovery">💆 Восстановление после нагрузок</option>
+            <option value="neutral" selected>⚖️ Стабильное / Нейтральное состояние</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-300 mb-1">
+            <span>Уровень Физической Энергии:</span>
+            <span class="text-amber-400 font-bold font-mono" x-text="energy + ' / 5'">3 / 5</span>
+          </div>
+          <input
+            type="range"
+            name="energy_level"
+            min="1"
+            max="5"
+            x-model="energy"
+            class="w-full accent-amber-500 bg-surface-900 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center text-xs font-medium text-slate-300 mb-1">
+            <span>Мышечная Усталость / Дискомфорт:</span>
+            <span class="text-rose-400 font-bold font-mono" x-text="soreness + ' / 5'">1 / 5</span>
+          </div>
+          <input
+            type="range"
+            name="soreness_level"
+            min="1"
+            max="5"
+            x-model="soreness"
+            class="w-full accent-rose-500 bg-surface-900 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Заметки и Симптомы:</label>
+          <textarea
+            name="notes"
+            rows="2"
+            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100"
+            placeholder="Ощущения в теле, качество сна, готовность к практике..."
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-medium text-xs rounded-xl shadow-lg transition-all"
+        >
+          Записать Состояние в Дневник
+        </button>
+      </form>
+    </div>
+
+    <!-- AI Recommendation & Status Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+        Рекомендация ИИ-Ассистента
+      </h2>
+
+      <div class="bg-surface-900/80 border border-surface-700 rounded-xl p-4 space-y-3">
+        <div class="flex items-center gap-2 text-amber-400 font-semibold text-xs">
+          <span>🤖 ИИ-Анализ Физиологического Отклика</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          На основе вашего текущего баланса энергии и фазы цикла ИИ-Ассистент рекомендует **оптимальный уровень нагрузки**:
+        </p>
+        <div class="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-xs text-indigo-300">
+          💡 **Совет на сегодня:** Отличный баланс энергии! Рекомендуются стандартные сессии удержания поз (15-20 мин) с обязательной гидратацией 500мл.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Log Table -->
+  {% if logs %}
+  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-3">
+    <h3 class="text-sm font-bold text-slate-200">История Записей Состояния</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead class="bg-surface-900 text-slate-400 uppercase font-mono">
+          <tr>
+            <th class="p-3">Дата</th>
+            <th class="p-3">Фаза Цикла</th>
+            <th class="p-3">Энергия</th>
+            <th class="p-3">Усталость</th>
+            <th class="p-3">Заметки</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-700">
+          {% for log in logs %}
+          <tr>
+            <td class="p-3 font-mono text-slate-400">{{ log.logged_at.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded bg-surface-900 border border-surface-700 font-mono">{{ log.cycle_phase }}</span></td>
+            <td class="p-3 text-amber-400 font-bold">{{ log.energy_level }}/5</td>
+            <td class="p-3 text-rose-400 font-bold">{{ log.soreness_level }}/5</td>
+            <td class="p-3 text-slate-400">{{ log.notes or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

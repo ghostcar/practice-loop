@@ -10,6 +10,9 @@
             <p class="pl-text-secondary text-sm mt-1">{{ t.health_subtitle }}</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
+            <a href="/health/body-cycle" class="px-3.5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 text-white text-xs font-semibold rounded-lg shadow hover:opacity-90 inline-flex items-center gap-1.5 min-h-[44px]">
+                🩸 Трекер Цикла & Состояния
+            </a>
             <form action="/health/analyze" method="post" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                 <button type="submit" class="pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">

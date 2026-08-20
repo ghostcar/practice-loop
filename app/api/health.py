@@ -899,3 +899,65 @@ async def json_analyze_labs(
         "recommendations": result.get("recommendations", []),
         "mode": result.get("_mode", mode),
     }
+
+
+@router.get("/health/body-cycle", response_class=HTMLResponse)
+async def health_body_cycle_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Body State & Cycle Tracking Hub page."""
+    from app.models.body_cycle import BodyCycleLog
+
+    logs = (
+        await db.execute(
+            select(BodyCycleLog)
+            .where(BodyCycleLog.user_id == user.id)
+            .order_by(BodyCycleLog.logged_at.desc())
+            .limit(20)
+        )
+    ).scalars().all()
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="health_body_cycle.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "health",
+            "logs": logs,
+        },
+    )
+
+
+@router.post("/health/body-cycle/log")
+async def log_body_cycle_endpoint(
+    cycle_phase: str = Form("neutral"),
+    energy_level: int = Form(3),
+    soreness_level: int = Form(1),
+    notes: str = Form(""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Logs current physical body state and cycle phase."""
+    from app.models.body_cycle import BodyCycleLog
+
+    log_entry = BodyCycleLog(
+        user_id=user.id,
+        cycle_phase=cycle_phase,
+        energy_level=energy_level,
+        soreness_level=soreness_level,
+        notes=notes,
+    )
+    db.add(log_entry)
+    await db.commit()
+    return RedirectResponse(url="/health/body-cycle", status_code=303)
+
