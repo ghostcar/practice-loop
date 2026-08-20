@@ -74,3 +74,32 @@ async def get_analytics_matrix_api(
     """REST JSON endpoint returning full pairwise matrix for mobile/PWA."""
     results = await run_full_analytics_suite(db, user.id, days=days, locale=user.locale)
     return JSONResponse(results)
+
+
+@router.get("/analytics/graph", response_class=HTMLResponse)
+async def analytics_graph_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    _access: None = Depends(require_feature("insights_analytics")),
+):
+    """Interactive Analytics Correlation Graph UI Page."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    results = await run_full_analytics_suite(db, user.id, days=30, locale=locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="analytics_graph.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "analytics_graph",
+            "analytics": results,
+        },
+    )

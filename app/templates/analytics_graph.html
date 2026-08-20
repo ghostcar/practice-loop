@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Интерактивный Граф Зависимостей — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header Badge -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">Аналитический Модуль v2</span>
+            <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
+                {{ icon('share-2', 'w-8 h-8 text-amber-400') }}
+                <span>Интерактивный Граф Взаимосвязей</span>
+            </h1>
+            <p class="text-xs text-archive-400 mt-1">Визуализация 10-модульной корреляционной матрицы фактора продуктивности и восстановления.</p>
+        </div>
+
+        <div class="flex items-center gap-3 bg-archive-950 p-3 rounded-lg border border-archive-800">
+            {{ icon('activity', 'w-5 h-5 text-emerald-400') }}
+            <div class="text-xs">
+                <span class="text-archive-400">Найдено Корреляций:</span>
+                <span class="font-bold text-emerald-400 font-mono text-sm ml-1">{{ analytics.matrix|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph Visualization Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('grid', 'w-5 h-5 text-amber-400') }}
+                <span>Пары Взаимосвязей Метрик</span>
+            </h2>
+
+            <div class="space-y-3">
+                {% for pair in analytics.matrix[:8] %}
+                <div class="bg-archive-950 border border-archive-800 p-4 rounded-lg flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-archive-100">{{ pair.metric_a }} ↔ {{ pair.metric_b }}</span>
+                        <p class="text-[10px] text-archive-400 mt-0.5">Связь: {{ pair.relationship }}</p>
+                    </div>
+
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-mono text-archive-400">Коэффициент r</span>
+                        <div class="text-sm font-bold font-mono text-amber-400">{{ "%.2f"|format(pair.r) }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Clusters Summary -->
+        <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('layers', 'w-5 h-5 text-amber-400') }}
+                <span>Многомерные Кластеры</span>
+            </h2>
+
+            {% if analytics.clusters %}
+            <div class="space-y-3">
+                {% for cluster in analytics.clusters %}
+                <div class="bg-archive-950 border border-archive-800 p-4 rounded-lg space-y-2">
+                    <div class="text-xs font-bold text-amber-400 flex items-center gap-2">
+                        {{ icon('zap', 'w-4 h-4 text-amber-400') }}
+                        <span>{{ cluster.title }}</span>
+                    </div>
+                    <p class="text-xs text-archive-300">{{ cluster.description }}</p>
+                    <div class="text-[10px] font-mono text-archive-400">Сила связи: {{ cluster.cluster_strength }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-archive-400">Недостаточно данных для формирования многомерных кластеров (требуется более 7 дней логов).</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -420,6 +420,49 @@
             --motion-base: 180ms;
             --motion-slow: 240ms;
         }
+        /* Archive variant tokens (DESIGN_V2 «Тёмный архив» §4) — used by community/insights/billing pages.
+           Maps to standard semantic tokens for dark theme consistency. */
+        html[data-theme="dark"] {
+            --archive-100: var(--text);
+            --archive-200: var(--text);
+            --archive-300: var(--text-secondary);
+            --archive-400: var(--text-muted);
+            --archive-500: var(--text-muted);
+            --archive-700: var(--border);
+            --archive-800: var(--border);
+            --archive-850: var(--border);
+            --archive-900: var(--surface);
+            --archive-950: var(--canvas-deep);
+        }
+        html[data-theme="light"] {
+            --archive-100: var(--text);
+            --archive-200: var(--text);
+            --archive-300: var(--text-secondary);
+            --archive-400: var(--text-muted);
+            --archive-500: var(--text-muted);
+            --archive-700: var(--border);
+            --archive-800: var(--border);
+            --archive-850: var(--border);
+            --archive-900: var(--surface);
+            --archive-950: var(--canvas-deep);
+        }
+        .bg-archive-900 { background-color: var(--archive-900); }
+        .bg-archive-950 { background-color: var(--archive-950); }
+        .bg-archive-800 { background-color: var(--archive-800); }
+        .bg-archive-850 { background-color: var(--archive-850); }
+        .border-archive-800 { border-color: var(--archive-800); }
+        .border-archive-850 { border-color: var(--archive-850); }
+        .border-archive-700 { border-color: var(--archive-700); }
+        .divide-archive-800 > :not([hidden]) ~ :not([hidden]) { border-color: var(--archive-800); }
+        .text-archive-100 { color: var(--archive-100); }
+        .text-archive-200 { color: var(--archive-200); }
+        .text-archive-300 { color: var(--archive-300); }
+        .text-archive-400 { color: var(--archive-400); }
+        .text-archive-500 { color: var(--archive-500); }
+        .text-archive-950 { color: var(--on-accent); }
+        .hover\:bg-archive-850:hover { background-color: var(--archive-850); }
+        .hover\:bg-archive-700:hover { background-color: var(--archive-700); }
+        .hover\:border-archive-700:hover { border-color: var(--archive-700); }
         /* Approved muted accent sets (DESIGN_V2 §16) — html[data-accent="..."].
            Contrast-verified: accent vs on-accent >= 4.5:1, accent-text vs surface >= 4.5:1. */
         html[data-theme="dark"][data-accent="sage"] { --accent:#5b7452; --accent-hover:#7a9470; --accent-soft:#26301f; --accent-text:#93ab8e; --focus:#7a9470; }
