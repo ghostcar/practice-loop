@@ -2,6 +2,17 @@
 {% from "components/icon.html" import icon %}
 {% block title %}Session {{ session.id[:8] }} — {{ t.locktimer_title }}{% endblock %}
 {% set active_nav = "locktimer" %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/locktimer" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_timer }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Сессия</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% set mode_label = (t.locktimer_mode_infinite or "Infinite") if session.duration_type == 'infinite' else (t.locktimer_mode_duration or "Duration from start") %}
 
 {% block content %}

@@ -554,38 +554,20 @@
         {% endif %}
     </div>
 
-    <!-- Telegram linking -->
-    <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3 min-w-0">
-                {{ icon('telegram', 'w-5 h-5 flex-shrink-0 text-sky-500') }}
-                <div class="min-w-0">
-                    <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.dashboard_telegram_link }}</h2>
-                    <p class="text-xs text-[color:var(--text-muted)] truncate" id="tg-status-text">{{ t.dashboard_loading }}</p>
-                </div>
-            </div>
-            <button onclick="generateLinkCode()" id="tg-link-btn"
-                    class="flex-shrink-0 px-4 py-2 pl-accent-bg hover:bg-[color:var(--accent-hover)] rounded-lg text-sm font-medium transition-colors">
-                {{ t.dashboard_link }}
-            </button>
-        </div>
-        <div id="tg-code-display" class="hidden mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-center">
-            <p class="text-sm text-[color:var(--text-secondary)] mb-1">{{ t.dashboard_telegram_code_valid }}</p>
-            <code id="tg-code" class="text-2xl font-bold tracking-widest text-indigo-600 dark:text-indigo-400"></code>
-            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.dashboard_telegram_code_hint }}</p>
-        </div>
-    </div>
-
-    <!-- Quick links -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <a href="/training" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('training', t.nav_training) }}</a>
-        <a href="/tasks/" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('tasks', t.nav_tasks) }}</a>
-        <a href="/entities/catalog" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('catalog', t.nav_catalog) }}</a>
-        <a href="/sessions" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('sessions', t.nav_sessions) }}</a>
-        <a href="/import" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('import', t.nav_import) }}</a>
-        <a href="/calendar" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('calendar', t.calendar_title) }}</a>
-        <a href="/api/v2/points/page" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('points', t.nav_points) }}</a>
-        <a href="/api/v2/inventory/page" class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-center text-sm font-medium text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{{ dscr_label('inventory', t.nav_inventory) }}</a>
+    <!-- Quick links (compact row) -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <a href="/calendar" class="px-3 py-2 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] font-medium inline-flex items-center gap-1.5 hover:bg-[color:var(--surface-soft)] transition-colors whitespace-nowrap">
+            {{ icon('calendar', 'w-3.5 h-3.5') }} {{ dscr_label('calendar', t.calendar_title) }}
+        </a>
+        <a href="/entities/catalog" class="px-3 py-2 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] font-medium inline-flex items-center gap-1.5 hover:bg-[color:var(--surface-soft)] transition-colors whitespace-nowrap">
+            {{ icon('catalog', 'w-3.5 h-3.5') }} {{ dscr_label('catalog', t.nav_catalog) }}
+        </a>
+        <a href="/api/v2/points/page" class="px-3 py-2 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] font-medium inline-flex items-center gap-1.5 hover:bg-[color:var(--surface-soft)] transition-colors whitespace-nowrap">
+            {{ icon('points', 'w-3.5 h-3.5') }} {{ dscr_label('points', t.nav_points) }}
+        </a>
+        <a href="/import" class="px-3 py-2 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] font-medium inline-flex items-center gap-1.5 hover:bg-[color:var(--surface-soft)] transition-colors whitespace-nowrap">
+            {{ icon('import', 'w-3.5 h-3.5') }} {{ dscr_label('import', t.nav_import) }}
+        </a>
     </div>
 </div>
 {% endblock %}

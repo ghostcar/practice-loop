@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.nav_import }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="animate-fade-in">
  <div class="flex items-center justify-between mb-6">
@@ -86,7 +96,8 @@
  <button type="submit"
  id="upload-btn"
  disabled
- class="px-6 py-2.5 min-h-[44px] inline-flex items-center rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium">
+ class="px-6 py-2.5 min-h-[44px] inline-flex items-center gap-2 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium">
+ <span class="htmx-indicator w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
  {{ t.import_submit }}
  </button>
  </div>

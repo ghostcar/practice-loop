@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.nav_diets }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block title %}{{ t.diets_title }} – Practice Loop{% endblock %}
 
 {% block content %}

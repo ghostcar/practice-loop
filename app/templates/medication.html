@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.nav_medication }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
     <!-- Header -->
@@ -330,6 +340,12 @@
                 </details>
             </article>
             {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-10 space-y-3">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[color:var(--surface-soft)]">{{ icon('prescription', 'w-7 h-7 text-[color:var(--text-muted)]') }}</div>
+            <p class="text-sm text-[color:var(--text-secondary)]">Медикаментов пока нет</p>
+            <p class="text-xs text-[color:var(--text-muted)]">Добавьте первый препарат через форму выше</p>
         </div>
         {% endif %}
     </section>

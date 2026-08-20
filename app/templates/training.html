@@ -2,6 +2,16 @@
 {% from "components/icon.html" import icon %}
 {% block title %}{{ t.get('training_title', 'Training') }} – Practice Loop{% endblock %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.get('training_title', 'Training') }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-5">
  <div class="flex items-center justify-between">
@@ -247,7 +257,7 @@
  placeholder="{{ t.training_log_add_field_notes }}"
  aria-label="{{ t.training_log_add_field_notes }}"
  class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-[color:var(--border)] rounded pl-surface text-[color:var(--text)]">
- <button type="submit" class="px-2 py-1 pl-accent-bg hover:bg-[color:var(--accent-hover)] text-[10px] font-medium rounded min-h-[44px]">{{ t.training_log_save }}</button>
+ <button type="submit" class="px-2 py-1 pl-accent-bg hover:bg-[color:var(--accent-hover)] text-[10px] font-medium rounded min-h-[44px] inline-flex items-center gap-1"><span class="htmx-indicator w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>{{ t.training_log_save }}</button>
  </form>
  {% if entry.is_extra %}
  <button hx-delete="/training/log-entry/{{ entry.id }}" hx-target="closest .log-entry-row" hx-swap="outerHTML"

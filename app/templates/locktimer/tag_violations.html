@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ t.locktimer_tag_audit_title }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/locktimer" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_timer }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Нарушения</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
   <div class="flex items-center justify-between">

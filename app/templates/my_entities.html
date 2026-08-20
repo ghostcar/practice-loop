@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/entities/catalog" class="hover:text-[color:var(--text)] transition-colors">{{ t.catalog_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Мои Задачи</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="animate-fade-in">
  <div class="flex items-center justify-between mb-6">

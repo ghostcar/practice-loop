@@ -2,6 +2,16 @@
 
 {% block title %}Сертификат Достижения — PracticeLoop{% endblock %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/achievements" class="hover:text-[color:var(--text)] transition-colors">{{ t.achievements_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Сертификат</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-12">
     <div class="bg-archive-900 border-2 border-amber-400/40 rounded-2xl p-10 shadow-2xl space-y-8 text-center relative overflow-hidden">

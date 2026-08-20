@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/sessions" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_sessions }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Live-Таймер</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto px-4 py-6" x-data="liveTimer()">
   <!-- Header -->
@@ -155,7 +165,7 @@
       </h3>
       <p class="text-xs text-[color:var(--text-muted)]">Досрочная остановка сессии со списком штрафных очков.</p>
 
-      <form action="/sessions/live/interrupt" method="POST" class="space-y-3 pt-1">
+      <form action="/sessions/live/interrupt" method="POST" class="space-y-3 pt-1" onsubmit="return confirm('Прервать сессию? Это повлечёт штрафные очки.')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <div>
           <label class="block text-xs text-[color:var(--text-secondary)] mb-1">Причина остановки:</label>

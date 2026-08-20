@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Points Economy{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.get('points_title', 'Points Economy') }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-4">
  <h1 class="text-2xl font-bold mb-4 text-[color:var(--text)]">{{ t.get('points_title', 'Points Economy') }}</h1>
@@ -81,9 +92,11 @@
  </div>
 
  <!-- Transactions -->
- <div class="pl-surface rounded-xl border border-[color:var(--border)] overflow-hidden">
+ <div class="pl-surface rounded-xl border border-[color:var(--border)]">
  <div class="pl-surface-soft px-6 py-3 font-semibold text-sm text-[color:var(--text)]">Recent Transactions</div>
+ <div class="overflow-x-auto">
  <table class="w-full text-sm"><tbody id="txn-table"></tbody></table>
+ </div>
  </div>
 </div>
 {% endblock %}

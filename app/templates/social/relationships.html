@@ -4,6 +4,16 @@
 
 {% block title %}{{ t.social_rel_title }}{% endblock %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/social/profile" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_social }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Отношения</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-8 space-y-8">
   <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.social_rel_title }}</h1>

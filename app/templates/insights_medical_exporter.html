@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/insights" class="hover:text-[color:var(--text)] transition-colors">{{ t.insights_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Врачебный Экспортёр</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6">
     <!-- Header -->
@@ -103,6 +113,7 @@
         <!-- Included Medications Table -->
         <div class="space-y-2">
             <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Включённые Препараты:</h3>
+            <div class="overflow-x-auto">
             <table class="w-full text-left text-xs border-collapse border border-zinc-200 dark:border-zinc-800">
                 <thead class="bg-zinc-100 dark:bg-zinc-900">
                     <tr>
@@ -125,6 +136,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- Included Courses -->

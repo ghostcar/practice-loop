@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.nav_aftercare }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ hydration: true, warm_compress: false, stretch: false, tea: false }">
     <!-- Header -->
@@ -87,15 +97,18 @@
                         <div class="text-[color:var(--text)] font-semibold text-xs mt-0.5">{{ e.kind }} (Комфорт: {{ e.comfort_level or '—' }}/5)</div>
                         {% if e.notes %}<p class="text-xs text-[color:var(--text-muted)] mt-1">{{ e.notes }}</p>{% endif %}
                     </div>
-                    <form action="/aftercare/entries/{{ e.id }}/delete" method="POST">
+                    <form action="/aftercare/entries/{{ e.id }}/delete" method="POST" onsubmit="return confirm('Удалить запись aftercare?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="text-xs text-rose-400 hover:underline">Удалить</button>
+                        <button type="submit" class="text-xs text-rose-400 hover:underline min-h-[44px]">Удалить</button>
                     </form>
                 </li>
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-xs text-[color:var(--text-muted)]">Записей пока нет.</p>
+            <div class="text-center py-8 space-y-2">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[color:var(--surface-soft)]">{{ icon('aftercare', 'w-5 h-5 text-[color:var(--text-muted)]') }}</div>
+                <p class="text-xs text-[color:var(--text-muted)]">Записей пока нет. Добавьте первую запись выше.</p>
+            </div>
             {% endif %}
         </section>
     </div>

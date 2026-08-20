@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/llm/templates" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_llm }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Внешняя ИИ-модель</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block title %}Обмен с внешней ИИ-моделью — PracticeLoop{% endblock %}
 
 {% block content %}

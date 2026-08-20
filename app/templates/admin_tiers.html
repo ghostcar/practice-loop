@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/admin" class="hover:text-[color:var(--text)] transition-colors">{{ t.admin_title_page }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Тиры & Промо</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block title %}Конструктор Тиров Монетизации — Admin Panel{% endblock %}
 
 {% block content %}

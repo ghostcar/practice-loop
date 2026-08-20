@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ t.get('measurements_title', 'Body Measurements') }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.get('measurements_title', 'Body Measurements') }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-5">
  <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.get('measurements_title', 'Body Measurements') }}</h1>
@@ -37,13 +48,15 @@
  </div>
 
  <!-- History table -->
- <div class="pl-surface rounded-xl border border-[color:var(--border)] overflow-hidden">
+ <div class="pl-surface rounded-xl border border-[color:var(--border)]">
+ <div class="overflow-x-auto">
  <table class="w-full text-sm">
  <thead class="pl-surface-soft text-[color:var(--text-secondary)]">
  <tr><th class="px-4 py-2.5 text-left font-medium">Date</th><th class="px-4 py-2.5 text-left font-medium">Time</th><th class="px-4 py-2.5 text-right font-medium">Weight</th><th class="px-4 py-2.5 text-right font-medium">Chest</th><th class="px-4 py-2.5 text-right font-medium">Waist</th><th class="px-4 py-2.5 text-right font-medium">Hips</th><th class="px-4 py-2.5 text-right font-medium">Thigh</th></tr>
  </thead>
  <tbody id="meas-table" class="divide-y divide-[color:var(--border)]"></tbody>
  </table>
+ </div>
  </div>
 </div>
 {% endblock %}

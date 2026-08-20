@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.tasks_title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div>
     <div class="flex items-center justify-between mb-6">
@@ -409,8 +419,10 @@
         {% endfor %}
 
         {% if not recent_logs %}
-        <div class="text-center py-12 text-[color:var(--text-muted)]">
-            <p>{{ t.tasks_empty }}</p>
+        <div class="text-center py-12 space-y-3">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[color:var(--surface-soft)]">{{ icon('tasks', 'w-7 h-7 text-[color:var(--text-muted)]') }}</div>
+            <p class="text-sm text-[color:var(--text-secondary)]">{{ t.tasks_empty }}</p>
+            <p class="text-xs text-[color:var(--text-muted)]">Сгенерируйте задачу через ИИ или добавьте вручную</p>
         </div>
         {% endif %}
     </div>

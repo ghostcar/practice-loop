@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.achievements_title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="animate-fade-in">
  <h1 class="text-2xl font-bold text-[color:var(--text)] mb-2 inline-flex items-center gap-2">{{ icon('trophy', 'w-7 h-7 text-amber-700 dark:text-amber-500') }}Achievements</h1>
@@ -63,7 +73,11 @@
  </div>
  {% endfor %}
  {% if not my_achievements %}
- <div class="col-span-full text-center py-8 text-[color:var(--text-muted)]">No achievements yet. Keep going!</div>
+ <div class="col-span-full text-center py-10 space-y-2">
+     <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[color:var(--surface-soft)]">{{ icon('trophy', 'w-6 h-6 text-[color:var(--text-muted)]') }}</div>
+     <p class="text-sm text-[color:var(--text-secondary)]">Пока нет достижений</p>
+     <p class="text-xs text-[color:var(--text-muted)]">Выполняйте задачи и сессии, чтобы получить первые награды</p>
+ </div>
  {% endif %}
  </div>
 
@@ -82,7 +96,10 @@
  </div>
  {% endfor %}
  {% if not all_achievements %}
- <div class="text-center py-8 text-[color:var(--text-muted)]">Board is empty. Be the first to earn an achievement!</div>
+ <div class="text-center py-8 space-y-2">
+     <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[color:var(--surface-soft)]">{{ icon('trophy', 'w-5 h-5 text-[color:var(--text-muted)]') }}</div>
+     <p class="text-xs text-[color:var(--text-muted)]">Доска достижений пока пуста</p>
+ </div>
  {% endif %}
  </div>
 </div>

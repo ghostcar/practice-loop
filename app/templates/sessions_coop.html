@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% from "components/icon.html" import icon %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/sessions" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_sessions }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Совместная Сессия</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ coopStatus: 'active', elapsed: 184 }">
   <!-- Header Bar -->
@@ -87,9 +97,9 @@
         </button>
       </form>
 
-      <form action="/sessions/live/interrupt" method="POST">
+      <form action="/sessions/live/interrupt" method="POST" onsubmit="return confirm('Прервать совместную сессию?')">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-        <button type="submit" class="px-6 py-3 pl-surface-soft hover:bg-[color:var(--border)] text-[color:var(--text-secondary)] font-bold text-xs rounded-xl transition-all border border-[color:var(--border-strong)]">
+        <button type="submit" class="px-6 py-3 pl-surface-soft hover:bg-[color:var(--border)] text-[color:var(--text-secondary)] font-bold text-xs rounded-xl transition-all border border-[color:var(--border-strong)] min-h-[44px]">
           {{ icon('stop', 'w-4 h-4') }} Прервать
         </button>
       </form>

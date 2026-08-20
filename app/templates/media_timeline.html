@@ -2,6 +2,16 @@
 
 {% block title %}Временная Шкала Медиа — PracticeLoop{% endblock %}
 
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/media" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_media }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Таймлайн</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
     <!-- Header Badge -->
