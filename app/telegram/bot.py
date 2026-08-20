@@ -42,6 +42,8 @@ main_router = Router()
 if TG_BOT_TOKEN:
     bot = Bot(token=TG_BOT_TOKEN)
     dp = Dispatcher()
+    from app.telegram.agent_handler import agent_tg_router  # noqa: E402
+    dp.include_router(agent_tg_router)
     dp.include_router(main_router)
 
     # ── helpers ──────────────────────────────────────────────────────
