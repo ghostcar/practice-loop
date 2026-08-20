@@ -1,4 +1,4 @@
-"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-47 / ADR-123 & ADR-095)."""
+"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-48 / ADR-123 & ADR-075)."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.memory import recall_user_memories
 from app.agent.proactive import schedule_agent_reminder, trigger_event_chain
+from app.agent.verify import verify_task_photo
 from app.llm.pipeline import generate_task
 from app.models.care import CareRoutine
 from app.models.health import HealthState
@@ -148,6 +149,21 @@ AGENT_TOOLS_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "verify_session_task_completion",
+            "description": "Run Vision AI verification on a submitted photo to confirm task or posture completion.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "media_asset_id": {"type": "string", "description": "UUID of the submitted media asset"},
+                    "task_description": {"type": "string", "description": "Description of physical task to verify"},
+                },
+                "required": ["media_asset_id", "task_description"],
+            },
+        },
+    },
 ]
 
 
@@ -265,5 +281,15 @@ async def execute_agent_tool(
             title=title, message=message, user_id=user_id, db=db, delay_minutes=delay, send_telegram=True
         )
         return res
+
+    elif tool_name == "verify_session_task_completion":
+        media_id_str = arguments.get("media_asset_id")
+        task_desc = arguments.get("task_description", "Физическое задание")
+        try:
+            m_uuid = uuid.UUID(media_id_str)
+            res = await verify_task_photo(media_asset_id=m_uuid, task_description=task_desc, user_id=user_id, db=db)
+            return res
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     return {"status": "error", "message": f"Unknown tool '{tool_name}'"}
