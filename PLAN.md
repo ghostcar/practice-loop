@@ -181,3 +181,9 @@
 - [x] Phase 1–11 полностью: фундамент, каталог, LLM-пайплайн, UI/геймификация, Training, Points v2/замеры/инвентарь, импорт/экспорт/графики, календарь, штрафы, Telegram-бот v2, автоанализ.
 - [x] Внешний аудит P0 (Сессия 55): зависимости, CSRF, safety-gate LLM, целостность, cross-user.
 - [x] Диеты v2/v3 (56): история оценок, синергия с тренировками, inline-редактирование, фото.
+- [x] D/s Suite & Keyholder Hub (62-64): модели `ManagedSubmissive`, `AssignedDuty`, `ChastityLockLog` и панель управления Ключника `/ds/keyholder`.
+- [x] Wear Check-Ins & Tag Seals (65-68): номерные пломбы, оценка комфорта, Vision AI проверка замка, ИИ-Ключник Wheel of Fortune `/ds/checkins`.
+- [x] Voluntary Delegation & Capability Grants (69-70 / ADR-129): инвайт-коды, 7 областей управления, кнопка Safe Word Emergency Revoke `/ds/my-top`.
+- [x] Categorized Prompt Library Viewer (72 / ADR-124): центральная библиотека промптов по разделам `/prompts/library`.
+- [x] D/s Command Center & Mode Switcher (73): полнофункциональный мульти-субмиссивный кокпит `/ds/portal` с тумблером персонального/управленческого режима.
+- [x] Telegram Linking for Offline Submissives (74 / ADR-130): привязка оффлайн-профилей к Telegram-боту по кодам `SUB-XXXXXX` и прямые PUSH-уведомления.
