@@ -52,6 +52,7 @@ from app.models.media import MediaAsset, MediaVerificationResult  # noqa: F401
 from app.models.medication import Medication, MedIntake, MedKit, MedSchedule, MedStock  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
+from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.prompt_template import PromptTemplate  # noqa: F401
 from app.models.prompt_library import PromptLibraryItem  # noqa: F401

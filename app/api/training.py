@@ -662,3 +662,89 @@ def _render_log_entry_row(entry: TrainingLogEntry) -> str:
         f'<button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700'
         f' text-white text-xs font-medium rounded transition-colors">Сохранить</button></form>{db_btn}</div>'
     )
+
+
+@router.get("/adaptive", response_class=HTMLResponse)
+async def adaptive_training_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Dynamic Adaptive Training Program Hub page."""
+    from sqlalchemy.orm import selectinload
+
+    from app.models.adaptive_training import AdaptiveProgram
+
+    programs = (
+        await db.execute(
+            select(AdaptiveProgram)
+            .options(selectinload(AdaptiveProgram.steps))
+            .where(AdaptiveProgram.user_id == user.id)
+            .order_by(AdaptiveProgram.created_at.desc())
+        )
+    ).scalars().all()
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="training_adaptive.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "training",
+            "programs": programs,
+        },
+    )
+
+
+@router.post("/adaptive/create")
+async def create_adaptive_program_endpoint(
+    title: str = Form(...),
+    focus_domain: str = Form("bladder_control"),
+    total_days: int = Form(14),
+    difficulty_level: int = Form(2),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Creates a new dynamic adaptive program."""
+    from app.agent.training_adaptive import create_adaptive_program
+
+    await create_adaptive_program(
+        user_id=user.id,
+        title=title,
+        focus_domain=focus_domain,
+        total_days=total_days,
+        difficulty_level=difficulty_level,
+        db=db,
+    )
+    return RedirectResponse(url="/training/adaptive", status_code=303)
+
+
+@router.post("/adaptive/steps/{step_id}/log")
+async def log_step_feedback_endpoint(
+    step_id: uuid.UUID,
+    comfort_score: int = Form(...),
+    actual_minutes: int = Form(...),
+    notes: str = Form(""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Logs step completion feedback and executes Agent AI adaptation."""
+    from app.agent.training_adaptive import log_step_feedback_and_adapt
+
+    await log_step_feedback_and_adapt(
+        step_id=step_id,
+        comfort_score=comfort_score,
+        actual_minutes=actual_minutes,
+        notes=notes,
+        user_id=user.id,
+        db=db,
+    )
+    return RedirectResponse(url="/training/adaptive", status_code=303)
+
