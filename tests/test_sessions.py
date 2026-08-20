@@ -284,3 +284,49 @@ async def test_json_session_full_lifecycle(auth_client: AsyncClient, db_session:
     history = await auth_client.get(f"/api/v2/sessions/{session_id}/history")
     assert history.status_code == 200
     assert [item["event_type"] for item in history.json()] == ["created", "task_added", "accepted", "started", "ended"]
+
+
+@pytest.mark.asyncio
+async def test_live_complete_requires_owned_active_session(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user
+):
+    """Test live completion transitions active session to completed and prevents double XP farming (Audit A-01/A-16)."""
+    # 1. Create and start a session
+    sess = ActivitySession(owner_id=test_user.id, title="Active Live Session", status="active")
+    db_session.add(sess)
+    await db_session.commit()
+
+    prog_before = await (
+        await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
+    ).scalar_one_or_none()
+    xp_before = prog_before.xp if prog_before else 0
+
+    # 2. Call live complete
+    resp = await auth_client.post(
+        "/sessions/live/complete",
+        data={"session_id": str(sess.id), "notes": "Completed test hold"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+    # 3. Assert session status changed to completed
+    await db_session.refresh(sess)
+    assert sess.status == "completed"
+
+    prog_after = await (
+        await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
+    ).scalar_one_or_none()
+    assert prog_after.xp == xp_before + 50
+
+    # 4. Replay attack attempt — calling complete again should NOT award more XP
+    resp2 = await auth_client.post(
+        "/sessions/live/complete",
+        data={"session_id": str(sess.id), "notes": "Replay attempt"},
+        follow_redirects=False,
+    )
+    assert resp2.status_code == 303
+
+    prog_after_replay = await (
+        await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
+    ).scalar_one_or_none()
+    assert prog_after_replay.xp == xp_before + 50  # XP unchanged!
