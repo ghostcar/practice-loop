@@ -93,6 +93,7 @@
     {% if composition and composition.timer_operational %}
     {{ nav_item('locktimer', '/locktimer', 'timer', t.nav_timer) }}
     {% endif %}
+    {{ nav_item('ds_portal', '/ds/portal', 'keyholder', 'D/s Command Center') }}
     {% if composition and composition.social_operational %}
     {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
     {% endif %}

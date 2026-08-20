@@ -63,6 +63,80 @@ async def keyholder_dashboard_page(
     )
 
 
+@router.get("/ds/portal", response_class=HTMLResponse)
+async def ds_command_center_portal_page(
+    request: Request,
+    sub_id: str | None = None,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Full-Featured D/s Command Center & Multi-Submissive Portal (Step 73)."""
+    from app.models.ds_suite import WearCheckInLog
+
+    submissives = (
+        (
+            await db.execute(
+                select(ManagedSubmissive)
+                .where(ManagedSubmissive.top_user_id == user.id)
+                .options(
+                    selectinload(ManagedSubmissive.duties),
+                    selectinload(ManagedSubmissive.lock_logs),
+                )
+                .order_by(ManagedSubmissive.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    selected_sub = None
+    if sub_id:
+        try:
+            sub_uuid = uuid.UUID(sub_id)
+            selected_sub = next((s for s in submissives if s.id == sub_uuid), None)
+        except ValueError:
+            selected_sub = None
+
+    if not selected_sub and submissives:
+        selected_sub = submissives[0]
+
+    checkins = []
+    if selected_sub:
+        checkins = (
+            (
+                await db.execute(
+                    select(WearCheckInLog)
+                    .where(WearCheckInLog.managed_sub_id == selected_sub.id)
+                    .order_by(WearCheckInLog.created_at.desc())
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="ds_portal.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds",
+            "mode": "command_center",
+            "submissives": submissives,
+            "selected_sub": selected_sub,
+            "checkins": checkins,
+        },
+    )
+
+
+
 @router.post("/ds/submissive/create")
 async def create_managed_submissive_endpoint(
     name: str = Form(...),

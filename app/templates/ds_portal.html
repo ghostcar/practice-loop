@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-7xl mx-auto px-4 py-6" x-data="{ deckTab: 'chastity', addSubModal: false, assignDutyModal: false }">
+  <!-- Mode Switcher & Portal Bar -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+          {% include "components/icon.html" %}
+          <use href="/static/icons/sprite.svg#keyholder"></use>
+          D/s Command Center & Multi-Submissive Portal
+        </h1>
+        <span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono text-xs border border-rose-500/30">
+          👑 Режим Ключника
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">
+        Полнофункциональный кабинет управления подконтрольными нижними и замками Chastity.
+      </p>
+    </div>
+
+    <!-- Mode Switcher Toggle Button -->
+    <div class="flex items-center bg-surface-800 p-1 border border-surface-700 rounded-xl font-mono text-xs">
+      <a href="/dashboard" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
+        👤 Персональный
+      </a>
+      <a href="/ds/portal" class="px-3.5 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-bold shadow flex items-center gap-1.5">
+        👑 Центр Управления
+      </a>
+    </div>
+  </div>
+
+  {% if submissives %}
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Submissive Switcher Sidebar Deck -->
+    <div class="lg:col-span-1 bg-surface-800 border border-surface-700 rounded-2xl p-4 space-y-4">
+      <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Подконтрольные ({{ submissives|length }})</h2>
+        <button @click="addSubModal = true" class="text-indigo-400 hover:text-indigo-300 text-xs font-bold">+ Добавить</button>
+      </div>
+
+      <div class="space-y-2">
+        {% for sub in submissives %}
+        <a
+          href="/ds/portal?sub_id={{ sub.id }}"
+          class="p-3.5 rounded-xl border transition-all block space-y-2 {% if selected_sub and selected_sub.id == sub.id %}bg-surface-700 border-indigo-500/50 shadow-md{% else %}bg-surface-900/60 border-surface-700 hover:border-surface-600{% endif %}"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-bold text-slate-100">{{ sub.name }}</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">{{ sub.compliance_score }}%</span>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px]">
+            {% if sub.chastity_status == 'locked' %}
+            <span class="text-rose-400 font-bold flex items-center gap-1">🔒 Locked</span>
+            {% elif sub.chastity_status == 'unlocked' %}
+            <span class="text-emerald-400 font-bold flex items-center gap-1">🔑 Unlocked</span>
+            {% else %}
+            <span class="text-amber-400 font-bold flex items-center gap-1">🛡️ Keyholder</span>
+            {% endif %}
+
+            {% if sub.is_offline %}
+            <span class="text-slate-400 font-mono">👤 Ручной</span>
+            {% else %}
+            <span class="text-indigo-300 font-mono">🌐 Онлайн</span>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Main Workspace Decks for Selected Submissive -->
+    {% if selected_sub %}
+    <div class="lg:col-span-3 space-y-6">
+      <!-- Active Submissive Banner -->
+      <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-bold text-slate-100">{{ selected_sub.name }}</h2>
+            {% if selected_sub.is_offline %}
+            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-mono border border-slate-600">👤 Ручной Оффлайн Профиль</span>
+            {% else %}
+            <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">🌐 Зарегистрированный Нижний</span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-slate-400">{{ selected_sub.rules_notes or 'Правила не назначены.' }}</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <form action="/ds/submissive/{{ selected_sub.id }}/ai-keyholder-spin" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <button type="submit" class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1">
+              🎰 Рулетка ИИ-Ключника
+            </button>
+          </form>
+
+          <button @click="assignDutyModal = true" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition-all">
+            + Приказ
+          </button>
+        </div>
+      </div>
+
+      <!-- Decks Tabs Bar -->
+      <div class="flex overflow-x-auto gap-2 bg-surface-800 p-1.5 border border-surface-700 rounded-2xl font-mono text-xs">
+        <button @click="deckTab = 'chastity'" :class="deckTab === 'chastity' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+          🔒 1. Chastity & Lock Deck
+        </button>
+        <button @click="deckTab = 'duties'" :class="deckTab === 'duties' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+          📋 2. Duties & Verification
+        </button>
+        <button @click="deckTab = 'training'" :class="deckTab === 'training' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+          🏋️ 3. Training Deck
+        </button>
+        <button @click="deckTab = 'telemetry'" :class="deckTab === 'telemetry' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+          📊 4. Health Telemetry
+        </button>
+      </div>
+
+      <!-- DECK 1: Chastity & Lock Deck -->
+      <div x-show="deckTab === 'chastity'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-100">Управление Замком Chastity</h3>
+            <p class="text-xs text-slate-400">Фиксация состояния устройства, времени удержания и выдачи ключа</p>
+          </div>
+
+          <form action="/ds/submissive/{{ selected_sub.id }}/lock-action" method="POST" class="flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            {% if selected_sub.chastity_status != 'locked' %}
+            <button type="submit" name="action" value="lock" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow">
+              🔒 Запереть Замок
+            </button>
+            {% else %}
+            <button type="submit" name="action" value="unlock" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">
+              🔑 Отпереть Замок
+            </button>
+            {% endif %}
+          </form>
+        </div>
+
+        <!-- Lock Logs History -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">История Операций с Ключом</h4>
+          {% if selected_sub.lock_logs %}
+          <div class="space-y-2">
+            {% for log in selected_sub.lock_logs %}
+            <div class="p-3 bg-surface-900/60 border border-surface-700 rounded-xl flex items-center justify-between text-xs">
+              <span class="font-mono text-indigo-300 font-bold">{{ log.action }}</span>
+              <span class="text-slate-300">{{ log.reason or '-' }}</span>
+              <span class="font-mono text-slate-500 text-[10px]">{{ log.performed_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-xs text-slate-500">Записи в журнале ключа отсутствуют.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- DECK 2: Duties & Verification -->
+      <div x-show="deckTab === 'duties'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-100">Приказы & Модерация Отчетов</h3>
+            <p class="text-xs text-slate-400">Назначенные задачи, проверка фото-подтверждений и оценка выполнения</p>
+          </div>
+
+          <button @click="assignDutyModal = true" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow">
+            + Назначить Новую Задачу
+          </button>
+        </div>
+
+        {% if selected_sub.duties %}
+        <div class="space-y-3">
+          {% for duty in selected_sub.duties %}
+          <div class="p-4 bg-surface-900/80 border border-surface-700 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold text-slate-100">{{ duty.title }}</h4>
+              <span class="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold {% if duty.status == 'approved' %}bg-emerald-500/20 text-emerald-300{% elif duty.status == 'rejected' %}bg-rose-500/20 text-rose-300{% else %}bg-amber-500/20 text-amber-300{% endif %}">
+                {{ duty.status }}
+              </span>
+            </div>
+
+            <p class="text-xs text-slate-400">{{ duty.description or 'Без описания.' }}</p>
+
+            {% if duty.status == 'pending' or duty.status == 'submitted' %}
+            <form action="/ds/duties/{{ duty.id }}/verify" method="POST" class="flex gap-2 pt-2 border-t border-surface-700">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+              <button type="submit" name="action" value="approve" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">
+                Утвердить (+{{ duty.reward_penalty_xp }} XP)
+              </button>
+              <button type="submit" name="action" value="reject" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold">
+                Отклонить
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-slate-500 text-center py-6">Назначенные приказания отсутствуют.</p>
+        {% endif %}
+      </div>
+
+      <!-- DECK 3: Training Deck -->
+      <div x-show="deckTab === 'training'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
+        <h3 class="text-base font-bold text-slate-100">Программы Тренировок & Адаптация Нагрузки</h3>
+        <p class="text-xs text-slate-400">Настройка интенсивности многодневных программ удержания и фитнеса.</p>
+        <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl text-xs text-slate-300">
+          🟢 Программа активна. Интенсивность подстраивается под состояние Нижнего на основе оценок самочувствия.
+        </div>
+      </div>
+
+      <!-- DECK 4: Health Telemetry (Read-Only) -->
+      <div x-show="deckTab === 'telemetry'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
+        <h3 class="text-base font-bold text-slate-100">Телеметрия Здоровья & Циклов (Read-Only)</h3>
+        <p class="text-xs text-slate-400">Данные о мышечной усталости, фазах цикла и самочувствии для безопасности (PD-013).</p>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl space-y-1">
+            <span class="text-xs text-slate-400 font-mono">Мышечная Усталость</span>
+            <div class="text-xl font-bold text-amber-400 font-mono">2 / 5 (Низкая)</div>
+          </div>
+          <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl space-y-1">
+            <span class="text-xs text-slate-400 font-mono">Фаза Цикла</span>
+            <div class="text-xl font-bold text-indigo-400 font-mono">Фолликулярная</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-12 text-center space-y-4 shadow-2xl">
+    <p class="text-sm text-slate-400">У вас пока нет привязанных подконтрольных профилей.</p>
+    <button @click="addSubModal = true" class="px-6 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg">
+      Добавить Первого Нижнего
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Add Submissive Modal -->
+  <div x-show="addSubModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-100">Создание Профиля Нижнего</h3>
+      <form action="/ds/submissive/create" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Имя / Позывной Нижнего:</label>
+          <input type="text" name="name" required class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="Подконтрольный #1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Тип Профиля:</label>
+          <select name="is_offline" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
+            <option value="true" selected>👤 Ручной / Оффлайн Профиль (Без аккаунта)</option>
+            <option value="false">🌐 Зарегистрированный пользователь</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="addSubModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="submit" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Assign Duty Modal -->
+  <div x-show="assignDutyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-100">Назначить Приказ / Задачу</h3>
+      <form action="/ds/duties/assign" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="managed_sub_id" value="{{ selected_sub.id if selected_sub else '' }}">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Название Приказа:</label>
+          <input type="text" name="title" required class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="Ежедневный отчет замка / Удержание 20 мин">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Инструкция:</label>
+          <textarea name="description" rows="2" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100" placeholder="Загрузить фото-подтверждение пломбы..."></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="assignDutyModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="submit" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Отправить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
