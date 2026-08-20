@@ -93,7 +93,7 @@
     {% if composition and composition.timer_operational %}
     {{ nav_item('locktimer', '/locktimer', 'timer', t.nav_timer) }}
     {% endif %}
-    {{ nav_item('ds_portal', '/ds/portal', 'keyholder', 'D/s Command Center') }}
+    {{ nav_item('ds_portal', '/ds/portal', 'dynamics', 'D/s Command Center') }}
     {% if composition and composition.social_operational %}
     {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
     {{ nav_item('social_pillory', '/social/pillory', 'lock', 'Позорный Столб') }}
@@ -110,7 +110,7 @@
     {{ nav_item('media', '/media', 'media-vault', t.nav_media) }}
     {{ nav_item('schedule', '/api/v2/schedule/page', 'schedule', t.nav_schedule) }}
     {{ nav_item('body_parts', '/api/v2/body-parts/page', 'body', t.nav_body_parts) }}
-    {{ nav_item('locations', '/locations', 'locations', t.nav_locations) }}
+    {{ nav_item('locations', '/locations', 'location', t.nav_locations) }}
     {{ nav_item('health', '/health', 'health', t.nav_health) }}
     {{ nav_item('care', '/care', 'routine', t.nav_care) }}
     {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
@@ -125,6 +125,7 @@
     {{ nav_item('quests', '/achievements/quests', 'points', 'Квесты & Челленджи') }}
     {{ nav_item('agent', '/agent/chat', 'ai', 'PracticeLoop Agent') }}
     {{ nav_item('llm_exchange', '/llm/exchange', 'ai', 'Внешняя ИИ-модель') }}
+    {{ nav_item('insights_analytics', '/insights/analytics', 'insights', 'Аналитический Движок') }}
     {{ nav_item('import', '/import', 'import', t.nav_import) }}
   </div>
   {% elif composition and composition.timer_operational %}
