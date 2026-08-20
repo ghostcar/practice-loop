@@ -6,6 +6,7 @@ class Base(DeclarativeBase):
 
 
 from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: E402
+from app.models.automation import AutomationTrigger  # noqa: E402
 from app.models.body_cycle import BodyCycleLog  # noqa: E402
 from app.models.community_agent import (  # noqa: E402
     CommunityMemberDelegation,
@@ -23,6 +24,7 @@ from app.models.ds_suite import (  # noqa: E402
     WearCheckInLog,
 )
 from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: E402
+from app.models.media_vault import OneTimeMediaToken  # noqa: E402
 from app.models.monetization import (  # noqa: E402
     SubscriptionTier,
     TemporaryFeaturePromotion,
@@ -37,6 +39,7 @@ __all__ = [
     "AdaptiveProgram",
     "AdaptiveProgramStep",
     "AssignedDuty",
+    "AutomationTrigger",
     "BodyCycleLog",
     "CapabilityGrant",
     "CapabilityGrantClaimAttempt",
@@ -48,6 +51,7 @@ __all__ = [
     "CommunityTournamentEntry",
     "EquipmentMaintenanceLog",
     "ManagedSubmissive",
+    "OneTimeMediaToken",
     "PaymentInvoice",
     "PromptLibraryItem",
     "Quest",

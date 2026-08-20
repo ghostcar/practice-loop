@@ -5,26 +5,26 @@
   {% set key = d.key %}
   {% set fid = prefix ~ key %}
   <div class="mb-3">
-    <label for="{{ fid }}" class="block text-xs font-medium text-[color:var(--text-secondary)] dark:text-[color:var(--text-muted)] mb-1">
+    <label for="{{ fid }}" class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">
       {{ d.title }}
-      {% if d.required %}<span class="text-red-700 dark:text-red-400">*</span>{% endif %}
+      {% if d.required %}<span class="text-[color:var(--danger)]">*</span>{% endif %}
     </label>
 
     {% if d.type == 'text' %}
       <textarea id="{{ fid }}" name="{{ fid }}" rows="2"
-        class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-indigo-500"
         {% if d.max_length %}maxlength="{{ d.max_length }}"{% endif %}></textarea>
 
     {% elif d.type == 'boolean' %}
       <div class="flex items-center gap-2">
         <input type="checkbox" id="{{ fid }}" name="{{ fid }}" value="true"
-          class="rounded border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-500">
-        <span class="text-sm text-slate-600 dark:text-slate-300">{{ t.tasks_form_boolean_hint }}</span>
+          class="rounded border-[color:var(--border)] text-indigo-500 focus:ring-indigo-500">
+        <span class="text-sm text-[color:var(--text-secondary)]">{{ t.tasks_form_boolean_hint }}</span>
       </div>
 
     {% elif d.type == 'enum' %}
       <select id="{{ fid }}" name="{{ fid }}"
-        class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="">{{ t.tasks_form_select_default }}</option>
         {% for opt in d.options %}
           <option value="{{ opt if opt is string else opt.value }}">{{ opt if opt is string else opt.title }}</option>
@@ -32,15 +32,15 @@
       </select>
       {% if d.allow_custom_value %}
         <input type="text" id="{{ fid }}_custom" name="{{ fid }}_custom" placeholder="{{ t.tasks_form_custom_value }}"
-          class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          class="mt-1 w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
       {% endif %}
 
     {% elif d.type == 'multi_enum' %}
       <div class="space-y-1.5">
         {% for opt in d.options %}
-          <label class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+          <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] cursor-pointer">
             <input type="checkbox" name="{{ fid }}" value="{{ opt if opt is string else opt.value }}"
-              class="rounded border-slate-300 dark:border-slate-600 text-indigo-500 focus:ring-indigo-500">
+              class="rounded border-[color:var(--border)] text-indigo-500 focus:ring-indigo-500">
             {{ opt if opt is string else opt.title }}
           </label>
         {% endfor %}
@@ -48,7 +48,7 @@
 
     {% elif d.type in ('inventory_selector', 'body_part_selector', 'location_selector') %}
       <select id="{{ fid }}" name="{{ fid }}" data-selector="{{ d.type }}"
-        class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <option value="">{{ t.tasks_form_select_default }}</option>
       </select>
 
@@ -60,7 +60,7 @@
         {% if d.min is not none %}min="{{ d.min }}"{% endif %}
         {% if d.max is not none %}max="{{ d.max }}"{% endif %}
         {% if d.max_length %}maxlength="{{ d.max_length }}"{% endif %}
-        class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-indigo-500">
     {% endif %}
   </div>
 {% endmacro %}
@@ -70,6 +70,6 @@
     {{ param_field(d, t, form_prefix) }}
   {% endfor %}
   {% if not param_defs %}
-    <p class="text-sm text-[color:var(--text-muted)] dark:text-[color:var(--text-secondary)]">{{ t.tasks_form_no_params }}</p>
+    <p class="text-sm text-[color:var(--text-muted)]">{{ t.tasks_form_no_params }}</p>
   {% endif %}
 </div>

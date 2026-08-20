@@ -210,12 +210,12 @@
             <div class="p-3 bg-[color:var(--canvas-deep)]/60 border border-[color:var(--border)] rounded-xl flex items-center justify-between text-xs">
               <span class="font-mono text-indigo-300 font-bold">{{ log.action }}</span>
               <span class="text-[color:var(--text-secondary)]">{{ log.reason or '-' }}</span>
-              <span class="font-mono text-slate-500 text-[10px]">{{ log.performed_at.strftime('%Y-%m-%d %H:%M') }}</span>
+              <span class="font-mono text-[color:var(--text-muted)] text-[10px]">{{ log.performed_at.strftime('%Y-%m-%d %H:%M') }}</span>
             </div>
             {% endfor %}
           </div>
           {% else %}
-          <p class="text-xs text-slate-500">Записи в журнале ключа отсутствуют.</p>
+          <p class="text-xs text-[color:var(--text-muted)]">Записи в журнале ключа отсутствуют.</p>
           {% endif %}
         </div>
       </div>
@@ -261,7 +261,7 @@
           {% endfor %}
         </div>
         {% else %}
-        <p class="text-xs text-slate-500 text-center py-6">Назначенные приказания отсутствуют.</p>
+        <p class="text-xs text-[color:var(--text-muted)] text-center py-6">Назначенные приказания отсутствуют.</p>
         {% endif %}
       </div>
 
