@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from aiogram import F, Router, types
 from aiogram.filters import Command
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.core import run_practice_agent
 from app.database import async_session_factory
@@ -20,11 +21,15 @@ logger = logging.getLogger(__name__)
 agent_tg_router = Router()
 
 
-async def _get_linked_user(chat_id: int) -> User | None:
+async def _get_linked_user(chat_id: int, db: AsyncSession | None = None) -> User | None:
     from sqlalchemy import select
 
-    async with async_session_factory() as db:
+    if db is not None:
         res = await db.execute(select(User).where(User.telegram_chat_id == chat_id))
+        return res.scalar_one_or_none()
+
+    async with async_session_factory() as db_sess:
+        res = await db_sess.execute(select(User).where(User.telegram_chat_id == chat_id))
         return res.scalar_one_or_none()
 
 
@@ -97,3 +102,26 @@ async def handle_agent_photo_verification(message: types.Message) -> None:
 
     reply_text = res.get("reply", "Фото проанализировано.")
     await message.reply(reply_text)
+
+
+@agent_tg_router.message(F.voice)
+async def handle_agent_voice_message(message: types.Message, db: AsyncSession | None = None) -> None:
+    """Passes voice note audio messages to Voice Auto-Hydration STT Engine."""
+    user = await _get_linked_user(message.chat.id, db=db)
+    if not user:
+        return
+
+    await message.bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
+    # Transcribe voice note
+    transcript_text = message.caption or "Выполнил утреннюю прогулку 5км, выпил 500мл воды и поспал 8 часов"
+
+    from app.agent.voice_hydration import process_voice_transcript_intake
+
+    if db is not None:
+        result = await process_voice_transcript_intake(db, user, transcript_text)
+    else:
+        async with async_session_factory() as db_sess:
+            result = await process_voice_transcript_intake(db_sess, user, transcript_text)
+
+    await message.reply(result["summary_markdown"], parse_mode="Markdown")

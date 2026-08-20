@@ -4,13 +4,13 @@
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ checkinModal: false }">
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+  <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('tag', 'w-6 h-6') }}
         Инспекция Номерных Пломб & Wear Check-Ins (Step 65)
       </h1>
-      <p class="text-sm text-slate-400 mt-1">
+      <p class="text-sm text-[color:var(--text-muted)] mt-1">
         Журнал проверок состояния устройства Chastity, комфорта ношения и номерных пломб/бирок (Number Tags).
       </p>
     </div>
@@ -25,10 +25,10 @@
 
   <!-- Check-Ins Log Table -->
   {% if checkins %}
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl overflow-hidden shadow-xl">
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl overflow-hidden shadow-xl">
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-xs text-slate-300">
-        <thead class="bg-surface-900 text-slate-400 font-mono uppercase text-[10px] border-b border-surface-700">
+      <table class="w-full text-left text-xs text-[color:var(--text-secondary)]">
+        <thead class="bg-[color:var(--canvas-deep)] text-[color:var(--text-muted)] font-mono uppercase text-[10px] border-b border-[color:var(--border)]">
           <tr>
             <th class="p-3">Дата & Время</th>
             <th class="p-3">Номер Пломбы / Бирки</th>
@@ -37,10 +37,10 @@
             <th class="p-3">Заметки</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-surface-700/60">
+        <tbody class="divide-y divide-[color:var(--border)]/60">
           {% for log in checkins %}
-          <tr class="hover:bg-surface-750/50 transition-colors">
-            <td class="p-3 font-mono text-slate-400">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <tr class="hover:bg-[color:var(--surface-soft)]/50 transition-colors">
+            <td class="p-3 font-mono text-[color:var(--text-muted)]">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
             <td class="p-3 font-mono font-bold text-amber-300">{{ icon('tag', 'w-3.5 h-3.5') }} {{ log.tag_number or 'Без пломбы' }}</td>
             <td class="p-3">
               <span class="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold {% if log.comfort_score >= 4 %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% elif log.comfort_score == 3 %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
@@ -53,10 +53,10 @@
                 {{ icon('check-circle', 'w-3.5 h-3.5') }} Photo & Vision Verified
               </span>
               {% else %}
-              <span class="text-slate-500 font-mono text-[10px]">Ручная запись</span>
+              <span class="text-[color:var(--text-muted)] font-mono text-[10px]">Ручная запись</span>
               {% endif %}
             </td>
-            <td class="p-3 text-slate-300">{{ log.notes or '-' }}</td>
+            <td class="p-3 text-[color:var(--text-secondary)]">{{ log.notes or '-' }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -64,36 +64,36 @@
     </div>
   </div>
   {% else %}
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center space-y-3">
-    <p class="text-sm text-slate-400">В журнале пока нет инспекций и проверок комфорта.</p>
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-8 text-center space-y-3">
+    <p class="text-sm text-[color:var(--text-muted)]">В журнале пока нет инспекций и проверок комфорта.</p>
   </div>
   {% endif %}
 
   <!-- Log Check-In Modal -->
   <div x-show="checkinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-100">Новая Инспекция / Wear Check-In</h3>
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-[color:var(--text)]">Новая Инспекция / Wear Check-In</h3>
       <form action="/ds/checkins/log" method="POST" class="space-y-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <input type="hidden" name="managed_sub_id" value="{{ checkins[0].managed_sub_id if checkins else '' }}">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Номер Пломбы / Спецбирки (Tag Seal #):</label>
-          <input type="text" name="tag_number" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="SEAL-9842">
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Номер Пломбы / Спецбирки (Tag Seal #):</label>
+          <input type="text" name="tag_number" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-sm text-[color:var(--text)]" placeholder="SEAL-9842">
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Оценка Физического Комфорта (1-5):</label>
-          <input type="number" min="1" max="5" name="comfort_score" value="5" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Оценка Физического Комфорта (1-5):</label>
+          <input type="number" min="1" max="5" name="comfort_score" value="5" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-sm text-[color:var(--text)]">
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">URL Фото-Отчета Пломбы:</label>
-          <input type="text" name="photo_url" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="https://example.com/proof.jpg">
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">URL Фото-Отчета Пломбы:</label>
+          <input type="text" name="photo_url" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-sm text-[color:var(--text)]" placeholder="https://example.com/proof.jpg">
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Заметки по Состоянию Устройства:</label>
-          <textarea name="notes" rows="2" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100" placeholder="Устройство цело, дискомфорт отсутствует..."></textarea>
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Заметки по Состоянию Устройства:</label>
+          <textarea name="notes" rows="2" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-xs text-[color:var(--text)]" placeholder="Устройство цело, дискомфорт отсутствует..."></textarea>
         </div>
         <div class="flex justify-end gap-3 pt-2">
-          <button type="button" @click="checkinModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="button" @click="checkinModal = false" class="px-4 py-2 bg-surface-700 text-[color:var(--text-secondary)] text-xs font-medium rounded-lg">Отмена</button>
           <button type="submit" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Сохранить</button>
         </div>
       </form>

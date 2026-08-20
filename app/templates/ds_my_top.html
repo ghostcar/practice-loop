@@ -4,12 +4,12 @@
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto px-4 py-6">
   <!-- Header & Voluntary Principle Banner -->
-  <div class="border-b border-surface-700 pb-4">
-    <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+  <div class="border-b border-[color:var(--border)] pb-4">
+    <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
       {{ icon('key', 'w-6 h-6') }}
       Управление Грантами и Делегированием Портала (My Top Delegation)
     </h1>
-    <p class="text-sm text-slate-400 mt-1">
+    <p class="text-sm text-[color:var(--text-muted)] mt-1">
       Настройка добровольного делегирования управления вашим профилем Верхнему/Ключнику.
     </p>
   </div>
@@ -25,15 +25,15 @@
   </div>
 
   <!-- Action Bar -->
-  <div class="flex justify-between items-center bg-surface-800 p-4 border border-surface-700 rounded-2xl">
+  <div class="flex justify-between items-center pl-surface p-4 border border-[color:var(--border)] rounded-2xl">
     <div>
-      <h2 class="text-sm font-bold text-slate-100">Передать доступ Верхнему</h2>
-      <p class="text-xs text-slate-400">Выберите точные права и передайте одноразовый код вашему Верхнему. Код действует 24 часа.</p>
+      <h2 class="text-sm font-bold text-[color:var(--text)]">Передать доступ Верхнему</h2>
+      <p class="text-xs text-[color:var(--text-muted)]">Выберите точные права и передайте одноразовый код вашему Верхнему. Код действует 24 часа.</p>
     </div>
 
     <form action="/ds/grant/create" method="POST" class="space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <fieldset class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-300">
+      <fieldset class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[color:var(--text-secondary)]">
         <label><input type="checkbox" name="scope_tasks" value="true"> Задачи и план</label>
         <label><input type="checkbox" name="scope_training" value="true"> Тренировки</label>
         <label><input type="checkbox" name="scope_inventory" value="true"> Инвентарь</label>
@@ -51,10 +51,10 @@
   <!-- Grants Table -->
   {% if grants %}
   <div class="space-y-4">
-    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Ваши Гранты Делегирования</h3>
+    <h3 class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] font-mono">Ваши Гранты Делегирования</h3>
 
     {% for grant in grants %}
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4">
       <div class="flex items-center justify-between">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
@@ -73,7 +73,7 @@
             </span>
             {% endif %}
           </div>
-          <p class="text-xs text-slate-400">Создан: {{ grant.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+          <p class="text-xs text-[color:var(--text-muted)]">Создан: {{ grant.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
         </div>
 
         {% if grant.status == 'active' %}
@@ -87,26 +87,26 @@
       </div>
 
       <!-- Scope Breakdown Grid -->
-      <div class="pt-4 border-t border-surface-700 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+      <div class="pt-4 border-t border-[color:var(--border)] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Замки: <span class="font-bold">{{ 'Вкл' if grant.scope_chastity else 'Выкл' }}</span>
         </div>
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Задачи и план: <span class="font-bold">{{ 'Вкл' if grant.scope_tasks else 'Выкл' }}</span>
         </div>
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Тренировки: <span class="font-bold">{{ 'Вкл' if grant.scope_training else 'Выкл' }}</span>
         </div>
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Медикаменты: <span class="font-bold">{{ 'Вкл' if grant.scope_medication else 'Выкл' }}</span>
         </div>
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Уход: <span class="font-bold">{{ 'Вкл' if grant.scope_aftercare else 'Выкл' }}</span>
         </div>
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Инвентарь: <span class="font-bold">{{ 'Вкл' if grant.scope_inventory else 'Выкл' }}</span>
         </div>
-        <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
+        <div class="p-2 bg-[color:var(--canvas-deep)]/60 rounded-lg flex items-center gap-2 text-[color:var(--text-secondary)]">
           Здоровье: <span class="font-bold">{{ 'Просмотр' if grant.scope_health_view else 'Выкл' }}</span>
         </div>
       </div>
@@ -114,8 +114,8 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center space-y-2">
-    <p class="text-sm text-slate-400">У вас пока нет активных грантов делегирования.</p>
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-8 text-center space-y-2">
+    <p class="text-sm text-[color:var(--text-muted)]">У вас пока нет активных грантов делегирования.</p>
   </div>
   {% endif %}
 </div>

@@ -4,13 +4,13 @@
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ coopStatus: 'active', elapsed: 184 }">
   <!-- Header Bar -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('session', 'w-6 h-6') }}
         Партнерская Совместная Сессия (Co-Op Real-Time Session)
       </h1>
-      <p class="text-xs text-slate-400 mt-1">
+      <p class="text-xs text-[color:var(--text-muted)] mt-1">
         Синхронное прохождение практик и таймеров для двух участников в реальном времени.
       </p>
     </div>
@@ -25,30 +25,30 @@
   <!-- Main Co-Op Active Room -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- Partner 1 (Self) Card -->
-    <div class="bg-surface-800 border border-indigo-500/40 rounded-2xl p-6 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+    <div class="pl-surface border border-indigo-500/40 rounded-2xl p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
         <div>
           <span class="text-xs font-mono text-indigo-400 font-bold uppercase tracking-wider">Участник #1 (Вы)</span>
-          <h2 class="text-lg font-bold text-slate-100">{{ user.email }}</h2>
+          <h2 class="text-lg font-bold text-[color:var(--text)]">{{ user.email }}</h2>
         </div>
         <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-mono text-xs font-bold">Готов / Удержание</span>
       </div>
 
-      <div class="p-4 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <span class="text-xs text-slate-400 font-mono">Текущее Задание:</span>
-        <div class="text-sm font-bold text-slate-100">Удержание статической позы #2 (3 мин)</div>
-        <div class="w-full bg-surface-900 h-2 rounded-full overflow-hidden border border-surface-700">
+      <div class="p-4 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
+        <span class="text-xs text-[color:var(--text-muted)] font-mono">Текущее Задание:</span>
+        <div class="text-sm font-bold text-[color:var(--text)]">Удержание статической позы #2 (3 мин)</div>
+        <div class="w-full bg-[color:var(--canvas-deep)] h-2 rounded-full overflow-hidden border border-[color:var(--border)]">
           <div class="bg-indigo-500 h-full w-3/4 transition-all duration-500"></div>
         </div>
       </div>
     </div>
 
     <!-- Partner 2 Card -->
-    <div class="bg-surface-800 border border-rose-500/40 rounded-2xl p-6 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+    <div class="pl-surface border border-rose-500/40 rounded-2xl p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
         <div>
           <span class="text-xs font-mono text-rose-400 font-bold uppercase tracking-wider">Участник #2 (Партнер)</span>
-          <h2 class="text-lg font-bold text-slate-100">
+          <h2 class="text-lg font-bold text-[color:var(--text)]">
             {% if relationships %}
             @{{ relationships[0].other_alias or 'Партнер' }}
             {% elif managed_subs %}
@@ -61,10 +61,10 @@
         <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-xs font-bold">В процессе</span>
       </div>
 
-      <div class="p-4 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <span class="text-xs text-slate-400 font-mono">Текущее Задание:</span>
-        <div class="text-sm font-bold text-slate-100">Контроль дыхания и таймера</div>
-        <div class="w-full bg-surface-900 h-2 rounded-full overflow-hidden border border-surface-700">
+      <div class="p-4 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
+        <span class="text-xs text-[color:var(--text-muted)] font-mono">Текущее Задание:</span>
+        <div class="text-sm font-bold text-[color:var(--text)]">Контроль дыхания и таймера</div>
+        <div class="w-full bg-[color:var(--canvas-deep)] h-2 rounded-full overflow-hidden border border-[color:var(--border)]">
           <div class="bg-rose-500 h-full w-3/4 transition-all duration-500"></div>
         </div>
       </div>
@@ -72,10 +72,10 @@
   </div>
 
   <!-- Synchronized Co-Op Live Timer Deck -->
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-8 text-center space-y-6 shadow-2xl">
     <div class="space-y-1">
       <span class="text-xs font-mono font-bold uppercase tracking-widest text-indigo-400">Общий Синхронизированный Таймер</span>
-      <div class="text-5xl font-black text-slate-100 font-mono tracking-wider">03:04</div>
+      <div class="text-5xl font-black text-[color:var(--text)] font-mono tracking-wider">03:04</div>
     </div>
 
     <!-- Actions Bar -->
@@ -89,7 +89,7 @@
 
       <form action="/sessions/live/interrupt" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-        <button type="submit" class="px-6 py-3 bg-surface-700 hover:bg-surface-600 text-slate-300 font-bold text-xs rounded-xl transition-all border border-surface-600">
+        <button type="submit" class="px-6 py-3 pl-surface-soft hover:bg-[color:var(--border)] text-[color:var(--text-secondary)] font-bold text-xs rounded-xl transition-all border border-[color:var(--border-strong)]">
           {{ icon('stop', 'w-4 h-4') }} Прервать
         </button>
       </form>
