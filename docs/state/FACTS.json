@@ -1,20 +1,20 @@
 {
   "alembic": {
-    "checked_at": "2026-08-20T02:31:08Z",
+    "checked_at": "2026-08-20T02:41:26Z",
     "command": "alembic heads",
     "heads": [
-      "076_equipment_maintenance"
+      "077_ds_suite_tables"
     ]
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-20T02:31:08Z",
+  "generated_at": "2026-08-20T02:41:26Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:fada850153430e843833024957e7f33f682938f2afebb3a96f106843fac46ad9",
+    "diff_hash": "sha256:162c93436167f211657347cf1eba4700dc439fc3112d89d486220e9462416a3c",
     "dirty": true,
-    "head": "a77fbc3ea69966cdded392d4417a8e4bafe2115c"
+    "head": "56d049d5c0924c87fa435a5176c5256a6ee78a93"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
