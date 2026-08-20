@@ -245,10 +245,12 @@ from app.api.billing import router as billing_router  # noqa: E402
 from app.api.calendar_v2 import router as calendar_v2_router  # noqa: E402
 from app.api.community_agent import router as community_agent_router  # noqa: E402
 from app.api.ds import router as ds_router  # noqa: E402
+from app.api.health_dashboard import router as health_dashboard_router  # noqa: E402
 from app.api.insights_analytics import router as insights_analytics_router  # noqa: E402
 from app.api.llm_exchange import router as llm_exchange_router  # noqa: E402
 from app.api.media_timeline import router as media_timeline_router  # noqa: E402
 from app.api.media_vault_v2 import router as media_vault_v2_router  # noqa: E402
+from app.api.persona_builder import router as persona_builder_router  # noqa: E402
 from app.telegram.bot import tg_router  # noqa: E402
 
 app.include_router(tg_router)
@@ -261,6 +263,8 @@ app.include_router(billing_router)
 app.include_router(calendar_v2_router)
 app.include_router(media_vault_v2_router)
 app.include_router(media_timeline_router)
+app.include_router(persona_builder_router)
+app.include_router(health_dashboard_router)
 
 # ---------------------------------------------------------------------------
 # Tracker routes

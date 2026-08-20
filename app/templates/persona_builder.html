@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Конструктор ИИ-Персоны — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header Badge -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">ИИ-Конфигуратор v2</span>
+            <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
+                {{ icon('cpu', 'w-8 h-8 text-amber-400') }}
+                <span>Конструктор Персоны ИИ-Агента</span>
+            </h1>
+            <p class="text-xs text-archive-400 mt-1">Настройка характера, тональности и строгости вашего виртуального Куратора/Ключника.</p>
+        </div>
+    </div>
+
+    <!-- Persona Builder Form -->
+    <form method="POST" action="/agent/persona-builder" class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+        <div>
+            <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
+                {{ icon('user-check', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                <span>Архетип Персоны</span>
+            </label>
+            <select name="persona_type" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2.5 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">
+                <option value="caring_curator" {% if persona.persona_type == 'caring_curator' %}selected{% endif %}>Заботливый Куратор (Акцент на уход и комфорт)</option>
+                <option value="strict_keyholder" {% if persona.persona_type == 'strict_keyholder' %}selected{% endif %}>Строгий Ключник (Дисциплина и тайминги)</option>
+                <option value="endurance_trainer" {% if persona.persona_type == 'endurance_trainer' %}selected{% endif %}>Тренер Выносливости (Мотивация и нагрузки)</option>
+                <option value="anonymous_observer" {% if persona.persona_type == 'anonymous_observer' %}selected{% endif %}>Анонимный Наблюдатель (Сухая статистика)</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
+                {{ icon('sliders', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                <span>Уровень Строгости Штрафов (1..5)</span>
+            </label>
+            <input type="number" name="strictness_level" min="1" max="5" value="{{ persona.strictness_level }}" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
+                {{ icon('volume-2', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                <span>Тональность Общения (Tone of Voice)</span>
+            </label>
+            <input type="text" name="tone_of_voice" value="{{ persona.tone_of_voice }}" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
+                {{ icon('bell', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                <span>Частота ИИ-Уведомлений</span>
+            </label>
+            <select name="proactive_frequency" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2.5 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">
+                <option value="daily" {% if persona.proactive_frequency == 'daily' %}selected{% endif %}>Ежедневно (Рекомендуется)</option>
+                <option value="high" {% if persona.proactive_frequency == 'high' %}selected{% endif %}>Высокая (Несколько раз в день)</option>
+                <option value="off" {% if persona.proactive_frequency == 'off' %}selected{% endif %}>Выключено</option>
+            </select>
+        </div>
+
+        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-archive-950 font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+            {{ icon('check', 'w-5 h-5') }}
+            <span>Сохранить Конфигурацию Персоны</span>
+        </button>
+    </form>
+</div>
+{% endblock %}

@@ -24,6 +24,7 @@ from app.models.ds_suite import (  # noqa: E402
     ManagedSubmissive,
     WearCheckInLog,
 )
+from app.models.duels import UserDuel  # noqa: E402
 from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: E402
 from app.models.media_vault import OneTimeMediaToken  # noqa: E402
 from app.models.monetization import (  # noqa: E402
@@ -32,6 +33,7 @@ from app.models.monetization import (  # noqa: E402
     TierFeatureGrant,
 )
 from app.models.payment import PaymentInvoice  # noqa: E402
+from app.models.persona import UserAgentPersona  # noqa: E402
 from app.models.prompt_library import PromptLibraryItem  # noqa: E402
 from app.models.quest import Quest, UserQuest  # noqa: E402
 
@@ -59,6 +61,8 @@ __all__ = [
     "SubscriptionTier",
     "TemporaryFeaturePromotion",
     "TierFeatureGrant",
+    "UserAgentPersona",
+    "UserDuel",
     "UserLeagueTier",
     "UserQuest",
     "WearCheckInLog",

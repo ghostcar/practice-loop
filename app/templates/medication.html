@@ -50,21 +50,21 @@
                         <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
                         <input type="hidden" name="schedule_id" value="{{ d.id }}">
                         <input type="hidden" name="status" value="taken">
-                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[44px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
                     </form>
                     <form action="/med-intakes" method="post" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
                         <input type="hidden" name="schedule_id" value="{{ d.id }}">
                         <input type="hidden" name="status" value="missed">
-                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--danger-soft)] text-[color:var(--danger)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('error', 'w-3.5 h-3.5') }}{{ t.med_status_missed }}</button>
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--danger-soft)] text-[color:var(--danger)] inline-flex items-center gap-1 min-h-[44px]">{{ icon('error', 'w-3.5 h-3.5') }}{{ t.med_status_missed }}</button>
                     </form>
                     <form action="/med-intakes" method="post" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
                         <input type="hidden" name="schedule_id" value="{{ d.id }}">
                         <input type="hidden" name="status" value="skipped">
-                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('skip', 'w-3.5 h-3.5') }}{{ t.med_status_skipped }}</button>
+                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[44px]">{{ icon('skip', 'w-3.5 h-3.5') }}{{ t.med_status_skipped }}</button>
                     </form>
                 </div>
             </li>
@@ -167,7 +167,7 @@
                     <span class="text-sm text-[color:var(--text)]">{{ k.name }}{% if k.location %} <span class="pl-text-muted text-xs">· {{ k.location }}</span>{% endif %}</span>
                     <form action="/med-kits/{{ k.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
                 </li>
                 {% endfor %}
@@ -204,7 +204,7 @@
                         <div class="mt-2">
                             <form action="/medications/{{ m.id }}/find-analogs" method="post" class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                                <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[32px]">
+                                <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[44px]">
                                     {{ icon('ai', 'w-3.5 h-3.5') }} Поиск аналогов ИИ
                                 </button>
                             </form>
@@ -228,7 +228,7 @@
                     </div>
                     <form action="/medications/{{ m.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.med_delete }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
                 </div>
 
@@ -246,7 +246,7 @@
                             {% if st.expiry_date %}<span class="text-xs {% if st.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ st.expiry_date }}</span>{% endif %}
                             <form action="/med-stocks/{{ st.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                                <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
+                                <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
                             </form>
                         </span>
                     </li>
@@ -269,7 +269,7 @@
                         </span>
                         <form action="/med-schedules/{{ s.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                            <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
+                            <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
                         </form>
                     </li>
                     {% endfor %}
