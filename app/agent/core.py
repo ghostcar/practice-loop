@@ -1,4 +1,4 @@
-"""Core Agent Loop Engine for PracticeLoop Agent (Step 44 / ADR-123)."""
+"""Core Agent Loop Engine for PracticeLoop Agent (Step 44-46 / ADR-123)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.memory import format_memory_context, recall_user_memories
 from app.agent.persona import build_persona_system_prompt
 from app.agent.tools import AGENT_TOOLS_SCHEMA, execute_agent_tool
 from app.llm.client import call_llm
@@ -23,7 +24,7 @@ async def run_practice_agent(
     db: AsyncSession,
     persona_role: str = "keyholder",
 ) -> dict[str, Any]:
-    """Runs single-turn or multi-turn agent tool execution loop."""
+    """Runs single-turn or multi-turn agent tool execution loop with memory recall."""
     llm_config = await get_active_llm_config(db, user_id)
     if not llm_config:
         return {
@@ -32,7 +33,16 @@ async def run_practice_agent(
             "tool_calls": [],
         }
 
-    system_prompt = build_persona_system_prompt(persona_role)
+    # Contextual memory recall for prompt
+    memories = await recall_user_memories(db=db, user_id=user_id, query=user_prompt, limit=3)
+    memory_str = format_memory_context(memories)
+
+    user_context = {
+        "user_prompt": user_prompt,
+        "recalled_memories": memory_str,
+    }
+
+    system_prompt = build_persona_system_prompt(persona_role, user_context=user_context)
 
     messages = [
         {"role": "system", "content": system_prompt},

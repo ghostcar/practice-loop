@@ -1,4 +1,4 @@
-"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-45 / ADR-123)."""
+"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-46 / ADR-123)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.memory import recall_user_memories
 from app.llm.pipeline import generate_task
 from app.models.care import CareRoutine
 from app.models.health import HealthState
@@ -94,6 +95,20 @@ AGENT_TOOLS_SCHEMA = [
                 "type": "object",
                 "properties": {},
                 "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_long_term_memory",
+            "description": "Perform semantic search over user's long-term practice memory and past notes.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query or topic to recall"},
+                },
+                "required": ["query"],
             },
         },
     },
@@ -195,5 +210,10 @@ async def execute_agent_tool(
             for h in recent_health
         ]
         return {"status": "success", "recent_entries_count": len(h_list), "entries": h_list}
+
+    elif tool_name == "search_long_term_memory":
+        query = arguments.get("query", "")
+        memories = await recall_user_memories(db=db, user_id=user_id, query=query, limit=5)
+        return {"status": "success", "memories_count": len(memories), "memories": memories}
 
     return {"status": "error", "message": f"Unknown tool '{tool_name}'"}
