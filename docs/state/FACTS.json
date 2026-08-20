@@ -1,6 +1,6 @@
 {
   "alembic": {
-    "checked_at": "2026-08-20T02:17:01Z",
+    "checked_at": "2026-08-20T02:20:21Z",
     "command": "alembic heads",
     "heads": [
       "074_adaptive_training_tables"
@@ -8,13 +8,13 @@
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-20T02:17:01Z",
+  "generated_at": "2026-08-20T02:20:21Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:1c3abe6eec62ccbf1b7e0a82674191d96dce27532f786cb8d19695218439ba6f",
+    "diff_hash": "sha256:989bee8cfd7d3c5bea7da237a66fba3826e1b04bde13d5dacd787bcd2608f492",
     "dirty": true,
-    "head": "103dce1fdd5902d2b3af49ab9e21d24da64f2a53"
+    "head": "148faae653fe8eab3e882a961d8f4e5362b37550"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
