@@ -1,6 +1,6 @@
 {
   "alembic": {
-    "checked_at": "2026-08-20T02:27:28Z",
+    "checked_at": "2026-08-20T02:31:08Z",
     "command": "alembic heads",
     "heads": [
       "076_equipment_maintenance"
@@ -8,13 +8,13 @@
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-20T02:27:28Z",
+  "generated_at": "2026-08-20T02:31:08Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:13a513a332847e3c6cb3b4205ae68cea532b03b13329d0aa7b7dec40a5f7356c",
+    "diff_hash": "sha256:fada850153430e843833024957e7f33f682938f2afebb3a96f106843fac46ad9",
     "dirty": true,
-    "head": "f4268f12e519efb04a9681660b58158e07e517a7"
+    "head": "a77fbc3ea69966cdded392d4417a8e4bafe2115c"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
