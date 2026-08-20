@@ -1,12 +1,12 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto px-4 py-6">
   <!-- Header & Voluntary Principle Banner -->
   <div class="border-b border-surface-700 pb-4">
     <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-      {% include "components/icon.html" %}
-      <use href="/static/icons/sprite.svg#keyholder"></use>
+      {{ icon('key', 'w-6 h-6') }}
       Управление Грантами и Делегированием Портала (My Top Delegation)
     </h1>
     <p class="text-sm text-slate-400 mt-1">
@@ -17,7 +17,7 @@
   <!-- Voluntary Emulation & Digital Freedom Notice -->
   <div class="p-4 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-2">
     <div class="flex items-center gap-2 text-indigo-300 font-bold text-xs">
-      <span>🛡️ Фундаментальный Принцип Безопасности & Цифровой Автономии</span>
+      <span>{{ icon('shield', 'w-4 h-4') }} Фундаментальный Принцип Безопасности & Цифровой Автономии</span>
     </div>
     <p class="text-xs text-indigo-200/90 leading-relaxed">
       PracticeLoop — это цифровой трекер и система геймификации. Управление порталом является <strong>100% добровольным</strong>. Вы сохраняете полную автономию: если приказ Верхнего противоречит вашим личным границам или самочувствию, вы всегда можете <strong>эмулировать выполнение задачи в интерфейсе</strong> (нажав кнопку отметки без фактического действия) или использовать <strong>Кнопку Экстренного Отзыва (Safe Word Revoke)</strong> ниже.
@@ -61,15 +61,15 @@
             <span class="text-sm font-mono font-bold text-indigo-300">Код: {{ grant.invite_code }}</span>
             {% if grant.status == 'active' %}
             <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
-              🟢 Активен (Делегировано)
+              {{ icon('check-circle', 'w-3 h-3') }} Активен (Делегировано)
             </span>
             {% elif grant.status == 'pending' %}
             <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono border border-amber-500/30">
-              ⏳ Ожидает Активации Верхним
+              {{ icon('clock', 'w-3 h-3') }} Ожидает Активации Верхним
             </span>
             {% else %}
             <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-mono border border-rose-500/30">
-              🚨 Отозван (Revoked)
+              {{ icon('warning', 'w-3 h-3') }} Отозван (Revoked)
             </span>
             {% endif %}
           </div>
@@ -80,7 +80,7 @@
         <form action="/ds/grant/{{ grant.id }}/revoke" method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <button type="submit" onclick="return confirm('Вы уверены? Это мгновенно отозовет все права Верхнего (Safe Word).')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1">
-            🚨 Экстренный Отзыв (Safe Word)
+            {{ icon('stop', 'w-4 h-4') }} Экстренный Отзыв (Safe Word)
           </button>
         </form>
         {% endif %}

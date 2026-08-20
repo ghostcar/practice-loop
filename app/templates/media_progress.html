@@ -7,21 +7,21 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
         <div>
             <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
-                📸 Динамика и Сравнение Фото-Прогресса
+                {{ icon('camera', 'w-6 h-6') }} Динамика и Сравнение Фото-Прогресса
             </h1>
             <p class="text-xs text-[color:var(--text-secondary)] mt-1">
                 Хронологический таймлайн и сравнение (Before/After) изменений: ГТ (HRT), физические упражнения, восстановление кожи и тэги Chastity.
             </p>
         </div>
         <a href="/media" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
-            ← Вернуться в Медиа-Сейф
+            {{ icon('arrow-left', 'w-3.5 h-3.5') }} Вернуться в Медиа-Сейф
         </a>
     </div>
 
     <!-- Side-by-Side Comparison Container -->
     <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4">
         <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--text)] inline-flex items-center gap-2">
-            🔍 Интерактивное Сравнение Снимков (Before / After)
+            {{ icon('search', 'w-4 h-4') }} Интерактивное Сравнение Снимков (Before / After)
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Image 1 Pick -->
@@ -59,7 +59,7 @@
     <!-- Photo Timeline Grid -->
     <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4">
         <h2 class="text-sm font-semibold uppercase tracking-wider text-[color:var(--text)]">
-            📅 Хронологическая Лента Снимков (Timeline)
+            {{ icon('calendar', 'w-4 h-4') }} Хронологическая Лента Снимков (Timeline)
         </h2>
         {% if items %}
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">

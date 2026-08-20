@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto px-4 py-6" x-data="liveTimer()">
@@ -6,8 +7,7 @@
   <div class="flex items-center justify-between border-b border-surface-700 pb-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-        {% include "components/icon.html" %}
-        <use href="/static/icons/sprite.svg#timer"></use>
+        {{ icon('timer', 'w-6 h-6') }}
         Центр Управления Сессией & Live-Таймер
       </h1>
       <p class="text-sm text-slate-400 mt-1">
@@ -55,7 +55,7 @@
         @click="resetTimer()"
         class="px-4 py-3 bg-surface-900 hover:bg-surface-700 text-slate-300 font-medium text-xs rounded-2xl border border-surface-700 transition-colors"
       >
-        🔄 Сброс
+        {{ icon('refresh', 'w-4 h-4') }} Сброс
       </button>
     </div>
   </div>
@@ -64,7 +64,7 @@
   <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
     <div class="flex items-center justify-between border-b border-surface-700 pb-3">
       <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 font-mono flex items-center gap-1.5">
-        🧩 Активные Расширения Сессии (Attached Chaster Extensions)
+        {{ icon('extension', 'w-4 h-4') }} Активные Расширения Сессии (Attached Chaster Extensions)
       </h3>
       <span class="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">Chaster Standard</span>
     </div>
@@ -72,7 +72,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
       <!-- Extension 1: Wheel -->
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <div class="text-xl">🎰</div>
+        <div class="text-xl">{{ icon('dice', 'w-6 h-6') }}</div>
         <span class="text-xs font-bold text-slate-100 block">Рулетка ИИ</span>
         <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 bg-surface-700 text-slate-400 font-bold text-[10px] rounded cursor-not-allowed">
           Скоро
@@ -81,7 +81,7 @@
 
       <!-- Extension 2: Pillory -->
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <div class="text-xl">🏛️</div>
+        <div class="text-xl">{{ icon('lock', 'w-6 h-6') }}</div>
         <span class="text-xs font-bold text-slate-100 block">Pillory Mode</span>
         <span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 font-mono text-[10px] rounded border border-rose-500/30 block">
           Прототип
@@ -90,7 +90,7 @@
 
       <!-- Extension 3: Tag Seal -->
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <div class="text-xl">🏷️</div>
+        <div class="text-xl">{{ icon('tag', 'w-6 h-6') }}</div>
         <span class="text-xs font-bold text-slate-100 block">Пломба</span>
         <a href="/ds/checkins" class="px-2 py-1 bg-surface-700 hover:bg-surface-600 text-slate-200 font-bold text-[10px] rounded block">
           Инспекция
@@ -99,7 +99,7 @@
 
       <!-- Extension 4: Peer Review -->
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <div class="text-xl">📸</div>
+        <div class="text-xl">{{ icon('camera', 'w-6 h-6') }}</div>
         <span class="text-xs font-bold text-slate-100 block">Народный Зачет</span>
         <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 font-mono text-[10px] rounded border border-emerald-500/30 block">
           Прототип
@@ -108,7 +108,7 @@
 
       <!-- Extension 5: Dice Roll -->
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
-        <div class="text-xl">🎲</div>
+        <div class="text-xl">{{ icon('dice', 'w-6 h-6') }}</div>
         <span class="text-xs font-bold text-slate-100 block">Кубик Удачи</span>
         <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 bg-surface-700 text-slate-400 font-bold text-[10px] rounded cursor-not-allowed">
           Скоро
@@ -207,7 +207,7 @@ function liveTimer() {
             clearInterval(this.timerId);
             this.isRunning = false;
             this.statusText = 'Время Истекло!';
-            alert('⏱ Время удержания завершено!');
+            alert('Время удержания завершено!');
           }
         }, 1000);
       }

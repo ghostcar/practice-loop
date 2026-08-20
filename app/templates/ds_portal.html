@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-7xl mx-auto px-4 py-6" x-data="{ deckTab: 'chastity', addSubModal: false, assignDutyModal: false }">
@@ -7,12 +8,11 @@
     <div>
       <div class="flex items-center gap-2">
         <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-          {% include "components/icon.html" %}
-          <use href="/static/icons/sprite.svg#keyholder"></use>
+          {{ icon('dynamics', 'w-6 h-6') }}
           D/s Command Center & Multi-Submissive Portal
         </h1>
         <span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono text-xs border border-rose-500/30">
-          👑 Режим Ключника
+          {{ icon('crown', 'w-3.5 h-3.5') }} Режим Ключника
         </span>
       </div>
       <p class="text-xs text-slate-400 mt-1">
@@ -23,10 +23,10 @@
     <!-- Mode Switcher Toggle Button -->
     <div class="flex items-center bg-surface-800 p-1 border border-surface-700 rounded-xl font-mono text-xs">
       <a href="/dashboard" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
-        👤 Персональный
+        {{ icon('profile', 'w-3.5 h-3.5') }} Персональный
       </a>
       <a href="/ds/portal" class="px-3.5 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-bold shadow flex items-center gap-1.5">
-        👑 Центр Управления
+        {{ icon('crown', 'w-3.5 h-3.5') }} Центр Управления
       </a>
     </div>
   </div>
@@ -92,17 +92,17 @@
 
           <div class="flex items-center justify-between text-[11px]">
             {% if sub.chastity_status == 'locked' %}
-            <span class="text-rose-400 font-bold flex items-center gap-1">🔒 Locked</span>
+            <span class="text-rose-400 font-bold flex items-center gap-1">{{ icon('lock', 'w-3.5 h-3.5') }} Locked</span>
             {% elif sub.chastity_status == 'unlocked' %}
-            <span class="text-emerald-400 font-bold flex items-center gap-1">🔑 Unlocked</span>
+            <span class="text-emerald-400 font-bold flex items-center gap-1">{{ icon('unlock', 'w-3.5 h-3.5') }} Unlocked</span>
             {% else %}
-            <span class="text-amber-400 font-bold flex items-center gap-1">🛡️ Keyholder</span>
+            <span class="text-amber-400 font-bold flex items-center gap-1">{{ icon('shield', 'w-3.5 h-3.5') }} Keyholder</span>
             {% endif %}
 
             {% if sub.is_offline %}
-            <span class="text-slate-400 font-mono">👤 Ручной</span>
+            <span class="text-slate-400 font-mono">{{ icon('profile', 'w-3.5 h-3.5') }} Ручной</span>
             {% else %}
-            <span class="text-indigo-300 font-mono">🌐 Онлайн</span>
+            <span class="text-indigo-300 font-mono">{{ icon('globe', 'w-3.5 h-3.5') }} Онлайн</span>
             {% endif %}
           </div>
         </a>
@@ -120,14 +120,14 @@
           <div class="flex items-center gap-2">
             <h2 class="text-xl font-bold text-slate-100">{{ selected_sub.name }}</h2>
             {% if selected_sub.is_offline %}
-            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-mono border border-slate-600">👤 Ручной Оффлайн Профиль</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-mono border border-slate-600">{{ icon('profile', 'w-3 h-3') }} Ручной Оффлайн Профиль</span>
             {% else %}
-            <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">🌐 Зарегистрированный Нижний</span>
+            <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">{{ icon('globe', 'w-3 h-3') }} Зарегистрированный Нижний</span>
             {% endif %}
 
             {% if selected_sub.telegram_chat_id %}
             <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/30">
-              ✈️ Telegram Подключен
+              {{ icon('telegram', 'w-3 h-3') }} Telegram Подключен
             </span>
             {% endif %}
           </div>
@@ -145,7 +145,7 @@
           <form action="/ds/submissive/{{ selected_sub.id }}/telegram-code" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl shadow transition-all border border-slate-600 flex items-center gap-1">
-              ✈️ Привязать Telegram
+              {{ icon('telegram', 'w-3.5 h-3.5') }} Привязать Telegram
             </button>
           </form>
           {% endif %}
@@ -153,7 +153,7 @@
           <form action="/ds/submissive/{{ selected_sub.id }}/ai-keyholder-spin" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             <button type="submit" class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1">
-              🎰 Рулетка ИИ-Ключника
+              {{ icon('dice', 'w-3.5 h-3.5') }} Рулетка ИИ-Ключника
             </button>
           </form>
 
@@ -166,16 +166,16 @@
       <!-- Decks Tabs Bar -->
       <div class="flex overflow-x-auto gap-2 bg-surface-800 p-1.5 border border-surface-700 rounded-2xl font-mono text-xs">
         <button @click="deckTab = 'chastity'" :class="deckTab === 'chastity' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
-          🔒 1. Chastity & Lock Deck
+          {{ icon('lock', 'w-3.5 h-3.5') }} 1. Chastity & Lock Deck
         </button>
         <button @click="deckTab = 'duties'" :class="deckTab === 'duties' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
-          📋 2. Duties & Verification
+          {{ icon('list', 'w-3.5 h-3.5') }} 2. Duties & Verification
         </button>
         <button @click="deckTab = 'training'" :class="deckTab === 'training' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
-          🏋️ 3. Training Deck
+          {{ icon('training', 'w-3.5 h-3.5') }} 3. Training Deck
         </button>
         <button @click="deckTab = 'telemetry'" :class="deckTab === 'telemetry' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
-          📊 4. Health Telemetry
+          {{ icon('chart', 'w-3.5 h-3.5') }} 4. Health Telemetry
         </button>
       </div>
 
@@ -191,11 +191,11 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
             {% if selected_sub.chastity_status != 'locked' %}
             <button type="submit" name="action" value="lock" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow">
-              🔒 Запереть Замок
+              {{ icon('lock', 'w-3.5 h-3.5') }} Запереть Замок
             </button>
             {% else %}
             <button type="submit" name="action" value="unlock" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">
-              🔑 Отпереть Замок
+              {{ icon('unlock', 'w-3.5 h-3.5') }} Отпереть Замок
             </button>
             {% endif %}
           </form>
@@ -270,7 +270,7 @@
         <h3 class="text-base font-bold text-slate-100">Программы Тренировок & Адаптация Нагрузки</h3>
         <p class="text-xs text-slate-400">Настройка интенсивности многодневных программ удержания и фитнеса.</p>
         <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl text-xs text-slate-300">
-          🟢 Программа активна. Интенсивность подстраивается под состояние Нижнего на основе оценок самочувствия.
+          {{ icon('check-circle', 'w-3.5 h-3.5') }} Программа активна. Интенсивность подстраивается под состояние Нижнего на основе оценок самочувствия.
         </div>
       </div>
 
@@ -315,8 +315,8 @@
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Тип Профиля:</label>
           <select name="is_offline" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
-            <option value="true" selected>👤 Ручной / Оффлайн Профиль (Без аккаунта)</option>
-            <option value="false">🌐 Зарегистрированный пользователь</option>
+            <option value="true" selected>Ручной / Оффлайн Профиль (Без аккаунта)</option>
+            <option value="false">Зарегистрированный пользователь</option>
           </select>
         </div>
         <div class="flex justify-end gap-3 pt-2">

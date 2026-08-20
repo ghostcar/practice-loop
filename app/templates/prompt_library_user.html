@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-6xl mx-auto px-4 py-6" x-data="{ activeTab: 'system' }">
@@ -6,8 +7,7 @@
   <div class="border-b border-surface-700 pb-4 flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-        {% include "components/icon.html" %}
-        <use href="/static/icons/sprite.svg#brain"></use>
+        {{ icon('ai', 'w-6 h-6') }}
         Центральная Библиотека Промптов (Prompt Library)
       </h1>
       <p class="text-sm text-slate-400 mt-1">
@@ -22,14 +22,14 @@
         :class="activeTab === 'system' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
         class="px-4 py-2 rounded-lg font-bold transition-all"
       >
-        🧠 Системные Персоны ({{ system_prompts|length }})
+        {{ icon('ai', 'w-4 h-4') }} Системные Персоны ({{ system_prompts|length }})
       </button>
       <button
         @click="activeTab = 'user'"
         :class="activeTab === 'user' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
         class="px-4 py-2 rounded-lg font-bold transition-all"
       >
-        👤 Пользовательские ({{ user_prompts|length }})
+        {{ icon('profile', 'w-4 h-4') }} Пользовательские ({{ user_prompts|length }})
       </button>
     </div>
   </div>

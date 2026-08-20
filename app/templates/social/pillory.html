@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
@@ -6,8 +7,7 @@
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-        {% include "components/icon.html" %}
-        <use href="/static/icons/sprite.svg#lock"></use>
+        {{ icon('lock', 'w-6 h-6') }}
         Позорный Столб & Голосование Сообщества (Pillory Board)
       </h1>
       <p class="text-xs text-slate-400 mt-1">
@@ -50,19 +50,19 @@
           <input type="hidden" name="publication_id" value="{{ publication.id }}">
 
           <button type="submit" name="vote_type" value="add_15m" class="px-3 py-2 bg-rose-600/80 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all">
-            ⏳ +15 мин
+            {{ icon('clock', 'w-4 h-4') }} +15 мин
           </button>
 
           <button type="submit" name="vote_type" value="add_1h" class="px-3 py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all">
-            ⏳ +1 час
+            {{ icon('clock', 'w-4 h-4') }} +1 час
           </button>
 
           <button type="submit" name="vote_type" value="sub_15m" class="px-3 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all">
-            🔑 -15 мин
+            {{ icon('unlock', 'w-4 h-4') }} -15 мин
           </button>
 
           <button type="submit" name="vote_type" value="assign_task" class="px-3 py-2 pl-accent-bg hover:bg-[color:var(--accent-hover)] rounded-xl text-xs font-bold transition-all">
-            📋 Задание
+            {{ icon('tasks', 'w-4 h-4') }} Задание
           </button>
         </form>
       </div>

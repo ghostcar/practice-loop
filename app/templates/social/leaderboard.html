@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6">
@@ -6,8 +7,7 @@
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-        {% include "components/icon.html" %}
-        <use href="/static/icons/sprite.svg#trophy"></use>
+        {{ icon('trophy', 'w-6 h-6') }}
         Обезличенная Доска Почета & Лидерборд (Hall of Fame)
       </h1>
       <p class="text-xs text-slate-400 mt-1">
@@ -16,7 +16,7 @@
     </div>
 
     <div class="flex items-center gap-2 bg-surface-800 p-2 border border-surface-700 rounded-xl font-mono text-xs text-amber-400">
-      <span>🔥 Поддерживайте коллег и получайте +10 Social XP</span>
+      <span>{{ icon('flame', 'w-4 h-4') }} Поддерживайте коллег и получайте +10 Social XP</span>
     </div>
   </div>
 
@@ -39,7 +39,7 @@
         <div class="flex items-center gap-4 w-full sm:w-auto justify-between">
           <div class="text-right text-xs font-mono">
             <span class="text-emerald-400 font-bold block">Compliance 96%</span>
-            <span class="text-slate-400 text-[11px]">🔥 14 Дней Серия</span>
+            <span class="text-slate-400 text-[11px]">{{ icon('flame', 'w-3.5 h-3.5') }} 14 Дней Серия</span>
           </div>
 
           <!-- Kudos Form -->
@@ -48,13 +48,13 @@
             <input type="hidden" name="target_alias" value="{{ prof.alias }}">
 
             <button type="submit" name="reaction" value="fire" title="Стальная Дисциплина" class="p-1.5 bg-surface-900 hover:bg-surface-700 border border-surface-700 rounded-lg text-xs transition-colors">
-              🔥
+              {{ icon('flame', 'w-4 h-4') }}
             </button>
             <button type="submit" name="reaction" value="shield" title="Безупречный Опт-ин" class="p-1.5 bg-surface-900 hover:bg-surface-700 border border-surface-700 rounded-lg text-xs transition-colors">
-              🛡️
+              {{ icon('shield', 'w-4 h-4') }}
             </button>
             <button type="submit" name="reaction" value="crown" title="Выдающееся Послушание" class="p-1.5 bg-surface-900 hover:bg-surface-700 border border-surface-700 rounded-lg text-xs transition-colors">
-              👑
+              {{ icon('crown', 'w-4 h-4') }}
             </button>
           </form>
         </div>

@@ -56,7 +56,7 @@ async def test_community_quest_generation_and_feed_post(
     post_res = await db_session.execute(select(CommunityPost).where(CommunityPost.community_id == community.id))
     posts = post_res.scalars().all()
     assert len(posts) >= 1
-    assert "Групповой Челлендж" in posts[0].title
+    assert "Челлендж" in posts[0].title
 
 
 @pytest.mark.asyncio

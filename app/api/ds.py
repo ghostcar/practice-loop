@@ -19,6 +19,7 @@ from app.i18n.helpers import detect_locale, detect_theme
 from app.models.ds_suite import AssignedDuty, ChastityLockLog, ManagedSubmissive
 from app.models.user import User
 from app.templates_setup import templates
+from app.tier_guard import require_feature
 
 router = APIRouter(tags=["ds"])
 
@@ -71,6 +72,7 @@ async def ds_command_center_portal_page(
     sub_id: str | None = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _access: None = Depends(require_feature("ds_portal")),
 ):
     """Full-Featured D/s Command Center & Multi-Submissive Portal (Step 73)."""
     from app.models.ds_suite import WearCheckInLog

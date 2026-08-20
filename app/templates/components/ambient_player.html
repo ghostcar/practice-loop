@@ -3,31 +3,31 @@
 <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-4 shadow-md">
     <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
         <div class="flex items-center gap-2">
-            <span class="w-8 h-8 rounded-xl pl-accent-soft flex items-center justify-center font-bold text-sm">🔊</span>
+            <span class="w-8 h-8 rounded-xl pl-accent-soft flex items-center justify-center font-bold text-sm">{{ icon('volume', 'w-5 h-5') }}</span>
             <div>
                 <h3 class="font-bold text-sm text-[color:var(--text)]">Аудио-Ассистент и Эмбиент Сессий</h3>
                 <p class="text-[11px] text-[color:var(--text-muted)]">Звуковое сопровождение (432Гц Aftercare, ритм дыхания, фокусирующий фон)</p>
             </div>
         </div>
         <button type="button" id="ambient-toggle-btn" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold transition-all duration-200">
-            ▶ Запустить Звук
+            {{ icon('play', 'w-4 h-4') }} Запустить Звук
         </button>
     </div>
 
     <!-- Presets Selector -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button type="button" class="ambient-preset-btn p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--accent)] text-left space-y-1" data-preset="aftercare">
-            <div class="font-semibold text-xs text-[color:var(--text)]">🧘 432Гц Aftercare</div>
+            <div class="font-semibold text-xs text-[color:var(--text)]">{{ icon('aftercare', 'w-4 h-4') }} 432Гц Aftercare</div>
             <div class="text-[10px] text-[color:var(--text-muted)]">Успокаивающий эмбиент для восстановления.</div>
         </button>
 
         <button type="button" class="ambient-preset-btn p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] text-left space-y-1" data-preset="pacing">
-            <div class="font-semibold text-xs text-[color:var(--text)]">⏱️ Ритм Дыхания и Поз</div>
+            <div class="font-semibold text-xs text-[color:var(--text)]">{{ icon('timer', 'w-4 h-4') }} Ритм Дыхания и Поз</div>
             <div class="text-[10px] text-[color:var(--text-muted)]">Импульсный метроном для упражнений.</div>
         </button>
 
         <button type="button" class="ambient-preset-btn p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] text-left space-y-1" data-preset="focus">
-            <div class="font-semibold text-xs text-[color:var(--text)]">🔒 Атмосфера Фокуса</div>
+            <div class="font-semibold text-xs text-[color:var(--text)]">{{ icon('lock', 'w-4 h-4') }} Атмосфера Фокуса</div>
             <div class="text-[10px] text-[color:var(--text-muted)]">Глубокий розовый шум для Keyholder-сессий.</div>
         </button>
     </div>
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     osc.connect(gainNode);
     osc.start();
     isPlaying = true;
-    toggleBtn.textContent = '⏹ Остановить Звук';
+    toggleBtn.textContent = 'Остановить Звук';
     toggleBtn.className = 'px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-all duration-200';
   }
 
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
       osc = null;
     }
     isPlaying = false;
-    toggleBtn.textContent = '▶ Запустить Звук';
+    toggleBtn.textContent = 'Запустить Звук';
     toggleBtn.className = 'px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold transition-all duration-200';
   }
 

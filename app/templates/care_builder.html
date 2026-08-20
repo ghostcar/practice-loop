@@ -29,7 +29,7 @@
             <div class="space-y-2">
                 <button type="button" class="add-care-item-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Увлажняющий & Восстанавливающий Гель" data-cat="skincare">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🧴 Увлажняющий Гель</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('lotion', 'w-4 h-4') }} Увлажняющий Гель</span>
                         <span class="text-[10px] pl-accent-soft px-1.5 py-0.5 rounded">Уход</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Успокаивающий гель для кожи после воздействия.</p>
@@ -37,7 +37,7 @@
 
                 <button type="button" class="add-care-item-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Водный Баланс (500мл Воды)" data-cat="hydration">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">💧 Водный Баланс (500мл)</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('droplet', 'w-4 h-4') }} Водный Баланс (500мл)</span>
                         <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">Гидратация</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Обязательное восполнение жидкости после нагрузки.</p>
@@ -45,7 +45,7 @@
 
                 <button type="button" class="add-care-item-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Эмоциональный Чек-ин & Теплый Одеял" data-cat="comfort">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🛋️ Комфорт и Тепло</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('comfort', 'w-4 h-4') }} Комфорт и Тепло</span>
                         <span class="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded">Комфорт</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Эмоциональная поддержка, отдых и сброс напряжения.</p>
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="w-5 h-5 rounded-full bg-[color:var(--surface-soft)] text-center text-[11px] font-bold text-[color:var(--text-muted)]">${idx + 1}</span>
           <span class="font-bold text-[color:var(--text)]">${item.name}</span>
         </div>
-        <button type="button" class="remove-care text-red-400 font-bold" data-idx="${idx}">✕</button>
+        <button type="button" class="remove-care text-red-400 font-bold" data-idx="${idx}">{{ icon('close', 'w-4 h-4') }}</button>
       `;
       canvas.appendChild(div);
     });

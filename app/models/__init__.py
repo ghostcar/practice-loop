@@ -22,6 +22,11 @@ from app.models.ds_suite import (  # noqa: E402
     WearCheckInLog,
 )
 from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: E402
+from app.models.monetization import (  # noqa: E402
+    SubscriptionTier,
+    TemporaryFeaturePromotion,
+    TierFeatureGrant,
+)
 from app.models.prompt_library import PromptLibraryItem  # noqa: E402
 from app.models.quest import Quest, UserQuest  # noqa: E402
 
@@ -42,6 +47,9 @@ __all__ = [
     "ManagedSubmissive",
     "PromptLibraryItem",
     "Quest",
+    "SubscriptionTier",
+    "TemporaryFeaturePromotion",
+    "TierFeatureGrant",
     "UserQuest",
     "WearCheckInLog",
 ]

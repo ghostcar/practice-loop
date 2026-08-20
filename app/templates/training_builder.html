@@ -29,7 +29,7 @@
             <div class="space-y-2">
                 <button type="button" class="add-exercise-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Удержание Позы (Posture Hold)" data-cat="posture" data-body="core">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🧘 Удержание Позы (Posture Hold)</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('activity', 'w-4 h-4') }} Удержание Позы (Posture Hold)</span>
                         <span class="text-[10px] pl-accent-soft px-1.5 py-0.5 rounded">Поза</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Статическое удержание осанки и баланса на время.</p>
@@ -37,7 +37,7 @@
 
                 <button type="button" class="add-exercise-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Приседания / Squats" data-cat="strength" data-body="legs">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🦵 Приседания / Squats</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('training', 'w-4 h-4') }} Приседания / Squats</span>
                         <span class="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Силовое</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Упражнения для ног и кора с отслеживанием подходов.</p>
@@ -45,7 +45,7 @@
 
                 <button type="button" class="add-exercise-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-name="Растяжка и Гибкость" data-cat="flexibility" data-body="full_body">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🤸 Растяжка и Гибкость</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('activity', 'w-4 h-4') }} Растяжка и Гибкость</span>
                         <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">Гибкость</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Комплекс на гибкость спины, бёдер и плечевого пояса.</p>
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
       div.innerHTML = `
         <div class="flex items-center justify-between">
           <span class="font-bold text-[color:var(--text)]">${ex.name}</span>
-          <button type="button" class="remove-ex text-red-400 font-bold" data-idx="${idx}">✕</button>
+          <button type="button" class="remove-ex text-red-400 font-bold" data-idx="${idx}">{{ icon('close', 'w-4 h-4') }}</button>
         </div>
         <div class="grid grid-cols-3 gap-2 text-[11px] text-[color:var(--text-secondary)]">
           <div>Категория: <span class="font-medium text-[color:var(--text)]">${ex.category}</span></div>

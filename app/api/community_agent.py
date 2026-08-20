@@ -28,6 +28,7 @@ from app.models.community_agent import (
 )
 from app.models.user import User
 from app.templates_setup import templates
+from app.tier_guard import require_feature
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ async def community_agent_dashboard_page(
     request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _access: None = Depends(require_feature("community_agent")),
 ):
     """Community Top Agent Cockpit UI."""
     try:

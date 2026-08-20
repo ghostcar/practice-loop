@@ -7,7 +7,7 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
         <div>
             <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
-                📄 Селективный Врачебный Отчёт & Права Приватности
+                {{ icon('report', 'w-6 h-6') }} Селективный Врачебный Отчёт & Права Приватности
             </h1>
             <p class="text-xs text-[color:var(--text-secondary)] mt-1">
                 Экспорт медицинских данных для врачей и специалистов с возможностью точечного исключения препаратов и курсов.
@@ -15,7 +15,7 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/insights" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
-                ← Назад к Инсайтам
+                {{ icon('arrow-left', 'w-3.5 h-3.5') }} Назад к Инсайтам
             </a>
         </div>
     </div>
@@ -26,7 +26,7 @@
             <!-- Medication Exclusions -->
             <div class="space-y-3">
                 <h3 class="font-bold text-xs text-[color:var(--text)] flex items-center justify-between">
-                    <span>💊 Препараты в Отчёте:</span>
+                    <span>{{ icon('medication', 'w-4 h-4') }} Препараты в Отчёте:</span>
                     <span class="text-[10px] text-[color:var(--text-muted)] font-normal">Снимите галочки для скрытия</span>
                 </h3>
                 <div class="space-y-2 max-h-48 overflow-y-auto p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
@@ -46,7 +46,7 @@
             <!-- Care Course Exclusions -->
             <div class="space-y-3">
                 <h3 class="font-bold text-xs text-[color:var(--text)] flex items-center justify-between">
-                    <span>🧴 Курсы Ухода & Процедуры:</span>
+                    <span>{{ icon('lotion', 'w-4 h-4') }} Курсы Ухода & Процедуры:</span>
                     <span class="text-[10px] text-[color:var(--text-muted)] font-normal">Снимите галочки для скрытия</span>
                 </h3>
                 <div class="space-y-2 max-h-48 overflow-y-auto p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
@@ -82,7 +82,7 @@
 
         <div class="flex justify-end">
             <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md inline-flex items-center gap-2">
-                📄 Сформировать Клинический Отчёт
+                {{ icon('report', 'w-4 h-4') }} Сформировать Клинический Отчёт
             </button>
         </div>
     </form>
@@ -96,7 +96,7 @@
                 <p class="text-xs text-zinc-500">Пациент: {{ report.patient_name }} | Сформирован: {{ report.generated_date }}</p>
             </div>
             <button type="button" onclick="window.print()" class="px-3.5 py-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-xs font-semibold hover:bg-zinc-300">
-                🖨️ Печать / Сохранить PDF
+                {{ icon('printer', 'w-4 h-4') }} Печать / Сохранить PDF
             </button>
         </div>
 

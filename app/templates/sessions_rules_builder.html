@@ -7,14 +7,14 @@
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
         <div>
             <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
-                📜 Конструктор Правил и Контрактов Сессий
+                {{ icon('policy', 'w-6 h-6') }} Конструктор Правил и Контрактов Сессий
             </h1>
             <p class="text-xs text-[color:var(--text-secondary)] mt-1">
                 Интерактивное создание правил сессий (Chastity, D/s контракты, штрафные триггеры, авто-переход в Aftercare).
             </p>
         </div>
         <a href="/sessions" class="px-3.5 py-2 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
-            ← Вернуться к Сессиям
+            {{ icon('arrow-left', 'w-3.5 h-3.5') }} Вернуться к Сессиям
         </a>
     </div>
 
@@ -22,11 +22,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Rule Template Palette -->
         <div class="space-y-4">
-            <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">📦 Шаблоны Правил</h2>
+            <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">{{ icon('archive', 'w-4 h-4') }} Шаблоны Правил</h2>
             <div class="space-y-2">
                 <button type="button" class="add-rule-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-type="chastity">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🔒 Правило Чек-инов Chastity</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('lock', 'w-4 h-4') }} Правило Чек-инов Chastity</span>
                         <span class="text-[10px] pl-accent-soft px-1.5 py-0.5 rounded">Контроль</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Контроль регулярных фото-отчётов и штраф при просрочке.</p>
@@ -34,7 +34,7 @@
 
                 <button type="button" class="add-rule-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-type="health_pause">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🩺 Триггер Заботы (Health Pause)</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('health', 'w-4 h-4') }} Триггер Заботы (Health Pause)</span>
                         <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">Забота</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Авто-приостановка или переключение на Aftercare при усталости.</p>
@@ -42,7 +42,7 @@
 
                 <button type="button" class="add-rule-btn w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-left hover:border-[color:var(--accent)] transition-colors space-y-1" data-type="task_quota">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-[color:var(--text)]">🎯 Квота Дисциплинарных Задач</span>
+                        <span class="font-semibold text-xs text-[color:var(--text)]">{{ icon('target', 'w-4 h-4') }} Квота Дисциплинарных Задач</span>
                         <span class="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Дисциплина</span>
                     </div>
                     <p class="text-[11px] text-[color:var(--text-muted)]">Требование выполнения N задач в день с начислением XP.</p>
@@ -53,7 +53,7 @@
         <!-- Canvas Active Rules List -->
         <div class="lg:col-span-2 space-y-4">
             <div class="flex items-center justify-between">
-                <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">🛠️ Активный Контракт Сессии</h2>
+                <h2 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">{{ icon('tools', 'w-4 h-4') }} Активный Контракт Сессии</h2>
                 <button type="button" id="clear-rules-btn" class="text-xs text-[color:var(--danger)] hover:underline">Очистить всё</button>
             </div>
 
@@ -68,7 +68,7 @@
                 <h3 class="text-xs font-semibold text-[color:var(--text)]">Предпросмотр JSON Контракта</h3>
                 <textarea id="rules-json-output" readonly rows="4" class="w-full p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] font-mono text-[11px] text-[color:var(--text)]"></textarea>
                 <button type="button" id="copy-json-btn" class="w-full py-2.5 pl-accent-bg text-xs font-semibold rounded-lg hover:bg-[color:var(--accent-hover)]">
-                    📋 Скопировать Контракт для Сессии
+                    {{ icon('copy', 'w-4 h-4') }} Скопировать Контракт для Сессии
                 </button>
             </div>
         </div>
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       div.innerHTML = `
         <div class="flex items-center justify-between">
           <span class="font-semibold text-[color:var(--text)]">${r.title}</span>
-          <button type="button" class="remove-rule text-red-400 font-bold" data-idx="${idx}">✕</button>
+          <button type="button" class="remove-rule text-red-400 font-bold" data-idx="${idx}">{{ icon('close', 'w-4 h-4') }}</button>
         </div>
         <pre class="text-[10px] text-[color:var(--text-secondary)] font-mono">${JSON.stringify(r, None, 2)}</pre>
       `;

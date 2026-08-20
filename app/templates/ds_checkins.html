@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ checkinModal: false }">
@@ -6,8 +7,7 @@
   <div class="flex items-center justify-between border-b border-surface-700 pb-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-        {% include "components/icon.html" %}
-        <use href="/static/icons/sprite.svg#keyholder"></use>
+        {{ icon('tag', 'w-6 h-6') }}
         Инспекция Номерных Пломб & Wear Check-Ins (Step 65)
       </h1>
       <p class="text-sm text-slate-400 mt-1">
@@ -41,7 +41,7 @@
           {% for log in checkins %}
           <tr class="hover:bg-surface-750/50 transition-colors">
             <td class="p-3 font-mono text-slate-400">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td class="p-3 font-mono font-bold text-amber-300">🏷️ {{ log.tag_number or 'Без пломбы' }}</td>
+            <td class="p-3 font-mono font-bold text-amber-300">{{ icon('tag', 'w-3.5 h-3.5') }} {{ log.tag_number or 'Без пломбы' }}</td>
             <td class="p-3">
               <span class="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold {% if log.comfort_score >= 4 %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% elif log.comfort_score == 3 %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% else %}bg-rose-500/20 text-rose-300 border border-rose-500/30{% endif %}">
                 {{ log.comfort_score }} / 5
@@ -50,7 +50,7 @@
             <td class="p-3">
               {% if log.is_verified_closed %}
               <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono text-[10px] border border-indigo-500/30">
-                ✅ Photo & Vision Verified
+                {{ icon('check-circle', 'w-3.5 h-3.5') }} Photo & Vision Verified
               </span>
               {% else %}
               <span class="text-slate-500 font-mono text-[10px]">Ручная запись</span>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
@@ -6,8 +7,7 @@
   <div class="flex items-center justify-between border-b border-surface-700 pb-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
-        {% include "components/icon.html" %}
-        <use href="/static/icons/sprite.svg#training"></use>
+        {{ icon('training', 'w-6 h-6') }}
         Адаптивные Программы Тренировок (Dynamic Adaptive Training)
       </h1>
       <p class="text-sm text-slate-400 mt-1">
@@ -48,10 +48,10 @@
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1">Сфера / Вектор Практики:</label>
               <select name="focus_domain" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
-                <option value="bladder_control">💧 Контроль мочевого пузыря & удержания</option>
-                <option value="chastity_rampup">🔒 Рамп-Ап Длительности Chastity</option>
-                <option value="posture_stamina">🧘 Выносливость Физических Поз</option>
-                <option value="custom">⚙️ Кастомная Дисциплинарная Программа</option>
+                <option value="bladder_control">Контроль мочевого пузыря & удержания</option>
+                <option value="chastity_rampup">Рамп-Ап Длительности Chastity</option>
+                <option value="posture_stamina">Выносливость Физических Поз</option>
+                <option value="custom">Кастомная Дисциплинарная Программа</option>
               </select>
             </div>
 
@@ -144,7 +144,7 @@
 
             {% if step.ai_adjustment_reason %}
             <div class="text-xs text-slate-400 italic bg-slate-800/60 p-2 rounded border border-slate-700">
-              🤖 ИИ: {{ step.ai_adjustment_reason }}
+              {{ icon('ai', 'w-3.5 h-3.5') }} ИИ: {{ step.ai_adjustment_reason }}
             </div>
             {% endif %}
 
@@ -200,8 +200,7 @@
   {% else %}
   <div class="bg-surface-800 border border-surface-700 rounded-2xl p-12 text-center space-y-4 shadow-xl">
     <div class="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center">
-      {% include "components/icon.html" %}
-      <use href="/static/icons/sprite.svg#training"></use>
+      {{ icon('training', 'w-6 h-6') }}
     </div>
     <h3 class="text-lg font-bold text-slate-200">Нет активных адаптивных программ</h3>
     <p class="text-xs text-slate-400 max-w-md mx-auto">

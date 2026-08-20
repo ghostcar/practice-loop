@@ -476,7 +476,7 @@ Emoji-иллюстрации запрещены. Допустима проста
 
 ## 10. Иконки и графика
 
-- **единый набор — собственный PracticeLoop icon pack** (`design/icons/`, 127 иконок + sprite +
+- **единый набор — собственный PracticeLoop icon pack** (`design/icons/`, 139 иконок + sprite +
   favicon; генератор `tools/generate_icon_pack.py`). Внешний icon package и CDN не добавлять.
   Интеграция — по `design/icons/INTEGRATION_AGENT.md`: runtime `app/static/icons/sprite.svg`,
   макрос `components/icon.html`, `aria`-правила, карты навигации/действий;

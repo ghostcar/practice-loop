@@ -60,7 +60,7 @@
 
         <div class="pt-2 flex justify-end">
             <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md inline-flex items-center gap-2">
-                🚀 Сгенерировать Карточки Активностей
+                {{ icon('rocket', 'w-4 h-4') }} Сгенерировать Карточки Активностей
             </button>
         </div>
     </form>
@@ -69,7 +69,7 @@
     {% if generated_items %}
     <div class="space-y-4">
         <h3 class="font-bold text-sm text-[color:var(--text)] border-b border-[color:var(--border)] pb-2">
-            ✨ Сгенерированные Карточки (Ожидают проверки / Review Needed)
+            {{ icon('sparkles', 'w-4 h-4') }} Сгенерированные Карточки (Ожидают проверки / Review Needed)
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {% for item in generated_items %}

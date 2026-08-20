@@ -2,7 +2,7 @@
 <div id="schema-builder-root" class="pl-surface rounded-xl border border-[color:var(--border)] p-6 space-y-6">
   <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
     <div>
-      <h3 class="text-base font-semibold text-[color:var(--text)]">🛠️ Визуальный Конструктор Схемы Параметров</h3>
+      <h3 class="text-base font-semibold text-[color:var(--text)]">{{ icon('tools', 'w-5 h-5') }} Визуальный Конструктор Схемы Параметров</h3>
       <p class="text-xs text-[color:var(--text-secondary)]">Интерактивное создание ползунков, диапазонов, чекбоксов и диапазонов длительности.</p>
     </div>
     <button type="button" id="sb-add-field-btn" class="px-3 py-1.5 pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-medium rounded-lg">
@@ -17,7 +17,7 @@
 
   <!-- Live Preview Container -->
   <div class="border-t border-[color:var(--border)] pt-5">
-    <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider mb-3">👁️ Предпросмотр формы параметров:</h4>
+    <h4 class="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider mb-3">{{ icon('eye', 'w-4 h-4') }} Предпросмотр формы параметров:</h4>
     <div id="sb-live-preview" class="p-4 bg-[color:var(--surface-soft)] rounded-lg border border-[color:var(--border)] min-h-[60px]">
       <p class="text-xs text-[color:var(--text-muted)]">Добавьте хотя бы один параметр для генерации интерфейса.</p>
     </div>

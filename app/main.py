@@ -240,6 +240,7 @@ app.include_router(settings_router)
 app.include_router(push_router)
 app.include_router(tokens_router)
 
+from app.api.admin_tiers import router as admin_tiers_router  # noqa: E402
 from app.api.community_agent import router as community_agent_router  # noqa: E402
 from app.api.ds import router as ds_router  # noqa: E402
 from app.api.insights_analytics import router as insights_analytics_router  # noqa: E402
@@ -251,6 +252,7 @@ app.include_router(ds_router)
 app.include_router(llm_exchange_router)
 app.include_router(insights_analytics_router)
 app.include_router(community_agent_router)
+app.include_router(admin_tiers_router)
 
 # ---------------------------------------------------------------------------
 # Tracker routes

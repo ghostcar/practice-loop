@@ -1,15 +1,16 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto space-y-6">
   <!-- Page Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl font-bold text-[color:var(--text)]">🛠️ Визуальный Конструктор Схем Активностей</h1>
+      <h1 class="text-xl font-bold text-[color:var(--text)]">{{ icon('tools', 'w-6 h-6') }} Визуальный Конструктор Схем Активностей</h1>
       <p class="text-xs text-[color:var(--text-secondary)]">Создание и редактирование допустимых диапазонов и параметров задач.</p>
     </div>
     <a href="/admin" class="px-3 py-1.5 pl-surface border border-[color:var(--border)] text-xs font-medium rounded-lg hover:bg-[color:var(--surface-soft)]">
-      ← Вернуться в Админку
+      {{ icon('arrow-left', 'w-3.5 h-3.5') }} Вернуться в Админку
     </a>
   </div>
 
