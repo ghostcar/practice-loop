@@ -1,4 +1,4 @@
-"""Core Agent Loop Engine for PracticeLoop Agent (Step 44-46 / ADR-123)."""
+"""Core Agent Loop Engine for PracticeLoop Agent (Step 44-49 / ADR-123 & ADR-124)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.memory import format_memory_context, recall_user_memories
-from app.agent.persona import build_persona_system_prompt
+from app.agent.persona import build_persona_system_prompt, fetch_persona_system_prompt
 from app.agent.tools import AGENT_TOOLS_SCHEMA, execute_agent_tool
 from app.llm.client import call_llm
 from app.llm.pipeline import get_active_llm_config
@@ -24,7 +24,7 @@ async def run_practice_agent(
     db: AsyncSession,
     persona_role: str = "keyholder",
 ) -> dict[str, Any]:
-    """Runs single-turn or multi-turn agent tool execution loop with memory recall."""
+    """Runs single-turn or multi-turn agent tool execution loop with memory recall & prompt library."""
     llm_config = await get_active_llm_config(db, user_id)
     if not llm_config:
         return {
@@ -42,7 +42,12 @@ async def run_practice_agent(
         "recalled_memories": memory_str,
     }
 
-    system_prompt = build_persona_system_prompt(persona_role, user_context=user_context)
+    # Fetch customized system prompt from Prompt Library or dynamic builder
+    try:
+        system_prompt = await fetch_persona_system_prompt(db=db, persona_role=persona_role, user_context=user_context)
+    except Exception as exc:
+        logger.warning("Prompt library fetch failed, using default persona builder: %s", exc)
+        system_prompt = build_persona_system_prompt(persona_role, user_context=user_context)
 
     messages = [
         {"role": "system", "content": system_prompt},

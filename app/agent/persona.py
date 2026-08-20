@@ -1,8 +1,13 @@
-"""Persona Manager for PracticeLoop Agent (Step 44-45 / ADR-123)."""
+"""Persona Manager for PracticeLoop Agent (Step 44-49 / ADR-123 & ADR-124)."""
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 PERSONA_PROMPTS = {
     "keyholder": (
@@ -37,3 +42,24 @@ def build_persona_system_prompt(persona_role: str, user_context: dict[str, Any] 
         extra += f"\n- Активный текущий контекст: {user_context}"
 
     return base_prompt + extra
+
+
+async def fetch_persona_system_prompt(
+    db: AsyncSession,
+    persona_role: str,
+    user_context: dict[str, Any] | None = None,
+) -> str:
+    """Async variant fetching customized system prompt template from Prompt Library."""
+    from app.prompt_library import get_prompt_template
+
+    key_map = {
+        "keyholder": "persona.keyholder",
+        "controller": "persona.controller",
+        "care_guide": "persona.care_guide",
+        "observer": "persona.observer",
+    }
+
+    p_key = key_map.get(persona_role, "persona.keyholder")
+    ctx_str = str(user_context) if user_context else "Нет дополнительных данных."
+
+    return await get_prompt_template(db=db, key=p_key, safety_context=ctx_str)

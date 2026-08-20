@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#cpu"></use>
+        Библиотека Промптов ИИ (Prompt Library)
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Управление системными промптами и пользовательскими шаблонами без изменения исходного кода.
+      </p>
+    </div>
+  </div>
+
+  <!-- Dual Library Tabs (Alpine / CSS state) -->
+  <div x-data="{ tab: 'system' }" class="space-y-6">
+    <!-- Tabs Header -->
+    <div class="flex border-b border-surface-700 space-x-4">
+      <button
+        @click="tab = 'system'"
+        :class="tab === 'system' ? 'border-amber-500 text-amber-400 font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        class="py-3 px-4 border-b-2 text-sm transition-colors flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+        </svg>
+        Системные Промпты (System Prompts)
+        <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          {{ system_prompts|length }}
+        </span>
+      </button>
+
+      <button
+        @click="tab = 'user'"
+        :class="tab === 'user' ? 'border-indigo-500 text-indigo-400 font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        class="py-3 px-4 border-b-2 text-sm transition-colors flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+        Пользовательские Промпты (User Prompts)
+        <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          {{ user_prompts|length }}
+        </span>
+      </button>
+    </div>
+
+    <!-- System Prompts Tab -->
+    <div x-show="tab === 'system'" class="space-y-4">
+      <div class="grid grid-cols-1 gap-6">
+        {% for prompt in system_prompts %}
+        <div class="bg-surface-800 border border-surface-700 rounded-xl p-5 shadow-lg space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600">
+                  {{ prompt.key }}
+                </span>
+                {% if prompt.is_customized %}
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Модифицирован
+                </span>
+                {% else %}
+                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  По умолчанию
+                </span>
+                {% endif %}
+              </div>
+              <h3 class="text-lg font-semibold text-slate-100 mt-1">{{ prompt.title }}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">{{ prompt.description }}</p>
+            </div>
+
+            {% if prompt.is_customized %}
+            <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" onsubmit="return confirm('Сбросить промпт к заводским настройкам?');">
+              <button type="submit" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors">
+                Сбросить по умолчанию
+              </button>
+            </form>
+            {% endif %}
+          </div>
+
+          <form action="/admin/prompts/{{ prompt.id }}/update" method="POST" class="space-y-3">
+            <label class="block text-xs font-medium text-slate-300">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
+            <textarea
+              name="template_content"
+              rows="4"
+              class="w-full bg-surface-900 border border-surface-600 rounded-lg p-3 text-sm text-slate-100 font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+            >{{ prompt.template_content }}</textarea>
+
+            <div class="flex justify-end">
+              <button
+                type="submit"
+                class="px-4 py-2 text-xs font-medium bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+              >
+                Сохранить Промпт
+              </button>
+            </div>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- User Prompts Tab -->
+    <div x-show="tab === 'user'" class="space-y-4">
+      <div class="grid grid-cols-1 gap-6">
+        {% for prompt in user_prompts %}
+        <div class="bg-surface-800 border border-surface-700 rounded-xl p-5 shadow-lg space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600">
+                  {{ prompt.key }}
+                </span>
+                {% if prompt.is_customized %}
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Модифицирован
+                </span>
+                {% else %}
+                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  По умолчанию
+                </span>
+                {% endif %}
+              </div>
+              <h3 class="text-lg font-semibold text-slate-100 mt-1">{{ prompt.title }}</h3>
+              <p class="text-xs text-slate-400 mt-0.5">{{ prompt.description }}</p>
+            </div>
+
+            {% if prompt.is_customized %}
+            <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" onsubmit="return confirm('Сбросить промпт к заводским настройкам?');">
+              <button type="submit" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors">
+                Сбросить по умолчанию
+              </button>
+            </form>
+            {% endif %}
+          </div>
+
+          <form action="/admin/prompts/{{ prompt.id }}/update" method="POST" class="space-y-3">
+            <label class="block text-xs font-medium text-slate-300">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
+            <textarea
+              name="template_content"
+              rows="4"
+              class="w-full bg-surface-900 border border-surface-600 rounded-lg p-3 text-sm text-slate-100 font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+            >{{ prompt.template_content }}</textarea>
+
+            <div class="flex justify-end">
+              <button
+                type="submit"
+                class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+              >
+                Сохранить Промпт
+              </button>
+            </div>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

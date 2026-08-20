@@ -308,3 +308,97 @@ async def admin_ai_generator_execute(
             "generated_items": generated_items,
         },
     )
+
+
+@router.get("/prompts", response_class=HTMLResponse)
+async def admin_prompts_hub(
+    request: Request,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Prompt Library Management Hub for System and User prompts."""
+    from app.models.prompt_library import PromptLibraryItem
+    from app.prompt_library import seed_prompt_library
+
+    # Auto seed if empty
+    await seed_prompt_library(db)
+
+    items = (
+        await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))
+    ).scalars().all()
+
+    system_prompts = [i for i in items if i.library_type == "system"]
+    user_prompts = [i for i in items if i.library_type == "user"]
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_prompts.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+            "system_prompts": system_prompts,
+            "user_prompts": user_prompts,
+        },
+    )
+
+
+@router.post("/prompts/{prompt_id}/update")
+async def update_prompt_item(
+    prompt_id: uuid.UUID,
+    template_content: str = Form(...),
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Updates a prompt template content in the library."""
+    from app.models.prompt_library import PromptLibraryItem
+
+    item = (
+        await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))
+    ).scalar_one_or_none()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Prompt item not found")
+
+    item.template_content = template_content
+    item.is_customized = True
+    item.updated_at = datetime.now(UTC)
+
+    await db.commit()
+    return RedirectResponse(url="/admin/prompts", status_code=303)
+
+
+@router.post("/prompts/{prompt_id}/reset")
+async def reset_prompt_item(
+    prompt_id: uuid.UUID,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Resets a customized prompt template back to system default."""
+    from app.models.prompt_library import PromptLibraryItem
+    from app.prompt_library import DEFAULT_PROMPT_REGISTRY
+
+    item = (
+        await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))
+    ).scalar_one_or_none()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Prompt item not found")
+
+    for reg in DEFAULT_PROMPT_REGISTRY:
+        if reg["key"] == item.key:
+            item.template_content = reg["template_content"]
+            item.is_customized = False
+            item.updated_at = datetime.now(UTC)
+            await db.commit()
+            break
+
+    return RedirectResponse(url="/admin/prompts", status_code=303)
+
