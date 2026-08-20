@@ -82,6 +82,63 @@
     </div>
   </div>
 
+  <!-- Chaster.app Attached Extensions Active Deck -->
+  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
+    <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 font-mono flex items-center gap-1.5">
+        🧩 Активные Расширения Сессии (Attached Chaster Extensions)
+      </h3>
+      <span class="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">Chaster Standard</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
+      <!-- Extension 1: Wheel -->
+      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+        <div class="text-xl">🎰</div>
+        <span class="text-xs font-bold text-slate-100 block">Рулетка ИИ</span>
+        <button @click="alert('🎰 Рулетка ИИ-Ключника крутится! +30 мин добавлено.')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-[10px] rounded shadow">
+          Крутить
+        </button>
+      </div>
+
+      <!-- Extension 2: Pillory -->
+      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+        <div class="text-xl">🏛️</div>
+        <span class="text-xs font-bold text-slate-100 block">Pillory Mode</span>
+        <span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 font-mono text-[10px] rounded border border-rose-500/30 block">
+          3 Голоса
+        </span>
+      </div>
+
+      <!-- Extension 3: Tag Seal -->
+      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+        <div class="text-xl">🏷️</div>
+        <span class="text-xs font-bold text-slate-100 block">Пломба</span>
+        <a href="/ds/checkins" class="px-2 py-1 bg-surface-700 hover:bg-surface-600 text-slate-200 font-bold text-[10px] rounded block">
+          Инспекция
+        </a>
+      </div>
+
+      <!-- Extension 4: Peer Review -->
+      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+        <div class="text-xl">📸</div>
+        <span class="text-xs font-bold text-slate-100 block">Народный Зачет</span>
+        <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 font-mono text-[10px] rounded border border-emerald-500/30 block">
+          2/3 Проверено
+        </span>
+      </div>
+
+      <!-- Extension 5: Dice Roll -->
+      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+        <div class="text-xl">🎲</div>
+        <span class="text-xs font-bold text-slate-100 block">Кубик Удачи</span>
+        <button @click="alert('🎲 Кубик выпал: 5! Множитель x1.5 XP на следующее задание.')" class="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] rounded shadow">
+          Бросить
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Live Quick Action Panel -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- Log Task Complete Card -->

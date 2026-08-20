@@ -875,16 +875,35 @@ async def create_custom_session(
     title: str = Form(...),
     ai_role: str = Form(default="keyholder"),
     notes: str = Form(default=""),
+    ext_wheel: bool = Form(default=False),
+    ext_pillory: bool = Form(default=False),
+    ext_tag_seal: bool = Form(default=False),
+    ext_peer_review: bool = Form(default=False),
+    ext_dice: bool = Form(default=False),
+    ext_aftercare: bool = Form(default=False),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Creates a custom configured session from interactive form."""
+    """Creates a custom configured session with Chaster.app style attached extensions."""
+    extensions_config = {
+        "wheel": ext_wheel,
+        "pillory": ext_pillory,
+        "tag_seal": ext_tag_seal,
+        "peer_review": ext_peer_review,
+        "dice": ext_dice,
+        "aftercare": ext_aftercare,
+    }
+
     session = ActivitySession(
         owner_id=user.id,
         status="created",
         title=title.strip()[:200],
         notes=notes.strip()[:1000] or None,
-        session_rules={"ai_role": ai_role, "custom_session": True},
+        session_rules={
+            "ai_role": ai_role,
+            "custom_session": True,
+            "extensions": extensions_config,
+        },
     )
     db.add(session)
     await db.flush()

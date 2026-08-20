@@ -133,6 +133,63 @@
                 <textarea name="notes" rows="3" placeholder="Укажите особые условия, задействованное оборудование или пожелания..." class="w-full p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)]"></textarea>
             </div>
 
+            <!-- Chaster.app Style Extensions Selector Matrix -->
+            <div class="space-y-3 pt-4 border-t border-[color:var(--border)]">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 font-mono flex items-center gap-1.5">
+                    🧩 Модули Расширений Сессии (Chaster.app Extensions)
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <label class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-indigo-500/50 flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="ext_wheel" value="true" checked class="mt-1 rounded text-indigo-600">
+                        <div>
+                            <span class="text-xs font-bold text-[color:var(--text)] block">🎰 Рулетка ИИ-Ключника</span>
+                            <span class="text-[11px] text-[color:var(--text-secondary)]">Случайное продление или сокращение времени</span>
+                        </div>
+                    </label>
+
+                    <label class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-rose-500/50 flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="ext_pillory" value="true" checked class="mt-1 rounded text-rose-600">
+                        <div>
+                            <span class="text-xs font-bold text-[color:var(--text)] block">🏛️ Позорный Столб (Pillory)</span>
+                            <span class="text-[11px] text-[color:var(--text-secondary)]">Публичное голосование сообщества за время</span>
+                        </div>
+                    </label>
+
+                    <label class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-amber-500/50 flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="ext_tag_seal" value="true" class="mt-1 rounded text-amber-600">
+                        <div>
+                            <span class="text-xs font-bold text-[color:var(--text)] block">🏷️ Номерные Пломбы</span>
+                            <span class="text-[11px] text-[color:var(--text-secondary)]">Периодический инспекционный фото-чек-ин</span>
+                        </div>
+                    </label>
+
+                    <label class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-emerald-500/50 flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="ext_peer_review" value="true" class="mt-1 rounded text-emerald-600">
+                        <div>
+                            <span class="text-xs font-bold text-[color:var(--text)] block">📸 Народная Проверка</span>
+                            <span class="text-[11px] text-[color:var(--text-secondary)]">Зачет выполнений по 3 голосам сообщества</span>
+                        </div>
+                    </label>
+
+                    <label class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-purple-500/50 flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="ext_dice" value="true" class="mt-1 rounded text-purple-600">
+                        <div>
+                            <span class="text-xs font-bold text-[color:var(--text)] block">🎲 Кубик Удачи</span>
+                            <span class="text-[11px] text-[color:var(--text-secondary)]">Случайные множители XP перед задачами</span>
+                        </div>
+                    </label>
+
+                    <label class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-blue-500/50 flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="ext_aftercare" value="true" checked class="mt-1 rounded text-blue-600">
+                        <div>
+                            <span class="text-xs font-bold text-[color:var(--text)] block">💊 Протокол Послеухода</span>
+                            <span class="text-[11px] text-[color:var(--text-secondary)]">Обязательный чек-лист восстановления</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div class="flex items-center justify-end gap-3 pt-2 border-t border-[color:var(--border)]">
                 <a href="/sessions" class="px-4 py-2 text-xs font-medium pl-text-muted hover:text-[color:var(--text)]">Отмена</a>
                 <button type="submit" class="px-5 py-2.5 pl-accent-bg text-xs font-semibold rounded-xl hover:bg-[color:var(--accent-hover)]">
