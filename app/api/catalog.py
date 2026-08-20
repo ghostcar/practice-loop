@@ -159,10 +159,17 @@ async def public_catalog_page(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Public Catalog & Community Template Exchange (Step 78 / ADR-091)."""
+    """Public Catalog & Community Template Exchange (Step 78 / Audit A-03 fix)."""
+    from sqlalchemy import or_
+
     result = await db.execute(
         select(ActivityCatalogItem)
-        .where(ActivityCatalogItem.owner_id.is_(None))
+        .where(
+            or_(
+                ActivityCatalogItem.owner_id.is_(None),
+                ActivityCatalogItem.is_public.is_(True),
+            )
+        )
         .order_by(ActivityCatalogItem.name.asc())
     )
     items = result.scalars().all()
@@ -182,6 +189,40 @@ async def public_catalog_page(
             "items": items,
         },
     )
+
+
+@router.post("/catalog/import-template")
+async def import_public_template_endpoint(
+    item_id: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Imports a public catalog template into user's personal catalog (Audit A-03 fix)."""
+    try:
+        template_uuid = uuid.UUID(item_id)
+    except ValueError:
+        raise HTTPException(400, "Invalid item_id UUID") from None
+
+    template = (
+        await db.execute(select(ActivityCatalogItem).where(ActivityCatalogItem.id == template_uuid))
+    ).scalar_one_or_none()
+
+    if not template:
+        raise HTTPException(404, "Template item not found")
+
+    new_item = ActivityCatalogItem(
+        name=f"{template.name} (Копия)",
+        description=template.description,
+        category_id=template.category_id,
+        tags=template.tags,
+        domains=template.domains,
+        owner_id=user.id,
+        is_public=False,
+    )
+    db.add(new_item)
+    await db.commit()
+
+    return RedirectResponse(url="/entities/catalog", status_code=303)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

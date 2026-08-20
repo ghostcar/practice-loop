@@ -314,10 +314,10 @@ async def create_grant_invite_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Generates an invite code for a Top to claim portal delegation."""
+    """Generates an invite code for a Top to claim portal delegation (Audit A-08 fix: entropy)."""
     from app.models.ds_suite import CapabilityGrant
 
-    invite_code = f"DS-{uuid.uuid4().hex[:6].upper()}"
+    invite_code = f"DS-{uuid.uuid4().hex[:12].upper()}"
     grant = CapabilityGrant(
         sub_user_id=user.id,
         invite_code=invite_code,
@@ -334,7 +334,7 @@ async def claim_grant_invite_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Top inputs an invite code to claim delegation over a submissive."""
+    """Top inputs an invite code to claim delegation over a submissive (Audit A-08 fix: non-self & deduplication)."""
     from app.models.ds_suite import CapabilityGrant, ManagedSubmissive
 
     clean_code = invite_code.strip().upper()
@@ -350,20 +350,33 @@ async def claim_grant_invite_endpoint(
     if not grant:
         raise HTTPException(404, "Invalid or expired invite code")
 
+    if grant.sub_user_id == user.id:
+        raise HTTPException(400, "Cannot claim self-delegation grant")
+
     grant.top_user_id = user.id
     grant.status = "active"
 
-    # Create linked ManagedSubmissive profile
-    sub_profile = ManagedSubmissive(
-        top_user_id=user.id,
-        sub_user_id=grant.sub_user_id,
-        name=f"Submissive User ({grant.sub_user_id.hex[:6]})",
-        is_offline=False,
-        chastity_status="unlocked",
-        compliance_score=100,
-    )
-    db.add(grant)
-    db.add(sub_profile)
+    # Check if a ManagedSubmissive link already exists for this pair
+    existing_sub = (
+        await db.execute(
+            select(ManagedSubmissive).where(
+                ManagedSubmissive.top_user_id == user.id,
+                ManagedSubmissive.sub_user_id == grant.sub_user_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not existing_sub:
+        sub_profile = ManagedSubmissive(
+            top_user_id=user.id,
+            sub_user_id=grant.sub_user_id,
+            name=f"Submissive User ({grant.sub_user_id.hex[:6]})",
+            is_offline=False,
+            chastity_status="unlocked",
+            compliance_score=100,
+        )
+        db.add(sub_profile)
+
     await db.commit()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
