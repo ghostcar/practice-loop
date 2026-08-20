@@ -595,6 +595,57 @@ async def mark_read(
 # --- Sessions ---
 
 
+@router.get("/sessions/live", response_class=HTMLResponse)
+async def sessions_live_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Interactive Session Live Timer & Control Center page."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="sessions_live.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+        },
+    )
+
+
+@router.post("/sessions/live/complete")
+async def live_session_complete_endpoint(
+    notes: str = Form(""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Logs completion of active live session task."""
+    from app.gamification.handler import on_task_completed
+
+    await on_task_completed(db, user.id, task_type="live_hold", xp_award=50)
+    return RedirectResponse(url="/sessions/live", status_code=303)
+
+
+@router.post("/sessions/live/interrupt")
+async def live_session_interrupt_endpoint(
+    reason: str = Form(""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Logs early interruption of live session with penalty penalty deduction."""
+    from app.gamification.handler import on_task_interrupted
+
+    await on_task_interrupted(db, user.id, task_type="live_hold", penalty_xp=25)
+    return RedirectResponse(url="/sessions/live", status_code=303)
+
+
 @router.get("/sessions", response_class=HTMLResponse)
 async def sessions_page(
     request: Request,

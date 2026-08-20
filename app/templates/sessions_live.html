@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto px-4 py-6" x-data="liveTimer()">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#timer"></use>
+        Центр Управления Сессией & Live-Таймер
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Интерактивный контроль текущих практик, отсчет удержаний поз и фиксация результатов в реальном времени.
+      </p>
+    </div>
+
+    <a href="/sessions" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-semibold rounded-xl border border-surface-700 transition-colors">
+      ← Список Сессий
+    </a>
+  </div>
+
+  <!-- Live Countdown Display Card -->
+  <div class="bg-surface-800 border border-surface-700 rounded-3xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+    <!-- Ambient Glow -->
+    <div class="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+      СЕССИЯ АКТИВНА · ИИ-КОНТРОЛЬ ВКЛЮЧЕН
+    </div>
+
+    <!-- Main Circular Progress Ring -->
+    <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
+      <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        <!-- Background Circle -->
+        <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="6" class="text-surface-900" fill="none" />
+        <!-- Progress Circle -->
+        <circle
+          cx="50"
+          cy="50"
+          r="42"
+          stroke="url(#timer-gradient)"
+          stroke-width="6"
+          stroke-dasharray="263.89"
+          :stroke-dashoffset="dashOffset"
+          stroke-linecap="round"
+          class="transition-all duration-1000 ease-linear"
+          fill="none"
+        />
+        <defs>
+          <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#6366f1" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <!-- Digital Counter Inside Circle -->
+      <div class="absolute inset-0 flex flex-col items-center justify-center space-y-1">
+        <span class="text-4xl font-extrabold font-mono text-slate-100 tracking-tight" x-text="formattedTime">00:00</span>
+        <span class="text-xs text-slate-400 font-medium" x-text="statusText">Удержание Позы</span>
+      </div>
+    </div>
+
+    <!-- Timer Controls -->
+    <div class="flex items-center justify-center gap-4 pt-2">
+      <button
+        @click="toggleTimer()"
+        class="px-6 py-3 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-bold text-sm rounded-2xl shadow-xl transition-all flex items-center gap-2"
+      >
+        <span x-text="isRunning ? '⏸ Пауза' : '▶ Старт'"></span>
+      </button>
+
+      <button
+        @click="resetTimer()"
+        class="px-4 py-3 bg-surface-900 hover:bg-surface-700 text-slate-300 font-medium text-xs rounded-2xl border border-surface-700 transition-colors"
+      >
+        🔄 Сброс
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Quick Action Panel -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Log Task Complete Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 shadow-xl space-y-3">
+      <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        Завершить Задание Сессии
+      </h3>
+      <p class="text-xs text-slate-400">Зафиксировать успешное выполнение и начислить XP.</p>
+
+      <form action="/sessions/live/complete" method="POST" class="space-y-3 pt-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Заметки / Ощущения:</label>
+          <input
+            type="text"
+            name="notes"
+            placeholder="Успешно удержано 20 минут..."
+            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2 text-xs text-slate-100"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow"
+        >
+          Завершить & Получить XP
+        </button>
+      </form>
+    </div>
+
+    <!-- Interrupt Session Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 shadow-xl space-y-3">
+      <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        Прервать Сессию (Штраф)
+      </h3>
+      <p class="text-xs text-slate-400">Досрочная остановка сессии со списком штрафных очков.</p>
+
+      <form action="/sessions/live/interrupt" method="POST" class="space-y-3 pt-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Причина остановки:</label>
+          <input
+            type="text"
+            name="reason"
+            placeholder="Преждевременный срыв / Усталость..."
+            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2 text-xs text-slate-100"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition-colors shadow"
+        >
+          Прервать Сессию
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function liveTimer() {
+  return {
+    totalSeconds: 1200, // 20 minutes default
+    remainingSeconds: 1200,
+    isRunning: false,
+    timerId: null,
+    statusText: 'Удержание Позы',
+
+    get formattedTime() {
+      const mins = Math.floor(this.remainingSeconds / 60);
+      const secs = this.remainingSeconds % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    },
+
+    get dashOffset() {
+      const totalDash = 263.89;
+      const progress = this.remainingSeconds / this.totalSeconds;
+      return totalDash * (1 - progress);
+    },
+
+    toggleTimer() {
+      if (this.isRunning) {
+        clearInterval(this.timerId);
+        this.isRunning = false;
+        this.statusText = 'Пауза';
+      } else {
+        this.isRunning = true;
+        this.statusText = 'Идёт Отсчет...';
+        this.timerId = setInterval(() => {
+          if (this.remainingSeconds > 0) {
+            this.remainingSeconds--;
+          } else {
+            clearInterval(this.timerId);
+            this.isRunning = false;
+            this.statusText = 'Время Истекло!';
+            alert('⏱ Время удержания завершено!');
+          }
+        }, 1000);
+      }
+    },
+
+    resetTimer() {
+      clearInterval(this.timerId);
+      this.isRunning = false;
+      this.remainingSeconds = this.totalSeconds;
+      this.statusText = 'Готов к Старту';
+    }
+  }
+}
+</script>
+{% endblock %}
