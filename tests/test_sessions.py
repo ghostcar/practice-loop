@@ -296,7 +296,7 @@ async def test_live_complete_requires_owned_active_session(
     db_session.add(sess)
     await db_session.commit()
 
-    prog_before = await (
+    prog_before = (
         await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
     ).scalar_one_or_none()
     xp_before = prog_before.xp if prog_before else 0
@@ -313,7 +313,7 @@ async def test_live_complete_requires_owned_active_session(
     await db_session.refresh(sess)
     assert sess.status == "ended"
 
-    prog_after = await (
+    prog_after = (
         await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
     ).scalar_one_or_none()
     assert prog_after.xp == xp_before + 50
@@ -326,7 +326,17 @@ async def test_live_complete_requires_owned_active_session(
     )
     assert resp2.status_code == 303
 
-    prog_after_replay = await (
+    prog_after_replay = (
         await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))
     ).scalar_one_or_none()
     assert prog_after_replay.xp == xp_before + 50  # XP unchanged!
+
+
+@pytest.mark.asyncio
+async def test_live_complete_rejects_malformed_session_id(auth_client: AsyncClient):
+    response = await auth_client.post(
+        "/sessions/live/complete",
+        data={"session_id": "not-a-uuid"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 400

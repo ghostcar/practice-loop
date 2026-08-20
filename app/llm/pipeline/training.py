@@ -71,7 +71,7 @@ async def generate_daily_plan(
 
     # Equipment from Inventory & Health Recovery Status (Step 22)
     from app.models.health import HealthState
-    from app.models.inventory import InventoryItem
+    from app.models.life import InventoryItem
 
     inventory_items = (await db.execute(select(InventoryItem).where(InventoryItem.user_id == user_id))).scalars().all()
     equip_names = [f"{i.name} ({i.category})" for i in inventory_items]

@@ -978,8 +978,12 @@ async def create_session(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Redirect blank session creation to interactive wizard."""
-    return RedirectResponse(url="/sessions/wizard", status_code=303)
+    """Create a minimal draft session; the wizard remains an optional UI."""
+    session = ActivitySession(owner_id=user.id, status="created", title="Session")
+    db.add(session)
+    await db.flush()
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="created"))
+    return RedirectResponse(url="/sessions", status_code=303)
 
 
 async def _owned_session(db: AsyncSession, session_id: uuid.UUID, user: User) -> ActivitySession:

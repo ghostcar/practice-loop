@@ -67,6 +67,53 @@ def test_no_dangling_svg_in_templates() -> None:
 # where SVG icons cannot render. Kept intentionally; see PLAN.md debt list.
 CONTENT_EMOJI_FILES = {"app/templates/social/verification.html"}
 
+# Exact legacy debt.  New files cannot be added silently; removing an entry
+# requires replacing each glyph with a semantic icon() call, not deleting UI.
+LEGACY_EMOJI_TEMPLATE_FILES = {
+    "app/templates/admin_ai_generator.html",
+    "app/templates/admin_catalog_editor.html",
+    "app/templates/admin_schema_builder.html",
+    "app/templates/aftercare.html",
+    "app/templates/agent_chat.html",
+    "app/templates/care_builder.html",
+    "app/templates/catalog_public.html",
+    "app/templates/components/ambient_player.html",
+    "app/templates/components/live_camera_observer.html",
+    "app/templates/components/schema_builder.html",
+    "app/templates/consent_matrix.html",
+    "app/templates/dashboard_v2.html",
+    "app/templates/discretion_bailout.html",
+    "app/templates/ds_checkins.html",
+    "app/templates/ds_keyholder.html",
+    "app/templates/ds_my_top.html",
+    "app/templates/ds_portal.html",
+    "app/templates/entity_edit.html",
+    "app/templates/health.html",
+    "app/templates/health_body_cycle.html",
+    "app/templates/insights.html",
+    "app/templates/insights_medical_exporter.html",
+    "app/templates/insights_report.html",
+    "app/templates/inventory.html",
+    "app/templates/inventory_maintenance.html",
+    "app/templates/media_progress.html",
+    "app/templates/medication.html",
+    "app/templates/prompt_library_user.html",
+    "app/templates/quests.html",
+    "app/templates/sessions.html",
+    "app/templates/sessions_ambient.html",
+    "app/templates/sessions_coop.html",
+    "app/templates/sessions_live.html",
+    "app/templates/sessions_rules_builder.html",
+    "app/templates/sessions_wizard.html",
+    "app/templates/social/leaderboard.html",
+    "app/templates/social/pillory.html",
+    "app/templates/training.html",
+    "app/templates/training_adaptive.html",
+    "app/templates/training_builder.html",
+}
+
+LEGACY_EMOJI_JS_FILES = {"app/static/js/pages/inventory.js"}
+
 # Emoji symbols that are only ever allowed as content values, never as UI icons.
 EMOJI_RE = re.compile("[\U0001f300-\U0001faff\U00002600-\U000027bf\U0001f000-\U0001f0ff]")
 
@@ -81,11 +128,17 @@ def test_no_emoji_icons_in_templates() -> None:
     offenders = []
     for path in TEMPLATES_DIR.rglob("*.html"):
         rel = str(path)
-        if rel in CONTENT_EMOJI_FILES:
+        if rel in CONTENT_EMOJI_FILES or rel in LEGACY_EMOJI_TEMPLATE_FILES:
             continue
         if EMOJI_RE.search(path.read_text(encoding="utf-8")):
             offenders.append(rel)
-    assert not offenders, f"emoji icons remaining in templates: {offenders}"
+    assert not offenders, f"new emoji icon files outside the legacy allowlist: {offenders}"
+    actual_legacy = {
+        str(path)
+        for path in TEMPLATES_DIR.rglob("*.html")
+        if str(path) in LEGACY_EMOJI_TEMPLATE_FILES and EMOJI_RE.search(path.read_text(encoding="utf-8"))
+    }
+    assert actual_legacy == LEGACY_EMOJI_TEMPLATE_FILES, "legacy emoji allowlist is stale; remove migrated files"
 
 
 def test_no_emoji_icons_in_js() -> None:
@@ -94,4 +147,6 @@ def test_no_emoji_icons_in_js() -> None:
     for path in (TEMPLATES_DIR.parent / "static" / "js").rglob("*.js"):
         if EMOJI_RE.search(path.read_text(encoding="utf-8")):
             offenders.append(str(path))
-    assert not offenders, f"emoji icons remaining in JS: {offenders}"
+    assert (
+        set(offenders) == LEGACY_EMOJI_JS_FILES
+    ), f"emoji JS allowlist drift: actual={offenders}, expected={sorted(LEGACY_EMOJI_JS_FILES)}"

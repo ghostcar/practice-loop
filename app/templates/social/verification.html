@@ -26,7 +26,7 @@
     <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
       <div class="flex items-center justify-between border-b border-surface-700 pb-3">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-mono font-bold text-indigo-400">@anonymous_sub</span>
+          <span class="text-xs font-mono font-bold pl-accent-text">@anonymous_sub</span>
           <span class="px-2 py-0.5 rounded bg-surface-900 text-slate-400 text-[10px] font-mono">🏷️ Номерная Пломба #SEAL-8841</span>
         </div>
         <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-500/30">
@@ -39,7 +39,7 @@
         <div class="bg-surface-900/90 border border-surface-700 rounded-xl p-4 flex flex-col items-center justify-center min-h-[140px] text-center space-y-2">
           <span class="text-3xl">📷</span>
           <span class="text-xs font-mono text-slate-400">Фото Пломбы Замка</span>
-          <span class="text-[10px] text-emerald-400 font-mono">Vision AI: Verified 98%</span>
+          <span class="text-[10px] text-slate-400 font-mono">Демонстрационный макет — AI-проверка не выполнялась</span>
         </div>
 
         <div class="md:col-span-2 space-y-3 flex flex-col justify-between">
@@ -59,11 +59,11 @@
             </div>
 
             <div class="flex items-center gap-3 pt-2">
-              <button @click="alert('✅ Голос «Зачтено» принят! +10 XP')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition-all">
-                ✅ Одобрить (+10 XP)
+              <button type="button" disabled title="Прототип: голосование ещё не подключено к этому макету" class="px-4 py-2 bg-surface-700 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">
+                Одобрить — скоро
               </button>
-              <button @click="alert('❌ Голос «Отклонено» принят')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow transition-all">
-                ❌ Отклонить
+              <button type="button" disabled title="Прототип: голосование ещё не подключено к этому макету" class="px-4 py-2 bg-surface-700 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">
+                Отклонить — скоро
               </button>
             </div>
           </div>

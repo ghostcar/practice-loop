@@ -29,9 +29,9 @@ async def test_create_custom_session_with_extensions(auth_client: AsyncClient, d
             "ext_pillory": "true",
             "ext_aftercare": "true",
         },
-        follow_redirects=True,
+        follow_redirects=False,
     )
-    assert response.status_code == 200
+    assert response.status_code == 303
 
     result = await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id))
     session = result.scalars().first()

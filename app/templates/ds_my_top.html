@@ -28,11 +28,20 @@
   <div class="flex justify-between items-center bg-surface-800 p-4 border border-surface-700 rounded-2xl">
     <div>
       <h2 class="text-sm font-bold text-slate-100">Передать доступ Верхнему</h2>
-      <p class="text-xs text-slate-400">Сгенерируйте 6-значный инвайт-код и передайте его вашему Верхнему</p>
+      <p class="text-xs text-slate-400">Выберите точные права и передайте одноразовый код вашему Верхнему. Код действует 24 часа.</p>
     </div>
 
-    <form action="/ds/grant/create" method="POST">
+    <form action="/ds/grant/create" method="POST" class="space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      <fieldset class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-300">
+        <label><input type="checkbox" name="scope_tasks" value="true"> Задачи и план</label>
+        <label><input type="checkbox" name="scope_training" value="true"> Тренировки</label>
+        <label><input type="checkbox" name="scope_inventory" value="true"> Инвентарь</label>
+        <label><input type="checkbox" name="scope_health_view" value="true"> Здоровье: просмотр</label>
+        <label><input type="checkbox" name="scope_medication" value="true"> Медикаменты</label>
+        <label><input type="checkbox" name="scope_aftercare" value="true"> Уход</label>
+        <label><input type="checkbox" name="scope_chastity" value="true"> Таймеры и замки</label>
+      </fieldset>
       <button type="submit" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-bold text-xs rounded-xl shadow hover:from-rose-500 hover:to-indigo-500 transition-all">
         + Сгенерировать Инвайт-Код
       </button>
@@ -80,25 +89,25 @@
       <!-- Scope Breakdown Grid -->
       <div class="pt-4 border-t border-surface-700 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          🔒 Замки Chastity: <span class="text-emerald-400 font-bold">Вкл</span>
+          Замки: <span class="font-bold">{{ 'Вкл' if grant.scope_chastity else 'Выкл' }}</span>
         </div>
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          📋 Задачи & План: <span class="text-emerald-400 font-bold">Вкл</span>
+          Задачи и план: <span class="font-bold">{{ 'Вкл' if grant.scope_tasks else 'Выкл' }}</span>
         </div>
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          🏋️ Тренировки: <span class="text-emerald-400 font-bold">Вкл</span>
+          Тренировки: <span class="font-bold">{{ 'Вкл' if grant.scope_training else 'Выкл' }}</span>
         </div>
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          💊 Медикаменты: <span class="text-emerald-400 font-bold">Вкл</span>
+          Медикаменты: <span class="font-bold">{{ 'Вкл' if grant.scope_medication else 'Выкл' }}</span>
         </div>
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          💆 Уход Aftercare: <span class="text-emerald-400 font-bold">Вкл</span>
+          Уход: <span class="font-bold">{{ 'Вкл' if grant.scope_aftercare else 'Выкл' }}</span>
         </div>
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          📦 Инвентарь: <span class="text-emerald-400 font-bold">Вкл</span>
+          Инвентарь: <span class="font-bold">{{ 'Вкл' if grant.scope_inventory else 'Выкл' }}</span>
         </div>
         <div class="p-2 bg-surface-900/60 rounded-lg flex items-center gap-2 text-slate-300">
-          📊 Анализы & Здоровье: <span class="text-indigo-400 font-bold">Просмотр</span>
+          Здоровье: <span class="font-bold">{{ 'Просмотр' if grant.scope_health_view else 'Выкл' }}</span>
         </div>
       </div>
     </div>

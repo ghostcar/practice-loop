@@ -16,29 +16,28 @@
     </div>
 
     <div class="flex items-center gap-2 bg-surface-800 p-2 border border-surface-700 rounded-xl font-mono text-xs text-amber-400">
-      <span>🪙 +15 Social XP за каждый голос</span>
+        <span>+15 Social XP за первый голос по публикации</span>
     </div>
   </div>
 
   <!-- Pillory Active Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for sub in submissives %}
+    {% for publication in publications %}
     <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between hover:border-rose-500/50 transition-all">
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-sm font-bold text-slate-100">{{ sub.name }}</span>
+          <span class="text-sm font-bold text-slate-100">{{ publication.snapshot.get('title', 'Публичная сессия') }}</span>
           <span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono text-xs font-bold border border-rose-500/30">
-            🔒 Locked
+            Опубликовано добровольно
           </span>
         </div>
 
         <p class="text-xs text-slate-400 font-mono bg-surface-900/60 p-2.5 rounded-xl border border-surface-700">
-          Правила: {{ sub.rules_notes or 'Обычный режим дисциплины.' }}
+          {{ publication.snapshot.get('summary', 'Владелец опубликовал обезличенный снимок сессии.') }}
         </p>
 
         <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
-          <span>Послушание: <strong class="text-emerald-400">{{ sub.compliance_score }}%</strong></span>
-          <span>Голосов за день: <strong class="text-amber-400">4</strong></span>
+          <span>Публикация: <strong class="text-emerald-400">{{ publication.created_at.strftime('%Y-%m-%d %H:%M') }}</strong></span>
         </div>
       </div>
 
@@ -48,7 +47,7 @@
 
         <form action="/social/pillory/vote" method="POST" class="grid grid-cols-2 gap-2">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <input type="hidden" name="sub_id" value="{{ sub.id }}">
+          <input type="hidden" name="publication_id" value="{{ publication.id }}">
 
           <button type="submit" name="vote_type" value="add_15m" class="px-3 py-2 bg-rose-600/80 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all">
             ⏳ +15 мин
@@ -62,7 +61,7 @@
             🔑 -15 мин
           </button>
 
-          <button type="submit" name="vote_type" value="assign_task" class="px-3 py-2 bg-indigo-600/80 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all">
+          <button type="submit" name="vote_type" value="assign_task" class="px-3 py-2 pl-accent-bg hover:bg-[color:var(--accent-hover)] rounded-xl text-xs font-bold transition-all">
             📋 Задание
           </button>
         </form>

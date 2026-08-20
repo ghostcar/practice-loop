@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -49,6 +49,8 @@ class ManagedSubmissive(Base):
     lock_logs: Mapped[list[ChastityLockLog]] = relationship(
         "ChastityLockLog", back_populates="managed_submissive", cascade="all, delete-orphan"
     )
+
+    __table_args__ = (UniqueConstraint("top_user_id", "sub_user_id", name="uq_managed_sub_registered_pair"),)
 
 
 class AssignedDuty(Base):
@@ -118,9 +120,24 @@ class CapabilityGrant(Base):
     scope_health_view: Mapped[bool] = mapped_column(Boolean, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     sub_user: Mapped[User] = relationship("User", foreign_keys=[sub_user_id])
     top_user: Mapped[User | None] = relationship("User", foreign_keys=[top_user_id])
+
+
+class CapabilityGrantClaimAttempt(Base):
+    """Durable, secret-free audit record used to rate-limit invite claims."""
+
+    __tablename__ = "capability_grant_claim_attempts"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    actor_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    invite_code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    succeeded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True)
 
 
 class WearCheckInLog(Base):

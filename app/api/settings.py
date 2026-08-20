@@ -207,5 +207,5 @@ async def toggle_discretion_endpoint(
     raw["discretion"]["mode"] = mode
     user.prefs = raw
     db.add(user)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/discretion/bailout", status_code=303)

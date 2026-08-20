@@ -230,7 +230,7 @@ async def import_public_template_endpoint(
         is_public=False,
     )
     db.add(new_item)
-    await db.commit()
+    await db.flush()
 
     return RedirectResponse(url="/entities/catalog", status_code=303)
 

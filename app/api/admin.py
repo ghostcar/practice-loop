@@ -367,7 +367,7 @@ async def update_prompt_item(
     item.is_customized = True
     item.updated_at = datetime.now(UTC)
 
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/admin/prompts", status_code=303)
 
 
@@ -391,7 +391,7 @@ async def reset_prompt_item(
             item.template_content = reg["template_content"]
             item.is_customized = False
             item.updated_at = datetime.now(UTC)
-            await db.commit()
+            await db.flush()
             break
 
     return RedirectResponse(url="/admin/prompts", status_code=303)

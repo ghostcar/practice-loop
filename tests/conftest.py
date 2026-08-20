@@ -6,9 +6,12 @@ from collections.abc import AsyncGenerator
 
 # Enable LockTimer Core for tests (must be set before app import).
 os.environ.setdefault("LOCKTIMER_CORE_ENABLED", "true")
+os.environ.setdefault("KB_CONTEXT_ENABLED", "false")
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.auth import create_access_token, hash_password
@@ -79,32 +82,62 @@ from app.templates_setup import templates
 templates.env.cache = None
 
 
+@pytest.fixture(scope="session")
+def _database_path(tmp_path_factory) -> str:
+    """Create the complete SQLite schema once, independently of event loops."""
+    database_path = tmp_path_factory.mktemp("practiceloop-db") / "tests.sqlite3"
+    sync_engine = create_engine(f"sqlite:///{database_path}")
+    try:
+        Base.metadata.create_all(sync_engine)
+    finally:
+        sync_engine.dispose()
+    return str(database_path)
+
+
 @pytest_asyncio.fixture(scope="function")
-async def _engine():
-    """Create engine and tables — fresh per test for isolation."""
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def _engine(_database_path: str):
+    """Open a lightweight async engine over the session-scoped schema.
+
+    Rebuilding the complete metadata for every test dominated the suite runtime
+    (more than 1,200 full create_all passes).  The connection-level transaction
+    in ``db_session`` is rolled back after each test, including application code
+    that calls ``Session.commit()``.
+    """
+    engine = create_async_engine(f"sqlite+aiosqlite:///{_database_path}", echo=False)
     yield engine
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def db_session(_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Provide a test database session with fresh tables."""
-    test_factory = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
+    """Provide an isolated session without rebuilding the schema."""
+    async with _engine.connect() as connection:
+        # SQLite defers BEGIN until the first write.  A Session savepoint could
+        # otherwise become the outermost transaction and Session.commit()
+        # would persist data into the shared test database.  Materialize the
+        # outer transaction before creating any savepoint.
+        await connection.exec_driver_sql("BEGIN")
+        test_factory = async_sessionmaker(
+            bind=connection,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+        )
 
-    async with test_factory() as session:
+        async with test_factory() as session:
 
-        async def override_get_db():
-            yield session
+            async def override_get_db():
+                yield session
 
-        app.dependency_overrides[get_db] = override_get_db
+            app.dependency_overrides[get_db] = override_get_db
 
-        yield session
+            try:
+                yield session
+            finally:
+                app.dependency_overrides.clear()
+                await session.close()
 
-        await session.rollback()
-        app.dependency_overrides.clear()
+        await connection.rollback()
 
 
 @pytest_asyncio.fixture
@@ -116,17 +149,23 @@ async def async_client(db_session) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest_asyncio.fixture
-async def test_user(db_session: AsyncSession) -> User:
+async def test_user(db_session: AsyncSession, _test_password_hash: str) -> User:
     """Create a test user and return it."""
     user = User(
         email="test@example.com",
-        password_hash=hash_password("secret123"),
+        password_hash=_test_password_hash,
         locale="en",
         theme="dark",
     )
     db_session.add(user)
     await db_session.flush()
     return user
+
+
+@pytest.fixture(scope="session")
+def _test_password_hash() -> str:
+    """Hash the shared fixture password once; password tests use real calls."""
+    return hash_password("secret123")
 
 
 @pytest_asyncio.fixture

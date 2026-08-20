@@ -597,24 +597,27 @@ async def insights_report_page(
 ):
     """Printable / Downloadable Monthly Practice & Analytics Report."""
     from app.models.activity_log import ActivityLog
-    from app.models.progress import UserProgress
 
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    total_logs = (
-        await db.execute(select(func.count(ActivityLog.id)).where(ActivityLog.user_id == user.id))
-    ).scalar() or 0
-
-    progress = (await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))).scalar_one_or_none()
-
-    total_xp = progress.xp if progress else 0
+    totals = (
+        await db.execute(
+            select(
+                func.count(ActivityLog.id),
+                func.count(ActivityLog.id).filter(ActivityLog.status == "completed"),
+                func.count(ActivityLog.id).filter(ActivityLog.status == "stopped"),
+            ).where(ActivityLog.user_id == user.id)
+        )
+    ).one()
+    total_logs, completed_logs, stopped_logs = (int(value or 0) for value in totals)
+    completion_rate = round((completed_logs / total_logs) * 100) if total_logs else 0
 
     stats = {
         "total_logs": total_logs,
-        "completion_rate": 100,
-        "total_xp": total_xp,
+        "completion_rate": completion_rate,
+        "stopped_logs": stopped_logs,
     }
 
     return templates.TemplateResponse(

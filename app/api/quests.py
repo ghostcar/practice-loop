@@ -46,7 +46,7 @@ async def quests_hub_page(
             new_uq = UserQuest(user_id=user.id, quest_id=q.id, current_progress=0, status="active")
             db.add(new_uq)
 
-    await db.commit()
+    await db.flush()
 
     # Refetch updated user quests with loaded relationships
     user_quests = (
@@ -105,7 +105,7 @@ async def claim_quest_reward(
         db.add(progress)
 
     progress.xp += quest.reward_xp
-    await db.commit()
+    await db.flush()
 
     return RedirectResponse(url="/achievements/quests", status_code=303)
 

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -154,7 +156,7 @@ async def create_managed_submissive_endpoint(
         compliance_score=100,
     )
     db.add(sub_profile)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
@@ -196,7 +198,7 @@ async def lock_action_endpoint(
     )
     db.add(sub)
     db.add(log)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
@@ -232,7 +234,7 @@ async def assign_duty_endpoint(
         status="pending",
     )
     db.add(duty)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
@@ -265,7 +267,7 @@ async def verify_duty_endpoint(
 
     duty.verification_notes = notes
     db.add(duty)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
@@ -311,20 +313,43 @@ async def my_top_delegation_page(
 
 @router.post("/ds/grant/create")
 async def create_grant_invite_endpoint(
+    scope_chastity: bool = Form(default=False),
+    scope_tasks: bool = Form(default=False),
+    scope_training: bool = Form(default=False),
+    scope_medication: bool = Form(default=False),
+    scope_aftercare: bool = Form(default=False),
+    scope_inventory: bool = Form(default=False),
+    scope_health_view: bool = Form(default=False),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Generates an invite code for a Top to claim portal delegation (Audit A-08 fix: entropy)."""
+    from datetime import timedelta
+
     from app.models.ds_suite import CapabilityGrant
+
+    selected_scopes = {
+        "scope_chastity": scope_chastity,
+        "scope_tasks": scope_tasks,
+        "scope_training": scope_training,
+        "scope_medication": scope_medication,
+        "scope_aftercare": scope_aftercare,
+        "scope_inventory": scope_inventory,
+        "scope_health_view": scope_health_view,
+    }
+    if not any(selected_scopes.values()):
+        raise HTTPException(400, "Select at least one delegated capability")
 
     invite_code = f"DS-{uuid.uuid4().hex[:12].upper()}"
     grant = CapabilityGrant(
         sub_user_id=user.id,
         invite_code=invite_code,
         status="pending",
+        expires_at=datetime.now(UTC) + timedelta(hours=24),
+        **selected_scopes,
     )
     db.add(grant)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/my-top", status_code=303)
 
 
@@ -335,26 +360,49 @@ async def claim_grant_invite_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     """Top inputs an invite code to claim delegation over a submissive (Audit A-08 fix: non-self & deduplication)."""
-    from app.models.ds_suite import CapabilityGrant, ManagedSubmissive
+    from app.models.ds_suite import CapabilityGrant, CapabilityGrantClaimAttempt, ManagedSubmissive
 
     clean_code = invite_code.strip().upper()
+    window_start = datetime.now(UTC) - timedelta(minutes=15)
+    recent_attempts = await db.scalar(
+        select(func.count())
+        .select_from(CapabilityGrantClaimAttempt)
+        .where(
+            CapabilityGrantClaimAttempt.actor_id == user.id,
+            CapabilityGrantClaimAttempt.created_at >= window_start,
+        )
+    )
+    if (recent_attempts or 0) >= 10:
+        return PlainTextResponse("Too many invite claim attempts", status_code=429)
+
+    attempt = CapabilityGrantClaimAttempt(
+        actor_id=user.id,
+        invite_code_hash=sha256(clean_code.encode("utf-8")).hexdigest(),
+        succeeded=False,
+    )
+    db.add(attempt)
     grant = (
         await db.execute(
-            select(CapabilityGrant).where(
+            select(CapabilityGrant)
+            .where(
                 CapabilityGrant.invite_code == clean_code,
                 CapabilityGrant.status == "pending",
+                CapabilityGrant.expires_at > datetime.now(UTC),
             )
+            .with_for_update()
         )
     ).scalar_one_or_none()
 
     if not grant:
-        raise HTTPException(404, "Invalid or expired invite code")
+        await db.flush()
+        return PlainTextResponse("Invalid or expired invite code", status_code=404)
 
     if grant.sub_user_id == user.id:
         raise HTTPException(400, "Cannot claim self-delegation grant")
 
     grant.top_user_id = user.id
     grant.status = "active"
+    attempt.succeeded = True
 
     # Check if a ManagedSubmissive link already exists for this pair
     existing_sub = (
@@ -377,7 +425,7 @@ async def claim_grant_invite_endpoint(
         )
         db.add(sub_profile)
 
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
@@ -405,7 +453,7 @@ async def revoke_grant_endpoint(
 
     grant.status = "revoked"
     db.add(grant)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/my-top", status_code=303)
 
 
@@ -473,7 +521,7 @@ async def log_wear_checkin_endpoint(
         is_verified_closed=bool(photo_url),
     )
     db.add(checkin)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/checkins", status_code=303)
 
 
@@ -516,7 +564,7 @@ async def ai_keyholder_spin_endpoint(
     )
     db.add(sub)
     db.add(log)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
@@ -546,5 +594,5 @@ async def generate_submissive_telegram_code_endpoint(
     sub.telegram_link_code = code
     sub.telegram_link_code_expires = datetime.now(UTC) + timedelta(minutes=30)
     db.add(sub)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url=f"/ds/portal?sub_id={sub.id}", status_code=303)

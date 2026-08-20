@@ -7,7 +7,7 @@ Routes:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,17 +72,29 @@ async def send_kudos_endpoint(
     """POST /social/kudos — Send Kudos reaction to a community member (Audit A-07 fix)."""
     from app.gamification.handler import get_or_create_progress
     from app.platform.social.models import SocialProfile
+    from app.platform.social.repositories import create_encouragement
 
-    valid_reactions = {"fire", "shield", "crown"}
-    if reaction not in valid_reactions:
-        reaction = "fire"
+    reaction_map = {"fire": "motivate", "shield": "support", "crown": "celebrate"}
+    if reaction not in reaction_map:
+        raise HTTPException(400, "Invalid reaction")
 
     target_profile = (
         (await db.execute(select(SocialProfile).where(SocialProfile.alias == target_alias.strip()))).scalars().first()
     )
 
-    # Award XP to the target user if profile exists and is not self
-    if target_profile and target_profile.user_id != user.id:
+    if target_profile is None:
+        raise HTTPException(404, "Social profile not found")
+    if target_profile.user_id == user.id:
+        raise HTTPException(400, "Cannot send kudos to yourself")
+
+    encouragement = await create_encouragement(
+        db,
+        user.id,
+        "profile",
+        target_profile.id,
+        reaction_map[reaction],
+    )
+    if encouragement is not None:
         target_prog = await get_or_create_progress(db, target_profile.user_id)
         target_prog.xp += 10
 

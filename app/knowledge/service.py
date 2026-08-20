@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,8 @@ KB_MAX_FRAGMENT_CHARS = 500
 
 
 def kb_available() -> bool:
+    if os.getenv("KB_CONTEXT_ENABLED", "true").strip().lower() not in {"1", "true", "yes", "on"}:
+        return False
     from app.knowledge.index import kb_backend_available
 
     ok, _ = kb_backend_available()
@@ -46,8 +49,10 @@ async def search_knowledge(
     limit: int = 5,
 ) -> dict:
     """JSON-API entry: {query, results: [{text, source, score}], available: bool}."""
+    if not kb_available():
+        return {"query": query, "results": [], "available": False}
     results = await retrieve_relevant(db, user_id, query, limit=limit)
-    return {"query": query, "results": results, "available": kb_available()}
+    return {"query": query, "results": results, "available": True}
 
 
 def format_kb_context(fragments: list[dict], max_chars: int = KB_MAX_FRAGMENT_CHARS) -> str | None:

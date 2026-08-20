@@ -962,5 +962,5 @@ async def log_body_cycle_endpoint(
         notes=notes,
     )
     db.add(log_entry)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/health/body-cycle", status_code=303)

@@ -204,3 +204,56 @@ UUID, interrupt, конкурентных запросов и cross-user private
 Commit `2097688` закрывает пять важных технических дефектов и заметно улучшает live-session и
 frontend runtime. Но remediation не завершён, а CI остаётся заведомо красным. Проект пригоден
 для дальнейшей локальной проверки владельцем; к multi-user или публичному доступу не готов.
+
+## 10. Результат исправляющей серии после аудита
+
+Исправляющая серия выполнена тем же независимым агентом после явного разрешения владельца.
+Итоговый непрерывный прогон: **1249 passed, 1 skipped за 199.78 s (3:19)**. До оптимизации полный
+suite занимал более 10 минут, а отдельный weekly-planner test — 32.5 s.
+
+Основные изменения:
+
+- тестовая схема SQLite создаётся один раз, а изоляция обеспечивается внешней транзакцией и
+  savepoints; общий bcrypt hash фикстурного пользователя вычисляется один раз;
+- тесты больше не обращаются к Omniroute/Private KB из локального `.env`;
+  `KB_CONTEXT_ENABLED=false` сокращает weekly-planner call с 32.5 s до 0.14 s;
+- cookie-authenticated `/api/v2/*` больше не обходят CSRF; bearer-запросы без session cookie
+  остаются совместимыми;
+- Pillory читает только explicit immutable `SocialPublication` snapshots и создаёт один durable
+  advisory vote на пользователя/публикацию; приватные D/s rows не раскрываются и не мутируются;
+- Kudos создаёт `SocialEncouragement`, валидирует target/self/reaction и начисляет XP только при
+  первой успешно сохранённой реакции;
+- CapabilityGrant получил 24-часовой expiry, явный выбор scopes, row lock при claim, durable
+  hashed attempt audit, лимит 10 попыток/15 минут и DB uniqueness активной пары;
+- добавлены session/adaptive/grant CHECK и UNIQUE constraints, новая migration `081`;
+- targeted routers переведены с ручного commit на request transaction owner;
+- fake state-changing controls отключены или явно помечены прототипом; фиктивная radar chart
+  удалена; Insights report больше не показывает вымышленные 100%/XP;
+- raw inline SVG удалены, отсутствующие имена заменены существующими иконками PracticeLoop;
+- добавлены negative/idempotency tests для malformed live UUID, private catalog import,
+  Pillory, Kudos и grants.
+
+Обновлённая оценка пунктов:
+
+| Пункт | Результат серии |
+|---|---|
+| R-01 | CLOSED: Memory state обновляется отдельным финальным commit |
+| R-02–R-04 | CLOSED; PostgreSQL row lock и negative UUID test |
+| R-05–R-07 | CLOSED для реализованных endpoints через Social projection/persistence/dedup |
+| R-08 | CLOSED + cross-user negative test |
+| R-09 | CLOSED в основном scope; остаётся желательным отдельный двухтранзакционный PostgreSQL race test |
+| R-10 | CLOSED |
+| R-11 | PARTIAL: ложные state-changing controls исправлены; legacy emoji/inline-JS оформлены точным allowlist и требуют отдельной семантической миграции |
+| R-12 | PARTIAL: затронутые и ещё четыре найденных router очищены; исторический allowlist других routers остаётся |
+| R-13 | SUBSTANTIALLY CLOSED для перечисленных session/adaptive/grant invariants; дальнейшие domain constraints добавляются по мере декомпозиции |
+| R-14 | FALSE POSITIVE: `library_type="user"` означает LLM message role, это глобальный admin-managed registry, а не персональная пользовательская библиотека |
+| R-15 | PARTIAL: transactional repositories улучшены, но полная декомпозиция крупных legacy routers остаётся архитектурной работой |
+| R-16 | CLOSED для текущего scope: полный suite green, добавлены persistence/negative/idempotency tests |
+
+Новые дефекты, обнаруженные полным прогоном и исправленные в той же серии:
+
+- несуществующий импорт `app.models.inventory` в training pipeline;
+- CSRF exemption всего `/api/v2/` при cookie authentication;
+- внешний KB timeout в unit/integration tests и degraded search path;
+- Insights → gamification coupling вопреки relief-only boundary;
+- stale UI assertions, icon names и raw SVG, из-за которых CI не мог быть green.

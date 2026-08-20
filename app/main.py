@@ -110,11 +110,7 @@ app = FastAPI(title="Practice Loop", version=__version__, lifespan=lifespan)
 
 @app.middleware("http")
 async def csrf_middleware(request: Request, call_next):
-    if (
-        request.url.path.startswith("/static")
-        or request.url.path == "/healthz"
-        or request.url.path.startswith("/api/v2/")
-    ):
+    if request.url.path.startswith("/static") or request.url.path == "/healthz":
         return await call_next(request)
     try:
         await verify_csrf(request)

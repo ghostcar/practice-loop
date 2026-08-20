@@ -10,6 +10,7 @@ from app.models.body_cycle import BodyCycleLog  # noqa: E402
 from app.models.ds_suite import (  # noqa: E402
     AssignedDuty,
     CapabilityGrant,
+    CapabilityGrantClaimAttempt,
     ChastityLockLog,
     ManagedSubmissive,
     WearCheckInLog,
@@ -25,6 +26,7 @@ __all__ = [
     "AssignedDuty",
     "BodyCycleLog",
     "CapabilityGrant",
+    "CapabilityGrantClaimAttempt",
     "ChastityLockLog",
     "EquipmentMaintenanceLog",
     "ManagedSubmissive",

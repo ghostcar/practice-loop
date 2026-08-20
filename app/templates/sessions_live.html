@@ -33,29 +33,7 @@
 
     <!-- Main Circular Progress Ring -->
     <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
-      <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-        <!-- Background Circle -->
-        <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="6" class="text-surface-900" fill="none" />
-        <!-- Progress Circle -->
-        <circle
-          cx="50"
-          cy="50"
-          r="42"
-          stroke="url(#timer-gradient)"
-          stroke-width="6"
-          stroke-dasharray="263.89"
-          :stroke-dashoffset="dashOffset"
-          stroke-linecap="round"
-          class="transition-all duration-1000 ease-linear"
-          fill="none"
-        />
-        <defs>
-          <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#f59e0b" />
-            <stop offset="100%" stop-color="#6366f1" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <div class="absolute inset-0 rounded-full border-[6px] border-surface-700 pl-accent-soft"></div>
 
       <!-- Digital Counter Inside Circle -->
       <div class="absolute inset-0 flex flex-col items-center justify-center space-y-1">
@@ -96,8 +74,8 @@
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
         <div class="text-xl">🎰</div>
         <span class="text-xs font-bold text-slate-100 block">Рулетка ИИ</span>
-        <button @click="alert('🎰 Рулетка ИИ-Ключника крутится! +30 мин добавлено.')" class="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-[10px] rounded shadow">
-          Крутить
+        <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 bg-surface-700 text-slate-400 font-bold text-[10px] rounded cursor-not-allowed">
+          Скоро
         </button>
       </div>
 
@@ -106,7 +84,7 @@
         <div class="text-xl">🏛️</div>
         <span class="text-xs font-bold text-slate-100 block">Pillory Mode</span>
         <span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 font-mono text-[10px] rounded border border-rose-500/30 block">
-          3 Голоса
+          Прототип
         </span>
       </div>
 
@@ -124,7 +102,7 @@
         <div class="text-xl">📸</div>
         <span class="text-xs font-bold text-slate-100 block">Народный Зачет</span>
         <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 font-mono text-[10px] rounded border border-emerald-500/30 block">
-          2/3 Проверено
+          Прототип
         </span>
       </div>
 
@@ -132,8 +110,8 @@
       <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
         <div class="text-xl">🎲</div>
         <span class="text-xs font-bold text-slate-100 block">Кубик Удачи</span>
-        <button @click="alert('🎲 Кубик выпал: 5! Множитель x1.5 XP на следующее задание.')" class="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] rounded shadow">
-          Бросить
+        <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 bg-surface-700 text-slate-400 font-bold text-[10px] rounded cursor-not-allowed">
+          Скоро
         </button>
       </div>
     </div>
@@ -212,12 +190,6 @@ function liveTimer() {
       const mins = Math.floor(this.remainingSeconds / 60);
       const secs = this.remainingSeconds % 60;
       return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    },
-
-    get dashOffset() {
-      const totalDash = 263.89;
-      const progress = this.remainingSeconds / this.totalSeconds;
-      return totalDash * (1 - progress);
     },
 
     toggleTimer() {

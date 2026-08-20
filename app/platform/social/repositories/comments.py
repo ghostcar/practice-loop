@@ -6,6 +6,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.social.models import SocialComment, SocialEncouragement
@@ -96,6 +97,13 @@ async def create_encouragement(
         target_id=target_id,
         encouragement_type=encouragement_type,
     )
-    db.add(enc)
-    await db.flush()
+    try:
+        async with db.begin_nested():
+            db.add(enc)
+            await db.flush()
+    except IntegrityError:
+        # The database uniqueness constraint is the concurrency-safe
+        # idempotency boundary.  Roll back only the savepoint so the caller's
+        # request transaction remains usable.
+        return None
     return enc

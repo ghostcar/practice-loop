@@ -40,11 +40,12 @@
     </div>
     <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl space-y-1">
       <span class="text-xs text-slate-400 uppercase font-mono">Успешность (Completion Rate)</span>
-      <div class="text-2xl font-bold text-emerald-400 font-mono">{{ stats.completion_rate or 100 }}%</div>
+      <div class="text-2xl font-bold text-emerald-400 font-mono">{{ stats.completion_rate }}%</div>
     </div>
     <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl space-y-1">
-      <span class="text-xs text-slate-400 uppercase font-mono">Набранный Опыт (XP)</span>
-      <div class="text-2xl font-bold text-indigo-400 font-mono">{{ stats.total_xp or 0 }} XP</div>
+      <span class="text-xs text-slate-400 uppercase font-mono">Прерванные активности</span>
+      <div class="text-2xl font-bold pl-accent-text font-mono">{{ stats.stopped_logs or 0 }}</div>
+      <div class="text-xs text-slate-400">Прервано</div>
     </div>
   </div>
 
