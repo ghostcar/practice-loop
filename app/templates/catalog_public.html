@@ -4,18 +4,18 @@
 {% block content %}
 <div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('catalog', 'w-6 h-6') }}
         Публичный Каталог Задач & Обмен Шаблонами
       </h1>
-      <p class="text-xs text-slate-400 mt-1">
+      <p class="text-xs text-[color:var(--text-muted)] mt-1">
         Авторские карточки активностей сообщества с рейтингом и быстрым добавлением в персональный опт-ин.
       </p>
     </div>
 
-    <a href="/catalog" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-bold rounded-xl border border-surface-700 transition-all">
+    <a href="/catalog" class="px-4 py-2 pl-surface hover:bg-[color:var(--surface-soft)] text-slate-200 text-xs font-bold rounded-xl border border-[color:var(--border)] transition-all">
       {{ icon('arrow-left', 'w-3.5 h-3.5') }} Мой Личный Каталог
     </a>
   </div>
@@ -23,7 +23,7 @@
   <!-- Items Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for item in items %}
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 space-y-4 shadow-xl flex flex-col justify-between hover:border-indigo-500/50 transition-all">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-4 shadow-xl flex flex-col justify-between hover:border-indigo-500/50 transition-all">
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono font-bold text-indigo-400">@system</span>
@@ -32,19 +32,19 @@
           </span>
         </div>
 
-        <h3 class="text-base font-bold text-slate-100">{{ item.name }}</h3>
-        <p class="text-xs text-slate-400 leading-relaxed">{{ item.description or 'Без описания.' }}</p>
+        <h3 class="text-base font-bold text-[color:var(--text)]">{{ item.name }}</h3>
+        <p class="text-xs text-[color:var(--text-muted)] leading-relaxed">{{ item.description or 'Без описания.' }}</p>
 
         {% if item.tags %}
         <div class="flex flex-wrap gap-1 pt-1">
           {% for tag in item.tags %}
-          <span class="px-2 py-0.5 rounded bg-surface-900 text-slate-400 font-mono text-[10px]">#{{ tag }}</span>
+          <span class="px-2 py-0.5 rounded bg-[color:var(--canvas-deep)] text-[color:var(--text-muted)] font-mono text-[10px]">#{{ tag }}</span>
           {% endfor %}
         </div>
         {% endif %}
       </div>
 
-      <div class="flex items-center justify-between border-t border-surface-700 pt-3 text-xs">
+      <div class="flex items-center justify-between border-t border-[color:var(--border)] pt-3 text-xs">
         <button class="text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1">
           {{ icon('plus', 'w-4 h-4') }} В Мой Каталог
         </button>
@@ -55,7 +55,7 @@
       </div>
     </div>
     {% else %}
-    <div class="col-span-3 bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center text-slate-400 text-sm">
+    <div class="col-span-3 pl-surface border border-[color:var(--border)] rounded-2xl p-8 text-center text-[color:var(--text-muted)] text-sm">
       Публичных шаблонов пока нет.
     </div>
     {% endfor %}

@@ -4,18 +4,18 @@
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6">
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
         {{ icon('camera', 'w-6 h-6') }}
         Народная Верификация & Peer Review Board
       </h1>
-      <p class="text-xs text-slate-400 mt-1">
+      <p class="text-xs text-[color:var(--text-muted)] mt-1">
         Проверка выполнения фото-отчетов и номерных пломб сообществом. Для зачета необходимо 3 положительных голоса.
       </p>
     </div>
 
-    <div class="flex items-center gap-2 bg-surface-800 p-2 border border-surface-700 rounded-xl font-mono text-xs text-emerald-400">
+    <div class="flex items-center gap-2 pl-surface p-2 border border-[color:var(--border)] rounded-xl font-mono text-xs text-emerald-400">
       <span>🤝 Консенсус Сообщества: 3/3 Голоса</span>
     </div>
   </div>
@@ -23,11 +23,11 @@
   <!-- Verification Queue Cards -->
   <div class="space-y-4">
     <!-- Verification Card 1 -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
         <div class="flex items-center gap-2">
           <span class="text-xs font-mono font-bold pl-accent-text">@anonymous_sub</span>
-          <span class="px-2 py-0.5 rounded bg-surface-900 text-slate-400 text-[10px] font-mono">🏷️ Номерная Пломба #SEAL-8841</span>
+          <span class="px-2 py-0.5 rounded bg-[color:var(--canvas-deep)] text-[color:var(--text-muted)] text-[10px] font-mono">🏷️ Номерная Пломба #SEAL-8841</span>
         </div>
         <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-500/30">
           ⏳ Ожидает Проверки (2/3)
@@ -36,33 +36,33 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Photo Placeholder -->
-        <div class="bg-surface-900/90 border border-surface-700 rounded-xl p-4 flex flex-col items-center justify-center min-h-[140px] text-center space-y-2">
+        <div class="bg-[color:var(--canvas-deep)]/90 border border-[color:var(--border)] rounded-xl p-4 flex flex-col items-center justify-center min-h-[140px] text-center space-y-2">
           <span class="text-3xl">📷</span>
-          <span class="text-xs font-mono text-slate-400">Фото Пломбы Замка</span>
-          <span class="text-[10px] text-slate-400 font-mono">Демонстрационный макет — AI-проверка не выполнялась</span>
+          <span class="text-xs font-mono text-[color:var(--text-muted)]">Фото Пломбы Замка</span>
+          <span class="text-[10px] text-[color:var(--text-muted)] font-mono">Демонстрационный макет — AI-проверка не выполнялась</span>
         </div>
 
         <div class="md:col-span-2 space-y-3 flex flex-col justify-between">
           <div class="space-y-1">
             <h3 class="text-sm font-bold text-slate-100">Инспекционный Фото-Отчет Замка Chastity</h3>
-            <p class="text-xs text-slate-400">Загружено 15 минут назад. Проверка целостности номерной пломбы и фиксаторов.</p>
+            <p class="text-xs text-[color:var(--text-muted)]">Загружено 15 минут назад. Проверка целостности номерной пломбы и фиксаторов.</p>
           </div>
 
           <!-- Vote Bar -->
-          <div class="space-y-2 pt-2 border-t border-surface-700">
+          <div class="space-y-2 pt-2 border-t border-[color:var(--border)]">
             <div class="flex items-center justify-between text-xs font-mono">
-              <span class="text-slate-400">Прогресс зачета:</span>
+              <span class="text-[color:var(--text-muted)]">Прогресс зачета:</span>
               <span class="text-emerald-400 font-bold">2 из 3 голосов</span>
             </div>
-            <div class="w-full bg-surface-900 h-2 rounded-full overflow-hidden border border-surface-700">
+            <div class="w-full bg-[color:var(--canvas-deep)] h-2 rounded-full overflow-hidden border border-[color:var(--border)]">
               <div class="bg-emerald-500 h-full w-2/3"></div>
             </div>
 
             <div class="flex items-center gap-3 pt-2">
-              <button type="button" disabled title="Прототип: голосование ещё не подключено к этому макету" class="px-4 py-2 bg-surface-700 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">
+              <button type="button" disabled title="Прототип: голосование ещё не подключено к этому макету" class="px-4 py-2 bg-surface-700 text-[color:var(--text-muted)] rounded-xl text-xs font-bold cursor-not-allowed">
                 Одобрить — скоро
               </button>
-              <button type="button" disabled title="Прототип: голосование ещё не подключено к этому макету" class="px-4 py-2 bg-surface-700 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">
+              <button type="button" disabled title="Прототип: голосование ещё не подключено к этому макету" class="px-4 py-2 bg-surface-700 text-[color:var(--text-muted)] rounded-xl text-xs font-bold cursor-not-allowed">
                 Отклонить — скоро
               </button>
             </div>

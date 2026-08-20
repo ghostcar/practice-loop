@@ -13,6 +13,7 @@ from app.models.community_agent import (  # noqa: E402
     CommunityTournament,
     CommunityTournamentEntry,
 )
+from app.models.community_roles import CommunityMemberRole  # noqa: E402
 from app.models.ds_suite import (  # noqa: E402
     AssignedDuty,
     CapabilityGrant,
@@ -41,6 +42,7 @@ __all__ = [
     "CapabilityGrantClaimAttempt",
     "ChastityLockLog",
     "CommunityMemberDelegation",
+    "CommunityMemberRole",
     "CommunityTopAgent",
     "CommunityTournament",
     "CommunityTournamentEntry",

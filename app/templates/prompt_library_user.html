@@ -4,29 +4,29 @@
 {% block content %}
 <div class="space-y-6 max-w-6xl mx-auto px-4 py-6" x-data="{ activeTab: 'system' }">
   <!-- Header -->
-  <div class="border-b border-surface-700 pb-4 flex items-center justify-between">
+  <div class="border-b border-[color:var(--border)] pb-4 flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('ai', 'w-6 h-6') }}
         Центральная Библиотека Промптов (Prompt Library)
       </h1>
-      <p class="text-sm text-slate-400 mt-1">
+      <p class="text-sm text-[color:var(--text-muted)] mt-1">
         Управление системными персонами ИИ и пользовательскими шаблонами промптов по разделам системы.
       </p>
     </div>
 
     <!-- Category Tabs -->
-    <div class="flex gap-2 bg-surface-800 p-1 border border-surface-700 rounded-xl font-mono text-xs">
+    <div class="flex gap-2 pl-surface p-1 border border-[color:var(--border)] rounded-xl font-mono text-xs">
       <button
         @click="activeTab = 'system'"
-        :class="activeTab === 'system' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+        :class="activeTab === 'system' ? 'bg-indigo-600 text-white shadow' : 'text-[color:var(--text-muted)] hover:text-[color:var(--text)]'"
         class="px-4 py-2 rounded-lg font-bold transition-all"
       >
         {{ icon('ai', 'w-4 h-4') }} Системные Персоны ({{ system_prompts|length }})
       </button>
       <button
         @click="activeTab = 'user'"
-        :class="activeTab === 'user' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+        :class="activeTab === 'user' ? 'bg-indigo-600 text-white shadow' : 'text-[color:var(--text-muted)] hover:text-[color:var(--text)]'"
         class="px-4 py-2 rounded-lg font-bold transition-all"
       >
         {{ icon('profile', 'w-4 h-4') }} Пользовательские ({{ user_prompts|length }})
@@ -37,7 +37,7 @@
   <!-- System Prompts Tab -->
   <div x-show="activeTab === 'system'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
     {% for p in system_prompts %}
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 space-y-3 shadow-lg flex flex-col justify-between">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-3 shadow-lg flex flex-col justify-between">
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono font-bold text-indigo-400">{{ p.key }}</span>
@@ -46,16 +46,16 @@
             Кастомный
           </span>
           {% else %}
-          <span class="px-2 py-0.5 rounded-full bg-surface-700 text-slate-400 font-mono text-[10px]">
+          <span class="px-2 py-0.5 rounded-full pl-surface-soft text-[color:var(--text-muted)] font-mono text-[10px]">
             Системный
           </span>
           {% endif %}
         </div>
 
-        <h3 class="text-base font-bold text-slate-100">{{ p.title }}</h3>
-        <p class="text-xs text-slate-400">{{ p.description }}</p>
+        <h3 class="text-base font-bold text-[color:var(--text)]">{{ p.title }}</h3>
+        <p class="text-xs text-[color:var(--text-muted)]">{{ p.description }}</p>
 
-        <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-wrap max-h-36 overflow-y-auto">
+        <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl font-mono text-xs text-[color:var(--text-secondary)] whitespace-pre-wrap max-h-36 overflow-y-auto">
           {{ p.template_content }}
         </div>
       </div>
@@ -66,7 +66,7 @@
   <!-- User Prompts Tab -->
   <div x-show="activeTab === 'user'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
     {% for p in user_prompts %}
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 space-y-3 shadow-lg flex flex-col justify-between">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-3 shadow-lg flex flex-col justify-between">
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono font-bold text-emerald-400">{{ p.key }}</span>
@@ -75,17 +75,17 @@
           </span>
         </div>
 
-        <h3 class="text-base font-bold text-slate-100">{{ p.title }}</h3>
-        <p class="text-xs text-slate-400">{{ p.description }}</p>
+        <h3 class="text-base font-bold text-[color:var(--text)]">{{ p.title }}</h3>
+        <p class="text-xs text-[color:var(--text-muted)]">{{ p.description }}</p>
 
-        <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-wrap max-h-36 overflow-y-auto">
+        <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl font-mono text-xs text-[color:var(--text-secondary)] whitespace-pre-wrap max-h-36 overflow-y-auto">
           {{ p.template_content }}
         </div>
       </div>
     </div>
     {% else %}
-    <div class="col-span-2 bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center space-y-2">
-      <p class="text-sm text-slate-400">Пользовательских промптов пока нет.</p>
+    <div class="col-span-2 pl-surface border border-[color:var(--border)] rounded-2xl p-8 text-center space-y-2">
+      <p class="text-sm text-[color:var(--text-muted)]">Пользовательских промптов пока нет.</p>
     </div>
     {% endfor %}
   </div>

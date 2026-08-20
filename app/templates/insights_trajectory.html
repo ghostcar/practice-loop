@@ -4,13 +4,13 @@
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6">
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+  <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('chart', 'w-6 h-6') }}
         Траектория Развития и Радар Мастерства
       </h1>
-      <p class="text-sm text-slate-400 mt-1">
+      <p class="text-sm text-[color:var(--text-muted)] mt-1">
         Комплексная аналитика выносливости, дисциплины ухода, Chastity-серий и адаптивная карта развития на 30 дней.
       </p>
     </div>
@@ -28,82 +28,82 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- Practice Mastery Radar Chart -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-[color:var(--text)] flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-amber-400"></span>
         Радар Мастерства (Mastery Radar)
       </h2>
-      <p class="text-xs text-slate-400">Оценка выносливости и дисциплины по 5 основным векторам практик.</p>
+      <p class="text-xs text-[color:var(--text-muted)]">Оценка выносливости и дисциплины по 5 основным векторам практик.</p>
 
       <!-- Data-backed chart is intentionally withheld until real metrics exist. -->
       <div class="flex justify-center items-center py-4">
-        <div class="w-full max-w-sm rounded-xl border border-surface-700 bg-surface-900 p-6 text-center text-sm text-slate-400">
+        <div class="w-full max-w-sm rounded-xl border border-[color:var(--border)] bg-[color:var(--canvas-deep)] p-6 text-center text-sm text-[color:var(--text-muted)]">
           Визуализация траектории появится после расчёта по реальным данным.
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-2 text-xs pt-2">
-        <div class="bg-surface-900/60 p-2.5 rounded-lg border border-surface-700">
-          <span class="text-slate-400 block">Выносливость поз:</span>
+        <div class="bg-[color:var(--canvas-deep)]/60 p-2.5 rounded-lg border border-[color:var(--border)]">
+          <span class="text-[color:var(--text-muted)] block">Выносливость поз:</span>
           <span class="text-amber-400 font-semibold">85 / 100 XP</span>
         </div>
-        <div class="bg-surface-900/60 p-2.5 rounded-lg border border-surface-700">
-          <span class="text-slate-400 block">Дисциплина замков:</span>
+        <div class="bg-[color:var(--canvas-deep)]/60 p-2.5 rounded-lg border border-[color:var(--border)]">
+          <span class="text-[color:var(--text-muted)] block">Дисциплина замков:</span>
           <span class="text-indigo-400 font-semibold">80 / 100 XP</span>
         </div>
       </div>
     </div>
 
     <!-- 30-Day Trajectory Map -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-[color:var(--text)] flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
         Карта Траектории на 30 Дней
       </h2>
-      <p class="text-xs text-slate-400">Прогнозируемый ИИ-Ассистентом рост уровня и целевые фокусы.</p>
+      <p class="text-xs text-[color:var(--text-muted)]">Прогнозируемый ИИ-Ассистентом рост уровня и целевые фокусы.</p>
 
       <div class="space-y-4 pt-2">
         <!-- Milestone 1 -->
-        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+        <div class="flex items-start gap-3 bg-[color:var(--canvas-deep)]/80 p-3.5 rounded-xl border border-[color:var(--border)]">
           <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/20">
             W1
           </div>
           <div>
             <h4 class="text-sm font-semibold text-slate-200">Неделя 1: Стабилизация Гидратации и Aftercare</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Закрепление регулярного ухода после физических нагрузок и удержания поз.</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-0.5">Закрепление регулярного ухода после физических нагрузок и удержания поз.</p>
           </div>
         </div>
 
         <!-- Milestone 2 -->
-        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+        <div class="flex items-start gap-3 bg-[color:var(--canvas-deep)]/80 p-3.5 rounded-xl border border-[color:var(--border)]">
           <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-500/20">
             W2
           </div>
           <div>
             <h4 class="text-sm font-semibold text-slate-200">Неделя 2: Плавное Окно Chastity (+12h)</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Плановое увеличение отрезка удержания с регулярными ИИ-проверками.</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-0.5">Плановое увеличение отрезка удержания с регулярными ИИ-проверками.</p>
           </div>
         </div>
 
         <!-- Milestone 3 -->
-        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+        <div class="flex items-start gap-3 bg-[color:var(--canvas-deep)]/80 p-3.5 rounded-xl border border-[color:var(--border)]">
           <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-500/20">
             W3
           </div>
           <div>
             <h4 class="text-sm font-semibold text-slate-200">Неделя 3: Выносливость Комплексных Поз</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Подключение 15-минутных сессий удержания средней интенсивности.</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-0.5">Подключение 15-минутных сессий удержания средней интенсивности.</p>
           </div>
         </div>
 
         <!-- Milestone 4 -->
-        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+        <div class="flex items-start gap-3 bg-[color:var(--canvas-deep)]/80 p-3.5 rounded-xl border border-[color:var(--border)]">
           <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-xs border border-purple-500/20">
             W4
           </div>
           <div>
             <h4 class="text-sm font-semibold text-slate-200">Неделя 4: Аттестация ИИ-Ключника & Новое Звание</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Финальный чек-ин месяца и разблокировка продвинутых квестов.</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-0.5">Финальный чек-ин месяца и разблокировка продвинутых квестов.</p>
           </div>
         </div>
       </div>
