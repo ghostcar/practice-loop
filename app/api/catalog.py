@@ -203,8 +203,18 @@ async def import_public_template_endpoint(
     except ValueError:
         raise HTTPException(400, "Invalid item_id UUID") from None
 
+    from sqlalchemy import or_
+
     template = (
-        await db.execute(select(ActivityCatalogItem).where(ActivityCatalogItem.id == template_uuid))
+        await db.execute(
+            select(ActivityCatalogItem).where(
+                ActivityCatalogItem.id == template_uuid,
+                or_(
+                    ActivityCatalogItem.owner_id.is_(None),
+                    ActivityCatalogItem.is_public.is_(True),
+                ),
+            )
+        )
     ).scalar_one_or_none()
 
     if not template:

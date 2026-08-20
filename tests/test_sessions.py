@@ -309,9 +309,9 @@ async def test_live_complete_requires_owned_active_session(
     )
     assert resp.status_code == 303
 
-    # 3. Assert session status changed to completed
+    # 3. Assert session status changed to canonical 'ended'
     await db_session.refresh(sess)
-    assert sess.status == "completed"
+    assert sess.status == "ended"
 
     prog_after = await (
         await db_session.execute(select(UserProgress).where(UserProgress.user_id == test_user.id))

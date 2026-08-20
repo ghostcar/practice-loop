@@ -662,31 +662,38 @@ async def live_session_complete_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Logs completion of active live session task (Audit A-01 fix: atomic state transition & ownership check)."""
+    """Logs completion of active live session task.
+
+    Audit R-03/R-04 fix: canonical 'ended' status and strict UUID validation.
+    """
     from app.gamification.handler import get_or_create_progress
     from app.models.session import ActivitySession
     from app.models.session_history import ActivitySessionHistory
 
-    # Find specified active session or user's latest active session
-    query = select(ActivitySession).where(
-        ActivitySession.owner_id == user.id,
-        ActivitySession.status == "active",
+    query = (
+        select(ActivitySession)
+        .where(
+            ActivitySession.owner_id == user.id,
+            ActivitySession.status == "active",
+        )
+        .with_for_update()
     )
-    if session_id:
+
+    if session_id and session_id.strip():
         try:
-            sess_uuid = uuid.UUID(session_id)
+            sess_uuid = uuid.UUID(session_id.strip())
             query = query.where(ActivitySession.id == sess_uuid)
         except ValueError:
-            pass
+            raise HTTPException(400, "Invalid session_id UUID format") from None
 
     session = (await db.execute(query)).scalars().first()
     if not session:
         return RedirectResponse(url="/sessions", status_code=303)
 
-    # Transition status to completed atomically
-    session.status = "completed"
+    # Transition status to canonical 'ended' atomically
+    session.status = "ended"
     session.ended_at = datetime.now(UTC)
-    session.notes = (session.notes or "") + f"\nCompleted with notes: {notes.strip()}"
+    session.notes = (session.notes or "") + f"\nCompleted hold with notes: {notes.strip()}"
 
     db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="completed"))
 
@@ -704,28 +711,34 @@ async def live_session_interrupt_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Logs early interruption of live session (Audit A-01 fix: atomic state transition & ownership check)."""
+    """Logs early interruption of live session (Audit R-03/R-04 fix: canonical 'ended' status & strict UUID check)."""
     from app.gamification.handler import get_or_create_progress
     from app.models.session import ActivitySession
     from app.models.session_history import ActivitySessionHistory
 
-    query = select(ActivitySession).where(
-        ActivitySession.owner_id == user.id,
-        ActivitySession.status == "active",
+    query = (
+        select(ActivitySession)
+        .where(
+            ActivitySession.owner_id == user.id,
+            ActivitySession.status == "active",
+        )
+        .with_for_update()
     )
-    if session_id:
+
+    if session_id and session_id.strip():
         try:
-            sess_uuid = uuid.UUID(session_id)
+            sess_uuid = uuid.UUID(session_id.strip())
             query = query.where(ActivitySession.id == sess_uuid)
         except ValueError:
-            pass
+            raise HTTPException(400, "Invalid session_id UUID format") from None
 
     session = (await db.execute(query)).scalars().first()
     if not session:
         return RedirectResponse(url="/sessions", status_code=303)
 
-    session.status = "interrupted"
+    session.status = "ended"
     session.ended_at = datetime.now(UTC)
+    session.notes = (session.notes or "") + f"\nInterrupted hold with reason: {reason.strip()}"
 
     db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="interrupted"))
 
