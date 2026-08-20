@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#inventory"></use>
+        Журнал Обслуживания Инвентаря & Девайсов (Equipment Maintenance)
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Учет дезинфекции, чистки, технического осмотра и графиков обслуживания физического оборудования.
+      </p>
+    </div>
+
+    <a href="/api/v2/inventory/page" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-semibold rounded-xl border border-surface-700 transition-colors">
+      ← Инвентарь
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Form Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        Зафиксировать Обслуживание Девайса
+      </h2>
+
+      <form action="/api/v2/inventory/maintenance/log" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Наименование Оборудования / Девайса:</label>
+          <input
+            type="text"
+            name="device_name"
+            required
+            placeholder="Chastity Cage #1 / Ремень / Фиксатор..."
+            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Тип Обслуживания:</label>
+          <select name="maintenance_type" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
+            <option value="sanitization" selected>🧪 Санитарная Дезинфекция & Чистка</option>
+            <option value="wear_inspection">🔍 Осмотр износа и целостности замков</option>
+            <option value="calibration">⚙️ Проверка параметров и калибровка</option>
+            <option value="repair">🛠️ Ремонт / Замена элементов</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Заметки / Использованные Средства:</label>
+          <textarea
+            name="notes"
+            rows="2"
+            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100"
+            placeholder="Использованные дезинфектанты, замеченный износ..."
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-medium text-xs rounded-xl shadow-lg transition-all"
+        >
+          Записать Обслуживание в Лог
+        </button>
+      </form>
+    </div>
+
+    <!-- Maintenance Guidance Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+        Стандарты Гигиены & ИИ-Напоминания
+      </h2>
+
+      <div class="space-y-3 text-xs text-slate-300">
+        <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-1">
+          <span class="text-amber-400 font-semibold block">🧼 Дезинфекция перед каждым удержанием</span>
+          <p class="text-slate-400">Все физические устройства Chastity и фиксаторы требуют промывки антисептиком медицинского класса.</p>
+        </div>
+
+        <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-1">
+          <span class="text-indigo-400 font-semibold block">🔍 Осмотр дужек и замков раз в 7 дней</span>
+          <p class="text-slate-400">ИИ-Ассистент автоматически проверяет журнал обслуживания и присылает уведомления при задержках чистки.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance History Table -->
+  {% if logs %}
+  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-3">
+    <h3 class="text-sm font-bold text-slate-200">История Обслуживания Девайсов</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead class="bg-surface-900 text-slate-400 uppercase font-mono">
+          <tr>
+            <th class="p-3">Дата</th>
+            <th class="p-3">Девайс</th>
+            <th class="p-3">Тип</th>
+            <th class="p-3">Заметки</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-surface-700">
+          {% for log in logs %}
+          <tr>
+            <td class="p-3 font-mono text-slate-400">{{ log.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td class="p-3 font-semibold text-slate-100">{{ log.device_name }}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded bg-surface-900 border border-surface-700 font-mono text-amber-400">{{ log.maintenance_type }}</span></td>
+            <td class="p-3 text-slate-400">{{ log.notes or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

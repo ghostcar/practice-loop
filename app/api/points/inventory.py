@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -217,3 +217,68 @@ async def service_inventory_item(
     await db.commit()
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
+
+
+@router.get("/inventory/maintenance")
+async def equipment_maintenance_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Equipment & Device Maintenance Log page."""
+    from app.i18n import get_translations
+    from app.i18n.helpers import detect_locale, detect_theme
+    from app.models.equipment_maintenance import EquipmentMaintenanceLog
+    from app.templates_setup import templates
+
+    logs = (
+        await db.execute(
+            select(EquipmentMaintenanceLog)
+            .where(EquipmentMaintenanceLog.user_id == user.id)
+            .order_by(EquipmentMaintenanceLog.created_at.desc())
+            .limit(20)
+        )
+    ).scalars().all()
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="inventory_maintenance.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "inventory",
+            "logs": logs,
+        },
+    )
+
+
+@router.post("/inventory/maintenance/log")
+async def log_equipment_maintenance_endpoint(
+    device_name: str = Form(...),
+    maintenance_type: str = Form("sanitization"),
+    notes: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Logs equipment maintenance, cleaning, or inspection."""
+    from fastapi.responses import RedirectResponse
+
+    from app.models.equipment_maintenance import EquipmentMaintenanceLog
+
+    log_entry = EquipmentMaintenanceLog(
+        user_id=user.id,
+        device_name=device_name,
+        maintenance_type=maintenance_type,
+        notes=notes,
+    )
+    db.add(log_entry)
+    await db.commit()
+    return RedirectResponse(url="/api/v2/inventory/maintenance", status_code=303)
+
