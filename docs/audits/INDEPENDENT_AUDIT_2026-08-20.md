@@ -239,6 +239,53 @@ Commit `6b50435` добавил шесть файлов, названных comp
 дефектов в commits `6b50435`/`1e52043` нет. Точечный новый pytest-run не завершился в контрольное
 окно среды, поэтому полный suite нельзя документировать как подтверждённо зелёный.
 
+### A-18 — L0: постоянное падение GitHub CI вызвано format gate
+
+GitHub Actions workflow запускается на каждый push в `main`. Job `lint` выполняет:
+
+1. `ruff check app/ cli.py tests/ seed_prod.py`;
+2. `ruff format --check app/ cli.py tests/ seed_prod.py`.
+
+Локальное воспроизведение показало: lint rules проходят, но `ruff format --check` завершается
+ошибкой. Точным CI formatter `ruff==0.5.7` признаны неформатированными 36 файлов, включая новые
+`app/agent/*`, `app/api/ds.py`, `app/api/dashboard.py`, `app/api/prompt_templates.py`,
+`app/agent/training_adaptive.py`, Social API и добавленные тесты.
+
+Это объясняет постоянные письма GitHub:
+
+- `lint` падает на каждом push;
+- jobs `test`, `migrations` и `e2e` имеют `needs: [lint]`, поэтому после падения lint
+  пропускаются и весь workflow получает failure;
+- серия работ создавала отдельный feature commit и следующий `docs(state)` commit с интервалом
+  в несколько секунд; каждый commit в `main` запускал новый полный workflow и новое уведомление;
+- в workflow нет `concurrency.cancel-in-progress`, поэтому устаревшие runs не отменяются;
+- нет job/path filtering, и чисто документационные state commits также запускают lint,
+  PostgreSQL migrations, browser E2E и Docker build.
+
+Конфигурация версии Ruff согласована (`ruff==0.5.7` в CI и lockfile), поэтому причина не в
+случайном обновлении formatter, а в том, что изменения коммитились без обязательного
+`ruff format --check`/pre-push gate. Диагностика отдельно установила и запустила именно
+проектный `0.5.7`: `ruff check` прошёл, `ruff format --check` вернул 36 файлов и ненулевой код.
+
+Прямые GitHub logs получить не удалось: локальный `gh` token недействителен, а подключённый
+GitHub connector возвращает только PR-triggered workflow runs, тогда как рассматриваемые runs
+созданы push-событиями. Однако failing command воспроизведён локально по точной CI-конфигурации,
+и он детерминированно объясняет текущий failure до запуска зависимых jobs.
+
+Исправление CI:
+
+1. В окружении с `ruff==0.5.7` выполнить `ruff format app/ cli.py tests/ seed_prod.py`.
+2. Проверить `ruff check` и `ruff format --check` теми же путями и версией, что в workflow.
+3. Добавить эти команды в pre-commit/pre-push либо единый `scripts/ci_local.sh`.
+4. Добавить workflow-level concurrency, например группу по workflow/ref с
+   `cancel-in-progress: true`.
+5. Разделить code CI и docs/memory CI через path filters: документационный commit должен
+   выполнять memory lint, но не обязан каждый раз поднимать PostgreSQL, Playwright и Docker.
+6. Не использовать прямую серию мелких push в `main`: сначала локальные gates, затем один
+   проверенный push или PR.
+7. После восстановления `gh auth login` проверить первый новый run и только затем разбирать
+   возможные ошибки, которые сейчас скрыты зависимостью `needs: [lint]`.
+
 ## 4. Положительные стороны
 
 - Сохраняется один линейный Alembic head.
@@ -255,11 +302,12 @@ Commit `6b50435` добавил шесть файлов, названных comp
 
 ### Этап 1 — честность локального прототипа
 
-1. Убрать XP mutation из fake live/kudos/pillory flows либо реализовать persisted state machine.
-2. Пометить demo UI или отключить маршруты feature flags до реальной реализации.
-3. Исправить adaptive training ownership и поставить пределы входных значений.
-4. Выбрать HTMX или Alpine; восстановить работоспособность всех новых контролов.
-5. Удалить authenticated routes из Service Worker cache.
+1. Восстановить зелёный CI: применить Ruff 0.5.7 formatter и прогнать точные CI-команды.
+2. Убрать XP mutation из fake live/kudos/pillory flows либо реализовать persisted state machine.
+3. Пометить demo UI или отключить маршруты feature flags до реальной реализации.
+4. Исправить adaptive training ownership и поставить пределы входных значений.
+5. Выбрать HTMX или Alpine; восстановить работоспособность всех новых контролов.
+6. Удалить authenticated routes из Service Worker cache.
 
 ### Этап 2 — code health
 
