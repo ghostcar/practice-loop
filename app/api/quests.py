@@ -120,3 +120,14 @@ async def claim_quest_reward(
     await db.commit()
 
     return RedirectResponse(url="/achievements/quests", status_code=303)
+
+
+@router.get("/quests/challenges", response_class=HTMLResponse)
+async def quests_challenges_alias(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Alias route for Quests & Weekly Challenges Hub."""
+    return await quests_hub_page(request=request, user=user, db=db)
+
