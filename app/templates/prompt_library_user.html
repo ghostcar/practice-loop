@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto px-4 py-6" x-data="{ activeTab: 'system' }">
+  <!-- Header -->
+  <div class="border-b border-surface-700 pb-4 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#brain"></use>
+        Центральная Библиотека Промптов (Prompt Library)
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Управление системными персонами ИИ и пользовательскими шаблонами промптов по разделам системы.
+      </p>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="flex gap-2 bg-surface-800 p-1 border border-surface-700 rounded-xl font-mono text-xs">
+      <button
+        @click="activeTab = 'system'"
+        :class="activeTab === 'system' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+        class="px-4 py-2 rounded-lg font-bold transition-all"
+      >
+        🧠 Системные Персоны ({{ system_prompts|length }})
+      </button>
+      <button
+        @click="activeTab = 'user'"
+        :class="activeTab === 'user' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+        class="px-4 py-2 rounded-lg font-bold transition-all"
+      >
+        👤 Пользовательские ({{ user_prompts|length }})
+      </button>
+    </div>
+  </div>
+
+  <!-- System Prompts Tab -->
+  <div x-show="activeTab === 'system'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for p in system_prompts %}
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 space-y-3 shadow-lg flex flex-col justify-between">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono font-bold text-indigo-400">{{ p.key }}</span>
+          {% if p.is_customized %}
+          <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] border border-amber-500/30">
+            Кастомный
+          </span>
+          {% else %}
+          <span class="px-2 py-0.5 rounded-full bg-surface-700 text-slate-400 font-mono text-[10px]">
+            Системный
+          </span>
+          {% endif %}
+        </div>
+
+        <h3 class="text-base font-bold text-slate-100">{{ p.title }}</h3>
+        <p class="text-xs text-slate-400">{{ p.description }}</p>
+
+        <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-wrap max-h-36 overflow-y-auto">
+          {{ p.template_content }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- User Prompts Tab -->
+  <div x-show="activeTab === 'user'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for p in user_prompts %}
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 space-y-3 shadow-lg flex flex-col justify-between">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono font-bold text-emerald-400">{{ p.key }}</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] border border-emerald-500/30">
+            User Prompt
+          </span>
+        </div>
+
+        <h3 class="text-base font-bold text-slate-100">{{ p.title }}</h3>
+        <p class="text-xs text-slate-400">{{ p.description }}</p>
+
+        <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl font-mono text-xs text-slate-300 whitespace-pre-wrap max-h-36 overflow-y-auto">
+          {{ p.template_content }}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-2 bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center space-y-2">
+      <p class="text-sm text-slate-400">Пользовательских промптов пока нет.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

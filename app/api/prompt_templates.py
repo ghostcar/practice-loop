@@ -152,6 +152,46 @@ async def templates_page(
     )
 
 
+@page_router.get("/prompts/library", response_class=HTMLResponse)
+async def user_prompt_library_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Categorized Prompt Library Hub (System & User Prompts)."""
+    from app.models.prompt_library import PromptLibraryItem
+    from app.prompt_library import seed_prompt_library
+
+    await seed_prompt_library(db)
+
+    items = (
+        await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))
+    ).scalars().all()
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    system_prompts = [i for i in items if i.library_type == "system"]
+    user_prompts = [i for i in items if i.library_type == "user"]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="prompt_library_user.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "llm",
+            "system_prompts": system_prompts,
+            "user_prompts": user_prompts,
+        },
+    )
+
+
+
 @page_router.get("/llm/templates/{template_id}", response_class=HTMLResponse)
 async def template_detail_page(
     template_id: uuid.UUID,
