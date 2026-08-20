@@ -75,14 +75,7 @@ async def vote_pillory_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """POST /social/pillory/vote — Cast community vote on Pillory item."""
-
-    sub_uuid = uuid.UUID(sub_id)
-    sub = (await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.id == sub_uuid))).scalar_one_or_none()
-
-    if not sub:
-        raise HTTPException(404, "Submissive Pillory entry not found")
-
+    """POST /social/pillory/vote — Cast community vote on Pillory item (Audit A-05/A-07 fix)."""
     reasons_map = {
         "add_15m": ("lock_extension", "+15 мин ношения по результатам голоса сообщества"),
         "add_1h": ("lock_extension", "+1 час ношения по результатам голоса сообщества"),
@@ -90,21 +83,32 @@ async def vote_pillory_endpoint(
         "assign_task": ("tag_check", "Сообщество назначило инспекционную задачу"),
     }
 
-    action_code, reason_text = reasons_map.get(vote_type, ("lock_extension", "Голос сообщества"))
+    if vote_type not in reasons_map:
+        raise HTTPException(400, "Invalid vote_type parameter")
+
+    try:
+        sub_uuid = uuid.UUID(sub_id)
+    except ValueError:
+        raise HTTPException(400, "Invalid UUID format") from None
+
+    sub = (await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.id == sub_uuid))).scalar_one_or_none()
+
+    if not sub:
+        raise HTTPException(404, "Submissive Pillory entry not found")
+
+    action_code, reason_text = reasons_map[vote_type]
 
     log = ChastityLockLog(
         managed_sub_id=sub.id,
         action=action_code,
-        reason=f"Pillory Community Vote: {reason_text}",
+        reason=f"Pillory Community Vote by user {user.id}: {reason_text}",
     )
     db.add(log)
-    await db.commit()
 
     # Award Social XP to voter
     from app.gamification.handler import get_or_create_progress
 
     prog = await get_or_create_progress(db, user.id)
     prog.xp += 15
-    await db.commit()
 
     return RedirectResponse(url="/social/pillory", status_code=303)

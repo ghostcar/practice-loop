@@ -69,11 +69,21 @@ async def send_kudos_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """POST /social/kudos — Send Kudos reaction to a community member."""
+    """POST /social/kudos — Send Kudos reaction to a community member (Audit A-07 fix)."""
     from app.gamification.handler import get_or_create_progress
+    from app.platform.social.models import SocialProfile
 
-    prog = await get_or_create_progress(db, user.id)
-    prog.xp += 10
-    await db.commit()
+    valid_reactions = {"fire", "shield", "crown"}
+    if reaction not in valid_reactions:
+        reaction = "fire"
+
+    target_profile = (
+        (await db.execute(select(SocialProfile).where(SocialProfile.alias == target_alias.strip()))).scalars().first()
+    )
+
+    # Award XP to the target user if profile exists and is not self
+    if target_profile and target_profile.user_id != user.id:
+        target_prog = await get_or_create_progress(db, target_profile.user_id)
+        target_prog.xp += 10
 
     return RedirectResponse(url="/social/leaderboard", status_code=303)

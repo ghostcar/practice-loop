@@ -160,9 +160,6 @@ async def user_prompt_library_page(
 ):
     """Categorized Prompt Library Hub (System & User Prompts)."""
     from app.models.prompt_library import PromptLibraryItem
-    from app.prompt_library import seed_prompt_library
-
-    await seed_prompt_library(db)
 
     items = (await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))).scalars().all()
 
