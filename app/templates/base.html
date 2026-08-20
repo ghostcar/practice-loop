@@ -142,7 +142,14 @@
     <link rel="icon" href="/static/favicon/favicon.ico" sizes="any">
     <link rel="icon" href="/static/favicon/{{ 'favicon-neutral.svg' if _discretion else 'favicon.svg' }}" type="image/svg+xml" id="pl-favicon">
     <link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png">
-    <link rel="manifest" href="/static/favicon/site.webmanifest">
+    <link rel="manifest" href="/static/manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/static/sw.js').catch(err => console.log('SW reg error:', err));
+        });
+      }
+    </script>
     <link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#a95f58">
     <meta name="theme-color" content="#171311">
     <!-- Local assets — no external CDN dependencies -->
