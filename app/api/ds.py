@@ -194,3 +194,131 @@ async def verify_duty_endpoint(
     db.add(duty)
     await db.commit()
     return RedirectResponse(url="/ds/keyholder", status_code=303)
+
+
+@router.get("/ds/my-top", response_class=HTMLResponse)
+async def my_top_delegation_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Submissive's Portal Delegation Settings (ADR-129)."""
+    from app.models.ds_suite import CapabilityGrant
+
+    grants = (
+        (
+            await db.execute(
+                select(CapabilityGrant)
+                .where(CapabilityGrant.sub_user_id == user.id)
+                .order_by(CapabilityGrant.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="ds_my_top.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds",
+            "grants": grants,
+        },
+    )
+
+
+@router.post("/ds/grant/create")
+async def create_grant_invite_endpoint(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generates an invite code for a Top to claim portal delegation."""
+    from app.models.ds_suite import CapabilityGrant
+
+    invite_code = f"DS-{uuid.uuid4().hex[:6].upper()}"
+    grant = CapabilityGrant(
+        sub_user_id=user.id,
+        invite_code=invite_code,
+        status="pending",
+    )
+    db.add(grant)
+    await db.commit()
+    return RedirectResponse(url="/ds/my-top", status_code=303)
+
+
+@router.post("/ds/grant/claim")
+async def claim_grant_invite_endpoint(
+    invite_code: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Top inputs an invite code to claim delegation over a submissive."""
+    from app.models.ds_suite import CapabilityGrant, ManagedSubmissive
+
+    clean_code = invite_code.strip().upper()
+    grant = (
+        await db.execute(
+            select(CapabilityGrant).where(
+                CapabilityGrant.invite_code == clean_code,
+                CapabilityGrant.status == "pending",
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not grant:
+        raise HTTPException(404, "Invalid or expired invite code")
+
+    grant.top_user_id = user.id
+    grant.status = "active"
+
+    # Create linked ManagedSubmissive profile
+    sub_profile = ManagedSubmissive(
+        top_user_id=user.id,
+        sub_user_id=grant.sub_user_id,
+        name=f"Submissive User ({grant.sub_user_id.hex[:6]})",
+        is_offline=False,
+        chastity_status="unlocked",
+        compliance_score=100,
+    )
+    db.add(grant)
+    db.add(sub_profile)
+    await db.commit()
+    return RedirectResponse(url="/ds/keyholder", status_code=303)
+
+
+@router.post("/ds/grant/{grant_id}/revoke")
+async def revoke_grant_endpoint(
+    grant_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Emergency Revoke / Safe Word Button — Revokes all Top access instantly."""
+    from app.models.ds_suite import CapabilityGrant
+
+    grant_uuid = uuid.UUID(grant_id)
+    grant = (
+        await db.execute(
+            select(CapabilityGrant).where(
+                CapabilityGrant.id == grant_uuid,
+                CapabilityGrant.sub_user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not grant:
+        raise HTTPException(404, "Grant not found")
+
+    grant.status = "revoked"
+    db.add(grant)
+    await db.commit()
+    return RedirectResponse(url="/ds/my-top", status_code=303)
+

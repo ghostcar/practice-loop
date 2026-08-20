@@ -54,7 +54,7 @@ from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
 from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: F401
 from app.models.body_cycle import BodyCycleLog  # noqa: F401
-from app.models.ds_suite import AssignedDuty, ChastityLockLog, ManagedSubmissive  # noqa: F401
+from app.models.ds_suite import AssignedDuty, CapabilityGrant, ChastityLockLog, ManagedSubmissive  # noqa: F401
 from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.prompt_template import PromptTemplate  # noqa: F401

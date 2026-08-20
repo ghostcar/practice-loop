@@ -86,3 +86,34 @@ class ChastityLockLog(Base):
     performed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     managed_submissive: Mapped[ManagedSubmissive] = relationship("ManagedSubmissive", back_populates="lock_logs")
+
+
+class CapabilityGrant(Base):
+    """Delegated capability grant from a registered Submissive to a Top/Keyholder (ADR-129)."""
+
+    __tablename__ = "capability_grants"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    sub_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    top_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+
+    invite_code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), default="pending")  # pending, active, paused, revoked
+
+    scope_chastity: Mapped[bool] = mapped_column(Boolean, default=True)
+    scope_tasks: Mapped[bool] = mapped_column(Boolean, default=True)
+    scope_training: Mapped[bool] = mapped_column(Boolean, default=True)
+    scope_medication: Mapped[bool] = mapped_column(Boolean, default=True)
+    scope_aftercare: Mapped[bool] = mapped_column(Boolean, default=True)
+    scope_inventory: Mapped[bool] = mapped_column(Boolean, default=True)
+    scope_health_view: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+    sub_user: Mapped[User] = relationship("User", foreign_keys=[sub_user_id])
+    top_user: Mapped[User | None] = relationship("User", foreign_keys=[top_user_id])
+
