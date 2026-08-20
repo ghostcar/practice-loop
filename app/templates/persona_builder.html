@@ -9,7 +9,7 @@
         <div>
             <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">ИИ-Конфигуратор v2</span>
             <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
-                {{ icon('cpu', 'w-8 h-8 text-amber-400') }}
+                {{ icon('ai', 'w-8 h-8 text-amber-400') }}
                 <span>Конструктор Персоны ИИ-Агента</span>
             </h1>
             <p class="text-xs text-archive-400 mt-1">Настройка характера, тональности и строгости вашего виртуального Куратора/Ключника.</p>
@@ -20,7 +20,7 @@
     <form method="POST" action="/agent/persona-builder" class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
         <div>
             <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
-                {{ icon('user-check', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                {{ icon('profile', 'w-4 h-4 text-amber-400 inline mr-1') }}
                 <span>Архетип Персоны</span>
             </label>
             <select name="persona_type" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2.5 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">
@@ -33,7 +33,7 @@
 
         <div>
             <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
-                {{ icon('sliders', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                {{ icon('settings', 'w-4 h-4 text-amber-400 inline mr-1') }}
                 <span>Уровень Строгости Штрафов (1..5)</span>
             </label>
             <input type="number" name="strictness_level" min="1" max="5" value="{{ persona.strictness_level }}" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">
@@ -41,7 +41,7 @@
 
         <div>
             <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
-                {{ icon('volume-2', 'w-4 h-4 text-amber-400 inline mr-1') }}
+                {{ icon('volume', 'w-4 h-4 text-amber-400 inline mr-1') }}
                 <span>Тональность Общения (Tone of Voice)</span>
             </label>
             <input type="text" name="tone_of_voice" value="{{ persona.tone_of_voice }}" class="w-full bg-archive-950 border border-archive-800 rounded-lg px-4 py-2 text-archive-100 text-sm focus:border-amber-400 focus:outline-none">

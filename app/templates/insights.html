@@ -46,7 +46,7 @@
                 <legend class="text-xs pl-text-secondary mb-1.5">{{ t.insights_sections }}</legend>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                     {% for s in sections %}
-                    <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] min-h-[36px]">
+                    <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] min-h-[44px]">
                         <input type="checkbox" name="sections" value="{{ s }}" checked class="accent-[color:var(--accent)]">
                         <span class="truncate">{{ t['insights_section_' + s] }}</span>
                     </label>
@@ -106,7 +106,7 @@
                 </a>
                 <form action="/insights/runs/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.insights_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.insights_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.insights_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
             </li>
             {% endfor %}

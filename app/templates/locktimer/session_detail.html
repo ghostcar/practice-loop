@@ -355,7 +355,7 @@
           {% if o.close_tag_number %}
           <span class="text-xs text-[color:var(--text-secondary)] font-mono inline-flex items-center gap-1">{{ icon('tag', 'w-3.5 h-3.5') }}{{ o.close_tag_number }}</span>
           {% endif %}
-          <button onclick="verifyTag('{{ o.id }}', '{{ o.close_tag_number or '' }}')" class="px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer">{{ t.locktimer_verify_tag or "Verify" }}</button>
+          <button onclick="verifyTag('{{ o.id }}', '{{ o.close_tag_number or '' }}')" class="px-2 py-2 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer min-h-[44px]">{{ t.locktimer_verify_tag or "Verify" }}</button>
           {% if slot_journal_pending and slot_journal_pending[o.id] %}
           <a href="/journal" class="px-2 py-1 text-xs text-[color:var(--warning)] hover:bg-[color:var(--warning-soft)] rounded cursor-pointer inline-flex items-center gap-1">{{ icon('aftercare', 'w-3.5 h-3.5') }}{{ t.locktimer_journal_pending or "Complete journal details" }}</a>
           {% endif %}
@@ -400,17 +400,17 @@
           {% if o.state == 'scheduled' and not o.content_visible %}
           <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/reveal" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <button type="submit" class="px-2 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 transition cursor-pointer">Reveal</button>
+            <button type="submit" class="px-2 py-2 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700 transition cursor-pointer min-h-[44px]">Reveal</button>
           </form>
           {% endif %}
           {% if o.state in ('visible', 'submitted') %}
           <form action="/api/v2/locktimer/task-occurrences/{{ o.id }}/complete" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <button type="submit" class="px-2 py-1 bg-green-700 text-white rounded text-xs hover:bg-green-800 transition cursor-pointer inline-flex items-center gap-1">{{ icon('check', 'w-3.5 h-3.5') }}Done</button>
+            <button type="submit" class="px-2 py-2 bg-green-700 text-white rounded text-xs hover:bg-green-800 transition cursor-pointer inline-flex items-center gap-1 min-h-[44px]">{{ icon('check', 'w-3.5 h-3.5') }}Done</button>
           </form>
           {% endif %}
           {% if o.state in ('scheduled', 'visible') %}
-          <button type="button" data-lock-action="skip" data-occ-id="{{ o.id }}" data-locked-msg="{{ t.locktimer_action_skipped or 'Skipped.' }}" data-penalty-msg="{{ t.locktimer_penalty_applied or 'Penalty applied: {detail}.' }}" data-failed-msg="{{ t.locktimer_action_failed or 'Action failed.' }}" data-req-failed-msg="{{ t.locktimer_action_request_failed or 'Request failed.' }}" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition cursor-pointer">{{ t.locktimer_skip or 'Skip' }}</button>
+          <button type="button" data-lock-action="skip" data-occ-id="{{ o.id }}" data-locked-msg="{{ t.locktimer_action_skipped or 'Skipped.' }}" data-penalty-msg="{{ t.locktimer_penalty_applied or 'Penalty applied: {detail}.' }}" data-failed-msg="{{ t.locktimer_action_failed or 'Action failed.' }}" data-req-failed-msg="{{ t.locktimer_action_request_failed or 'Request failed.' }}" class="px-2 py-2 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition cursor-pointer min-h-[44px]">{{ t.locktimer_skip or 'Skip' }}</button>
           {% endif %}
         </div>
         {% endif %}

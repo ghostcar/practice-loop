@@ -118,7 +118,7 @@
                     </span>
                     <form action="/journal/partners/{{ p.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.journal_delete }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                        <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
                 </li>
                 {% endfor %}
@@ -253,7 +253,7 @@
                 </div>
                 <form action="/journal/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.journal_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
             </li>
             {% endfor %}

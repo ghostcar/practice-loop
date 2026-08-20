@@ -9,14 +9,14 @@
         <div>
             <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">Панель Управления ИИ-Верхним</span>
             <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
-                {{ icon('user-check', 'w-8 h-8 text-amber-400') }}
+                {{ icon('profile', 'w-8 h-8 text-amber-400') }}
                 <span>{{ agent.persona_name }}</span>
             </h1>
             <p class="text-xs text-archive-400 mt-1">Сообщество: <strong class="text-archive-200">{{ community.name }}</strong></p>
         </div>
 
         <div class="flex items-center gap-3 bg-archive-950 p-3 rounded-lg border border-archive-800">
-            {{ icon('sliders', 'w-5 h-5 text-amber-400') }}
+            {{ icon('settings', 'w-5 h-5 text-amber-400') }}
             <div class="text-xs">
                 <span class="text-archive-400">Уровень Строгости:</span>
                 <span class="font-bold text-amber-400 font-mono text-sm ml-1">{{ agent.strictness_level }}/5</span>

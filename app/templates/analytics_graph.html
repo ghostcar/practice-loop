@@ -9,7 +9,7 @@
         <div>
             <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">Аналитический Модуль v2</span>
             <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
-                {{ icon('share-2', 'w-8 h-8 text-amber-400') }}
+                {{ icon('link', 'w-8 h-8 text-amber-400') }}
                 <span>Интерактивный Граф Взаимосвязей</span>
             </h1>
             <p class="text-xs text-archive-400 mt-1">Визуализация 10-модульной корреляционной матрицы фактора продуктивности и восстановления.</p>
@@ -28,7 +28,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
             <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
-                {{ icon('grid', 'w-5 h-5 text-amber-400') }}
+                {{ icon('dashboard', 'w-5 h-5 text-amber-400') }}
                 <span>Пары Взаимосвязей Метрик</span>
             </h2>
 
@@ -52,7 +52,7 @@
         <!-- Clusters Summary -->
         <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
             <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
-                {{ icon('layers', 'w-5 h-5 text-amber-400') }}
+                {{ icon('catalog', 'w-5 h-5 text-amber-400') }}
                 <span>Многомерные Кластеры</span>
             </h2>
 
@@ -61,7 +61,7 @@
                 {% for cluster in analytics.clusters %}
                 <div class="bg-archive-950 border border-archive-800 p-4 rounded-lg space-y-2">
                     <div class="text-xs font-bold text-amber-400 flex items-center gap-2">
-                        {{ icon('zap', 'w-4 h-4 text-amber-400') }}
+                        {{ icon('sparkles', 'w-4 h-4 text-amber-400') }}
                         <span>{{ cluster.title }}</span>
                     </div>
                     <p class="text-xs text-archive-300">{{ cluster.description }}</p>

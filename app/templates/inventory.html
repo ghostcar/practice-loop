@@ -67,11 +67,11 @@
   <!-- Operational Status Bar (Состояние эксплуатации) -->
   <div class="flex items-center gap-2 flex-wrap text-xs">
     <span class="text-[color:var(--text-muted)] font-medium">Фильтр состояния:</span>
-    <button onclick="filterInvStatus('')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]">Все состояния</button>
-    <button onclick="filterInvStatus('available')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">{{ icon('check-circle', 'w-3.5 h-3.5') }} В наличии (Готово)</button>
-    <button onclick="filterInvStatus('in_use')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{{ icon('play', 'w-3.5 h-3.5') }} В работе</button>
-    <button onclick="filterInvStatus('cleaning')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ icon('refresh', 'w-3.5 h-3.5') }} На дезинфекции/очистке</button>
-    <button onclick="filterInvStatus('maintenance')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">{{ icon('settings', 'w-3.5 h-3.5') }} На обслуживании</button>
+    <button onclick="filterInvStatus('')" class="status-btn px-2.5 py-2 rounded-lg border min-h-[44px] border-[color:var(--border)] pl-surface-soft text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]">Все состояния</button>
+    <button onclick="filterInvStatus('available')" class="status-btn px-2.5 py-2 rounded-lg border min-h-[44px] border-[color:var(--border)] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">{{ icon('check-circle', 'w-3.5 h-3.5') }} В наличии (Готово)</button>
+    <button onclick="filterInvStatus('in_use')" class="status-btn px-2.5 py-2 rounded-lg border min-h-[44px] border-[color:var(--border)] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{{ icon('play', 'w-3.5 h-3.5') }} В работе</button>
+    <button onclick="filterInvStatus('cleaning')" class="status-btn px-2.5 py-2 rounded-lg border min-h-[44px] border-[color:var(--border)] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ icon('refresh', 'w-3.5 h-3.5') }} На дезинфекции/очистке</button>
+    <button onclick="filterInvStatus('maintenance')" class="status-btn px-2.5 py-2 rounded-lg border min-h-[44px] border-[color:var(--border)] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">{{ icon('settings', 'w-3.5 h-3.5') }} На обслуживании</button>
   </div>
 
   <!-- Extended ERP Master Data Creation Form (hidden by default) -->

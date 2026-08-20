@@ -49,7 +49,6 @@ LEGACY_COMMIT_ROUTERS: set[str] = {
     "app/api/references/task_targets.py",
     "app/api/task_flows.py",
     "app/api/tasks.py",
-    "app/api/training.py",
     "app/api/verification.py",
 }
 

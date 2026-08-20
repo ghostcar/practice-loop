@@ -65,7 +65,10 @@ def test_no_dangling_svg_in_templates() -> None:
 
 # Emoji used as content VALUES (not icons) — stored in DB / select options
 # where SVG icons cannot render. Kept intentionally; see PLAN.md debt list.
-CONTENT_EMOJI_FILES = {"app/templates/social/verification.html"}
+CONTENT_EMOJI_FILES = {
+    "app/templates/social/verification.html",
+    "app/templates/billing.html",  # emoji in <option> values for payment methods / promo banners
+}
 
 # Exact legacy debt.  New files cannot be added silently; removing an entry
 # requires replacing each glyph with a semantic icon() call, not deleting UI.

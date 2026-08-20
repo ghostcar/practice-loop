@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Сертификат Достижения — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="bg-archive-900 border-2 border-amber-400/40 rounded-2xl p-10 shadow-2xl space-y-8 text-center relative overflow-hidden">
+        <!-- Background watermark icon -->
+        <div class="absolute -right-12 -bottom-12 opacity-5 pointer-events-none text-amber-400">
+            {{ icon('trophy', 'w-96 h-96') }}
+        </div>
+
+        <div class="flex justify-center">
+            <div class="w-20 h-20 bg-archive-950 border-2 border-amber-400 rounded-full flex items-center justify-center text-amber-400 shadow-xl">
+                {{ icon('trophy', 'w-10 h-10') }}
+            </div>
+        </div>
+
+        <div>
+            <span class="text-xs uppercase tracking-widest text-amber-400 font-bold">Официальный Цифровой Сертификат</span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-archive-100 mt-2">Сертификат Завершения Программы</h1>
+            <p class="text-xs text-archive-400 mt-2 font-mono">ID Подлинности: {{ cert_id }}</p>
+        </div>
+
+        <div class="bg-archive-950 border border-archive-800 p-6 rounded-xl space-y-3 max-w-xl mx-auto">
+            <span class="text-xs text-archive-400 uppercase tracking-wider">Подтверждает Успешное Прохождение</span>
+            <h2 class="text-xl font-bold text-amber-400">{{ program_title }}</h2>
+            <div class="text-xs text-emerald-400 flex items-center justify-center gap-2 pt-2">
+                {{ icon('check-circle', 'w-4 h-4') }}
+                <span>Подлинность верифицирована в реестре PracticeLoop</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

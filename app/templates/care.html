@@ -91,7 +91,7 @@
                     <legend class="text-xs pl-text-secondary mb-1.5">{{ t.care_products_used }}</legend>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {% for p in products %}
-                        <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] min-h-[36px]">
+                        <label class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] min-h-[44px]">
                             <input type="checkbox" name="product_ids" value="{{ p.id }}" class="accent-[color:var(--accent)]">
                             <span class="truncate">{{ p.name }}</span>
                         </label>
@@ -124,7 +124,7 @@
                 </div>
                 <form action="/care/routines/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
             </li>
             {% endfor %}
@@ -178,7 +178,7 @@
                 </div>
                 <form action="/care/products/{{ p.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
             </li>
             {% endfor %}
@@ -221,7 +221,7 @@
                         {% if s.status == 'pending' %}
                         <form action="/care/course-sessions/{{ s.id }}/done" method="post" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                            <button type="submit" title="{{ s.scheduled_date }}" class="px-2 py-1 rounded-lg text-xs bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)] min-h-[36px]">{{ s.session_number }}</button>
+                            <button type="submit" title="{{ s.scheduled_date }}" class="px-2 py-1 rounded-lg text-xs bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)] min-h-[44px]">{{ s.session_number }}</button>
                         </form>
                         {% else %}
                         <span class="px-2 py-1 rounded-lg text-xs {% if s.status == 'done' %}bg-[color:var(--success-soft)] text-[color:var(--success)]{% else %}bg-[color:var(--surface-soft)] text-[color:var(--text-muted)] line-through{% endif %}">{{ s.session_number }}</span>
@@ -232,7 +232,7 @@
                 </div>
                 <form action="/care/courses/{{ c.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
             </li>
             {% endfor %}
@@ -279,7 +279,7 @@
                 </div>
                 <form action="/care/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[36px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                    <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
             </li>
             {% endfor %}
