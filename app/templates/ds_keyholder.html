@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto px-4 py-6" x-data="{ addSubModal: false, assignDutyModal: false, selectedSubId: '' }">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#keyholder"></use>
+        D/s Suite — Панель Управления Ключника (Keyholder Portal)
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Управление подконтрольными нижними (зарегистрированными и оффлайн), контроль замков Chastity, назначение приказов и модерация отчетов.
+      </p>
+    </div>
+
+    <button
+      @click="addSubModal = true"
+      class="px-4 py-2.5 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white font-medium text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+    >
+      + Добавить Профиль Нижнего
+    </button>
+  </div>
+
+  <!-- Submissives Grid -->
+  {% if submissives %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for sub in submissives %}
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4 relative overflow-hidden">
+      <!-- Top Bar of Card -->
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-100">{{ sub.name }}</h2>
+            {% if sub.is_offline %}
+            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-mono border border-slate-600">
+              👤 Ручной/Оффлайн Профиль
+            </span>
+            {% else %}
+            <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">
+              🌐 Зарегистрирован
+            </span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">{{ sub.rules_notes or 'Правила и лимиты не указаны.' }}</p>
+        </div>
+
+        <div class="text-right">
+          <span class="text-xs text-slate-400 font-mono block">Послушание</span>
+          <span class="text-lg font-bold text-emerald-400 font-mono">{{ sub.compliance_score }}%</span>
+        </div>
+      </div>
+
+      <!-- Lock Status Display & Controls -->
+      <div class="p-4 bg-surface-900/80 border border-surface-700 rounded-xl flex items-center justify-between">
+        <div>
+          <span class="text-xs text-slate-400 block font-mono">Статус Замка Chastity:</span>
+          {% if sub.chastity_status == 'locked' %}
+          <span class="text-sm font-bold text-rose-400 flex items-center gap-1">🔒 Заблокирован (Keyholder Locked)</span>
+          {% elif sub.chastity_status == 'unlocked' %}
+          <span class="text-sm font-bold text-emerald-400 flex items-center gap-1">🔑 Разблокирован / Свободен</span>
+          {% elif sub.chastity_status == 'keyholder_held' %}
+          <span class="text-sm font-bold text-amber-400 flex items-center gap-1">🛡️ Ключ у Ключника</span>
+          {% else %}
+          <span class="text-sm font-bold text-indigo-400 flex items-center gap-1">🚨 Экстренное Снятие</span>
+          {% endif %}
+        </div>
+
+        <!-- Action Quick-Form -->
+        <form action="/ds/submissive/{{ sub.id }}/lock-action" method="POST" class="flex gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          {% if sub.chastity_status != 'locked' %}
+          <button type="submit" name="action" value="lock" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow">
+            🔒 Запереть
+          </button>
+          {% else %}
+          <button type="submit" name="action" value="unlock" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow">
+            🔑 Отпереть
+          </button>
+          {% endif %}
+        </form>
+      </div>
+
+      <!-- Assign Duty Button -->
+      <div class="pt-2 flex justify-between items-center border-t border-surface-700">
+        <span class="text-xs text-slate-400">Назначено приказов: {{ sub.duties|length }}</span>
+        <button
+          @click="selectedSubId = '{{ sub.id }}'; assignDutyModal = true"
+          class="px-3 py-1.5 bg-surface-700 hover:bg-surface-600 text-slate-200 text-xs font-medium rounded-lg border border-surface-600 transition-colors"
+        >
+          + Назначить Приказ
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center space-y-3">
+    <p class="text-sm text-slate-400">У вас пока нет подконтрольных нижних.</p>
+    <button @click="addSubModal = true" class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow">
+      Добавить Первого Нижнего
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- Add Submissive Modal -->
+  <div x-show="addSubModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-100">Создание Профиля Нижнего</h3>
+      <form action="/ds/submissive/create" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Имя / Позывной Нижнего:</label>
+          <input type="text" name="name" required class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="Подконтрольный #1">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Тип Профиля:</label>
+          <select name="is_offline" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
+            <option value="true" selected>👤 Ручной / Оффлайн Профиль (Без аккаунта на сайте)</option>
+            <option value="false">🌐 Зарегистрированный пользователь</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Правила и Ограничения:</label>
+          <textarea name="rules_notes" rows="2" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100" placeholder="Установленные стоп-слова, протоколы отчетов..."></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="addSubModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="submit" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Assign Duty Modal -->
+  <div x-show="assignDutyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-100">Назначить Приказ / Задачу</h3>
+      <form action="/ds/duties/assign" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="managed_sub_id" :value="selectedSubId">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Название Приказа:</label>
+          <input type="text" name="title" required class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="Ежедневный отчет замка / Удержание позы 20 мин">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Инструкция / Требования:</label>
+          <textarea name="description" rows="2" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100" placeholder="Загрузить фото-подтверждение ключа до 22:00..."></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" @click="assignDutyModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="submit" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Отправить Приказ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
