@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#lock"></use>
+        Позорный Столб & Голосование Сообщества (Pillory Board)
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">
+        Публичные удержания и замки участников. Голосуйте за продление, сокращение или назначение задач!
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 bg-surface-800 p-2 border border-surface-700 rounded-xl font-mono text-xs text-amber-400">
+      <span>🪙 +15 Social XP за каждый голос</span>
+    </div>
+  </div>
+
+  <!-- Pillory Active Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for sub in submissives %}
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between hover:border-rose-500/50 transition-all">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold text-slate-100">{{ sub.name }}</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono text-xs font-bold border border-rose-500/30">
+            🔒 Locked
+          </span>
+        </div>
+
+        <p class="text-xs text-slate-400 font-mono bg-surface-900/60 p-2.5 rounded-xl border border-surface-700">
+          Правила: {{ sub.rules_notes or 'Обычный режим дисциплины.' }}
+        </p>
+
+        <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+          <span>Послушание: <strong class="text-emerald-400">{{ sub.compliance_score }}%</strong></span>
+          <span>Голосов за день: <strong class="text-amber-400">4</strong></span>
+        </div>
+      </div>
+
+      <!-- Pillory Vote Wheel Form Buttons -->
+      <div class="space-y-2 pt-3 border-t border-surface-700">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold block">Отдать Голос:</span>
+
+        <form action="/social/pillory/vote" method="POST" class="grid grid-cols-2 gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <input type="hidden" name="sub_id" value="{{ sub.id }}">
+
+          <button type="submit" name="vote_type" value="add_15m" class="px-3 py-2 bg-rose-600/80 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all">
+            ⏳ +15 мин
+          </button>
+
+          <button type="submit" name="vote_type" value="add_1h" class="px-3 py-2 bg-rose-700 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all">
+            ⏳ +1 час
+          </button>
+
+          <button type="submit" name="vote_type" value="sub_15m" class="px-3 py-2 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all">
+            🔑 -15 мин
+          </button>
+
+          <button type="submit" name="vote_type" value="assign_task" class="px-3 py-2 bg-indigo-600/80 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all">
+            📋 Задание
+          </button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-3 bg-surface-800 border border-surface-700 rounded-2xl p-12 text-center space-y-2">
+      <p class="text-sm text-slate-400">На позорном столбе сейчас нет активных удержаний.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

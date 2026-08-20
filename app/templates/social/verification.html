@@ -1,98 +1,75 @@
 {% extends "base.html" %}
-{% set active_nav = "social" %}
-
-{% block title %}{{ t.social_verify_title }}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-8 space-y-6">
-  <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.social_verify_title }}</h1>
-  <p class="text-sm text-[color:var(--text-secondary)]">{{ t.social_verify_subtitle }}</p>
+<div class="space-y-6 max-w-5xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#camera"></use>
+        Народная Верификация & Peer Review Board
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">
+        Проверка выполнения фото-отчетов и номерных пломб сообществом. Для зачета необходимо 3 положительных голоса.
+      </p>
+    </div>
 
-  <!-- Create verification request -->
-  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_create }}</h2>
-    <form action="/social/verify/create" method="post" class="space-y-3">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <div class="flex gap-3 flex-wrap">
-        <input type="text" name="subject_id" required
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
-               placeholder="Subject UUID">
-        <input type="number" name="min_approvals" value="1" min="1" max="20"
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm w-20 text-[color:var(--text)]"
-               title="Min approvals">
-        <input type="number" name="deadline_hours" value="72" min="1" max="720"
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm w-20 text-[color:var(--text)]"
-               title="Deadline hours">
-        <button type="submit" class="px-5 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_verify_create_btn }}</button>
+    <div class="flex items-center gap-2 bg-surface-800 p-2 border border-surface-700 rounded-xl font-mono text-xs text-emerald-400">
+      <span>🤝 Консенсус Сообщества: 3/3 Голоса</span>
+    </div>
+  </div>
+
+  <!-- Verification Queue Cards -->
+  <div class="space-y-4">
+    <!-- Verification Card 1 -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono font-bold text-indigo-400">@anonymous_sub</span>
+          <span class="px-2 py-0.5 rounded bg-surface-900 text-slate-400 text-[10px] font-mono">🏷️ Номерная Пломба #SEAL-8841</span>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-500/30">
+          ⏳ Ожидает Проверки (2/3)
+        </span>
       </div>
-    </form>
-  </section>
 
-  <!-- Cast vote -->
-  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_vote }}</h2>
-    <form action="/social/verify/PLACEHOLDER/vote" method="post" class="space-y-2"
-          onsubmit="this.action = this.action.replace('PLACEHOLDER', document.getElementById('vote_req_id').value)">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <div class="flex gap-2 flex-wrap items-center">
-        <input type="text" id="vote_req_id" required
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
-               placeholder="Request UUID">
-        <select name="value" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
-          <option value="approve">✅ {{ t.social_verify_approve }}</option>
-          <option value="reject">❌ {{ t.social_verify_reject }}</option>
-          <option value="abstain">⏸ {{ t.social_verify_abstain }}</option>
-        </select>
-        <input type="text" name="comment" maxlength="500"
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)] flex-1"
-               placeholder="Comment (optional)">
-        <button type="submit" class="px-4 py-2 bg-green-700 text-white text-sm rounded-lg hover:bg-green-800">{{ t.social_verify_vote_btn }}</button>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Photo Placeholder -->
+        <div class="bg-surface-900/90 border border-surface-700 rounded-xl p-4 flex flex-col items-center justify-center min-h-[140px] text-center space-y-2">
+          <span class="text-3xl">📷</span>
+          <span class="text-xs font-mono text-slate-400">Фото Пломбы Замка</span>
+          <span class="text-[10px] text-emerald-400 font-mono">Vision AI: Verified 98%</span>
+        </div>
+
+        <div class="md:col-span-2 space-y-3 flex flex-col justify-between">
+          <div class="space-y-1">
+            <h3 class="text-sm font-bold text-slate-100">Инспекционный Фото-Отчет Замка Chastity</h3>
+            <p class="text-xs text-slate-400">Загружено 15 минут назад. Проверка целостности номерной пломбы и фиксаторов.</p>
+          </div>
+
+          <!-- Vote Bar -->
+          <div class="space-y-2 pt-2 border-t border-surface-700">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-400">Прогресс зачета:</span>
+              <span class="text-emerald-400 font-bold">2 из 3 голосов</span>
+            </div>
+            <div class="w-full bg-surface-900 h-2 rounded-full overflow-hidden border border-surface-700">
+              <div class="bg-emerald-500 h-full w-2/3"></div>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+              <button @click="alert('✅ Голос «Зачтено» принят! +10 XP')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow transition-all">
+                ✅ Одобрить (+10 XP)
+              </button>
+              <button @click="alert('❌ Голос «Отклонено» принят')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow transition-all">
+                ❌ Отклонить
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </form>
-  </section>
-
-  <!-- Comment on feed -->
-  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_comment }}</h2>
-    <form action="/social/comment" method="post" class="space-y-2">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <div class="flex gap-2 flex-wrap">
-        <select name="target_type" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
-          <option value="publication">Publication</option>
-          <option value="verification_request">Verification</option>
-        </select>
-        <input type="text" name="target_id" required
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
-               placeholder="Target UUID">
-        <input type="text" name="body" required maxlength="2000"
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)] flex-1"
-               placeholder="Your comment...">
-        <button type="submit" class="px-4 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_verify_send }}</button>
-      </div>
-    </form>
-  </section>
-
-  <!-- Encouragement -->
-  <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_verify_encourage }}</h2>
-    <form action="/social/encourage" method="post" class="flex gap-2 flex-wrap items-center">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <select name="target_type" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
-        <option value="publication">Publication</option>
-        <option value="verification_request">Verification</option>
-      </select>
-      <input type="text" name="target_id" required
-             class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]"
-             placeholder="Target UUID">
-      <button type="submit" name="encouragement_type" value="thumbs_up"
-              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">👍</button>
-      <button type="submit" name="encouragement_type" value="support"
-              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">💪</button>
-      <button type="submit" name="encouragement_type" value="celebrate"
-              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">🎉</button>
-      <button type="submit" name="encouragement_type" value="motivate"
-              class="px-3 py-2 text-sm rounded-lg border border-[color:var(--border-strong)] hover:bg-[color:var(--surface-soft)]">🔥</button>
-    </form>
-  </section>
+    </div>
+  </div>
 </div>
 {% endblock %}
