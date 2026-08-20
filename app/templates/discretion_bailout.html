@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#lock"></use>
+        Центр Конфиденциальности и Маскировки (Discretion Bailout Center)
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Мгновенная защита приватности и переключение интерфейса в нейтральный рабочий режим (Stealth Mode).
+      </p>
+    </div>
+
+    <form action="/discretion/toggle" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      <button
+        type="submit"
+        class="px-4 py-2.5 bg-gradient-to-r from-slate-700 to-indigo-600 hover:from-slate-600 hover:to-indigo-500 text-white font-medium text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        Переключить Нейтральный Режим (Stealth)
+      </button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Status Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        Статус Защиты Приватности
+      </h2>
+      <p class="text-xs text-slate-400">
+        В режиме маскировки все специфические термины и заголовки портала автоматически заменяются на нейтральные формулировки ("Задачи", "Проекты", "Расписание").
+      </p>
+
+      <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300">
+        🛡️ **Шифрование & Локальный Кэш**: Ваши записи полностью защищены и недоступны без повторного авторизованного входа.
+      </div>
+    </div>
+
+    <!-- Emergency Shortcut Card -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        Быстрые Действия
+      </h2>
+      <p class="text-xs text-slate-400">Настройки экстренной очистки экрана сессии при необходимости.</p>
+
+      <form action="/auth/logout" method="POST" class="pt-2">
+        <button
+          type="submit"
+          class="w-full py-2.5 bg-rose-600/80 hover:bg-rose-500 text-white font-medium text-xs rounded-xl shadow transition-colors"
+        >
+          🚨 Мгновенный Выход из Аккаунта (Bailout Logout)
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

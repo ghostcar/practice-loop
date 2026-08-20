@@ -168,3 +168,45 @@ async def change_password(
     db.add(user)
     await db.execute(delete(ApiToken).where(ApiToken.user_id == user.id))
     return RedirectResponse(url="/settings?password_status=changed", status_code=303)
+
+
+@router.get("/discretion/bailout", response_class=HTMLResponse)
+async def discretion_bailout_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Emergency Discretion & Stealth Control Center page."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="discretion_bailout.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "settings",
+        },
+    )
+
+
+@router.post("/discretion/toggle")
+async def toggle_discretion_endpoint(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Quick toggle for Discretion Stealth Mode."""
+    from app.prefs import raw_dict
+
+    raw = sanitize_prefs(raw_dict(user.prefs))
+    mode = "off" if raw.get("discretion", {}).get("mode") == "always" else "always"
+    raw["discretion"]["mode"] = mode
+    user.prefs = raw
+    db.add(user)
+    await db.commit()
+    return RedirectResponse(url="/discretion/bailout", status_code=303)
+
