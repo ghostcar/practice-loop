@@ -241,10 +241,12 @@ app.include_router(push_router)
 app.include_router(tokens_router)
 
 from app.api.ds import router as ds_router  # noqa: E402
+from app.api.llm_exchange import router as llm_exchange_router  # noqa: E402
 from app.telegram.bot import tg_router  # noqa: E402
 
 app.include_router(tg_router)
 app.include_router(ds_router)
+app.include_router(llm_exchange_router)
 
 # ---------------------------------------------------------------------------
 # Tracker routes

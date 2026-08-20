@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Обмен с внешней ИИ-моделью — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight text-archive-100 flex items-center gap-3">
+            {{ icon('ai', 'w-8 h-8 text-amber-400') }}
+            <span>Обмен с внешней ИИ-моделью</span>
+        </h1>
+        <p class="mt-2 text-archive-400">
+            Сквозная генерация и составление планов через внешние интерфейсы ИИ с возможностью точного сопоставления со своими справочниками.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Left Panel: Prompt Exporter -->
+        <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-archive-100 mb-4 flex items-center gap-2">
+                    {{ icon('export', 'w-5 h-5 text-amber-400') }}
+                    <span>1. Экспорт Сквозного Промпта</span>
+                </h2>
+
+                <label class="block text-sm font-medium text-archive-300 mb-2">Выберите сферы для генерации:</label>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <label class="flex items-center gap-2 bg-archive-950 p-3 rounded-lg border border-archive-800 cursor-pointer hover:border-archive-700 transition">
+                        <input type="checkbox" name="domain_chk" value="tracker" checked class="rounded border-archive-700 text-amber-500 focus:ring-amber-500">
+                        <span class="text-sm text-archive-200">Задачи и Активности</span>
+                    </label>
+                    <label class="flex items-center gap-2 bg-archive-950 p-3 rounded-lg border border-archive-800 cursor-pointer hover:border-archive-700 transition">
+                        <input type="checkbox" name="domain_chk" value="timer" checked class="rounded border-archive-700 text-amber-500 focus:ring-amber-500">
+                        <span class="text-sm text-archive-200">Таймеры и Удержания</span>
+                    </label>
+                    <label class="flex items-center gap-2 bg-archive-950 p-3 rounded-lg border border-archive-800 cursor-pointer hover:border-archive-700 transition">
+                        <input type="checkbox" name="domain_chk" value="care" class="rounded border-archive-700 text-amber-500 focus:ring-amber-500">
+                        <span class="text-sm text-archive-200">Протоколы Ухода</span>
+                    </label>
+                    <label class="flex items-center gap-2 bg-archive-950 p-3 rounded-lg border border-archive-800 cursor-pointer hover:border-archive-700 transition">
+                        <input type="checkbox" name="domain_chk" value="training" class="rounded border-archive-700 text-amber-500 focus:ring-amber-500">
+                        <span class="text-sm text-archive-200">Тренировки</span>
+                    </label>
+                </div>
+
+                <button id="btn-export-prompt" onclick="generateAndCopyPrompt()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-archive-950 font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                    {{ icon('copy', 'w-5 h-5') }}
+                    <span>Скопировать Сквозной Промпт</span>
+                </button>
+
+                <div class="mt-6">
+                    <label class="block text-xs font-medium text-archive-400 mb-2">Предпросмотр промпта:</label>
+                    <textarea id="prompt-preview" readonly rows="8" class="w-full bg-archive-950 border border-archive-800 rounded-lg p-3 text-xs font-mono text-archive-300 focus:outline-none" placeholder="Нажмите кнопку выше для генерации промпта..."></textarea>
+                </div>
+            </div>
+            <p id="copy-status" class="mt-2 text-xs text-emerald-400 hidden">✓ Промпт скопирован в буфер обмена!</p>
+        </div>
+
+        <!-- Right Panel: Response Parser & Reference Matcher -->
+        <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col justify-between">
+            <div>
+                <h2 class="text-xl font-semibold text-archive-100 mb-4 flex items-center gap-2">
+                    {{ icon('import', 'w-5 h-5 text-amber-400') }}
+                    <span>2. Импорт Ответа и Сопоставление</span>
+                </h2>
+
+                <label class="block text-sm font-medium text-archive-300 mb-2">Вставьте ответ от внешней ИИ-модели:</label>
+                <textarea id="raw-response-input" rows="6" class="w-full bg-archive-950 border border-archive-800 rounded-lg p-3 text-xs font-mono text-archive-200 focus:ring-amber-500 focus:border-amber-500 mb-4" placeholder="Вставьте JSON или markdown-блок ответа внешней модели..."></textarea>
+
+                <button onclick="parseAndMatchResponse()" class="w-full py-3 px-4 bg-archive-800 hover:bg-archive-700 text-archive-100 font-medium rounded-lg border border-archive-700 transition flex items-center justify-center gap-2">
+                    {{ icon('settings', 'w-5 h-5') }}
+                    <span>Распаковать и сопоставить справочники</span>
+                </button>
+
+                <!-- Container for Parsed Items & Reference Selectors -->
+                <div id="parsed-items-container" class="mt-6 hidden">
+                    <h3 class="text-sm font-semibold text-archive-200 mb-3">Сопоставление со своими справочниками:</h3>
+                    <form action="/llm/exchange/confirm" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                        <input type="hidden" id="confirmed-title" name="title" value="Сквозной план от Внешней ИИ">
+                        <input type="hidden" id="confirmed-reasoning" name="reasoning" value="">
+                        <input type="hidden" id="confirmed-items-json" name="items_json" value="[]">
+
+                        <div id="items-list-box" class="space-y-3 mb-4 max-h-60 overflow-y-auto pr-1"></div>
+
+                        <button type="submit" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                            {{ icon('check', 'w-5 h-5') }}
+                            <span>Подтвердить и создать план в БД (+30 XP)</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function generateAndCopyPrompt() {
+    const checkboxes = document.querySelectorAll('input[name="domain_chk"]:checked');
+    const formData = new FormData();
+    checkboxes.forEach(c => formData.append('domains', c.value));
+    formData.append('csrf_token', '{{ request.cookies.get("csrf_token", "") }}');
+
+    const res = await fetch('/llm/exchange/export', {
+        method: 'POST',
+        headers: {'X-CSRF-Token': '{{ request.cookies.get("csrf_token", "") }}'},
+        body: formData
+    });
+    const data = await res.json();
+    if (data.prompt) {
+        const area = document.getElementById('prompt-preview');
+        area.value = data.prompt;
+        navigator.clipboard.writeText(data.prompt);
+        const status = document.getElementById('copy-status');
+        status.classList.remove('hidden');
+        setTimeout(() => status.classList.add('hidden'), 3000);
+    }
+}
+
+async function parseAndMatchResponse() {
+    const rawText = document.getElementById('raw-response-input').value;
+    if (!rawText.trim()) return;
+
+    const formData = new FormData();
+    formData.append('raw_response', rawText);
+    formData.append('csrf_token', '{{ request.cookies.get("csrf_token", "") }}');
+
+    const res = await fetch('/llm/exchange/parse', {
+        method: 'POST',
+        headers: {'X-CSRF-Token': '{{ request.cookies.get("csrf_token", "") }}'},
+        body: formData
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+        const container = document.getElementById('parsed-items-container');
+        const listBox = document.getElementById('items-list-box');
+        container.classList.remove('hidden');
+        listBox.innerHTML = '';
+
+        const parsed = data.parsed;
+        document.getElementById('confirmed-title').value = parsed.title || 'Сквозной план от Внешней ИИ';
+        document.getElementById('confirmed-reasoning').value = parsed.reasoning || '';
+        document.getElementById('confirmed-items-json').value = JSON.stringify(parsed.items || []);
+
+        (parsed.items || []).forEach((it, idx) => {
+            const row = document.createElement('div');
+            row.className = 'p-3 bg-archive-950 border border-archive-800 rounded-lg text-xs flex flex-col gap-2';
+            row.innerHTML = `
+                <div class="font-semibold text-archive-100 flex items-center justify-between">
+                    <span>${it.title || 'Активность'}</span>
+                    <span class="text-archive-400 text-[10px]">${it.domain || 'general'}</span>
+                </div>
+                <div class="text-archive-300">${it.notes || ''}</div>
+            `;
+            listBox.appendChild(row);
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 {
   "alembic": {
-    "checked_at": "2026-08-20T06:27:02Z",
+    "checked_at": "2026-08-20T06:31:26Z",
     "command": "alembic heads",
     "heads": [
       "081_social_grant_invariants"
@@ -8,13 +8,13 @@
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-20T06:27:02Z",
+  "generated_at": "2026-08-20T06:31:26Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:ca5eee149876e3315f82e491a5c81780c3fe50f90d2a4518777a7cea98a84f54",
+    "diff_hash": "sha256:463a0f94fa63f901a977ce2fa013def6a07f9f2632dfd364ae8f0370f10f7768",
     "dirty": true,
-    "head": "79ab4f4e86d779c4e6663b2a23d433a0c219907a"
+    "head": "fb7032ef510bdbff1e2ab11441e5a497d57721b5"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
