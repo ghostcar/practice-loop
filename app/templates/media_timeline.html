@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Временная Шкала Медиа — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header Badge -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">Архив Доказательств</span>
+            <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
+                {{ icon('calendar', 'w-8 h-8 text-amber-400') }}
+                <span>Хронологическая Лента Медиа</span>
+            </h1>
+            <p class="text-xs text-archive-400 mt-1">История фото и видео-подтверждений выполнения квестов, чек-инов и процедур ухода.</p>
+        </div>
+
+        <div class="flex items-center gap-3 bg-archive-950 p-3 rounded-lg border border-archive-800">
+            {{ icon('image', 'w-5 h-5 text-amber-400') }}
+            <div class="text-xs">
+                <span class="text-archive-400">Всего Снимков:</span>
+                <span class="font-bold text-amber-400 font-mono text-sm ml-1">{{ assets|length }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Assets List -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+        <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+            {{ icon('clock', 'w-5 h-5 text-amber-400') }}
+            <span>История Чек-инов</span>
+        </h2>
+
+        {% if assets %}
+        <div class="space-y-4">
+            {% for asset in assets %}
+            <div class="bg-archive-950 border border-archive-800 p-4 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-archive-900 rounded-lg flex items-center justify-center border border-archive-800 text-amber-400">
+                        {{ icon('file-text', 'w-6 h-6') }}
+                    </div>
+                    <div>
+                        <span class="text-xs font-mono text-archive-400">ID: {{ asset.id }}</span>
+                        <div class="text-sm font-semibold text-archive-100 flex items-center gap-2 mt-0.5">
+                            <span class="capitalize">{{ asset.owner_type }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-right">
+                    <span class="text-[10px] uppercase font-mono text-archive-400">Дата Загрузки</span>
+                    <div class="text-xs font-mono text-archive-200">{{ asset.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-archive-400">В медиа-архиве пока нет загруженных подтверждений.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
