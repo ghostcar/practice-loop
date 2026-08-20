@@ -1,4 +1,4 @@
-"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-47 / ADR-123)."""
+"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-47 / ADR-123 & ADR-095)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.memory import recall_user_memories
-from app.agent.proactive import trigger_event_chain
+from app.agent.proactive import schedule_agent_reminder, trigger_event_chain
 from app.llm.pipeline import generate_task
 from app.models.care import CareRoutine
 from app.models.health import HealthState
@@ -132,6 +132,22 @@ AGENT_TOOLS_SCHEMA = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_agent_reminder",
+            "description": "Create an in-app and Telegram reminder for the user.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Short title of the reminder"},
+                    "message": {"type": "string", "description": "Detailed text or instructions"},
+                    "delay_minutes": {"type": "integer", "description": "Optional delay in minutes"},
+                },
+                "required": ["title", "message"],
+            },
+        },
+    },
 ]
 
 
@@ -240,5 +256,14 @@ async def execute_agent_tool(
         event_type = arguments.get("event_type", "custom_event")
         res = await trigger_event_chain(event_type=event_type, user_id=user_id, db=db)
         return {"status": "scheduled", "event_type": event_type, "chain_result": res}
+
+    elif tool_name == "create_agent_reminder":
+        title = arguments.get("title", "Напоминание Агента")
+        message = arguments.get("message", "")
+        delay = arguments.get("delay_minutes", 0)
+        res = await schedule_agent_reminder(
+            title=title, message=message, user_id=user_id, db=db, delay_minutes=delay, send_telegram=True
+        )
+        return res
 
     return {"status": "error", "message": f"Unknown tool '{tool_name}'"}
