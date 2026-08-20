@@ -1,4 +1,4 @@
-"""Centralized Prompt Library Registry & Manager (Step 49 / ADR-124)."""
+"""Centralized Prompt Library Registry & Manager (Step 49-50 / ADR-124)."""
 
 from __future__ import annotations
 
@@ -72,6 +72,39 @@ DEFAULT_PROMPT_REGISTRY: list[dict[str, Any]] = [
             '{"verified": true/false, "confidence": 0-100, "reasoning": "краткое объяснение"}'
         ),
     },
+    {
+        "key": "keyholder.decision",
+        "library_type": "system",
+        "title": "ИИ-Ключник: Принятие Решений по Замкам Chastity",
+        "description": "Системный промпт оценки выполнения требований для открытия или продления окна замка.",
+        "template_content": (
+            "Ты — ИИ-Ключник Chastity. На основе истории вычислений таймера, дисциплины и фото-подтверждений "
+            "прими решение: открыть замок, продлить удержание или выдать штрафное задание.\n"
+            "Контекст: {{keyholder_context}}"
+        ),
+    },
+    {
+        "key": "catalog.ai_generator",
+        "library_type": "system",
+        "title": "ИИ-Генератор Карточек Каталога",
+        "description": "Системный промпт генерации кандидатов сущностей для каталога активностей.",
+        "template_content": (
+            "Ты — Генератор Карточек Каталога Активностей PracticeLoop. Создавай структурированные задания "
+            "с валидной JSON-схемой параметров в рамках предписанного уровня откровенности.\n"
+            "Уровень: {{explicit_level}}, Директивы: {{custom_directives}}"
+        ),
+    },
+    {
+        "key": "journal.consultant",
+        "library_type": "system",
+        "title": "Консультант Сексуального Дневника и Заметок",
+        "description": "Системный промпт анализа эмоционального состояния и записей парного дневника.",
+        "template_content": (
+            "Ты — Эмпатичный Консультант Дневника Практик. Проанализируй дневниковые записи, выдели "
+            "динамику доверия, комфортные практики и дай рекомендацию по укреплению контакта.\n"
+            "Записи: {{journal_entries}}"
+        ),
+    },
     # --- USER PROMPTS ---
     {
         "key": "task.generator_base",
@@ -101,6 +134,15 @@ DEFAULT_PROMPT_REGISTRY: list[dict[str, Any]] = [
         "template_content": (
             "Проведи пошаговую сессию ухода Aftercare для пользователя с учётом "
             "сохранённых предпочтений: {{care_products}}"
+        ),
+    },
+    {
+        "key": "media.photo_verifier",
+        "library_type": "user",
+        "title": "Мультимодальный запрос верификации фото",
+        "description": "Пользовательский шаблон запроса Vision AI для проверки оригинальности и распознавания позы.",
+        "template_content": (
+            "Проверь загруженное фото на предмет выполнения позы '{{posture_name}}' и считывания кода '{{code}}'."
         ),
     },
 ]

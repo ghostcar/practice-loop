@@ -1,4 +1,4 @@
-"""Full Multi-Modal Session & Task Verification Engine (Step 48 / ADR-123 & ADR-075)."""
+"""Full Multi-Modal Session & Task Verification Engine (Step 48-50 / ADR-123 & ADR-124)."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.llm.client import call_llm
 from app.llm.pipeline import get_active_llm_config
 from app.models.media import MediaAsset
+from app.prompt_library import get_prompt_template
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +37,13 @@ async def verify_task_photo(
     if not llm_config:
         return {"status": "error", "message": "No active LLM configuration for Vision inspection."}
 
-    # Vision prompt for task verification
-    system_prompt = (
-        "Ты — Эксперт Мультимодальной Верификации Заданий. Оцени изображение на предмет соответствия "
-        "заданной физической практике или позе. Отвечай строго в формате JSON: "
-        '{"verified": true/false, "confidence": 0-100, "reasoning": "краткое объяснение"}'
+    # Dynamic Vision prompt from Prompt Library
+    system_prompt = await get_prompt_template(db=db, key="agent.vision_verify")
+    user_prompt = await get_prompt_template(
+        db=db, key="media.photo_verifier", posture_name=task_description, code="N/A"
     )
 
-    user_prompt = f"Задание для проверки: {task_description}"
-
     try:
-        # Construct image message with data URL or path reference
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
