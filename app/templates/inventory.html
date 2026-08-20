@@ -35,25 +35,25 @@
     </div>
     <div class="flex flex-wrap gap-2" id="group-type-tabs">
       <button onclick="filterGroup('')" data-group="" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5 active">
-        📦 Вся номенклатура
+        {{ icon('inventory', 'w-3.5 h-3.5') }} Вся номенклатура
       </button>
       <button onclick="filterGroup('equipment')" data-group="equipment" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-        ⚙️ Снаряжение & Инвентарь
+        {{ icon('settings', 'w-3.5 h-3.5') }} Снаряжение & Инвентарь
       </button>
       <button onclick="filterGroup('wear')" data-group="wear" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-        👗 Экипировка & Одежда
+        {{ icon('tag', 'w-3.5 h-3.5') }} Экипировка & Одежда
       </button>
       <button onclick="filterGroup('care_cosmetics')" data-group="care_cosmetics" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-        🧴 Уход & Косметика
+        {{ icon('routine', 'w-3.5 h-3.5') }} Уход & Косметика
       </button>
       <button onclick="filterGroup('electronics')" data-group="electronics" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-        🔌 Девайсы & Электроника
+        {{ icon('device', 'w-3.5 h-3.5') }} Девайсы & Электроника
       </button>
       <button onclick="filterGroup('furniture')" data-group="furniture" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold pl-surface-soft border border-[color:var(--border)] text-[color:var(--text)] hover:border-[color:var(--accent)] transition-all flex items-center gap-1.5">
-        🛋️ Мебель & Фиксация
+        {{ icon('home', 'w-3.5 h-3.5') }} Мебель & Фиксация
       </button>
       <button onclick="filterShoppingList()" class="group-btn px-3 py-2 rounded-xl text-xs font-semibold bg-[color:var(--warning-soft)] text-[color:var(--warning)] border border-[color:var(--border)] hover:opacity-90 transition-all flex items-center gap-1.5">
-        🛒 Корзина закупок
+        {{ icon('archive', 'w-3.5 h-3.5') }} Корзина закупок
       </button>
     </div>
 
@@ -68,10 +68,10 @@
   <div class="flex items-center gap-2 flex-wrap text-xs">
     <span class="text-[color:var(--text-muted)] font-medium">Фильтр состояния:</span>
     <button onclick="filterInvStatus('')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]">Все состояния</button>
-    <button onclick="filterInvStatus('available')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">🟢 В наличии (Готово)</button>
-    <button onclick="filterInvStatus('in_use')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">🔵 В работе</button>
-    <button onclick="filterInvStatus('cleaning')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">🟡 На дезинфекции/очистке</button>
-    <button onclick="filterInvStatus('maintenance')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">🔧 На обслуживании</button>
+    <button onclick="filterInvStatus('available')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">{{ icon('check-circle', 'w-3.5 h-3.5') }} В наличии (Готово)</button>
+    <button onclick="filterInvStatus('in_use')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">{{ icon('play', 'w-3.5 h-3.5') }} В работе</button>
+    <button onclick="filterInvStatus('cleaning')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ icon('refresh', 'w-3.5 h-3.5') }} На дезинфекции/очистке</button>
+    <button onclick="filterInvStatus('maintenance')" class="status-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">{{ icon('settings', 'w-3.5 h-3.5') }} На обслуживании</button>
   </div>
 
   <!-- Extended ERP Master Data Creation Form (hidden by default) -->
@@ -81,7 +81,7 @@
         {{ icon('plus', 'w-5 h-5 text-[color:var(--accent)]') }}
         Карточка создания новой Номенклатуры (ERP Specification)
       </h3>
-      <button onclick="hideForm()" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--text)]">Закрыть ✕</button>
+      <button onclick="hideForm()" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--text)] inline-flex items-center gap-1">{{ icon('close', 'w-3.5 h-3.5') }} Закрыть</button>
     </div>
 
     <form id="inv-form" class="space-y-4">
@@ -90,12 +90,12 @@
         <div>
           <label class="block text-xs font-semibold text-[color:var(--text-secondary)] mb-1">Группа номенклатуры *</label>
           <select id="inv-group-type" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] focus:outline-none focus:border-[color:var(--accent)]">
-            <option value="equipment" selected>⚙️ Снаряжение & Инвентарь</option>
-            <option value="wear">👗 Экипировка & Одежда</option>
-            <option value="care_cosmetics">🧴 Уход & Косметика</option>
-            <option value="electronics">🔌 Девайсы & Электроника</option>
-            <option value="furniture">🛋️ Мебель & Фиксаторы</option>
-            <option value="general">📝 Общий справочник</option>
+            <option value="equipment" selected>Снаряжение & Инвентарь</option>
+            <option value="wear">Экипировка & Одежда</option>
+            <option value="care_cosmetics">Уход & Косметика</option>
+            <option value="electronics">Девайсы & Электроника</option>
+            <option value="furniture">Мебель & Фиксаторы</option>
+            <option value="general">Общий справочник</option>
           </select>
         </div>
 
@@ -148,11 +148,11 @@
         <div>
           <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Состояние эксплуатации</label>
           <select id="inv-operational-status" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)]">
-            <option value="available" selected>🟢 В наличии (Готов)</option>
-            <option value="in_use">🔵 В работе / Сессия</option>
-            <option value="cleaning">🟡 На дезинфекции</option>
-            <option value="maintenance">🔧 На обслуживании</option>
-            <option value="archived">📦 В архиве</option>
+            <option value="available" selected>В наличии (Готов)</option>
+            <option value="in_use">В работе / Сессия</option>
+            <option value="cleaning">На дезинфекции</option>
+            <option value="maintenance">На обслуживании</option>
+            <option value="archived">В архиве</option>
           </select>
         </div>
 
@@ -170,7 +170,7 @@
       <div class="flex items-center justify-between pt-2">
         <label class="flex items-center gap-2 text-xs font-medium text-[color:var(--text)] cursor-pointer">
           <input type="checkbox" id="inv-shop" class="rounded text-[color:var(--accent)]">
-          🛒 Поместить в список закупок (Shopping list)
+          {{ icon('archive', 'w-3.5 h-3.5') }} Поместить в список закупок (Shopping list)
         </label>
 
         <div class="flex items-center gap-2">

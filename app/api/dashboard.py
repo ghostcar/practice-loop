@@ -341,7 +341,7 @@ async def dashboard(
                 {
                     "type": "warning",
                     "icon": "heart",
-                    "title": "📉 Post-session Drop (Эмоциональный спад)",
+                    "title": "Post-session Drop (Эмоциональный спад)",
                     "message": (
                         "Активирован режим бережного восстановления. "
                         "Рекомендуются расслабляющие процедуры Ухода и Aftercare."
@@ -355,7 +355,7 @@ async def dashboard(
                 {
                     "type": "warning",
                     "icon": "today",
-                    "title": f"⚡ Низкий уровень восстановления ({today_state.recovery}/5)",
+                    "title": f"Низкий уровень восстановления ({today_state.recovery}/5)",
                     "message": "ИИ-Наблюдатель рекомендует снизить интенсивность физических тренировок и нагрузок.",
                     "action_url": "/health",
                     "action_label": "Дневник Здоровья",
@@ -366,8 +366,8 @@ async def dashboard(
             dashboard_alerts.append(
                 {
                     "type": "info",
-                    "icon": "sparkles",
-                    "title": "💊 Напоминание ГТ / HRT",
+                    "icon": "health",
+                    "title": "Напоминание ГТ / HRT",
                     "message": "Не забудьте отметить сегодняшний приём гормональной терапии в Дневнике Здоровья.",
                     "action_url": "/health",
                     "action_label": "Отметить ГТ",
@@ -383,7 +383,7 @@ async def dashboard(
             {
                 "type": "info",
                 "icon": "medication",
-                "title": "💊 Запланированный приём медикаментов",
+                "title": "Запланированный приём медикаментов",
                 "message": f"Ожидают приёма {len(med_summary['due'])} поз. на сегодня.",
                 "action_url": "/medications",
                 "action_label": "Принять",
@@ -395,7 +395,7 @@ async def dashboard(
             {
                 "type": "lock",
                 "icon": "lock",
-                "title": "🔒 Активен Контроль Доступа (Замок)",
+                "title": "Активен Контроль Доступа (Замок)",
                 "message": f"Режим: {locktimer_session['state']}. Ограничения активны.",
                 "action_url": "/timer/dashboard",
                 "action_label": "Статус замка",

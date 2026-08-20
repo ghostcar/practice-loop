@@ -31,6 +31,45 @@
     </div>
   </div>
 
+  <!-- Cohort Analytics & Keyholder Insights Widget -->
+  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 shadow-xl">
+    <div class="flex items-center justify-between border-b border-surface-700 pb-3 mb-3">
+      <h2 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+        {{ icon('insights', 'w-5 h-5 text-amber-400') }}
+        <span>Обобщенная Аналитика Когорты Ключника</span>
+      </h2>
+      <a href="/insights/analytics" class="text-xs text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1">
+        <span>Полный Аналитический Движок →</span>
+      </a>
+    </div>
+
+    {% if cohort_analytics %}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+      <div class="bg-surface-900 border border-surface-700 p-3 rounded-xl">
+        <span class="text-[10px] text-slate-400 font-mono uppercase">Подконтрольных Нижних</span>
+        <div class="text-lg font-bold text-slate-100">{{ cohort_analytics.total_submissives }}</div>
+      </div>
+      <div class="bg-surface-900 border border-surface-700 p-3 rounded-xl">
+        <span class="text-[10px] text-slate-400 font-mono uppercase">Средний Compliance</span>
+        <div class="text-lg font-bold text-emerald-400">{{ cohort_analytics.avg_compliance }}%</div>
+      </div>
+      <div class="bg-surface-900 border border-surface-700 p-3 rounded-xl">
+        <span class="text-[10px] text-slate-400 font-mono uppercase">В Подзамковом Режиме</span>
+        <div class="text-lg font-bold text-rose-400">{{ cohort_analytics.locked_count }}</div>
+      </div>
+    </div>
+
+    <div class="space-y-1.5 text-xs text-slate-300">
+      {% for insight in cohort_analytics.cohort_insights %}
+      <div class="flex items-start gap-2 bg-surface-900/60 p-2 rounded-lg border border-surface-700/50">
+        <span class="text-amber-400 font-bold">•</span>
+        <span>{{ insight }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
   {% if submissives %}
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     <!-- Submissive Switcher Sidebar Deck -->
@@ -74,6 +113,7 @@
     <!-- Main Workspace Decks for Selected Submissive -->
     {% if selected_sub %}
     <div class="lg:col-span-3 space-y-6">
+
       <!-- Active Submissive Banner -->
       <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div class="space-y-1">

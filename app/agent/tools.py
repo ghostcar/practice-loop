@@ -17,7 +17,6 @@ from app.models.care import CareRoutine
 from app.models.health import HealthState
 from app.models.journal import JournalPartner
 from app.models.session import ActivitySession
-from app.timeutils import local_today
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +116,36 @@ AGENT_TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
+            "name": "create_dynamic_insight_finding",
+            "description": "Create and persist a new AI-discovered pattern/finding into DB for the user.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Title of discovered pattern"},
+                    "detail": {"type": "string", "description": "Empirical detail/explanation"},
+                    "impact": {"type": "string", "description": "positive or warning"},
+                },
+                "required": ["title", "detail"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_analytics_correlation_matrix",
+            "description": "Fetch pairwise correlation matrix and dynamic findings for the user.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days": {"type": "integer", "description": "Period days (default 30)"},
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "schedule_followup_event",
             "description": "Schedule an autonomous follow-up event or practice task in the event chain.",
             "parameters": {
@@ -209,6 +238,46 @@ async def execute_agent_tool(
             "routines_count": len(routines),
             "advice": "Rest, hydrate, maintain warmth, and engage in gentle recovery.",
         }
+
+    elif tool_name == "create_dynamic_insight_finding":
+        from app.models.insights import InsightFinding, InsightRun
+        from app.timeutils import local_today
+
+        today = local_today()
+        run = (
+            await db.execute(
+                select(InsightRun).where(InsightRun.user_id == user_id).order_by(InsightRun.created_at.desc()).limit(1)
+            )
+        ).scalar_one_or_none()
+
+        if not run:
+            run = InsightRun(
+                user_id=user_id,
+                period_start=today,
+                period_end=today,
+                sections=["agent"],
+                status="completed",
+                summary="ИИ-Агент обнаружил новую закономерность в диалоге.",
+            )
+            db.add(run)
+            await db.flush()
+
+        finding = InsightFinding(
+            run_id=run.id,
+            section="agent_discovery",
+            title=arguments.get("title", "Обнаруженное наблюдение"),
+            summary=arguments.get("detail", "Сгенерировано ИИ-Агентом в диалоге"),
+            used_data=["agent_chat"],
+        )
+        db.add(finding)
+        return {"status": "created", "finding_id": str(finding.id), "title": finding.title}
+
+    elif tool_name == "get_analytics_correlation_matrix":
+        from app.analytics.engine import run_full_analytics_suite
+
+        days = arguments.get("days", 30)
+        suite = await run_full_analytics_suite(db, user_id, days=days)
+        return {"status": "success", "analytics": suite}
 
     elif tool_name == "record_health_state":
         today = local_today()

@@ -29,7 +29,7 @@ SEED_QUESTS: list[dict[str, Any]] = [
         "category": "chastity",
         "target_count": 5,
         "reward_xp": 300,
-        "badge_icon": "locktimer",
+        "badge_icon": "lock",
     },
     {
         "title": "🏋️ Идеальный Контур и Осанка",

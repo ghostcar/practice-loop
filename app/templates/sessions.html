@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icon.html" import icon %}
 
 {% block content %}
 <div class="space-y-5">
@@ -9,10 +10,10 @@
  </div>
   <div class="flex items-center gap-2">
     <a href="/sessions/live" class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 text-white text-xs font-semibold rounded-lg shadow hover:opacity-90 inline-flex items-center gap-1.5 min-h-[44px]">
-      ⏱ Live-Таймер Сессии
+      {{ icon('timer', 'w-3.5 h-3.5') }} Live-Таймер Сессии
     </a>
     <a href="/sessions/wizard" class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-semibold transition-colors inline-flex items-center gap-1.5 min-h-[44px]">
-      ✨ Конструктор & Шаблоны Сессий
+      {{ icon('edit', 'w-3.5 h-3.5') }} Конструктор & Шаблоны Сессий
     </a>
   </div>
  </div>

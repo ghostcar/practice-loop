@@ -120,6 +120,10 @@ async def ds_command_center_portal_page(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
+    from app.analytics.engine import aggregate_keyholder_cohort_analytics
+
+    cohort_analytics = await aggregate_keyholder_cohort_analytics(db, user.id)
+
     return templates.TemplateResponse(
         request=request,
         name="ds_portal.html",
@@ -129,11 +133,11 @@ async def ds_command_center_portal_page(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "active_nav": "ds",
-            "mode": "command_center",
+            "active_nav": "ds_portal",
             "submissives": submissives,
             "selected_sub": selected_sub,
             "checkins": checkins,
+            "cohort_analytics": cohort_analytics,
         },
     )
 
