@@ -117,3 +117,25 @@ class CapabilityGrant(Base):
     sub_user: Mapped[User] = relationship("User", foreign_keys=[sub_user_id])
     top_user: Mapped[User | None] = relationship("User", foreign_keys=[top_user_id])
 
+
+class WearCheckInLog(Base):
+    """Log of regular wear check-ins, tag seals, and physical comfort (Step 65 / ADR-100)."""
+
+    __tablename__ = "wear_check_in_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    managed_sub_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("managed_submissives.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    tag_number: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Seal number / tag ID
+    comfort_score: Mapped[int] = mapped_column(Integer, default=5)  # 1-5 scale
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    photo_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    is_verified_closed: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+    managed_submissive: Mapped[ManagedSubmissive] = relationship("ManagedSubmissive")
+
+

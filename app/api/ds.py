@@ -322,3 +322,117 @@ async def revoke_grant_endpoint(
     await db.commit()
     return RedirectResponse(url="/ds/my-top", status_code=303)
 
+
+@router.get("/ds/checkins", response_class=HTMLResponse)
+async def wear_checkins_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Wear Check-Ins & Tag Seal Inspection Center (Step 65 / ADR-100)."""
+    from app.models.ds_suite import WearCheckInLog
+
+    checkins = (
+        (
+            await db.execute(
+                select(WearCheckInLog)
+                .join(ManagedSubmissive, WearCheckInLog.managed_sub_id == ManagedSubmissive.id)
+                .where(
+                    (ManagedSubmissive.top_user_id == user.id) | (ManagedSubmissive.sub_user_id == user.id)
+                )
+                .order_by(WearCheckInLog.created_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="ds_checkins.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds",
+            "checkins": checkins,
+        },
+    )
+
+
+@router.post("/ds/checkins/log")
+async def log_wear_checkin_endpoint(
+    managed_sub_id: str = Form(...),
+    tag_number: str = Form(""),
+    comfort_score: int = Form(5),
+    notes: str = Form(""),
+    photo_url: str = Form(""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Logs a wear check-in and seal inspection (Step 65)."""
+    from app.models.ds_suite import WearCheckInLog
+
+    sub_uuid = uuid.UUID(managed_sub_id)
+    checkin = WearCheckInLog(
+        managed_sub_id=sub_uuid,
+        tag_number=tag_number or None,
+        comfort_score=comfort_score,
+        notes=notes,
+        photo_url=photo_url or None,
+        is_verified_closed=bool(photo_url),
+    )
+    db.add(checkin)
+    await db.commit()
+    return RedirectResponse(url="/ds/checkins", status_code=303)
+
+
+@router.post("/ds/submissive/{sub_id}/ai-keyholder-spin")
+async def ai_keyholder_spin_endpoint(
+    sub_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """AI Keyholder Bot Wheel of Fortune / Random Extensions (Step 67 / ADR-113)."""
+    import random
+
+    sub_uuid = uuid.UUID(sub_id)
+    sub = (
+        await db.execute(
+            select(ManagedSubmissive).where(
+                ManagedSubmissive.id == sub_uuid,
+                ManagedSubmissive.top_user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not sub:
+        raise HTTPException(404, "Submissive profile not found")
+
+    outcomes = [
+        ("lock_extension", "+24 часа ношения замка", "AI Keyholder Bot добавил +24ч ношения замка"),
+        ("key_reward", "🔑 Выдача Ключа!", "AI Keyholder Bot разблокировал замок за высокое послушание"),
+        ("tag_check", "🏷️ Запрос инспекции пломбы", "AI Keyholder Bot потребовал фото-проверку номерной пломбы"),
+    ]
+    action_type, result_title, log_reason = random.choice(outcomes)
+
+    if action_type == "key_reward":
+        sub.chastity_status = "unlocked"
+
+    log = ChastityLockLog(
+        managed_sub_id=sub.id,
+        action=action_type,
+        reason=f"AI Keyholder Wheel: {log_reason}",
+    )
+    db.add(sub)
+    db.add(log)
+    await db.commit()
+    return RedirectResponse(url="/ds/keyholder", status_code=303)
+
+
