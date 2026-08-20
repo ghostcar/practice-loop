@@ -1725,6 +1725,16 @@ async def send_telegram_notification(chat_id: int, text: str, parse_mode: str = 
 
         await message.answer(rep["report_markdown"], parse_mode="Markdown")
 
+    from app.telegram.community_handlers import (
+        handle_ds_status_command,
+        handle_my_rank_command,
+        handle_tournaments_command,
+    )
+
+    main_router.message(Command("tournaments"))(handle_tournaments_command)
+    main_router.message(Command("my_rank"))(handle_my_rank_command)
+    main_router.message(Command("ds_status"))(handle_ds_status_command)
+
 
 # ── Webhook endpoint ───────────────────────────────────────────────
 
