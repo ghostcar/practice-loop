@@ -76,7 +76,6 @@ async def vote_pillory_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     """POST /social/pillory/vote — Cast community vote on Pillory item."""
-    from app.gamification.handler import on_task_completed
 
     sub_uuid = uuid.UUID(sub_id)
     sub = (
@@ -104,6 +103,10 @@ async def vote_pillory_endpoint(
     await db.commit()
 
     # Award Social XP to voter
-    await on_task_completed(db, user.id, task_type="community_vote", xp_award=15)
+    from app.gamification.handler import get_or_create_progress
+
+    prog = await get_or_create_progress(db, user.id)
+    prog.xp += 15
+    await db.commit()
 
     return RedirectResponse(url="/social/pillory", status_code=303)
