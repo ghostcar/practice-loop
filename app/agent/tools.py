@@ -1,4 +1,4 @@
-"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-46 / ADR-123)."""
+"""Native Agent Tools Registry for PracticeLoop Agent (Step 44-47 / ADR-123)."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.memory import recall_user_memories
+from app.agent.proactive import trigger_event_chain
 from app.llm.pipeline import generate_task
 from app.models.care import CareRoutine
 from app.models.health import HealthState
@@ -109,6 +110,25 @@ AGENT_TOOLS_SCHEMA = [
                     "query": {"type": "string", "description": "Search query or topic to recall"},
                 },
                 "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "schedule_followup_event",
+            "description": "Schedule an autonomous follow-up event or practice task in the event chain.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "description": "Event type (e.g., session_completed, chastity_checkin)",
+                    },
+                    "delay_minutes": {"type": "integer", "description": "Delay in minutes before triggering"},
+                    "description": {"type": "string", "description": "Reason or description for the follow-up"},
+                },
+                "required": ["event_type"],
             },
         },
     },
@@ -215,5 +235,10 @@ async def execute_agent_tool(
         query = arguments.get("query", "")
         memories = await recall_user_memories(db=db, user_id=user_id, query=query, limit=5)
         return {"status": "success", "memories_count": len(memories), "memories": memories}
+
+    elif tool_name == "schedule_followup_event":
+        event_type = arguments.get("event_type", "custom_event")
+        res = await trigger_event_chain(event_type=event_type, user_id=user_id, db=db)
+        return {"status": "scheduled", "event_type": event_type, "chain_result": res}
 
     return {"status": "error", "message": f"Unknown tool '{tool_name}'"}
