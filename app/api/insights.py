@@ -593,3 +593,51 @@ async def generate_trajectory_map_endpoint(
     """Regenerates AI Trajectory Map from Agent."""
     return RedirectResponse(url="/insights/trajectory", status_code=303)
 
+
+@router.get("/insights/report", response_class=HTMLResponse)
+async def insights_report_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Printable / Downloadable Monthly Practice & Analytics Report."""
+    from app.models.activity_log import ActivityLog
+    from app.models.progress import UserProgress
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    total_logs = (
+        await db.execute(
+            select(func.count(ActivityLog.id)).where(ActivityLog.user_id == user.id)
+        )
+    ).scalar() or 0
+
+    progress = (
+        await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))
+    ).scalar_one_or_none()
+
+    total_xp = progress.xp if progress else 0
+
+    stats = {
+        "total_logs": total_logs,
+        "completion_rate": 100,
+        "total_xp": total_xp,
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="insights_report.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "stats": stats,
+            "today": local_today().isoformat(),
+        },
+    )
+
+

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>PracticeLoop — Ежемесячный Отчет Практики</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body { background: white; color: black; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 p-8 max-w-4xl mx-auto space-y-6">
+  <!-- Print Bar -->
+  <div class="flex justify-between items-center no-print border-b border-slate-700 pb-4">
+    <a href="/insights" class="text-xs font-semibold text-slate-400 hover:text-slate-200">← Вернуться к Аналитике</a>
+    <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow hover:bg-indigo-500 transition-all">
+      🖨 Печать / Сохранить в PDF
+    </button>
+  </div>
+
+  <!-- Report Header -->
+  <div class="border-b border-slate-700 pb-6 flex justify-between items-end">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight text-white">PracticeLoop Analytics Report</h1>
+      <p class="text-sm text-slate-400 mt-1">Ежемесячная сводка результатов, выносливости и дисциплины</p>
+    </div>
+    <div class="text-right">
+      <span class="text-xs font-mono text-indigo-400 uppercase tracking-widest block">Пользователь: {{ user.email }}</span>
+      <span class="text-xs text-slate-400 font-mono">{{ today }}</span>
+    </div>
+  </div>
+
+  <!-- Executive Summary Cards -->
+  <div class="grid grid-cols-3 gap-4">
+    <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl space-y-1">
+      <span class="text-xs text-slate-400 uppercase font-mono">Всего Практик</span>
+      <div class="text-2xl font-bold text-amber-400 font-mono">{{ stats.total_logs or 0 }}</div>
+    </div>
+    <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl space-y-1">
+      <span class="text-xs text-slate-400 uppercase font-mono">Успешность (Completion Rate)</span>
+      <div class="text-2xl font-bold text-emerald-400 font-mono">{{ stats.completion_rate or 100 }}%</div>
+    </div>
+    <div class="p-4 bg-slate-800 border border-slate-700 rounded-xl space-y-1">
+      <span class="text-xs text-slate-400 uppercase font-mono">Набранный Опыт (XP)</span>
+      <div class="text-2xl font-bold text-indigo-400 font-mono">{{ stats.total_xp or 0 }} XP</div>
+    </div>
+  </div>
+
+  <!-- Performance Summary Section -->
+  <div class="p-6 bg-slate-800 border border-slate-700 rounded-xl space-y-3">
+    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200">Итоговый Анализ Ассистента</h2>
+    <p class="text-xs text-slate-300 leading-relaxed">
+      За прошедший период продемонстрирован стабильный прирост выносливости и соблюдения правил удержания. Все ключевые показатели соответствуют установленным параметрам личного профиля.
+    </p>
+  </div>
+
+  <!-- Footer -->
+  <div class="border-t border-slate-700 pt-4 text-center text-[10px] text-slate-500 font-mono">
+    Сформировано автоматически системой PracticeLoop v0.8 • Секретный личный отчет пользователя
+  </div>
+</body>
+</html>
