@@ -136,7 +136,6 @@ async def ds_command_center_portal_page(
     )
 
 
-
 @router.post("/ds/submissive/create")
 async def create_managed_submissive_endpoint(
     name: str = Form(...),
@@ -411,9 +410,7 @@ async def wear_checkins_page(
             await db.execute(
                 select(WearCheckInLog)
                 .join(ManagedSubmissive, WearCheckInLog.managed_sub_id == ManagedSubmissive.id)
-                .where(
-                    (ManagedSubmissive.top_user_id == user.id) | (ManagedSubmissive.sub_user_id == user.id)
-                )
+                .where((ManagedSubmissive.top_user_id == user.id) | (ManagedSubmissive.sub_user_id == user.id))
                 .order_by(WearCheckInLog.created_at.desc())
             )
         )
@@ -538,6 +535,3 @@ async def generate_submissive_telegram_code_endpoint(
     db.add(sub)
     await db.commit()
     return RedirectResponse(url=f"/ds/portal?sub_id={sub.id}", status_code=303)
-
-
-

@@ -164,9 +164,7 @@ async def user_prompt_library_page(
 
     await seed_prompt_library(db)
 
-    items = (
-        await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))
-    ).scalars().all()
+    items = (await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))).scalars().all()
 
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
@@ -189,7 +187,6 @@ async def user_prompt_library_page(
             "user_prompts": user_prompts,
         },
     )
-
 
 
 @page_router.get("/llm/templates/{template_id}", response_class=HTMLResponse)

@@ -676,13 +676,17 @@ async def adaptive_training_page(
     from app.models.adaptive_training import AdaptiveProgram
 
     programs = (
-        await db.execute(
-            select(AdaptiveProgram)
-            .options(selectinload(AdaptiveProgram.steps))
-            .where(AdaptiveProgram.user_id == user.id)
-            .order_by(AdaptiveProgram.created_at.desc())
+        (
+            await db.execute(
+                select(AdaptiveProgram)
+                .options(selectinload(AdaptiveProgram.steps))
+                .where(AdaptiveProgram.user_id == user.id)
+                .order_by(AdaptiveProgram.created_at.desc())
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
@@ -747,4 +751,3 @@ async def log_step_feedback_endpoint(
         db=db,
     )
     return RedirectResponse(url="/training/adaptive", status_code=303)
-

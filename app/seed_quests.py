@@ -56,9 +56,7 @@ async def seed_quests(db: AsyncSession) -> int:
     """Seeds default quests if missing."""
     count = 0
     for q_data in SEED_QUESTS:
-        existing = (
-            await db.execute(select(Quest).where(Quest.title == q_data["title"]))
-        ).scalar_one_or_none()
+        existing = (await db.execute(select(Quest).where(Quest.title == q_data["title"]))).scalar_one_or_none()
         if not existing:
             quest = Quest(**q_data)
             db.add(quest)

@@ -78,9 +78,7 @@ async def vote_pillory_endpoint(
     """POST /social/pillory/vote — Cast community vote on Pillory item."""
 
     sub_uuid = uuid.UUID(sub_id)
-    sub = (
-        await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.id == sub_uuid))
-    ).scalar_one_or_none()
+    sub = (await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.id == sub_uuid))).scalar_one_or_none()
 
     if not sub:
         raise HTTPException(404, "Submissive Pillory entry not found")

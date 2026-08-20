@@ -38,9 +38,7 @@ async def quests_hub_page(
     catalog_quests = (await db.execute(select(Quest))).scalars().all()
 
     # Assign missing quests to user
-    existing_uq = (
-        await db.execute(select(UserQuest).where(UserQuest.user_id == user.id))
-    ).scalars().all()
+    existing_uq = (await db.execute(select(UserQuest).where(UserQuest.user_id == user.id))).scalars().all()
     assigned_quest_ids = {uq.quest_id for uq in existing_uq}
 
     for q in catalog_quests:
@@ -52,13 +50,7 @@ async def quests_hub_page(
 
     # Refetch updated user quests with loaded relationships
     user_quests = (
-        (
-            await db.execute(
-                select(UserQuest)
-                .where(UserQuest.user_id == user.id)
-                .order_by(UserQuest.created_at.desc())
-            )
-        )
+        (await db.execute(select(UserQuest).where(UserQuest.user_id == user.id).order_by(UserQuest.created_at.desc())))
         .scalars()
         .all()
     )
@@ -89,9 +81,7 @@ async def claim_quest_reward(
 
     uq_uuid = uuid.UUID(user_quest_id)
     uq = (
-        await db.execute(
-            select(UserQuest).where(UserQuest.id == uq_uuid, UserQuest.user_id == user.id)
-        )
+        await db.execute(select(UserQuest).where(UserQuest.id == uq_uuid, UserQuest.user_id == user.id))
     ).scalar_one_or_none()
 
     if not uq:
@@ -108,9 +98,7 @@ async def claim_quest_reward(
     uq.obtained_at = datetime.now(UTC)
 
     # Award XP to UserProgress
-    progress = (
-        await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))
-    ).scalar_one_or_none()
+    progress = (await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))).scalar_one_or_none()
 
     if not progress:
         progress = UserProgress(user_id=user.id, xp=0, level=1)
@@ -130,4 +118,3 @@ async def quests_challenges_alias(
 ):
     """Alias route for Quests & Weekly Challenges Hub."""
     return await quests_hub_page(request=request, user=user, db=db)
-

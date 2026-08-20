@@ -25,9 +25,7 @@ async def verify_task_photo(
 ) -> dict[str, Any]:
     """Runs Vision AI verification on photo proof of physical tasks or posture holds."""
     asset = (
-        await db.execute(
-            select(MediaAsset).where(MediaAsset.id == media_asset_id, MediaAsset.user_id == user_id)
-        )
+        await db.execute(select(MediaAsset).where(MediaAsset.id == media_asset_id, MediaAsset.user_id == user_id))
     ).scalar_one_or_none()
 
     if not asset:

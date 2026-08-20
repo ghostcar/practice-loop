@@ -277,13 +277,9 @@ async def export_medical_report_page(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    medications = (
-        await db.execute(select(Medication).where(Medication.user_id == user.id))
-    ).scalars().all()
+    medications = (await db.execute(select(Medication).where(Medication.user_id == user.id))).scalars().all()
 
-    courses = (
-        await db.execute(select(CareCourse).where(CareCourse.user_id == user.id))
-    ).scalars().all()
+    courses = (await db.execute(select(CareCourse).where(CareCourse.user_id == user.id))).scalars().all()
 
     return templates.TemplateResponse(
         request=request,
@@ -320,13 +316,9 @@ async def export_medical_report_generate(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    all_meds = (
-        await db.execute(select(Medication).where(Medication.user_id == user.id))
-    ).scalars().all()
+    all_meds = (await db.execute(select(Medication).where(Medication.user_id == user.id))).scalars().all()
 
-    all_courses = (
-        await db.execute(select(CareCourse).where(CareCourse.user_id == user.id))
-    ).scalars().all()
+    all_courses = (await db.execute(select(CareCourse).where(CareCourse.user_id == user.id))).scalars().all()
 
     filtered_meds = [m for m in all_meds if str(m.id) in include_meds]
     filtered_courses = [c for c in all_courses if str(c.id) in include_courses]
@@ -503,23 +495,22 @@ async def json_correlation_matrix(
 
     # Fetch health states
     h_stmt = (
-        select(HealthState)
-        .where(HealthState.user_id == user.id)
-        .order_by(HealthState.event_date.asc())
-        .limit(days)
+        select(HealthState).where(HealthState.user_id == user.id).order_by(HealthState.event_date.asc()).limit(days)
     )
     health_states = (await db.execute(h_stmt)).scalars().all()
 
     health_matrix = []
     for h in health_states:
-        health_matrix.append({
-            "date": h.event_date.isoformat(),
-            "mood": h.mood or 0,
-            "energy": h.energy or 0,
-            "sleep_hours": h.sleep_hours or 0,
-            "post_session_drop": bool(h.post_session_drop),
-            "hrt_taken": bool(h.hrt_taken),
-        })
+        health_matrix.append(
+            {
+                "date": h.event_date.isoformat(),
+                "mood": h.mood or 0,
+                "energy": h.energy or 0,
+                "sleep_hours": h.sleep_hours or 0,
+                "post_session_drop": bool(h.post_session_drop),
+                "hrt_taken": bool(h.hrt_taken),
+            }
+        )
 
     # Fetch lock sessions
     locks_stmt = select(LockSession).where(LockSession.owner_id == user.id).limit(20)
@@ -530,13 +521,15 @@ async def json_correlation_matrix(
         dur_h = 0.0
         if lock_sess.started_at and lock_sess.ended_at:
             dur_h = round((lock_sess.ended_at - lock_sess.started_at).total_seconds() / 3600.0, 1)
-        lock_matrix.append({
-            "lock_id": str(lock_sess.id)[:8],
-            "status": lock_sess.status,
-            "duration_hours": dur_h,
-            "extensions_count": len(lock_sess.extension_history or []),
-            "health_paused": lock_sess.is_health_paused,
-        })
+        lock_matrix.append(
+            {
+                "lock_id": str(lock_sess.id)[:8],
+                "status": lock_sess.status,
+                "duration_hours": dur_h,
+                "extensions_count": len(lock_sess.extension_history or []),
+                "health_paused": lock_sess.is_health_paused,
+            }
+        )
 
     # Fetch partner satisfaction
     partners_stmt = select(JournalPartner).where(JournalPartner.user_id == user.id)
@@ -548,11 +541,13 @@ async def json_correlation_matrix(
             JournalEntry.user_id == user.id, JournalEntry.partner_id == p.id
         )
         avg_sat = (await db.execute(entries_stmt)).scalar() or 0.0
-        partner_matrix.append({
-            "partner_name": p.name,
-            "roles": p.roles or [],
-            "avg_satisfaction": round(float(avg_sat), 2),
-        })
+        partner_matrix.append(
+            {
+                "partner_name": p.name,
+                "roles": p.roles or [],
+                "avg_satisfaction": round(float(avg_sat), 2),
+            }
+        )
 
     return {
         "days": days,
@@ -609,14 +604,10 @@ async def insights_report_page(
     t = get_translations(locale)
 
     total_logs = (
-        await db.execute(
-            select(func.count(ActivityLog.id)).where(ActivityLog.user_id == user.id)
-        )
+        await db.execute(select(func.count(ActivityLog.id)).where(ActivityLog.user_id == user.id))
     ).scalar() or 0
 
-    progress = (
-        await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))
-    ).scalar_one_or_none()
+    progress = (await db.execute(select(UserProgress).where(UserProgress.user_id == user.id))).scalar_one_or_none()
 
     total_xp = progress.xp if progress else 0
 
@@ -639,5 +630,3 @@ async def insights_report_page(
             "today": local_today().isoformat(),
         },
     )
-
-

@@ -364,16 +364,8 @@ async def edit_entity_page(
 
     import json
 
-    params_json = (
-        json.dumps(entity.params_schema, indent=2, ensure_ascii=False)
-        if entity.params_schema
-        else ""
-    )
-    safety_json = (
-        json.dumps(entity.safety_contract, indent=2, ensure_ascii=False)
-        if entity.safety_contract
-        else ""
-    )
+    params_json = json.dumps(entity.params_schema, indent=2, ensure_ascii=False) if entity.params_schema else ""
+    safety_json = json.dumps(entity.safety_contract, indent=2, ensure_ascii=False) if entity.safety_contract else ""
 
     tags_str = ", ".join(entity.tags) if entity.tags else ""
     role_tags_str = ", ".join(entity.role_tags) if entity.role_tags else ""

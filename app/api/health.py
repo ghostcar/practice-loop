@@ -911,13 +911,17 @@ async def health_body_cycle_page(
     from app.models.body_cycle import BodyCycleLog
 
     logs = (
-        await db.execute(
-            select(BodyCycleLog)
-            .where(BodyCycleLog.user_id == user.id)
-            .order_by(BodyCycleLog.logged_at.desc())
-            .limit(20)
+        (
+            await db.execute(
+                select(BodyCycleLog)
+                .where(BodyCycleLog.user_id == user.id)
+                .order_by(BodyCycleLog.logged_at.desc())
+                .limit(20)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
@@ -960,4 +964,3 @@ async def log_body_cycle_endpoint(
     db.add(log_entry)
     await db.commit()
     return RedirectResponse(url="/health/body-cycle", status_code=303)
-

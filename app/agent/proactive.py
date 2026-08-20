@@ -93,11 +93,13 @@ async def trigger_event_chain(
             delay_minutes=30,
             send_telegram=True,
         )
-        followup_actions.append({
-            "action": "recovery_checkin_scheduled",
-            "delay_minutes": 30,
-            "message": "Сессия прервана. Агент запланировал гидратацию и отдых.",
-        })
+        followup_actions.append(
+            {
+                "action": "recovery_checkin_scheduled",
+                "delay_minutes": 30,
+                "message": "Сессия прервана. Агент запланировал гидратацию и отдых.",
+            }
+        )
 
     elif event_type == "chastity_checkin_verified":
         # Schedule next check-in window reminder
@@ -109,11 +111,13 @@ async def trigger_event_chain(
             delay_minutes=720,
             send_telegram=True,
         )
-        followup_actions.append({
-            "action": "next_checkin_scheduled",
-            "delay_hours": 12,
-            "message": "Чек-ин подтверждён. Следующее окно проверки от Агента назначено.",
-        })
+        followup_actions.append(
+            {
+                "action": "next_checkin_scheduled",
+                "delay_hours": 12,
+                "message": "Чек-ин подтверждён. Следующее окно проверки от Агента назначено.",
+            }
+        )
 
     return {
         "status": "chained",

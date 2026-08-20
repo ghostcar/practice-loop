@@ -70,19 +70,13 @@ async def generate_personal_medical_report(
     )
 
     # Locks
-    locks = (
-        (await db.execute(select(LockSession).where(LockSession.owner_id == user_id))).scalars().all()
-    )
+    locks = (await db.execute(select(LockSession).where(LockSession.owner_id == user_id))).scalars().all()
 
     # Partners
-    partners = (
-        (await db.execute(select(JournalPartner).where(JournalPartner.user_id == user_id))).scalars().all()
-    )
+    partners = (await db.execute(select(JournalPartner).where(JournalPartner.user_id == user_id))).scalars().all()
 
     # Entries
-    entries = (
-        (await db.execute(select(JournalEntry).where(JournalEntry.user_id == user_id))).scalars().all()
-    )
+    entries = (await db.execute(select(JournalEntry).where(JournalEntry.user_id == user_id))).scalars().all()
 
     report_md = f"""# 📊 PracticeLoop Personal & Health Report
 *Generated on: {today.isoformat()}*

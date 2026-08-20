@@ -209,4 +209,3 @@ async def toggle_discretion_endpoint(
     db.add(user)
     await db.commit()
     return RedirectResponse(url="/discretion/bailout", status_code=303)
-

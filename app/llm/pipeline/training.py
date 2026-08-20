@@ -73,9 +73,7 @@ async def generate_daily_plan(
     from app.models.health import HealthState
     from app.models.inventory import InventoryItem
 
-    inventory_items = (
-        (await db.execute(select(InventoryItem).where(InventoryItem.user_id == user_id))).scalars().all()
-    )
+    inventory_items = (await db.execute(select(InventoryItem).where(InventoryItem.user_id == user_id))).scalars().all()
     equip_names = [f"{i.name} ({i.category})" for i in inventory_items]
     equip_str = ", ".join(equip_names) if equip_names else "Bodyweight / None"
 
@@ -93,8 +91,7 @@ async def generate_daily_plan(
 
     if adapt_mode == "strict_no_reduction":
         health_note = (
-            "User explicitly disabled intensity reduction (Conscious Choice). "
-            "Maintain standard planned intensity."
+            "User explicitly disabled intensity reduction (Conscious Choice). Maintain standard planned intensity."
         )
     elif health_state:
         rec_thresh = 1 if sensitivity == "gentle" else (3 if sensitivity == "strict" else 2)

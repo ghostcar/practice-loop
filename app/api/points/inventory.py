@@ -232,13 +232,17 @@ async def equipment_maintenance_page(
     from app.templates_setup import templates
 
     logs = (
-        await db.execute(
-            select(EquipmentMaintenanceLog)
-            .where(EquipmentMaintenanceLog.user_id == user.id)
-            .order_by(EquipmentMaintenanceLog.created_at.desc())
-            .limit(20)
+        (
+            await db.execute(
+                select(EquipmentMaintenanceLog)
+                .where(EquipmentMaintenanceLog.user_id == user.id)
+                .order_by(EquipmentMaintenanceLog.created_at.desc())
+                .limit(20)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
@@ -281,4 +285,3 @@ async def log_equipment_maintenance_endpoint(
     db.add(log_entry)
     await db.commit()
     return RedirectResponse(url="/api/v2/inventory/maintenance", status_code=303)
-

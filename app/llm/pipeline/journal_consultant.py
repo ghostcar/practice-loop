@@ -74,15 +74,15 @@ async def analyze_partner_dynamics(
 
     user_prompt = f"""
 Partner Alias: {partner.name}
-Roles/Identifiers: {partner.roles or 'Not specified'}
-Identity/HRT Notes: {partner.identity_notes or 'None'}
-Hard Limits: {partner.hard_limits or 'None'}
-Soft Limits: {partner.soft_limits or 'None'}
-Safewords: {partner.safewords or 'Standard RYG'}
-Aftercare Preferences: {partner.aftercare_preferences or 'Gentle rest'}
+Roles/Identifiers: {partner.roles or "Not specified"}
+Identity/HRT Notes: {partner.identity_notes or "None"}
+Hard Limits: {partner.hard_limits or "None"}
+Soft Limits: {partner.soft_limits or "None"}
+Safewords: {partner.safewords or "Standard RYG"}
+Aftercare Preferences: {partner.aftercare_preferences or "Gentle rest"}
 
 Recent Shared Journal Entries (last {len(entries)}):
-{chr(10).join(entries_summary) if entries_summary else 'No recent entries logged yet.'}
+{chr(10).join(entries_summary) if entries_summary else "No recent entries logged yet."}
 Language: {locale}
 
 {llm_mode_hint(mode)}

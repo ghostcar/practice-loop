@@ -105,9 +105,7 @@ async def generate_catalog_proposals(
     for item in items:
         slug = str(item.get("slug", f"gen-task-{uuid.uuid4().hex[:6]}"))
         # Check slug collision
-        existing = (
-            await db.execute(select(Entity).where(Entity.slug == slug))
-        ).scalar_one_or_none()
+        existing = (await db.execute(select(Entity).where(Entity.slug == slug))).scalar_one_or_none()
         if existing:
             slug = f"{slug}-{uuid.uuid4().hex[:4]}"
 

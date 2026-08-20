@@ -22,6 +22,7 @@ agent_tg_router = Router()
 
 async def _get_linked_user(chat_id: int) -> User | None:
     from sqlalchemy import select
+
     async with async_session_factory() as db:
         res = await db.execute(select(User).where(User.telegram_chat_id == chat_id))
         return res.scalar_one_or_none()

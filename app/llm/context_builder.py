@@ -83,16 +83,13 @@ async def _get_allowed_entities(db: AsyncSession, user_id: uuid.UUID) -> list[di
     entities.
     """
     # All opt-ins of the user (both opted-in and opted-out rows)
-    opt_result = await db.execute(
-        select(UserEntityOptIn).where(UserEntityOptIn.user_id == user_id)
-    )
+    opt_result = await db.execute(select(UserEntityOptIn).where(UserEntityOptIn.user_id == user_id))
     opt_ins = {oi.entity_id: oi for oi in opt_result.scalars().all()}
 
     # Opted-in public entities + ALL personal entities (owner = user).
     result = await db.execute(
         select(Entity).where(
-            (Entity.owner_id == user_id)
-            | (Entity.id.in_([eid for eid, oi in opt_ins.items() if oi.is_opted_in]))
+            (Entity.owner_id == user_id) | (Entity.id.in_([eid for eid, oi in opt_ins.items() if oi.is_opted_in]))
         )
     )
     entities = []

@@ -489,8 +489,10 @@ def test_scenario_source_keeps_names_and_phases_without_steps() -> None:
     assert len(manifest["scenarios"]) == 13
     assert all(scenario["steps_imported"] is False for scenario in manifest["scenarios"])
     assert all(not scenario["seed_ready"] for scenario in manifest["scenarios"])
-    assert all(scenario["review_routing"] in {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
-               for scenario in manifest["scenarios"])
+    assert all(
+        scenario["review_routing"] in {"candidate", "manual_only", "needs_safe_rewrite", "research_only"}
+        for scenario in manifest["scenarios"]
+    )
 
 
 def test_scenario_source_preview_reports_routing() -> None:

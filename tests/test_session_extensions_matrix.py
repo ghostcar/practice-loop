@@ -17,9 +17,7 @@ async def test_session_wizard_extensions_page(auth_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_create_custom_session_with_extensions(
-    auth_client: AsyncClient, db_session: AsyncSession, test_user
-):
+async def test_create_custom_session_with_extensions(auth_client: AsyncClient, db_session: AsyncSession, test_user):
     """POST /sessions/create-custom — Create session with attached Chaster extensions."""
     response = await auth_client.post(
         "/sessions/create-custom",
@@ -35,9 +33,7 @@ async def test_create_custom_session_with_extensions(
     )
     assert response.status_code == 200
 
-    result = await db_session.execute(
-        select(ActivitySession).where(ActivitySession.owner_id == test_user.id)
-    )
+    result = await db_session.execute(select(ActivitySession).where(ActivitySession.owner_id == test_user.id))
     session = result.scalars().first()
     assert session is not None
     assert session.session_rules is not None

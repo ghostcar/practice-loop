@@ -314,6 +314,7 @@ if composition.tracker_active:
 
     from app.api.media_vault import json_router as media_vault_json_router  # noqa: E402
     from app.api.references.locations import page_router as locations_page_router  # noqa: E402
+
     app.include_router(locations_page_router)
     app.include_router(media_vault_json_router)
 
@@ -356,9 +357,11 @@ if composition.tracker_active:
         app.include_router(consent_json_router)
 
     from app.api.quests import router as quests_router  # noqa: E402
+
     app.include_router(quests_router)
 
     from app.api.agent import router as agent_router  # noqa: E402
+
     app.include_router(agent_router)
 
     from app.api.today import router as today_router  # noqa: E402

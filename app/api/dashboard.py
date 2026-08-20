@@ -632,13 +632,7 @@ async def sessions_coop_page(
 
     relationships = await list_user_relationships(db, user.id)
     managed_subs = (
-        (
-            await db.execute(
-                select(ManagedSubmissive).where(ManagedSubmissive.top_user_id == user.id)
-            )
-        )
-        .scalars()
-        .all()
+        (await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.top_user_id == user.id))).scalars().all()
     )
 
     locale = detect_locale(request, user.locale)
@@ -659,7 +653,6 @@ async def sessions_coop_page(
             "managed_subs": managed_subs,
         },
     )
-
 
 
 @router.post("/sessions/live/complete")

@@ -60,9 +60,7 @@ async def log_step_feedback_and_adapt(
     db: AsyncSession,
 ) -> dict[str, Any]:
     """Logs user feedback for step and dynamically adapts upcoming steps via Agent rules."""
-    step = (
-        await db.execute(select(AdaptiveProgramStep).where(AdaptiveProgramStep.id == step_id))
-    ).scalar_one_or_none()
+    step = (await db.execute(select(AdaptiveProgramStep).where(AdaptiveProgramStep.id == step_id))).scalar_one_or_none()
 
     if not step:
         return {"status": "error", "message": "Step not found."}
@@ -76,16 +74,20 @@ async def log_step_feedback_and_adapt(
 
     # Agent Adaptive Adjustment Logic
     upcoming_steps = (
-        await db.execute(
-            select(AdaptiveProgramStep)
-            .where(
-                AdaptiveProgramStep.program_id == step.program_id,
-                AdaptiveProgramStep.day_number > step.day_number,
-                AdaptiveProgramStep.status == "pending",
+        (
+            await db.execute(
+                select(AdaptiveProgramStep)
+                .where(
+                    AdaptiveProgramStep.program_id == step.program_id,
+                    AdaptiveProgramStep.day_number > step.day_number,
+                    AdaptiveProgramStep.status == "pending",
+                )
+                .order_by(AdaptiveProgramStep.day_number)
             )
-            .order_by(AdaptiveProgramStep.day_number)
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     adjustment_summary = ""
     if comfort_score >= 4:

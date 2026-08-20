@@ -161,7 +161,9 @@ async def public_catalog_page(
 ):
     """Public Catalog & Community Template Exchange (Step 78 / ADR-091)."""
     result = await db.execute(
-        select(ActivityCatalogItem).where(ActivityCatalogItem.owner_id.is_(None)).order_by(ActivityCatalogItem.name.asc())
+        select(ActivityCatalogItem)
+        .where(ActivityCatalogItem.owner_id.is_(None))
+        .order_by(ActivityCatalogItem.name.asc())
     )
     items = result.scalars().all()
 
@@ -180,7 +182,6 @@ async def public_catalog_page(
             "items": items,
         },
     )
-
 
 
 # ─────────────────────────────────────────────────────────────────────────────

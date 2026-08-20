@@ -153,9 +153,7 @@ async def seed_prompt_library(db: AsyncSession) -> int:
     added_count = 0
     for default_item in DEFAULT_PROMPT_REGISTRY:
         existing = (
-            await db.execute(
-                select(PromptLibraryItem).where(PromptLibraryItem.key == default_item["key"])
-            )
+            await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.key == default_item["key"]))
         ).scalar_one_or_none()
 
         if not existing:
@@ -178,11 +176,7 @@ async def seed_prompt_library(db: AsyncSession) -> int:
 
 async def get_prompt_template(db: AsyncSession, key: str, **kwargs: str) -> str:
     """Fetches prompt template by key from DB (or default fallback) and renders kwargs placeholders."""
-    item = (
-        await db.execute(
-            select(PromptLibraryItem).where(PromptLibraryItem.key == key)
-        )
-    ).scalar_one_or_none()
+    item = (await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.key == key))).scalar_one_or_none()
 
     template = ""
     if item:

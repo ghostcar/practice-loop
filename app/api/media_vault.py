@@ -198,6 +198,7 @@ async def json_verify_photo_llm(
     llm_config = await get_active_llm_config(db, user.id)
     if not llm_config:
         from fastapi import HTTPException
+
         raise HTTPException(400, "LLM provider config required for AI Photo Verification")
 
     res = await verify_photo_with_llm(
@@ -225,6 +226,7 @@ async def json_recognize_inventory_photo(
     llm_config = await get_active_llm_config(db, user.id)
     if not llm_config:
         from fastapi import HTTPException
+
         raise HTTPException(400, "LLM provider config required for AI Inventory Recognition")
 
     item_data = await recognize_inventory_from_photo(

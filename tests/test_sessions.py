@@ -52,9 +52,7 @@ async def test_multiple_parallel_sessions_allowed(auth_client: AsyncClient, db_s
 
 
 @pytest.mark.asyncio
-async def test_json_create_multiple_sessions(
-    auth_client: AsyncClient, db_session: AsyncSession, test_user
-):
+async def test_json_create_multiple_sessions(auth_client: AsyncClient, db_session: AsyncSession, test_user):
     """JSON endpoint creates a fresh session each time (parallel sessions allowed)."""
     first = await auth_client.post("/api/v2/sessions", json={"title": "API session"})
     assert first.status_code == 201

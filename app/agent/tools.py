@@ -203,9 +203,7 @@ async def execute_agent_tool(
             return {"status": "error", "message": str(e)}
 
     elif tool_name == "trigger_aftercare":
-        routines = (
-            await db.execute(select(CareRoutine).where(CareRoutine.user_id == user_id))
-        ).scalars().all()
+        routines = (await db.execute(select(CareRoutine).where(CareRoutine.user_id == user_id))).scalars().all()
         return {
             "status": "aftercare_launched",
             "routines_count": len(routines),
@@ -215,9 +213,7 @@ async def execute_agent_tool(
     elif tool_name == "record_health_state":
         today = local_today()
         state = (
-            await db.execute(
-                select(HealthState).where(HealthState.user_id == user_id, HealthState.event_date == today)
-            )
+            await db.execute(select(HealthState).where(HealthState.user_id == user_id, HealthState.event_date == today))
         ).scalar_one_or_none()
 
         if not state:
@@ -233,33 +229,36 @@ async def execute_agent_tool(
         return {"status": "recorded", "event_date": str(today), "mood": state.mood, "energy": state.energy}
 
     elif tool_name == "get_partner_limits":
-        partners = (
-            await db.execute(select(JournalPartner).where(JournalPartner.user_id == user_id))
-        ).scalars().all()
+        partners = (await db.execute(select(JournalPartner).where(JournalPartner.user_id == user_id))).scalars().all()
         p_list = []
         for p in partners:
-            p_list.append({
-                "alias": p.alias,
-                "hard_limits": p.hard_limits or [],
-                "soft_limits": p.soft_limits or [],
-                "safewords": p.safewords or [],
-            })
+            p_list.append(
+                {
+                    "alias": p.alias,
+                    "hard_limits": p.hard_limits or [],
+                    "soft_limits": p.soft_limits or [],
+                    "safewords": p.safewords or [],
+                }
+            )
         return {"status": "success", "partners_count": len(p_list), "partners": p_list}
 
     elif tool_name == "get_health_context":
         today = local_today()
         recent_health = (
-            await db.execute(
-                select(HealthState)
-                .where(HealthState.user_id == user_id)
-                .order_by(HealthState.event_date.desc())
-                .limit(5)
+            (
+                await db.execute(
+                    select(HealthState)
+                    .where(HealthState.user_id == user_id)
+                    .order_by(HealthState.event_date.desc())
+                    .limit(5)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         h_list = [
-            {"date": str(h.event_date), "mood": h.mood, "energy": h.energy, "notes": h.notes}
-            for h in recent_health
+            {"date": str(h.event_date), "mood": h.mood, "energy": h.energy, "notes": h.notes} for h in recent_health
         ]
         return {"status": "success", "recent_entries_count": len(h_list), "entries": h_list}
 

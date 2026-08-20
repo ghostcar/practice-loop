@@ -76,7 +76,7 @@ Current Health State:
 - Post-Session Drop: {drop_str}
 - Recovery Level: {rec_str}
 - Skin Sensitivity: {skin_str}
-- Symptoms: {health.symptoms if health else 'None'}
+- Symptoms: {health.symptoms if health else "None"}
 
 Available Care Products: {", ".join(prod_names) if prod_names else "Basic hydration"}
 Available Medications: {", ".join(med_names) if med_names else "None"}

@@ -142,5 +142,3 @@ class WearCheckInLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     managed_submissive: Mapped[ManagedSubmissive] = relationship("ManagedSubmissive")
-
-

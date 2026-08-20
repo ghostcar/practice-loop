@@ -555,9 +555,7 @@ async def test_manual_training_task_creates_log(auth_client: AsyncClient, db_ses
     )
     assert response.status_code == 303
 
-    logs = (
-        (await db_session.execute(select(ActivityLog).where(ActivityLog.training_day_id == td.id))).scalars().all()
-    )
+    logs = (await db_session.execute(select(ActivityLog).where(ActivityLog.training_day_id == td.id))).scalars().all()
     assert len(logs) == 1
     assert logs[0].entity_id == entity.id
     assert logs[0].selected_params == {"intensity": 2}
@@ -678,8 +676,8 @@ async def test_create_entity_auto_optin(auth_client: AsyncClient, db_session: As
     assert response.status_code == 303
 
     entity = (
-        (await db_session.execute(select(Entity).where(Entity.real_name == "Auto Optin Task"))).scalar_one_or_none()
-    )
+        await db_session.execute(select(Entity).where(Entity.real_name == "Auto Optin Task"))
+    ).scalar_one_or_none()
     assert entity is not None
     opt_in = (
         await db_session.execute(

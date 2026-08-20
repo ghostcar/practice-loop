@@ -43,6 +43,7 @@ if TG_BOT_TOKEN:
     bot = Bot(token=TG_BOT_TOKEN)
     dp = Dispatcher()
     from app.telegram.agent_handler import agent_tg_router  # noqa: E402
+
     dp.include_router(agent_tg_router)
     dp.include_router(main_router)
 
@@ -1387,9 +1388,7 @@ if TG_BOT_TOKEN:
 
         async with async_session_factory() as db:
             result = await db.execute(
-                select(ActivitySession).where(
-                    ActivitySession.owner_id == user.id, ActivitySession.status == "active"
-                )
+                select(ActivitySession).where(ActivitySession.owner_id == user.id, ActivitySession.status == "active")
             )
             active_sessions = result.scalars().all()
             for s in active_sessions:

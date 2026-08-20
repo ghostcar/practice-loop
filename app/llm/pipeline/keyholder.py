@@ -75,8 +75,8 @@ async def evaluate_keyholder_action(
 
     user_prompt = f"""
 Action Requested: {action_kind}
-User Reason / Note: {reason or 'No note provided'}
-Lock State: {lock_sess.state if lock_sess else 'active'}
+User Reason / Note: {reason or "No note provided"}
+Lock State: {lock_sess.state if lock_sess else "active"}
 Current User Health Context: {health_info}
 Language: {locale}
 

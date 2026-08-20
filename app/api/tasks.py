@@ -132,10 +132,7 @@ async def tasks_page(
         .outerjoin(UserEntityOptIn, UserEntityOptIn.entity_id == Entity.id)
         .where(
             (Entity.owner_id == user.id)
-            | (
-                (UserEntityOptIn.user_id == user.id)
-                & UserEntityOptIn.is_opted_in.is_(True)
-            ),
+            | ((UserEntityOptIn.user_id == user.id) & UserEntityOptIn.is_opted_in.is_(True)),
         )
         .order_by(Entity.category, Entity.real_name)
     )

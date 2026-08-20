@@ -323,9 +323,7 @@ async def admin_prompts_hub(
     # Auto seed if empty
     await seed_prompt_library(db)
 
-    items = (
-        await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))
-    ).scalars().all()
+    items = (await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))).scalars().all()
 
     system_prompts = [i for i in items if i.library_type == "system"]
     user_prompts = [i for i in items if i.library_type == "user"]
@@ -360,9 +358,7 @@ async def update_prompt_item(
     """Updates a prompt template content in the library."""
     from app.models.prompt_library import PromptLibraryItem
 
-    item = (
-        await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))
-    ).scalar_one_or_none()
+    item = (await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))).scalar_one_or_none()
 
     if not item:
         raise HTTPException(status_code=404, detail="Prompt item not found")
@@ -385,9 +381,7 @@ async def reset_prompt_item(
     from app.models.prompt_library import PromptLibraryItem
     from app.prompt_library import DEFAULT_PROMPT_REGISTRY
 
-    item = (
-        await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))
-    ).scalar_one_or_none()
+    item = (await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))).scalar_one_or_none()
 
     if not item:
         raise HTTPException(status_code=404, detail="Prompt item not found")
@@ -401,4 +395,3 @@ async def reset_prompt_item(
             break
 
     return RedirectResponse(url="/admin/prompts", status_code=303)
-

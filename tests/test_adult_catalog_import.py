@@ -129,9 +129,7 @@ async def test_apply_plan_slug_idempotent_roundtrip(db_session: AsyncSession):
     async def _apply(entities):
         imported = skipped = 0
         for fields in entities:
-            existing = await db_session.execute(
-                select(Entity.id).where(Entity.slug == fields["slug"]).limit(1)
-            )
+            existing = await db_session.execute(select(Entity.id).where(Entity.slug == fields["slug"]).limit(1))
             if existing.scalar_one_or_none() is not None:
                 skipped += 1
                 continue
