@@ -153,6 +153,36 @@ async def catalog_page(
     )
 
 
+@router.get("/catalog/public", response_class=HTMLResponse)
+async def public_catalog_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Public Catalog & Community Template Exchange (Step 78 / ADR-091)."""
+    result = await db.execute(
+        select(ActivityCatalogItem).where(ActivityCatalogItem.owner_id.is_(None)).order_by(ActivityCatalogItem.name.asc())
+    )
+    items = result.scalars().all()
+
+    locale = detect_locale(request, user.locale)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="catalog_public.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "active_nav": "activity_catalog",
+            "items": items,
+        },
+    )
+
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Form handlers
 # ─────────────────────────────────────────────────────────────────────────────

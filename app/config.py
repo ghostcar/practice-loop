@@ -34,10 +34,10 @@ class Settings(BaseSettings):
     # Feature flags — all default OFF for safe rollout (03A_PRODUCT_VARIANTS.md §7).
     locktimer_core_enabled: bool = False
     locktimer_verification_enabled: bool = False
-    social_enabled: bool = False
-    social_tracker_adapter_enabled: bool = False
-    social_timer_adapter_enabled: bool = False
-    social_public_enabled: bool = False
+    social_enabled: bool = True
+    social_tracker_adapter_enabled: bool = True
+    social_timer_adapter_enabled: bool = True
+    social_public_enabled: bool = True
     locktimer_keyholder_enabled: bool = False
     locktimer_cloud_media_enabled: bool = False
 

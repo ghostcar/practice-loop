@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#catalog"></use>
+        Публичный Каталог Задач & Обмен Шаблонами
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">
+        Авторские карточки активностей сообщества с рейтингом и быстрым добавлением в персональный опт-ин.
+      </p>
+    </div>
+
+    <a href="/catalog" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-bold rounded-xl border border-surface-700 transition-all">
+      ← Мой Личный Каталог
+    </a>
+  </div>
+
+  <!-- Items Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for item in items %}
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 space-y-4 shadow-xl flex flex-col justify-between hover:border-indigo-500/50 transition-all">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono font-bold text-indigo-400">@system</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] border border-emerald-500/30">
+            Опубликовано
+          </span>
+        </div>
+
+        <h3 class="text-base font-bold text-slate-100">{{ item.name }}</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">{{ item.description or 'Без описания.' }}</p>
+
+        {% if item.tags %}
+        <div class="flex flex-wrap gap-1 pt-1">
+          {% for tag in item.tags %}
+          <span class="px-2 py-0.5 rounded bg-surface-900 text-slate-400 font-mono text-[10px]">#{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="flex items-center justify-between border-t border-surface-700 pt-3 text-xs">
+        <button class="text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1">
+          ➕ В Мой Каталог
+        </button>
+
+        <button class="text-slate-500 hover:text-rose-400 transition-colors text-[11px]" title="Пожаловаться">
+          🚩 Пожаловаться
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-3 bg-surface-800 border border-surface-700 rounded-2xl p-8 text-center text-slate-400 text-sm">
+      Публичных шаблонов пока нет.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

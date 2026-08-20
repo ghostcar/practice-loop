@@ -620,6 +620,48 @@ async def sessions_live_page(
     )
 
 
+@router.get("/sessions/coop", response_class=HTMLResponse)
+async def sessions_coop_page(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Partner Multi-User Session Co-Op Portal (Step 77)."""
+    from app.models.ds_suite import ManagedSubmissive
+    from app.platform.social.repositories import list_user_relationships
+
+    relationships = await list_user_relationships(db, user.id)
+    managed_subs = (
+        (
+            await db.execute(
+                select(ManagedSubmissive).where(ManagedSubmissive.top_user_id == user.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="sessions_coop.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+            "relationships": relationships,
+            "managed_subs": managed_subs,
+        },
+    )
+
+
+
 @router.post("/sessions/live/complete")
 async def live_session_complete_endpoint(
     notes: str = Form(""),
