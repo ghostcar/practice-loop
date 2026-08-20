@@ -27,6 +27,7 @@ from app.models.monetization import (  # noqa: E402
     TemporaryFeaturePromotion,
     TierFeatureGrant,
 )
+from app.models.payment import PaymentInvoice  # noqa: E402
 from app.models.prompt_library import PromptLibraryItem  # noqa: E402
 from app.models.quest import Quest, UserQuest  # noqa: E402
 
@@ -45,6 +46,7 @@ __all__ = [
     "CommunityTournamentEntry",
     "EquipmentMaintenanceLog",
     "ManagedSubmissive",
+    "PaymentInvoice",
     "PromptLibraryItem",
     "Quest",
     "SubscriptionTier",

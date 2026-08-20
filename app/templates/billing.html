@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Управление Подпиской & Платёжными Шлюзами — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Current User Status & Active Promotions Banner -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">Текущий План Подписки</span>
+                <div class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
+                    {{ icon('shield', 'w-8 h-8 text-amber-400') }}
+                    <span class="capitalize">{{ user.subscription_tier or 'free' }}</span>
+                    {% if user.is_monetization_exempt %}
+                    <span class="px-3 py-1 bg-emerald-950 text-emerald-400 text-xs font-mono font-semibold rounded-full border border-emerald-800">
+                        Admin Exemption Active
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="bg-archive-950 border border-archive-800 p-4 rounded-lg flex items-center gap-4">
+                {{ icon('zap', 'w-6 h-6 text-amber-400') }}
+                <div class="text-xs text-archive-300">
+                    <p class="font-semibold text-archive-100">Мгновенная Активация</p>
+                    <p class="text-archive-400">Поддержка Stripe, Telegram Stars, Crypto (USDT/TON) и ЮKassa.</p>
+                </div>
+            </div>
+        </div>
+
+        {% if active_promos %}
+        <div class="bg-amber-950/40 border border-amber-800/60 p-4 rounded-lg flex items-center gap-3">
+            {{ icon('star', 'w-5 h-5 text-amber-400') }}
+            <div class="text-xs text-amber-200">
+                <span class="font-bold">🔥 Активная Маркетинговая Акция:</span>
+                {% for p in active_promos %}
+                Модуль <strong class="font-mono text-amber-400">{{ p.feature_code }}</strong> временно открыт для подписок от <strong class="uppercase">{{ p.target_min_tier_code }}</strong>!
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Subscription Tier Comparison Cards -->
+    <div class="space-y-4">
+        <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+            {{ icon('grid', 'w-5 h-5 text-amber-400') }}
+            <span>Доступные Тиры Подписки</span>
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <!-- Free Tier -->
+            <div class="bg-archive-900 border border-archive-800 rounded-xl p-5 shadow flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <span class="text-xs font-mono text-archive-400 uppercase">Бесплатный</span>
+                    <h3 class="text-xl font-bold text-archive-100">Free</h3>
+                    <div class="text-2xl font-bold text-archive-200">$0<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Каталог 30+ задач</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Ведение всех журналов</span></li>
+                        <li class="flex items-center gap-2 text-archive-400"><span>1 сессия каждого типа/день</span></li>
+                    </ul>
+                </div>
+                <button disabled class="w-full py-2 bg-archive-800 text-archive-400 text-xs font-semibold rounded-lg opacity-60">
+                    Базовый План
+                </button>
+            </div>
+
+            <!-- Standard Tier -->
+            <div class="bg-archive-900 border border-archive-800 rounded-xl p-5 shadow flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <span class="text-xs font-mono text-archive-400 uppercase">Стандартный</span>
+                    <h3 class="text-xl font-bold text-archive-100">Standard</h3>
+                    <div class="text-2xl font-bold text-amber-400">$9.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Неограниченно сессий</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Экспорт Внешней ИИ-Модели</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>До 3 таймеров</span></li>
+                    </ul>
+                </div>
+
+                <form action="/billing/checkout" method="POST" class="space-y-2">
+                    <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                    <input type="hidden" name="tier_code" value="standard">
+                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                        <option value="stripe">💳 Stripe (Международный)</option>
+                        <option value="telegram_stars">⭐ Telegram Stars</option>
+                        <option value="crypto">💎 Crypto (TON/USDT)</option>
+                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                    </select>
+                    <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow">
+                        Оплатить Standard
+                    </button>
+                </form>
+            </div>
+
+            <!-- Pro Tier -->
+            <div class="bg-archive-900 border border-amber-800/80 rounded-xl p-5 shadow flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <span class="text-xs font-mono text-amber-400 uppercase font-semibold">Персональный ИИ</span>
+                    <h3 class="text-xl font-bold text-archive-100">Pro</h3>
+                    <div class="text-2xl font-bold text-amber-400">$19.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>ИИ-Агент PracticeLoop</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>10-Модульная Аналитика</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Сквозные кластеры $N \ge 3$</span></li>
+                    </ul>
+                </div>
+
+                <form action="/billing/checkout" method="POST" class="space-y-2">
+                    <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                    <input type="hidden" name="tier_code" value="pro">
+                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                        <option value="stripe">💳 Stripe (Международный)</option>
+                        <option value="telegram_stars">⭐ Telegram Stars</option>
+                        <option value="crypto">💎 Crypto (TON/USDT)</option>
+                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                    </select>
+                    <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-archive-950 font-bold text-xs rounded-lg transition shadow">
+                        Оплатить Pro
+                    </button>
+                </form>
+            </div>
+
+            <!-- DS Master Tier -->
+            <div class="bg-archive-900 border border-archive-800 rounded-xl p-5 shadow flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <span class="text-xs font-mono text-archive-400 uppercase">Ключник D/s</span>
+                    <h3 class="text-xl font-bold text-archive-100">DS Master</h3>
+                    <div class="text-2xl font-bold text-amber-400">$29.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Всё из Pro +</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>D/s Command Center</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Управление Нижними</span></li>
+                    </ul>
+                </div>
+
+                <form action="/billing/checkout" method="POST" class="space-y-2">
+                    <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                    <input type="hidden" name="tier_code" value="ds_master">
+                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                        <option value="stripe">💳 Stripe (Международный)</option>
+                        <option value="telegram_stars">⭐ Telegram Stars</option>
+                        <option value="crypto">💎 Crypto (TON/USDT)</option>
+                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                    </select>
+                    <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow">
+                        Оплатить DS Master
+                    </button>
+                </form>
+            </div>
+
+            <!-- Guild Master Tier -->
+            <div class="bg-archive-900 border border-archive-800 rounded-xl p-5 shadow flex flex-col justify-between space-y-4">
+                <div class="space-y-2">
+                    <span class="text-xs font-mono text-archive-400 uppercase">Сообщества</span>
+                    <h3 class="text-xl font-bold text-archive-100">Guild</h3>
+                    <div class="text-2xl font-bold text-amber-400">$49.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Всё из DS Master +</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>ИИ-Верхний Сообщества</span></li>
+                        <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Публичные Турниры</span></li>
+                    </ul>
+                </div>
+
+                <form action="/billing/checkout" method="POST" class="space-y-2">
+                    <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                    <input type="hidden" name="tier_code" value="guild_master">
+                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                        <option value="stripe">💳 Stripe (Международный)</option>
+                        <option value="telegram_stars">⭐ Telegram Stars</option>
+                        <option value="crypto">💎 Crypto (TON/USDT)</option>
+                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                    </select>
+                    <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow">
+                        Оплатить Guild
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- History of Invoices -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-4">
+        <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+            {{ icon('journal', 'w-5 h-5 text-amber-400') }}
+            <span>История Инвойсов & Транзакций</span>
+        </h2>
+
+        {% if user_invoices %}
+        <div class="space-y-2">
+            {% for inv in user_invoices %}
+            <div class="bg-archive-950 border border-archive-800 p-3 rounded-lg flex items-center justify-between text-xs">
+                <div>
+                    <span class="font-bold text-archive-100 uppercase font-mono">{{ inv.tier_code }}</span>
+                    <span class="text-archive-400"> ({{ inv.gateway }})</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="font-mono text-amber-400 font-bold">${{ inv.amount }} {{ inv.currency }}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] uppercase font-mono {% if inv.status == 'paid' %}bg-emerald-950 text-emerald-400 border border-emerald-800{% else %}bg-archive-800 text-archive-400{% endif %}">
+                        {{ inv.status }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-archive-400">История платежей пока пуста.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

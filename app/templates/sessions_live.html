@@ -4,24 +4,24 @@
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto px-4 py-6" x-data="liveTimer()">
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+  <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('timer', 'w-6 h-6') }}
         Центр Управления Сессией & Live-Таймер
       </h1>
-      <p class="text-sm text-slate-400 mt-1">
+      <p class="text-sm text-[color:var(--text-muted)] mt-1">
         Интерактивный контроль текущих практик, отсчет удержаний поз и фиксация результатов в реальном времени.
       </p>
     </div>
 
-    <a href="/sessions" class="px-3.5 py-2 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-semibold rounded-xl border border-surface-700 transition-colors">
+    <a href="/sessions" class="px-3.5 py-2 pl-surface hover:bg-[color:var(--surface-soft)] text-[color:var(--text)] text-xs font-semibold rounded-xl border border-[color:var(--border)] transition-colors">
       ← Список Сессий
     </a>
   </div>
 
   <!-- Live Countdown Display Card -->
-  <div class="bg-surface-800 border border-surface-700 rounded-3xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+  <div class="pl-surface border border-[color:var(--border)] rounded-3xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
     <!-- Ambient Glow -->
     <div class="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -33,12 +33,12 @@
 
     <!-- Main Circular Progress Ring -->
     <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
-      <div class="absolute inset-0 rounded-full border-[6px] border-surface-700 pl-accent-soft"></div>
+      <div class="absolute inset-0 rounded-full border-[6px] border-[color:var(--border)] pl-accent-soft"></div>
 
       <!-- Digital Counter Inside Circle -->
       <div class="absolute inset-0 flex flex-col items-center justify-center space-y-1">
-        <span class="text-4xl font-extrabold font-mono text-slate-100 tracking-tight" x-text="formattedTime">00:00</span>
-        <span class="text-xs text-slate-400 font-medium" x-text="statusText">Удержание Позы</span>
+        <span class="text-4xl font-extrabold font-mono text-[color:var(--text)] tracking-tight" x-text="formattedTime">00:00</span>
+        <span class="text-xs text-[color:var(--text-muted)] font-medium" x-text="statusText">Удержание Позы</span>
       </div>
     </div>
 
@@ -53,7 +53,7 @@
 
       <button
         @click="resetTimer()"
-        class="px-4 py-3 bg-surface-900 hover:bg-surface-700 text-slate-300 font-medium text-xs rounded-2xl border border-surface-700 transition-colors"
+        class="px-4 py-3 bg-[color:var(--canvas-deep)] hover:bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] font-medium text-xs rounded-2xl border border-[color:var(--border)] transition-colors"
       >
         {{ icon('refresh', 'w-4 h-4') }} Сброс
       </button>
@@ -61,8 +61,8 @@
   </div>
 
   <!-- Chaster.app Attached Extensions Active Deck -->
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
-    <div class="flex items-center justify-between border-b border-surface-700 pb-3">
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4 shadow-xl">
+    <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
       <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 font-mono flex items-center gap-1.5">
         {{ icon('extension', 'w-4 h-4') }} Активные Расширения Сессии (Attached Chaster Extensions)
       </h3>
@@ -71,46 +71,46 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
       <!-- Extension 1: Wheel -->
-      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+      <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
         <div class="text-xl">{{ icon('dice', 'w-6 h-6') }}</div>
-        <span class="text-xs font-bold text-slate-100 block">Рулетка ИИ</span>
-        <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 bg-surface-700 text-slate-400 font-bold text-[10px] rounded cursor-not-allowed">
+        <span class="text-xs font-bold text-[color:var(--text)] block">Рулетка ИИ</span>
+        <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 pl-surface-soft text-[color:var(--text-muted)] font-bold text-[10px] rounded cursor-not-allowed">
           Скоро
         </button>
       </div>
 
       <!-- Extension 2: Pillory -->
-      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+      <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
         <div class="text-xl">{{ icon('lock', 'w-6 h-6') }}</div>
-        <span class="text-xs font-bold text-slate-100 block">Pillory Mode</span>
+        <span class="text-xs font-bold text-[color:var(--text)] block">Pillory Mode</span>
         <span class="px-2 py-0.5 bg-rose-500/20 text-rose-300 font-mono text-[10px] rounded border border-rose-500/30 block">
           Прототип
         </span>
       </div>
 
       <!-- Extension 3: Tag Seal -->
-      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+      <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
         <div class="text-xl">{{ icon('tag', 'w-6 h-6') }}</div>
-        <span class="text-xs font-bold text-slate-100 block">Пломба</span>
-        <a href="/ds/checkins" class="px-2 py-1 bg-surface-700 hover:bg-surface-600 text-slate-200 font-bold text-[10px] rounded block">
+        <span class="text-xs font-bold text-[color:var(--text)] block">Пломба</span>
+        <a href="/ds/checkins" class="px-2 py-1 pl-surface-soft hover:bg-[color:var(--border)] text-[color:var(--text)] font-bold text-[10px] rounded block">
           Инспекция
         </a>
       </div>
 
       <!-- Extension 4: Peer Review -->
-      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+      <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
         <div class="text-xl">{{ icon('camera', 'w-6 h-6') }}</div>
-        <span class="text-xs font-bold text-slate-100 block">Народный Зачет</span>
+        <span class="text-xs font-bold text-[color:var(--text)] block">Народный Зачет</span>
         <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 font-mono text-[10px] rounded border border-emerald-500/30 block">
           Прототип
         </span>
       </div>
 
       <!-- Extension 5: Dice Roll -->
-      <div class="p-3 bg-surface-900/80 border border-surface-700 rounded-xl space-y-2">
+      <div class="p-3 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-2">
         <div class="text-xl">{{ icon('dice', 'w-6 h-6') }}</div>
-        <span class="text-xs font-bold text-slate-100 block">Кубик Удачи</span>
-        <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 bg-surface-700 text-slate-400 font-bold text-[10px] rounded cursor-not-allowed">
+        <span class="text-xs font-bold text-[color:var(--text)] block">Кубик Удачи</span>
+        <button type="button" disabled title="Прототип: серверная логика ещё не подключена" class="px-2 py-1 pl-surface-soft text-[color:var(--text-muted)] font-bold text-[10px] rounded cursor-not-allowed">
           Скоро
         </button>
       </div>
@@ -120,22 +120,22 @@
   <!-- Live Quick Action Panel -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- Log Task Complete Card -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 shadow-xl space-y-3">
-      <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 shadow-xl space-y-3">
+      <h3 class="text-sm font-bold text-[color:var(--text)] flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
         Завершить Задание Сессии
       </h3>
-      <p class="text-xs text-slate-400">Зафиксировать успешное выполнение и начислить XP.</p>
+      <p class="text-xs text-[color:var(--text-muted)]">Зафиксировать успешное выполнение и начислить XP.</p>
 
       <form action="/sessions/live/complete" method="POST" class="space-y-3 pt-1">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <div>
-          <label class="block text-xs text-slate-300 mb-1">Заметки / Ощущения:</label>
+          <label class="block text-xs text-[color:var(--text-secondary)] mb-1">Заметки / Ощущения:</label>
           <input
             type="text"
             name="notes"
             placeholder="Успешно удержано 20 минут..."
-            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2 text-xs text-slate-100"
+            class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2 text-xs text-[color:var(--text)]"
           />
         </div>
         <button
@@ -148,22 +148,22 @@
     </div>
 
     <!-- Interrupt Session Card -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 shadow-xl space-y-3">
-      <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 shadow-xl space-y-3">
+      <h3 class="text-sm font-bold text-[color:var(--text)] flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-rose-500"></span>
         Прервать Сессию (Штраф)
       </h3>
-      <p class="text-xs text-slate-400">Досрочная остановка сессии со списком штрафных очков.</p>
+      <p class="text-xs text-[color:var(--text-muted)]">Досрочная остановка сессии со списком штрафных очков.</p>
 
       <form action="/sessions/live/interrupt" method="POST" class="space-y-3 pt-1">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <div>
-          <label class="block text-xs text-slate-300 mb-1">Причина остановки:</label>
+          <label class="block text-xs text-[color:var(--text-secondary)] mb-1">Причина остановки:</label>
           <input
             type="text"
             name="reason"
             placeholder="Преждевременный срыв / Усталость..."
-            class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2 text-xs text-slate-100"
+            class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2 text-xs text-[color:var(--text)]"
           />
         </div>
         <button
