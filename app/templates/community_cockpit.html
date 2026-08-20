@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Cockpit ИИ-Верхнего {{ community.name }} — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header Badge -->
+    <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="text-xs uppercase tracking-wider text-archive-400 font-semibold">Панель Управления ИИ-Верхним</span>
+            <h1 class="text-3xl font-bold text-archive-100 flex items-center gap-3 mt-1">
+                {{ icon('user-check', 'w-8 h-8 text-amber-400') }}
+                <span>{{ agent.persona_name }}</span>
+            </h1>
+            <p class="text-xs text-archive-400 mt-1">Сообщество: <strong class="text-archive-200">{{ community.name }}</strong></p>
+        </div>
+
+        <div class="flex items-center gap-3 bg-archive-950 p-3 rounded-lg border border-archive-800">
+            {{ icon('sliders', 'w-5 h-5 text-amber-400') }}
+            <div class="text-xs">
+                <span class="text-archive-400">Уровень Строгости:</span>
+                <span class="font-bold text-amber-400 font-mono text-sm ml-1">{{ agent.strictness_level }}/5</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Persona Tuning Widget -->
+        <div class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('settings', 'w-5 h-5 text-amber-400') }}
+                <span>Настройка Личности</span>
+            </h2>
+
+            <form action="/communities/{{ community.id }}/cockpit/update-persona" method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
+                <div>
+                    <label class="block text-xs text-archive-400 uppercase font-semibold mb-1">Имя Пёрсоны / Титул</label>
+                    <input type="text" name="persona_name" value="{{ agent.persona_name }}" class="w-full bg-archive-950 border border-archive-800 text-xs text-archive-100 rounded-lg p-2.5">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-archive-400 uppercase font-semibold mb-1">Уровень Строгости (1..5)</label>
+                    <input type="number" name="strictness_level" min="1" max="5" value="{{ agent.strictness_level }}" class="w-full bg-archive-950 border border-archive-800 text-xs text-archive-100 rounded-lg p-2.5">
+                </div>
+
+                <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-archive-950 font-bold text-xs rounded-lg transition shadow">
+                    Сохранить Настройки
+                </button>
+            </form>
+        </div>
+
+        <!-- Delegated Submissives Radar -->
+        <div class="lg:col-span-2 bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+            <h2 class="text-xl font-semibold text-archive-100 flex items-center gap-2">
+                {{ icon('users', 'w-5 h-5 text-amber-400') }}
+                <span>Подконтрольные Подписчики ({{ delegations|length }})</span>
+            </h2>
+
+            {% if delegations %}
+            <div class="space-y-3">
+                {% for d in delegations %}
+                <div class="bg-archive-950 border border-archive-800 p-4 rounded-lg flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-mono text-archive-400">ID: {{ d.user_id }}</span>
+                        <div class="text-sm font-semibold text-archive-100 flex items-center gap-2 mt-1">
+                            {{ icon('shield', 'w-4 h-4 text-emerald-400') }}
+                            <span>Делегирован Полный Контроль</span>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-mono text-archive-400">Compliance</span>
+                        <div class="text-sm font-bold font-mono text-emerald-400">{{ d.compliance_score }}%</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-archive-400">Нет делегированных профилей подконтрольных в данном сообществе.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

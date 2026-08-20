@@ -4,13 +4,13 @@
 {% block content %}
 <div class="space-y-6 max-w-4xl mx-auto px-4 py-6">
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+  <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('lock', 'w-6 h-6') }}
         Центр Конфиденциальности и Маскировки (Discretion Bailout Center)
       </h1>
-      <p class="text-sm text-slate-400 mt-1">
+      <p class="text-sm text-[color:var(--text-muted)] mt-1">
         Мгновенная защита приватности и переключение интерфейса в нейтральный рабочий режим (Stealth Mode).
       </p>
     </div>
@@ -29,12 +29,12 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- Status Card -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-[color:var(--text)] flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
         Статус Защиты Приватности
       </h2>
-      <p class="text-xs text-slate-400">
+      <p class="text-xs text-[color:var(--text-muted)]">
         В режиме маскировки все специфические термины и заголовки портала автоматически заменяются на нейтральные формулировки ("Задачи", "Проекты", "Расписание").
       </p>
 
@@ -44,12 +44,12 @@
     </div>
 
     <!-- Emergency Shortcut Card -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-[color:var(--text)] flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-amber-400"></span>
         Быстрые Действия
       </h2>
-      <p class="text-xs text-slate-400">Настройки экстренной очистки экрана сессии при необходимости.</p>
+      <p class="text-xs text-[color:var(--text-muted)]">Настройки экстренной очистки экрана сессии при необходимости.</p>
 
       <form action="/auth/logout" method="POST" class="pt-2">
         <button

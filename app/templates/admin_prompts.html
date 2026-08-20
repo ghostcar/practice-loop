@@ -4,13 +4,13 @@
 {% block content %}
 <div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+  <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('ai', 'w-6 h-6') }}
         Библиотека Промптов ИИ (Prompt Library)
       </h1>
-      <p class="text-sm text-slate-400 mt-1">
+      <p class="text-sm text-[color:var(--text-muted)] mt-1">
         Управление системными промптами и пользовательскими шаблонами без изменения исходного кода.
       </p>
     </div>
@@ -19,10 +19,10 @@
   <!-- Dual Library Tabs (Alpine / CSS state) -->
   <div x-data="{ tab: 'system' }" class="space-y-6">
     <!-- Tabs Header -->
-    <div class="flex border-b border-surface-700 space-x-4">
+    <div class="flex border-b border-[color:var(--border)] space-x-4">
       <button
         @click="tab = 'system'"
-        :class="tab === 'system' ? 'border-amber-500 text-amber-400 font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        :class="tab === 'system' ? 'border-amber-500 text-amber-400 font-semibold' : 'border-transparent text-[color:var(--text-muted)] hover:text-[color:var(--text)]'"
         class="py-3 px-4 border-b-2 text-sm transition-colors flex items-center gap-2"
       >
         {{ icon('lock', 'w-4 h-4') }}
@@ -34,7 +34,7 @@
 
       <button
         @click="tab = 'user'"
-        :class="tab === 'user' ? 'border-indigo-500 text-indigo-400 font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'"
+        :class="tab === 'user' ? 'border-indigo-500 text-indigo-400 font-semibold' : 'border-transparent text-[color:var(--text-muted)] hover:text-[color:var(--text)]'"
         class="py-3 px-4 border-b-2 text-sm transition-colors flex items-center gap-2"
       >
         {{ icon('profile', 'w-4 h-4') }}
@@ -49,11 +49,11 @@
     <div x-show="tab === 'system'" class="space-y-4">
       <div class="grid grid-cols-1 gap-6">
         {% for prompt in system_prompts %}
-        <div class="bg-surface-800 border border-surface-700 rounded-xl p-5 shadow-lg space-y-4">
+        <div class="pl-surface border border-[color:var(--border)] rounded-xl p-5 shadow-lg space-y-4">
           <div class="flex items-start justify-between">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600">
+                <span class="text-xs font-mono px-2 py-0.5 rounded bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-slate-600">
                   {{ prompt.key }}
                 </span>
                 {% if prompt.is_customized %}
@@ -61,18 +61,18 @@
                   Модифицирован
                 </span>
                 {% else %}
-                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--canvas)] text-[color:var(--text-muted)] border border-slate-700">
                   По умолчанию
                 </span>
                 {% endif %}
               </div>
-              <h3 class="text-lg font-semibold text-slate-100 mt-1">{{ prompt.title }}</h3>
-              <p class="text-xs text-slate-400 mt-0.5">{{ prompt.description }}</p>
+              <h3 class="text-lg font-semibold text-[color:var(--text)] mt-1">{{ prompt.title }}</h3>
+              <p class="text-xs text-[color:var(--text-muted)] mt-0.5">{{ prompt.description }}</p>
             </div>
 
             {% if prompt.is_customized %}
             <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" onsubmit="return confirm('Сбросить промпт к заводским настройкам?');">
-              <button type="submit" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors">
+              <button type="submit" class="px-3 py-1.5 text-xs bg-[color:var(--surface-soft)] hover:bg-[color:var(--border)] text-[color:var(--text)] rounded-lg transition-colors">
                 Сбросить по умолчанию
               </button>
             </form>
@@ -80,11 +80,11 @@
           </div>
 
           <form action="/admin/prompts/{{ prompt.id }}/update" method="POST" class="space-y-3">
-            <label class="block text-xs font-medium text-slate-300">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
+            <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
             <textarea
               name="template_content"
               rows="4"
-              class="w-full bg-surface-900 border border-surface-600 rounded-lg p-3 text-sm text-slate-100 font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+              class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-3 text-sm text-[color:var(--text)] font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
             >{{ prompt.template_content }}</textarea>
 
             <div class="flex justify-end">
@@ -105,11 +105,11 @@
     <div x-show="tab === 'user'" class="space-y-4">
       <div class="grid grid-cols-1 gap-6">
         {% for prompt in user_prompts %}
-        <div class="bg-surface-800 border border-surface-700 rounded-xl p-5 shadow-lg space-y-4">
+        <div class="pl-surface border border-[color:var(--border)] rounded-xl p-5 shadow-lg space-y-4">
           <div class="flex items-start justify-between">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600">
+                <span class="text-xs font-mono px-2 py-0.5 rounded bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-slate-600">
                   {{ prompt.key }}
                 </span>
                 {% if prompt.is_customized %}
@@ -117,18 +117,18 @@
                   Модифицирован
                 </span>
                 {% else %}
-                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--canvas)] text-[color:var(--text-muted)] border border-slate-700">
                   По умолчанию
                 </span>
                 {% endif %}
               </div>
-              <h3 class="text-lg font-semibold text-slate-100 mt-1">{{ prompt.title }}</h3>
-              <p class="text-xs text-slate-400 mt-0.5">{{ prompt.description }}</p>
+              <h3 class="text-lg font-semibold text-[color:var(--text)] mt-1">{{ prompt.title }}</h3>
+              <p class="text-xs text-[color:var(--text-muted)] mt-0.5">{{ prompt.description }}</p>
             </div>
 
             {% if prompt.is_customized %}
             <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" onsubmit="return confirm('Сбросить промпт к заводским настройкам?');">
-              <button type="submit" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors">
+              <button type="submit" class="px-3 py-1.5 text-xs bg-[color:var(--surface-soft)] hover:bg-[color:var(--border)] text-[color:var(--text)] rounded-lg transition-colors">
                 Сбросить по умолчанию
               </button>
             </form>
@@ -136,11 +136,11 @@
           </div>
 
           <form action="/admin/prompts/{{ prompt.id }}/update" method="POST" class="space-y-3">
-            <label class="block text-xs font-medium text-slate-300">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
+            <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
             <textarea
               name="template_content"
               rows="4"
-              class="w-full bg-surface-900 border border-surface-600 rounded-lg p-3 text-sm text-slate-100 font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+              class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-3 text-sm text-[color:var(--text)] font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
             >{{ prompt.template_content }}</textarea>
 
             <div class="flex justify-end">

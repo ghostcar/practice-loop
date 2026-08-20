@@ -193,3 +193,63 @@ async def toggle_community_delegation_endpoint(
         status = "delegated"
 
     return JSONResponse({"status": status})
+
+
+@router.get("/communities/{community_id}/cockpit", response_class=HTMLResponse)
+async def community_cockpit_page(
+    community_id: str,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    _access: None = Depends(require_feature("community_agent")),
+):
+    """Community Agent Cockpit Owner View."""
+    c_uuid = uuid.UUID(community_id)
+    community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
+    if not community:
+        raise HTTPException(404, "Community not found")
+
+    agent = await get_or_create_community_top_agent(db, c_uuid)
+
+    delegations_res = await db.execute(
+        select(CommunityMemberDelegation).where(CommunityMemberDelegation.community_id == c_uuid)
+    )
+    delegations = delegations_res.scalars().all()
+
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="community_cockpit.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "community": community,
+            "agent": agent,
+            "delegations": delegations,
+            "active_nav": "community_cockpit",
+        },
+    )
+
+
+@router.post("/communities/{community_id}/cockpit/update-persona")
+async def update_community_agent_persona_endpoint(
+    community_id: str,
+    persona_name: str = Form(...),
+    strictness_level: int = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Updates Community Agent Persona configuration."""
+    c_uuid = uuid.UUID(community_id)
+    agent = await get_or_create_community_top_agent(db, c_uuid)
+    agent.persona_name = persona_name
+    agent.strictness_level = max(1, min(5, strictness_level))
+
+    await db.flush()
+    return JSONResponse({"status": "success", "persona_name": agent.persona_name, "strictness": agent.strictness_level})
