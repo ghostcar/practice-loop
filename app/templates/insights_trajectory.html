@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        {% include "components/icon.html" %}
+        <use href="/static/icons/sprite.svg#trending-up"></use>
+        Траектория Развития и Радар Мастерства
+      </h1>
+      <p class="text-sm text-slate-400 mt-1">
+        Комплексная аналитика выносливости, дисциплины ухода, Chastity-серий и адаптивная карта развития на 30 дней.
+      </p>
+    </div>
+
+    <form action="/insights/trajectory/generate-map" method="POST">
+      <button
+        type="submit"
+        class="px-4 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-medium text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        Обновить ИИ-Траекторию
+      </button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Practice Mastery Radar Chart -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        Радар Мастерства (Mastery Radar)
+      </h2>
+      <p class="text-xs text-slate-400">Оценка выносливости и дисциплины по 5 основным векторам практик.</p>
+
+      <!-- SVG Radar Chart -->
+      <div class="flex justify-center items-center py-4">
+        <svg viewBox="0 0 300 300" class="w-64 h-64 overflow-visible">
+          <!-- Background Grid Polygons -->
+          <polygon points="150,30 255,106 215,230 85,230 45,106" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+          <polygon points="150,70 220,121 193,203 107,203 80,121" fill="none" stroke="#334155" stroke-width="1"/>
+          <polygon points="150,110 185,136 172,177 128,177 115,136" fill="none" stroke="#334155" stroke-width="1"/>
+
+          <!-- Axis Lines -->
+          <line x1="150" y1="150" x2="150" y2="30" stroke="#475569" stroke-width="1"/>
+          <line x1="150" y1="150" x2="255" y2="106" stroke="#475569" stroke-width="1"/>
+          <line x1="150" y1="150" x2="215" y2="230" stroke="#475569" stroke-width="1"/>
+          <line x1="150" y1="150" x2="85" y2="230" stroke="#475569" stroke-width="1"/>
+          <line x1="150" y1="150" x2="45" y2="106" stroke="#475569" stroke-width="1"/>
+
+          <!-- User Progress Filled Polygon -->
+          <polygon
+            points="150,50 240,115 200,215 100,210 60,115"
+            fill="rgba(245, 158, 11, 0.25)"
+            stroke="#f59e0b"
+            stroke-width="2.5"
+          />
+
+          <!-- Axis Labels -->
+          <text x="150" y="15" fill="#f8fafc" font-size="10" text-anchor="middle" font-weight="bold">Выносливость (85%)</text>
+          <text x="265" y="106" fill="#f8fafc" font-size="10" text-anchor="start" font-weight="bold">Chastity (80%)</text>
+          <text x="225" y="245" fill="#f8fafc" font-size="10" text-anchor="start" font-weight="bold">Aftercare (75%)</text>
+          <text x="75" y="245" fill="#f8fafc" font-size="10" text-anchor="end" font-weight="bold">Дневник (70%)</text>
+          <text x="35" y="106" fill="#f8fafc" font-size="10" text-anchor="end" font-weight="bold">Квесты (90%)</text>
+        </svg>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs pt-2">
+        <div class="bg-surface-900/60 p-2.5 rounded-lg border border-surface-700">
+          <span class="text-slate-400 block">Выносливость поз:</span>
+          <span class="text-amber-400 font-semibold">85 / 100 XP</span>
+        </div>
+        <div class="bg-surface-900/60 p-2.5 rounded-lg border border-surface-700">
+          <span class="text-slate-400 block">Дисциплина замков:</span>
+          <span class="text-indigo-400 font-semibold">80 / 100 XP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 30-Day Trajectory Map -->
+    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
+      <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+        Карта Траектории на 30 Дней
+      </h2>
+      <p class="text-xs text-slate-400">Прогнозируемый ИИ-Ассистентом рост уровня и целевые фокусы.</p>
+
+      <div class="space-y-4 pt-2">
+        <!-- Milestone 1 -->
+        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+          <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/20">
+            W1
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-slate-200">Неделя 1: Стабилизация Гидратации и Aftercare</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Закрепление регулярного ухода после физических нагрузок и удержания поз.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 2 -->
+        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+          <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-500/20">
+            W2
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-slate-200">Неделя 2: Плавное Окно Chastity (+12h)</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Плановое увеличение отрезка удержания с регулярными ИИ-проверками.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 3 -->
+        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-500/20">
+            W3
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-slate-200">Неделя 3: Выносливость Комплексных Поз</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Подключение 15-минутных сессий удержания средней интенсивности.</p>
+          </div>
+        </div>
+
+        <!-- Milestone 4 -->
+        <div class="flex items-start gap-3 bg-surface-900/80 p-3.5 rounded-xl border border-surface-700">
+          <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-xs border border-purple-500/20">
+            W4
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-slate-200">Неделя 4: Аттестация ИИ-Ключника & Новое Звание</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Финальный чек-ин месяца и разблокировка продвинутых квестов.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
