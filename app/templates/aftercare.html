@@ -4,38 +4,38 @@
 {% block content %}
 <div class="space-y-6 max-w-5xl mx-auto px-4 py-6" x-data="{ hydration: true, warm_compress: false, stretch: false, tea: false }">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-surface-700 pb-4">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-100 inline-flex items-center gap-2">
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
                 {{ icon('aftercare', 'w-6 h-6') }}{{ t.aftercare_title }} & Recovery Hub
             </h1>
-            <p class="text-slate-400 text-sm mt-1">
+            <p class="text-[color:var(--text-muted)] text-sm mt-1">
                 Система поддержки, восстановления, компрессов и комфорта после интенсивных сессий и практик.
             </p>
         </div>
     </div>
 
     <!-- AI Care Guidance Card -->
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-        <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+        <h2 class="text-lg font-semibold text-[color:var(--text)] flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-rose-400"></span>
             Интерактивный Чек-Лист Восстановления (Aftercare Protocols)
         </h2>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <label class="p-3 bg-surface-900 border border-surface-700 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-slate-200">
+            <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="hydration" class="accent-rose-500 rounded">
                 <span>Гидратация (500мл)</span>
             </label>
-            <label class="p-3 bg-surface-900 border border-surface-700 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-slate-200">
+            <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="warm_compress" class="accent-rose-500 rounded">
                 <span>Тёплый Компресс</span>
             </label>
-            <label class="p-3 bg-surface-900 border border-surface-700 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-slate-200">
+            <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="stretch" class="accent-rose-500 rounded">
                 <span>{{ icon('activity', 'w-4 h-4 text-rose-400') }} Легкая Растяжка</span>
             </label>
-            <label class="p-3 bg-surface-900 border border-surface-700 rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-slate-200">
+            <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="tea" class="accent-rose-500 rounded">
                 <span>Травяной Чай</span>
             </label>
@@ -44,30 +44,30 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Add entry -->
-        <section class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300 inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.aftercare_add }}</h2>
-            <p class="text-xs text-slate-400">{{ t.aftercare_add_hint }}</p>
+        <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-[color:var(--text-secondary)] inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.aftercare_add }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.aftercare_add_hint }}</p>
             <form action="/aftercare/entries" method="post" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                <label class="text-xs text-slate-300">{{ t.aftercare_date }}
-                    <input type="date" name="entry_date" value="{{ today }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-surface-900 border border-surface-600 text-slate-100 min-h-[44px]">
+                <label class="text-xs text-[color:var(--text-secondary)]">{{ t.aftercare_date }}
+                    <input type="date" name="entry_date" value="{{ today }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] text-[color:var(--text)] min-h-[44px]">
                 </label>
-                <label class="text-xs text-slate-300 col-span-2">{{ t.aftercare_kind }}
-                    <select name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-surface-900 border border-surface-600 text-slate-100 min-h-[44px]">
+                <label class="text-xs text-[color:var(--text-secondary)] col-span-2">{{ t.aftercare_kind }}
+                    <select name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] text-[color:var(--text)] min-h-[44px]">
                         {% for k in kinds %}<option value="{{ k }}" {% if k == 'physical' %}selected{% endif %}>{{ t['aftercare_kind_' + k] or k }}</option>{% endfor %}
                     </select>
                 </label>
-                <label class="text-xs text-slate-300">{{ t.aftercare_comfort }}
-                    <input type="number" name="comfort_level" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-surface-900 border border-surface-600 text-slate-100 min-h-[44px]">
+                <label class="text-xs text-[color:var(--text-secondary)]">{{ t.aftercare_comfort }}
+                    <input type="number" name="comfort_level" min="1" max="5" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] text-[color:var(--text)] min-h-[44px]">
                 </label>
-                <label class="text-xs text-slate-300 col-span-2">{{ t.aftercare_journal_link }}
-                    <select name="journal_entry_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-surface-900 border border-surface-600 text-slate-100 min-h-[44px]">
+                <label class="text-xs text-[color:var(--text-secondary)] col-span-2">{{ t.aftercare_journal_link }}
+                    <select name="journal_entry_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] text-[color:var(--text)] min-h-[44px]">
                         <option value="">{{ t.aftercare_no_link }}</option>
                         {% for je in journal_entries %}<option value="{{ je.id }}">{{ je.entry_date.isoformat() }} · {{ je.activity_type or '—' }}</option>{% endfor %}
                     </select>
                 </label>
-                <label class="text-xs text-slate-300 col-span-2 sm:col-span-3">{{ t.aftercare_notes }}
-                    <textarea name="notes" rows="2" class="mt-1 w-full px-3 py-2 rounded-lg bg-surface-900 border border-surface-600 text-slate-100 min-h-[44px]"></textarea>
+                <label class="text-xs text-[color:var(--text-secondary)] col-span-2 sm:col-span-3">{{ t.aftercare_notes }}
+                    <textarea name="notes" rows="2" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] text-[color:var(--text)] min-h-[44px]"></textarea>
                 </label>
                 <button type="submit" class="col-span-2 sm:col-span-3 py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 text-white rounded-xl text-xs font-medium inline-flex items-center justify-center gap-1.5 shadow-lg">
                     {{ icon('save', 'w-4 h-4') }}{{ t.aftercare_save }}
@@ -76,16 +76,16 @@
         </section>
 
         <!-- History -->
-        <section class="bg-surface-800 border border-surface-700 rounded-2xl p-6 shadow-xl space-y-4">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300 inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.aftercare_history }}</h2>
+        <section class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 shadow-xl space-y-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-[color:var(--text-secondary)] inline-flex items-center gap-1.5">{{ icon('history', 'w-4 h-4') }}{{ t.aftercare_history }}</h2>
             {% if entries %}
-            <ul class="divide-y divide-surface-700 text-sm">
+            <ul class="divide-y divide-[color:var(--border)] text-sm">
                 {% for e in entries %}
                 <li class="py-3 flex justify-between items-start">
                     <div>
-                        <div class="font-mono text-xs text-slate-400">{{ e.entry_date }}</div>
-                        <div class="text-slate-200 font-semibold text-xs mt-0.5">{{ e.kind }} (Комфорт: {{ e.comfort_level or '—' }}/5)</div>
-                        {% if e.notes %}<p class="text-xs text-slate-400 mt-1">{{ e.notes }}</p>{% endif %}
+                        <div class="font-mono text-xs text-[color:var(--text-muted)]">{{ e.entry_date }}</div>
+                        <div class="text-[color:var(--text)] font-semibold text-xs mt-0.5">{{ e.kind }} (Комфорт: {{ e.comfort_level or '—' }}/5)</div>
+                        {% if e.notes %}<p class="text-xs text-[color:var(--text-muted)] mt-1">{{ e.notes }}</p>{% endif %}
                     </div>
                     <form action="/aftercare/entries/{{ e.id }}/delete" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -95,7 +95,7 @@
                 {% endfor %}
             </ul>
             {% else %}
-            <p class="text-xs text-slate-400">Записей пока нет.</p>
+            <p class="text-xs text-[color:var(--text-muted)]">Записей пока нет.</p>
             {% endif %}
         </section>
     </div>

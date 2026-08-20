@@ -4,10 +4,10 @@
 {% block content %}
 <div class="space-y-6 max-w-7xl mx-auto px-4 py-6" x-data="{ deckTab: 'chastity', addSubModal: false, assignDutyModal: false }">
   <!-- Mode Switcher & Portal Bar -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-surface-700 pb-4">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
     <div>
       <div class="flex items-center gap-2">
-        <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2">
+        <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
           {{ icon('dynamics', 'w-6 h-6') }}
           D/s Command Center & Multi-Submissive Portal
         </h1>
@@ -15,14 +15,14 @@
           {{ icon('crown', 'w-3.5 h-3.5') }} Режим Ключника
         </span>
       </div>
-      <p class="text-xs text-slate-400 mt-1">
+      <p class="text-xs text-[color:var(--text-muted)] mt-1">
         Полнофункциональный кабинет управления подконтрольными нижними и замками Chastity.
       </p>
     </div>
 
     <!-- Mode Switcher Toggle Button -->
-    <div class="flex items-center bg-surface-800 p-1 border border-surface-700 rounded-xl font-mono text-xs">
-      <a href="/dashboard" class="px-3.5 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
+    <div class="flex items-center pl-surface p-1 border border-[color:var(--border)] rounded-xl font-mono text-xs">
+      <a href="/dashboard" class="px-3.5 py-2 rounded-lg text-[color:var(--text-muted)] hover:text-[color:var(--text)] transition-colors flex items-center gap-1.5">
         {{ icon('profile', 'w-3.5 h-3.5') }} Персональный
       </a>
       <a href="/ds/portal" class="px-3.5 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-bold shadow flex items-center gap-1.5">
@@ -32,9 +32,9 @@
   </div>
 
   <!-- Cohort Analytics & Keyholder Insights Widget -->
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-5 shadow-xl">
-    <div class="flex items-center justify-between border-b border-surface-700 pb-3 mb-3">
-      <h2 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 shadow-xl">
+    <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3 mb-3">
+      <h2 class="text-sm font-bold text-[color:var(--text)] flex items-center gap-2">
         {{ icon('insights', 'w-5 h-5 text-amber-400') }}
         <span>Обобщенная Аналитика Когорты Ключника</span>
       </h2>
@@ -45,23 +45,23 @@
 
     {% if cohort_analytics %}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-      <div class="bg-surface-900 border border-surface-700 p-3 rounded-xl">
-        <span class="text-[10px] text-slate-400 font-mono uppercase">Подконтрольных Нижних</span>
-        <div class="text-lg font-bold text-slate-100">{{ cohort_analytics.total_submissives }}</div>
+      <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-3 rounded-xl">
+        <span class="text-[10px] text-[color:var(--text-muted)] font-mono uppercase">Подконтрольных Нижних</span>
+        <div class="text-lg font-bold text-[color:var(--text)]">{{ cohort_analytics.total_submissives }}</div>
       </div>
-      <div class="bg-surface-900 border border-surface-700 p-3 rounded-xl">
-        <span class="text-[10px] text-slate-400 font-mono uppercase">Средний Compliance</span>
+      <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-3 rounded-xl">
+        <span class="text-[10px] text-[color:var(--text-muted)] font-mono uppercase">Средний Compliance</span>
         <div class="text-lg font-bold text-emerald-400">{{ cohort_analytics.avg_compliance }}%</div>
       </div>
-      <div class="bg-surface-900 border border-surface-700 p-3 rounded-xl">
-        <span class="text-[10px] text-slate-400 font-mono uppercase">В Подзамковом Режиме</span>
+      <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-3 rounded-xl">
+        <span class="text-[10px] text-[color:var(--text-muted)] font-mono uppercase">В Подзамковом Режиме</span>
         <div class="text-lg font-bold text-rose-400">{{ cohort_analytics.locked_count }}</div>
       </div>
     </div>
 
-    <div class="space-y-1.5 text-xs text-slate-300">
+    <div class="space-y-1.5 text-xs text-[color:var(--text-secondary)]">
       {% for insight in cohort_analytics.cohort_insights %}
-      <div class="flex items-start gap-2 bg-surface-900/60 p-2 rounded-lg border border-surface-700/50">
+      <div class="flex items-start gap-2 bg-[color:var(--canvas-deep)]/60 p-2 rounded-lg border border-[color:var(--border)]/50">
         <span class="text-amber-400 font-bold">•</span>
         <span>{{ insight }}</span>
       </div>
@@ -73,9 +73,9 @@
   {% if submissives %}
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     <!-- Submissive Switcher Sidebar Deck -->
-    <div class="lg:col-span-1 bg-surface-800 border border-surface-700 rounded-2xl p-4 space-y-4">
-      <div class="flex items-center justify-between border-b border-surface-700 pb-3">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Подконтрольные ({{ submissives|length }})</h2>
+    <div class="lg:col-span-1 pl-surface border border-[color:var(--border)] rounded-2xl p-4 space-y-4">
+      <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] font-mono">Подконтрольные ({{ submissives|length }})</h2>
         <button @click="addSubModal = true" class="text-indigo-400 hover:text-indigo-300 text-xs font-bold">+ Добавить</button>
       </div>
 
@@ -83,10 +83,10 @@
         {% for sub in submissives %}
         <a
           href="/ds/portal?sub_id={{ sub.id }}"
-          class="p-3.5 rounded-xl border transition-all block space-y-2 {% if selected_sub and selected_sub.id == sub.id %}bg-surface-700 border-indigo-500/50 shadow-md{% else %}bg-surface-900/60 border-surface-700 hover:border-surface-600{% endif %}"
+          class="p-3.5 rounded-xl border transition-all block space-y-2 {% if selected_sub and selected_sub.id == sub.id %}pl-surface-soft border-indigo-500/50 shadow-md{% else %}bg-[color:var(--canvas-deep)]/60 border-[color:var(--border)] hover:border-[color:var(--border-strong)]{% endif %}"
         >
           <div class="flex items-center justify-between">
-            <span class="text-sm font-bold text-slate-100">{{ sub.name }}</span>
+            <span class="text-sm font-bold text-[color:var(--text)]">{{ sub.name }}</span>
             <span class="text-xs font-mono font-bold text-emerald-400">{{ sub.compliance_score }}%</span>
           </div>
 
@@ -100,7 +100,7 @@
             {% endif %}
 
             {% if sub.is_offline %}
-            <span class="text-slate-400 font-mono">{{ icon('profile', 'w-3.5 h-3.5') }} Ручной</span>
+            <span class="text-[color:var(--text-muted)] font-mono">{{ icon('profile', 'w-3.5 h-3.5') }} Ручной</span>
             {% else %}
             <span class="text-indigo-300 font-mono">{{ icon('globe', 'w-3.5 h-3.5') }} Онлайн</span>
             {% endif %}
@@ -115,12 +115,12 @@
     <div class="lg:col-span-3 space-y-6">
 
       <!-- Active Submissive Banner -->
-      <div class="bg-surface-800 border border-surface-700 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+      <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <h2 class="text-xl font-bold text-slate-100">{{ selected_sub.name }}</h2>
+            <h2 class="text-xl font-bold text-[color:var(--text)]">{{ selected_sub.name }}</h2>
             {% if selected_sub.is_offline %}
-            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-mono border border-slate-600">{{ icon('profile', 'w-3 h-3') }} Ручной Оффлайн Профиль</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-700 text-[color:var(--text-secondary)] text-[10px] font-mono border border-slate-600">{{ icon('profile', 'w-3 h-3') }} Ручной Оффлайн Профиль</span>
             {% else %}
             <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-mono border border-indigo-500/30">{{ icon('globe', 'w-3 h-3') }} Зарегистрированный Нижний</span>
             {% endif %}
@@ -131,7 +131,7 @@
             </span>
             {% endif %}
           </div>
-          <p class="text-xs text-slate-400">{{ selected_sub.rules_notes or 'Правила не назначены.' }}</p>
+          <p class="text-xs text-[color:var(--text-muted)]">{{ selected_sub.rules_notes or 'Правила не назначены.' }}</p>
           
           {% if selected_sub.telegram_link_code %}
           <div class="p-2 bg-indigo-950/50 border border-indigo-500/30 rounded-lg text-xs font-mono text-indigo-200">
@@ -144,7 +144,7 @@
           {% if not selected_sub.telegram_chat_id and not selected_sub.telegram_link_code %}
           <form action="/ds/submissive/{{ selected_sub.id }}/telegram-code" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <button type="submit" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl shadow transition-all border border-slate-600 flex items-center gap-1">
+            <button type="submit" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-[color:var(--text)] font-bold text-xs rounded-xl shadow transition-all border border-slate-600 flex items-center gap-1">
               {{ icon('telegram', 'w-3.5 h-3.5') }} Привязать Telegram
             </button>
           </form>
@@ -164,27 +164,27 @@
       </div>
 
       <!-- Decks Tabs Bar -->
-      <div class="flex overflow-x-auto gap-2 bg-surface-800 p-1.5 border border-surface-700 rounded-2xl font-mono text-xs">
-        <button @click="deckTab = 'chastity'" :class="deckTab === 'chastity' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+      <div class="flex overflow-x-auto gap-2 pl-surface p-1.5 border border-[color:var(--border)] rounded-2xl font-mono text-xs">
+        <button @click="deckTab = 'chastity'" :class="deckTab === 'chastity' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-[color:var(--text-muted)] hover:text-[color:var(--text)]'" class="px-4 py-2 rounded-xl transition-all">
           {{ icon('lock', 'w-3.5 h-3.5') }} 1. Chastity & Lock Deck
         </button>
-        <button @click="deckTab = 'duties'" :class="deckTab === 'duties' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+        <button @click="deckTab = 'duties'" :class="deckTab === 'duties' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-[color:var(--text-muted)] hover:text-[color:var(--text)]'" class="px-4 py-2 rounded-xl transition-all">
           {{ icon('list', 'w-3.5 h-3.5') }} 2. Duties & Verification
         </button>
-        <button @click="deckTab = 'training'" :class="deckTab === 'training' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+        <button @click="deckTab = 'training'" :class="deckTab === 'training' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-[color:var(--text-muted)] hover:text-[color:var(--text)]'" class="px-4 py-2 rounded-xl transition-all">
           {{ icon('training', 'w-3.5 h-3.5') }} 3. Training Deck
         </button>
-        <button @click="deckTab = 'telemetry'" :class="deckTab === 'telemetry' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-2 rounded-xl transition-all">
+        <button @click="deckTab = 'telemetry'" :class="deckTab === 'telemetry' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-[color:var(--text-muted)] hover:text-[color:var(--text)]'" class="px-4 py-2 rounded-xl transition-all">
           {{ icon('chart', 'w-3.5 h-3.5') }} 4. Health Telemetry
         </button>
       </div>
 
       <!-- DECK 1: Chastity & Lock Deck -->
-      <div x-show="deckTab === 'chastity'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-6 shadow-xl">
-        <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+      <div x-show="deckTab === 'chastity'" class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
           <div>
-            <h3 class="text-base font-bold text-slate-100">Управление Замком Chastity</h3>
-            <p class="text-xs text-slate-400">Фиксация состояния устройства, времени удержания и выдачи ключа</p>
+            <h3 class="text-base font-bold text-[color:var(--text)]">Управление Замком Chastity</h3>
+            <p class="text-xs text-[color:var(--text-muted)]">Фиксация состояния устройства, времени удержания и выдачи ключа</p>
           </div>
 
           <form action="/ds/submissive/{{ selected_sub.id }}/lock-action" method="POST" class="flex gap-2">
@@ -203,13 +203,13 @@
 
         <!-- Lock Logs History -->
         <div class="space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">История Операций с Ключом</h4>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] font-mono">История Операций с Ключом</h4>
           {% if selected_sub.lock_logs %}
           <div class="space-y-2">
             {% for log in selected_sub.lock_logs %}
-            <div class="p-3 bg-surface-900/60 border border-surface-700 rounded-xl flex items-center justify-between text-xs">
+            <div class="p-3 bg-[color:var(--canvas-deep)]/60 border border-[color:var(--border)] rounded-xl flex items-center justify-between text-xs">
               <span class="font-mono text-indigo-300 font-bold">{{ log.action }}</span>
-              <span class="text-slate-300">{{ log.reason or '-' }}</span>
+              <span class="text-[color:var(--text-secondary)]">{{ log.reason or '-' }}</span>
               <span class="font-mono text-slate-500 text-[10px]">{{ log.performed_at.strftime('%Y-%m-%d %H:%M') }}</span>
             </div>
             {% endfor %}
@@ -221,11 +221,11 @@
       </div>
 
       <!-- DECK 2: Duties & Verification -->
-      <div x-show="deckTab === 'duties'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-6 shadow-xl">
-        <div class="flex items-center justify-between border-b border-surface-700 pb-4">
+      <div x-show="deckTab === 'duties'" class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-4">
           <div>
-            <h3 class="text-base font-bold text-slate-100">Приказы & Модерация Отчетов</h3>
-            <p class="text-xs text-slate-400">Назначенные задачи, проверка фото-подтверждений и оценка выполнения</p>
+            <h3 class="text-base font-bold text-[color:var(--text)]">Приказы & Модерация Отчетов</h3>
+            <p class="text-xs text-[color:var(--text-muted)]">Назначенные задачи, проверка фото-подтверждений и оценка выполнения</p>
           </div>
 
           <button @click="assignDutyModal = true" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow">
@@ -236,18 +236,18 @@
         {% if selected_sub.duties %}
         <div class="space-y-3">
           {% for duty in selected_sub.duties %}
-          <div class="p-4 bg-surface-900/80 border border-surface-700 rounded-xl space-y-3">
+          <div class="p-4 bg-[color:var(--canvas-deep)]/80 border border-[color:var(--border)] rounded-xl space-y-3">
             <div class="flex items-center justify-between">
-              <h4 class="text-sm font-bold text-slate-100">{{ duty.title }}</h4>
+              <h4 class="text-sm font-bold text-[color:var(--text)]">{{ duty.title }}</h4>
               <span class="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold {% if duty.status == 'approved' %}bg-emerald-500/20 text-emerald-300{% elif duty.status == 'rejected' %}bg-rose-500/20 text-rose-300{% else %}bg-amber-500/20 text-amber-300{% endif %}">
                 {{ duty.status }}
               </span>
             </div>
 
-            <p class="text-xs text-slate-400">{{ duty.description or 'Без описания.' }}</p>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ duty.description or 'Без описания.' }}</p>
 
             {% if duty.status == 'pending' or duty.status == 'submitted' %}
-            <form action="/ds/duties/{{ duty.id }}/verify" method="POST" class="flex gap-2 pt-2 border-t border-surface-700">
+            <form action="/ds/duties/{{ duty.id }}/verify" method="POST" class="flex gap-2 pt-2 border-t border-[color:var(--border)]">
               <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
               <button type="submit" name="action" value="approve" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">
                 Утвердить (+{{ duty.reward_penalty_xp }} XP)
@@ -266,26 +266,26 @@
       </div>
 
       <!-- DECK 3: Training Deck -->
-      <div x-show="deckTab === 'training'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
-        <h3 class="text-base font-bold text-slate-100">Программы Тренировок & Адаптация Нагрузки</h3>
-        <p class="text-xs text-slate-400">Настройка интенсивности многодневных программ удержания и фитнеса.</p>
-        <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl text-xs text-slate-300">
+      <div x-show="deckTab === 'training'" class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4 shadow-xl">
+        <h3 class="text-base font-bold text-[color:var(--text)]">Программы Тренировок & Адаптация Нагрузки</h3>
+        <p class="text-xs text-[color:var(--text-muted)]">Настройка интенсивности многодневных программ удержания и фитнеса.</p>
+        <div class="p-4 bg-[color:var(--canvas-deep)]/60 border border-[color:var(--border)] rounded-xl text-xs text-[color:var(--text-secondary)]">
           {{ icon('check-circle', 'w-3.5 h-3.5') }} Программа активна. Интенсивность подстраивается под состояние Нижнего на основе оценок самочувствия.
         </div>
       </div>
 
       <!-- DECK 4: Health Telemetry (Read-Only) -->
-      <div x-show="deckTab === 'telemetry'" class="bg-surface-800 border border-surface-700 rounded-2xl p-6 space-y-4 shadow-xl">
-        <h3 class="text-base font-bold text-slate-100">Телеметрия Здоровья & Циклов (Read-Only)</h3>
-        <p class="text-xs text-slate-400">Данные о мышечной усталости, фазах цикла и самочувствии для безопасности (PD-013).</p>
+      <div x-show="deckTab === 'telemetry'" class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 space-y-4 shadow-xl">
+        <h3 class="text-base font-bold text-[color:var(--text)]">Телеметрия Здоровья & Циклов (Read-Only)</h3>
+        <p class="text-xs text-[color:var(--text-muted)]">Данные о мышечной усталости, фазах цикла и самочувствии для безопасности (PD-013).</p>
         
         <div class="grid grid-cols-2 gap-4">
-          <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl space-y-1">
-            <span class="text-xs text-slate-400 font-mono">Мышечная Усталость</span>
+          <div class="p-4 bg-[color:var(--canvas-deep)]/60 border border-[color:var(--border)] rounded-xl space-y-1">
+            <span class="text-xs text-[color:var(--text-muted)] font-mono">Мышечная Усталость</span>
             <div class="text-xl font-bold text-amber-400 font-mono">2 / 5 (Низкая)</div>
           </div>
-          <div class="p-4 bg-surface-900/60 border border-surface-700 rounded-xl space-y-1">
-            <span class="text-xs text-slate-400 font-mono">Фаза Цикла</span>
+          <div class="p-4 bg-[color:var(--canvas-deep)]/60 border border-[color:var(--border)] rounded-xl space-y-1">
+            <span class="text-xs text-[color:var(--text-muted)] font-mono">Фаза Цикла</span>
             <div class="text-xl font-bold text-indigo-400 font-mono">Фолликулярная</div>
           </div>
         </div>
@@ -294,8 +294,8 @@
     {% endif %}
   </div>
   {% else %}
-  <div class="bg-surface-800 border border-surface-700 rounded-2xl p-12 text-center space-y-4 shadow-2xl">
-    <p class="text-sm text-slate-400">У вас пока нет привязанных подконтрольных профилей.</p>
+  <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-12 text-center space-y-4 shadow-2xl">
+    <p class="text-sm text-[color:var(--text-muted)]">У вас пока нет привязанных подконтрольных профилей.</p>
     <button @click="addSubModal = true" class="px-6 py-3 bg-gradient-to-r from-rose-600 to-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg">
       Добавить Первого Нижнего
     </button>
@@ -304,23 +304,23 @@
 
   <!-- Add Submissive Modal -->
   <div x-show="addSubModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-100">Создание Профиля Нижнего</h3>
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-[color:var(--text)]">Создание Профиля Нижнего</h3>
       <form action="/ds/submissive/create" method="POST" class="space-y-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Имя / Позывной Нижнего:</label>
-          <input type="text" name="name" required class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="Подконтрольный #1">
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Имя / Позывной Нижнего:</label>
+          <input type="text" name="name" required class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-sm text-[color:var(--text)]" placeholder="Подконтрольный #1">
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Тип Профиля:</label>
-          <select name="is_offline" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100">
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Тип Профиля:</label>
+          <select name="is_offline" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-sm text-[color:var(--text)]">
             <option value="true" selected>Ручной / Оффлайн Профиль (Без аккаунта)</option>
             <option value="false">Зарегистрированный пользователь</option>
           </select>
         </div>
         <div class="flex justify-end gap-3 pt-2">
-          <button type="button" @click="addSubModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="button" @click="addSubModal = false" class="px-4 py-2 pl-surface-soft text-[color:var(--text-secondary)] text-xs font-medium rounded-lg">Отмена</button>
           <button type="submit" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Сохранить</button>
         </div>
       </form>
@@ -329,21 +329,21 @@
 
   <!-- Assign Duty Modal -->
   <div x-show="assignDutyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-    <div class="bg-surface-800 border border-surface-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-100">Назначить Приказ / Задачу</h3>
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-[color:var(--text)]">Назначить Приказ / Задачу</h3>
       <form action="/ds/duties/assign" method="POST" class="space-y-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <input type="hidden" name="managed_sub_id" value="{{ selected_sub.id if selected_sub else '' }}">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Название Приказа:</label>
-          <input type="text" name="title" required class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-sm text-slate-100" placeholder="Ежедневный отчет замка / Удержание 20 мин">
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Название Приказа:</label>
+          <input type="text" name="title" required class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-sm text-[color:var(--text)]" placeholder="Ежедневный отчет замка / Удержание 20 мин">
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Инструкция:</label>
-          <textarea name="description" rows="2" class="w-full bg-surface-900 border border-surface-600 rounded-lg p-2.5 text-xs text-slate-100" placeholder="Загрузить фото-подтверждение пломбы..."></textarea>
+          <label class="block text-xs font-medium text-[color:var(--text-secondary)] mb-1">Инструкция:</label>
+          <textarea name="description" rows="2" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-2.5 text-xs text-[color:var(--text)]" placeholder="Загрузить фото-подтверждение пломбы..."></textarea>
         </div>
         <div class="flex justify-end gap-3 pt-2">
-          <button type="button" @click="assignDutyModal = false" class="px-4 py-2 bg-surface-700 text-slate-300 text-xs font-medium rounded-lg">Отмена</button>
+          <button type="button" @click="assignDutyModal = false" class="px-4 py-2 pl-surface-soft text-[color:var(--text-secondary)] text-xs font-medium rounded-lg">Отмена</button>
           <button type="submit" class="px-4 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow">Отправить</button>
         </div>
       </form>
