@@ -34,6 +34,11 @@ class ManagedSubmissive(Base):
     chastity_status: Mapped[str] = mapped_column(String(50), default="unlocked")
     compliance_score: Mapped[int] = mapped_column(Integer, default=100)
     rules_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    telegram_chat_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    telegram_link_code: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    telegram_link_code_expires: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     top_user: Mapped[User] = relationship("User", foreign_keys=[top_user_id])

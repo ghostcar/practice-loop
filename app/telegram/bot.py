@@ -110,27 +110,53 @@ if TG_BOT_TOKEN:
             return
 
         async with async_session_factory() as db:
-            result = await db.execute(select(User).where(User.telegram_link_code == code.upper()))
+            from app.models.ds_suite import ManagedSubmissive
+
+            clean_code = code.upper()
+            # Check user first
+            result = await db.execute(select(User).where(User.telegram_link_code == clean_code))
             user = result.scalar_one_or_none()
 
-            if user is None:
-                await message.answer("❌ Invalid code. Check your web profile and try again.")
+            if user:
+                if user.telegram_link_code_expires and as_utc(user.telegram_link_code_expires) < datetime.now(UTC):
+                    await message.answer("⏰ Code expired. Generate a new one in your web profile.")
+                    return
+
+                user.telegram_chat_id = message.chat.id
+                user.telegram_link_code = None
+                user.telegram_link_code_expires = None
+                db.add(user)
+                await db.commit()
+
+                msg = f"✅ Linked! Welcome, {user.email}!\n\nUse /next to get your first task."
+                await message.answer(msg)
                 return
 
-            if user.telegram_link_code_expires and as_utc(user.telegram_link_code_expires) < datetime.now(UTC):
-                await message.answer("⏰ Code expired. Generate a new one in your web profile.")
+            # Check ManagedSubmissive profile
+            sub_stmt = select(ManagedSubmissive).where(ManagedSubmissive.telegram_link_code == clean_code)
+            sub_res = await db.execute(sub_stmt)
+            sub_profile = sub_res.scalar_one_or_none()
+
+            if sub_profile:
+                exp = sub_profile.telegram_link_code_expires
+                if exp and as_utc(exp) < datetime.now(UTC):
+                    await message.answer("⏰ Code expired. Ask your Keyholder for a new code.")
+                    return
+
+                sub_profile.telegram_chat_id = str(message.chat.id)
+                sub_profile.telegram_link_code = None
+                sub_profile.telegram_link_code_expires = None
+                db.add(sub_profile)
+                await db.commit()
+
+                sub_msg = (
+                    f"👑 D/s Submissive Profile Linked! Welcome, {sub_profile.name}!\n\n"
+                    "You will receive direct Telegram notifications from your Keyholder."
+                )
+                await message.answer(sub_msg)
                 return
 
-            # Link the account
-            user.telegram_chat_id = message.chat.id
-            user.telegram_link_code = None
-            user.telegram_link_code_expires = None
-            db.add(user)
-            await db.commit()
-
-        await message.answer(
-            f"✅ Linked! Welcome, {user.email}!\n\nUse /next to get your first task, or /stats to see your progress.",
-        )
+            await message.answer("❌ Invalid code. Check your profile or ask your Keyholder for a code.")
 
     # ── /next ────────────────────────────────────────────────────────
 

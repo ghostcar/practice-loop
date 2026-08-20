@@ -510,3 +510,34 @@ async def ai_keyholder_spin_endpoint(
     return RedirectResponse(url="/ds/keyholder", status_code=303)
 
 
+@router.post("/ds/submissive/{sub_id}/telegram-code")
+async def generate_submissive_telegram_code_endpoint(
+    sub_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generates a 6-character code for linking an offline submissive to Telegram bot (Step 74 / ADR-130)."""
+    from datetime import UTC, datetime, timedelta
+
+    sub_uuid = uuid.UUID(sub_id)
+    sub = (
+        await db.execute(
+            select(ManagedSubmissive).where(
+                ManagedSubmissive.id == sub_uuid,
+                ManagedSubmissive.top_user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not sub:
+        raise HTTPException(404, "Submissive profile not found")
+
+    code = f"SUB-{uuid.uuid4().hex[:6].upper()}"
+    sub.telegram_link_code = code
+    sub.telegram_link_code_expires = datetime.now(UTC) + timedelta(minutes=30)
+    db.add(sub)
+    await db.commit()
+    return RedirectResponse(url=f"/ds/portal?sub_id={sub.id}", status_code=303)
+
+
+
