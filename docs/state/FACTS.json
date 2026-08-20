@@ -1,20 +1,20 @@
 {
   "alembic": {
-    "checked_at": "2026-08-20T02:20:21Z",
+    "checked_at": "2026-08-20T02:27:28Z",
     "command": "alembic heads",
     "heads": [
-      "074_adaptive_training_tables"
+      "076_equipment_maintenance"
     ]
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-20T02:20:21Z",
+  "generated_at": "2026-08-20T02:27:28Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:989bee8cfd7d3c5bea7da237a66fba3826e1b04bde13d5dacd787bcd2608f492",
+    "diff_hash": "sha256:13a513a332847e3c6cb3b4205ae68cea532b03b13329d0aa7b7dec40a5f7356c",
     "dirty": true,
-    "head": "148faae653fe8eab3e882a961d8f4e5362b37550"
+    "head": "f4268f12e519efb04a9681660b58158e07e517a7"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
