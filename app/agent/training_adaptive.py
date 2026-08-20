@@ -22,11 +22,15 @@ async def create_adaptive_program(
     difficulty_level: int,
     db: AsyncSession,
 ) -> AdaptiveProgram:
-    """Creates a new adaptive training program and populates initial steps."""
+    """Creates a new adaptive training program and populates initial steps (Audit A-02 fix: input bounds)."""
+    # Enforce safe upper and lower bounds for total_days and difficulty
+    total_days = max(1, min(30, total_days))
+    difficulty_level = max(1, min(5, difficulty_level))
+
     program = AdaptiveProgram(
         user_id=user_id,
-        title=title,
-        focus_domain=focus_domain,
+        title=title.strip()[:200],
+        focus_domain=focus_domain.strip()[:100],
         total_days=total_days,
         difficulty_level=difficulty_level,
         status="active",
@@ -36,7 +40,7 @@ async def create_adaptive_program(
 
     # Generate initial baseline steps
     for day_num in range(1, total_days + 1):
-        target_minutes = 30 + (day_num - 1) * 10
+        target_minutes = min(180, 30 + (day_num - 1) * 10)
         step_title = f"День {day_num}: {title} ({target_minutes} мин)"
         step = AdaptiveProgramStep(
             program_id=program.id,
@@ -59,11 +63,27 @@ async def log_step_feedback_and_adapt(
     user_id: uuid.UUID,
     db: AsyncSession,
 ) -> dict[str, Any]:
-    """Logs user feedback for step and dynamically adapts upcoming steps via Agent rules."""
-    step = (await db.execute(select(AdaptiveProgramStep).where(AdaptiveProgramStep.id == step_id))).scalar_one_or_none()
+    """Logs user feedback for step and adapts upcoming steps via Agent rules.
+
+    Audit A-02 fix: user ownership check and input range limits.
+    """
+    # Range bounds validation
+    comfort_score = max(1, min(5, comfort_score))
+    actual_minutes = max(0, min(1440, actual_minutes))
+
+    # Verify user ownership of the parent program
+    query = (
+        select(AdaptiveProgramStep)
+        .join(AdaptiveProgram, AdaptiveProgramStep.program_id == AdaptiveProgram.id)
+        .where(
+            AdaptiveProgramStep.id == step_id,
+            AdaptiveProgram.user_id == user_id,
+        )
+    )
+    step = (await db.execute(query)).scalar_one_or_none()
 
     if not step:
-        return {"status": "error", "message": "Step not found."}
+        return {"status": "error", "message": "Step not found or access denied."}
 
     step.actual_feedback = {
         "comfort_score": comfort_score,

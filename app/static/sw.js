@@ -1,11 +1,11 @@
 // PracticeLoop Service Worker (PWA Offline Cache & Push Dispatches)
 
-const CACHE_NAME = "practiceloop-v1";
+const CACHE_NAME = "practiceloop-v2";
 const ASSETS_TO_CACHE = [
-  "/",
   "/static/icons/sprite.svg",
-  "/agent/chat",
-  "/insights/trajectory"
+  "/static/tailwindcss.js",
+  "/static/htmx.min.js",
+  "/static/alpine.min.js"
 ];
 
 self.addEventListener("install", (event) => {

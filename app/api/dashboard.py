@@ -657,28 +657,83 @@ async def sessions_coop_page(
 
 @router.post("/sessions/live/complete")
 async def live_session_complete_endpoint(
+    session_id: str | None = Form(None),
     notes: str = Form(""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Logs completion of active live session task."""
-    from app.gamification.handler import on_task_completed
+    """Logs completion of active live session task (Audit A-01 fix: atomic state transition & ownership check)."""
+    from app.gamification.handler import get_or_create_progress
+    from app.models.session import ActivitySession
+    from app.models.session_history import ActivitySessionHistory
 
-    await on_task_completed(db, user.id, task_type="live_hold", xp_award=50)
-    return RedirectResponse(url="/sessions/live", status_code=303)
+    # Find specified active session or user's latest active session
+    query = select(ActivitySession).where(
+        ActivitySession.owner_id == user.id,
+        ActivitySession.status == "active",
+    )
+    if session_id:
+        try:
+            sess_uuid = uuid.UUID(session_id)
+            query = query.where(ActivitySession.id == sess_uuid)
+        except ValueError:
+            pass
+
+    session = (await db.execute(query)).scalars().first()
+    if not session:
+        return RedirectResponse(url="/sessions", status_code=303)
+
+    # Transition status to completed atomically
+    session.status = "completed"
+    session.ended_at = datetime.now(UTC)
+    session.notes = (session.notes or "") + f"\nCompleted with notes: {notes.strip()}"
+
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="completed"))
+
+    prog = await get_or_create_progress(db, user.id)
+    prog.xp += 50
+    prog.total_completed += 1
+
+    return RedirectResponse(url="/sessions", status_code=303)
 
 
 @router.post("/sessions/live/interrupt")
 async def live_session_interrupt_endpoint(
+    session_id: str | None = Form(None),
     reason: str = Form(""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Logs early interruption of live session with penalty penalty deduction."""
-    from app.gamification.handler import on_task_interrupted
+    """Logs early interruption of live session (Audit A-01 fix: atomic state transition & ownership check)."""
+    from app.gamification.handler import get_or_create_progress
+    from app.models.session import ActivitySession
+    from app.models.session_history import ActivitySessionHistory
 
-    await on_task_interrupted(db, user.id, task_type="live_hold", penalty_xp=25)
-    return RedirectResponse(url="/sessions/live", status_code=303)
+    query = select(ActivitySession).where(
+        ActivitySession.owner_id == user.id,
+        ActivitySession.status == "active",
+    )
+    if session_id:
+        try:
+            sess_uuid = uuid.UUID(session_id)
+            query = query.where(ActivitySession.id == sess_uuid)
+        except ValueError:
+            pass
+
+    session = (await db.execute(query)).scalars().first()
+    if not session:
+        return RedirectResponse(url="/sessions", status_code=303)
+
+    session.status = "interrupted"
+    session.ended_at = datetime.now(UTC)
+
+    db.add(ActivitySessionHistory(session_id=session.id, actor_id=user.id, event_type="interrupted"))
+
+    prog = await get_or_create_progress(db, user.id)
+    prog.xp = max(0, prog.xp - 25)
+    prog.total_interrupted += 1
+
+    return RedirectResponse(url="/sessions", status_code=303)
 
 
 @router.get("/sessions", response_class=HTMLResponse)
