@@ -1120,3 +1120,19 @@ manual 154). Прод не тронут — отдельный prod-импорт
 5. **Бейджи**: участник с ролью модератора помечается «Модератор» в списке участников.
 
 **Status:** ✅ Реализовано, 8 новых тестов (`test_community_governance.py`), полный цикл проверен в браузере на проде (назначение co_top → права модератора → передача владения → 403 бывшему владельцу). Коммит `da58c930`.
+
+### ADR-136 — Рекомпозиция продукта: R0-аудит и 5 документов примирения (Master Brief)
+**Date:** 2026-08-21
+**Decision:** По `examples/PRACTICE_LOOP_RETHINK_REFACTOR_MASTER.md` проведён R0-аудит (без кода) и созданы 5 deliverables:
+
+1. `memory/PRODUCT_REFRAME.md` — product definition: Personal Core / Intelligence / Virtual Dynamics / Human Dynamics, manual-first, AI опционален, Agency/Protocol/Dynamic/Capability, anti-goals.
+2. `memory/IMPLEMENTATION_RECONCILIATION.md` — evidence-based матрица: 134 таблицы / 0 моделей без таблиц / 83 миграции (prod head 083) / 543 роута / 1332 из 1334 тестов.
+3. `memory/TECH_DEBT_V2.md` — реестр долга (мёртвые модели, stubs, дублирование, связность, docs drift).
+4. `memory/TARGET_ARCHITECTURE_V2.md` — bounded contexts, AgencyPolicy, единый Capability-примитив, Protocol-каркас, Dynamic как проекция, AI proposal/apply pipeline.
+5. `memory/REFACTOR_ROADMAP_V2.md` — фазы R0–R9 с exit criteria и первым безопасным батчем.
+
+**Ключевые находки:** automation_triggers / user_league_tiers / user_duels — таблицы без API (мёртвые, флаг или удаление — R1-P0); TimerSocialAdapter — скелет; medication relief-only (health/journal) конфликтует с adherence XP (Telegram /med) — требуется решение; Entity vs activity_catalog — дублирование (FK между ними); 4 системы делегирования (SocialGrant/CapabilityGrant/CommunityDelegation/CommunityRole). 2 failed теста — тест-инфраструктура (.env перекрывает tmp_path), не код.
+
+**Решение:** аудит подтверждает manual-first направление брифа; следующие фазы (R1+) начинать только после согласования первого безопасного батча с владельцем. Бриф раздел 21 (anti-goals) — обязателен.
+
+**Status:** ✅ Документы созданы и закоммичены. Код не менялся (R0 = только аудит).
