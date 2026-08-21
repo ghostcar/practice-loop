@@ -12,11 +12,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.community_agent import (
     approve_community_member,
+    assign_member_role,
     create_community,
     get_community_membership,
+    is_valid_moderator_role,
     join_community,
     leave_community,
+    list_member_roles,
+    remove_member_role,
     rotate_community_invite_code,
+    transfer_community_ownership,
 )
 from app.api.auth import get_current_user
 from app.config import settings
@@ -30,6 +35,7 @@ from app.models.community_agent import (
     CommunityTopAgent,
     CommunityTournament,
 )
+from app.models.community_roles import CommunityMemberRole
 from app.models.user import User
 from app.templates_setup import templates
 
@@ -188,6 +194,10 @@ async def community_detail_page(
     active_members = [m for m in members if m.status == "active"]
     pending_members = [m for m in members if m.status == "pending"]
 
+    # Moderator role assignments (for the owner management panel).
+    moderator_roles = await list_member_roles(db, c_uuid)
+    user_moderator_roles = {r.role_type for r in moderator_roles if r.user_id == user.id}
+
     agent_res = await db.execute(select(CommunityTopAgent).where(CommunityTopAgent.community_id == c_uuid))
     agent = agent_res.scalar_one_or_none()
 
@@ -223,6 +233,8 @@ async def community_detail_page(
             "members": active_members,
             "pending_members": pending_members,
             "member_count": len(active_members),
+            "moderator_roles": moderator_roles,
+            "user_moderator_roles": user_moderator_roles,
             "agent": agent,
             "recent_posts": recent_posts,
             "tournaments": tournaments,
@@ -331,3 +343,85 @@ async def delete_community_endpoint(
     await db.delete(community)
     await db.flush()
     return RedirectResponse(url="/communities", status_code=303)
+
+
+async def _require_owner(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user: User,
+) -> Community:
+    """Fetches community and enforces that the current user is its active owner."""
+    community = (await db.execute(select(Community).where(Community.id == community_id))).scalar_one_or_none()
+    if not community:
+        raise HTTPException(404, "Community not found")
+    membership = await get_community_membership(db, community_id, user.id)
+    if not membership or membership.role != "owner" or membership.status != "active":
+        raise HTTPException(403, "Только владелец сообщества может выполнять это действие")
+    return community
+
+
+@router.post("/communities/{community_id}/transfer")
+async def transfer_ownership_endpoint(
+    community_id: str,
+    new_owner_id: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Owner transfers ownership to another active member."""
+    c_uuid = uuid.UUID(community_id)
+    community = await _require_owner(db, c_uuid, user)
+
+    status, _ = await transfer_community_ownership(db, community, uuid.UUID(new_owner_id))
+    await db.flush()
+
+    if status == "not_member":
+        raise HTTPException(400, "Новый владелец должен быть активным участником сообщества")
+    if status == "already_owner":
+        raise HTTPException(400, "Этот участник уже является владельцем")
+
+    return RedirectResponse(url=f"/communities/{c_uuid}?transfer=ok", status_code=303)
+
+
+@router.post("/communities/{community_id}/moderators/add")
+async def add_moderator_endpoint(
+    community_id: str,
+    user_id: str = Form(...),
+    role_type: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Owner assigns a moderator role to an active member."""
+    c_uuid = uuid.UUID(community_id)
+    await _require_owner(db, c_uuid, user)
+
+    status, _ = await assign_member_role(db, c_uuid, uuid.UUID(user_id), role_type)
+    await db.flush()
+
+    if status == "invalid_role":
+        raise HTTPException(400, "Неизвестная роль модератора")
+    if status == "not_member":
+        raise HTTPException(400, "Участник должен быть активным членом сообщества")
+    if status == "already_assigned":
+        raise HTTPException(400, "Роль уже назначена этому участнику")
+
+    return RedirectResponse(url=f"/communities/{c_uuid}?moderator=added", status_code=303)
+
+
+@router.post("/communities/{community_id}/moderators/remove")
+async def remove_moderator_endpoint(
+    community_id: str,
+    user_id: str = Form(...),
+    role_type: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Owner removes a moderator role from a member."""
+    c_uuid = uuid.UUID(community_id)
+    await _require_owner(db, c_uuid, user)
+
+    removed = await remove_member_role(db, c_uuid, uuid.UUID(user_id), role_type)
+    await db.flush()
+    if not removed:
+        raise HTTPException(400, "Роль не была назначена")
+
+    return RedirectResponse(url=f"/communities/{c_uuid}?moderator=removed", status_code=303)

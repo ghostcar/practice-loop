@@ -47,7 +47,7 @@
                 {% endif %}
             </form>
 
-            {% if is_owner %}
+            {% if can_manage %}
             <a href="/communities/{{ community.id }}" class="py-2.5 px-4 pl-surface border border-[color:var(--border)] text-[color:var(--text)] font-semibold text-xs rounded-lg transition flex items-center gap-2 hover:border-[color:var(--border-strong)]">
                 {{ icon('users', 'w-4 h-4') }}
                 <span>Участники</span>
@@ -71,7 +71,7 @@
                 <span>Публичные Турниры Сообщества</span>
             </h2>
 
-            {% if is_owner %}
+            {% if can_manage %}
             <form action="/communities/{{ community.id }}/agent/tournaments/create" method="POST" class="flex items-center gap-2">
                 <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                 <input type="text" name="title" placeholder="Название турнира..." required class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] text-xs text-[color:var(--text)] rounded-lg p-2">
@@ -106,7 +106,7 @@
 
                 <div class="flex items-center justify-between pt-2 border-t border-[color:var(--border)] text-xs">
                     <span class="text-[color:var(--text-muted)] font-mono">Метрика: {{ t.metric_type }}</span>
-                    {% if is_owner %}
+                    {% if can_manage %}
                     <form action="/communities/{{ community.id }}/agent/tournaments/{{ t.id }}/points" method="POST" class="flex items-center gap-1.5" title="Начислить очки участнику">
                         <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                         <select name="user_id" class="bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded px-1.5 py-1 text-[10px] text-[color:var(--text)]" required>

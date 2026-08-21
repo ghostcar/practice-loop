@@ -18,6 +18,7 @@ from app.models.community_agent import (
     CommunityTournament,
     CommunityTournamentEntry,
 )
+from app.models.community_roles import CommunityMemberRole
 
 logger = logging.getLogger(__name__)
 
@@ -327,3 +328,135 @@ async def run_community_delegated_governance(
         d.compliance_score = min(100.0, d.compliance_score + 1.0)
 
     return {"status": "success", "audited_submissives": audited_count}
+
+
+# ---------------------------------------------------------------------------
+# Ownership transfer & co-moderator roles
+# ---------------------------------------------------------------------------
+
+VALID_MODERATOR_ROLES = frozenset(
+    {"co_top", "keyholder", "trainer", "care_curator", "tournament_organizer"}
+)
+
+
+def is_valid_moderator_role(role: str) -> bool:
+    return role in VALID_MODERATOR_ROLES
+
+
+async def get_member_roles(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> set[str]:
+    """Returns the set of moderator role types a member holds in a community."""
+    res = await db.execute(
+        select(CommunityMemberRole).where(
+            CommunityMemberRole.community_id == community_id,
+            CommunityMemberRole.user_id == user_id,
+        )
+    )
+    return {r.role_type for r in res.scalars().all()}
+
+
+async def list_member_roles(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+) -> list[CommunityMemberRole]:
+    """All moderator role assignments in a community (join-able for names)."""
+    res = await db.execute(
+        select(CommunityMemberRole)
+        .where(CommunityMemberRole.community_id == community_id)
+        .order_by(CommunityMemberRole.assigned_at)
+    )
+    return list(res.scalars().all())
+
+
+async def assign_member_role(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user_id: uuid.UUID,
+    role_type: str,
+) -> tuple[str, CommunityMemberRole | None]:
+    """Assigns a moderator role to an active member. Returns (status, role)."""
+    if not is_valid_moderator_role(role_type):
+        return "invalid_role", None
+
+    membership = await get_community_membership(db, community_id, user_id)
+    if not membership or membership.status != "active":
+        return "not_member", None
+
+    existing = (
+        await db.execute(
+            select(CommunityMemberRole).where(
+                CommunityMemberRole.community_id == community_id,
+                CommunityMemberRole.user_id == user_id,
+                CommunityMemberRole.role_type == role_type,
+            )
+        )
+    ).scalar_one_or_none()
+    if existing:
+        return "already_assigned", existing
+
+    role = CommunityMemberRole(
+        community_id=community_id,
+        user_id=user_id,
+        role_type=role_type,
+    )
+    db.add(role)
+    await db.flush()
+    return "assigned", role
+
+
+async def remove_member_role(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user_id: uuid.UUID,
+    role_type: str,
+) -> bool:
+    """Removes a moderator role assignment."""
+    role = (
+        await db.execute(
+            select(CommunityMemberRole).where(
+                CommunityMemberRole.community_id == community_id,
+                CommunityMemberRole.user_id == user_id,
+                CommunityMemberRole.role_type == role_type,
+            )
+        )
+    ).scalar_one_or_none()
+    if not role:
+        return False
+    await db.delete(role)
+    await db.flush()
+    return True
+
+
+async def transfer_community_ownership(
+    db: AsyncSession,
+    community: Community,
+    new_owner_id: uuid.UUID,
+) -> tuple[str, CommunityMember | None]:
+    """Transfers ownership to an active non-owner member.
+
+    Returns (status, new_owner_membership):
+      status: "transferred" | "not_member" | "already_owner"
+    """
+    if new_owner_id == community.owner_id:
+        return "already_owner", None
+
+    new_owner = await get_community_membership(db, community.id, new_owner_id)
+    if not new_owner or new_owner.status != "active":
+        return "not_member", None
+
+    old_owner = await get_community_membership(db, community.id, community.owner_id)
+    if old_owner:
+        old_owner.role = "member"
+
+    new_owner.role = "owner"
+    community.owner_id = new_owner_id
+
+    # A co_top moderator becomes redundant once promoted to owner.
+    if "co_top" in await get_member_roles(db, community.id, new_owner_id):
+        await remove_member_role(db, community.id, new_owner_id, "co_top")
+
+    await db.flush()
+    return "transferred", new_owner

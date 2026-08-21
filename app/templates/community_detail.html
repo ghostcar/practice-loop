@@ -158,10 +158,15 @@
         {% if members %}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {% for m in members %}
-            <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-2.5 rounded-lg flex items-center justify-between">
+            <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-2.5 rounded-lg flex items-center justify-between gap-2">
                 <span class="text-xs font-mono text-[color:var(--text)] truncate">{{ m.user_id }}</span>
                 {% if m.role == 'owner' %}
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-950 text-amber-400 border border-amber-800">Владелец</span>
+                {% else %}
+                {% set m_roles = moderator_roles|selectattr('user_id', 'equalto', m.user_id)|map(attribute='role_type')|list %}
+                {% if m_roles %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-indigo-950 text-indigo-300 border border-indigo-800" title="{{ m_roles|join(', ') }}">Модератор</span>
+                {% endif %}
                 {% endif %}
             </div>
             {% endfor %}
@@ -170,6 +175,96 @@
         <p class="text-xs text-[color:var(--text-muted)]">Участников пока нет.</p>
         {% endif %}
     </section>
+
+    {% set mod_flash = request.query_params.get('moderator') %}
+    {% if mod_flash == 'added' %}
+    <p class="px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 text-xs" role="status">Роль модератора назначена</p>
+    {% elif mod_flash == 'removed' %}
+    <p class="px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 text-xs" role="status">Роль модератора снята</p>
+    {% endif %}
+    {% if request.query_params.get('transfer') == 'ok' %}
+    <p class="px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 text-xs" role="status">Владение сообществом передано</p>
+    {% endif %}
+
+    <!-- Owner: moderators & ownership transfer -->
+    {% if is_owner %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-4" aria-labelledby="admin-h">
+        <h2 id="admin-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('crown', 'w-4 h-4') }} Управление сообществом
+        </h2>
+
+        {% set non_owner_members = members|selectattr('role', 'ne', 'owner')|list %}
+
+        {% if non_owner_members %}
+        <div class="space-y-3">
+            <!-- Assign moderator role -->
+            <form action="/communities/{{ community.id }}/moderators/add" method="POST" class="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase font-bold text-[color:var(--text-muted)]">Участник</label>
+                    <select name="user_id" class="pl-surface-soft border border-[color:var(--border)] rounded-lg px-2.5 py-2 text-xs text-[color:var(--text)] min-w-44" required>
+                        {% for m in non_owner_members %}
+                        <option value="{{ m.user_id }}">{{ m.user_id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase font-bold text-[color:var(--text-muted)]">Роль</label>
+                    <select name="role_type" class="pl-surface-soft border border-[color:var(--border)] rounded-lg px-2.5 py-2 text-xs text-[color:var(--text)]" required>
+                        <option value="co_top">co_top — управление агентом (квесты, турниры, настройки)</option>
+                        <option value="tournament_organizer">tournament_organizer — турниры и очки</option>
+                        <option value="keyholder">keyholder — ключник</option>
+                        <option value="trainer">trainer — тренер</option>
+                        <option value="care_curator">care_curator — куратор заботы</option>
+                    </select>
+                </div>
+                <button type="submit" class="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition inline-flex items-center gap-1.5">
+                    {{ icon('user-add', 'w-3.5 h-3.5') }} Назначить
+                </button>
+            </form>
+
+            <!-- Active moderator assignments -->
+            {% if moderator_roles %}
+            <div class="space-y-1.5">
+                <div class="text-[10px] uppercase font-bold text-[color:var(--text-muted)]">Назначенные роли</div>
+                {% for r in moderator_roles %}
+                <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] px-3 py-2 rounded-lg flex items-center justify-between gap-2">
+                    <span class="text-xs font-mono text-[color:var(--text)] truncate">{{ r.user_id }}</span>
+                    <span class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-indigo-950 text-indigo-300 border border-indigo-800">{{ r.role_type }}</span>
+                        <form action="/communities/{{ community.id }}/moderators/remove" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <input type="hidden" name="user_id" value="{{ r.user_id }}">
+                            <input type="hidden" name="role_type" value="{{ r.role_type }}">
+                            <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-semibold" title="Снять роль">{{ icon('close', 'w-3 h-3') }}</button>
+                        </form>
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Transfer ownership -->
+            <form action="/communities/{{ community.id }}/transfer" method="POST" class="pt-2 border-t border-[color:var(--border)] flex flex-wrap items-end gap-2" onsubmit="return confirm('Передать владение сообществом выбранному участнику? Вы станете обычным участником.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase font-bold text-[color:var(--text-muted)]">Новый владелец</label>
+                    <select name="new_owner_id" class="pl-surface-soft border border-[color:var(--border)] rounded-lg px-2.5 py-2 text-xs text-[color:var(--text)] min-w-44" required>
+                        {% for m in non_owner_members %}
+                        <option value="{{ m.user_id }}">{{ m.user_id }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-archive-950 text-xs font-semibold transition inline-flex items-center gap-1.5">
+                    {{ icon('crown', 'w-3.5 h-3.5') }} Передать владение
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <p class="text-xs text-[color:var(--text-muted)]">Передача владения и назначение модераторов станут доступны, когда в сообществе появятся участники.</p>
+        {% endif %}
+    </section>
+    {% endif %}
 
     <!-- Agent & Tournaments -->
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-4" aria-labelledby="agent-h">
