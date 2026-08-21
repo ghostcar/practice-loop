@@ -1,0 +1,221 @@
+{# Personalize modal (R2.5, REFACTOR_ROADMAP_V2.md).
+   Модальное окно «персонализация» карточки каталога (Fork-on-Opt-In, ADR-106):
+   длительность (duration_picker ×2: мин/макс), повторения (quantity_picker),
+   селектор инвентаря и средств ухода (мягкие ссылки), уровень желания.
+   Постится на POST /entities/{id}/personalize; JS собирает секунды и id-списки.
+
+   Usage (один раз на странице каталога, с context):
+     {% from "components/catalog_personalize_modal.html" import catalog_personalize_modal with context %}
+     {{ catalog_personalize_modal(desire_levels, care_products, inventory_items) }}
+
+   Кнопка-триггер на карточке:
+     <button onclick="openPersonalizeModal(this)" data-id="..." data-name="..."
+       data-dur-min="..." data-dur-max="..." data-reps-min="..." data-reps-max="..."
+       data-desire="..." data-inv-ids="id1,id2" data-care-ids="id1,id2">Настроить</button>
+   (dur-* в СЕКУНДАХ; inv-ids/care-ids — разделённые запятой UUID мягких ссылок.) #}
+{% from "components/icon.html" import icon %}
+{% from "components/duration_picker.html" import duration_picker with context %}
+{% from "components/quantity_picker.html" import quantity_picker with context %}
+
+{% macro catalog_personalize_modal(desire_levels, care_products=None, inventory_items=None) -%}
+{% set t_loc = t if t is defined else {} %}
+<dialog id="personalize-modal"
+        class="w-full max-w-2xl rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] p-0 backdrop:bg-black/50"
+        aria-labelledby="personalize-modal-title">
+  <form id="personalize-form" method="POST" class="max-h-[85vh] overflow-y-auto">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+    <input type="hidden" name="is_opted_in" value="true">
+    <input type="hidden" name="duration_min" id="pd-duration-min" value="">
+    <input type="hidden" name="duration_max" id="pd-duration-max" value="">
+    <input type="hidden" name="assigned_care_ids" id="pd-care-ids" value="">
+    <input type="hidden" name="assigned_inventory_ids" id="pd-inv-ids" value="">
+
+    <div class="flex items-center justify-between border-b border-[color:var(--border)] px-5 py-4">
+      <div>
+        <h2 id="personalize-modal-title" class="text-lg font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+          {{ icon('settings', 'w-5 h-5 text-[color:var(--accent)]') }}
+          <span id="pd-entity-name">{{ t_loc.get('cpm_title', 'Personalize activity') }}</span>
+        </h2>
+        <p class="text-xs text-[color:var(--text-muted)] mt-0.5">{{ t_loc.get('cpm_subtitle', 'Set your own bounds — a private copy of the task is created.') }}</p>
+      </div>
+      <button type="button" id="pd-close" class="p-2 rounded-lg hover:bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]" aria-label="Close">
+        {{ icon('close', 'w-4 h-4') }}
+      </button>
+    </div>
+
+    <div class="space-y-5 px-5 py-4">
+      <!-- Custom name -->
+      <div>
+        <label for="pd-custom-name" class="block text-xs font-semibold text-[color:var(--text-muted)] mb-1">
+          {{ t_loc.get('cpm_name_label', 'Custom name (optional)') }}
+        </label>
+        <input type="text" id="pd-custom-name" name="custom_name" autocomplete="off"
+               class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]"
+               placeholder="{{ t_loc.get('cpm_name_hint', 'Leave empty → “(My setting)” fork') }}">
+      </div>
+
+      <!-- Duration min/max -->
+      <div>
+        <span class="block text-xs font-semibold text-[color:var(--text-muted)] mb-2">{{ t_loc.get('cpm_duration_label', 'Duration') }}</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <span class="text-[10px] uppercase tracking-wide text-[color:var(--text-muted)] font-semibold">{{ t_loc.get('cpm_dur_min', 'Min') }}</span>
+            {{ duration_picker('pd_min') }}
+          </div>
+          <div>
+            <span class="text-[10px] uppercase tracking-wide text-[color:var(--text-muted)] font-semibold">{{ t_loc.get('cpm_dur_max', 'Max') }}</span>
+            {{ duration_picker('pd_max') }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Repetitions -->
+      <div>
+        <span class="block text-xs font-semibold text-[color:var(--text-muted)] mb-2">{{ t_loc.get('cpm_reps_label', 'Repetitions') }}</span>
+        {{ quantity_picker('reps') }}
+      </div>
+
+      <!-- Desire level -->
+      <div>
+        <label for="pd-desire" class="block text-xs font-semibold text-[color:var(--text-muted)] mb-1">{{ t_loc.get('catalog_desire_label', 'Desire') }}</label>
+        <select id="pd-desire" name="desire_level" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]">
+          {% for lvl in desire_levels %}
+          <option value="{{ lvl }}">{{ t_loc.get('desire_' ~ lvl, lvl) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Inventory & care products -->
+      <div>
+        <span class="block text-xs font-semibold text-[color:var(--text-muted)] mb-1">{{ t_loc.get('cpm_inventory_label', 'Required items & care') }}</span>
+        <p class="text-[11px] text-[color:var(--text-muted)] mb-2">{{ t_loc.get('cpm_inventory_hint', 'Soft links: items shown in the activity card and generation context.') }}</p>
+        {% set has_inv = inventory_items and inventory_items | length > 0 %}
+        {% set has_care = care_products and care_products | length > 0 %}
+        {% if not has_inv and not has_care %}
+        <p class="text-xs text-[color:var(--text-muted)] pl-surface-soft p-3 rounded-xl">{{ t_loc.get('cpm_no_items', 'No items yet — add some in Inventory / Care.') }}</p>
+        {% else %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-44 overflow-y-auto pl-surface-soft p-3 rounded-xl">
+          {% if has_inv %}
+          <fieldset>
+            <legend class="text-[10px] uppercase tracking-wide text-[color:var(--text-muted)] font-semibold mb-1.5">{{ t_loc.get('cpm_inv_group', 'Inventory') }}</legend>
+            <div class="space-y-1.5">
+              {% for it in inventory_items %}
+              <label class="flex items-center gap-2 text-xs text-[color:var(--text)] cursor-pointer">
+                <input type="checkbox" class="pd-inv-cb rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]" value="{{ it.id }}">
+                <span class="truncate">{{ it.name }}</span>
+                <span class="text-[10px] text-[color:var(--text-muted)] shrink-0">{{ it.category }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% endif %}
+          {% if has_care %}
+          <fieldset>
+            <legend class="text-[10px] uppercase tracking-wide text-[color:var(--text-muted)] font-semibold mb-1.5">{{ t_loc.get('cpm_care_group', 'Care products') }}</legend>
+            <div class="space-y-1.5">
+              {% for p in care_products %}
+              <label class="flex items-center gap-2 text-xs text-[color:var(--text)] cursor-pointer">
+                <input type="checkbox" class="pd-care-cb rounded border-[color:var(--border)] text-emerald-600 dark:text-emerald-400 focus:ring-[color:var(--focus)]" value="{{ p.id }}">
+                <span class="truncate">{{ p.name }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Opt-in -->
+      <label class="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+        <input type="checkbox" id="pd-opted" checked class="rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]">
+        {{ t_loc.get('opt_in_label', 'Opt-in (allowed for me)') }}
+      </label>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 border-t border-[color:var(--border)] px-5 py-3">
+      <button type="button" id="pd-cancel" class="px-4 py-2 rounded-xl border border-[color:var(--border)] text-xs font-semibold text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)]">
+        {{ t_loc.get('cpm_cancel', 'Cancel') }}
+      </button>
+      <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all inline-flex items-center gap-2">
+        {{ icon('save', 'w-4 h-4') }} {{ t_loc.get('cpm_save', 'Save personalization') }}
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var dialog = document.getElementById('personalize-modal');
+  if (!dialog) return;
+  var form = document.getElementById('personalize-form');
+  var UNITS = [['months', 2592000], ['days', 86400], ['hours', 3600], ['minutes', 60], ['seconds', 1]];
+
+  function fillDuration(root, totalSeconds) {
+    var rest = Number(totalSeconds) || 0;
+    UNITS.forEach(function (pair) {
+      var input = root.querySelector('input[name$="_' + pair[0] + '"]');
+      if (!input) return;
+      input.value = Math.floor(rest / pair[1]);
+      rest = rest % pair[1];
+    });
+  }
+  function collectSeconds(root) {
+    var total = 0;
+    UNITS.forEach(function (pair) {
+      var input = root.querySelector('input[name$="_' + pair[0] + '"]');
+      if (input && input.value) total += Number(input.value) * pair[1];
+    });
+    return total;
+  }
+  function parseIds(str) {
+    if (!str) return [];
+    return str.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  function setChecked(selector, ids) {
+    document.querySelectorAll(selector).forEach(function (cb) {
+      cb.checked = ids.indexOf(cb.value) !== -1;
+    });
+  }
+
+  window.openPersonalizeModal = function (btn) {
+    form.setAttribute('action', '/entities/' + btn.dataset.id + '/personalize');
+    var nameEl = document.getElementById('pd-entity-name');
+    if (nameEl) nameEl.textContent = btn.dataset.name || nameEl.textContent;
+    document.getElementById('pd-custom-name').value = '';
+    fillDuration(document.querySelector('[data-dp="pd_min"]'), btn.dataset.durMin);
+    fillDuration(document.querySelector('[data-dp="pd_max"]'), btn.dataset.durMax);
+    var repsMin = document.querySelector('input[name="reps_min"]');
+    var repsMax = document.querySelector('input[name="reps_max"]');
+    if (repsMin) repsMin.value = btn.dataset.repsMin || '';
+    if (repsMax) repsMax.value = btn.dataset.repsMax || '';
+    var desire = document.getElementById('pd-desire');
+    if (desire && btn.dataset.desire) desire.value = btn.dataset.desire;
+    document.getElementById('pd-opted').checked = btn.dataset.opted !== 'false';
+    setChecked('.pd-inv-cb', parseIds(btn.dataset.invIds));
+    setChecked('.pd-care-cb', parseIds(btn.dataset.careIds));
+    dialog.showModal();
+  };
+
+  form.addEventListener('submit', function () {
+    document.getElementById('pd-duration-min').value = collectSeconds(document.querySelector('[data-dp="pd_min"]'));
+    document.getElementById('pd-duration-max').value = collectSeconds(document.querySelector('[data-dp="pd_max"]'));
+    var inv = [];
+    document.querySelectorAll('.pd-inv-cb:checked').forEach(function (cb) { inv.push(cb.value); });
+    document.getElementById('pd-inv-ids').value = inv.join(',');
+    var care = [];
+    document.querySelectorAll('.pd-care-cb:checked').forEach(function (cb) { care.push(cb.value); });
+    document.getElementById('pd-care-ids').value = care.join(',');
+    document.getElementById('pd-opted').value = document.getElementById('pd-opted').checked ? 'true' : 'false';
+  });
+
+  function close() { if (dialog.open) dialog.close(); }
+  document.getElementById('pd-close').addEventListener('click', close);
+  document.getElementById('pd-cancel').addEventListener('click', close);
+  dialog.addEventListener('click', function (e) {
+    if (e.target === dialog) close();
+  });
+})();
+</script>
+{%- endmacro %}

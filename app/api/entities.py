@@ -59,6 +59,53 @@ def _category_and_descendants(cat_id: uuid.UUID, cats: list[ActivityCategory]) -
     return result
 
 
+def _personalize_hint(schema: dict | list | None) -> dict:
+    """Extract duration / reps bounds from ``params_schema`` for the personalize modal (R2.5).
+
+    Supports both schema shapes (ADR-041): legacy compact map
+    ``{"duration_minutes": {"min": 3, "max": 20, "unit": "minutes"}}`` and the
+    structured definition list. Returns bounds converted to **seconds** for
+    duration (unit-aware: hour/day/minute/second) and plain integers for reps.
+    """
+    hint = {"duration_min": None, "duration_max": None, "reps_min": None, "reps_max": None}
+    if not schema:
+        return hint
+
+    if isinstance(schema, dict):
+        defs: list[tuple[str, object]] = list(schema.items())
+    else:
+        defs = [(d.get("key", "") if isinstance(d, dict) else "", d) for d in schema]
+
+    for key, rule in defs:
+        if not isinstance(rule, dict):
+            continue
+        k = str(key).lower()
+        typ = str(rule.get("type", "")).lower()
+        is_dur = typ == "duration" or any(seg in k for seg in ("duration", "minute", "second", "hour", "day"))
+        is_rep = (not is_dur) and (
+            typ in ("integer", "number", "count") or any(seg in k for seg in ("rep", "count", "quant", "participant"))
+        )
+        if not (is_dur or is_rep):
+            continue
+        lo, hi = rule.get("min"), rule.get("max")
+        mult = 1
+        if is_dur:
+            unit = str(rule.get("unit", "")).lower()
+            if "hour" in unit:
+                mult = 3600
+            elif "minute" in unit:
+                mult = 60
+            elif "day" in unit:
+                mult = 86400
+            # else: seconds / unknown → keep as-is
+        prefix = "duration" if is_dur else "reps"
+        if hint[f"{prefix}_min"] is None and lo is not None:
+            hint[f"{prefix}_min"] = int(lo) * mult
+        if hint[f"{prefix}_max"] is None and hi is not None:
+            hint[f"{prefix}_max"] = int(hi) * mult
+    return hint
+
+
 # --- Pages ---
 
 
@@ -107,6 +154,37 @@ async def catalog_page(
     opt_in_result = await db.execute(select(UserEntityOptIn).where(UserEntityOptIn.user_id == user.id))
     opt_ins = {oi.entity_id: oi for oi in opt_in_result.scalars().all()}
 
+    # Personalize modal (R2.5): care products + inventory as soft-link selectors
+    care_products: list[dict] = []
+    try:
+        from app.models.care import CareProduct
+
+        cp_result = await db.execute(
+            select(CareProduct).where(CareProduct.user_id == user.id).order_by(CareProduct.name).limit(200)
+        )
+        care_products = [{"id": str(p.id), "name": p.name} for p in cp_result.scalars().all()]
+    except Exception:
+        pass  # care module may not be deployed yet
+
+    inventory_items: list[dict] = []
+    try:
+        from app.models.life import InventoryItem
+
+        inv_result = await db.execute(
+            select(InventoryItem)
+            .where(InventoryItem.user_id == user.id, InventoryItem.inventory_status != "archived")
+            .order_by(InventoryItem.name)
+            .limit(200)
+        )
+        inventory_items = [
+            {"id": str(i.id), "name": i.name, "category": i.category} for i in inv_result.scalars().all()
+        ]
+    except Exception:
+        pass  # inventory module may not be deployed yet
+
+    # Per-entity bounds (seconds for duration) for prefill of the modal
+    personalize_hints = {str(e.id): _personalize_hint(e.params_schema) for e in entities}
+
     # Legacy unique category strings (fallback chips for non-normalized entities)
     legacy_cats_result = await db.execute(select(Entity.category).distinct().order_by(Entity.category))
     legacy_categories = [row[0] for row in legacy_cats_result.all()]
@@ -128,6 +206,9 @@ async def catalog_page(
             "active_category_id": str(active_category_id) if active_category_id else None,
             "active_category_str": active_category_str,
             "desire_levels": DESIRE_LEVELS,
+            "care_products": care_products,
+            "inventory_items": inventory_items,
+            "personalize_hints": personalize_hints,
             "active_nav": "catalog",
         },
     )
@@ -560,5 +641,140 @@ async def toggle_opt_in(
     db.add(opt_in)
     await db.flush()
 
+    referer = request.headers.get("referer", "/entities/catalog")
+    return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.post("/{entity_id}/personalize")
+async def personalize_entity(
+    request: Request,
+    entity_id: uuid.UUID,
+    custom_name: str = Form(default=""),
+    duration_min: int | None = Form(default=None),
+    duration_max: int | None = Form(default=None),
+    reps_min: int | None = Form(default=None),
+    reps_max: int | None = Form(default=None),
+    desire_level: str = Form(default="want"),
+    is_opted_in: bool = Form(default=True),
+    assigned_care_ids: str = Form(default=""),
+    assigned_inventory_ids: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Personalize an activity into a user-owned fork (Fork-on-Opt-In, ADR-106 / Revision 2).
+
+    When a user customizes parameters of a catalog item, it becomes a private
+    user-owned Entity with their specific bounds, leaving the system template intact.
+    """
+    ent_result = await db.execute(
+        select(Entity).where(
+            Entity.id == entity_id,
+            Entity.is_public.is_(True) | (Entity.owner_id == user.id),
+        )
+    )
+    base_entity = ent_result.scalar_one_or_none()
+    if base_entity is None:
+        raise HTTPException(status_code=404, detail="Activity entity not found")
+
+    # Build custom params schema dictionary
+    custom_params: dict = dict(base_entity.params_schema or {})
+    if duration_min is not None or duration_max is not None:
+        dur_dict = custom_params.setdefault("duration_min", {})
+        if isinstance(dur_dict, dict):
+            if duration_min is not None:
+                dur_dict["min"] = duration_min
+            if duration_max is not None:
+                dur_dict["max"] = duration_max
+    if reps_min is not None or reps_max is not None:
+        reps_dict = custom_params.setdefault("reps", {})
+        if isinstance(reps_dict, dict):
+            if reps_min is not None:
+                reps_dict["min"] = reps_min
+            if reps_max is not None:
+                reps_dict["max"] = reps_max
+
+    care_ids = [x.strip() for x in assigned_care_ids.split(",") if x.strip()] if assigned_care_ids else None
+    inventory_ids = [
+        x.strip() for x in assigned_inventory_ids.split(",") if x.strip()
+    ] if assigned_inventory_ids else None
+    if inventory_ids:
+        # R2.5: inventory selector → typed param (ADR-041 inventory_selector)
+        custom_params["inventory_ids"] = {
+            "type": "inventory_selector",
+            "title": "Inventory",
+            "selection_mode": "multiple",
+            "required": False,
+            "value": inventory_ids,
+        }
+
+    # Check if this is already a user-owned entity
+    if base_entity.owner_id == user.id:
+        if custom_name.strip():
+            base_entity.real_name = custom_name.strip()
+        base_entity.params_schema = custom_params
+        if care_ids is not None:
+            base_entity.care_product_ids = care_ids
+        target_entity = base_entity
+    else:
+        # Check if user already has a personal fork of this base entity
+        fork_res = await db.execute(
+            select(Entity).where(Entity.owner_id == user.id, Entity.parent_id == base_entity.id)
+        )
+        forked = fork_res.scalar_one_or_none()
+        if forked is not None:
+            if custom_name.strip():
+                forked.real_name = custom_name.strip()
+            forked.params_schema = custom_params
+            if care_ids is not None:
+                forked.care_product_ids = care_ids
+            target_entity = forked
+        else:
+            target_entity = Entity(
+                owner_id=user.id,
+                parent_id=base_entity.id,
+                catalog_item_id=base_entity.catalog_item_id,
+                real_name=custom_name.strip() or f"{base_entity.real_name} (Моя настройка)",
+                slug=slugify(custom_name.strip() or base_entity.real_name),
+                type=base_entity.type,
+                category=base_entity.category,
+                category_id=base_entity.category_id,
+                tags=base_entity.tags,
+                role_tags=base_entity.role_tags,
+                intensity=base_entity.intensity,
+                risk_level=base_entity.risk_level,
+                adult_only=base_entity.adult_only,
+                automation_allowed=True,
+                is_public=False,
+                params_schema=custom_params,
+                care_product_ids=care_ids or base_entity.care_product_ids,
+            )
+            db.add(target_entity)
+            await db.flush()
+
+    # Upsert opt-in for target entity
+    oi_res = await db.execute(
+        select(UserEntityOptIn).where(
+            UserEntityOptIn.user_id == user.id,
+            UserEntityOptIn.entity_id == target_entity.id,
+        )
+    )
+    opt_in = oi_res.scalar_one_or_none()
+    if opt_in is None:
+        opt_in = UserEntityOptIn(
+            user_id=user.id,
+            entity_id=target_entity.id,
+            is_opted_in=is_opted_in,
+            desire_level=desire_level if desire_level in DESIRE_LEVELS else "want",
+        )
+        db.add(opt_in)
+    else:
+        opt_in.is_opted_in = is_opted_in
+        if desire_level in DESIRE_LEVELS:
+            opt_in.desire_level = desire_level
+        from datetime import datetime
+
+        opt_in.updated_at = datetime.now(UTC)
+
+    await db.flush()
     referer = request.headers.get("referer", "/entities/catalog")
     return RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)

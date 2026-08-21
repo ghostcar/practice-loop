@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/parameter_badges.html" import render_param_badges with context %}
+{% from "components/catalog_personalize_modal.html" import catalog_personalize_modal with context %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
@@ -116,6 +117,26 @@
 
  <!-- Opt-in & Edit controls -->
   <div class="flex-shrink-0 flex items-center gap-2">
+  {% set hint = personalize_hints.get(entity.id | string) if personalize_hints else none %}
+  {% set inv_ids = '' %}
+  {% if entity.params_schema and entity.params_schema is mapping %}
+    {% set inv_def = entity.params_schema.get('inventory_ids') %}
+    {% if inv_def is mapping and inv_def.get('value') %}{% set inv_ids = inv_def.value | join(',') %}{% endif %}
+  {% endif %}
+  {% set care_ids = entity.care_product_ids | join(',') if entity.care_product_ids else '' %}
+  <button type="button" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] font-medium transition-colors"
+          title="{{ t.cpm_button_hint }}" onclick="openPersonalizeModal(this)"
+          data-id="{{ entity.id }}" data-name="{{ entity.real_name }}"
+          data-dur-min="{{ hint.duration_min if hint and hint.duration_min is not none else '' }}"
+          data-dur-max="{{ hint.duration_max if hint and hint.duration_max is not none else '' }}"
+          data-reps-min="{{ hint.reps_min if hint and hint.reps_min is not none else '' }}"
+          data-reps-max="{{ hint.reps_max if hint and hint.reps_max is not none else '' }}"
+          data-desire="{{ oi.desire_level if oi and oi.desire_level else 'neutral' }}"
+          data-inv-ids="{{ inv_ids }}" data-care-ids="{{ care_ids }}"
+          data-opted="{{ 'true' if (not oi or oi.is_opted_in) else 'false' }}">
+  {{ icon('sliders', 'w-3.5 h-3.5 text-[color:var(--accent)]') }}
+  <span>{{ t.cpm_button }}</span>
+  </button>
   {% if entity.owner_id == user.id or user.role == 'admin' %}
   <a href="/entities/{{ entity.id }}/edit" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] font-medium transition-colors" title="Настроить параметры и контракт безопасности">
   {{ icon('settings', 'w-3.5 h-3.5 text-[color:var(--accent)]') }}
@@ -190,5 +211,7 @@
  </div>
  {% endif %}
  </div>
+
+ {{ catalog_personalize_modal(desire_levels, care_products, inventory_items) }}
 </div>
 {% endblock %}

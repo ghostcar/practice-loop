@@ -39,9 +39,9 @@
   {%- elif def is mapping and def.get('options') is not none -%}
     {{ def.get('options') | join(' / ') }}
   {%- elif def is mapping and def.get('value') is not none -%}
-    {{ def.get('value') }}
+    {%- if def.get('value') is iterable and def.get('value') is not string -%}{{ def.get('value') | join(', ') }}{%- else -%}{{ def.get('value') }}{%- endif -%}
   {%- elif def is not mapping -%}
-    {{ def }}
+    {%- if def is iterable and def is not string -%}{{ def | join(', ') }}{%- else -%}{{ def }}{%- endif -%}
   {%- elif def.get('type') -%}
     {{ def.get('type') }}
   {%- endif -%}
