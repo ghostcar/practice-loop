@@ -1,6 +1,5 @@
 """Security: CSRF protection, object-level ownership checks, idempotency guards."""
 
-import hashlib
 import hmac
 import secrets
 import uuid
@@ -24,11 +23,6 @@ CSRF_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 def _generate_csrf_token() -> str:
     return secrets.token_hex(32)
-
-
-def _hmac_csrf(token: str) -> str:
-    key = settings.jwt_secret_key.encode()[:32]
-    return hmac.new(key, token.encode(), hashlib.sha256).hexdigest()
 
 
 def set_csrf_cookie(response: Response, request: Request | None = None) -> str:

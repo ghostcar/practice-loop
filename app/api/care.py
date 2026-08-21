@@ -491,16 +491,6 @@ async def _inventory_options(db: AsyncSession, user_id: uuid.UUID) -> list[dict]
     return [{"id": str(i.id), "name": i.name, "status": i.inventory_status, "category": i.category} for i in rows]
 
 
-async def _entry_product_ids(db: AsyncSession, entry_id: uuid.UUID) -> list[str]:
-    """Product ids bound to a care entry (for view/JSON)."""
-    rows = (
-        (await db.execute(select(CareEntryProduct.product_id).where(CareEntryProduct.entry_id == entry_id)))
-        .scalars()
-        .all()
-    )
-    return [str(r) for r in rows]
-
-
 async def _set_entry_products(db: AsyncSession, entry_id: uuid.UUID, product_ids: list[uuid.UUID]) -> None:
     """Replace the product set bound to a care entry (join rows, CASCADE)."""
     from sqlalchemy import delete

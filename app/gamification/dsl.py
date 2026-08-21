@@ -15,7 +15,6 @@ arbitrary code into the runtime.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 # Operators supported by the evaluator (whitelist — no eval, no arbitrary code).
 _OPS = (">", "<", ">=", "<=", "==", "!=")
@@ -127,10 +126,3 @@ def find_param_key(condition: str, params: dict) -> str | None:
     key = condition.split()[0] if " " in condition else condition
     return key if key in params else None
 
-
-def _coerce_number(value: Any) -> float | None:
-    """Best-effort numeric coercion used by callers."""
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None

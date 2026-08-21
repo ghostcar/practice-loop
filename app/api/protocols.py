@@ -34,10 +34,6 @@ TIMING_TYPES = [t.value for t in TimingSpecType]
 CATEGORIES = ("prep", "recovery", "routine", "discipline")
 
 
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-
-
 # ── Страницы ──────────────────────────────────────────────────────────
 
 
@@ -246,7 +242,7 @@ async def protocols_create(
         db, user.id, title=title.strip()[:255], description=description.strip() or None,
         category=category, anchor_type=anchor_type, steps=steps,
     )
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url=f"/protocols/{proto.id}/edit", status_code=303)
 
 
@@ -288,7 +284,7 @@ async def protocols_update(
                 custom_params=s["custom_params"],
             )
         )
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url=f"/protocols/{protocol_id}/edit", status_code=303)
 
 
@@ -301,7 +297,7 @@ async def protocols_delete(
 ):
     proto = await _get_own_protocol(db, protocol_id, user.id)
     await db.delete(proto)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url="/protocols", status_code=303)
 
 
@@ -321,7 +317,7 @@ async def protocols_start(
     if anchor.tzinfo is None:
         anchor = anchor.replace(tzinfo=timezone.utc)
     run = await start_protocol_run(db, user.id, proto.id, anchor)
-    await db.commit()
+    await db.flush()
     return RedirectResponse(url=f"/protocols/{run.id}/run", status_code=303)
 
 
@@ -354,7 +350,7 @@ async def protocols_complete_step(
             payload = {}
     try:
         await execute_protocol_step(db, step_log_id, actor, payload)
-        await db.commit()
+        await db.flush()
     except ValueError:
         await db.rollback()
     return RedirectResponse(url=f"/protocols/{run_id}/run", status_code=303)

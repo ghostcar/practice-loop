@@ -13,7 +13,6 @@ from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale
 from app.models.user import User
-from app.platform.social.models import SocialProfile
 from app.platform.social.repositories import (
     create_profile,
     get_profile,
@@ -27,20 +26,6 @@ from app.templates_setup import templates
 router = APIRouter(tags=["social"])
 
 CURRENT_CONSENT_VERSION = 1
-
-
-async def _check_social_access(
-    db: AsyncSession,
-    user: User,
-    require_consent: bool = True,
-) -> tuple[SocialProfile | None, str]:
-    """Verify social is accessible: profile exists + consent accepted."""
-    profile = await get_profile(db, user.id)
-    if profile is None:
-        return None, "profile_not_created"
-    if require_consent and not await has_accepted_consent(db, user.id, CURRENT_CONSENT_VERSION):
-        return profile, "consent_required"
-    return profile, "ok"
 
 
 @router.get("/profile", response_class=HTMLResponse)

@@ -70,10 +70,6 @@ def _serialize(t: PromptTemplate) -> dict:
     }
 
 
-def _require_active_config(user: User, db: AsyncSession) -> None:
-    """Raise 409 if no active LLM provider config (generation needs one)."""
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Pages
 # ─────────────────────────────────────────────────────────────────────────────

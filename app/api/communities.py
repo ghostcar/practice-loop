@@ -15,7 +15,6 @@ from app.agent.community_agent import (
     assign_member_role,
     create_community,
     get_community_membership,
-    is_valid_moderator_role,
     join_community,
     leave_community,
     list_member_roles,
@@ -35,7 +34,6 @@ from app.models.community_agent import (
     CommunityTopAgent,
     CommunityTournament,
 )
-from app.models.community_roles import CommunityMemberRole
 from app.models.user import User
 from app.templates_setup import templates
 

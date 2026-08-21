@@ -88,23 +88,9 @@ def parse_file(path: Path) -> list[tuple[str, str, str]]:
     return out
 
 
-def include_prefixes() -> dict[str, str]:
-    """Map include_router variable -> prefix in main.py (e.g. router -> /api/v2)."""
-    main_src = MAIN.read_text(encoding="utf-8", errors="ignore")
-    var_prefix: dict[str, str] = {}
-    for m in re.finditer(
-        r'app\.include_router\(([a-z_]+_router)\s*,\s*prefix\s*=\s*["\']([^"\']+)["\']', main_src
-    ):
-        var_prefix[m.group(1)] = m.group(2).rstrip("/")
-    for m in re.finditer(r'([a-z_]+_router)\s*=\s*APIRouter\([^)]*prefix\s*=\s*["\']([^"\']+)["\']', main_src):
-        var_prefix.setdefault(m.group(1), m.group(2).rstrip("/"))
-    return var_prefix
-
-
 def main() -> None:
     hrefs = collect_hrefs()
     href_norm = {h.rstrip("/") for h in hrefs}
-    inc = include_prefixes()
 
     pages: list[tuple[str, str, str]] = []  # (template, final_path, source_file)
     for py in sorted(API.rglob("*.py")):

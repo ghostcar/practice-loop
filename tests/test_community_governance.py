@@ -5,7 +5,6 @@ and the management-role helpers used by the agent API.
 """
 
 import pytest
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.community_agent import (
