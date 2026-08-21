@@ -1,0 +1,104 @@
+{# Parameter badges (R2.2, REFACTOR_ROADMAP_V2.md).
+   Рендерит params_schema (ADR-041: список определений ИЛИ legacy-компактная map)
+   как человекочитаемые чипы: время, интенсивность, зоны, инвентарь, количество.
+   Usage: {% from "components/parameter_badges.html" import parameter_badges with context %}
+          {{ parameter_badges(entity.params_schema) }}
+   Схемы:
+     - ADR-041 list:  [{"key": "duration_minutes", "title": "Duration", "type": "duration",
+                         "min": 10, "max": 20, "required": true}, ...]
+     - legacy map:    {"duration_minutes": {"min": 10, "max": 20}, "participants": 1}
+   Никогда не выводит сырой JSON. Использует только PracticeLoop icon pack. #}
+{% from "components/icon.html" import icon %}
+
+{% macro _pb_unit(key, def, t) -%}
+  {%- set unit_group = def.get('unit_group') if def is mapping and def.get('unit_group') else '' -%}
+  {%- if unit_group == 'strikes' -%}{{ t.get('unit_strikes', 'strikes') }}
+  {%- elif unit_group == 'sets' -%}{{ t.get('unit_sets', 'sets') }}
+  {%- elif unit_group == 'ml' -%}{{ t.get('unit_ml', 'ml') }}
+  {%- elif unit_group == 'drops' -%}{{ t.get('unit_drops', 'drops') }}
+  {%- elif unit_group == 'pcs' -%}{{ t.get('unit_pcs', 'pcs') }}
+  {%- elif unit_group == 'kg' -%}{{ t.get('unit_kg', 'kg') }}
+  {%- elif unit_group == 'times' -%}{{ t.get('unit_times', 'times') }}
+  {%- elif 'second' in key -%}{{ t.get('unit_sec', 's') }}
+  {%- elif 'minute' in key -%}{{ t.get('unit_min', 'min') }}
+  {%- elif 'hour' in key -%}{{ t.get('unit_hour', 'h') }}
+  {%- elif 'day' in key -%}{{ t.get('unit_day', 'd') }}
+  {%- elif 'month' in key -%}{{ t.get('unit_month', 'mo') }}
+  {%- elif def is mapping and def.get('unit') -%}{{ def.get('unit') }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro _pb_value(key, def, t) -%}
+  {%- if def is mapping and (def.get('min') is not none or def.get('max') is not none) -%}
+    {%- set lo = def.get('min') -%}
+    {%- set hi = def.get('max') -%}
+    {%- if lo is not none and hi is not none %}{{ lo }}–{{ hi }}
+    {%- elif lo is not none %}≥ {{ lo }}
+    {%- else %}≤ {{ hi }}{% endif %}
+    {%- set u = _pb_unit(key, def, t) %}{% if u %} {{ u }}{% endif %}
+  {%- elif def is mapping and def.get('options') is not none -%}
+    {{ def.get('options') | join(' / ') }}
+  {%- elif def is mapping and def.get('value') is not none -%}
+    {{ def.get('value') }}
+  {%- elif def is not mapping -%}
+    {{ def }}
+  {%- elif def.get('type') -%}
+    {{ def.get('type') }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro _pb_classify(key, def) -%}
+  {# returns (icon_name, label_key) #}
+  {%- set k = key|lower -%}
+  {%- set typ = def.get('type') if def is mapping else '' -%}
+  {%- if typ == 'duration' or 'duration' in k or 'time' in k or 'second' in k or 'minute' in k or 'hour' in k or 'day' in k or 'month' in k -%}
+    timer,pb_duration
+  {%- elif typ == 'intensity' or 'intensity' in k or 'intens' in k -%}
+    flame,pb_intensity
+  {%- elif typ == 'body_part_selector' or 'zone' in k or 'body' in k or 'target' in k or 'area' in k -%}
+    target,pb_zones
+  {%- elif typ == 'inventory_selector' or 'tool' in k or 'inventory' in k or 'equipment' in k or 'item' in k -%}
+    tools,pb_inventory
+  {%- elif typ in ('integer', 'decimal', 'number') or 'count' in k or 'quant' in k or 'rep' in k or 'participant' in k -%}
+    activity,pb_quantity
+  {%- else -%}
+    tag,pb_params
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro parameter_badges(schema, max_chips=12) -%}
+{% if schema %}
+<div class="flex flex-wrap gap-1.5 mt-2" role="list" aria-label="{{ t.get('pb_params', 'Parameters') if t is defined else 'Parameters' }}">
+  {% if schema is mapping %}
+    {% set defs = [] %}
+    {% for key, rule in schema.items() %}
+      {% set _ = defs.append({'key': key, 'def': rule if rule is mapping else {'value': rule}}) %}
+    {% endfor %}
+  {% else %}
+    {% set defs = [] %}
+    {% for d in schema %}
+      {% set _ = defs.append({'key': d.get('key', d.get('title', '')), 'def': d}) %}
+    {% endfor %}
+  {% endif %}
+  {% for item in defs[:max_chips] %}
+    {% set key = item.key %}
+    {% set def = item.def %}
+    {% set cls = _pb_classify(key, def) %}
+    {% set icon_name = cls.split(',')[0] %}
+    {% set label_key = cls.split(',')[1] %}
+    {% set label = t.get(label_key, label_key) if t is defined else label_key %}
+    {% set title = def.get('title') if def is mapping and def.get('title') else key %}
+    <span role="listitem" class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text-secondary)]"
+          title="{{ title }}">
+      {{ icon(icon_name, 'w-3.5 h-3.5 text-[color:var(--accent)]') }}
+      <span class="text-[color:var(--text-muted)]">{{ label }}:</span>
+      <span class="text-[color:var(--text)]">{{ _pb_value(key, def, t) }}</span>
+      {% if def is mapping and def.get('required') %}<span class="text-rose-400" aria-label="required">*</span>{% endif %}
+    </span>
+  {% endfor %}
+  {% if (defs | length) > max_chips %}
+    <span class="inline-flex items-center rounded-lg px-2.5 py-1 text-xs text-[color:var(--text-muted)]">+{{ (defs | length) - max_chips }}</span>
+  {% endif %}
+</div>
+{% endif %}
+{%- endmacro %}

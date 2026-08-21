@@ -1,0 +1,87 @@
+{# Duration picker (R2.3, REFACTOR_ROADMAP_V2.md).
+   Гибкий ввод длительности: 5 полей (Месяцы, Дни, Часы, Минуты, Секунды)
+   + быстрые пресеты-чипы (10с..90с, 2м..45м, 1ч..24ч, 2д..90д).
+   Usage: {% from "components/duration_picker.html" import duration_picker with context %}
+          {{ duration_picker('duration', mode='minmax', min_name='duration_min', max_name='duration_max') }}
+          {{ duration_picker('duration', mode='single', value={'hours': 1, 'minutes': 30}) }}
+   Имена полей (mode='minmax'): {min_name}_months .. {min_name}_seconds и {max_name}_*.
+   Имена полей (mode='single'): {name}_months .. {name}_seconds.
+   Value dict ключи: months, days, hours, minutes, seconds. #}
+
+{% macro duration_picker(name, mode='minmax', min_name=None, max_name=None, value=None, min_value=None, max_value=None, prefix='dp') -%}
+{% set t_loc = t if t is defined else {} %}
+{% set _min_name = min_name or (name ~ '_min') %}
+{% set _max_name = max_name or (name ~ '_max') %}
+<div class="duration-picker space-y-3" data-dp-prefix="{{ prefix }}">
+  {% if mode == 'minmax' %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <fieldset>
+      <legend class="text-xs font-semibold text-[color:var(--text-muted)] mb-1.5">{{ t_loc.get('dp_from', 'From') }}</legend>
+      <div class="grid grid-cols-5 gap-1.5" data-dp-side="min">
+        {% for unit, key, label in [('months','dp_months','Месяцы'), ('days','dp_days','Дни'), ('hours','dp_hours','Часы'), ('minutes','dp_minutes','Минуты'), ('seconds','dp_seconds','Секунды')] %}
+        <label class="flex flex-col gap-0.5">
+          <span class="text-[10px] text-[color:var(--text-muted)]">{{ t_loc.get(key, label) }}</span>
+          <input type="number" min="0" step="1" name="{{ _min_name }}_{{ unit }}" value="{{ (min_value or {}).get(unit, '') }}"
+                 class="w-full px-1.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[34px]">
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend class="text-xs font-semibold text-[color:var(--text-muted)] mb-1.5">{{ t_loc.get('dp_to', 'To') }}</legend>
+      <div class="grid grid-cols-5 gap-1.5" data-dp-side="max">
+        {% for unit, key, label in [('months','dp_months','Месяцы'), ('days','dp_days','Дни'), ('hours','dp_hours','Часы'), ('minutes','dp_minutes','Минуты'), ('seconds','dp_seconds','Секунды')] %}
+        <label class="flex flex-col gap-0.5">
+          <span class="text-[10px] text-[color:var(--text-muted)]">{{ t_loc.get(key, label) }}</span>
+          <input type="number" min="0" step="1" name="{{ _max_name }}_{{ unit }}" value="{{ (max_value or {}).get(unit, '') }}"
+                 class="w-full px-1.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[34px]">
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+  </div>
+  {% else %}
+  <div class="grid grid-cols-5 gap-1.5" data-dp-side="single">
+    {% for unit, key, label in [('months','dp_months','Месяцы'), ('days','dp_days','Дни'), ('hours','dp_hours','Часы'), ('minutes','dp_minutes','Минуты'), ('seconds','dp_seconds','Секунды')] %}
+    <label class="flex flex-col gap-0.5">
+      <span class="text-[10px] text-[color:var(--text-muted)]">{{ t_loc.get(key, label) }}</span>
+      <input type="number" min="0" step="1" name="{{ name }}_{{ unit }}" value="{{ (value or {}).get(unit, '') }}"
+             class="w-full px-1.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs text-[color:var(--text)] min-h-[34px]">
+    </label>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="flex flex-wrap items-center gap-1.5">
+    <span class="text-[10px] uppercase tracking-wide text-[color:var(--text-muted)] font-semibold">{{ t_loc.get('dp_presets', 'Quick presets') }}:</span>
+    {% for label, unit, lo, hi in [('10с..90с','seconds',10,90), ('2м..45м','minutes',2,45), ('1ч..24ч','hours',1,24), ('2д..90д','days',2,90)] %}
+    <button type="button" class="dp-preset px-2 py-1 rounded-lg text-[11px] font-medium pl-surface-soft border border-[color:var(--border)] text-[color:var(--text-secondary)] hover:border-[color:var(--accent)] hover:text-[color:var(--text)] transition-colors"
+            data-unit="{{ unit }}" data-lo="{{ lo }}" data-hi="{{ hi }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var root = document.querySelector('[data-dp-prefix="{{ prefix }}"]');
+  if (!root) return;
+  root.querySelectorAll('.dp-preset').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var unit = btn.dataset.unit;
+      var lo = Number(btn.dataset.lo);
+      var hi = Number(btn.dataset.hi);
+      var sides = root.querySelectorAll('[data-dp-side]');
+      sides.forEach(function (side) {
+        side.querySelectorAll('input').forEach(function (inp) {
+          inp.value = 0;
+        });
+        var target = side.querySelector('input[name$="_' + unit + '"]');
+        if (target) {
+          target.value = side.dataset.dpSide === 'max' ? hi : (side.dataset.dpSide === 'min' ? lo : hi);
+        }
+      });
+    });
+  });
+})();
+</script>
+{%- endmacro %}
