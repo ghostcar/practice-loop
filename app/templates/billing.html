@@ -43,7 +43,7 @@
         <div class="bg-amber-950/40 border border-amber-800/60 p-4 rounded-lg flex items-center gap-3">
             {{ icon('star', 'w-5 h-5 text-amber-400') }}
             <div class="text-xs text-amber-200">
-                <span class="font-bold">🔥 Активная Маркетинговая Акция:</span>
+                <span class="font-bold">Активная Маркетинговая Акция:</span>
                 {% for p in active_promos %}
                 Модуль <strong class="font-mono text-amber-400">{{ p.feature_code }}</strong> временно открыт для подписок от <strong class="uppercase">{{ p.target_min_tier_code }}</strong>!
                 {% endfor %}
@@ -94,10 +94,10 @@
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="standard">
                     <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
-                        <option value="stripe">💳 Stripe (Международный)</option>
-                        <option value="telegram_stars">⭐ Telegram Stars</option>
-                        <option value="crypto">💎 Crypto (TON/USDT)</option>
-                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                        <option value="stripe">Stripe (Международный)</option>
+                        <option value="telegram_stars">Telegram Stars</option>
+                        <option value="crypto">Crypto (TON/USDT)</option>
+                        <option value="yukassa">ЮKassa / СБП</option>
                     </select>
                     <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow">
                         Оплатить Standard
@@ -122,10 +122,10 @@
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="pro">
                     <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
-                        <option value="stripe">💳 Stripe (Международный)</option>
-                        <option value="telegram_stars">⭐ Telegram Stars</option>
-                        <option value="crypto">💎 Crypto (TON/USDT)</option>
-                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                        <option value="stripe">Stripe (Международный)</option>
+                        <option value="telegram_stars">Telegram Stars</option>
+                        <option value="crypto">Crypto (TON/USDT)</option>
+                        <option value="yukassa">ЮKassa / СБП</option>
                     </select>
                     <button type="submit" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-archive-950 font-bold text-xs rounded-lg transition shadow">
                         Оплатить Pro
@@ -150,10 +150,10 @@
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="ds_master">
                     <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
-                        <option value="stripe">💳 Stripe (Международный)</option>
-                        <option value="telegram_stars">⭐ Telegram Stars</option>
-                        <option value="crypto">💎 Crypto (TON/USDT)</option>
-                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                        <option value="stripe">Stripe (Международный)</option>
+                        <option value="telegram_stars">Telegram Stars</option>
+                        <option value="crypto">Crypto (TON/USDT)</option>
+                        <option value="yukassa">ЮKassa / СБП</option>
                     </select>
                     <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow">
                         Оплатить DS Master
@@ -178,10 +178,10 @@
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="guild_master">
                     <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
-                        <option value="stripe">💳 Stripe (Международный)</option>
-                        <option value="telegram_stars">⭐ Telegram Stars</option>
-                        <option value="crypto">💎 Crypto (TON/USDT)</option>
-                        <option value="yukassa">₽ ЮKassa / СБП</option>
+                        <option value="stripe">Stripe (Международный)</option>
+                        <option value="telegram_stars">Telegram Stars</option>
+                        <option value="crypto">Crypto (TON/USDT)</option>
+                        <option value="yukassa">ЮKassa / СБП</option>
                     </select>
                     <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition shadow">
                         Оплатить Guild

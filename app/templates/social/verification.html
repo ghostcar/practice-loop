@@ -26,7 +26,7 @@
     </div>
 
     <div class="flex items-center gap-2 pl-surface p-2 border border-[color:var(--border)] rounded-xl font-mono text-xs text-emerald-400">
-      <span>🤝 Консенсус Сообщества: 3/3 Голоса</span>
+      {{ icon('vote', 'w-4 h-4') }}<span>Консенсус Сообщества: 3/3 Голоса</span>
     </div>
   </div>
 
@@ -37,17 +37,17 @@
       <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
         <div class="flex items-center gap-2">
           <span class="text-xs font-mono font-bold pl-accent-text">@anonymous_sub</span>
-          <span class="px-2 py-0.5 rounded bg-[color:var(--canvas-deep)] text-[color:var(--text-muted)] text-[10px] font-mono">🏷️ Номерная Пломба #SEAL-8841</span>
+          <span class="px-2 py-0.5 rounded bg-[color:var(--canvas-deep)] text-[color:var(--text-muted)] text-[10px] font-mono inline-flex items-center gap-1">{{ icon('tag', 'w-3 h-3') }} Номерная Пломба #SEAL-8841</span>
         </div>
         <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-500/30">
-          ⏳ Ожидает Проверки (2/3)
+          {{ icon('timer', 'w-3.5 h-3.5') }} Ожидает Проверки (2/3)
         </span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Photo Placeholder -->
         <div class="bg-[color:var(--canvas-deep)]/90 border border-[color:var(--border)] rounded-xl p-4 flex flex-col items-center justify-center min-h-[140px] text-center space-y-2">
-          <span class="text-3xl">📷</span>
+          {{ icon('camera', 'w-10 h-10 text-[color:var(--text-muted)]') }}
           <span class="text-xs font-mono text-[color:var(--text-muted)]">Фото Пломбы Замка</span>
           <span class="text-[10px] text-[color:var(--text-muted)] font-mono">Демонстрационный макет — AI-проверка не выполнялась</span>
         </div>

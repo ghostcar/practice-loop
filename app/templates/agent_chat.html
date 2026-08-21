@@ -45,9 +45,14 @@
         </div>
 
         <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
             <a href="/sessions/ambient" class="text-xs text-[color:var(--text-muted)] hover:underline inline-flex items-center gap-1">
                 {{ icon('session', 'w-4 h-4') }} Открыть Аудио-Эмбиент
             </a>
+            <a href="/agent/persona-builder" class="text-xs text-[color:var(--text-muted)] hover:underline inline-flex items-center gap-1">
+                {{ icon('profile', 'w-3.5 h-3.5') }} Конструктор Персон
+            </a>
+            </div>
             <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md inline-flex items-center gap-2">
                 {{ icon('send', 'w-4 h-4') }} Отправить Агенту
             </button>

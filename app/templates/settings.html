@@ -142,6 +142,12 @@
                 </label>
             </div>
 
+            <div class="flex items-center gap-2 pt-1">
+                <a href="/discretion/bailout" class="inline-flex items-center gap-1.5 text-xs font-medium text-[color:var(--accent)] hover:text-[color:var(--accent-hover)] transition-colors">
+                    {{ icon('shield', 'w-3.5 h-3.5') }} Центр Управления Режимом (Emergency Discretion & Stealth)
+                </a>
+            </div>
+
             <div class="space-y-2">
                 <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_blur }}</div>
                 <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_blur }}">
@@ -257,6 +263,18 @@
                 {{ t.settings_password_submit }}
             </button>
         </form>
+    </section>
+
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="billing-h">
+        <div>
+            <h2 id="billing-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('sparkles', 'w-4 h-4') }} Подписка & Платёжные Шлюзы
+            </h2>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">Текущий план: <strong class="capitalize">{{ user.subscription_tier or 'free' }}</strong>. Управление тирами, шлюзами (Stripe / Telegram Stars / Crypto / ЮKassa) и историей инвойсов.</p>
+        </div>
+        <a href="/billing" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+            {{ icon('points', 'w-4 h-4') }} Перейти к Подписке
+        </a>
     </section>
 </div>
 {% endblock %}

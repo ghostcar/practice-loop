@@ -186,6 +186,10 @@
         @custom-variant dark (&:where(.dark, .dark *));
     </style>
     <style>
+        /* Alpine x-cloak — hide elements before hydration (DESIGN v2) */
+        [x-cloak] { display: none !important; }
+    </style>
+    <style>
         /* === Self-hosted fonts (DESIGN v2 §5 — no font CDN) === */
         @font-face {
             font-family: 'Inter';

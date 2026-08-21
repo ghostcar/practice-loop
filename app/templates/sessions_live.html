@@ -58,7 +58,12 @@
         @click="toggleTimer()"
         class="px-6 py-3 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-bold text-sm rounded-2xl shadow-xl transition-all flex items-center gap-2"
       >
-        <span x-text="isRunning ? '⏸ Пауза' : '▶ Старт'"></span>
+        <span x-show="!isRunning" x-cloak class="flex items-center gap-2">
+          {{ icon('play', 'w-4 h-4') }} Старт
+        </span>
+        <span x-show="isRunning" x-cloak class="flex items-center gap-2">
+          {{ icon('pause', 'w-4 h-4') }} Пауза
+        </span>
       </button>
 
       <button
