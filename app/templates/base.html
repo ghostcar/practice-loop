@@ -86,7 +86,9 @@
     {{ nav_item('today', '/today', 'today', t.nav_today) }}
     {{ nav_item('tasks', '/tasks/', 'tasks', t.nav_tasks) }}
     {{ nav_item('sessions', '/sessions', 'session', t.nav_sessions) }}
+    {% if not composition or composition.journal_enabled %}
     {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
+    {% endif %}
     {{ nav_item('points', '/api/v2/points/page', 'insights', t.nav_points) }}
     {% if composition and composition.timer_operational %}
     {{ nav_item('locktimer', '/locktimer', 'timer', t.nav_timer) }}
@@ -95,7 +97,9 @@
   {# ── Section 2: План — planned activities ── #}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_plan }}</div>
+    {% if not composition or composition.catalog_enabled %}
     {{ nav_item('catalog', '/entities/catalog', 'catalog', t.catalog_title) }}
+    {% endif %}
     {{ nav_item('training', '/training', 'training', t.training_title) }}
     {{ nav_item('diets', '/diets', 'diet', t.nav_diets) }}
     {{ nav_item('quests', '/achievements/quests', 'points', 'Квесты & Челленджи') }}
@@ -105,10 +109,18 @@
   {# ── Section 3: Тело & Рутина — body, care, inventory ── #}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_body }}</div>
+    {% if not composition or composition.health_enabled %}
     {{ nav_item('health', '/health', 'health', t.nav_health) }}
+    {% endif %}
+    {% if not composition or composition.care_enabled %}
     {{ nav_item('care', '/care', 'routine', t.nav_care) }}
+    {% endif %}
+    {% if not composition or composition.aftercare_enabled %}
     {{ nav_item('aftercare', '/aftercare', 'aftercare', t.nav_aftercare) }}
+    {% endif %}
+    {% if not composition or composition.medication_enabled %}
     {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
+    {% endif %}
     {{ nav_item('measurements', '/api/v2/measurements/page', 'measurement', t.nav_measurements) }}
     {{ nav_item('inventory', '/api/v2/inventory/page', 'inventory', t.nav_inventory) }}
     {{ nav_item('body_parts', '/api/v2/body-parts/page', 'body', t.nav_body_parts) }}
@@ -125,12 +137,16 @@
     {{ nav_item('social_pillory', '/social/pillory', 'lock', 'Позорный Столб') }}
     {{ nav_item('social_verification', '/social/verification', 'camera', 'Народная Верификация') }}
     {{ nav_item('social_leaderboard', '/social/leaderboard', 'trophy', 'Лидерборд') }}
+    {% if not composition or composition.consent_enabled %}
     {{ nav_item('consent_matrix', '/consent/matrix', 'consent', 'Матрица Согласий') }}
+    {% endif %}
   </div>
   {% else %}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_social }}</div>
+    {% if not composition or composition.consent_enabled %}
     {{ nav_item('consent_matrix', '/consent/matrix', 'consent', 'Матрица Согласий') }}
+    {% endif %}
   </div>
   {% endif %}
   {# ── Section 5: Система — tools, data & settings ── #}
@@ -139,7 +155,9 @@
     {{ nav_item('calendar', '/calendar', 'calendar', t.calendar_title) }}
     {{ nav_item('achievements', '/achievements', 'trophy', t.achievements_title) }}
     {{ nav_item('agent', '/agent/chat', 'ai', 'PracticeLoop Agent') }}
+    {% if not composition or composition.insights_enabled %}
     {{ nav_item('insights_analytics', '/insights/analytics', 'insights', 'Аналитический Движок') }}
+    {% endif %}
     {{ nav_item('training_builder', '/training/builder', 'training', 'Конструктор Тренировок') }}
     {{ nav_item('care_builder', '/care/builder', 'routine', 'Конструктор Ухода') }}
     {{ nav_item('llm_exchange', '/llm/exchange', 'ai', 'Внешняя ИИ-модель') }}
