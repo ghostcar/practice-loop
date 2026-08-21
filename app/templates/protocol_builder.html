@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+{% from "components/duration_picker.html" import duration_picker with context %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/protocols" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_protocols }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.protocols_builder_title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+            {{ icon('routine', 'w-6 h-6 text-[color:var(--accent)]') }}
+            {{ t.protocols_builder_title }}
+        </h1>
+        <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.protocols_builder_subtitle }}</p>
+    </div>
+
+    <form method="post" action="{{ '/protocols/' ~ proto.id ~ '/update' if proto else '/protocols/create' }}" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+        <!-- Meta -->
+        <section class="p-5 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] space-y-4">
+            <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.protocols_meta }}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_title_label }}</span>
+                    <input type="text" name="title" required maxlength="255" value="{{ proto.title if proto else '' }}"
+                           class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[42px]" placeholder="{{ t.protocols_title_ph }}">
+                </label>
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_category_label }}</span>
+                    <select name="category" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[42px]">
+                        {% for c in categories %}
+                        <option value="{{ c }}" {% if (proto and proto.category == c) or (not proto and c == 'prep') %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="flex flex-col gap-1 sm:col-span-2">
+                    <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_description_label }}</span>
+                    <textarea name="description" rows="2" maxlength="1000" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)]" placeholder="{{ t.protocols_description_ph }}">{{ proto.description if proto and proto.description else '' }}</textarea>
+                </label>
+                <label class="flex flex-col gap-1 sm:col-span-2">
+                    <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_anchor_label }}</span>
+                    <select name="anchor_type" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[42px]">
+                        {% for a in ['session_bound', 'independent', 'timer_bound'] %}
+                        <option value="{{ a }}" {% if (proto and proto.anchor_type == a) or (not proto and a == 'session_bound') %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+        </section>
+
+        <!-- Steps -->
+        <section class="p-5 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold text-[color:var(--text)]">{{ t.protocols_steps }}</h2>
+                <button type="button" id="add-step" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all">
+                    {{ icon('plus', 'w-3.5 h-3.5') }} {{ t.protocols_add_step }}
+                </button>
+            </div>
+
+            <div id="steps-canvas" class="space-y-3">
+                {% for s in steps %}
+                <div class="step-row p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3" data-idx="{{ loop.index0 }}">
+                    <div class="flex items-center gap-2 justify-between">
+                        <span class="step-num text-xs font-bold text-[color:var(--accent)]">{{ loop.index }}</span>
+                        <button type="button" class="remove-step text-rose-400 hover:bg-rose-500/10 rounded-lg p-1" title="{{ t.protocols_remove_step }}">{{ icon('close', 'w-4 h-4') }}</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex flex-col gap-1">
+                            <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_title }}</span>
+                            <input type="text" class="step-title px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]" value="{{ s.title }}">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_type }}</span>
+                            <select class="step-type px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]">
+                                {% for st in step_types %}
+                                <option value="{{ st }}" {% if s.step_type == st %}selected{% endif %}>{{ st }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex flex-col gap-1">
+                            <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_timing }}</span>
+                            <select class="step-timing px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]">
+                                {% for tt in timing_types %}
+                                <option value="{{ tt }}" {% if s.timing_spec.get('type') == tt %}selected{% endif %}>{{ tt }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_offset }}</span>
+                            <input type="number" min="0" step="1" class="step-offset px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]" value="{{ s.timing_spec.get('offset_seconds', 0) }}">
+                        </label>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_duration }}</span>
+                        <div class="mt-1.5">
+                            {% set d = s.custom_params.get('duration_seconds', 0) %}
+                            {{ duration_picker('step_' ~ loop.index0, default_seconds=d | int) }}
+                        </div>
+                    </div>
+                    <input type="hidden" class="step-duration-json" name="" value="">
+                </div>
+                {% endfor %}
+            </div>
+
+            <input type="hidden" name="steps_json" id="steps-json" value="">
+        </section>
+
+        <div class="flex items-center justify-end gap-3">
+            <a href="/protocols" class="px-4 py-2 rounded-xl border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] text-sm font-medium">{{ t.protocols_cancel }}</a>
+            <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl pl-accent-bg text-sm font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
+                {{ icon('save', 'w-4 h-4') }} {{ t.protocols_save }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('steps-canvas');
+  var jsonOut = document.getElementById('steps-json');
+  var STEP_TYPES = {{ step_types | tojson }};
+  var TIMING_TYPES = {{ timing_types | tojson }};
+
+  var UNIT_SECONDS = { months: 2592000, days: 86400, hours: 3600, minutes: 60, seconds: 1 };
+
+  function rowDurationSeconds(row) {
+    var total = 0;
+    Object.keys(UNIT_SECONDS).forEach(function (unit) {
+      var input = row.querySelector('input[name$="_' + unit + '"]');
+      if (input) total += (Number(input.value) || 0) * UNIT_SECONDS[unit];
+    });
+    return total;
+  }
+
+  function collect() {
+    var rows = canvas.querySelectorAll('.step-row');
+    var steps = [];
+    rows.forEach(function (row, idx) {
+      var title = row.querySelector('.step-title').value.trim();
+      if (!title) return;
+      steps.push({
+        title: title,
+        step_type: row.querySelector('.step-type').value,
+        timing_spec: {
+          type: row.querySelector('.step-timing').value,
+          offset_seconds: Number(row.querySelector('.step-offset').value) || 0
+        },
+        custom_params: { duration_seconds: rowDurationSeconds(row) }
+      });
+    });
+    jsonOut.value = JSON.stringify(steps);
+  }
+
+  function renumber() {
+    canvas.querySelectorAll('.step-row').forEach(function (row, idx) {
+      row.dataset.idx = idx;
+      row.querySelector('.step-num').textContent = idx + 1;
+      row.querySelectorAll('input[name]').forEach(function () {});
+    });
+  }
+
+  function makeRow() {
+    var idx = canvas.querySelectorAll('.step-row').length;
+    var row = document.createElement('div');
+    row.className = 'step-row p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3';
+    row.dataset.idx = idx;
+    var typeOpts = STEP_TYPES.map(function (st) { return '<option value="' + st + '">' + st + '</option>'; }).join('');
+    var timingOpts = TIMING_TYPES.map(function (tt) { return '<option value="' + tt + '">' + tt + '</option>'; }).join('');
+    row.innerHTML =
+      '<div class="flex items-center gap-2 justify-between">' +
+        '<span class="step-num text-xs font-bold text-[color:var(--accent)]">' + (idx + 1) + '</span>' +
+        '<button type="button" class="remove-step text-rose-400 hover:bg-rose-500/10 rounded-lg p-1" title="remove">{{ t.protocols_remove_step }}</button>' +
+      '</div>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+        '<label class="flex flex-col gap-1"><span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_title }}</span>' +
+          '<input type="text" class="step-title px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]" placeholder="{{ t.protocols_step_title_ph }}"></label>' +
+        '<label class="flex flex-col gap-1"><span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_type }}</span>' +
+          '<select class="step-type px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]">' + typeOpts + '</select></label>' +
+      '</div>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
+        '<label class="flex flex-col gap-1"><span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_timing }}</span>' +
+          '<select class="step-timing px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]">' + timingOpts + '</select></label>' +
+        '<label class="flex flex-col gap-1"><span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_offset }}</span>' +
+          '<input type="number" min="0" step="1" class="step-offset px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)]" value="0"></label>' +
+      '</div>' +
+      '<div><span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.protocols_step_duration }}</span>' +
+        '<div class="mt-1.5"></div></div>' +
+      '<input type="hidden" class="step-duration-json" name="" value="">';
+    canvas.appendChild(row);
+    renumber();
+    collect();
+  }
+
+  document.getElementById('add-step').addEventListener('click', makeRow);
+  canvas.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.remove-step');
+    if (!btn) return;
+    btn.closest('.step-row').remove();
+    renumber();
+    collect();
+  });
+  canvas.addEventListener('input', collect);
+  canvas.addEventListener('change', collect);
+  document.querySelector('form').addEventListener('submit', collect);
+})();
+</script>
+{% endblock %}

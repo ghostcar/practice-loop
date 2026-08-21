@@ -51,6 +51,7 @@
     'health': t.nav_health,
     'journal': t.nav_journal,
     'care': t.nav_care,
+    'protocols': t.nav_protocols,
     'aftercare': t.nav_aftercare,
     'consent': t.nav_consent,
     'activity_catalog': t.nav_activity_catalog,
@@ -102,6 +103,7 @@
     <div class="pl-nav-group-title">Здоровье</div>
     {{ nav_item('health', '/health', 'health', t.nav_health) }}
     {{ nav_item('care', '/care', 'routine', t.nav_care) }}
+    {{ nav_item('protocols', '/protocols', 'routine', t.nav_protocols) }}
     {{ nav_item('aftercare', '/aftercare', 'aftercare', t.nav_aftercare) }}
     {{ nav_item('medication', '/medications', 'medication', t.nav_medication) }}
   </div>

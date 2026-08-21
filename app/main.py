@@ -252,6 +252,7 @@ from app.api.ds import router as ds_router  # noqa: E402
 from app.api.health_dashboard import router as health_dashboard_router  # noqa: E402
 from app.api.insights_analytics import router as insights_analytics_router  # noqa: E402
 from app.api.llm_exchange import router as llm_exchange_router  # noqa: E402
+from app.api.protocols import router as protocols_router  # noqa: E402
 from app.api.media_albums import router as media_albums_router  # noqa: E402
 from app.api.media_exposure import public_router as media_showcase_public_router  # noqa: E402
 from app.api.media_exposure import router as media_exposure_router  # noqa: E402
@@ -265,6 +266,7 @@ from app.telegram.bot import tg_router  # noqa: E402
 app.include_router(tg_router)
 app.include_router(ds_router)
 app.include_router(llm_exchange_router)
+app.include_router(protocols_router)
 app.include_router(insights_analytics_router)
 app.include_router(communities_router)
 app.include_router(community_agent_router)

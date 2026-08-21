@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.nav_protocols }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+    <div class="flex items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                {{ icon('routine', 'w-6 h-6 text-[color:var(--accent)]') }} {{ t.nav_protocols }}
+            </h1>
+            <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.protocols_subtitle }}</p>
+        </div>
+        <a href="/protocols/new" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-bold transition-all shadow-md">
+            {{ icon('plus', 'w-4 h-4') }} {{ t.protocols_create }}
+        </a>
+    </div>
+
+    <!-- Active runs -->
+    {% if active_runs %}
+    <section>
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-[color:var(--text-muted)] mb-3">{{ t.protocols_active_runs }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {% for run in active_runs %}
+            <a href="/protocols/{{ run.id }}/run" class="p-4 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors block space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="font-semibold text-[color:var(--text)] text-sm">{{ run.protocol_id and '#' + run.id|string|truncate(8, True, '') or '—' }}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full {% if run.status == 'active' %}bg-emerald-500/20 text-emerald-400{% else %}bg-amber-500/20 text-amber-400{% endif %}">{{ run.status }}</span>
+                </div>
+                <div class="text-xs text-[color:var(--text-muted)]">
+                    {{ icon('clock', 'w-3.5 h-3.5 inline') }} {{ localtime(run.anchor_time, '%d.%m %H:%M') }}
+                </div>
+                {% set done = run.step_logs | selectattr('status', 'equalto', 'completed') | list | length %}
+                {% set total = run.step_logs | length %}
+                <div class="text-xs text-[color:var(--text-secondary)]">{{ done }} / {{ total }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Protocol list -->
+    <section>
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-[color:var(--text-muted)] mb-3">{{ t.protocols_list }}</h2>
+        {% if protocols %}
+        <div class="space-y-3">
+            {% for p in protocols %}
+            <div class="p-4 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold text-[color:var(--text)]">{{ p.title }}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full pl-surface-soft text-[color:var(--text-secondary)]">{{ p.category }}</span>
+                        {% if not p.is_active %}<span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400">{{ t.protocols_inactive }}</span>{% endif %}
+                    </div>
+                    {% if p.description %}<div class="text-xs text-[color:var(--text-muted)]">{{ p.description }}</div>{% endif %}
+                    <div class="text-[11px] text-[color:var(--text-muted)]">
+                        {{ p.steps | length }} {{ t.protocols_steps_lower }} · {{ p.anchor_type }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <form action="/protocols/{{ p.id }}/start" method="post" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="anchor_time" value="">
+                        <button type="submit" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg pl-accent-bg text-white font-semibold hover:bg-[color:var(--accent-hover)] transition-colors" title="{{ t.protocols_start }}">
+                            {{ icon('play', 'w-3.5 h-3.5') }}
+                        </button>
+                    </form>
+                    <a href="/protocols/{{ p.id }}/edit" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] transition-colors" title="{{ t.protocols_edit }}">
+                        {{ icon('edit', 'w-3.5 h-3.5') }}
+                    </a>
+                    <form action="/protocols/{{ p.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.protocols_delete_confirm }}')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <button type="submit" class="inline-flex items-center text-xs px-2.5 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors" title="{{ t.protocols_delete }}">
+                            {{ icon('delete', 'w-3.5 h-3.5') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-14 space-y-3">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[color:var(--surface-soft)]">{{ icon('routine', 'w-6 h-6 text-[color:var(--text-muted)]') }}</div>
+            <p class="text-[color:var(--text-secondary)]">{{ t.protocols_empty }}</p>
+            <a href="/protocols/new" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl pl-accent-bg text-sm font-bold">{{ icon('plus', 'w-4 h-4') }} {{ t.protocols_create }}</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
