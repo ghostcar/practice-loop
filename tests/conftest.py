@@ -162,6 +162,20 @@ async def test_user(db_session: AsyncSession, _test_password_hash: str) -> User:
     return user
 
 
+@pytest_asyncio.fixture
+async def second_user(db_session: AsyncSession, _test_password_hash: str) -> User:
+    """Second test user for membership / multi-user flows."""
+    user = User(
+        email="second@example.com",
+        password_hash=_test_password_hash,
+        locale="en",
+        theme="dark",
+    )
+    db_session.add(user)
+    await db_session.flush()
+    return user
+
+
 @pytest.fixture(scope="session")
 def _test_password_hash() -> str:
     """Hash the shared fixture password once; password tests use real calls."""

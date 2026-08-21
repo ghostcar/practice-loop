@@ -128,22 +128,27 @@ async def save_media(file: UploadFile) -> dict:
 
 
 def _persist_media(data: bytes, mime: str, name: str, sha256: str, file: UploadFile) -> dict:
-    """Synchronous disk+Pillow pipeline, executed inside a thread pool."""
-    file_path = _media_subdir() / name
-    file_path.write_bytes(data)
+    """Synchronous disk+Pillow pipeline with EXIF/GPS stripping, executed inside thread pool."""
+    from app.media.sanitizer import strip_exif_metadata
 
-    width, height = _get_dimensions(data, mime)
+    clean_data, _ = strip_exif_metadata(data, mime)
+    clean_sha256 = hashlib.sha256(clean_data).hexdigest()
+
+    file_path = _media_subdir() / name
+    file_path.write_bytes(clean_data)
+
+    width, height = _get_dimensions(clean_data, mime)
     thumb_name = None
     if width and height:
-        thumb_name = _make_thumbnail(data, name, mime)
+        thumb_name = _make_thumbnail(clean_data, name, mime)
 
     return {
         "file_path": f"/uploads/media/{name}",
         "thumbnail_path": f"/uploads/thumbnails/{thumb_name}" if thumb_name else None,
         "original_filename": (file.filename or "")[:500] or None,
         "mime_type": mime,
-        "file_size_bytes": len(data),
-        "sha256_hex": sha256,
+        "file_size_bytes": len(clean_data),
+        "sha256_hex": clean_sha256,
         "width": width,
         "height": height,
     }

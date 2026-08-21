@@ -244,11 +244,17 @@ from app.api.admin_tiers import router as admin_tiers_router  # noqa: E402
 from app.api.billing import router as billing_router  # noqa: E402
 from app.api.calendar_v2 import router as calendar_v2_router  # noqa: E402
 from app.api.certificates import router as certificates_router  # noqa: E402
+from app.api.communities import router as communities_router  # noqa: E402
 from app.api.community_agent import router as community_agent_router  # noqa: E402
+from app.api.dead_mans_switch import page_router as dms_page_router  # noqa: E402
+from app.api.dead_mans_switch import router as dms_router  # noqa: E402
 from app.api.ds import router as ds_router  # noqa: E402
 from app.api.health_dashboard import router as health_dashboard_router  # noqa: E402
 from app.api.insights_analytics import router as insights_analytics_router  # noqa: E402
 from app.api.llm_exchange import router as llm_exchange_router  # noqa: E402
+from app.api.media_albums import router as media_albums_router  # noqa: E402
+from app.api.media_exposure import public_router as media_showcase_public_router  # noqa: E402
+from app.api.media_exposure import router as media_exposure_router  # noqa: E402
 from app.api.media_timeline import router as media_timeline_router  # noqa: E402
 from app.api.media_vault_v2 import router as media_vault_v2_router  # noqa: E402
 from app.api.persona_builder import router as persona_builder_router  # noqa: E402
@@ -260,12 +266,18 @@ app.include_router(tg_router)
 app.include_router(ds_router)
 app.include_router(llm_exchange_router)
 app.include_router(insights_analytics_router)
+app.include_router(communities_router)
 app.include_router(community_agent_router)
 app.include_router(admin_tiers_router)
 app.include_router(billing_router)
 app.include_router(calendar_v2_router)
 app.include_router(media_vault_v2_router)
 app.include_router(media_timeline_router)
+app.include_router(media_exposure_router)
+app.include_router(media_showcase_public_router)
+app.include_router(media_albums_router)
+app.include_router(dms_router)
+app.include_router(dms_page_router)
 app.include_router(persona_builder_router)
 app.include_router(health_dashboard_router)
 app.include_router(promocodes_router)

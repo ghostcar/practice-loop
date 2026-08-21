@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/communities" class="hover:text-[color:var(--text)] transition-colors">Сообщества</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ community.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block title %}{{ community.name }} — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header -->
+    <div class="pl-surface border border-[color:var(--border)] rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-2">
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
+                    {{ icon('community', 'w-6 h-6') }}
+                    {{ community.name }}
+                </h1>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase {% if community.visibility == 'private' %}bg-purple-950 text-purple-300 border border-purple-800{% else %}bg-emerald-950 text-emerald-400 border border-emerald-800{% endif %}">
+                    {{ community.visibility }}
+                </span>
+            </div>
+            <p class="text-xs text-[color:var(--text-muted)] font-mono">/{{ community.slug }} · {{ member_count }} участников</p>
+            {% if community.description %}
+            <p class="text-sm text-[color:var(--text-secondary)] max-w-xl">{{ community.description }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            {% set joined = request.query_params.get('joined') %}
+            {% if joined == 'ok' %}
+            <span class="text-xs text-emerald-400 font-semibold" role="status">Вы вступили в сообщество</span>
+            {% elif joined == 'pending' %}
+            <span class="text-xs text-amber-400 font-semibold" role="status">Заявка отправлена — ожидает одобрения</span>
+            {% endif %}
+            {% set inv = request.query_params.get('invite') %}
+            {% if inv %}
+            <span class="text-xs text-purple-300 font-mono px-2 py-1 bg-purple-950/50 border border-purple-800 rounded-lg" role="status">
+                Инвайт-код: {{ inv }}
+            </span>
+            {% endif %}
+
+            {% if membership and membership.status == 'active' %}
+                {% if is_owner %}
+                <a href="/communities/{{ community.id }}/cockpit" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-archive-950 text-xs font-bold transition-all shadow inline-flex items-center gap-2">
+                    {{ icon('ai', 'w-4 h-4') }} Cockpit ИИ-Верхнего
+                </a>
+                <form action="/communities/{{ community.id }}/delete" method="POST" onsubmit="return confirm('Удалить сообщество навсегда?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="px-3 py-2 rounded-xl border border-red-800/60 text-red-400 text-xs font-semibold hover:bg-red-950/40 transition-colors inline-flex items-center gap-1.5">
+                        {{ icon('delete', 'w-3.5 h-3.5') }} Удалить
+                    </button>
+                </form>
+                {% else %}
+                <form action="/communities/{{ community.id }}/leave" method="POST" onsubmit="return confirm('Покинуть сообщество?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="px-3 py-2 rounded-xl border border-[color:var(--border)] text-[color:var(--text-secondary)] text-xs font-semibold hover:bg-[color:var(--surface-soft)] transition-colors inline-flex items-center gap-1.5">
+                        {{ icon('logout', 'w-3.5 h-3.5') }} Покинуть
+                    </button>
+                </form>
+                {% endif %}
+            {% elif membership and membership.status == 'pending' %}
+            <span class="px-3 py-2 rounded-xl bg-amber-950/50 border border-amber-800/60 text-amber-300 text-xs font-semibold inline-flex items-center gap-2">
+                {{ icon('timer', 'w-3.5 h-3.5') }} Заявка на рассмотрении
+            </span>
+            {% else %}
+                {% if community.visibility == 'private' %}
+                <form action="/communities/{{ community.id }}/join" method="POST" class="flex items-center gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <input type="text" name="invite_code" placeholder="Инвайт-код" required
+                           class="pl-surface-soft border border-[color:var(--border)] rounded-lg px-3 py-2 text-xs text-[color:var(--text)] w-36">
+                    <button type="submit" class="px-4 py-2 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-bold text-[color:var(--on-accent)] transition-all shadow inline-flex items-center gap-2">
+                        {{ icon('lock', 'w-3.5 h-3.5') }} Вступить
+                    </button>
+                </form>
+                {% else %}
+                <form action="/communities/{{ community.id }}/join" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" class="px-4 py-2 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-bold text-[color:var(--on-accent)] transition-all shadow inline-flex items-center gap-2">
+                        {{ icon('user-add', 'w-4 h-4') }} Вступить
+                    </button>
+                </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% set err = request.query_params.get('error') %}
+    {% if err %}
+    <p class="px-4 py-3 rounded-xl bg-red-950/50 border border-red-800/60 text-red-300 text-xs" role="alert">{{ err }}</p>
+    {% endif %}
+
+    <!-- Owner: pending approvals -->
+    {% if is_owner and pending_members %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3" aria-labelledby="pending-h">
+        <h2 id="pending-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('timer', 'w-4 h-4') }} Заявки на вступление ({{ pending_members|length }})
+        </h2>
+        <div class="space-y-2">
+            {% for m in pending_members %}
+            <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-3 rounded-lg flex items-center justify-between">
+                <span class="text-xs font-mono text-[color:var(--text)]">ID: {{ m.user_id }}</span>
+                <div class="flex items-center gap-2">
+                    <form action="/communities/{{ community.id }}/approve" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="member_id" value="{{ m.id }}">
+                        <input type="hidden" name="decision" value="approve">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-900 transition-colors inline-flex items-center gap-1">
+                            {{ icon('check', 'w-3 h-3') }} Одобрить
+                        </button>
+                    </form>
+                    <form action="/communities/{{ community.id }}/approve" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="member_id" value="{{ m.id }}">
+                        <input type="hidden" name="decision" value="reject">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-800/60 text-red-400 text-[11px] font-semibold hover:bg-red-950/40 transition-colors">
+                            Отклонить
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Owner: invite code -->
+    {% if is_owner and community.visibility == 'private' %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3" aria-labelledby="invite-h">
+        <h2 id="invite-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('lock', 'w-4 h-4') }} Инвайт-код
+        </h2>
+        <p class="text-xs text-[color:var(--text-muted)]">
+            Приватное сообщество: участники вступают по коду.
+            {% if community.invite_code %}Текущий код: <strong class="font-mono text-purple-300">{{ community.invite_code }}</strong>{% endif %}
+        </p>
+        <form action="/communities/{{ community.id }}/invite" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <button type="submit" class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-bold text-[color:var(--on-accent)] transition-all inline-flex items-center gap-2">
+                {{ icon('refresh', 'w-3.5 h-3.5') }} Сгенерировать новый код
+            </button>
+        </form>
+    </section>
+    {% endif %}
+
+    <!-- Members -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3" aria-labelledby="members-h">
+        <h2 id="members-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('users', 'w-4 h-4') }} Участники ({{ member_count }})
+        </h2>
+        {% if members %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {% for m in members %}
+            <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-2.5 rounded-lg flex items-center justify-between">
+                <span class="text-xs font-mono text-[color:var(--text)] truncate">{{ m.user_id }}</span>
+                {% if m.role == 'owner' %}
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-950 text-amber-400 border border-amber-800">Владелец</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-[color:var(--text-muted)]">Участников пока нет.</p>
+        {% endif %}
+    </section>
+
+    <!-- Agent & Tournaments -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-4" aria-labelledby="agent-h">
+        <div class="flex items-center justify-between">
+            <h2 id="agent-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('ai', 'w-4 h-4') }} ИИ-Верхний Сообщества
+            </h2>
+            {% if membership and membership.status == 'active' %}
+            <a href="/communities/{{ community.id }}/agent" class="text-xs text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-1">
+                Перейти к агенту {{ icon('arrow-right', 'w-3 h-3') }}
+            </a>
+            {% endif %}
+        </div>
+        {% if agent %}
+        <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-950 text-amber-400 border border-amber-800 inline-flex items-center gap-1.5">
+                {{ icon('ai', 'w-3.5 h-3.5') }} {{ agent.persona_name }} (Строгость {{ agent.strictness_level }}/5)
+            </span>
+        </div>
+        {% endif %}
+
+        {% if tournaments %}
+        <div class="space-y-2 pt-1">
+            <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">Активные турниры</div>
+            {% for tr in tournaments %}
+            <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-3 rounded-lg flex items-center justify-between">
+                <div>
+                    <div class="text-sm font-semibold text-[color:var(--text)]">{{ tr.title }}</div>
+                    <div class="text-[11px] text-[color:var(--text-muted)]">Метрика: {{ tr.metric_type }}</div>
+                </div>
+                <span class="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-950 text-emerald-400 border border-emerald-800 uppercase">{{ tr.status }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if recent_posts %}
+        <div class="space-y-2 pt-1">
+            <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">Последние объявления</div>
+            {% for p in recent_posts %}
+            <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-3 rounded-lg space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-semibold text-amber-400">{{ p.author_name or 'ИИ-Верхний' }}</span>
+                    <span class="text-[10px] text-[color:var(--text-muted)] font-mono">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '' }}</span>
+                </div>
+                <p class="text-xs text-[color:var(--text)] font-medium">{{ p.title }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

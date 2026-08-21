@@ -10,6 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.community_agent import (
+    Community,
+    CommunityMember,
     CommunityMemberDelegation,
     CommunityPost,
     CommunityTopAgent,
@@ -170,6 +172,144 @@ async def recalculate_tournament_standings(
 
     await db.flush()
     return standings
+
+
+async def create_community(
+    db: AsyncSession,
+    name: str,
+    slug: str,
+    owner_id: uuid.UUID,
+    description: str | None = None,
+    visibility: str = "public",
+    require_approval: bool = False,
+) -> Community:
+    """Creates a community and registers the owner as its first member."""
+    community = Community(
+        name=name.strip(),
+        slug=slug.strip().lower(),
+        description=description.strip() if description else None,
+        owner_id=owner_id,
+        visibility=visibility if visibility in ("public", "private") else "public",
+        require_approval=require_approval,
+        invite_code=None,
+    )
+    db.add(community)
+    await db.flush()
+
+    db.add(
+        CommunityMember(
+            community_id=community.id,
+            user_id=owner_id,
+            role="owner",
+            status="active",
+        )
+    )
+    await db.flush()
+
+    # The community always has a Top Agent persona.
+    await get_or_create_community_top_agent(db, community.id)
+    return community
+
+
+async def get_community_membership(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> CommunityMember | None:
+    """Returns the user's membership record for a community, if any."""
+    return (
+        await db.execute(
+            select(CommunityMember).where(
+                CommunityMember.community_id == community_id,
+                CommunityMember.user_id == user_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def join_community(
+    db: AsyncSession,
+    community: Community,
+    user_id: uuid.UUID,
+    invite_code: str | None = None,
+) -> tuple[str, CommunityMember]:
+    """Joins a community. Returns (status, membership).
+
+    status: "joined" | "pending" | "already_member" | "already_pending" | "invalid_code"
+    """
+    existing = await get_community_membership(db, community.id, user_id)
+    if existing:
+        if existing.status == "active":
+            return "already_member", existing
+        return "already_pending", existing
+
+    if community.visibility == "private" and (
+        not invite_code or not community.invite_code or invite_code.strip() != community.invite_code
+    ):
+        return "invalid_code", None  # type: ignore[return-value]
+
+    needs_approval = community.require_approval
+    member = CommunityMember(
+        community_id=community.id,
+        user_id=user_id,
+        role="member",
+        status="pending" if needs_approval else "active",
+    )
+    db.add(member)
+    await db.flush()
+    return ("pending" if needs_approval else "joined"), member
+
+
+async def leave_community(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> bool:
+    """Removes the user from a community. Owners cannot leave (must delete/transfer)."""
+    member = await get_community_membership(db, community_id, user_id)
+    if not member:
+        return False
+    if member.role == "owner":
+        return False
+    await db.delete(member)
+    await db.flush()
+    return True
+
+
+async def approve_community_member(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    member_id: uuid.UUID,
+    approve: bool,
+) -> str:
+    """Approves or rejects a pending membership. Returns "approved" | "rejected" | "not_found"."""
+    member = (
+        await db.execute(
+            select(CommunityMember).where(
+                CommunityMember.id == member_id,
+                CommunityMember.community_id == community_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not member:
+        return "not_found"
+    if approve:
+        member.status = "active"
+        return "approved"
+    await db.delete(member)
+    await db.flush()
+    return "rejected"
+
+
+async def rotate_community_invite_code(
+    db: AsyncSession,
+    community: Community,
+) -> str:
+    """Generates a fresh invite code for a community."""
+    code = uuid.uuid4().hex[:12].upper()
+    community.invite_code = code
+    await db.flush()
+    return code
 
 
 async def run_community_delegated_governance(

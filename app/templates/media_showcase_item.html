@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block title %}Медиа-Экспозиция — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    {% if error %}
+    <div class="p-8 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--danger)] text-center space-y-3 shadow-xl">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[color:var(--danger-soft)] text-[color:var(--danger)]">
+            {{ icon('warning', 'w-8 h-8') }}
+        </div>
+        <h1 class="text-xl font-bold text-[color:var(--text)]">Доступ к Экспозиции Недоступен</h1>
+        <p class="text-sm text-[color:var(--text-secondary)]">{{ error }}</p>
+        <div class="pt-4">
+            <a href="/" class="px-4 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs font-medium hover:bg-[color:var(--surface)]">
+                Вернуться на Главную
+            </a>
+        </div>
+    </div>
+    {% elif pin_required %}
+    <!-- PIN Protection Modal / Box -->
+    <div class="max-w-md mx-auto p-8 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] text-center space-y-4 shadow-2xl">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400">
+            {{ icon('shield', 'w-7 h-7') }}
+        </div>
+        <h2 class="text-lg font-bold text-[color:var(--text)]">Защищено PIN-кодом</h2>
+        <p class="text-xs text-[color:var(--text-muted)]">Для просмотра этой экспозиции введите секретный код доступа:</p>
+
+        {% if pin_error %}
+        <div class="p-3 rounded-lg bg-[color:var(--danger-soft)] text-[color:var(--danger)] text-xs font-medium">
+            {{ pin_error }}
+        </div>
+        {% endif %}
+
+        <form method="get" action="/media/showcase/{{ token }}" class="space-y-4">
+            <input type="password" name="pin" maxlength="16" placeholder="Введите PIN" autofocus required
+                   class="w-full text-center tracking-widest text-lg font-mono px-4 py-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[color:var(--text)] focus:border-amber-400">
+            <button type="submit" class="w-full py-3 rounded-xl pl-accent-bg text-sm font-semibold hover:opacity-90 transition-opacity">
+                Разблокировать Снимок
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <!-- Main Showcase Item -->
+    <div class="rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] p-6 space-y-6 shadow-2xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    {% if is_permanent %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 inline-flex items-center gap-1">
+                        {{ icon('star', 'w-3.5 h-3.5') }} НЕИЗМЕНЯЕМАЯ ПОСТОЯННАЯ ПУБЛИКАЦИЯ
+                    </span>
+                    {% elif drop.exposure_type == 'one_time' %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40 inline-flex items-center gap-1">
+                        {{ icon('warning', 'w-3.5 h-3.5') }} ОДНОРАЗОВЫЙ СНИМОК (BURN ON READ)
+                    </span>
+                    {% else %}
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-500/20 text-sky-400 border border-sky-500/40 inline-flex items-center gap-1">
+                        {{ icon('clock', 'w-3.5 h-3.5') }} ДИНАМИЧЕСКИЙ ТАЙМЕР ЭКСПОЗИЦИИ
+                    </span>
+                    {% endif %}
+                </div>
+                <h1 class="text-2xl font-bold text-[color:var(--text)] mt-2">{{ drop.title or 'Публикация Доказательства' }}</h1>
+                {% if drop.caption %}
+                <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ drop.caption }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Stats Badge -->
+            <div class="flex items-center gap-3 bg-[color:var(--surface-soft)] px-4 py-2.5 rounded-xl border border-[color:var(--border)] text-xs">
+                <div>
+                    <span class="text-[color:var(--text-muted)]">Просмотров:</span>
+                    <span class="font-bold text-[color:var(--text)] font-mono ml-1">{{ view_count }}</span>
+                </div>
+                {% if not is_permanent and expires_at %}
+                <div class="border-l border-[color:var(--border)] pl-3">
+                    <span class="text-[color:var(--text-muted)]">Истекает:</span>
+                    <span class="font-mono text-amber-400 font-semibold ml-1" id="exp-countdown">--:--:--</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Image Presentation -->
+        <div class="rounded-xl overflow-hidden bg-black flex items-center justify-center border border-[color:var(--border)] max-h-[70vh]">
+            <img src="{{ media_path }}" alt="Showcase Media" class="max-h-[68vh] w-auto object-contain">
+        </div>
+
+        <!-- Dynamic Timer Controls for Host / Keyholder -->
+        {% if not is_permanent and drop.exposure_type == 'dynamic_timer' %}
+        <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-[color:var(--text)] inline-flex items-center gap-1.5">
+                {{ icon('clock', 'w-4 h-4 text-amber-400') }} Управление Временем Экспозиции
+            </h3>
+            <form method="post" action="/media/exposure/{{ token }}/adjust-timer" class="flex flex-wrap items-center gap-2 text-xs">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <span class="text-[color:var(--text-muted)]">Продлить:</span>
+                <button type="submit" name="delta_minutes" value="15" class="px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-amber-400 transition-colors">+15 мин</button>
+                <button type="submit" name="delta_minutes" value="60" class="px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-amber-400 transition-colors">+1 час</button>
+                <button type="submit" name="delta_minutes" value="1440" class="px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-amber-400 transition-colors">+24 часа</button>
+
+                <span class="text-[color:var(--text-muted)] ml-3">Сократить:</span>
+                <button type="submit" name="delta_minutes" value="-15" class="px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-red-400 transition-colors text-red-400">-15 мин</button>
+                <button type="submit" name="delta_minutes" value="-60" class="px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-red-400 transition-colors text-red-400">-1 час</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if is_permanent %}
+        <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-400 flex items-center gap-2">
+            {{ icon('info', 'w-4 h-4 flex-shrink-0') }}
+            <span>Данное доказательство имеет статус <strong>Неснимаемого Обязательства</strong>. Оно доступно бессрочно и защищено от удаления до закрытия профиля.</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

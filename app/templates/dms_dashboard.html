@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block title %}Dead Man's Switch — PracticeLoop{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Dead Man's Switch</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-[color:var(--border)] pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] inline-flex items-center gap-2">
+                {{ icon('clock', 'w-6 h-6 text-amber-400') }} Dead Man's Switch (Сквозной Контроль Активностей)
+            </h1>
+            <p class="text-xs text-[color:var(--text-secondary)] mt-1">
+                Автоматический монитор регулярности: пломбы chastity, ежедневные тренировки, приём медикаментов и дедлайны чек-инов с эскалацией штрафов при пропуске.
+            </p>
+        </div>
+        <form method="post" action="/api/v2/dms/heartbeat">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input type="hidden" name="switch_type" value="general_heartbeat">
+            <button type="submit" class="px-4 py-2 rounded-xl pl-accent-bg text-xs font-semibold inline-flex items-center gap-1.5 shadow-lg cursor-pointer">
+                {{ icon('check-circle', 'w-4 h-4') }} Отправить Общий Heartbeat
+            </button>
+        </form>
+    </div>
+
+    <!-- Active Switches Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for rule in rules %}
+        <div class="p-6 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] space-y-4 shadow-xl flex flex-col justify-between">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider
+                        {% if rule.status == 'active' %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+                        {% elif rule.status == 'warning' %}bg-amber-500/10 text-amber-400 border border-amber-500/20
+                        {% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
+                        {{ rule.status }}
+                    </span>
+                    <span class="text-xs font-mono text-[color:var(--text-muted)]">Интервал: {{ rule.interval_hours }}ч</span>
+                </div>
+
+                <div>
+                    <h3 class="text-base font-semibold text-[color:var(--text)]">{{ rule.title }}</h3>
+                    <p class="text-xs text-[color:var(--text-muted)] mt-0.5">Тип: <span class="font-mono text-[color:var(--text-secondary)]">{{ rule.switch_type }}</span></p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] space-y-1.5 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-[color:var(--text-muted)]">Последний чек-ин:</span>
+                        <span class="font-mono text-[color:var(--text)]">{{ rule.last_heartbeat_at.strftime('%d.%m %H:%M') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-[color:var(--text-muted)]">Следующий дедлайн:</span>
+                        <span class="font-mono font-bold text-amber-400">{{ rule.next_deadline_at.strftime('%d.%m %H:%M') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-[color:var(--text-muted)]">Штраф за пропуск:</span>
+                        <span class="font-mono text-red-400">-{{ rule.penalty_xp }} XP</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <form method="post" action="/api/v2/dms/heartbeat">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <input type="hidden" name="switch_type" value="{{ rule.switch_type }}">
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:bg-[color:var(--surface)] text-xs font-medium transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer">
+                        {{ icon('refresh', 'w-3.5 h-3.5') }} Подтвердить Активность (Чек-ин)
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full p-12 text-center bg-[color:var(--surface)] border border-[color:var(--border)] rounded-2xl">
+            <p class="text-xs text-[color:var(--text-muted)]">Активные мониторы Dead Man's Switch пока не созданы. Они создаются автоматически при первой активности или через API.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

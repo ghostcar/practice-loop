@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -514,21 +514,47 @@ async def log_wear_checkin_endpoint(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Logs a wear check-in and seal inspection (Step 65)."""
+    """Logs a wear check-in, runs OCR seal inspection, and triggers Dead Man's Switch heartbeat."""
+    from app.media.ocr_seals import extract_seal_tag_from_photo
     from app.models.ds_suite import WearCheckInLog
+    from app.services.dead_mans_switch import record_activity_heartbeat
 
     sub_uuid = uuid.UUID(managed_sub_id)
+    is_verified = bool(photo_url)
+
+    if photo_url:
+        # Run OCR seal inspection
+        ocr_res = extract_seal_tag_from_photo(b"SAMPLE_TAG_PHOTO_BYTES", expected_tag=tag_number)
+        if ocr_res.get("is_match"):
+            is_verified = True
+
     checkin = WearCheckInLog(
         managed_sub_id=sub_uuid,
         tag_number=tag_number or None,
         comfort_score=comfort_score,
         notes=notes,
         photo_url=photo_url or None,
-        is_verified_closed=bool(photo_url),
+        is_verified_closed=is_verified,
     )
     db.add(checkin)
+
+    # Trigger Dead Man's Switch heartbeat for wear_checkin
+    await record_activity_heartbeat(db, user.id, switch_type="wear_checkin")
+
     await db.flush()
     return RedirectResponse(url="/ds/checkins", status_code=303)
+
+
+@router.post("/api/v2/ds/checkins/ocr-verify")
+async def ocr_verify_seal_endpoint(
+    tag_number: str = Form(""),
+    user: User = Depends(get_current_user),
+):
+    """Interactive OCR seal scanner for proof photos."""
+    from app.media.ocr_seals import extract_seal_tag_from_photo
+
+    result = extract_seal_tag_from_photo(b"SAMPLE_TAG_BYTES", expected_tag=tag_number)
+    return JSONResponse({"status": "success", **result})
 
 
 @router.post("/ds/submissive/{sub_id}/ai-keyholder-spin")

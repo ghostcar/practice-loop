@@ -646,8 +646,10 @@ async def record_intake_form(
     # ADR-085: on-time intake may earn XP/achievements (positive-only, never penalizes).
     if status == "taken":
         from app.gamification.medication import on_medication_taken
+        from app.services.dead_mans_switch import record_activity_heartbeat
 
         await on_medication_taken(db, user.id, m.name, on_time=True)
+        await record_activity_heartbeat(db, user.id, switch_type="medication")
     return RedirectResponse(url="/medications", status_code=303)
 
 

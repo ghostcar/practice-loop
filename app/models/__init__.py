@@ -16,6 +16,7 @@ from app.models.community_agent import (  # noqa: E402
 )
 from app.models.community_leagues import UserLeagueTier  # noqa: E402
 from app.models.community_roles import CommunityMemberRole  # noqa: E402
+from app.models.dead_mans_switch import DeadMansSwitchRule  # noqa: E402
 from app.models.ds_suite import (  # noqa: E402
     AssignedDuty,
     CapabilityGrant,
@@ -26,6 +27,7 @@ from app.models.ds_suite import (  # noqa: E402
 )
 from app.models.duels import UserDuel  # noqa: E402
 from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: E402
+from app.models.media_exposure import MediaExposureDrop  # noqa: E402
 from app.models.media_vault import OneTimeMediaToken  # noqa: E402
 from app.models.monetization import (  # noqa: E402
     SubscriptionTier,
@@ -53,8 +55,10 @@ __all__ = [
     "CommunityTopAgent",
     "CommunityTournament",
     "CommunityTournamentEntry",
+    "DeadMansSwitchRule",
     "EquipmentMaintenanceLog",
     "ManagedSubmissive",
+    "MediaExposureDrop",
     "OneTimeMediaToken",
     "PaymentInvoice",
     "PromoCode",

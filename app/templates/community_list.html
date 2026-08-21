@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/social/profile" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_social }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Сообщества</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block title %}Сообщества — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('community', 'w-6 h-6') }}
+                Сообщества
+            </h1>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">
+                Публичные и приватные группы с ИИ-Верхним: групповые квесты, турниры и делегирование профиля.
+            </p>
+        </div>
+    </div>
+
+    {% set error = request.query_params.get('error') %}
+    {% if error %}
+    <p class="px-4 py-3 rounded-xl bg-red-950/50 border border-red-800/60 text-red-300 text-xs" role="alert">
+        {{ error }}
+    </p>
+    {% endif %}
+
+    <!-- Create Community -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-4" aria-labelledby="create-h">
+        <h2 id="create-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('plus', 'w-4 h-4') }} Создать Сообщество
+        </h2>
+        {% if creation_limit and creation_limit > 0 and owned >= creation_limit %}
+        <p class="text-xs text-[color:var(--text-muted)]">Лимит созданных сообществ ({{ creation_limit }}) исчерпан.</p>
+        {% else %}
+        <form action="/communities/create" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <label class="block text-xs text-[color:var(--text-secondary)]">
+                Название *
+                <input type="text" name="name" required maxlength="200" placeholder="Например: Хранители Согласия"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--text)]">
+            </label>
+            <label class="block text-xs text-[color:var(--text-secondary)]">
+                Slug (URL) *
+                <input type="text" name="slug" required pattern="[a-z0-9][a-z0-9-]{2,63}" placeholder="keepers-of-consent"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--text)] font-mono">
+            </label>
+            <label class="block text-xs text-[color:var(--text-secondary)] md:col-span-2">
+                Описание
+                <textarea name="description" rows="2" placeholder="Цели, правила, атмосфера..."
+                          class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--text)]"></textarea>
+            </label>
+            <div class="flex flex-col gap-2 md:col-span-2">
+                <div class="flex flex-wrap items-center gap-4 text-xs text-[color:var(--text-secondary)]">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="visibility" value="public" checked class="accent-[color:var(--accent)]">
+                        Публичное (все видят в каталоге)
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="visibility" value="private" class="accent-[color:var(--accent)]">
+                        Приватное (по инвайт-коду)
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="require_approval" class="accent-[color:var(--accent)]">
+                        Одобрение владельцем при вступлении
+                    </label>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <button type="submit" class="px-5 py-2.5 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-bold text-[color:var(--on-accent)] transition-all shadow-md inline-flex items-center gap-2">
+                    {{ icon('plus', 'w-4 h-4') }} Создать Сообщество
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </section>
+
+    <!-- My Communities -->
+    <section class="space-y-3" aria-labelledby="mine-h">
+        <h2 id="mine-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('users', 'w-4 h-4') }} Мои Сообщества ({{ my_communities|length }})
+        </h2>
+        {% if my_communities %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for c in my_communities %}
+            {% set mem = my_membership.get(c.id) %}
+            <a href="/communities/{{ c.id }}" class="pl-surface border border-[color:var(--border)] rounded-xl p-4 hover:border-[color:var(--border-strong)] transition-colors block">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="space-y-1">
+                        <div class="font-semibold text-sm text-[color:var(--text)]">{{ c.name }}</div>
+                        <div class="text-[11px] font-mono text-[color:var(--text-muted)]">/{{ c.slug }}</div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase {% if c.visibility == 'private' %}bg-purple-950 text-purple-300 border border-purple-800{% else %}bg-emerald-950 text-emerald-400 border border-emerald-800{% endif %}">
+                        {{ c.visibility }}
+                    </span>
+                </div>
+                {% if c.description %}
+                <p class="text-xs text-[color:var(--text-muted)] mt-2 line-clamp-2">{{ c.description }}</p>
+                {% endif %}
+                <div class="flex items-center gap-3 mt-3 text-[11px] text-[color:var(--text-muted)]">
+                    <span class="inline-flex items-center gap-1">{{ icon('users', 'w-3 h-3') }} {{ member_counts.get(c.id, 0) }} участников</span>
+                    {% if mem and mem.role == 'owner' %}
+                    <span class="text-amber-400 font-semibold">Владелец</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="pl-surface-soft border border-dashed border-[color:var(--border)] rounded-xl p-6 text-center">
+            {{ icon('community', 'w-8 h-8 mx-auto text-[color:var(--text-muted)]') }}
+            <p class="text-sm text-[color:var(--text)] font-medium mt-2">Вы пока не вступили ни в одно сообщество</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">Создайте своё или присоединитесь к публичному ниже.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Public Discovery -->
+    <section class="space-y-3" aria-labelledby="public-h">
+        <h2 id="public-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('globe', 'w-4 h-4') }} Публичные Сообщества
+        </h2>
+        {% if public_communities %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for c in public_communities %}
+            <a href="/communities/{{ c.id }}" class="pl-surface border border-[color:var(--border)] rounded-xl p-4 hover:border-[color:var(--border-strong)] transition-colors block">
+                <div class="font-semibold text-sm text-[color:var(--text)]">{{ c.name }}</div>
+                <div class="text-[11px] font-mono text-[color:var(--text-muted)] mt-0.5">/{{ c.slug }}</div>
+                {% if c.description %}
+                <p class="text-xs text-[color:var(--text-muted)] mt-2 line-clamp-2">{{ c.description }}</p>
+                {% endif %}
+                <div class="flex items-center gap-3 mt-3 text-[11px] text-[color:var(--text-muted)]">
+                    <span class="inline-flex items-center gap-1">{{ icon('users', 'w-3 h-3') }} {{ member_counts.get(c.id, 0) }}</span>
+                    {% if c.require_approval %}
+                    <span class="text-amber-400">по одобрению</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-xs text-[color:var(--text-muted)] pl-surface-soft border border-dashed border-[color:var(--border)] rounded-xl p-6 text-center">
+            Публичных сообществ пока нет — создайте первое!
+        </p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
