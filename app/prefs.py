@@ -61,6 +61,7 @@ PROFILE_MODULES = (
 # markers in dashboard_v2.html.
 DASH_BLOCKS = (
     "header",
+    "tg",
     "stats",
     "charts",
     "summaries",
@@ -138,7 +139,12 @@ class UserPrefs:
 
     @property
     def dash_visible(self) -> list[str]:
-        order = self.dash_blocks.get("order") or list(DASH_BLOCKS)
+        order = list(self.dash_blocks.get("order") or list(DASH_BLOCKS))
+        # Newly added canonical blocks default to visible even for users who
+        # saved their own order (still hideable via prefs).
+        for b in DASH_BLOCKS:
+            if b not in order:
+                order.append(b)
         hidden = set(self.dash_blocks.get("hidden") or [])
         return [b for b in order if b not in hidden]
 

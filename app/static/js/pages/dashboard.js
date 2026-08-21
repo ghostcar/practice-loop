@@ -16,8 +16,13 @@
   let tgLinked = false;
   const statusEl = document.getElementById('tg-status-text');
   const btnEl = document.getElementById('tg-link-btn');
+  const tgUi = statusEl && btnEl;
+  // Default action (unlinked): fetch a fresh linking code. The linked branch
+  // of checkTelegramStatus() overrides this with "open the bot".
+  if (btnEl) btnEl.onclick = generateLinkCode;
 
   async function checkTelegramStatus() {
+    if (!tgUi) return;
     try {
       const res = await fetch('/profile/telegram-status');
       const data = await res.json();
@@ -53,9 +58,12 @@
   }
 
   function showCode(code) {
-    document.getElementById('tg-code').textContent = code;
-    document.getElementById('tg-code-display').classList.remove('hidden');
-    btnEl.textContent = T.dashboard_new_code || '';
+    const codeEl = document.getElementById('tg-code');
+    const display = document.getElementById('tg-code-display');
+    if (!codeEl || !display) return;
+    codeEl.textContent = code;
+    display.classList.remove('hidden');
+    if (btnEl) btnEl.textContent = T.dashboard_new_code || '';
   }
 
   // ── Color palette (DESIGN.md semantic tokens) ──
