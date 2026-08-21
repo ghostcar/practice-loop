@@ -11,7 +11,6 @@ Revises: 081_social_grant_invariants
 from collections.abc import Sequence
 
 from alembic import op
-
 from app.models import Base  # noqa: F401 — imports all modules, registers tables
 
 revision: str = "082_add_missing_module_tables"

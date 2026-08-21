@@ -6,8 +6,9 @@ Adds quests and user_quests tables for daily/weekly practice quests and streak r
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision: str = "072_quests_user_quests"
 down_revision: str | None = "071_partner_profiles_journal"

@@ -7,8 +7,9 @@ maintenance_interval_days, last_serviced_at, extra_properties columns.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
+
+from alembic import op
 
 revision: str = "064_inventory_nomenklatura_erp"
 down_revision: str | None = "9c8d7e6f5a4b"

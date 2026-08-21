@@ -7,8 +7,9 @@ Adds aftercare_trigger_drop and medication_ids to care_routines.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
+
+from alembic import op
 
 revision: str = "070_health_adapt_aftercare"
 down_revision: str | None = "069_train_discipline_equip"

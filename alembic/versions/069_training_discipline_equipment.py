@@ -6,8 +6,9 @@ Adds equipment_item_ids, discipline_notes, and adapted_for_health to training_da
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
+
+from alembic import op
 
 revision: str = "069_train_discipline_equip"
 down_revision: str | None = "068_chastity_keyholder_suite"

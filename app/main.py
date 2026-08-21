@@ -80,9 +80,15 @@ async def lifespan(app: FastAPI):
 
     await start_reminders()
 
+    # DMS & Protocol background worker.
+    from app.reminders.dms_worker import start_dms_worker, stop_dms_worker
+
+    await start_dms_worker()
+
     yield
 
     # Shutdown.
+    await stop_dms_worker()
     from app.reminders.scheduler import stop_reminders
 
     await stop_reminders()
@@ -252,7 +258,6 @@ from app.api.ds import router as ds_router  # noqa: E402
 from app.api.health_dashboard import router as health_dashboard_router  # noqa: E402
 from app.api.insights_analytics import router as insights_analytics_router  # noqa: E402
 from app.api.llm_exchange import router as llm_exchange_router  # noqa: E402
-from app.api.protocols import router as protocols_router  # noqa: E402
 from app.api.media_albums import router as media_albums_router  # noqa: E402
 from app.api.media_exposure import public_router as media_showcase_public_router  # noqa: E402
 from app.api.media_exposure import router as media_exposure_router  # noqa: E402
@@ -260,6 +265,7 @@ from app.api.media_timeline import router as media_timeline_router  # noqa: E402
 from app.api.media_vault_v2 import router as media_vault_v2_router  # noqa: E402
 from app.api.persona_builder import router as persona_builder_router  # noqa: E402
 from app.api.promocodes import router as promocodes_router  # noqa: E402
+from app.api.protocols import router as protocols_router  # noqa: E402
 from app.api.security_2fa import router as security_2fa_router  # noqa: E402
 from app.telegram.bot import tg_router  # noqa: E402
 
@@ -292,8 +298,13 @@ app.include_router(security_2fa_router)
 
 if composition.tracker_active:
     from app.api.admin import router as admin_router  # noqa: E402
+    from app.api.agency import json_router as agency_json_router  # noqa: E402
+    from app.api.agency import router as agency_router  # noqa: E402
     from app.api.attachments import router as attachments_router  # noqa: E402
+    from app.api.billing import router as billing_router  # noqa: E402
     from app.api.calendar import router as calendar_router  # noqa: E402
+    from app.api.capabilities import json_router as capabilities_json_router  # noqa: E402
+    from app.api.capabilities import router as capabilities_router  # noqa: E402
     from app.api.care import json_router as care_json_router  # noqa: E402
     from app.api.care import router as care_router  # noqa: E402
     from app.api.catalog import json_router as catalog_json_router  # noqa: E402
@@ -301,6 +312,8 @@ if composition.tracker_active:
     from app.api.dashboard import router as dashboard_router  # noqa: E402
     from app.api.dashboard import session_json_router  # noqa: E402
     from app.api.diets import router as diets_router  # noqa: E402
+    from app.api.dynamics import json_router as dynamics_json_router  # noqa: E402
+    from app.api.dynamics import router as dynamics_router  # noqa: E402
     from app.api.entities import router as entities_router  # noqa: E402
     from app.api.health import json_router as health_json_router  # noqa: E402
     from app.api.health import router as health_router  # noqa: E402
@@ -319,6 +332,7 @@ if composition.tracker_active:
     from app.api.points import router as points_router  # noqa: E402
     from app.api.prompt_templates import json_router as prompt_templates_json_router  # noqa: E402
     from app.api.prompt_templates import page_router as prompt_templates_page_router  # noqa: E402
+    from app.api.protocols import router as protocols_router  # noqa: E402
     from app.api.references import router as references_router  # noqa: E402
     from app.api.task_flows import router as task_flows_router  # noqa: E402
     from app.api.tasks import router as tasks_router  # noqa: E402
@@ -345,6 +359,14 @@ if composition.tracker_active:
         media_verify_json_router,
         media_vault_router,
         knowledge_router,
+        protocols_router,
+        agency_router,
+        agency_json_router,
+        capabilities_router,
+        capabilities_json_router,
+        dynamics_router,
+        dynamics_json_router,
+        billing_router,
     ):
         app.include_router(_router)
 

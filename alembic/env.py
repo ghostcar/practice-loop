@@ -10,8 +10,10 @@ from app.config import settings
 from app.models import Base  # noqa: F401 — import all models for autogenerate
 from app.models.achievement import Achievement, UserAchievement  # noqa: F401
 from app.models.activity_log import ActivityLog  # noqa: F401
+from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: F401
 from app.models.aftercare import AftercareEntry  # noqa: F401
 from app.models.api_token import ApiToken  # noqa: F401
+from app.models.body_cycle import BodyCycleLog  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
 from app.models.care import (  # noqa: F401
     CareCourse,
@@ -27,7 +29,15 @@ from app.models.category import ActivityCategory  # noqa: F401
 from app.models.chastity import ChastityCheckIn  # noqa: F401
 from app.models.consent import ConsentRecord  # noqa: F401
 from app.models.device import ChastityDeviceEvent  # noqa: F401
+from app.models.ds_suite import (  # noqa: F401
+    AssignedDuty,
+    CapabilityGrant,
+    ChastityLockLog,
+    ManagedSubmissive,
+    WearCheckInLog,
+)
 from app.models.entity import Entity  # noqa: F401
+from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: F401
 from app.models.health import CycleEvent, CycleSettings, HealthState, LabRecord  # noqa: F401
 from app.models.insights import InsightFinding, InsightRun  # noqa: F401
 from app.models.inventory_category import InventoryCategory  # noqa: F401
@@ -52,13 +62,9 @@ from app.models.media import MediaAsset, MediaVerificationResult  # noqa: F401
 from app.models.medication import Medication, MedIntake, MedKit, MedSchedule, MedStock  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
-from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: F401
-from app.models.body_cycle import BodyCycleLog  # noqa: F401
-from app.models.ds_suite import AssignedDuty, CapabilityGrant, ChastityLockLog, ManagedSubmissive, WearCheckInLog  # noqa: F401
-from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
-from app.models.prompt_template import PromptTemplate  # noqa: F401
 from app.models.prompt_library import PromptLibraryItem  # noqa: F401
+from app.models.prompt_template import PromptTemplate  # noqa: F401
 from app.models.push_device import PushDevice  # noqa: F401
 from app.models.quest import Quest, UserQuest  # noqa: F401
 from app.models.reminder_log import ReminderLog  # noqa: F401

@@ -66,6 +66,7 @@ uploads/
 test-results/
 playwright-report/
 blob-report/
+.playwright-mcp/
 
 # Node/browser-test tooling (playwright etc. — never commit)
 node_modules/

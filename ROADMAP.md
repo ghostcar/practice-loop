@@ -1,7 +1,7 @@
 # Practice Loop — продуктовый roadmap
 
 > Статус: принятый порядок развития без календарных обещаний.
-> Актуально на: 18 августа 2026 года.
+> Актуально на: 20 августа 2026 года.
 > Текущая контрольная точка и блокеры: `CURRENT_STATE.md`.
 
 ## 1. Цель roadmap
@@ -176,8 +176,9 @@ history.
   контракты.
 
 Реализовано: access/refresh с ротацией и отзывом, push-device registry и provider abstraction,
-bearer media URL, dual-mode JSON для ключевых Timer/actions. Расширение JSON-first покрытия остаётся
-операционным долгом перед клиентом.
+bearer media URL, dual-mode JSON для ключевых Timer/actions. JSON-first расширен в v0.8.1:
+`GET /api/v2/analytics/matrix` — полная корреляционная матрица для мобильного/PWA. Расширение
+JSON-first покрытия остаётся операционным долгом перед клиентом.
 
 ### 5B. Кроссплатформенный клиент
 
@@ -214,11 +215,23 @@ Revoke/block действует немедленно; private original недо�
 
 ## 10. Этап 7 — Dominant/submissive
 
-### 7A. Manual Dominant Workspace — ❌ не начато
+**Статус: ⚠️ v0.8.1 добавил D/s Command Center (ADR-128/129/130) поверх зарегистрированных
+пользователей; полноценный ручной flow для внешних сабмиссивов — впереди.**
 
-Внешний submissive — локальная сущность, не User; versioned agreements; задания и отчёты;
-генератор текста; ручная отметка отправки; ручной импорт ответа и медиа; очередь проверки;
-pause/stop/close. Гостевого портала нет.
+### 7A. Manual Dominant Workspace — ⚠️ частично реализовано (v0.8.1)
+
+Реализовано в рамках зарегистрированного контура:
+- Keyholder Dashboard: зарегистрированные и **offline-сабмиссивы** (локальные сущности,
+  не обязаны быть User) — `ManagedSubmissive`, журнал lock/unlock/key_check/emergency_unlock;
+- задания и отчёты: назначение, approve/reject с проверкой;
+- D/s Command Center (`/ds/portal`) с когортной аналитикой;
+- гранулярные гранты делегирования (`CapabilityGrant`, 7 scopes) + Safe Word мгновенный отзыв;
+- AI Keyholder Wheel (ADR-113) — случайные продления/выдача ключа/инспекции;
+- wear check-ins (ADR-100) и Telegram-код привязки offline-сабмиссива (ADR-130).
+
+Осталось из исходного 7A: versioned agreements как отдельная сущность, ручной импорт ответа и
+медиа из внешних каналов, очередь проверки, pause/stop/close для внешних сабмиссивов, генератор
+текста для офлайн-контура. Гостевого портала нет.
 
 ### 7B. Transport adapters — после ручного flow
 
@@ -233,9 +246,19 @@ revoke/block мгновенно останавливает будущие дей
 
 ## 11. Этап 8 — закрытые пространства и Community
 
-Сначала закрытые пространства с модераторами, курируемые шаблоны, ограниченные публикации,
-экспорт/выход/блокировка, нагрузочные и abuse tests. Значительно позже — открытая лента, поиск,
-рекомендации, marketplace.
+**Статус: ⚠️ v0.8.1 реализовал прототипную обвязку Community (Top Agent, турниры, роли
+со-управления, делегирования); открытие — по gates ниже.**
+
+Реализовано в v0.8.1:
+- сообщества (Community), лента анонсов (CommunityPost);
+- автономный Top Agent (персона, строгость, автогенерация групповых квестов);
+- публичные турниры с метриками (compliance/xp/care/lock), топ-3 бейджи, iCal-экспорт;
+- гранулярные роли со-управления (co_top, keyholder, trainer, care_curator, tournament_organizer);
+- делегирование блоков профиля членов агенту (tasks/training/care/timer) с compliance_score.
+
+Осталось из исходного этапа: модераторы и модерация закрытых пространств, курируемые шаблоны,
+ограниченные публикации, экспорт/выход/блокировка, нагрузочные и abuse tests. Открытая лента,
+поиск, рекомендации и marketplace — значительно позже.
 
 ### Gate M7
 
@@ -341,7 +364,13 @@ Personal release gate S8 завершён, production-like compose находи�
 справочник `entities` очищен после backup; ближайшая продуктовая работа — новый модерируемый
 consensual-adult/BDSM starter catalog по `docs/catalog/ADULT_ACTIVITY_CATALOG.md`.
 
-Ближайшая инженерная очередь вне Social: off-site backups и restore drill → единый переносимый
-export/restore → observability → account recovery → enforcing CSP → transaction cleanup → media
-storage abstraction. Owner self-testing идёт параллельно и имеет приоритет над новыми крупными
-модулями. Мобильный клиент начинается после стабилизации этих контрактов.
+v0.8.1 (20.08.2026) добавил широкий пласт новых модулей: Media Vault + одноразовые ссылки,
+ИИ-агенты (персона, аудит выгорания, адаптивные тренировки, авто-триггеры, дайджест, голосовой
+ввод), аналитика корреляций, квесты, монетизация (тиры, промокоды, мульти-гейтвей оплата),
+Community (Top Agent, турниры, роли), D/s Command Center. Приоритеты инженерной очереди:
+Alembic-миграции для всех новых моделей v0.8.1 (см. `CURRENT_STATE.md`), замена payload-заглушек
+(Telegram broadcast, TTS, PDF, AI-сравнение медиа) реальными интеграциями, затем off-site backups
+и restore drill → единый переносимый export/restore → observability → account recovery →
+enforcing CSP → transaction cleanup → media storage abstraction. Owner self-testing идёт параллельно
+и имеет приоритет над новыми крупными модулями. Мобильный клиент начинается после стабилизации
+этих контрактов.

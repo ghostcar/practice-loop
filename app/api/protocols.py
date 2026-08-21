@@ -9,7 +9,7 @@ JSON (``rel_before``/``rel_after`` + offset_seconds).
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -311,11 +311,11 @@ async def protocols_start(
 ):
     proto = await _get_own_protocol(db, protocol_id, user.id)
     try:
-        anchor = datetime.fromisoformat(anchor_time) if anchor_time else datetime.now(timezone.utc)
+        anchor = datetime.fromisoformat(anchor_time) if anchor_time else datetime.now(UTC)
     except ValueError:
-        anchor = datetime.now(timezone.utc)
+        anchor = datetime.now(UTC)
     if anchor.tzinfo is None:
-        anchor = anchor.replace(tzinfo=timezone.utc)
+        anchor = anchor.replace(tzinfo=UTC)
     run = await start_protocol_run(db, user.id, proto.id, anchor)
     await db.flush()
     return RedirectResponse(url=f"/protocols/{run.id}/run", status_code=303)

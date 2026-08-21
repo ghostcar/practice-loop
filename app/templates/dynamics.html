@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+  <div class="border-b border-border pb-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-serif text-foreground font-semibold flex items-center gap-2">
+        {{ icon("layers", "w-6 h-6 text-accent") }}
+        {{ t.dynamics_title | default("Оркестрация режимов (Dynamics Engine)") }}
+      </h1>
+      <p class="text-sm text-foreground/60 mt-1">
+        {{ t.dynamics_desc | default("Комплексные сценарии и режимы с иммутабельным снимком правил (Frozen Snapshot).") }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Active Dynamic Run Banner -->
+  {% if active_run %}
+  <div class="card p-5 bg-accent/5 border border-accent/30 rounded-xl space-y-3 shadow-sm">
+    <div class="flex justify-between items-start">
+      <div>
+        <span class="px-2 py-0.5 text-xs font-semibold rounded bg-accent/20 text-accent uppercase">
+          Активный режим
+        </span>
+        <h2 class="text-lg font-medium text-foreground mt-1">
+          {{ active_run.frozen_dynamic_snapshot.get("title", "Режим") }}
+        </h2>
+        <p class="text-xs text-foreground/60">
+          Запущен: {{ active_run.started_at.strftime('%d.%m.%Y %H:%M') }}
+          {% if active_run.expires_at %} | Завершение: {{ active_run.expires_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}
+        </p>
+      </div>
+      <form action="/dynamics/runs/{{ active_run.id }}/end" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token if request.state.csrf_token else '' }}">
+        <button type="submit" class="btn btn-sm btn-outline text-rose-500 hover:bg-rose-500/10 text-xs">
+          Завершить режим
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Create new Dynamic Definition -->
+  <div class="card p-5 bg-card border border-border rounded-xl space-y-4 shadow-sm">
+    <h2 class="text-base font-medium text-foreground">
+      {{ t.create_dynamic_mode | default("Создать новый режим") }}
+    </h2>
+    <form action="/dynamics/new" method="POST" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token if request.state.csrf_token else '' }}">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-foreground/70 mb-1">Название режима</label>
+          <input type="text" name="title" required placeholder="Например: 14-дневный дисциплинарный марафон" class="input w-full text-sm bg-background border border-border rounded-lg p-2">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-foreground/70 mb-1">Описание</label>
+          <input type="text" name="description" placeholder="Краткое описание правил" class="input w-full text-sm bg-background border border-border rounded-lg p-2">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-foreground/70 mb-1">Agency Overlay (JSON)</label>
+          <input type="text" name="agency_overlay_json" placeholder='{"timer": {"max_extension_hours": 24}}' class="input w-full text-xs font-mono bg-background border border-border rounded-lg p-2">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-foreground/70 mb-1">Полномочия (через запятую)</label>
+          <input type="text" name="granted_capabilities" placeholder="timer.extend, protocol.start" class="input w-full text-xs font-mono bg-background border border-border rounded-lg p-2">
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button type="submit" class="btn btn-primary px-4 py-2 text-sm font-medium">
+          {{ t.save_definition | default("Сохранить шаблон режима") }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Definitions list -->
+  <div class="card p-5 bg-card border border-border rounded-xl space-y-4 shadow-sm">
+    <h2 class="text-base font-medium text-foreground">
+      {{ t.available_dynamic_modes | default("Сохранённые шаблоны режимов") }}
+    </h2>
+    {% if definitions %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for d in definitions %}
+      <div class="p-4 border border-border/70 rounded-lg bg-background/50 space-y-3">
+        <div class="flex justify-between items-start">
+          <h3 class="font-medium text-sm text-foreground">{{ d.title }}</h3>
+        </div>
+        {% if d.description %}
+        <p class="text-xs text-foreground/60">{{ d.description }}</p>
+        {% endif %}
+        <form action="/dynamics/{{ d.id }}/start" method="POST" class="flex gap-2 items-center pt-2">
+          <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token if request.state.csrf_token else '' }}">
+          <input type="number" name="duration_days" placeholder="Дней (напр. 7)" min="1" class="input text-xs w-28 p-1.5 border border-border rounded">
+          <button type="submit" class="btn btn-sm btn-primary text-xs flex-1">
+            Запустить
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-xs text-foreground/50">Нет созданных шаблонов режимов.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

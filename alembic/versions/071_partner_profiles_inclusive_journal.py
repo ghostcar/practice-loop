@@ -7,8 +7,9 @@ Adds partner_id to sj_entries.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision: str = "071_partner_profiles_journal"
 down_revision: str | None = "070_health_adapt_aftercare"

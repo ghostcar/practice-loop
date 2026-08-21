@@ -1,5 +1,5 @@
-import re
 from app.prefs import UserPrefs
+
 
 def test_prefs_new_block_visible_by_default():
     p = UserPrefs()

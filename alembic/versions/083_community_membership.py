@@ -15,7 +15,6 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 
 from alembic import op
-
 from app.models import Base  # noqa: F401 — imports all modules, registers tables
 
 revision: str = "083_community_membership"

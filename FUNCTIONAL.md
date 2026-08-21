@@ -83,6 +83,21 @@ sidebar (иконки + подписи).
 | `/aftercare` | Структурированный relief-only журнал восстановления и дебрифа (§34) |
 | `/locktimer` | Lock Timer: обзор, детали сессии, шаблоны (§16) |
 | `/social/*` | Социальная подсистема: профиль, связи, лента, верификация, модерация (§17) |
+| `/health/dashboard` | Health & Cycle Dashboard: визуализация BodyCycleLog и процедур ухода (§43) |
+| `/achievements/quests` | Quests Hub: интерактивный квест-хаб, прогресс, claim наград (§44) |
+| `/billing` | Billing Showcase: тиры подписки, акции, мульти-гейтвей чекаут, инвойсы (§45) |
+| `/communities/{id}/agent` | Community Top Agent: персона, турниры, делегирование блоков профиля (§46) |
+| `/communities/{id}/cockpit` | Community Cockpit: управление агентом и делегированиями (§46) |
+| `/llm/exchange` | LLM Exchange Hub: экспорт кросс-доменного промпта, парсинг ответа внешней ИИ (§47) |
+| `/insights/analytics` | Analytics Cockpit: 10-модульный корреляционный движок (§48) |
+| `/analytics/graph` | Интерактивный граф корреляций: матрица + кластеры (§48) |
+| `/insights/trajectory` | Траектория развития: динамика метрик по времени (§48) |
+| `/insights/report`, `/insights/export-medical` | Отчёт по инсайтам, медицинский экспорт (§48) |
+| `/ds/keyholder` | Keyholder Dashboard: управление сабмиссивами (§49) |
+| `/ds/portal` | D/s Command Center: мульти-сабмиссивный портал, чек-ины, когортная аналитика (§49) |
+| `/ds/my-top` | Портал Нижнего: гранты делегирования, safe-word revoke (§49) |
+| `/ds/checkins` | Wear Check-Ins: инспекция номерных пломб (§49) |
+| `/agent/persona-builder` | Конструктор ИИ-Персоны (§40.1) |
 
 ---
 
@@ -353,6 +368,23 @@ sidebar (иконки + подписи).
   `lock_llm_proposals`, `lock_audit_events`, `lock_job_receipts`, `lock_outbox_events`.
 
 Таблицы Social (`app/platform/social/models.py`) перечислены в §17.
+
+Таблицы новых модулей v0.8.1:
+- **Quests (§44)**: `quests`, `user_quests` (миграция 072).
+- **Billing (§45)**: `subscription_tiers`, `tier_feature_grants`, `temporary_feature_promotions`,
+  `payment_invoices`, `promocodes` (без миграций — технический долг, см. CURRENT_STATE.md).
+- **Community (§46)**: `communities`, `community_posts`, `community_top_agents`,
+  `community_member_delegations`, `community_tournaments`, `community_tournament_entries`,
+  `community_member_roles` (без миграций — тех. долг).
+- **Automation (§46)**: `automation_triggers` (без миграций — тех. долг).
+- **Media Vault v2 (§51)**: `one_time_media_tokens` (без миграций — тех. долг).
+- **Адаптивные программы (§38.1)**: `adaptive_programs`, `adaptive_program_steps` (миграция 074).
+- **Обслуживание инвентаря (§38.4)**: `equipment_maintenance_logs` (миграция 076).
+- **D/s-делегирование (§49)**: `managed_submissives`, `assigned_duties`, `chastity_lock_logs`,
+  `capability_grants`, `capability_grant_claim_attempts`, `wear_check_in_logs`
+  (миграции 077–081).
+- **AI-персоны (§40)**: `user_agent_personas`; **Лиги/Дуэли (§39)**: `user_league_tiers`,
+  `user_duels` (без миграций — тех. долг).
 
 ---
 
@@ -952,6 +984,476 @@ Timer. Модуль доступен через `/aftercare` и `/api/v2/afterca
   refresh-token rotation; при блокировке и reset все сохранённые refresh-токены удаляются.
 - Не реализованы: восстановление через email, verified смена email, приглашения и отдельный audit
   trail административных операций.
+
+---
+
+## 37. Зашифрованное Медиа-Хранилище (Media Vault)
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+- **AES-256-GCM шифрование** (`app/media/crypto.py`): все загружаемые медиа-файлы шифруются на
+  диске. 12-байтный случайный nonce генерируется для каждого файла; ключ шифрования берётся из
+  `CREDENTIALS_ENCRYPTION_KEY`. Дешифровка только через авторизованный API.
+
+- **Анти-утечка водяные знаки** (`app/media/watermark.py`): при отдаче файла накладывается
+  полупрозрачный overlay с `user_id` и временно́й меткой. Препятствует несанкционированному
+  распространению через скриншоты или повторную публикацию.
+
+- **Извлечение ключевых кадров из видео** (`app/media/video_frames.py`): видео-доказательства
+  проходят через frame-extraction — сохраняются N ключевых кадров для аудита и AI-анализа.
+
+- **EXIF-аудит и pHash антиспуфинг** (`app/media/anti_spoofing.py`): вычисляет dHash/pHash для
+  дедупликации и обнаружения повторно используемых изображений; анализирует EXIF-метаданные
+  (время съёмки, GPS, устройство) и выдаёт оценку подлинности `authenticity_score` (0..100).
+
+- **Мультиподписное HMAC-доказательство** (`app/media/multi_sig.py`): криптографическая
+  верификация целостности медиа-файла через HMAC-SHA256. Позволяет удостоверить, что файл не
+  изменялся после подписания.
+
+- **AI визуальное сравнение «До/После»** (`app/agent/media_comparison.py`): мультимодальный
+  AI-анализ пары фото «до» и «после» для оценки прогресса (используется multimodal LLM).
+
+- **Авто AI-теггинг и умные альбомы** (`app/agent/media_tagging.py`): семантические теги
+  (`[chastity, checkin, aftercare]`) + автоматическая категоризация в смарт-альбомы на основе
+  визуального содержимого.
+
+- **Временна́я шкала медиа-доказательств** (`/media/timeline`): хронологический интерактивный
+  просмотр медиа-доказательств в формате «Dark Archive» UI.
+
+---
+
+## 38. ИИ-Агенты: расширенные движки
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+### 38.1. Адаптивный генератор тренировочных программ
+
+`app/agent/training_generator.py` — генерирует 7-дневные адаптивные тренировочные программы на
+основе recovery-логов пользователя. Использует LLM для подбора нагрузки, упражнений и
+последовательности дней с учётом текущего уровня восстановления.
+
+Модели: `AdaptiveProgram` (`focus_domain`, `total_days`, `current_day`, `difficulty_level`,
+`status`) + `AdaptiveProgramStep` (`program_id`, `day_number`, `title`, `target_parameters`, `status`).
+
+### 38.2. AI визуальное сравнение медиа
+
+`app/agent/media_comparison.py` — мультимодальный AI-анализ фотопар «До / После» для прогресс-
+отчётов. Результат — структурированное сравнение изменений по ключевым параметрам.
+
+### 38.3. AI авто-теггинг и умные альбомы
+
+`app/agent/media_tagging.py` — автоматическое назначение семантических тегов медиа-файлам и их
+категоризация в умные альбомы. Примеры тегов: `chastity`, `checkin`, `aftercare`, `training`,
+`progress`.
+
+### 38.4. Контроль обслуживания инвентаря
+
+`app/agent/equipment_maintenance.py` — автоматическое отслеживание интервалов дезинфекции и
+ухода за предметами инвентаря. Функция `schedule_equipment_maintenance_reminders` опрашивает
+`EquipmentMaintenanceLog` и формирует чек-ин-напоминания для предметов, превысивших установленный
+интервал обслуживания.
+
+### 38.5. Ежемесячные визуальные отчёты прогресса
+
+`app/agent/pdf_reports.py` — `generate_monthly_user_report(db, user)` компилирует ежемесячную
+статистику активностей (всего/завершено/success_rate) в HTML-отчёт для личного архива.
+
+### 38.6. Тест готовности к сессии (Pre-Session Readiness)
+
+`app/agent/stress_test.py` — `evaluate_pre_session_readiness(answers: list[int])`:
+- 5 диагностических вопросов по шкале 1..5
+- Итоговый `readiness_score` (0..100%)
+- При `readiness_score < 30%` → `is_load_restricted = True` + рекомендация снизить интенсивность
+  на 50% или заменить сессию на Aftercare-отдых
+
+---
+
+## 39. Геймификация: Лиги и Дуэли
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+### 39.1. Лиги сообщества
+
+`app/agent/community_leagues.py` + `app/models/community_leagues.py`:
+- Тиры: **Бронза → Серебро → Золото → Мастер**
+- Модель `UserLeagueTier`: `user_id`, `tier` (bronze/silver/gold/master), `points_this_period`,
+  `promoted_at`
+- Автоматическое повышение при достижении порога очков за период
+- Понижение при падении ниже нижнего порога
+
+### 39.2. Еженедельные 1-на-1 Дуэли
+
+`app/agent/weekly_duels.py` + `app/models/duels.py`:
+- Модель `UserDuel`: `challenger_id`, `opponent_id`, `challenger_score`, `opponent_score`,
+  `status` (pending/active/completed), `winner_id`, `week_start`
+- Функция `evaluate_duel_result(db, duel_id)`: определяет победителя по счёту, завершает дуэль,
+  начисляет бонусные очки победителю
+
+---
+
+## 40. ИИ-Персона и Аудитор Безопасности
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+### 40.1. Конструктор ИИ-Персоны (`/agent/persona-builder`)
+
+`app/agent/persona_builder.py` + `app/models/persona.py` + `app/api/persona_builder.py`:
+- **4 архетипа**: Строгий Ключник (Strict Keyholder), Заботливый Куратор (Caring Curator),
+  Тренер Выносливости (Endurance Trainer), Анонимный Наблюдатель (Anonymous Observer)
+- **Строгость штрафов**: шкала 1..5
+- **Tone of Voice**: пользовательский свободный текст
+- **Регулятор проактивности**: насколько часто агент инициирует задачи и напоминания
+- Модель `UserAgentPersona`: `user_id`, `archetype`, `strictness_level`, `tone_of_voice`,
+  `proactivity_level`, `custom_instructions`
+- Страница `/agent/persona-builder` — Dark Archive UI с настройкой и сохранением персоны
+
+### 40.2. Аудитор безопасности и выгорания
+
+`app/agent/safety_auditor.py`:
+- Вычисляет индекс выгорания **0..100%** на основе истории нагрузки и recovery-логов
+- При `burnout_index > 70%` → активируется защитная заморозка нагрузки:
+  рекомендуется приостановить нагрузочные активности и перейти в режим восстановления
+- Информационные уведомления (не жёсткие блокировки — согласно ADR-129)
+
+---
+
+## 41. Монетизация, Сертификаты и Безопасность
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+### 41.1. Промокоды и Gift-подписки
+
+`app/models/promocodes.py` + `app/api/promocodes.py`:
+- Модель `PromoCode`: `code` (unique, индексируемый), `tier_grant`, `duration_days`,
+  `max_claims`, `claims_count`, `is_active`
+- `POST /billing/promocodes/claim` — активация промокода, мгновенный грант тира доступа
+- Валидации: лимит активаций, статус активности, верхний регистр кода
+
+### 41.2. Публичные цифровые сертификаты достижений
+
+`app/api/certificates.py` + `app/templates/certificate.html`:
+- `GET /certificates/{cert_id}/verify` — публичная страница верификации сертификата
+- Отображает: ID подлинности, название программы, подтверждение верификации в реестре
+- Dark Archive UI с иконкой трофея и криптографическим ID-подписью
+
+### 41.3. 2FA PIN Shield
+
+`app/api/security_2fa.py`:
+- `POST /security/verify-pin` — верификация PIN-кода для разблокировки чувствительных зон
+  (Media Vault, D/s-контроли)
+- Валидации: минимум 4 цифры, только цифровой ввод
+- Возвращает `vault_token` при успешной верификации
+- Статус: минимальная заглушка (будущая полная TOTP 2FA — в roadmap)
+
+---
+
+## 42. Telegram: Broadcast Engine
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/telegram/broadcast.py`:
+- `send_telegram_direct_notification(db, user_id, message_text)` — отправляет прямое
+  персональное уведомление в Telegram-чат пользователя через aiogram-бот
+- Используется для AI-агентных алертов (выгорание, дуэли, повышение в лиге, обслуживание
+  инвентаря)
+- Статус: интеграция с реальным aiogram-вебхуком — в roadmap; текущая реализация — payload-
+  заглушка с логированием
+
+---
+
+## 43. Health & Cycle Dashboard
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/api/health_dashboard.py` + шаблон `health_body_cycle.html`:
+- Страница `/health/dashboard` — сводная визуализация ежедневного check-in (`BodyCycleLog`:
+  настроение/энергия/сон/симптомы) и процедур ухода (`CareEntry`)
+- Сгруппированные карточки по датам, фаза цикла, динамика самочувствия
+- Объединяет модули Health + Cycle (§23) и Personal Care (§25) в единый обзор
+
+---
+
+## 44. Quests & Weekly Challenges (ADR-120)
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/api/quests.py` + `app/models/quest.py` + `app/seed_quests.py` + шаблон `quests.html`
+(миграция `072_add_quests_and_user_quests.py`):
+- Модель `Quest`: `title`, `description`, `quest_type` (daily / weekly / streak), `category`,
+  `target_count`, `reward_xp`, `badge_icon`
+- Модель `UserQuest`: `current_progress`, `status` (active / completed / claimed), `obtained_at`
+- Хаб `/achievements/quests` (алиас `/quests/challenges`): авто-сидирование каталога квестов,
+  назначение активных квестов пользователю
+- `POST /achievements/quests/{user_quest_id}/claim` — claim награды: статус `claimed` +
+  начисление `reward_xp` в `UserProgress`
+
+---
+
+## 45. Billing: тиры, акции, мульти-гейтвей оплаты
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/api/billing.py` + `app/billing/gateways.py` + `app/models/monetization.py` +
+`app/models/payment.py` + шаблон `billing.html`:
+
+### 45.1. Конструктор тиров подписки
+- `SubscriptionTier`: `code`, `name`, `rank` (иерархия 1..5), `price_monthly`, `is_default`
+- `TierFeatureGrant`: `feature_code` + `limit_value` (NULL = безлимит) — какие функции доступны
+  на тире
+- `TemporaryFeaturePromotion`: временная акция, открывающая feature-код на более низкие тиры
+  (`starts_at` / `ends_at` / `is_active`)
+
+### 45.2. Multi-Gateway Checkout
+- `POST /billing/checkout` — создание чекаута по `tier_code` + `gateway`
+- Провайдеры (`PRICES_MAP`): **Stripe**, **Telegram Stars**, **Crypto (NowPayments)**,
+  **ЮKassa (yoomoney)**; цены: standard 9.99$ / pro 19.99$ / ds_master 29.99$ / guild_master 49.99$
+- `PaymentInvoice`: `user_id`, `tier_code`, `gateway`, `external_invoice_id`, `amount`, `currency`,
+  `status` (pending → paid), `paid_at`
+- `POST /billing/webhook/{gateway}` — обработка вебхука: подтверждает платёж по
+  `external_invoice_id`, апгрейдит `user.subscription_tier`
+
+### 45.3. Взаимодействие с Промокодами (§41.1)
+- `POST /billing/promocodes/claim` — активация промокода, мгновенный грант тира
+
+---
+
+## 46. Community Top Agent, Турниры и Автоматизация
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+### 46.1. Автономный Top Agent сообщества
+
+`app/agent/community_agent.py` + `app/api/community_agent.py` +
+`app/models/community_agent.py`:
+- `CommunityTopAgent`: `persona_name` (по умолчанию «Domina Veritas»), `strictness_level` (1..5),
+  `auto_quests_enabled`, `lock_challenges_enabled`, `rules_manifest`, `last_audit_at`
+- `CommunityPost`: лента анонсов (тип, заголовок, контент)
+- `CommunityMemberDelegation`: делегирование блоков профиля агенту (`delegate_tasks`,
+  `delegate_training`, `delegate_care`, `delegate_timer`) + `compliance_score`
+- Страницы: `/communities/{id}/agent` (кокпит члена), `/communities/{id}/cockpit` (кокпит владельца)
+- Эндпоинты: `POST .../agent/configure`, `.../agent/quest/generate`, `.../agent/delegate`,
+  `.../cockpit/update-persona`
+
+### 46.2. Публичные турниры сообщества
+
+`app/agent/tournament_rewards.py`:
+- `CommunityTournament`: `title`, `metric_type` (compliance / xp / care / lock), `status`
+  (active / completed), `starts_at` / `ends_at`
+- `CommunityTournamentEntry`: `points`, `rank` — живой лидерборд
+- `POST .../tournaments/create`, `POST .../tournaments/{id}/join`
+- `award_tournament_prizes`: пересчёт итогов и награждение топ-3 эксклюзивными бейджами
+  (`tournament_gold_champion`, `tournament_silver_runner_up`, `tournament_bronze_podium`)
+- **iCal-экспорт турниров**: `GET /calendar/feed.ics` (RFC 5545, §52)
+
+### 46.3. Co-Governance роли
+
+`app/agent/community_roles.py` + `app/models/community_roles.py`:
+- `CommunityMemberRole`: гранулярные роли со-управления — `co_top`, `keyholder`, `trainer`,
+  `care_curator`, `tournament_organizer`
+- `assign_community_role(db, community_id, user_id, role_type)` — выдача роли с проверкой
+  валидности типа; `get_community_user_roles` — получение ролей пользователя
+
+### 46.4. Automation Triggers (AI-автогенерация триггеров)
+
+`app/agent/automation_triggers.py` + `app/models/automation.py`:
+- `AutomationTrigger`: `condition_type`, `threshold_value`, `action_type`, `action_params`,
+  `is_active`, `is_agent_generated`, `reasoning_notes`
+- `generate_agent_automation_triggers`: анализ истории за 14 дней →
+  - пропущенные задачи → триггер `missed_tasks_count → apply_penalty` (штраф XP);
+  - записи ухода → триггер `high_stress_score → generate_emergency_quest` (экстренный сеанс
+    восстановления);
+- `evaluate_user_triggers`: проверка активных триггеров по текущей метрике и выполнение действий
+
+---
+
+## 47. LLM Exchange Hub (Внешняя ИИ-модель)
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/api/llm_exchange.py` + `app/llm/pipeline/exchange.py` + шаблон `llm_exchange.html`:
+- Страница `/llm/exchange` (feature `llm_exchange`): справочники пользователя для матчинга
+- `POST /llm/exchange/export` — сборка и экспорт **кросс-доменного промпта** по выбранным
+  доменам для копирования во внешнюю ИИ-модель
+- `POST /llm/exchange/parse` — парсинг вставленного ответа внешней ИИ через `json_repair`
+  → структурированные items
+- `POST /llm/exchange/confirm` — гидрирование подтверждённых items: создание
+  `ActivitySession` + `ActivityLog` на каждый item, начисление +30 XP
+- Принцип комплаенса: внешней модели передаётся промпт-описание и справочники, а не
+  откровенный контент; финальные действия подтверждает пользователь
+
+---
+
+## 48. Analytics Engine v2 (корреляции, кластеры, траектория)
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/analytics/engine.py` + `app/api/insights_analytics.py` + `app/api/insights.py`:
+
+### 48.1. Всеохватывающий корреляционный движок
+- `run_full_analytics_suite(db, user, days, locale)` — попарный корреляционный анализ
+  (Pearson r) по всем модулям (задачи, тренировки, уход, здоровье, цикл, замеры, диеты и др.)
+- `compute_multivariable_clusters` — тройные кластеры сильных корреляций (A+B+C, топ-5)
+- Динамическая запись находок в `insight_findings` (section=`correlation`)
+- Страницы: `/insights/analytics` (Analytics Cockpit), `/analytics/graph` (интерактивный граф
+  корреляций)
+- REST: `GET /api/v2/analytics/matrix` — полная матрица для мобильного/PWA
+- `POST /insights/analytics/run` — запуск анализа с периодом 7..365 дней
+
+### 48.2. Траектория развития
+- `/insights/trajectory` + `POST /insights/trajectory/generate-map` — динамика метрик по
+  времени, карта изменений
+
+### 48.3. Отчёт и медицинский экспорт
+- `/insights/report` — сводный отчёт по инсайтам
+- `/insights/export-medical` + `POST /insights/export-medical/generate` — экспорт медицинских
+  данных (проверенные показатели для врача)
+
+---
+
+## 49. D/s Command Center и Keyholder Management (ADR-128/129/130)
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/api/ds.py` + `app/models/ds_suite.py` + шаблоны `ds_keyholder.html`, `ds_portal.html`,
+`ds_my_top.html`, `ds_checkins.html`:
+
+### 49.1. Keyholder Dashboard
+- `/ds/keyholder` — управление сабмиссивами (registered / offline)
+- `POST /ds/submissive/create` — создание профиля сабмиссива
+- `POST /ds/submissive/{id}/lock-action` — lock / unlock / key_check / emergency_unlock
+  с журналом `ChastityLockLog`
+- `POST /ds/duties/assign` — выдача задания; `POST /ds/duties/{id}/verify` — approve/reject
+  с проверкой исполнения
+
+### 49.2. D/s Command Center (портал)
+- `/ds/portal` — мульти-сабмиссивный командный центр: выбор сабмиссива, чек-ины,
+  когортная аналитика (`aggregate_keyholder_cohort_analytics`)
+- `POST /ds/submissive/{id}/ai-keyholder-spin` — «Колесо Фортуны» ИИ-ключника (ADR-113):
+  +24ч продления / выдача ключа / запрос инспекции пломбы
+- `POST /ds/submissive/{id}/telegram-code` — генерация 6-символьного кода привязки offline-
+  сабмиссива к Telegram-боту (ADR-130)
+
+### 49.3. Портал Нижнего (делегирование, ADR-129)
+- `/ds/my-top` — настройки делегирования: `CapabilityGrant` (scope_chastity, scope_tasks,
+  scope_training, scope_medication, scope_aftercare, scope_inventory, scope_health_view)
+- `POST /ds/grant/create` — генерация invite-кода `DS-XXXX...` (24ч)
+- `POST /ds/grant/claim` — активация кода Верхним; rate-limit 10 попыток / 15 мин; запрет
+  self-delegation; `with_for_update` против гонок
+- `POST /ds/grant/{id}/revoke` — **Safe Word**: мгновенный отзыв всех прав
+
+### 49.4. Wear Check-Ins (ADR-100)
+- `/ds/checkins` + `POST /ds/checkins/log` — фиксация чек-ина: номер пломбы, comfort_score,
+  заметки, фото (`is_verified_closed` при наличии фото)
+
+---
+
+## 50. Voice STT и TTS
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+- **STT-интрейк** (`app/agent/voice_hydration.py`): `process_voice_transcript_intake` —
+  обработка транскрипта голосовой заметки: извлечение выполненных/прерванных задач
+  (`[Voice Intake]`), метрик здоровья (вода/сон/настроение), создание ActivityLog, markdown-сводка
+  для Telegram
+- **TTS** (`app/telegram/voice_tts.py`): генерация голосовых ответов/уведомлений
+- Статус: STT-парсинг — эвристический (LLM-фолбэк зарезервирован); TTS — payload-заглушка
+  с логированием (реальная озвучка — в roadmap)
+
+---
+
+## 51. Media Vault v2: одноразовые ссылки
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+`app/api/media_vault_v2.py` + `app/models/media_vault.py` (таблица `one_time_media_tokens`):
+- `POST /media/one-time-token` — создание **burn-on-read** токена: `secrets.token_urlsafe(32)`,
+  срок 24 часа, привязка к `media_path`
+- `GET /media/view-once/{token}` — просмотр фото-доказательства с мгновенным уничтожением
+  токена (`is_burned`); просроченный токен → 410 Gone
+- Дополняет §37 (шифрование, водяные знаки, pHash, HMAC): одноразовый обмен — без
+  сохранения копии у получателя
+
+---
+
+## 52. Weekly Digest и iCal-календарь
+
+> Добавлено в v0.8.1-actual (2026-08-20).
+
+- **Weekly AI Digest** (`app/agent/weekly_digest.py`): `generate_weekly_user_digest` —
+  недельная сводка (всего/выполнено/прервано, completion rate) + предиктивный прогноз
+  вероятности достижения целей на следующую неделю (75%..98.5%), markdown для Telegram
+- **iCal Feed** (`app/api/calendar_v2.py`): `GET /calendar/feed.ics` — RFC 5545 iCalendar
+  событий активных турниров сообщества (§46.2) для импорта в любой календарь
+
+---
+
+## 53. Media Showcase: Динамический таймер и Неснимаемые публикации
+
+> Добавлено в v0.8.1-actual (2026-08-21).
+
+`app/models/media_exposure.py` + `app/api/media_exposure.py` + шаблон `media_showcase_item.html`:
+- `POST /media/exposure/create` — создание публичной или защищенной экспозиции:
+  1) **One-Time Burn-on-Read** (`exposure_type="one_time"`): уничтожение после первого открытия;
+  2) **Dynamic Countdown Timer** (`exposure_type="dynamic_timer"`): базовый таймер (1–168ч) с
+     интерактивным обратным отсчетом на странице;
+  3) **Immutable Permanent Showcase** (`exposure_type="permanent_immutable"`): неснимаемая
+     публикация, **защищенная от удаления пользователем** на всё время жизни профиля (удаляется
+     только при полном удалении аккаунта);
+- `POST /media/exposure/{token}/adjust-timer` — управление временем экспозиции: кнопки быстрого
+  продления (`+15m`, `+1h`, `+24h`) и сокращения (`-15m`, `-1h`) дедлайна;
+- `POST /media/exposure/{token}/revoke` — Kill Switch: мгновенный отзыв временной ссылки
+  (блокируется для неснимаемых публикаций);
+- Опциональная PIN-защита (4–16 символов) и счетчик просмотров (`view_count`).
+
+---
+
+## 54. Deep EXIF/GPS Stripper и Privacy Masking Studio
+
+> Добавлено в v0.8.1-actual (2026-08-21).
+
+`app/media/sanitizer.py` + `app/media/privacy_mask.py` + `app/api/media_albums.py`:
+- **EXIF/GPS Stripper**: автоматическое вырезание геолокации, серийных номеров камер и
+  персональных метаданных при любой загрузке изображений (`strip_exif_metadata`); генерация
+  серверного HMAC-SHA256 подтверждения подлинности;
+- **Privacy Masking Engine**: нанесение зон размытия (Gaussian blur) и blackout-закрашивания
+  на чувствительные области (лица, татуировки, фон, интимные зоны) перед экспортом или публикацией
+  через `POST /api/v2/media/redact`.
+
+---
+
+## 55. Smart Albums и Зашифрованный Пакетный Экспорт
+
+> Добавлено в v0.8.1-actual (2026-08-21).
+
+`app/services/smart_albums.py` + `app/api/media_albums.py`:
+- `GET /api/v2/media/smart-albums` — группировка медиа-архива по смарт-альбомам: *«Сессии»*,
+  *«Пломбы и замки»*, *«Замеры и тело»*, *«Процедуры ухода»*, *«Неснимаемая витрина»*;
+- `POST /api/v2/media/batch-export-zip` — выгрузка выбранных материалов в зашифрованный ZIP-архив
+  с опциональным пользовательским паролем;
+- `POST /api/v2/media/batch-delete` — пакетное удаление с **серверной защитой неснимаемых
+  постоянных публикаций** (постоянные дропы игнорируются при удалении и сохраняются).
+
+---
+
+## 56. Cross-Activity Dead Man's Switch (Сквозной Контроль Активностей)
+
+> Добавлено в v0.8.1-actual (2026-08-21).
+
+`app/models/dead_mans_switch.py` + `app/services/dead_mans_switch.py` + `app/api/dead_mans_switch.py`
++ шаблон `dms_dashboard.html`:
+- Сквозной монитор дедлайнов регулярности по ключевым модулям:
+  1) **Wear Check-Ins**: контроль инспекций номерных пломб (автоматический OCR-скан номера
+     пломбы через `app/media/ocr_seals.py` при чек-ине на `/ds/checkins`);
+  2) **Daily Tasks**: контроль выполнения регулярных задач;
+  3) **Medications**: контроль факта своевременного приёма медикаментов;
+  4) **General Heartbeat**: общий чек-ин активности;
+- Автоматический сдвиг дедлайна при активности (`record_activity_heartbeat`);
+- Фоновый аудитор (`evaluate_all_dead_mans_switches`): автоматический переход статусов
+  `active → warning → triggered_penalty` и эскалация штрафов при просрочке дедлайна;
+- Дашборд мониторинга: `/dms`.
+
+
+
 ## 57. Протоколы (Protocol Engine, R5, ADR-140)
 
 `app/models/protocol.py` + `app/services/protocol.py` + `app/api/protocols.py`

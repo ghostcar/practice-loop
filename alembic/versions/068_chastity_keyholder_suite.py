@@ -6,8 +6,9 @@ Adds chastity_device_id, keyholder_type, auto_pause_on_health_drop, extension_hi
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision: str = "068_chastity_keyholder_suite"
 down_revision: str | None = "067_inclusive_health_cycle_suite"

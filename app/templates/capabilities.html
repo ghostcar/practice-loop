@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+  <div class="border-b border-border pb-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-serif text-foreground font-semibold flex items-center gap-2">
+        {{ icon("key", "w-6 h-6 text-accent") }}
+        {{ t.capabilities_title | default("Управление полномочиями (Capabilities Grants)") }}
+      </h1>
+      <p class="text-sm text-foreground/60 mt-1">
+        {{ t.capabilities_desc | default("Делегирование прав на запуск протоколов, продление таймеров и управление планом.") }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Form to issue new grant -->
+  <div class="card p-5 bg-card border border-border rounded-xl space-y-4 shadow-sm">
+    <h2 class="text-base font-medium text-foreground">
+      {{ t.grant_new_capability | default("Выдать полномочие партнёру") }}
+    </h2>
+    <form action="/capabilities" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token if request.state.csrf_token else '' }}">
+      
+      <div>
+        <label class="block text-xs font-medium text-foreground/70 mb-1">Email получателя</label>
+        <input type="email" name="recipient_email" required placeholder="user@example.com" class="input w-full text-sm bg-background border border-border rounded-lg p-2">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-foreground/70 mb-1">Код полномочия</label>
+        <input type="text" name="capability_code" required placeholder="timer.extend или protocol.start" class="input w-full text-sm bg-background border border-border rounded-lg p-2">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-foreground/70 mb-1">Срок (дней)</label>
+        <input type="number" name="duration_days" placeholder="30 (или бессрочно)" min="1" class="input w-full text-sm bg-background border border-border rounded-lg p-2">
+      </div>
+
+      <div class="flex items-end">
+        <button type="submit" class="btn btn-primary w-full py-2 text-sm font-medium">
+          {{ t.issue_grant | default("Делегировать") }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Issued grants table -->
+  <div class="card p-5 bg-card border border-border rounded-xl space-y-4 shadow-sm">
+    <h2 class="text-base font-medium text-foreground">
+      {{ t.issued_grants | default("Выданные вами полномочия") }}
+    </h2>
+    {% if issued_grants %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-border text-xs text-foreground/60">
+            <th class="py-2">Код полномочия</th>
+            <th class="py-2">Получатель ID</th>
+            <th class="py-2">Статус</th>
+            <th class="py-2">Действует до</th>
+            <th class="py-2 text-right">Действие</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border/50">
+          {% for g in issued_grants %}
+          <tr>
+            <td class="py-2.5 font-mono text-xs text-accent font-semibold">{{ g.capability_code }}</td>
+            <td class="py-2.5 font-mono text-xs text-foreground/70">{{ g.recipient_id }}</td>
+            <td class="py-2.5">
+              <span class="px-2 py-0.5 text-xs rounded {% if g.status == 'active' %}bg-emerald-500/10 text-emerald-500{% else %}bg-zinc-500/10 text-zinc-500{% endif %}">
+                {{ g.status }}
+              </span>
+            </td>
+            <td class="py-2.5 text-xs text-foreground/60">{{ g.valid_until.strftime('%d.%m.%Y') if g.valid_until else 'Бессрочно' }}</td>
+            <td class="py-2.5 text-right">
+              {% if g.status == 'active' %}
+              <form action="/capabilities/{{ g.id }}/revoke" method="POST" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token if request.state.csrf_token else '' }}">
+                <button type="submit" class="text-xs text-rose-500 hover:underline">Отозвать</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-xs text-foreground/50">Нет выданных полномочий.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -227,7 +227,6 @@ async def test_inline_script_legacy_allowlist_is_accurate():
         "insights.html",
         "media_progress.html",
         "medication.html",
-        "protocol_builder.html",
         "sessions_live.html",
         "sessions_rules_builder.html",
         "training_builder.html",

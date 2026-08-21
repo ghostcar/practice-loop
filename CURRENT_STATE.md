@@ -1,103 +1,189 @@
-# Practice Loop — текущее состояние и ближайшие gates
+# Practice Loop — Текущее состояние
 
-> Снимок на: 18 августа 2026 года.
-> Репозиторий: `ghostcar/practice-loop`.
-> Это фактический документ; продуктовая цель описана в `PRODUCT_VISION.md`, порядок — в
-> `ROADMAP.md`, текущая рабочая очередь — в `PLAN.md`.
+> Версия: **v0.8.1-actual**
+> Обновлено: **2026-08-21**
+> Git-коммит: `20dc2d73`
+> Тесты: **1327 passed, 1 skipped** (17+ тестовых сюитов)
 
-## 1. Резюме
+---
 
-Practice Loop — работающий Personal-first веб-продукт: Activity Tracker, Today projection,
-Lock Timer, Personal Suite, Mobile Foundation, Telegram, LLM/BYOK и закрытая Social Platform.
-Social S0–S7 присутствует в коде, но не открыт внешним пользователям. Полноценного
-кроссплатформенного мобильного клиента, D/s delegation и Community пока нет.
+## Статус CI / качество
 
-Исходное дерево находится на единственной Alembic head **060 (`c1d2e3f4a5b6`)**. Последний
-полный воспроизводимый baseline на Python 3.11: **1154 passed, 1 skipped, 3 warnings**, Ruff check
-и format-check зелёные. Реальный production dump восстановлен в отдельную PostgreSQL 15 БД;
-совпали контрольные counts и migration head, uploads volume архивирован отдельно.
-
-Запущенный здесь production-like compose обновлён и здоров: образ содержит актуальный код, БД на
-head **060**. Полный Personal release gate, общий prod-smoke и Chromium smoke/a11y/usability
-**7/7** прошли успешно. Social при этом не изменялся.
-
-## 2. Проверенная исходная точка
-
-| Параметр | Состояние |
+| Проверка | Результат |
 |---|---|
-| Ветка | `main` |
-| Проверенный HEAD документации S3 | `1432ae4` (2026-08-18) |
-| Версия приложения | `0.8.0` |
-| Исходная Alembic head | `060_add_activity_session_history` (`c1d2e3f4a5b6`) |
-| Полный pytest baseline | **1154 passed, 1 skipped, 3 warnings** (S8, Python 3.11) |
-| Статические проверки | Ruff check + format-check ✅ |
-| PostgreSQL integration | migration roundtrip + consent concurrency + Personal CRUD/cascade ✅ |
-| Запущенный compose | health ✅; БД на 060; Personal smoke + Chromium 7/7 ✅ |
+| pytest (SQLite in-memory) | ✅ **1327 passed, 1 skipped** |
+| ruff check | ✅ 0 errors |
+| ruff format | ✅ чисто |
+| memoryctl lint | ✅ 0 issues |
+| Watchdog: icon-pack sprite | ✅ все иконки покрыты |
+| Watchdog: audit-s57 | ✅ inline-script allowlist точный |
+| Watchdog: transaction-boundary | ✅ commit-router allowlist точный |
+| Docker `/healthz` | ✅ `ok` |
 
-Счётчик тестов относится к проверенному S2-дереву; его нельзя автоматически переносить на
-будущий HEAD без нового полного прогона.
+---
 
-## 3. Функциональная матрица
+## Реализованные модули (все в production)
 
-| Область | Фактический статус | Главный остаток |
+### 1. Фундамент
+- Регистрация/логин, JWT + CSRF double-submit
+- Роли: user / moderator / admin
+- i18n EN/RU, темы dark/light/system, 3 акцентных набора (ember/sage/slate)
+- Кастомизация дашборда (блоки, плотность)
+
+### 2. Каталог активностей (Entity)
+- Единая модель + `params_schema` (диапазоны параметров)
+- Системные задачи (admin-seed) + пользовательские
+- Опт-ин (`user_entity_opt_in`): enabled, attitude, frequency, due dates
+- Публикация с авторством, категории и подкатегории (16 категорий)
+- `risk_level`, `penalty_enabled`, `gamification_config`
+
+### 3. LLM-пайплайн
+- Гибридная генерация: LLM выбирает из опт-ин набора, не создаёт контент
+- Режимы: `full` (имена) / `abstract` (opaque ID)
+- BYOK: Omniroute (по умолчанию), Groq, OpenRouter
+- JSON repair: `json.loads` → `json_repair` → regex → 3 попытки → ошибка + «Повторить»
+- Usage-метрики (токены, стоимость) хранятся всегда; `raw_llm_response` — опционально
+- Prompt-библиотека (`/llm/templates`)
+
+### 4. Задачи (ActivityLog)
+- 11-состояний (draft/planned/in_progress/completed/partially_completed/skipped/cancelled/stopped/substituted/not_applicable/review_needed)
+- Атомарные гарды завершения/прерывания, аудит `activity_task_history`
+- Генерация: LLM (`/tasks/generate`) и детерминированная
+- Подзадачи (checklists), выбранные параметры, очки/XP
+
+### 5. Сессии
+- Создание, участники (многопользовательские), правила, статусы
+- Принятие (accepted) → freeze: изменения штрафуются, append-only аудит
+- Cooperative-режим
+
+### 6. Геймификация
+- XP/уровни/серии/комбо/достижения
+- Штрафы + эскалация (×1, ×1.5, ×2...) + Redemption (отработки)
+- Points Economy v2: баланс, профили, транзакции, инвентарь, замеры, расписание
+- Недельные челленджи, случайные бонус-задачи
+
+### 7. Тренировки
+- TrainingDay планы: подзадачи с чек-листами, временны́е окна, журнал, фото-отчёты
+- LLM анализ дня (`analyze_training_day`)
+- Параллельные планы
+- Адаптивные программы (AdaptiveProgram/AdaptiveProgramStep): 7-дневные AI-генерируемые планы на основе recovery-логов
+
+### 8. Здоровье и Цикл
+- Ежедневный check-in: настроение/энергия/сон/симптомы (`BodyCycleLog`)
+- Цикл: расчётная фаза, история
+- Дашборд `/health/dashboard` с визуализацией BodyCycleLog и процедур ухода
+
+### 9. Замеры и тело
+- Утренние/вечерние замеры тела с графиками
+- Зоны тела
+
+### 10. Лекарства
+- Medication Organizer: лекарства, аптечки, остатки, расписание, факт приёма
+- Экспорт для врача
+
+### 11. Медиа-Хранилище (Media Vault)
+- **AES-256-GCM** шифрование при хранении (app/media/crypto.py)
+- Анти-утечка: водяные знаки с user_id + timestamp (app/media/watermark.py, Pillow)
+- Извлечение ключевых кадров из видео-доказательств (app/media/video_frames.py)
+- EXIF-аудит + pHash/dHash антиспуфинговый движок (app/media/anti_spoofing.py)
+- Мультиподписное HMAC криптодоказательство (app/media/multi_sig.py)
+- AI визуальное сравнение «До/После» (app/agent/media_comparison.py)
+- Авто AI-теггинг и умные альбомы (app/agent/media_tagging.py)
+- Временна́я шкала медиа-доказательств (`/media/timeline`)
+
+### 12. Lock Timer
+- Chastity management: обзор, детали сессии, шаблоны, нарушения тегов
+- Безопасная остановка всегда доступна (эмуляция)
+
+### 13. D/s Делегирование
+- Роли: Keyholder (Верхний) / Submissive (Нижний)
+- Добровольное делегирование полного или точечного контроля над блоками профиля
+- Данные о самочувствии доступны Верхнему в режиме просмотра
+- Нижний сохраняет цифровую автономию; жёсткие блокировки заменены информационными уведомлениями
+
+### 14. Социальная платформа
+- Профили, связи, лента активностей
+- Верификация, модерация
+- Обезличенная доска достижений
+- Pillory (публичный позор) с модерацией
+
+### 15. Аналитика и ИИ-агенты
+- Интерактивный граф корреляций (`/analytics/graph`) — матрица + сетевой граф кластеров
+- Analytics Engine v2 (`/insights/analytics`): попарный корреляционный анализ (Pearson) по всем
+  модулям, тройные кластеры сильных связей, динамические находки в `insight_findings`
+- Траектория развития (`/insights/trajectory`), сводный отчёт (`/insights/report`),
+  медицинский экспорт (`/insights/export-medical`)
+- Адаптивный генератор тренировочных программ (app/agent/training_generator.py)
+- Аудитор безопасности и выгорания (app/agent/safety_auditor.py): индекс 0..100%, защитная заморозка при >70%
+- ИИ-персона конструктор (`/agent/persona-builder`): 4 архетипа, строгость 1..5, Tone of Voice
+- Лиги сообщества (app/agent/community_leagues.py): Бронза→Серебро→Золото→Мастер
+- Еженедельные 1-на-1 Дуэли (app/agent/weekly_duels.py)
+- Контроль обслуживания инвентаря (app/agent/equipment_maintenance.py)
+- Тест готовности к сессии (app/agent/stress_test.py): 5 вопросов, 0..100%, автоснижение нагрузки при <30%
+- Ежемесячные визуальные отчёты прогресса (app/agent/pdf_reports.py)
+- Automation Triggers (app/agent/automation_triggers.py): AI-анализ 14-дневной истории →
+  авто-триггеры (штрафы за пропуски, экстренные сеансы ухода)
+- Weekly AI Digest (app/agent/weekly_digest.py): недельная сводка + предиктивный прогноз
+- LLM Exchange Hub (`/llm/exchange`): экспорт кросс-доменного промпта, парсинг ответа внешней
+  ИИ, гидрирование плана в сессию (комплаенс: без откровенного контента)
+- Voice STT-интрейк (app/agent/voice_hydration.py): голосовая заметка → задачи/метрики здоровья
+- Telegram Broadcast Engine (app/telegram/broadcast.py): прямые уведомления через aiogram
+
+### 16. Монетизация, безопасность и Community
+- Billing Showcase (`/billing`): тиры подписки (SubscriptionTier + TierFeatureGrant),
+  временные акции (TemporaryFeaturePromotion), мульти-гейтвей чекаут — **Stripe, Telegram Stars,
+  Crypto (NowPayments), ЮKassa**; PaymentInvoice + вебхуки; прайсы 9.99–49.99$
+- Промокоды и Gift-подписки (`POST /billing/promocodes/claim`)
+- Публичные цифровые сертификаты достижений (`GET /certificates/{id}/verify`)
+- 2FA PIN Shield (`POST /security/verify-pin`) для Media Vault и D/s-контролей
+- Community Top Agent (`/communities/{id}/agent`, `/cockpit`): автономная персона, лента
+  анонсов, делегирование блоков профиля (tasks/training/care/timer)
+- Публичные турниры (`POST .../tournaments/create|join`): метрики compliance/xp/care/lock,
+  топ-3 → эксклюзивные бейджи; iCal-фид `GET /calendar/feed.ics`
+- Co-Governance роли (app/agent/community_roles.py): co_top, keyholder, trainer, care_curator,
+  tournament_organizer
+- D/s Command Center (`/ds/portal`), Keyholder Dashboard (`/ds/keyholder`), Портал Нижнего
+  (`/ds/my-top`): CapabilityGrant по 7 scopes, Safe Word revoke, AI Keyholder Wheel (ADR-113),
+  Telegram-код привязки (ADR-130), Wear Check-Ins (ADR-100)
+- Media Vault v2: одноразовые burn-on-read ссылки (`/media/one-time-token`, `/media/view-once`)
+- Media Showcase (`/media/exposure/create`, `/media/showcase/{token}`): динамические таймеры экспозиции (+15m/+1h/+24h quick adjust), PIN-блокировка, просмотры, и **неснимаемые постоянные публикации** (не удаляемые до закрытия профиля)
+- Deep EXIF/GPS Stripper (`app/media/sanitizer.py`): автоматическая очистка метаданных и HMAC-proof
+- Privacy Masking Studio (`/api/v2/media/redact`): Gaussian blur, pixelation и blackout чувствительных зон
+- Smart Albums & Encrypted Batch Export (`/api/v2/media/smart-albums`, `/batch-export-zip`): категоризация, шифрованный ZIP, защита permanent-дропов
+- Cross-Activity Dead Man's Switch (`/api/v2/dms/status`, `/heartbeat`, `/dms` dashboard): сквозной контроль дедлайнов регулярности (пломбы, задачи, лекарства, общий heartbeat) с авто-эскалацией штрафов
+- Wear Check-Ins OCR Verification (`/api/v2/ds/checkins/ocr-verify`): распознавание номеров пломб
+- Health & Cycle Dashboard (`/health/dashboard`): визуализация BodyCycleLog + CareEntry
+
+### 17. Инфраструктура
+- Import/Export: CSV/JSON шаблоны, upload, API-push, полный экспорт
+- Admin Panel: seed каталога/LLM-пресетов, пользователи, тиры
+- Telegram-бот: aiogram 3.x, вебхук + исходящие уведомления
+- Calendar: шаблоны доступности + vacation-оверрайды
+- Scheduling: правила расписания дня
+- Диеты: планы, LLM-генерация, оценка, синергия с тренировками
+- Aftercare: structured relief-only журнал восстановления
+- Consent: неизменяемая история согласий
+
+---
+
+## Известные технические долги
+
+| Проблема | Статус | Приоритет |
 |---|---|---|
-| Auth, CSRF, privacy/export | ✅ работает | email verification/public hardening |
-| Профиль/пароль | ✅ `/account`, self-service пароль | изменение email и recovery по email отсутствуют |
-| Admin users | ✅ роли, disable/enable, явный password reset | audit trail и приглашения отсутствуют |
-| Activity Tracker + 11 статусов | ✅ accepted-session enforcement + append-only audit | дальнейший UX polish |
-| Каталог действий (`entities`) | 🧹 очищен: 0 записей после backup S8a | новый модерируемый 18+ starter set |
-| Today projection | ✅ overdue/review queue и локальные сутки | дальнейшая унификация CTA |
-| Training, Diet, Calendar, Points | ✅ работает | дальнейшая унификация контрактов |
-| Media Vault / attachments | ✅ foundation работает | storage abstraction, derivatives/retention polish |
-| LLM/BYOK | ✅ работает | расширять use cases только через consent/policy gates |
-| Durable consent | ✅ S1 | одно согласие на purpose+terms version; новые модули запрашиваются при включении |
-| BYOK disclosure | ✅ S1 | пользователь сам подключает провайдера и отвечает за его выбор, ключ и условия |
-| Lock Timer Core | ✅ C0–C9 | дальнейший subject/storage polish |
-| Device inventory / care | ✅ работает | расширение аналитики и UX обслуживания |
-| Wear check-ins | ✅ реализовано, head 055 | production deploy S5 |
-| Aftercare | ✅ реализовано, head 056 | production deploy S5 |
-| Personal Telegram | ✅ работает | локализация части bot-текстов |
-| Medication Organizer | ✅ работает | — |
-| Health + Cycle | ✅ работает, relief-only | — |
-| Sexual Journal | ✅ работает, Private Record | — |
-| Personal Care + products/courses | ✅ работает, relief-only | — |
-| Activity Catalog | ✅ работает | — |
-| Personal Insights | ✅ работает | причинность не заявляется; opt-in разделов |
-| Mobile Foundation | ✅ bearer/refresh, push registry, JSON/media + Personal action contracts | полноценный клиент отдельно |
-| Mobile client | ❌ не реализован | выбор Flutter/React Native и отдельный этап |
-| Social Platform S0–S7 | ✅ код, 🧪 закрытый rollout: Tracker adapter включён локально | public rollout, rate limits, email verification |
-| Chastity Social | ❌ не реализован | отдельное продуктовое решение |
-| D/s delegation / Community | ❌ не реализованы | после Social/capability gates |
+| 14 иконок не в sprite (award, check-circle-2, cpu, file-text, grid, journal, layers, repeat, share-2, shield-check, sliders, user-check, volume-2, zap) | Временно заменены ближайшими аналогами | Medium |
+| Alembic миграции не охватывают новые модели v0.8.1: PromoCode, UserAgentPersona, UserDuel, UserLeagueTier, SubscriptionTier, TierFeatureGrant, TemporaryFeaturePromotion, PaymentInvoice, AutomationTrigger, OneTimeMediaToken, Community/CommunityPost/CommunityTopAgent/CommunityMemberDelegation/CommunityTournament/CommunityTournamentEntry, CommunityMemberRole | Нужны новые миграции. Покрыты: 072 quests, 073 prompt library, 074 adaptive, 075 body_cycle, 076 equipment_maintenance, 077–081 D/s (managed_submissives, duties, lock_logs, grants, wear_check_ins) | High |
+| Мобильное приложение не реализовано | Запланировано (M4) | Roadmap |
+| `llm_exchange.html` содержит inline-script (в allowlist) | Нужен вынос в ES-модуль | Low |
+| Broadcast Engine, Voice TTS, PDF-отчёты (HTML), AI-сравнение медиа, антиспуфинг, multi-sig — частично payload-заглушки / симулированные результаты | Реальная интеграция — в roadmap | Medium |
 
-## 4. Consent и ответственность BYOK
+---
 
-- Согласие выдаётся один раз на конкретную цель и версию условий и действует всё время
-  пользования порталом, пока пользователь явно его не отзовёт или не изменится версия условий.
-- При первом входе запрашиваются согласия только для уже включённых профильных модулей. При
-  последующем включении нового модуля в профиле портал отдельно запрашивает нужное ему согласие.
-  Простое выключение функции не считается отзывом.
-- История consent append-only; повторный grant идемпотентен, revoke немедленно закрывает
-  чувствительное действие. Новая версия условий создаёт новую версию записи.
-- Для BYOK интерфейс отдельно сообщает, что провайдера, endpoint, модель и ключ принёс сам
-  пользователь. Пользователь отвечает за выбор провайдера, его ToS, тарифы и допустимость
-  передаваемых данных; портал всё равно не обходит provider safety и применяет собственные gates.
+## Следующие шаги (предлагаемые)
 
-## 5. Ближайшая последовательность
-
-1. Утвердить модель и starter set нового consensual-adult/BDSM каталога, затем заменить legacy seed.
-2. Автоматизировать off-site backup PostgreSQL+uploads и restore drill.
-3. Объединить privacy export и legacy full export в единый восстанавливаемый manifest.
-4. Добавить production observability и account recovery; затем enforcing CSP и transaction cleanup.
-5. Проводить owner self-testing параллельно и превращать найденные дефекты в browser regression.
-6. Mobile client и любые новые крупные контуры — только после этих эксплуатационных gates.
-7. Social/keyholder/public rollout остаётся отдельным замороженным направлением.
-   public rollout остаётся отдельным этапом после rate limits и email verification.
-
-Future Research по автономным физическим устройствам описан в `ROADMAP.md` §12 и не является
-разрешением на hardware-разработку или safety-critical управление.
-
-## 6. Правило обновления
-
-Факты меняются здесь и в `FUNCTIONAL.md`; порядок — в `ROADMAP.md`; рабочий gate — в `PLAN.md`.
-Generated `docs/state/*` обновляются только через `python -m tools.memoryctl facts`. Замороженные
-`memory/STATUS.md`, `memory/SESSIONS.md` и `memory/CHANGELOG.md` не дописываются.
+- Создать Alembic-миграции для новых моделей v0.8.1 (см. таблицу тех. долгов)
+- Добавить 14 недостающих иконок в sprite-pack
+- Реализовать настоящую 2FA (TOTP, не только PIN)
+- Написать реальную интеграцию Telegram broadcast/voice TTS с aiogram 3.x и STT-движком
+- Заменить симуляции AI-агентов (media_comparison, anti_spoofing, multi_sig, pdf_reports)
+  реальными вызовами
+- Мобильное приложение (M4 по roadmap)

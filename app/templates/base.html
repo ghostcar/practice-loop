@@ -27,6 +27,11 @@
     or (_path.startswith('/achievements') and 'achievements')
     or (_path.startswith('/api/v2/media') and 'media')
     or (_path.startswith('/media') and 'media')
+    or (_path.startswith('/protocols') and 'protocols')
+    or (_path.startswith('/dynamics') and 'dynamics')
+    or (_path.startswith('/agency') and 'agency')
+    or (_path.startswith('/capabilities') and 'capabilities')
+    or (_path.startswith('/billing') and 'billing')
     or (_path.startswith('/import') and 'import')
     or (_path.startswith('/notifications') and 'notifications')
     or (_path.startswith('/llm') and 'llm')
@@ -52,6 +57,10 @@
     'journal': t.nav_journal,
     'care': t.nav_care,
     'protocols': t.nav_protocols,
+    'dynamics': 'Режимы Динамики',
+    'agency': 'Автономия & Лимиты',
+    'capabilities': 'Делегирование Прав',
+    'billing': 'Подписки & Шлюзы',
     'aftercare': t.nav_aftercare,
     'consent': t.nav_consent,
     'activity_catalog': t.nav_activity_catalog,
@@ -105,6 +114,7 @@
     {{ nav_item('quests', '/achievements/quests', 'points', 'Квесты & Челленджи') }}
     {{ nav_item('schedule', '/api/v2/schedule/page', 'schedule', t.nav_schedule) }}
     {{ nav_item('protocols', '/protocols', 'routine', t.nav_protocols) }}
+    {{ nav_item('dynamics', '/dynamics', 'dynamics', 'Режимы Динамики') }}
   </div>
   {# ── Section 3: Тело & Рутина — body, care, inventory ── #}
   <div class="pl-nav-group">
@@ -132,6 +142,8 @@
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_social }}</div>
     {{ nav_item('ds_portal', '/ds/portal', 'dynamics', 'D/s Command Center') }}
+    {{ nav_item('capabilities', '/capabilities', 'security', 'Делегирование Прав') }}
+    {{ nav_item('agency', '/agency', 'settings', 'Автономия & Лимиты') }}
     {{ nav_item('communities', '/communities', 'community', 'Сообщества') }}
     {{ nav_item('social', '/social/profile', 'users', t.nav_social) }}
     {{ nav_item('social_pillory', '/social/pillory', 'lock', 'Позорный Столб') }}
@@ -144,6 +156,8 @@
   {% else %}
   <div class="pl-nav-group">
     <div class="pl-nav-group-title">{{ t.nav_group_social }}</div>
+    {{ nav_item('capabilities', '/capabilities', 'security', 'Делегирование Прав') }}
+    {{ nav_item('agency', '/agency', 'settings', 'Автономия & Лимиты') }}
     {% if not composition or composition.consent_enabled %}
     {{ nav_item('consent_matrix', '/consent/matrix', 'consent', 'Матрица Согласий') }}
     {% endif %}
@@ -162,6 +176,7 @@
     {{ nav_item('care_builder', '/care/builder', 'routine', 'Конструктор Ухода') }}
     {{ nav_item('llm_exchange', '/llm/exchange', 'ai', 'Внешняя ИИ-модель') }}
     {{ nav_item('sessions_ambient', '/sessions/ambient', 'session', 'Аудио-Эмбиент') }}
+    {{ nav_item('billing', '/billing', 'points', 'Подписки & Шлюзы') }}
     {{ nav_item('locations', '/locations', 'location', t.nav_locations) }}
     {{ nav_item('import', '/import', 'import', t.nav_import) }}
   </div>

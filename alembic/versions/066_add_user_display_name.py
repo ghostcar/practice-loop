@@ -11,6 +11,7 @@ Create Date: 2026-08-19
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "066_add_user_display_name"

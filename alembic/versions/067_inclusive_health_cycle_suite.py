@@ -7,8 +7,9 @@ Adds bbt, session_id, post_session_data to cycle_events and health_states.
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 revision: str = "067_inclusive_health_cycle_suite"
 down_revision: str | None = "066_add_user_display_name"

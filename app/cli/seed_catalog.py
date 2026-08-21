@@ -196,10 +196,10 @@ async def _apply_plan(database_url: str, plan: dict[str, Any], user_id: str | No
     # Импорт всех моделей — чтобы mapper registry разрешил FK (как в alembic/env.py).
     import app.models.catalog  # noqa: F401
     import app.models.category  # noqa: F401
-    import app.models.life  # noqa: F401
-    import app.models.user  # noqa: F401
     import app.models.entity  # noqa: F401 — ActivityCategory.entities → Entity
+    import app.models.life  # noqa: F401
     import app.models.opt_in  # noqa: F401 — Entity.user_entity_opt_ins
+    import app.models.user  # noqa: F401
     from app.models.catalog import ActivityCatalogItem
     from app.models.category import ActivityCategory
     from app.models.entity import Entity

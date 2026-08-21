@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+  <div class="border-b border-border pb-4">
+    <h1 class="text-2xl font-serif text-foreground font-semibold flex items-center gap-2">
+      {{ icon("shield-check", "w-6 h-6 text-accent") }}
+      {{ t.agency_title | default("Уровни автономности и границы (Agency Policy)") }}
+    </h1>
+    <p class="text-sm text-foreground/60 mt-1">
+      {{ t.agency_desc | default("Настройте уровень автономности ИИ и партнёра для каждого домена. Ваши ограничения действуют как непреодолимый защитный барьер.") }}
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for dom in domains %}
+    <div class="card p-5 bg-card border border-border rounded-xl space-y-4 shadow-sm">
+      <div class="flex items-center justify-between border-b border-border/50 pb-3">
+        <h2 class="text-lg font-medium text-foreground capitalize flex items-center gap-2">
+          {{ icon("sliders", "w-5 h-5 text-accent/80") }}
+          {{ dom.domain }}
+        </h2>
+        <span class="px-2.5 py-1 text-xs font-mono rounded bg-accent/10 text-accent font-semibold uppercase">
+          {{ dom.default_level }}
+        </span>
+      </div>
+
+      <form action="/agency/{{ dom.domain }}" method="POST" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token if request.state.csrf_token else '' }}">
+        
+        <div>
+          <label class="block text-xs font-medium text-foreground/70 mb-1.5">
+            {{ t.default_agency_level | default("Уровень автономности по умолчанию") }}
+          </label>
+          <select name="default_level" class="input w-full text-sm bg-background border border-border rounded-lg p-2.5">
+            {% for lvl in agency_levels %}
+            <option value="{{ lvl }}" {% if lvl == dom.default_level %}selected{% endif %}>
+              {{ lvl | upper }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-foreground/70 mb-1.5">
+            {{ t.constraints_json | default("Непреодолимые ограничения (JSON Bounds)") }}
+          </label>
+          <textarea name="constraints_json" rows="2" placeholder='{"max_duration_min": 60, "forbidden_tags": ["high_risk"]}' class="input w-full text-xs font-mono bg-background border border-border rounded-lg p-2">{{ dom.constraints | tojson if dom.constraints else '' }}</textarea>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button type="submit" class="btn btn-sm btn-primary px-4 py-1.5 text-xs">
+            {{ t.save | default("Сохранить") }}
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
