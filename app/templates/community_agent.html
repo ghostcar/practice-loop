@@ -111,7 +111,7 @@
                         <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                         <select name="user_id" class="bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded px-1.5 py-1 text-[10px] text-[color:var(--text)]" required>
                             {% for e in t.entries %}
-                            <option value="{{ e.user_id }}">{{ e.user_id[:8] }}</option>
+                            <option value="{{ e.user_id }}">{{ e.user_id|string|truncate(8, true, '') }}</option>
                             {% endfor %}
                         </select>
                         <input type="number" name="points" value="10" min="1" class="bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded px-1.5 py-1 text-[10px] text-[color:var(--text)] w-14" required>
