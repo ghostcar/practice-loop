@@ -99,3 +99,45 @@ def test_full_personal_loop(page) -> None:
     page.wait_for_load_state("networkidle")
     real_errors = [e for e in page._console_errors if "favicon" not in e.lower()]  # type: ignore[attr-defined]
     assert not real_errors, f"console errors: {real_errors[:5]}"
+
+
+def test_protocol_builder_duration_picker(page) -> None:
+    """R10.5 regression: JS-added step rows must render the duration picker.
+
+    The server-side macro renders fields, but rows created by the "Add step"
+    button are generated in protocol_builder.js — those must include the five
+    duration inputs + preset chips (regression: empty Duration section).
+    """
+    email = _fresh_email()
+    password = "Smoke-Pass-2026!"
+
+    page.goto(f"{BASE_URL}/register")
+    page.fill('input[name="email"]', email)
+    page.fill('input[name="password"]', password)
+    page.click('button[type="submit"]')
+    page.wait_for_url(lambda u: "/dashboard" in u or "/login" in u, timeout=20_000)
+    if "/login" in page.url:
+        page.fill('input[name="email"]', email)
+        page.fill('input[name="password"]', password)
+        page.click('button[type="submit"]')
+        page.wait_for_url(lambda u: "/dashboard" in u, timeout=20_000)
+
+    page.goto(f"{BASE_URL}/protocols/new")
+    page.wait_for_load_state("networkidle")
+    page.click("#add-step")
+    page.wait_for_selector(".step-row .duration-picker", timeout=10_000)
+
+    row = page.locator(".step-row").first
+    # Five duration inputs with the step_0_* naming.
+    for unit in ("months", "days", "hours", "minutes", "seconds"):
+        assert row.locator(f'input[name="step_0_{unit}"]').count() == 1, f"missing step_0_{unit}"
+    # Preset chips present and clickable: 15м -> 15 minutes, 0 h/months.
+    row.locator('.dp-preset[data-seconds="900"]').click()
+    minutes = row.locator('input[name="step_0_minutes"]').input_value()
+    hours = row.locator('input[name="step_0_hours"]').input_value()
+    assert minutes == "15", f"expected 15 minutes after 15м preset, got {minutes}"
+    assert hours == "0", f"expected 0 hours, got {hours}"
+
+    # No console errors (favicon 404s benign).
+    real_errors = [e for e in page._console_errors if "favicon" not in e.lower()]  # type: ignore[attr-defined]
+    assert not real_errors, f"console errors: {real_errors[:5]}"
