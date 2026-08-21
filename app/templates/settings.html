@@ -224,6 +224,18 @@
             </div>
         </section>
 
+        <!-- Medication gamification (ADR-137) -->
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="med-game-h">
+            <h2 id="med-game-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_med_gamification }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_med_gamification_hint }}</p>
+            <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                <input type="checkbox" name="med_gamification" value="on" class="accent-[color:var(--accent)]"
+                       {{ 'checked' if prefs.med_gamification else '' }}>
+                <span class="text-sm text-[color:var(--text)]">{{ t.settings_med_gamification_label }}</span>
+            </label>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_med_gamification_note }}</p>
+        </section>
+
         <div class="flex justify-end">
             <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
                 {{ t.settings_save }}

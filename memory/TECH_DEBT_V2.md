@@ -32,7 +32,7 @@
 |---|---|---|---|
 | D1 | Entity vs activity_catalog (два каталога, FK между ними) | P1 | `entities` 194 + `activity_catalog` 25 |
 | D2 | 4 системы делегирования: SocialGrant, CapabilityGrant, CommunityMemberDelegation, CommunityMemberRole | P1 | models social + ds_suite + community |
-| D3 | Medication relief-only (health/journal) vs adherence XP (Telegram /med) | P1 | `app/telegram/bot.py:1207`, `app/api/health.py` |
+| D3 | Medication relief-only vs adherence XP — **решено ADR-137** (prefs.med_gamification, default ON, positive-only) | ~~P1~~ ✅ | `app/prefs.py`, `app/gamification/medication.py` |
 | D4 | CareCourse/MedicationSchedule/Training/AdaptiveProgram/Diet/ScheduleRule/LockTaskRule — кандидаты под Protocol | P2 | 7+ моделей с похожей семантикой последовательностей |
 | D5 | Feature flag vs user composition vs agency — один boolean на 4 смысла | P1 | config.py flags vs user_prefs |
 

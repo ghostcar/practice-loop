@@ -75,6 +75,7 @@ async def save_settings(
     reminder_tz: str = Form(""),
     enabled_modules: list[str] = Form(default=[]),
     display_name: str = Form(""),
+    med_gamification: str = Form("off"),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
     raw = sanitize_prefs(
@@ -96,6 +97,9 @@ async def save_settings(
             "enabled_modules": enabled_modules,
             "reminder_time": reminder_time,
             "reminder_tz": reminder_tz,
+            # ADR-137: checkbox sends "on" only when checked; unchecked =
+            # missing field → "off". Stored as bool by sanitize_prefs.
+            "med_gamification": med_gamification == "on",
         }
     )
 

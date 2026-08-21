@@ -1,9 +1,13 @@
 """Health + Cycle foundation API (M3 Personal Suite, Шаг 13, ROADMAP §7 4D).
 
-Health-модуль — **relief-only** (PD-013): никакой игровой интеграции, никаких
-штрафов. Все записи Private Record (DATA_LIFECYCLE.md). Сигналы Health могут
-только открыть окно/смягчить/поставить на паузу/остановить — но в этом модуле
-никаких сигналов наружу нет (адаптеры — в Tracker/Timer).
+Health-модуль — **relief-only** (PD-013, ADR-137): медицинские записи не
+участвуют в геймификации и не штрафуются. Все записи Private Record
+(DATA_LIFECYCLE.md). Сигналы Health могут только открыть окно/смягчить/поставить
+на паузу/остановить — но в этом модуле никаких сигналов наружу нет
+(адаптеры — в Tracker/Timer).
+
+Примечание: лекарства — отдельный модуль с настраиваемым positive-only
+adherence-XP (ADR-085/137, prefs.med_gamification) — см. app/api/medication.py.
 
 Страницы:
 - GET  /health                    — check-in сегодня + timeline + лабораторные + Cycle

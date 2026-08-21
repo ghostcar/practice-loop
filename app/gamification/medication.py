@@ -1,8 +1,14 @@
-"""Medication adherence gamification (ADR-085 — softened PD-013).
+"""Medication adherence gamification (ADR-085/137 — configurable PD-013).
 
-Positive-only: an on-time intake may earn XP and achievements (capped per day).
+Positive-only: an on-time intake may earn XP and achievements (capped per day)
+while the per-user pref ``prefs.med_gamification`` is enabled (default ON).
 A missed/skipped intake NEVER subtracts points and never penalizes — negative
 gamification of health is prohibited. Medical signals remain relief-only.
+
+Policy (ADR-137): gamification is NOT prohibited by the medication domain —
+it is a user-owned, configurable positive reinforcement. When the user turns
+``med_gamification`` off, intakes are recorded as usual but no XP or
+achievements are awarded and no notifications are created.
 
 Achievements (seeded via SEED_ACHIEVEMENTS + migration 042):
 - ``med_first``        — first on-time intake
@@ -188,6 +194,12 @@ async def on_medication_taken(
             return result
 
         prefs, locale = await _load_prefs(db, user_id)
+        # ADR-137: positive-only gamification is user-configurable. When
+        # disabled, record nothing game-related — the intake itself is logged
+        # by the caller and remains untouched.
+        if not prefs.med_gamification:
+            return result
+
         progress = await get_or_create_progress(db, user_id)
 
         # XP with daily cap

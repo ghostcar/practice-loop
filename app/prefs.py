@@ -132,6 +132,7 @@ class UserPrefs:
     insights_auto_days: int = 7
     reminder_time: str = ""  # HH:MM, "" = inherit settings.reminder_time
     reminder_tz: str = ""  # IANA name, "" = inherit settings.reminder_tz
+    med_gamification: bool = True  # ADR-137: positive-only adherence XP (default ON)
 
     # --- convenience ------------------------------------------------------
 
@@ -217,6 +218,9 @@ def sanitize_prefs(raw: dict | None) -> dict:
     # Per-user reminder schedule (ADR-098): invalid/empty → inherit global.
     out["reminder_time"] = raw.get("reminder_time") if _valid_hhmm(raw.get("reminder_time")) else ""
     out["reminder_tz"] = raw.get("reminder_tz") if _valid_tz(raw.get("reminder_tz")) else ""
+    # ADR-137: medication adherence gamification is configurable, default ON.
+    # Absent value = ON (preserves legacy behavior for existing profiles).
+    out["med_gamification"] = bool(raw.get("med_gamification", True))
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

@@ -240,3 +240,109 @@ class TestAdherenceStreak:
         await _make_med_schedule(db_session, test_user, "Vitamin D")
         streak = await adherence_streak(db_session, test_user.id)
         assert streak == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADR-137 — configurable medication gamification (positive-only)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestMedicationGamificationToggle:
+    """ADR-137: prefs.med_gamification gates adherence XP/achievements.
+
+    Default is ON (legacy behavior preserved). When OFF, an on-time intake is
+    still recorded but awards no XP and no achievements.
+    """
+
+    async def test_default_prefs_gamification_enabled(self, db_session, test_user: User) -> None:
+        from app.prefs import prefs_from_dict
+
+        prefs = prefs_from_dict(test_user.prefs)
+        assert prefs.med_gamification is True
+
+    async def test_prefs_gamification_disabled_awards_no_xp(
+        self, db_session, test_user: User, auth_client
+    ) -> None:
+        from app.gamification.medication import on_medication_taken
+        from app.models.medication import MedIntake, MedSchedule
+        from app.prefs import raw_dict, sanitize_prefs
+
+        # Turn gamification off via prefs (as /settings would persist).
+        raw = sanitize_prefs(raw_dict(test_user.prefs))
+        raw["med_gamification"] = False
+        test_user.prefs = raw
+        await db_session.flush()
+
+        med = Medication(user_id=test_user.id, name="Vitamin D", kind="supplement")
+        db_session.add(med)
+        await db_session.flush()
+        sched = MedSchedule(
+            user_id=test_user.id,
+            medication_id=med.id,
+            dose_quantity=1,
+            dose_unit="tab",
+            frequency_type="daily",
+            times_per_day=1,
+        )
+        db_session.add(sched)
+        await db_session.flush()
+
+        db_session.add(
+            MedIntake(
+                user_id=test_user.id,
+                medication_id=med.id,
+                schedule_id=sched.id,
+                scheduled_at=datetime.now(UTC),
+                taken_at=datetime.now(UTC),
+                status="taken",
+                quantity_taken=1,
+            )
+        )
+        await db_session.flush()
+
+        result = await on_medication_taken(db_session, test_user.id, med.name, on_time=True)
+        await db_session.commit()
+
+        # Intake recorded, but no gamification side effects.
+        assert result["xp_earned"] == 0
+        assert result["new_achievements"] == 0
+        intakes = (await db_session.execute(select(MedIntake).where(MedIntake.user_id == test_user.id))).scalars().all()
+        assert len(intakes) == 1
+        assert intakes[0].status == "taken"
+
+    async def test_prefs_gamification_enabled_awards_xp(
+        self, db_session, test_user: User
+    ) -> None:
+        from app.gamification.medication import on_medication_taken
+        from app.models.medication import MedIntake, MedSchedule
+
+        med = Medication(user_id=test_user.id, name="Vitamin D", kind="supplement")
+        db_session.add(med)
+        await db_session.flush()
+        sched = MedSchedule(
+            user_id=test_user.id,
+            medication_id=med.id,
+            dose_quantity=1,
+            dose_unit="tab",
+            frequency_type="daily",
+            times_per_day=1,
+        )
+        db_session.add(sched)
+        await db_session.flush()
+
+        db_session.add(
+            MedIntake(
+                user_id=test_user.id,
+                medication_id=med.id,
+                schedule_id=sched.id,
+                scheduled_at=datetime.now(UTC),
+                taken_at=datetime.now(UTC),
+                status="taken",
+                quantity_taken=1,
+            )
+        )
+        await db_session.flush()
+
+        result = await on_medication_taken(db_session, test_user.id, med.name, on_time=True)
+        await db_session.commit()
+        assert result["xp_earned"] > 0

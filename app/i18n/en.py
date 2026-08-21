@@ -1065,6 +1065,18 @@ EN = {
         "Expanded mode: the assistant may give recommendations and advice. It is not a medical professional — "
         "verify anything important with a doctor."
     ),
+    # ADR-137 — Medication gamification (configurable)
+    "settings_section_med_gamification": "Medication gamification",
+    "settings_med_gamification_hint": (
+        "Policy ADR-137: medication participates in gamification only as positive "
+        "reinforcement — an on-time intake may earn XP and achievements (capped per day). "
+        "A missed dose never subtracts points and is never penalized."
+    ),
+    "settings_med_gamification_label": "Award XP and achievements for on-time intake",
+    "settings_med_gamification_note": (
+        "Turn off to record intakes without game mechanics. Intake logging and "
+        "reminders keep working."
+    ),
     # Step 17f — Per-user reminders (ADR-098)
     "settings_section_reminders": "Reminders",
     "settings_reminder_hint": (
