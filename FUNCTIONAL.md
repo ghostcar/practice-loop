@@ -952,3 +952,49 @@ Timer. Модуль доступен через `/aftercare` и `/api/v2/afterca
   refresh-token rotation; при блокировке и reset все сохранённые refresh-токены удаляются.
 - Не реализованы: восстановление через email, verified смена email, приглашения и отдельный audit
   trail административных операций.
+## 57. Протоколы (Protocol Engine, R5, ADR-140)
+
+`app/models/protocol.py` + `app/services/protocol.py` + `app/api/protocols.py`
++ шаблоны `protocols.html` / `protocol_builder.html` / `protocol_run.html`:
+- **Протокол** — упорядоченный набор шагов (`ProtocolStep`) с типами (`ProtocolStepType`:
+  wait/checklist/timer/care/medication/note), таймингом (`TimingSpecType`:
+  rel_before/rel_after + `offset_seconds`) и якорями (`ProtocolAnchorType`).
+- UI: список протоколов + активные раны (`/protocols`), визуальный конструктор шагов
+  с `duration_picker` и селектором типа (`/protocols/new`, `/{id}/edit`),
+  интерактивный чеклист рана с прогресс-баром и эмуляцией отметки по ADR-129
+  (`/{id}/run`).
+- Раны: `ProtocolRun` (scheduled/active/completed/aborted) + журнал `ProtocolStepLog`
+  с `planned_at`/`completed_at`; завершение шага — `POST /protocols/{run_id}/steps/{step_id}/complete`.
+- Все мутации — через сервисы с `ActorContext(owner_manual)`, авторство фиксируется.
+
+## 58. Community Governance: роли, модерация, передача владения (ADR-143)
+
+`app/models/community_roles.py` (`CommunityMemberRole`) + эндпоинты в `app/api/communities.py`:
+- **Передача владения** — `POST /communities/{id}/transfer-ownership` (только текущий
+  владелец, активному участнику).
+- **Со-модераторы** — `POST /communities/{id}/moderators/add` и `/remove`
+  (владелец назначает/снимает роль модератора; `role_type` хранится в
+  `CommunityMemberRole`, набор ролей участника агрегируется на странице сообщества).
+- Список ролей и проверка прав — через сервис `list_member_roles`/`assign_member_role`.
+
+## 59. Agency & Capability (D/s делегирование v2, ADR-145)
+
+`app/models/agency.py` (`AgencyPolicy`, `AgencyLevel`) + `app/models/capability.py`
+(`CapabilityGrantV2`, миграция 085) + `app/models/dynamic.py` (`DynamicDefinition`,
+`DynamicRun`, миграция 086):
+- **Agency** — политика «Полного Делегирования» (ADR-129): уровни
+  (`AgencyLevel`), границы контроля Верхнего над блоками профиля Нижнего.
+- **Capability** — точечные гранты возможностей (`CapabilityGrantV2`), проверяются
+  на мутациях; фоновые условия в `services/`.
+- **Dynamic Engine** — сквозные динамические условия/триггеры с персистентным
+  журналом ранов.
+
+## 60. Навигация «Тёмный архив»: 5 разделов и feature-гейтинг (R10.1, ADR-141/144)
+
+`app/templates/base.html` (макрос `nav_groups()`, общий для десктоп-сайдбара и
+мобильного drawer):
+- Пункты сгруппированы в 5 разделов: **Сегодня / План / Тело & Рутина / Связи / Система**.
+- Пункты выключенных модулей скрываются по `ProductComposition` (`composition.*_enabled`)
+  теми же флагами, которыми регистрируются роуты (журнал, каталог, здоровье/уход/послеуход/
+  медикаменты, инсайты, матрица согласий, LockTimer, соцсеть).
+- Мёртвые шаблоны прототипа удалены (R9.1): `dashboard.html`, `components/live_camera_observer.html`.

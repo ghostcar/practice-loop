@@ -7,10 +7,9 @@ timer_operational, social_operational.
 import re
 import warnings
 
-warnings.filterwarnings("ignore")  # passlib/bcrypt env artifact
-
-import pytest
 from app.platform.composition import ProductComposition, build_product_composition
+
+warnings.filterwarnings("ignore")  # passlib/bcrypt env artifact
 
 
 async def test_nav_renders_five_sections(auth_client):
@@ -27,7 +26,8 @@ async def _nav_links(auth_client) -> list[tuple[str, str]]:
     r = await auth_client.get("/dashboard")
     assert r.status_code == 200
     # <a href="..." class="pl-nav-item ..."> … <span class="pl-nav-label">Label</span>
-    return re.findall(r'<a href="(/[^"]+)"[^>]*class="pl-nav-item[^"]*".*?<span class="pl-nav-label">([^<]+)</span>', r.text, re.DOTALL)
+    pattern = r'<a href="(/[^"]+)"[^>]*class="pl-nav-item[^"]*".*?<span class="pl-nav-label">([^<]+)</span>'
+    return re.findall(pattern, r.text, re.DOTALL)
 
 
 async def test_nav_hides_disabled_modules(auth_client, monkeypatch):

@@ -48,11 +48,12 @@ async def protocols_page(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    protos = (
-        (await db.execute(select(ProtocolDefinition).where(ProtocolDefinition.user_id == user.id).order_by(ProtocolDefinition.created_at.desc())))
-        .scalars()
-        .all()
+    protos_result = await db.execute(
+        select(ProtocolDefinition)
+        .where(ProtocolDefinition.user_id == user.id)
+        .order_by(ProtocolDefinition.created_at.desc())
     )
+    protos = list(protos_result.scalars().all())
     runs = (
         await db.execute(
             select(ProtocolRun)
@@ -122,11 +123,10 @@ async def protocol_run_page(
     if run is None:
         return RedirectResponse(url="/protocols", status_code=303)
 
-    logs = (
-        (await db.execute(select(ProtocolStepLog).where(ProtocolStepLog.run_id == run.id).order_by(ProtocolStepLog.planned_at)))
-        .scalars()
-        .all()
+    logs_result = await db.execute(
+        select(ProtocolStepLog).where(ProtocolStepLog.run_id == run.id).order_by(ProtocolStepLog.planned_at)
     )
+    logs = list(logs_result.scalars().all())
     return templates.TemplateResponse(
         request=request,
         name="protocol_run.html",
@@ -364,7 +364,10 @@ async def _get_own_protocol(db: AsyncSession, protocol_id: uuid.UUID, user_id: u
 
     proto = (
         await db.execute(
-            select(ProtocolDefinition).where(ProtocolDefinition.id == protocol_id, ProtocolDefinition.user_id == user_id)
+            select(ProtocolDefinition).where(
+                ProtocolDefinition.id == protocol_id,
+                ProtocolDefinition.user_id == user_id,
+            )
         )
     ).scalar_one_or_none()
     if proto is None:

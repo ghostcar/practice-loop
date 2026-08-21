@@ -77,7 +77,11 @@ def test_index_code_check_without_deps(tmp_path):
     assert info.get("status") == "stale"
 
 
-def test_index_code_blocked_without_omniroute_config(tmp_path):
+def test_index_code_blocked_without_omniroute_config(tmp_path, monkeypatch):
+    # Isolate from the host env: the real project .env may leak OMNIROUTE_*
+    # into os.environ via dotenv loading in conftest/app imports.
+    monkeypatch.delenv("OMNIROUTE_HOST", raising=False)
+    monkeypatch.delenv("OMNIROUTE_API_KEY", raising=False)
     root = _init_repo(tmp_path)
     info = v.index_code(root, mode="full")
     # tmp repo has no .env → either deps absent (available=False) or
@@ -89,7 +93,9 @@ def test_index_code_blocked_without_omniroute_config(tmp_path):
         assert "reason" in info
 
 
-def test_omniroute_settings_reads_dotenv(tmp_path):
+def test_omniroute_settings_reads_dotenv(tmp_path, monkeypatch):
+    monkeypatch.delenv("OMNIROUTE_HOST", raising=False)
+    monkeypatch.delenv("OMNIROUTE_API_KEY", raising=False)
     (tmp_path / ".env").write_text("OMNIROUTE_HOST=llm.example.ru\nOMNIROUTE_API_KEY=sk-test-123\n", encoding="utf-8")
     s = v.omniroute_settings(tmp_path)
     assert s["OMNIROUTE_HOST"] == "llm.example.ru"

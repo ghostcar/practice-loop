@@ -70,6 +70,8 @@ ignore = ["B008"]  # Depends in FastAPI defaults is idiomatic
 # Data-table authoring: SPECS keeps keyword-arg dict() for readability and
 # long RU/EN content lines exceed the code line-length on purpose.
 "tools/adult_catalog_promote.py" = ["C408", "E501"]
+# Alembic migration docstrings carry long RU/EN revision notes (content, not code).
+"alembic/versions/*.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

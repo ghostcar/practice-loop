@@ -96,10 +96,7 @@ def main() -> None:
     for py in sorted(API.rglob("*.py")):
         for tpl, rpath in parse_file(py):
             # route path may already be absolute; else prefix from main include or file router
-            if rpath.startswith("/"):
-                final = rpath
-            else:
-                final = "/" + rpath
+            final = rpath if rpath.startswith("/") else "/" + rpath
             pages.append((tpl, final.rstrip("/"), str(py.relative_to(ROOT))))
 
     print(f"pages with TemplateResponse: {len(pages)}")
@@ -129,7 +126,7 @@ def main() -> None:
         print("  (none)")
     print("\n=== Sample linked pages ===")
     shown = 0
-    for tpl, path, src in sorted(pages, key=lambda kv: kv[1]):
+    for tpl, path, _src in sorted(pages, key=lambda kv: kv[1]):
         if path in href_norm and shown < 8:
             print(f"  {path:50s} {tpl}")
             shown += 1
