@@ -1,11 +1,12 @@
 {# Quantity picker (R2.3, REFACTOR_ROADMAP_V2.md).
-   Точный ввод количества: поля Мин / Макс / Цель + селектор единиц
-   (раз, ударов, подходов, мл, капель, шт, кг) + быстрые пресеты.
+   Точный ввод количества: поля [Мин] [Макс / Цель] + селектор единиц
+   (раз, ударов, подходов, мл, капель, шт, кг) + быстрые чипы пресетов
+   (5, 10, 15, 20, 30, 50, 100) — клик заполняет Мин и Макс.
    Usage: {% from "components/quantity_picker.html" import quantity_picker with context %}
-          {{ quantity_picker('count', min_value=5, max_value=20, target_value=10, unit='times') }}
-   Имена полей: {name}_min, {name}_max, {name}_target, {name}_unit. #}
+          {{ quantity_picker('count') }}
+   Имена полей: {field_name_prefix}_min / _max / _unit. #}
 
-{% macro quantity_picker(name, min_value=None, max_value=None, target_value=None, unit='times', show_target=true, prefix='qp') -%}
+{% macro quantity_picker(field_name_prefix) -%}
 {% set t_loc = t if t is defined else {} %}
 {% set units = [
     ('times',  'unit_times',  'раз'),
@@ -16,55 +17,47 @@
     ('pcs',    'unit_pcs',    'шт'),
     ('kg',     'unit_kg',     'кг'),
 ] %}
-<div class="quantity-picker space-y-3" data-qp-prefix="{{ prefix }}">
+<div class="quantity-picker space-y-3" data-qp="{{ field_name_prefix }}">
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
     <label class="flex flex-col gap-1">
       <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t_loc.get('qp_min', 'Min') }}</span>
-      <input type="number" min="0" step="1" name="{{ name }}_min" value="{{ min_value if min_value is not none else '' }}"
+      <input type="number" min="0" step="1" name="{{ field_name_prefix }}_min" value=""
              class="px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]">
     </label>
     <label class="flex flex-col gap-1">
-      <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t_loc.get('qp_max', 'Max') }}</span>
-      <input type="number" min="0" step="1" name="{{ name }}_max" value="{{ max_value if max_value is not none else '' }}"
+      <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t_loc.get('qp_max', 'Max / Target') }}</span>
+      <input type="number" min="0" step="1" name="{{ field_name_prefix }}_max" value=""
              class="px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]">
     </label>
-    {% if show_target %}
     <label class="flex flex-col gap-1">
-      <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t_loc.get('qp_target', 'Target') }}</span>
-      <input type="number" min="0" step="1" name="{{ name }}_target" value="{{ target_value if target_value is not none else '' }}"
-             class="px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]">
+      <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t_loc.get('qp_unit', 'Unit') }}</span>
+      <select name="{{ field_name_prefix }}_unit" class="px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]">
+        {% for val, key, ru in units %}
+        <option value="{{ val }}">{{ t_loc.get(key, ru) }}</option>
+        {% endfor %}
+      </select>
     </label>
-    {% endif %}
   </div>
-
-  <label class="flex flex-col gap-1 sm:max-w-[220px]">
-    <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t_loc.get('qp_unit', 'Unit') }}</span>
-    <select name="{{ name }}_unit" class="px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-sm text-[color:var(--text)] min-h-[38px]">
-      {% for val, key, ru in units %}
-      <option value="{{ val }}" {% if val == unit %}selected{% endif %}>{{ t_loc.get(key, ru) }}</option>
-      {% endfor %}
-    </select>
-  </label>
 
   <div class="flex flex-wrap items-center gap-1.5">
     <span class="text-[10px] uppercase tracking-wide text-[color:var(--text-muted)] font-semibold">{{ t_loc.get('qp_presets', 'Quick presets') }}:</span>
-    {% for lo, hi in [(1,5), (5,10), (10,30), (30,100)] %}
+    {% for n in [5, 10, 15, 20, 30, 50, 100] %}
     <button type="button" class="qp-preset px-2 py-1 rounded-lg text-[11px] font-medium pl-surface-soft border border-[color:var(--border)] text-[color:var(--text-secondary)] hover:border-[color:var(--accent)] hover:text-[color:var(--text)] transition-colors"
-            data-lo="{{ lo }}" data-hi="{{ hi }}">{{ lo }}–{{ hi }}</button>
+            data-value="{{ n }}">{{ n }}</button>
     {% endfor %}
   </div>
 </div>
 <script>
 (function () {
   'use strict';
-  var root = document.querySelector('[data-qp-prefix="{{ prefix }}"]');
+  var root = document.querySelector('[data-qp="{{ field_name_prefix }}"]');
   if (!root) return;
   root.querySelectorAll('.qp-preset').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var min = root.querySelector('input[name$="_min"]');
       var max = root.querySelector('input[name$="_max"]');
-      if (min) min.value = btn.dataset.lo;
-      if (max) max.value = btn.dataset.hi;
+      if (min) min.value = btn.dataset.value;
+      if (max) max.value = btn.dataset.value;
     });
   });
 })();

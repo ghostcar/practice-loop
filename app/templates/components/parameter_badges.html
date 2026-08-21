@@ -1,8 +1,8 @@
 {# Parameter badges (R2.2, REFACTOR_ROADMAP_V2.md).
    Рендерит params_schema (ADR-041: список определений ИЛИ legacy-компактная map)
    как человекочитаемые чипы: время, интенсивность, зоны, инвентарь, количество.
-   Usage: {% from "components/parameter_badges.html" import parameter_badges with context %}
-          {{ parameter_badges(entity.params_schema) }}
+   Usage: {% from "components/parameter_badges.html" import render_param_badges with context %}
+          {{ render_param_badges(entity.params_schema) }}
    Схемы:
      - ADR-041 list:  [{"key": "duration_minutes", "title": "Duration", "type": "duration",
                          "min": 10, "max": 20, "required": true}, ...]
@@ -66,7 +66,7 @@
   {%- endif -%}
 {%- endmacro %}
 
-{% macro parameter_badges(schema, max_chips=12) -%}
+{% macro render_param_badges(schema, max_chips=12) -%}
 {% if schema %}
 <div class="flex flex-wrap gap-1.5 mt-2" role="list" aria-label="{{ t.get('pb_params', 'Parameters') if t is defined else 'Parameters' }}">
   {% if schema is mapping %}
@@ -101,4 +101,9 @@
   {% endif %}
 </div>
 {% endif %}
+{%- endmacro %}
+
+{# Обратная совместимость: прежнее имя макроса. #}
+{% macro parameter_badges(schema, max_chips=12) -%}
+{{ render_param_badges(schema, max_chips) }}
 {%- endmacro %}

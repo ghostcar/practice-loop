@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/parameter_badges.html" import parameter_badges with context %}
+{% from "components/parameter_badges.html" import render_param_badges with context %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
@@ -150,7 +150,7 @@
  <summary class="text-xs text-[color:var(--text-muted)] cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400">
  {{ t.catalog_parameters_label }} ▾
  </summary>
- {{ parameter_badges(entity.params_schema) }}
+ {{ render_param_badges(entity.params_schema) }}
  </details>
  {% endif %}
 

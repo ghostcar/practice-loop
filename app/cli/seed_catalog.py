@@ -1,25 +1,31 @@
 """CLI-сидер каталога (R2.1, REFACTOR_ROADMAP_V2.md).
 
-Парсит JSON-манифесты из ``data/seed/`` и загружает их в справочные таблицы:
+Читает ВСЕ JSON-манифесты из ``data/seed/`` (23 файла: activity review-батчи,
+full catalog, foundation, extensions, taxonomy, inventory, vocabulary и др.) и
+загружает в справочные таблицы:
 
-- ``adult_category_taxonomy_source.v1.json`` → ``activity_categories``;
-- ``adult_activity_full_catalog.v1.json``   → ``activity_catalog_items``;
-- ``adult_inventory_source.v1.json``        → ``inventory_items``.
+- ``activity_categories`` — из ``adult_category_taxonomy_source.v1.json``
+  (13 source-категорий + 2 обязательные platform extensions) + категории,
+  встречающиеся в карточках, но отсутствующие в таксономии;
+- ``activity_catalog_items`` — системные записи (``owner_id = NULL``) из всех
+  карточек ``cards`` (full_catalog / foundation / extensions / editorial);
+- ``entities`` — базовые системные Entity (``owner_id = NULL, is_public = True``,
+  ``content_status`` по манифесту) из тех же карточек;
+- ``inventory_items`` — инвентарь из ``adult_inventory_source.v1.json``
+  (``seed_ready=true``). Таблица user-scoped (``user_id`` NOT NULL, колонки
+  ``is_system`` нет — R0-аудит), поэтому грузится только с ``--user-id``.
 
 Idempotent: повторный запуск не создаёт дубликаты (upsert по уникальным ключам —
-slug для категорий, name+category для каталога, name+user для инвентаря).
+slug для категорий и Entity, name+category для каталога, name+user для
+инвентаря). ``is_system`` в схеме не существует — системность выражается
+``owner_id = NULL`` (см. ``app/api/catalog.py: is_system = owner_id is None``).
 
-``inventory_items`` — пользовательская таблица (``user_id`` NOT NULL, колонки
-``is_system`` нет — см. R0-аудит, dead/inventory scoping). Поэтому инвентарь
-загружается только при передаче ``--user-id``; без него секция пропускается с
-предупреждением. Категории и каталог — системные (``owner_id = NULL``).
-
-Гейт записи: по умолчанию скрипт печатает план (dry-run); фактическая запись —
-только с ``--apply`` (как ``tools/adult_catalog_import.py``, ADR-105).
+Гейт записи: по умолчанию печатает план (dry-run); запись — только с ``--apply``
+(как ``tools/adult_catalog_import.py``, ADR-105).
 
 Usage:
     python -m app.cli.seed_catalog                              # dry-run план
-    python -m app.cli.seed_catalog --apply --database-url ...   # запись каталога
+    python -m app.cli.seed_catalog --apply --database-url ...   # запись
     python -m app.cli.seed_catalog --apply --database-url ... --user-id <uuid>
 """
 
@@ -33,8 +39,15 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_SEED_DIR = Path("data/seed")
+
+# Манифесты, из которых берутся карточки активностей (ключ "cards")
+CARD_MANIFESTS = (
+    "adult_activity_full_catalog.v1.json",
+    "adult_activity_foundation.v1.json",
+    "adult_activity_extensions.v1.json",
+    "adult_activity_editorial_candidates.v1.json",
+)
 CATEGORY_FILE = "adult_category_taxonomy_source.v1.json"
-CATALOG_FILE = "adult_activity_full_catalog.v1.json"
 INVENTORY_FILE = "adult_inventory_source.v1.json"
 
 # family → group_type для inventory_items (справочник group_type модели)
@@ -55,11 +68,21 @@ def _load_json(path: Path) -> dict[str, Any]:
         return json.load(fh)
 
 
+def _title_of(card: dict[str, Any]) -> str:
+    t = card.get("title") or {}
+    return t.get("ru") or t.get("en") or card.get("slug", "")
+
+
+def _summary_of(card: dict[str, Any]) -> str | None:
+    s = card.get("summary") or {}
+    return s.get("ru") or s.get("en")
+
+
 # ── Парсинг манифестов ────────────────────────────────────────────────
 
 
 def parse_categories(data: dict[str, Any]) -> list[dict[str, Any]]:
-    """13 source-категорий + 2 обязательные platform extensions."""
+    """Категории из taxonomy + platform extensions."""
     out: list[dict[str, Any]] = []
     for idx, cat in enumerate(data.get("categories", [])):
         out.append(
@@ -82,17 +105,33 @@ def parse_categories(data: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
-def parse_catalog_items(data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Карточки full catalog → записи activity_catalog_items."""
+def parse_cards(seed_dir: Path) -> list[dict[str, Any]]:
+    """Собрать все карточки из CARD_MANIFESTS, дедуп по slug (первый выигрывает)."""
+    seen: set[str] = set()
     out: list[dict[str, Any]] = []
-    for card in data.get("cards", []):
-        title = (card.get("title") or {}).get("ru") or (card.get("title") or {}).get("en") or card.get("slug", "")
-        summary = (card.get("summary") or {}).get("ru") or (card.get("summary") or {}).get("en")
+    for name in CARD_MANIFESTS:
+        path = seed_dir / name
+        if not path.exists():
+            continue
+        data = _load_json(path)
+        for card in data.get("cards", []):
+            slug = card.get("slug")
+            if not slug or slug in seen:
+                continue
+            seen.add(slug)
+            out.append(card)
+    return out
+
+
+def parse_catalog_items(cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Карточки → записи activity_catalog_items."""
+    out: list[dict[str, Any]] = []
+    for card in cards:
         tags = [card["content_kind"]] if card.get("content_kind") else None
         out.append(
             {
-                "name": title,
-                "description": summary,
+                "name": _title_of(card),
+                "description": _summary_of(card),
                 "category_slug": card.get("category"),
                 "tags": tags,
                 "domains": None,
@@ -101,8 +140,36 @@ def parse_catalog_items(data: dict[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+def parse_entities(cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Карточки → базовые системные Entity (owner_id=None, is_public=True)."""
+    out: list[dict[str, Any]] = []
+    for card in cards:
+        slug = card["slug"]
+        content_status = card.get("content_status") or card.get("status")
+        if content_status not in ("reviewed", "approved", "draft"):
+            content_status = "approved"  # owner decision (tools/adult_catalog_import.py)
+        out.append(
+            {
+                "slug": slug,
+                "real_name": _title_of(card),
+                "short_title": _title_of(card)[:200],
+                "category": card.get("category") or "other",
+                "category_slug": card.get("category"),
+                "tags": [card["content_kind"]] if card.get("content_kind") else None,
+                "type": "one_time",
+                "owner_id": None,
+                "is_public": True,
+                "params_schema": card.get("proposed_parameters") or card.get("parameters"),
+                "risk_level": card.get("risk_level") or "not_assessed",
+                "automation_allowed": bool(card.get("automation_allowed", False)),
+                "content_status": content_status,
+            }
+        )
+    return out
+
+
 def parse_inventory_items(data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Нормализованные предметы inventory source."""
+    """Нормализованные предметы inventory source (seed_ready=true)."""
     out: list[dict[str, Any]] = []
     for item in data.get("items", []):
         if not item.get("seed_ready"):
@@ -135,14 +202,15 @@ async def _apply_plan(database_url: str, plan: dict[str, Any], user_id: str | No
     import app.models.opt_in  # noqa: F401 — Entity.user_entity_opt_ins
     from app.models.catalog import ActivityCatalogItem
     from app.models.category import ActivityCategory
+    from app.models.entity import Entity
     from app.models.life import InventoryItem
 
     engine = create_async_engine(database_url)
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    counts = {"categories": 0, "catalog": 0, "inventory": 0, "skipped": 0}
+    counts = {"categories": 0, "catalog": 0, "entities": 0, "inventory": 0, "skipped": 0}
 
     async with factory() as db:
-        # Категории: upsert по slug
+        # Категории: upsert по slug (+ недостающие из карточек)
         slug_to_id: dict[str, Any] = {}
         for cat in plan["categories"]:
             existing = (
@@ -191,6 +259,34 @@ async def _apply_plan(database_url: str, plan: dict[str, Any], user_id: str | No
             )
             counts["catalog"] += 1
 
+        # Системные Entity: без дубликатов по slug
+        for ent in plan["entities"]:
+            existing = (
+                await db.execute(select(Entity.id).where(Entity.slug == ent["slug"]).limit(1))
+            ).scalar_one_or_none()
+            if existing:
+                counts["skipped"] += 1
+                continue
+            category_id = slug_to_id.get(ent["category_slug"])
+            db.add(
+                Entity(
+                    slug=ent["slug"],
+                    real_name=ent["real_name"],
+                    short_title=ent["short_title"],
+                    category=ent["category"],
+                    category_id=category_id,
+                    tags=ent["tags"],
+                    type=ent["type"],
+                    owner_id=None,
+                    is_public=True,
+                    params_schema=ent["params_schema"],
+                    risk_level=ent["risk_level"],
+                    automation_allowed=ent["automation_allowed"],
+                    content_status=ent["content_status"],
+                )
+            )
+            counts["entities"] += 1
+
         # Инвентарь: только для указанного пользователя (таблица user-scoped)
         if user_id and plan["inventory"]:
             from uuid import UUID as _UUID
@@ -231,8 +327,10 @@ async def _apply_plan(database_url: str, plan: dict[str, Any], user_id: str | No
 def _render_plan(plan: dict[str, Any], user_id: str | None) -> str:
     lines = [
         "Каталог seed — dry-run план",
+        f"  файлов прочитано:   {plan['files']}",
         f"  категории:          {len(plan['categories'])}",
         f"  записи каталога:    {len(plan['catalog'])}",
+        f"  системные Entity:   {len(plan['entities'])}",
         f"  инвентарь (готовые):{len(plan['inventory'])}",
         f"  user_id для инвентаря: {user_id or '— (не указан, инвентарь пропущен)'}",
     ]
@@ -248,19 +346,38 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     seed_dir = args.seed_dir
-    category_file = seed_dir / CATEGORY_FILE
-    catalog_file = seed_dir / CATALOG_FILE
-    inventory_file = seed_dir / INVENTORY_FILE
-    missing = [p for p in (category_file, catalog_file, inventory_file) if not p.exists()]
-    if missing:
-        for p in missing:
-            print(f"ERROR: manifest missing: {p}", file=sys.stderr)
+    if not seed_dir.is_dir():
+        print(f"ERROR: seed dir not found: {seed_dir}", file=sys.stderr)
         return 1
 
-    categories = parse_categories(_load_json(category_file))
-    catalog = parse_catalog_items(_load_json(catalog_file))
-    inventory = parse_inventory_items(_load_json(inventory_file))
-    plan = {"categories": categories, "catalog": catalog, "inventory": inventory}
+    # Читаем все JSON-манифесты в data/seed/
+    manifests: dict[str, dict[str, Any]] = {}
+    for path in sorted(seed_dir.glob("*.json")):
+        try:
+            manifests[path.name] = _load_json(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"ERROR: cannot parse {path.name}: {exc}", file=sys.stderr)
+            return 1
+
+    categories: list[dict[str, Any]] = []
+    if CATEGORY_FILE in manifests:
+        categories = parse_categories(manifests[CATEGORY_FILE])
+
+    cards = parse_cards(seed_dir)
+    catalog = parse_catalog_items(cards)
+    entities = parse_entities(cards)
+
+    inventory: list[dict[str, Any]] = []
+    if INVENTORY_FILE in manifests:
+        inventory = parse_inventory_items(manifests[INVENTORY_FILE])
+
+    plan = {
+        "files": len(manifests),
+        "categories": categories,
+        "catalog": catalog,
+        "entities": entities,
+        "inventory": inventory,
+    }
 
     if not args.apply:
         print(_render_plan(plan, args.user_id))
@@ -279,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
     counts = asyncio.run(_apply_plan(database_url, plan, args.user_id))
     print(
         f"imported: categories={counts['categories']} catalog={counts['catalog']} "
-        f"inventory={counts['inventory']} skipped={counts['skipped']}"
+        f"entities={counts['entities']} inventory={counts['inventory']} skipped={counts['skipped']}"
     )
     return 0
 
