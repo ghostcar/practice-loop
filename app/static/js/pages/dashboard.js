@@ -1,6 +1,10 @@
 // Dashboard v2: telegram linking, activity chart, category summary, points trend,
 // completion summary, XP sparkline (extracted from dashboard_v2.html, DESIGN.md 15.4).
 // i18n strings + tg_bot_username come from the <script type="application/json" id="page-i18n"> block.
+//
+// NOTE: the script tag lives in {% block head %}, so element lookups must wait
+// for the DOM — everything runs inside init() on DOMContentLoaded (settings.js
+// pattern). Head-time lookups silently killed the whole page script.
 (function () {
   'use strict';
   let T = {};
@@ -12,73 +16,74 @@
   }
   const tgBotUser = T.tg_bot_username || '';
 
-  // ── Telegram linking ──
-  let tgLinked = false;
-  const statusEl = document.getElementById('tg-status-text');
-  const btnEl = document.getElementById('tg-link-btn');
-  const tgUi = statusEl && btnEl;
-  // Default action (unlinked): fetch a fresh linking code. The linked branch
-  // of checkTelegramStatus() overrides this with "open the bot".
-  if (btnEl) btnEl.onclick = generateLinkCode;
+  async function init() {
+    // ── Telegram linking ──
+    let tgLinked = false;
+    const statusEl = document.getElementById('tg-status-text');
+    const btnEl = document.getElementById('tg-link-btn');
+    const tgUi = statusEl && btnEl;
 
-  async function checkTelegramStatus() {
-    if (!tgUi) return;
-    try {
-      const res = await fetch('/profile/telegram-status');
-      const data = await res.json();
-      tgLinked = data.linked;
-      if (data.linked) {
-        statusEl.textContent = T.dashboard_telegram_connected || '';
-        btnEl.textContent = T.dashboard_open_bot || '';
-        btnEl.onclick = () => window.open('https://t.me/' + tgBotUser, '_blank');
-      } else if (data.code) {
-        statusEl.textContent = T.dashboard_telegram_code_ready || '';
-        showCode(data.code);
-      } else {
-        statusEl.textContent = T.dashboard_telegram_not_linked || '';
+    async function checkTelegramStatus() {
+      if (!tgUi) return;
+      try {
+        const res = await fetch('/profile/telegram-status');
+        const data = await res.json();
+        tgLinked = data.linked;
+        if (data.linked) {
+          statusEl.textContent = T.dashboard_telegram_connected || '';
+          btnEl.textContent = T.dashboard_open_bot || '';
+          btnEl.onclick = () => window.open('https://t.me/' + tgBotUser, '_blank');
+        } else if (data.code) {
+          statusEl.textContent = T.dashboard_telegram_code_ready || '';
+          showCode(data.code);
+        } else {
+          statusEl.textContent = T.dashboard_telegram_not_linked || '';
+        }
+      } catch (e) {
+        console.warn('TG status:', e);
       }
-    } catch (e) {
-      console.warn('TG status:', e);
     }
-  }
 
-  async function generateLinkCode() {
-    if (tgLinked) {
-      window.open('https://t.me/' + tgBotUser, '_blank');
-      return;
+    async function generateLinkCode() {
+      if (tgLinked) {
+        window.open('https://t.me/' + tgBotUser, '_blank');
+        return;
+      }
+      try {
+        const res = await fetch('/profile/telegram-link-code', { method: 'POST' });
+        const data = await res.json();
+        showCode(data.code);
+        statusEl.textContent = T.dashboard_telegram_code_ready || '';
+      } catch (e) {
+        console.warn('TG code:', e);
+      }
     }
-    try {
-      const res = await fetch('/profile/telegram-link-code', { method: 'POST' });
-      const data = await res.json();
-      showCode(data.code);
-      statusEl.textContent = T.dashboard_telegram_code_ready || '';
-    } catch (e) {
-      console.warn('TG code:', e);
+
+    function showCode(code) {
+      const codeEl = document.getElementById('tg-code');
+      const display = document.getElementById('tg-code-display');
+      if (!codeEl || !display) return;
+      codeEl.textContent = code;
+      display.classList.remove('hidden');
+      if (btnEl) btnEl.textContent = T.dashboard_new_code || '';
     }
-  }
 
-  function showCode(code) {
-    const codeEl = document.getElementById('tg-code');
-    const display = document.getElementById('tg-code-display');
-    if (!codeEl || !display) return;
-    codeEl.textContent = code;
-    display.classList.remove('hidden');
-    if (btnEl) btnEl.textContent = T.dashboard_new_code || '';
-  }
+    // Default action (unlinked): fetch a fresh linking code. The linked branch
+    // of checkTelegramStatus() overrides this with "open the bot".
+    if (btnEl) btnEl.onclick = generateLinkCode;
 
-  // ── Color palette (DESIGN.md semantic tokens) ──
-  const PALETTE = ['#6B57A5', '#2F7657', '#9A6415', '#A83B4A', '#356A9A', '#B8A3EE', '#71C89D', '#E4B064'];
-  const CHART_GRID = 'rgba(148,163,184,0.12)';
-  const CHART_TEXT = '#94a3b8';
-  const FONT = 'Inter, system-ui, sans-serif';
+    // ── Color palette (DESIGN.md semantic tokens) ──
+    const PALETTE = ['#6B57A5', '#2F7657', '#9A6415', '#A83B4A', '#356A9A', '#B8A3EE', '#71C89D', '#E4B064'];
+    const CHART_GRID = 'rgba(148,163,184,0.12)';
+    const CHART_TEXT = '#94a3b8';
+    const FONT = 'Inter, system-ui, sans-serif';
 
-  Chart.defaults.font.family = FONT;
-  Chart.defaults.font.size = 11;
+    Chart.defaults.font.family = FONT;
+    Chart.defaults.font.size = 11;
 
-  const root = document.getElementById('activity-chart');
-  if (!root) return;
+    const root = document.getElementById('activity-chart');
+    if (!root) return;
 
-  document.addEventListener('DOMContentLoaded', async () => {
     checkTelegramStatus();
 
     // ── Weekly Activity Bar Chart ──
@@ -227,8 +232,11 @@
     } catch (e) {
       console.warn('XP sparkline:', e);
     }
-  });
+  }
 
-  // Exposed for inline onclick handlers in the template.
-  window.generateLinkCode = generateLinkCode;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
