@@ -921,6 +921,8 @@ EN = {
     "mv_no_media": "No finalized media yet — upload and finalize a photo first.",
     # DESIGN v2 shell (DESIGN_V2.md §7)
     "nav_group_now": "Now",
+    "nav_group_plan": "Plan",
+    "nav_group_body": "Body & Routine",
     "nav_group_personal": "Personal",
     "nav_group_data": "Data",
     "nav_group_social": "Connections",

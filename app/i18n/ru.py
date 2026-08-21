@@ -927,6 +927,8 @@ RU = {
     "mv_no_media": "Готовых медиа пока нет — сначала загрузите и привяжите фото.",
     # DESIGN v2 shell (DESIGN_V2.md §7)
     "nav_group_now": "Сейчас",
+    "nav_group_plan": "План",
+    "nav_group_body": "Тело & Рутина",
     "nav_group_personal": "Личное",
     "nav_group_data": "Данные",
     "nav_group_social": "Связи",
