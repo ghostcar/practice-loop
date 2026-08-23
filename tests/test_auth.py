@@ -4,6 +4,7 @@ import secrets
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import create_access_token
@@ -79,6 +80,60 @@ async def test_dashboard_requires_auth(async_client: AsyncClient):
     """Dashboard without auth returns 401."""
     response = await async_client.get("/dashboard", follow_redirects=False)
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_authed_user_redirected_from_register_page(async_client: AsyncClient, test_user):
+    """GET /register while authenticated redirects to /dashboard.
+
+    The register form carries no csrf_token and CSRF is enforced for authed
+    sessions, so a second registration would 403 — redirect instead (ADR-148).
+    """
+    headers, _ = _auth_cookie_headers(test_user)
+    resp = await async_client.get("/register", headers=headers, follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard"
+
+
+@pytest.mark.asyncio
+async def test_authed_user_redirected_from_login_page(async_client: AsyncClient, test_user):
+    """GET /login while authenticated redirects to /dashboard."""
+    headers, _ = _auth_cookie_headers(test_user)
+    resp = await async_client.get("/login", headers=headers, follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard"
+
+
+@pytest.mark.asyncio
+async def test_authed_register_post_redirects_no_account(
+    async_client: AsyncClient, db_session: AsyncSession, test_user
+):
+    """POST /auth/register while authenticated must not create a second account."""
+    headers, csrf = _auth_cookie_headers(test_user)
+    resp = await async_client.post(
+        "/auth/register",
+        headers=headers,
+        data={"email": "dupe@example.com", "password": "pass1234", "csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard"
+    result = await db_session.execute(select(User).where(User.email == "dupe@example.com"))
+    assert result.scalar_one_or_none() is None
+
+
+@pytest.mark.asyncio
+async def test_authed_login_post_redirects(async_client: AsyncClient, test_user):
+    """POST /auth/login while authenticated redirects to /dashboard (no re-auth)."""
+    headers, csrf = _auth_cookie_headers(test_user)
+    resp = await async_client.post(
+        "/auth/login",
+        headers=headers,
+        data={"email": "nobody@example.com", "password": "pass1234", "csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/dashboard"
 
 
 @pytest.mark.asyncio

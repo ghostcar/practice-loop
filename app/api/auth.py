@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import (
     create_access_token,
     get_current_user,
+    get_optional_user,
     hash_password,
     verify_password,
 )
@@ -23,8 +24,15 @@ router = APIRouter()
 
 
 @router.get("/register", response_class=HTMLResponse)
-async def register_page(request: Request):
+async def register_page(request: Request, user: User | None = Depends(get_optional_user)):
     """Serve the registration form page."""
+    # Authed users don't belong on the auth pages. The forms carry no
+    # csrf_token, and CSRF is enforced for authenticated sessions — a second
+    # registration/login attempt would 403 (seen in browser E2E). Redirecting
+    # authed visitors keeps the flow clean and the quirk unreachable.
+    if user is not None:
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
     locale = detect_locale(request)
     t = get_translations(locale)
 
@@ -42,8 +50,11 @@ async def register_page(request: Request):
 
 
 @router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login_page(request: Request, user: User | None = Depends(get_optional_user)):
     """Serve the login form page."""
+    if user is not None:
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
     locale = detect_locale(request)
     t = get_translations(locale)
 
@@ -68,8 +79,14 @@ async def register(
     email: str = Form(...),
     password: str = Form(min_length=6, max_length=128),
     db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     """Register a new user account."""
+    # Guard: an authenticated session must not silently create another account
+    # (nor hit the CSRF 403 — the register form carries no token).
+    if user is not None:
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
     locale = detect_locale(request)
     t = get_translations(locale)
 
@@ -115,8 +132,12 @@ async def login(
     email: str = Form(...),
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     """Authenticate user and set JWT cookie, then redirect."""
+    if user is not None:
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
     locale = detect_locale(request)
     t = get_translations(locale)
 
