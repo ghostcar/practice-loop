@@ -12,7 +12,11 @@
  {{ t.app_tagline }}
  </p>
 
- {% if request.query_params.get('registered') %}
+ {% if request.query_params.get('session_expired') %}
+ <div class="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2" role="alert">
+ {{ icon('warning', 'w-4 h-4') }}{{ t.login_session_expired }}
+ </div>
+ {% elif request.query_params.get('registered') %}
  <div class="mb-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
  {{ icon('check-circle', 'w-4 h-4') }}{{ t.success_registered }}
  </div>

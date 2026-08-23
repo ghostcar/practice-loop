@@ -19,6 +19,7 @@ EN = {
     "login_button": "Log In",
     "login_no_account": "Don't have an account?",
     "login_register_link": "Register",
+    "login_session_expired": "Your session has expired. Please log in again.",
     "dashboard_title": "Dashboard",
     "dashboard_welcome": "Welcome! You are logged in.",
     "dashboard_stats": "Your stats will appear here.",

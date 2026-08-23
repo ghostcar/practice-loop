@@ -528,7 +528,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         if exc.status_code == 401:
             from fastapi.responses import RedirectResponse
 
-            return RedirectResponse(url="/auth/login", status_code=303)
+            # Token expired/invalid: send the browser back to the login page
+            # with a notice, and drop the stale cookie so the client doesn't
+            # keep sending it (each protected page would re-401 otherwise).
+            response = RedirectResponse(url="/login?session_expired=1", status_code=303)
+            response.delete_cookie("access_token", path="/")
+            return response
         return await _render_error_page(request, exc.status_code, str(exc.detail or ""))
     from fastapi.responses import JSONResponse
 

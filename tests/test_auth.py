@@ -83,6 +83,32 @@ async def test_dashboard_requires_auth(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_expired_token_redirects_to_login_with_notice(async_client: AsyncClient, test_user):
+    """HTML client with an invalid token gets 303 to /login?session_expired=1.
+
+    The stale access_token cookie must be dropped too, otherwise every
+    protected page re-401s and the notice loops.
+    """
+    headers = {
+        "Accept": "text/html",
+        "Cookie": "access_token=invalid.token.value; csrf_token=abc",
+    }
+    resp = await async_client.get("/dashboard", headers=headers, follow_redirects=False)
+    assert resp.status_code == 303
+    assert resp.headers["location"] == "/login?session_expired=1"
+    set_cookie = resp.headers.get("set-cookie", "")
+    assert "access_token=" in set_cookie  # cookie cleared
+
+
+@pytest.mark.asyncio
+async def test_login_page_renders_session_expired_notice(async_client: AsyncClient):
+    """GET /login?session_expired=1 shows the expiry notice."""
+    resp = await async_client.get("/login?session_expired=1", headers={"Accept": "text/html"})
+    assert resp.status_code == 200
+    assert "session has expired" in resp.text
+
+
+@pytest.mark.asyncio
 async def test_authed_user_redirected_from_register_page(async_client: AsyncClient, test_user):
     """GET /register while authenticated redirects to /dashboard.
 

@@ -19,6 +19,7 @@ RU = {
     "login_button": "Войти",
     "login_no_account": "Нет аккаунта?",
     "login_register_link": "Зарегистрироваться",
+    "login_session_expired": "Сессия истекла. Пожалуйста, войдите снова.",
     "dashboard_title": "Дашборд",
     "dashboard_welcome": "Добро пожаловать! Вы вошли в систему.",
     "dashboard_stats": "Здесь будет ваша статистика.",
