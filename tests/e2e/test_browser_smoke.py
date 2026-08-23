@@ -32,6 +32,40 @@ def _fresh_email() -> str:
     return os.environ.get("E2E_EMAIL") or f"smoke-{uuid.uuid4().hex[:12]}@example.com"
 
 
+def _register_and_login(page, email: str, password: str) -> None:
+    """Register a fresh user and land on /dashboard, passing the consent gate.
+
+    New users are redirected /login?registered=1 after registration, and after
+    login they must grant module permissions on /consent/setup before the
+    dashboard becomes available (auth.py:149).
+    """
+    page.goto(f"{BASE_URL}/register")
+    page.fill('input[name="email"]', email)
+    page.fill('input[name="password"]', password)
+    page.click('button[type="submit"]')
+    page.wait_for_url(lambda u: "/dashboard" in u or "/login" in u or "/consent" in u, timeout=20_000)
+
+    if "/login" in page.url:
+        # Registration redirected to login — sign in.
+        page.fill('input[name="email"]', email)
+        page.fill('input[name="password"]', password)
+        page.click('button[type="submit"]')
+        page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=20_000)
+
+    if "/consent/setup" in page.url:
+        # Consent gate: grant all required module permissions, then continue.
+        # Scope locators to the consent form — the shell has locale-switcher
+        # forms whose submit buttons precede it in DOM order.
+        form = page.locator('form[action="/consent/setup"]')
+        boxes = form.locator('input[name="consent_types"]')
+        for i in range(boxes.count()):
+            boxes.nth(i).check()
+        form.locator('button[type="submit"]').click()
+        page.wait_for_url(lambda u: "/dashboard" in u, timeout=20_000)
+
+    assert "/dashboard" in page.url, f"expected dashboard, got {page.url}"
+
+
 @pytest.fixture(scope="module")
 def browser():
     from playwright.sync_api import sync_playwright
@@ -42,8 +76,13 @@ def browser():
         b.close()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def page(browser):
+    # Function-scoped on purpose: each test gets a fresh context (no session
+    # cookies leaking between tests). Registration is CSRF-rejected for an
+    # already-authenticated session (the register form carries no csrf_token
+    # and CSRF is enforced only when access_token is present), so a shared
+    # module-scoped page would make every test after the first fail.
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     pg = ctx.new_page()
     pg.set_default_timeout(15_000)
@@ -58,21 +97,8 @@ def test_full_personal_loop(page) -> None:
     email = _fresh_email()
     password = "Smoke-Pass-2026!"
 
-    # ── Register ────────────────────────────────────────────────────────
-    page.goto(f"{BASE_URL}/register")
-    page.fill('input[name="email"]', email)
-    page.fill('input[name="password"]', password)
-    page.click('button[type="submit"]')
-    page.wait_for_url(lambda u: "/dashboard" in u or "/login" in u, timeout=20_000)
-
-    if "/login" in page.url:
-        # Registration redirected to login — sign in.
-        page.fill('input[name="email"]', email)
-        page.fill('input[name="password"]', password)
-        page.click('button[type="submit"]')
-        page.wait_for_url(lambda u: "/dashboard" in u, timeout=20_000)
-
-    assert "/dashboard" in page.url, f"expected dashboard, got {page.url}"
+    # ── Register + login (+ consent gate for fresh users) ───────────────
+    _register_and_login(page, email, password)
     page.screenshot(path="/tmp/smoke_dashboard.png")
 
     # Desktop shell must render (DESIGN v2 sidebar) and the icon sprite must
@@ -122,16 +148,7 @@ def test_protocol_builder_duration_picker(page) -> None:
     email = _fresh_email()
     password = "Smoke-Pass-2026!"
 
-    page.goto(f"{BASE_URL}/register")
-    page.fill('input[name="email"]', email)
-    page.fill('input[name="password"]', password)
-    page.click('button[type="submit"]')
-    page.wait_for_url(lambda u: "/dashboard" in u or "/login" in u, timeout=20_000)
-    if "/login" in page.url:
-        page.fill('input[name="email"]', email)
-        page.fill('input[name="password"]', password)
-        page.click('button[type="submit"]')
-        page.wait_for_url(lambda u: "/dashboard" in u, timeout=20_000)
+    _register_and_login(page, email, password)
 
     page.goto(f"{BASE_URL}/protocols/new")
     page.wait_for_load_state("networkidle")
