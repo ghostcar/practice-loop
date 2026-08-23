@@ -44,7 +44,7 @@
  <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span>{{ t.calendar_legend_disallowed }}</span>
  </div>
  {% else %}
- <p class="text-sm text-[color:var(--text-muted)] py-3">{{ t.calendar_empty }} <button onclick="showTemplateForm()" class="text-indigo-600 dark:text-indigo-400 underline">{{ t.calendar_create_default }}</button></p>
+ <p class="text-sm text-[color:var(--text-muted)] py-3">{{ t.calendar_empty }} <button data-action="showTemplateForm" class="text-indigo-600 dark:text-indigo-400 underline">{{ t.calendar_create_default }}</button></p>
  {% endif %}
  </div>
 
@@ -53,12 +53,12 @@
  <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
  <h3 class="text-sm font-semibold text-[color:var(--text)] mb-2">{{ t.calendar_card_templates }}</h3>
  <div id="template-list" class="text-xs space-y-1 mb-3"></div>
- <button onclick="showTemplateForm()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors">+ {{ t.calendar_btn_new_template }}</button>
+ <button data-action="showTemplateForm" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors">+ {{ t.calendar_btn_new_template }}</button>
  </div>
  <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
  <h3 class="text-sm font-semibold text-[color:var(--text)] mb-2">{{ t.calendar_card_overrides }}</h3>
  <div id="override-list" class="text-xs space-y-1 mb-3"></div>
- <button onclick="showOverrideForm()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors">+ {{ t.calendar_btn_new_vacation }}</button>
+ <button data-action="showOverrideForm" class="text-xs px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors">+ {{ t.calendar_btn_new_vacation }}</button>
  </div>
  <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
  <h3 class="text-sm font-semibold text-[color:var(--text)] mb-2">{{ t.calendar_card_check }}</h3>
@@ -95,8 +95,8 @@
  </div>
  </div>
  <div class="flex gap-2">
- <button onclick="addWindowRow()" class="text-xs px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] transition-colors">+ {{ t.calendar_form_btn_add_window }}</button>
- <button onclick="saveTemplate()" class="text-xs px-4 py-1.5 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] transition-colors">{{ t.calendar_form_btn_save }}</button>
+ <button data-action="addWindowRow" class="text-xs px-3 py-1.5 rounded-lg pl-surface-soft hover:bg-[color:var(--surface-soft)] transition-colors">+ {{ t.calendar_form_btn_add_window }}</button>
+ <button data-action="saveTemplate" class="text-xs px-4 py-1.5 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] transition-colors">{{ t.calendar_form_btn_save }}</button>
  </div>
  </div>
 
@@ -109,7 +109,7 @@
  <input type="date" id="ovr-start" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
  <input type="date" id="ovr-end" class="text-sm pl-surface-soft rounded-lg px-3 py-2 border border-[color:var(--border)] text-[color:var(--text)]">
  </div>
- <button onclick="saveOverride()" class="text-xs px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">{{ t.calendar_form_btn_save_override }}</button>
+ <button data-action="saveOverride" class="text-xs px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors">{{ t.calendar_form_btn_save_override }}</button>
  </div>
 </div>
 {% endblock %}

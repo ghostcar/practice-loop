@@ -22,11 +22,11 @@
  </div>
  <div class="flex items-center gap-2">
  {% if active_config %}
- <button onclick="showGenForm()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white text-sm font-medium transition-colors min-h-[44px]">{{ t.diets_btn_generate }}</button>
+ <button data-action="showGenForm" class="px-4 py-2 rounded-lg bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white text-sm font-medium transition-colors min-h-[44px]">{{ t.diets_btn_generate }}</button>
  {% else %}
  <span class="text-xs text-[color:var(--text-muted)]" title="{{ t.diets_no_llm }}">{{ icon('warning', 'w-4 h-4') }}</span>
  {% endif %}
- <button onclick="showDietForm()" class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-medium transition-colors min-h-[44px]">+ {{ t.diets_btn_add }}</button>
+ <button data-action="showDietForm" class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-sm font-medium transition-colors min-h-[44px]">+ {{ t.diets_btn_add }}</button>
  </div>
  </div>
 
@@ -68,7 +68,7 @@
  <div class="flex flex-col sm:flex-row gap-3">
  <input id="gen-goal" maxlength="1000" placeholder="{{ t.diets_gen_ph }}"
  class="flex-1 px-3 py-2 text-sm pl-surface rounded-lg border border-[color:var(--border)] text-[color:var(--text)]">
- <button id="gen-btn" onclick="generateDiet()"
+ <button id="gen-btn" data-action="generateDiet"
  class="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-medium rounded-lg min-h-[44px] disabled:opacity-50">{{ t.diets_gen_btn }}</button>
  </div>
  <p id="gen-error" class="hidden mt-2 text-sm text-red-600 dark:text-red-400"></p>
@@ -104,7 +104,7 @@
  <span class="text-xs text-[color:var(--text-muted)]">{{ t.diets_synergy_subtitle }}</span>
  </div>
  {% if active_config %}
- <button id="synergy-btn" onclick="runSynergy()"
+ <button id="synergy-btn" data-action="runSynergy"
  class="px-4 py-2 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-sm font-medium rounded-lg min-h-[44px] disabled:opacity-50">{{ t.diets_synergy_btn }}</button>
  {% endif %}
  </div>

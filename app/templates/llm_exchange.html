@@ -53,7 +53,7 @@
                     </label>
                 </div>
 
-                <button id="btn-export-prompt" onclick="generateAndCopyPrompt()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-archive-950 font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
+                <button id="btn-export-prompt" data-action="generateAndCopyPrompt" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-archive-950 font-semibold rounded-lg shadow transition flex items-center justify-center gap-2">
                     {{ icon('copy', 'w-5 h-5') }}
                     <span>Скопировать Сквозной Промпт</span>
                 </button>
@@ -77,7 +77,7 @@
                 <label class="block text-sm font-medium text-archive-300 mb-2">Вставьте ответ от внешней ИИ-модели:</label>
                 <textarea id="raw-response-input" rows="6" class="w-full bg-archive-950 border border-archive-800 rounded-lg p-3 text-xs font-mono text-archive-200 focus:ring-amber-500 focus:border-amber-500 mb-4" placeholder="Вставьте JSON или markdown-блок ответа внешней модели..."></textarea>
 
-                <button onclick="parseAndMatchResponse()" class="w-full py-3 px-4 bg-archive-800 hover:bg-archive-700 text-archive-100 font-medium rounded-lg border border-archive-700 transition flex items-center justify-center gap-2">
+                <button data-action="parseAndMatchResponse" class="w-full py-3 px-4 bg-archive-800 hover:bg-archive-700 text-archive-100 font-medium rounded-lg border border-archive-700 transition flex items-center justify-center gap-2">
                     {{ icon('settings', 'w-5 h-5') }}
                     <span>Распаковать и сопоставить справочники</span>
                 </button>

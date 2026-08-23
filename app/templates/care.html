@@ -132,7 +132,7 @@
                     </div>
                     {% if r.notes %}<div class="text-xs pl-text-muted">{{ r.notes }}</div>{% endif %}
                 </div>
-                <form action="/care/routines/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                <form action="/care/routines/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.care_delete }}?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
@@ -186,7 +186,7 @@
                     </div>
                     {% if p.notes %}<div class="text-xs pl-text-muted">{{ p.notes }}</div>{% endif %}
                 </div>
-                <form action="/care/products/{{ p.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                <form action="/care/products/{{ p.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.care_delete }}?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
@@ -240,7 +240,7 @@
                     </div>
                     {% endif %}
                 </div>
-                <form action="/care/courses/{{ c.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                <form action="/care/courses/{{ c.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.care_delete }}?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
@@ -287,7 +287,7 @@
                         <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[40px]">{{ icon('upload', 'w-3.5 h-3.5') }}{{ t.care_add_photo }}</button>
                     </form>
                 </div>
-                <form action="/care/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.care_delete }}?')">
+                <form action="/care/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.care_delete }}?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.care_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>

@@ -27,7 +27,7 @@
   <input type="hidden" name="params_schema_json" id="sb-output-json" value="{}">
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('sb-fields-container');
   const addBtn = document.getElementById('sb-add-field-btn');

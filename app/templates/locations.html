@@ -18,7 +18,7 @@
  <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.locations_title }}</h1>
  <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.locations_subtitle }}</p>
  </div>
- <button onclick="window.showAddForm()"
+ <button data-action="showAddForm"
  class="pl-accent-bg hover:bg-[color:var(--accent-hover)] px-4 py-2 rounded-xl text-sm font-medium transition-colors">
  {{ t.locations_btn_add }}
  </button>
@@ -42,7 +42,7 @@
  </select>
  <div class="flex gap-2 col-span-full">
  <button type="submit" class="pl-accent-bg hover:bg-[color:var(--accent-hover)] px-4 py-2 rounded-lg text-sm transition-colors font-medium">{{ t.locations_btn_save }}</button>
- <button type="button" onclick="window.hideForm()" class="pl-surface-soft hover:bg-[color:var(--surface-soft)] px-4 py-2 rounded-lg text-sm transition-colors">Cancel</button>
+ <button type="button" data-action="hideForm" class="pl-surface-soft hover:bg-[color:var(--surface-soft)] px-4 py-2 rounded-lg text-sm transition-colors">Cancel</button>
  </div>
  </form>
  </div>
@@ -51,8 +51,8 @@
  <div class="flex gap-3 mb-4">
  <input id="loc-search" type="text" placeholder="{{ t.locations_search_ph }}"
  class="flex-1 pl-surface border border-[color:var(--border)] rounded-xl px-4 py-2.5 text-sm text-[color:var(--text)]"
- oninput="window.renderList()">
- <select id="loc-type-filter" onchange="window.renderList()"
+ data-input="renderList">
+ <select id="loc-type-filter" data-change="renderList"
  class="pl-surface border border-[color:var(--border)] rounded-xl px-3 py-2.5 text-sm text-[color:var(--text)]">
  <option value="">{{ t.locations_type_all }}</option>
  <option value="home">Home</option><option value="room">Room</option><option value="bathroom">Bathroom</option>

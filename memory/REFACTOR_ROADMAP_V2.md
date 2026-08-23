@@ -63,7 +63,7 @@
 - [x] **R9.1 [Model: Flash/Fast]** Аудит шаблонов: сканирование `app/templates/` и удаление неиспользуемых файлов-черновиков прототипа (`live_camera_observer.html`, `dashboard.html` legacy).
 - [x] **R9.2 [Model: Flash/Fast]** Очистка статических файлов: вынос inline-скриптов в `app/static/js/pages/`, актуализация пакета SVG-иконок (142 шт).
 - [x] **R9.3 [Model: Flash/Fast]** Удаление мертвого Python-кода и неиспользуемых импортов.
-- [ ] **Exit:** 0 мусорных файлов в проекте; чистый репозиторий.
+- [x] **Exit:** 0 мусорных файлов в проекте; чистый репозиторий.
 
 ## R10 — Рекомпозиция интерфейса («Тёмный архив») и Closed Beta Release Candidate (v1.0)
 - [x] **R10.1 [Model: Flash/Fast]** Обновление `sidebar.html` и мобильной панели: группировка в 5 разделов (*Сегодня / План / Тело & Рутина / Связи / Система*), скрытие выключенных модулей.
@@ -71,4 +71,4 @@
 - [x] **R10.3 [Model: Pro/Reasoner]** Фоновый async-воркер DMS & Reminder Scheduler в `lifespan` FastAPI + Telegram алерты.
 - [x] **R10.4 [Model: Pro/Reasoner]** Сквозной E2E регрессионный тест критических путей (`tests/test_v1_rc_critical_paths.py`).
 - [x] **R10.5 [Model: Flash/Fast]** Прогон полного pytest-сьюта (1340+ тестов), `ruff check`, `memoryctl facts && lint`, обновление документации (`FUNCTIONAL.md`, `README.md`, `CURRENT_STATE.md`, `PRODUCT.md`).
-- [ ] **Exit:** Release Candidate v1.0.0-rc1 готов к продуктовому деплою для закрытого бета-теста.
+- [x] **Exit:** Release Candidate v1.0.0-rc1 готов к продуктовому деплою для закрытого бета-теста (собран, сводный аудит зелёный, задеплоен — ADR-147).

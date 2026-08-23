@@ -9,7 +9,7 @@
      {{ catalog_personalize_modal(desire_levels, care_products, inventory_items) }}
 
    Кнопка-триггер на карточке:
-     <button onclick="openPersonalizeModal(this)" data-id="..." data-name="..."
+     <button data-action="openPersonalizeModal" data-args='["$this"]' data-id="..." data-name="..."
        data-dur-min="..." data-dur-max="..." data-reps-min="..." data-reps-max="..."
        data-desire="..." data-inv-ids="id1,id2" data-care-ids="id1,id2">Настроить</button>
    (dur-* в СЕКУНДАХ; inv-ids/care-ids — разделённые запятой UUID мягких ссылок.) #}
@@ -144,7 +144,7 @@
   </form>
 </dialog>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 (function () {
   'use strict';
   var dialog = document.getElementById('personalize-modal');

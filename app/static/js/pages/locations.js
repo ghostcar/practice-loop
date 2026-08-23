@@ -37,9 +37,9 @@
       ? '<span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-medium">Custom</span>'
       : '<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">System</span>';
     var icons = loc.is_custom
-      ? '<button onclick="window._locEdit(\'' + loc.id + '\')\" class="text-[color:var(--text-muted)] hover:text-indigo-500 dark:hover:text-indigo-400 p-1">\u270e</button>' +
-        '<button onclick="window._locArchive(\'' + loc.id + '\')\" class="text-[color:var(--text-muted)] hover:text-amber-500 p-1">\ud83d\udce6</button>' +
-        '<button onclick="window._locDelete(\'' + loc.id + '\')\" class="text-[color:var(--text-muted)] hover:text-red-500 p-1">\u2715</button>'
+      ? '<button data-action="_locEdit" data-arg1=\"' + loc.id + '\" class="text-[color:var(--text-muted)] hover:text-indigo-500 dark:hover:text-indigo-400 p-1">\u270e</button>' +
+        '<button data-action="_locArchive" data-arg1=\"' + loc.id + '\" class="text-[color:var(--text-muted)] hover:text-amber-500 p-1">\ud83d\udce6</button>' +
+        '<button data-action="_locDelete" data-arg1=\"' + loc.id + '\" class="text-[color:var(--text-muted)] hover:text-red-500 p-1">\u2715</button>'
       : '';
     return '<div class="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">' +
       '<span class="text-sm font-medium text-slate-700 dark:text-slate-200 flex-1">' + escHtml(loc.title) + '</span>' +

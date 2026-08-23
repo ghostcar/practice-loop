@@ -126,7 +126,7 @@
                         {% if p.notes %}<span class="pl-text-muted text-xs"> · {{ p.notes }}</span>{% endif %}
                         <span class="pl-text-muted text-xs"> · {{ p.entries_count }}</span>
                     </span>
-                    <form action="/journal/partners/{{ p.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.journal_delete }}?')">
+                    <form action="/journal/partners/{{ p.id }}/delete" method="post" class="inline" data-confirm="{{ t.journal_delete }}?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
@@ -261,7 +261,7 @@
                         <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[40px]">{{ icon('upload', 'w-3.5 h-3.5') }}{{ t.journal_add_photo }}</button>
                     </form>
                 </div>
-                <form action="/journal/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.journal_delete }}?')">
+                <form action="/journal/entries/{{ e.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.journal_delete }}?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.journal_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>

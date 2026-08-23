@@ -137,7 +137,7 @@ async def test_catalog_page_renders_personalize_modal(
     html = resp.text
     # modal present
     assert 'id="personalize-modal"' in html
-    assert 'openPersonalizeModal(this)' in html
+    assert 'data-action="openPersonalizeModal"' in html
     assert "duration-picker" in html
     assert "quantity-picker" in html
     # data attrs prefill (3–20 minutes → 180–1200 seconds)

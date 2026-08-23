@@ -77,7 +77,7 @@
                     <a href="/protocols/{{ p.id }}/edit" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] transition-colors" title="{{ t.protocols_edit }}">
                         {{ icon('edit', 'w-3.5 h-3.5') }}
                     </a>
-                    <form action="/protocols/{{ p.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.protocols_delete_confirm }}')">
+                    <form action="/protocols/{{ p.id }}/delete" method="post" class="inline" data-confirm="{{ t.protocols_delete_confirm }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="inline-flex items-center text-xs px-2.5 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors" title="{{ t.protocols_delete }}">
                             {{ icon('delete', 'w-3.5 h-3.5') }}

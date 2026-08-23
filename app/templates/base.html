@@ -96,7 +96,7 @@
     {{ nav_item('tasks', '/tasks/', 'tasks', t.nav_tasks) }}
     {{ nav_item('sessions', '/sessions', 'session', t.nav_sessions) }}
     {% if not composition or composition.journal_enabled %}
-    {{ nav_item('journal', '/journal', 'aftercare', t.nav_journal) }}
+    {{ nav_item('journal', '/journal', 'journal', t.nav_journal) }}
     {% endif %}
     {{ nav_item('points', '/api/v2/points/page', 'insights', t.nav_points) }}
     {% if composition and composition.timer_operational %}
@@ -201,7 +201,7 @@
     <link rel="icon" href="/static/favicon/{{ 'favicon-neutral.svg' if _discretion else 'favicon.svg' }}" type="image/svg+xml" id="pl-favicon">
     <link rel="apple-touch-icon" href="/static/favicon/apple-touch-icon.png">
     <link rel="manifest" href="/static/manifest.json">
-    <script>
+    <script nonce="{{ csp_nonce }}">
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/static/sw.js').catch(err => console.log('SW reg error:', err));

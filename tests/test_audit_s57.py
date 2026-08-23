@@ -205,33 +205,26 @@ async def test_inline_script_legacy_allowlist_is_accurate():
     from pathlib import Path
 
     root = Path("app/templates")
-    inline_pages = []
-    for tpl in root.glob("*.html"):
+    # Every inline <script> body must carry the per-request CSP nonce
+    # (ADR-151: enforcing Content-Security-Policy with script-src
+    # 'self' 'nonce-...'). Raw inline bodies without the nonce would be
+    # blocked by the policy, so the gate below fails hard on them. Nonced
+    # inline scripts are a sanctioned debt — extraction into app/static/js
+    # continues, but the old allowlist of unnonced inline pages is closed.
+    unnonced_pages = []
+    for tpl in root.rglob("*.html"):
         text = tpl.read_text(encoding="utf-8")
-        # Allow: <script src=...>, <script type="application/json">, timeline JSON block,
-        # and the shared app.js include. Reject raw inline JS bodies.
-        stripped = (
+        # Mask sanctioned patterns: external src, JSON blocks, timeline data,
+        # and nonced inline scripts. Any remaining raw <script> body is a
+        # CSP violation waiting to happen.
+        masked = (
             text.replace("<script src=", "<script_src=")
             .replace('<script type="application/json"', "<script_json=")
             .replace('<script id="timeline-data"', "<script_json=")
+            .replace('<script nonce="{{ csp_nonce }}"', "<script_nonce=")
         )
-        if "<script>" in stripped:
-            inline_pages.append(tpl.name)
-    # These legacy pages still need extraction into app/static/js.  Keep the
-    # debt exact so new inline scripts cannot appear while migration proceeds.
-    legacy_inline_pages = {
-        "admin_catalog_editor.html",
-        "base.html",
-        "care_builder.html",
-        "entity_edit.html",
-        "insights.html",
-        "media_progress.html",
-        "medication.html",
-        "sessions_live.html",
-        "sessions_rules_builder.html",
-        "training_builder.html",
-    }
-    assert set(inline_pages) == legacy_inline_pages, (
-        f"inline script allowlist drift: added={sorted(set(inline_pages) - legacy_inline_pages)} "
-        f"removed={sorted(legacy_inline_pages - set(inline_pages))}"
+        if "<script>" in masked:
+            unnonced_pages.append(str(tpl.relative_to(root)))
+    assert not unnonced_pages, (
+        f"inline scripts missing CSP nonce (would be blocked): {sorted(unnonced_pages)}"
     )

@@ -219,7 +219,7 @@
  <!-- Photo report -->
  <div class="mt-2 flex items-center gap-2 flex-wrap">
  <div class="photo-thumbs flex items-center gap-1.5" data-owner-type="activity_log" data-owner-id="{{ log.id }}"></div>
- <button type="button" onclick="pickLogPhoto('{{ log.id }}')"
+ <button type="button" data-action="pickLogPhoto" data-args='["{{ log.id }}"]'
  class="text-[10px] px-2 py-1 rounded border border-[color:var(--border)] text-[color:var(--text-secondary)] hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors inline-flex items-center gap-1">{{ icon('camera', 'w-3.5 h-3.5') }}{{ t.training_photo_add }}</button>
  </div>
  </div>

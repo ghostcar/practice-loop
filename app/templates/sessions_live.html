@@ -170,7 +170,7 @@
       </h3>
       <p class="text-xs text-[color:var(--text-muted)]">Досрочная остановка сессии со списком штрафных очков.</p>
 
-      <form action="/sessions/live/interrupt" method="POST" class="space-y-3 pt-1" onsubmit="return confirm('Прервать сессию? Это повлечёт штрафные очки.')">
+      <form action="/sessions/live/interrupt" method="POST" class="space-y-3 pt-1" data-confirm="Прервать сессию? Это повлечёт штрафные очки.">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <div>
           <label class="block text-xs text-[color:var(--text-secondary)] mb-1">Причина остановки:</label>
@@ -192,7 +192,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 function liveTimer() {
   return {
     totalSeconds: 1200, // 20 minutes default

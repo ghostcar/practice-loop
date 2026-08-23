@@ -144,10 +144,7 @@
 - **OCR-верификация (Q13)** — отложена; медиа-верификация остаётся HMAC (Шаг 7 добавил LLM-оценку фото через vision — `code_match`/`chastity_closed`; OCR как распознавание текста отдельно не реализовано).
 - **Редизайн по DESIGN_V2.md** — основной этап 9a–9f завершён; дальнейшие исправления интерфейса ведутся как непрерывный frontend/a11y-долг с обязательными browser-тестами и PracticeLoop icon pack.
 - **Иконки flame/target/star для streak/goal** — **добавлены в пакет** (flame.svg/target.svg/star.svg) и подключены: flame в leaderboard (серии/поддержка), target в sessions_rules_builder (квота задач).
-- **Иконки для Aftercare-чек-листа** (heat/compress, cup/tea) — в пакете нет соответствий для «Тёплый Компресс» и «Травяной Чай»; hydration использует новый droplet.svg. Добавить heat/cup при следующей доработке икон-пака.
-- **Иконка gift** — в пакете нет соответствия (🎁 «Забрать XP» в квестах заменён на points); добавить при доработке икон-пака.
-- **Иконка journal** — в пакете нет соответствия; ссылка в community_agent.html («Лента Сообщества») заменена на community, nav-пункт «Журнал» использует aftercare.svg. Добавить journal.svg при доработке икон-пака.
-- **Иконка grid** — в пакете нет соответствия; «Попарная Матрица Корреляций» (insights_analytics) использует correlation. Добавить grid.svg при доработке икон-пака.
+- **Иконки heat/cup/gift/journal/grid** — **добавлены в пакет** (147 иконок, ADR-151) и подключены: heat в aftercare («Тёплый Компресс»), cup в aftercare («Травяной Чай»), gift в quests («Забрать XP»), journal в nav-пункт «Журнал» (base.html), grid в insights_analytics («Попарная Матрица Корреляций»).
 - **Битые raw `<use>`** — найдены и исправлены в ds_portal/ds_keyholder/ds_my_top/ds_checkins (#keyholder не существует), sessions_live/sessions_coop (#timer/#session без icon-префикса), insights_trajectory (#trending-up), admin_prompts (#cpu), catalog_public/discretion_bailout/social_*/training_adaptive/prompt_library_user — заменены на макрос icon().
 - **Reaction-иконки social (thumbs-up/fire/party/muscle)** — остались emoji как content-значения (БД); добавить в икон-пак, когда потребуется.
 - **Mobile Foundation (M4)** — Шаг 10 завершён: bearer access/refresh, push-device registry и JSON-first ключевых модулей реализованы; полноценный мобильный клиент остаётся отдельным будущим продуктовым этапом.

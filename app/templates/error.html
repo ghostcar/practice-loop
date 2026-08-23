@@ -21,7 +21,7 @@
     <a href="/dashboard" class="px-5 py-2.5 pl-accent-bg hover:bg-[color:var(--accent-hover)] rounded-xl text-sm font-medium inline-flex items-center gap-2">
       {{ icon('dashboard', 'w-4 h-4') }}{{ t.error_go_home }}
     </a>
-    <button onclick="history.back()" class="px-5 py-2.5 pl-surface border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] rounded-xl text-sm font-medium">
+    <button data-action="historyBack" class="px-5 py-2.5 pl-surface border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] rounded-xl text-sm font-medium">
       {{ t.error_go_back }}
     </button>
   </div>

@@ -131,6 +131,62 @@
       applyLocalTimezones(document);
     });
 
+    // CSP enforcing (ADR-151): inline event handlers are forbidden, so page
+    // code uses data-action/data-change/data-input + data-confirm attributes.
+    // Delegated listeners call the global page functions (window.*) with
+    // JSON-encoded data-args ("$this" is replaced with the element).
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      // Confirm-buttons: ask before letting the enclosing form submit.
+      if (el.hasAttribute('data-confirm')) {
+        if (!window.confirm(el.getAttribute('data-confirm'))) {
+          e.preventDefault();
+          return;
+        }
+      }
+      var action = el.getAttribute('data-action');
+      if (action === 'historyBack') { history.back(); return; }
+      if (action === 'copyImportUrl') {
+        var u = el.getAttribute('data-arg1') || '';
+        navigator.clipboard.writeText(u).catch(function () {});
+        return;
+      }
+      var fn = window[action];
+      if (typeof fn !== 'function') return;
+      var args = [];
+      try { args = JSON.parse(el.getAttribute('data-args') || '[]'); } catch (err) { args = []; }
+      if (!args.length && el.hasAttribute('data-arg1')) {
+        for (var i = 1; i <= 9; i++) {
+          var v = el.getAttribute('data-arg' + i);
+          if (v === null) break;
+          args.push(v);
+        }
+      }
+      for (var j = 0; j < args.length; j++) {
+        if (args[j] === '$this') args[j] = el;
+      }
+      fn.apply(el, args);
+    });
+    document.addEventListener('change', function (e) {
+      var el = e.target.closest('[data-change]');
+      if (!el) return;
+      var fn = window[el.getAttribute('data-change')];
+      if (typeof fn === 'function') fn.call(el);
+    });
+    document.addEventListener('input', function (e) {
+      var el = e.target.closest('[data-input]');
+      if (!el) return;
+      var fn = window[el.getAttribute('data-input')];
+      if (typeof fn === 'function') fn.call(el);
+    });
+    document.addEventListener('submit', function (e) {
+      var form = e.target.closest('form[data-confirm]');
+      if (form && !window.confirm(form.getAttribute('data-confirm'))) {
+        e.preventDefault();
+      }
+    });
+
     // HTMX live region: announce after-swap events
     var live = document.getElementById('htmx-live-region');
     document.body.addEventListener('htmx:afterSwap', function (evt) {

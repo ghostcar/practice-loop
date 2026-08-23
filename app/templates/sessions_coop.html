@@ -97,7 +97,7 @@
         </button>
       </form>
 
-      <form action="/sessions/live/interrupt" method="POST" onsubmit="return confirm('Прервать совместную сессию?')">
+      <form action="/sessions/live/interrupt" method="POST" data-confirm="Прервать совместную сессию?">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button type="submit" class="px-6 py-3 pl-surface-soft hover:bg-[color:var(--border)] text-[color:var(--text-secondary)] font-bold text-xs rounded-xl transition-all border border-[color:var(--border-strong)] min-h-[44px]">
           {{ icon('stop', 'w-4 h-4') }} Прервать

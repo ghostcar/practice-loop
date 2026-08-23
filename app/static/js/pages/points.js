@@ -70,8 +70,8 @@
         ${r.description ? `<div class="text-xs text-slate-500">${escapeHtml(r.description)}</div>` : ''}
       </div>
       <div class="flex gap-1">
-        <button onclick="completeRedemption('${r.id}')" class="text-xs px-2 py-1 rounded bg-emerald-700 hover:bg-emerald-600">+${r.points_value}pts</button>
-        <button onclick="skipRedemption('${r.id}')" class="text-xs px-2 py-1 rounded bg-gray-700 hover:bg-gray-600">Skip</button>
+        <button data-action="completeRedemption" data-arg1="${r.id}" class="text-xs px-2 py-1 rounded bg-emerald-700 hover:bg-emerald-600">+${r.points_value}pts</button>
+        <button data-action="skipRedemption" data-arg1="${r.id}" class="text-xs px-2 py-1 rounded bg-gray-700 hover:bg-gray-600">Skip</button>
       </div>
     </div>
   `
@@ -94,7 +94,7 @@
       profiles
         .map(
           (p) =>
-            `<div class="flex justify-between items-center"><span>${escapeHtml(p.name)} ${p.is_default ? '(default)' : ''}</span><button onclick="delProfile('${escapeHtml(String(p.id))}')" class="text-red-700 dark:text-red-400 hover:text-red-500">Del</button></div>`
+            `<div class="flex justify-between items-center"><span>${escapeHtml(p.name)} ${p.is_default ? '(default)' : ''}</span><button data-action="delProfile" data-arg1="${escapeHtml(String(p.id))}" class="text-red-700 dark:text-red-400 hover:text-red-500">Del</button></div>`
         )
         .join('') || '<span class="text-[color:var(--text-muted)]">No profiles</span>';
     const sel = document.getElementById('assign-profile');

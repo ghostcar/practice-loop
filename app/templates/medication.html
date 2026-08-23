@@ -23,7 +23,7 @@
             <a href="/medications/export" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
                 {{ icon('download', 'w-4 h-4') }}{{ t.med_export }}
             </a>
-            <form action="/medications/migrate-inventory" method="post" class="inline" onsubmit="return confirm('{{ t.med_migrate_confirm }}')">
+            <form action="/medications/migrate-inventory" method="post" class="inline" data-confirm="{{ t.med_migrate_confirm }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                 <button type="submit" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
                     {{ icon('inventory', 'w-4 h-4') }}{{ t.med_migrate }}
@@ -175,7 +175,7 @@
                 {% for k in kits %}
                 <li class="py-2 flex items-center justify-between gap-2">
                     <span class="text-sm text-[color:var(--text)]">{{ k.name }}{% if k.location %} <span class="pl-text-muted text-xs">· {{ k.location }}</span>{% endif %}</span>
-                    <form action="/med-kits/{{ k.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
+                    <form action="/med-kits/{{ k.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
@@ -236,7 +236,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <form action="/medications/{{ m.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.med_delete }}?')">
+                    <form action="/medications/{{ m.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.med_delete }}?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
@@ -254,7 +254,7 @@
                         </span>
                         <span class="flex items-center gap-2">
                             {% if st.expiry_date %}<span class="text-xs {% if st.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ st.expiry_date }}</span>{% endif %}
-                            <form action="/med-stocks/{{ st.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
+                            <form action="/med-stocks/{{ st.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                                 <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
                             </form>
@@ -277,7 +277,7 @@
                             {% endif %}
                             {% if not s.is_active %}<span class="text-xs pl-text-muted">(inactive)</span>{% endif %}
                         </span>
-                        <form action="/med-schedules/{{ s.id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ t.med_delete }}?')">
+                        <form action="/med-schedules/{{ s.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                             <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
                         </form>
@@ -351,7 +351,7 @@
     </section>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const autofillBtn = document.getElementById('btn-autofill-pharma');
     if (!autofillBtn) return;

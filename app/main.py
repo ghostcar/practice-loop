@@ -11,6 +11,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import mimetypes
+import secrets
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -139,6 +140,14 @@ async def security_headers_middleware(request: Request, call_next):
     contain inline <script>/handlers and runtime Tailwind, so an enforcing CSP
     would break the UI (Gate C — collect first, then enforce).
     """
+    # Enforcing CSP (ADR-151): inline <script> blocks are allowed only with a
+    # per-request nonce (injected by the csp_nonce context processor); inline
+    # event handlers were migrated to data-* attributes + delegated listeners
+    # in app.js. 'unsafe-inline' stays for style-src only (Tailwind runtime
+    # injects a <style> block; CSS is not an XSS vector on its own).
+    # The nonce must be set BEFORE call_next so templates render it.
+    nonce = secrets.token_urlsafe(16)
+    request.state.csp_nonce = nonce
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
@@ -147,8 +156,8 @@ async def security_headers_middleware(request: Request, call_next):
     if request.url.scheme == "https":
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     response.headers.setdefault(
-        "Content-Security-Policy-Report-Only",
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "Content-Security-Policy",
+        f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; "
         "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
         "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; "
         "base-uri 'self'; form-action 'self'",

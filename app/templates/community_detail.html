@@ -52,14 +52,14 @@
                 <a href="/communities/{{ community.id }}/cockpit" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-archive-950 text-xs font-bold transition-all shadow inline-flex items-center gap-2">
                     {{ icon('ai', 'w-4 h-4') }} Cockpit ИИ-Верхнего
                 </a>
-                <form action="/communities/{{ community.id }}/delete" method="POST" onsubmit="return confirm('Удалить сообщество навсегда?')">
+                <form action="/communities/{{ community.id }}/delete" method="POST" data-confirm="Удалить сообщество навсегда?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="px-3 py-2 rounded-xl border border-red-800/60 text-red-400 text-xs font-semibold hover:bg-red-950/40 transition-colors inline-flex items-center gap-1.5">
                         {{ icon('delete', 'w-3.5 h-3.5') }} Удалить
                     </button>
                 </form>
                 {% else %}
-                <form action="/communities/{{ community.id }}/leave" method="POST" onsubmit="return confirm('Покинуть сообщество?')">
+                <form action="/communities/{{ community.id }}/leave" method="POST" data-confirm="Покинуть сообщество?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="px-3 py-2 rounded-xl border border-[color:var(--border)] text-[color:var(--text-secondary)] text-xs font-semibold hover:bg-[color:var(--surface-soft)] transition-colors inline-flex items-center gap-1.5">
                         {{ icon('logout', 'w-3.5 h-3.5') }} Покинуть
@@ -245,7 +245,7 @@
             {% endif %}
 
             <!-- Transfer ownership -->
-            <form action="/communities/{{ community.id }}/transfer" method="POST" class="pt-2 border-t border-[color:var(--border)] flex flex-wrap items-end gap-2" onsubmit="return confirm('Передать владение сообществом выбранному участнику? Вы станете обычным участником.')">
+            <form action="/communities/{{ community.id }}/transfer" method="POST" class="pt-2 border-t border-[color:var(--border)] flex flex-wrap items-end gap-2" data-confirm="Передать владение сообществом выбранному участнику? Вы станете обычным участником.">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                 <div class="space-y-1">
                     <label class="text-[10px] uppercase font-bold text-[color:var(--text-muted)]">Новый владелец</label>

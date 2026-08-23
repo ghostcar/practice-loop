@@ -47,7 +47,7 @@
     {% endfor %}
   </div>
 </div>
-<script>
+<script nonce="{{ csp_nonce }}">
 (function () {
   'use strict';
   var root = document.querySelector('[data-qp="{{ field_name_prefix }}"]');

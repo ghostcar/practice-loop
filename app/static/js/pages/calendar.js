@@ -36,7 +36,7 @@
       templates
         .map(
           (t) =>
-            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-[color:var(--text-muted)]">${escapeHtml(t.name)}${t.is_default ? defaultSuffix : ''} &mdash; ${t.windows.length}${winSuffix}</span><button onclick="delTpl('${escapeHtml(String(t.id))}')" class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
+            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-[color:var(--text-muted)]">${escapeHtml(t.name)}${t.is_default ? defaultSuffix : ''} &mdash; ${t.windows.length}${winSuffix}</span><button data-action="delTpl" data-arg1="${escapeHtml(String(t.id))}" class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
         )
         .join('') || '<span class="text-[color:var(--text-muted)]">' + escapeHtml(I18N.calendar_no_templates) + '</span>';
 
@@ -49,7 +49,7 @@
       overrides
         .map(
           (o) =>
-            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-[color:var(--text-muted)]">${escapeHtml(String(o.label || o.template_name))}: ${o.start_date} &rarr; ${o.end_date}</span><button onclick="delOvr('${escapeHtml(String(o.id))}')" class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
+            `<div class="flex justify-between items-center py-0.5"><span class="text-slate-600 dark:text-[color:var(--text-muted)]">${escapeHtml(String(o.label || o.template_name))}: ${o.start_date} &rarr; ${o.end_date}</span><button data-action="delOvr" data-arg1="${escapeHtml(String(o.id))}" class="text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs">${escapeHtml(I18N.calendar_btn_delete)}</button></div>`
         )
         .join('') || '<span class="text-[color:var(--text-muted)]">' + escapeHtml(I18N.calendar_no_overrides) + '</span>';
   }

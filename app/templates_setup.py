@@ -16,8 +16,15 @@ def _csrf_context(request: Request) -> dict:
     meta tag. Without this processor the token was only injected on the
     dashboard and home pages, so every other page sent an empty token and all
     state-changing requests failed CSRF verification with 403.
+
+    Also injects `csp_nonce` (per-request, set by the CSP middleware in
+    app/main.py) so inline <script> blocks render with nonce="..." and pass
+    the enforcing Content-Security-Policy (ADR-151).
     """
-    return {"csrf_token": request.cookies.get("csrf_token", "")}
+    return {
+        "csrf_token": request.cookies.get("csrf_token", ""),
+        "csp_nonce": getattr(request.state, "csp_nonce", ""),
+    }
 
 
 def _composition_context(request: Request) -> dict:

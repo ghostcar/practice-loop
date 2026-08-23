@@ -48,10 +48,10 @@
     <!-- Actions -->
     <div class="flex gap-2 flex-shrink-0 flex-wrap">
       {% if session.state == 'draft' %}
-      <button onclick="validateSession('{{ session.id }}')" class="px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium transition cursor-pointer">
+      <button data-action="validateSession" data-args='["{{ session.id }}"]' class="px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-xs font-medium transition cursor-pointer">
         {{ icon('search', 'w-4 h-4') }}{{ t.locktimer_validate or "Validate" }}
       </button>
-      <form action="/api/v2/locktimer/sessions/{{ session.id }}/start" method="post" onsubmit="return confirm('Start this chastity session? Rules will be frozen.')">
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/start" method="post" data-confirm="Start this chastity session? Rules will be frozen.">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button type="submit" class="px-4 py-2 bg-[color:var(--success)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 text-sm font-medium transition cursor-pointer inline-flex items-center gap-1.5">
           {{ icon('play', 'w-4 h-4') }}{{ t.locktimer_start or "Start" }}
@@ -92,7 +92,7 @@
       {% if session.merge_gap_seconds %}<span>· merge gap {{ session.merge_gap_seconds }}s</span>{% endif %}
     </div>
     <div class="mt-6 flex justify-center">
-      <form action="/api/v2/locktimer/sessions/{{ session.id }}/safety-stop" method="post" onsubmit="return confirm('Safety stop? Future occurrences will be cancelled. This cannot be undone.')">
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/safety-stop" method="post" data-confirm="Safety stop? Future occurrences will be cancelled. This cannot be undone.">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <input type="hidden" name="reason_code" value="user_requested">
         <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[color:var(--danger)] text-[color:var(--on-accent)] font-semibold transition hover:opacity-90 cursor-pointer">
@@ -260,7 +260,7 @@
           {% endif %}
         </div>
         {% if session.state == 'draft' %}
-        <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" data-confirm="Delete this rule?">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <button type="submit" class="text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer">{{ icon('close', 'w-3.5 h-3.5') }}</button>
         </form>
@@ -313,7 +313,7 @@
           <span class="ml-1 text-[color:var(--text-secondary)]">{{ r.due_window_seconds }}s</span>
         </div>
         {% if session.state == 'draft' %}
-        <form action="/api/v2/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this rule?')">
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" method="post" class="inline" data-confirm="Delete this rule?">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <button type="submit" class="text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer">{{ icon('close', 'w-3.5 h-3.5') }}</button>
         </form>
@@ -366,7 +366,7 @@
           {% if o.close_tag_number %}
           <span class="text-xs text-[color:var(--text-secondary)] font-mono inline-flex items-center gap-1">{{ icon('tag', 'w-3.5 h-3.5') }}{{ o.close_tag_number }}</span>
           {% endif %}
-          <button onclick="verifyTag('{{ o.id }}', '{{ o.close_tag_number or '' }}')" class="px-2 py-2 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer min-h-[44px]">{{ t.locktimer_verify_tag or "Verify" }}</button>
+          <button data-action="verifyTag" data-arg1="{{ o.id }}" data-arg2="{{ o.close_tag_number or '' }}" class="px-2 py-2 text-xs text-indigo-600 hover:bg-indigo-50 rounded cursor-pointer min-h-[44px]">{{ t.locktimer_verify_tag or "Verify" }}</button>
           {% if slot_journal_pending and slot_journal_pending[o.id] %}
           <a href="/journal" class="px-2 py-1 text-xs text-[color:var(--warning)] hover:bg-[color:var(--warning-soft)] rounded cursor-pointer inline-flex items-center gap-1">{{ icon('aftercare', 'w-3.5 h-3.5') }}{{ t.locktimer_journal_pending or "Complete journal details" }}</a>
           {% endif %}
@@ -577,7 +577,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 // Countdown timer
 (function() {
   var el = document.getElementById('countdown-display');

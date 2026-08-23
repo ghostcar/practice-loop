@@ -35,11 +35,11 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="hydration" class="accent-rose-500 rounded">
-                <span>Гидратация (500мл)</span>
+                <span>{{ icon('droplet', 'w-4 h-4 text-rose-400') }} Гидратация (500мл)</span>
             </label>
             <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="warm_compress" class="accent-rose-500 rounded">
-                <span>Тёплый Компресс</span>
+                <span>{{ icon('heat', 'w-4 h-4 text-rose-400') }} Тёплый Компресс</span>
             </label>
             <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="stretch" class="accent-rose-500 rounded">
@@ -47,7 +47,7 @@
             </label>
             <label class="p-3 bg-[color:var(--canvas-deep)] border border-[color:var(--border)] rounded-xl cursor-pointer flex items-center gap-2.5 text-xs text-[color:var(--text)]">
                 <input type="checkbox" x-model="tea" class="accent-rose-500 rounded">
-                <span>Травяной Чай</span>
+                <span>{{ icon('cup', 'w-4 h-4 text-rose-400') }} Травяной Чай</span>
             </label>
         </div>
     </div>
@@ -97,7 +97,7 @@
                         <div class="text-[color:var(--text)] font-semibold text-xs mt-0.5">{{ e.kind }} (Комфорт: {{ e.comfort_level or '—' }}/5)</div>
                         {% if e.notes %}<p class="text-xs text-[color:var(--text-muted)] mt-1">{{ e.notes }}</p>{% endif %}
                     </div>
-                    <form action="/aftercare/entries/{{ e.id }}/delete" method="POST" onsubmit="return confirm('Удалить запись aftercare?')">
+                    <form action="/aftercare/entries/{{ e.id }}/delete" method="POST" data-confirm="Удалить запись aftercare?"
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="text-xs text-rose-400 hover:underline min-h-[44px]">Удалить</button>
                     </form>

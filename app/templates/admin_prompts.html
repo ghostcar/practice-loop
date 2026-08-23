@@ -81,7 +81,7 @@
             </div>
 
             {% if prompt.is_customized %}
-            <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" onsubmit="return confirm('Сбросить промпт к заводским настройкам?');">
+            <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" data-confirm="Сбросить промпт к заводским настройкам?">
               <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
               <button type="submit" class="px-3 py-1.5 text-xs bg-[color:var(--surface-soft)] hover:bg-[color:var(--border)] text-[color:var(--text)] rounded-lg transition-colors">
                 Сбросить по умолчанию
@@ -139,7 +139,7 @@
             </div>
 
             {% if prompt.is_customized %}
-            <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" onsubmit="return confirm('Сбросить промпт к заводским настройкам?');">
+            <form action="/admin/prompts/{{ prompt.id }}/reset" method="POST" data-confirm="Сбросить промпт к заводским настройкам?">
               <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
               <button type="submit" class="px-3 py-1.5 text-xs bg-[color:var(--surface-soft)] hover:bg-[color:var(--border)] text-[color:var(--text)] rounded-lg transition-colors">
                 Сбросить по умолчанию

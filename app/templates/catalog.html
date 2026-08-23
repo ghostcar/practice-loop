@@ -125,7 +125,7 @@
   {% endif %}
   {% set care_ids = entity.care_product_ids | join(',') if entity.care_product_ids else '' %}
   <button type="button" class="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] text-[color:var(--text)] font-medium transition-colors"
-          title="{{ t.cpm_button_hint }}" onclick="openPersonalizeModal(this)"
+          title="{{ t.cpm_button_hint }}" data-action="openPersonalizeModal" data-args='["$this"]'
           data-id="{{ entity.id }}" data-name="{{ entity.real_name }}"
           data-dur-min="{{ hint.duration_min if hint and hint.duration_min is not none else '' }}"
           data-dur-max="{{ hint.duration_max if hint and hint.duration_max is not none else '' }}"

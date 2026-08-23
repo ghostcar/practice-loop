@@ -34,7 +34,7 @@
  This action cannot be undone.
  </p>
  <form action="/privacy/delete" method="post"
- onsubmit="return confirm('Are you absolutely sure? ALL your data will be permanently deleted.')">
+ data-confirm="Are you absolutely sure? ALL your data will be permanently deleted.">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
  <button type="submit"
  class="px-4 py-2 min-h-[44px] inline-flex items-center rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium">

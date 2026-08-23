@@ -125,7 +125,7 @@
  </button>
  </form>
  <form action="/llm/templates/{{ tmpl.id }}/delete" method="post"
- onsubmit="return confirm('Delete template {{ tmpl.name }}?')">
+ data-confirm="Delete template {{ tmpl.name }}?">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
  <button type="submit"
  class="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors">

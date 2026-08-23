@@ -215,7 +215,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ csp_nonce }}">
 (function() {
   var el = document.getElementById('countdown-display');
   if (!el) return;

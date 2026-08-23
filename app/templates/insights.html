@@ -114,7 +114,7 @@
                     <span class="pl-text-muted text-xs shrink-0">{{ r.sections | length }} {{ t.insights_sections_short }}</span>
                     {% if r.status == 'failed' %}<span class="text-xs shrink-0 text-[color:var(--danger)]">{{ t.insights_failed_short }}</span>{% endif %}
                 </a>
-                <form action="/insights/runs/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" onsubmit="return confirm('{{ t.insights_delete }}?')">
+                <form action="/insights/runs/{{ r.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.insights_delete }}?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.insights_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                 </form>
@@ -178,7 +178,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', async () => {
   const healthEl = document.getElementById('matrix-health-chart');
   const lockEl = document.getElementById('matrix-lock-chart');

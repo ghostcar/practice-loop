@@ -57,7 +57,7 @@
     var html = '<div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors' +
       (highlighted ? '' : ' opacity-30') + '" style="padding-left:' + (indent + 16) + 'px">';
     if (hasChildren) {
-      html += '<button onclick="window._bpToggle(\'' + id + '\')\" class="w-5 h-5 flex items-center justify-center text-[color:var(--text-muted)] hover:text-slate-600 dark:hover:text-slate-300 text-xs transition-transform\" id=\"' + id + '-btn\">\u25b8</button>';
+      html += '<button data-action="_bpToggle" data-arg1=\"' + id + '\" class="w-5 h-5 flex items-center justify-center text-[color:var(--text-muted)] hover:text-slate-600 dark:hover:text-slate-300 text-xs transition-transform\" id=\"' + id + '-btn\">\u25b8</button>';
     } else {
       html += '<span class="w-5"></span>';
     }

@@ -89,7 +89,7 @@
         {% if grant.status == 'active' %}
         <form action="/ds/grant/{{ grant.id }}/revoke" method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" onclick="return confirm('Вы уверены? Это мгновенно отозовет все права Верхнего (Safe Word).')" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1">
+          <button type="submit" data-confirm="Вы уверены? Это мгновенно отозовет все права Верхнего (Safe Word)." class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1">
             {{ icon('stop', 'w-4 h-4') }} Экстренный Отзыв (Safe Word)
           </button>
         </form>

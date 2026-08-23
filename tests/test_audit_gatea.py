@@ -113,7 +113,12 @@ async def test_security_headers_present_on_html_pages(async_client) -> None:
     assert response.headers.get("x-frame-options") == "DENY"
     assert response.headers.get("referrer-policy") == "strict-origin-when-cross-origin"
     assert "camera=()" in response.headers.get("permissions-policy", "")
-    assert "content-security-policy-report-only" in response.headers
+    # CSP is enforcing since ADR-151 (was report-only): script-src carries a
+    # per-request nonce and forbids 'unsafe-inline' for scripts.
+    csp = response.headers.get("content-security-policy", "")
+    assert "content-security-policy-report-only" not in response.headers
+    assert "'nonce-" in csp
+    assert "'unsafe-inline'" not in csp.split("script-src")[1].split(";")[0]
 
 
 async def test_security_headers_on_api_response(async_client) -> None:
@@ -122,7 +127,8 @@ async def test_security_headers_on_api_response(async_client) -> None:
     assert response.status_code == 200
     assert response.headers.get("x-content-type-options") == "nosniff"
     assert response.headers.get("x-frame-options") == "DENY"
-    assert "content-security-policy-report-only" in response.headers
+    assert "content-security-policy-report-only" not in response.headers
+    assert "'nonce-" in response.headers.get("content-security-policy", "")
     # HSTS only on https (test client is http).
     assert "strict-transport-security" not in response.headers
 
@@ -134,6 +140,9 @@ async def test_hsts_only_on_https(async_client) -> None:
 
     class FakeRequest:
         url = type("URL", (), {"scheme": "https"})()  # type: ignore[attr-defined]
+
+        class state:  # noqa: N801 - minimal stand-in for Request.state
+            csp_nonce = "test-nonce"
 
         async def _body(self):  # pragma: no cover - unused
             return b""

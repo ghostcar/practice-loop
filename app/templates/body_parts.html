@@ -25,8 +25,8 @@
  <input id="bp-search" type="text"
  placeholder="{{ t.body_parts_search_ph }}"
  class="flex-1 pl-surface border border-[color:var(--border)] rounded-xl px-4 py-2.5 text-sm text-[color:var(--text)]"
- oninput="window.filterTree()">
- <select id="bp-system" onchange="window.filterTree()"
+ data-input="filterTree">
+ <select id="bp-system" data-change="filterTree"
  class="pl-surface border border-[color:var(--border)] rounded-xl px-3 py-2.5 text-sm text-[color:var(--text)]">
  <option value="">{{ t.body_parts_system_all }}</option>
  <option value="general">General</option>

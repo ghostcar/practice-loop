@@ -91,7 +91,7 @@
     const container = document.getElementById('inv-cat-filters');
     if (!container) return;
     container.innerHTML = invCategories.map(c =>
-      `<button onclick="filterByCat('${c.id}')" data-cat="${c.id}" class="filter-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] pl-surface-soft text-xs text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] font-medium transition-colors">${escapeHtml(c.title)}</button>`
+      `<button data-action="filterByCat" data-arg1="${c.id}" data-cat="${c.id}" class="filter-btn px-2.5 py-1 rounded-lg border border-[color:var(--border)] pl-surface-soft text-xs text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] font-medium transition-colors">${escapeHtml(c.title)}</button>`
     ).join('');
   }
 
@@ -177,12 +177,12 @@
 
             <!-- ERP Item Quick Action Toolbar -->
             <div class="flex items-center gap-2 flex-shrink-0 self-start">
-              <button onclick="serviceItem('${escapeHtml(String(i.id))}')" class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-emerald-100 hover:text-emerald-700 text-xs font-medium transition-colors flex items-center gap-1" title="Отметить дезинфекцию / обслуживание сегодня">
+              <button data-action="serviceItem" data-arg1="${escapeHtml(String(i.id))}" class="px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-emerald-100 hover:text-emerald-700 text-xs font-medium transition-colors flex items-center gap-1" title="Отметить дезинфекцию / обслуживание сегодня">
                 ТО / Очистить
               </button>
-              <button onclick="pickImage('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--accent)] text-xs" title="Загрузить фото" aria-label="Photo"></button>
-              ${i.image_path ? `<button onclick="delImage('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--danger)] text-xs" title="Удалить фото" aria-label="Remove photo"></button>` : ''}
-              <button onclick="del('${escapeHtml(String(i.id))}')" class="p-1.5 rounded-lg border border-[color:var(--danger)] text-[color:var(--danger)] hover:bg-red-50 dark:hover:bg-red-900/30 text-xs font-medium">Удалить</button>
+              <button data-action="pickImage" data-arg1="${escapeHtml(String(i.id))}" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--accent)] text-xs" title="Загрузить фото" aria-label="Photo"></button>
+              ${i.image_path ? `<button data-action="delImage" data-arg1="${escapeHtml(String(i.id))}" class="p-1.5 rounded-lg border border-[color:var(--border)] pl-surface-soft hover:text-[color:var(--danger)] text-xs" title="Удалить фото" aria-label="Remove photo"></button>` : ''}
+              <button data-action="del" data-arg1="${escapeHtml(String(i.id))}" class="p-1.5 rounded-lg border border-[color:var(--danger)] text-[color:var(--danger)] hover:bg-red-50 dark:hover:bg-red-900/30 text-xs font-medium">Удалить</button>
             </div>
           </div>
         </div>
