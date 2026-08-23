@@ -62,6 +62,7 @@
       <p class="text-xs text-[color:var(--text-muted)]">Настройки экстренной очистки экрана сессии при необходимости.</p>
 
       <form action="/auth/logout" method="POST" class="pt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <button
           type="submit"
           class="w-full py-2.5 bg-rose-600/80 hover:bg-rose-500 text-white font-medium text-xs rounded-xl shadow transition-colors"

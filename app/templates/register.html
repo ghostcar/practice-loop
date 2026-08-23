@@ -12,6 +12,7 @@
  </p>
 
  <form action="/auth/register" method="post" class="space-y-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
  <div>
  <label for="email" class="block text-sm font-medium text-[color:var(--text)] mb-1">
  {{ t.register_email }}

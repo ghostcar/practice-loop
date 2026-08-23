@@ -32,6 +32,7 @@
 
     <!-- Generation Form / Workbench -->
     <form method="POST" action="/admin/ai-generator/generate" class="pl-surface border border-[color:var(--border)] rounded-2xl p-5 space-y-5 shadow-md">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <!-- Controls Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Mode Selector -->

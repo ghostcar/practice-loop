@@ -28,6 +28,7 @@
 
     <!-- Persona Builder Form -->
     <form method="POST" action="/agent/persona-builder" class="bg-archive-900 border border-archive-800 rounded-xl p-6 shadow-xl space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <div>
             <label class="block text-xs uppercase tracking-wider font-semibold text-archive-300 mb-2">
                 {{ icon('profile', 'w-4 h-4 text-amber-400 inline mr-1') }}

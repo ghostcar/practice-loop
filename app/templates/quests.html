@@ -53,6 +53,7 @@
                 </span>
                 {% elif uq.current_progress >= uq.quest.target_count %}
                 <form method="POST" action="/achievements/quests/{{ uq.id }}/claim">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold transition-all shadow">
                         {{ icon('points', 'w-3.5 h-3.5') }} Забрать +{{ uq.quest.reward_xp }} XP
                     </button>

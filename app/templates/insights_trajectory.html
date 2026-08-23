@@ -26,6 +26,7 @@
     </div>
 
     <form action="/insights/trajectory/generate-map" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <button
         type="submit"
         class="px-4 py-2 bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white font-medium text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
