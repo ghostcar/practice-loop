@@ -1385,3 +1385,15 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
   - `_insights_summary` re-export из insights_service для dashboard_service.
   - Лёгкие статические страницы (trajectory, report) без бизнес-логики остаются в routes.
 - **Коммит:** (pending)
+
+## ADR-169: sessions.py → sessions_service.py (Thin Routes)
+- **Статус:** принят
+- **Дата:** 2026-08-24
+- **Контекст:** sessions.py 616 строк — монолит с CRUD, lifecycle, JSON API, interactive pages.
+- **Решение:** Вынесены helpers (owned_session, record_event, serializer), page contexts, CRUD (create/accept/start/end), lifecycle (complete/interrupt live), task attach/detach, history в `app/services/sessions_service.py` (393 строки).
+  HTTP-хендлеры в `app/api/sessions.py` (371 строк, было 616) — тонкие обёртки.
+- **Последствия:**
+  - `NotFoundError` (app/services/errors.py) используется для ownership check (→ 404).
+  - `ValueError` используется для status conflicts (→ 409).
+  - `create_session()` использует `**kwargs.pop("title", "Session")` для гибкости.
+- **Коммит:** (pending)
