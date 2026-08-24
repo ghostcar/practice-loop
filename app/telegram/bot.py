@@ -1483,7 +1483,7 @@ if TG_BOT_TOKEN:
             await callback.answer("Account not linked.", show_alert=True)
             return
 
-        from app.api.care import _cycle_snapshot
+        from app.services.care_service import cycle_snapshot as _cycle_snapshot
         from app.models.care import CareEntry, CareRoutine
 
         today = datetime.now(UTC).date()

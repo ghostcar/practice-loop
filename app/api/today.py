@@ -190,9 +190,9 @@ async def _load_health_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 
 async def _load_care_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
-    from app.api.care import _care_summary
+    from app.services.care_service import get_care_summary
 
-    return await _care_summary(db, user_id)
+    return await get_care_summary(db, user_id)
 
 
 async def _load_aftercare_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:

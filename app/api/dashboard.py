@@ -259,9 +259,9 @@ async def dashboard(
         from app.platform.composition import composition
 
         if composition.care_enabled:
-            from app.api.care import _care_summary
+            from app.services.care_service import get_care_summary
 
-            care_summary = await _care_summary(db, user.id)
+            care_summary = await get_care_summary(db, user.id)
     except Exception:
         pass  # care may not be deployed yet
 

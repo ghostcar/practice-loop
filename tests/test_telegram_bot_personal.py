@@ -90,7 +90,7 @@ async def test_cycle_context_phase(db_session: AsyncSession, test_user: User) ->
 @pytest.mark.asyncio
 async def test_care_due_and_entry_flow(db_session: AsyncSession, test_user: User) -> None:
     """/care shows due routines; the 'Done' action records a CareEntry for today."""
-    from app.api.care import _cycle_snapshot
+    from app.services.care_service import cycle_snapshot as _cycle_snapshot
 
     routine = CareRoutine(user_id=test_user.id, name="Face mask", area="face", frequency_days=7)
     db_session.add(routine)

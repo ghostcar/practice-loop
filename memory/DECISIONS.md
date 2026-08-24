@@ -1291,3 +1291,16 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 - `LEGACY_COMMIT_ROUTERS` in `test_transaction_boundary.py` set to empty set
 
 **Verification:** 1380 tests pass, 0 `db.commit()` in `app/api/`, boundary test green.
+
+## ADR-161: care.py → care_service.py (Service Layer Extraction)
+
+**Статус:** принят, реализован.
+**Контекст:** care.py (1417 строк) — монолит с бизнес-логикой, HTTP-парсингом и сериализацией в одном файле.
+
+**Решение:**
+- `app/services/care_service.py` (1161 строк) — вся бизнес-логика: CRUD, валидация, сериализация, Pydantic-модели
+- `app/api/care.py` (478 строк, было 1417) — тонкие HTTP-обёртки: парсинг формы/JSON → вызов сервиса → ответ
+
+**Паттерн:** каждый HTTP-хендлер — 3-10 строк: try → service call → except ValueError → redirect/JSON
+
+**Рефакторинг其他大型 файлов (care.py -> care_service.py) — ADR-161.**
