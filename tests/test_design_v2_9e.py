@@ -46,17 +46,25 @@ async def _save_prefs(client, db=None, **overrides):
 
 class TestSettingsPage:
     async def test_settings_page_renders_sections(self, auth_client):
+        # Default tab (appearance)
         r = await auth_client.get("/settings")
         assert r.status_code == 200
         html = r.text
         assert "settings_title" in html or "Settings" in html
-        assert "appearance-h" in html
-        assert "dash-h" in html
-        assert "discr-h" in html
         assert 'name="theme_choice"' in html
         assert 'name="accent"' in html
-        assert 'name="block_order"' in html
-        assert 'name="discretion_mode"' in html
+
+        # Dashboard tab
+        r2 = await auth_client.get("/settings?tab=dashboard")
+        assert 'name="block_order"' in r2.text
+
+        # Privacy tab
+        r3 = await auth_client.get("/settings?tab=privacy")
+        assert 'name="discretion_mode"' in r3.text
+
+        # Security tab
+        r4 = await auth_client.get("/settings?tab=security")
+        assert 'action="/settings/password"' in r4.text
 
     async def test_save_settings_persists(self, db_session, auth_client, test_user):
         await _save_prefs(

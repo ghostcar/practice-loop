@@ -23,26 +23,40 @@
         <p class="pl-text-secondary text-sm mt-1">{{ t.settings_subtitle }}</p>
     </div>
 
-    <form method="post" action="/settings" id="settings-form" class="space-y-5">
+    {# ── Tab Navigation ── #}
+    {% set active_tab = request.query_params.get('tab', 'appearance') %}
+    <nav class="flex gap-1 overflow-x-auto pb-1 text-xs" role="tablist" aria-label="{{ t.nav_settings }}">
+        {% set tabs = [
+            ('appearance', 'sun', t.settings_tab_appearance),
+            ('dashboard', 'dashboard', t.settings_tab_dashboard),
+            ('modules', 'tasks', t.settings_tab_modules),
+            ('privacy', 'discretion', t.settings_tab_privacy),
+            ('security', 'shield', t.settings_tab_security),
+            ('billing', 'sparkles', t.settings_tab_billing),
+        ] %}
+        {% for key, icon_name, label in tabs %}
+        <a href="/settings?tab={{ key }}"
+           role="tab"
+           aria-selected="{{ 'true' if active_tab == key else 'false' }}"
+           class="px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-colors
+                  {{ 'pl-accent-bg text-[color:var(--on-accent)]' if active_tab == key else 'text-[color:var(--text-muted)] hover:text-[color:var(--text)] hover:bg-[color:var(--surface-soft)]' }}">
+            {{ icon(icon_name, 'w-3.5 h-3.5 inline') }} {{ label }}
+        </a>
+        {% endfor %}
+    </nav>
+
+    {# ════════════════════════════════════════════════════════════════════
+       TAB: Appearance
+       ════════════════════════════════════════════════════════════════════ #}
+    {% if active_tab == 'appearance' %}
+    <form method="post" action="/settings" class="space-y-5">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="tab" value="appearance">
 
-        <!-- Profile (ADR-110: abstract display name instead of email in shell) -->
-        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="profile-h">
-            <h2 id="profile-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_profile }}</h2>
-            <label class="block text-sm text-[color:var(--text-secondary)]">
-                {{ t.settings_display_name }}
-                <input type="text" name="display_name" maxlength="100"
-                       value="{{ user.display_name or '' }}"
-                       placeholder="{{ t.settings_display_name_ph }}"
-                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
-            </label>
-            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_display_name_hint }}</p>
-        </section>
-
-        <!-- Appearance -->
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="appearance-h">
             <h2 id="appearance-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_appearance }}</h2>
 
+            {# Theme #}
             <div class="space-y-2">
                 <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_theme }}</div>
                 <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_theme }}">
@@ -58,6 +72,7 @@
                 <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_theme_system_hint }}</p>
             </div>
 
+            {# Accent #}
             <div class="space-y-2">
                 <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_accent }}</div>
                 <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_accent }}">
@@ -73,6 +88,7 @@
                 </div>
             </div>
 
+            {# Density #}
             <div class="space-y-2">
                 <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_density }}</div>
                 <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="{{ t.settings_density }}">
@@ -87,7 +103,21 @@
             </div>
         </section>
 
-        <!-- Dashboard blocks -->
+        <div class="flex justify-end">
+            <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                {{ t.settings_save }}
+            </button>
+        </div>
+    </form>
+
+    {# ════════════════════════════════════════════════════════════════════
+       TAB: Dashboard
+       ════════════════════════════════════════════════════════════════════ #}
+    {% elif active_tab == 'dashboard' %}
+    <form method="post" action="/settings" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="tab" value="dashboard">
+
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="dash-h">
             <h2 id="dash-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_dashboard }}</h2>
             <div class="text-xs text-[color:var(--text-muted)]">{{ t.settings_dashboard_blocks }} — {{ t.settings_dashboard_hint }}</div>
@@ -116,52 +146,22 @@
             </ul>
         </section>
 
-        <!-- Discretion -->
-        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="discr-h">
-            <h2 id="discr-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_discretion }}</h2>
-            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_discretion_hint }}</p>
+        <div class="flex justify-end">
+            <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                {{ t.settings_save }}
+            </button>
+        </div>
+    </form>
 
-            <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_section_discretion }}">
-                {% for key, label in [('off', t.settings_discretion_off), ('always', t.settings_discretion_always), ('schedule', t.settings_discretion_schedule)] %}
-                <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
-                    <input type="radio" name="discretion_mode" value="{{ key }}" class="accent-[color:var(--accent)]"
-                           {{ 'checked' if prefs.discretion_mode == key else '' }}>
-                    <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
-                </label>
-                {% endfor %}
-            </div>
+    {# ════════════════════════════════════════════════════════════════════
+       TAB: Modules + LLM + Reminders + Med Gamification
+       ════════════════════════════════════════════════════════════════════ #}
+    {% elif active_tab == 'modules' %}
+    <form method="post" action="/settings" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="tab" value="modules">
 
-            <div class="flex items-center gap-4">
-                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_discretion_start }}
-                    <input type="time" name="discretion_start" value="{{ prefs.discretion.start }}"
-                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
-                </label>
-                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_discretion_end }}
-                    <input type="time" name="discretion_end" value="{{ prefs.discretion.end }}"
-                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
-                </label>
-            </div>
-
-            <div class="flex items-center gap-2 pt-1">
-                <a href="/discretion/bailout" class="inline-flex items-center gap-1.5 text-xs font-medium text-[color:var(--accent)] hover:text-[color:var(--accent-hover)] transition-colors">
-                    {{ icon('shield', 'w-3.5 h-3.5') }} Центр Управления Режимом (Emergency Discretion & Stealth)
-                </a>
-            </div>
-
-            <div class="space-y-2">
-                <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_blur }}</div>
-                <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_blur }}">
-                    {% for key, label in [(0, t.settings_blur_0), (1, t.settings_blur_1), (2, t.settings_blur_2)] %}
-                    <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
-                        <input type="radio" name="blur" value="{{ key }}" class="accent-[color:var(--accent)]"
-                               {{ 'checked' if prefs.blur == key else '' }}>
-                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
-                    </label>
-                    {% endfor %}
-                </div>
-            </div>
-        </section>
-
+        {# Module toggles #}
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="modules-h">
             <h2 id="modules-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_modules_title }}</h2>
             <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_modules_hint }}</p>
@@ -175,7 +175,7 @@
             </div>
         </section>
 
-        <!-- LLM mode (ADR-087) -->
+        {# LLM mode #}
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="llm-h">
             <h2 id="llm-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_llm }}</h2>
             <div class="text-xs text-[color:var(--text-muted)]">{{ t.settings_llm_hint }}</div>
@@ -193,7 +193,7 @@
             {% endif %}
         </section>
 
-        <!-- Reminders (ADR-098) -->
+        {# Reminders #}
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="rem-h">
             <h2 id="rem-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_reminders }}</h2>
             <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_reminder_hint }}</p>
@@ -224,7 +224,7 @@
             </div>
         </section>
 
-        <!-- Medication gamification (ADR-137) -->
+        {# Medication gamification #}
         <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="med-game-h">
             <h2 id="med-game-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_med_gamification }}</h2>
             <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_med_gamification_hint }}</p>
@@ -237,12 +237,77 @@
         </section>
 
         <div class="flex justify-end">
-            <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+            <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
                 {{ t.settings_save }}
             </button>
         </div>
     </form>
 
+    {# ════════════════════════════════════════════════════════════════════
+       TAB: Privacy (Discretion + Blur)
+       ════════════════════════════════════════════════════════════════════ #}
+    {% elif active_tab == 'privacy' %}
+    <form method="post" action="/settings" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="tab" value="privacy">
+
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="discr-h">
+            <h2 id="discr-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_section_discretion }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_discretion_hint }}</p>
+
+            <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_section_discretion }}">
+                {% for key, label in [('off', t.settings_discretion_off), ('always', t.settings_discretion_always), ('schedule', t.settings_discretion_schedule)] %}
+                <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                    <input type="radio" name="discretion_mode" value="{{ key }}" class="accent-[color:var(--accent)]"
+                           {{ 'checked' if prefs.discretion_mode == key else '' }}>
+                    <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="flex items-center gap-4">
+                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_discretion_start }}
+                    <input type="time" name="discretion_start" value="{{ prefs.discretion.start }}"
+                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
+                </label>
+                <label class="text-sm text-[color:var(--text-secondary)]">{{ t.settings_discretion_end }}
+                    <input type="time" name="discretion_end" value="{{ prefs.discretion.end }}"
+                           class="ml-2 pl-surface-soft rounded-lg border border-[color:var(--border)] px-2 py-1.5 text-sm text-[color:var(--text)]">
+                </label>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+                <a href="/discretion/bailout" class="inline-flex items-center gap-1.5 text-xs font-medium text-[color:var(--accent)] hover:text-[color:var(--accent-hover)] transition-colors">
+                    {{ icon('shield', 'w-3.5 h-3.5') }} {{ t.settings_discretion_bailout or 'Emergency Discretion & Stealth' }}
+                </a>
+            </div>
+
+            <div class="space-y-2">
+                <div class="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wider">{{ t.settings_blur }}</div>
+                <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="{{ t.settings_blur }}">
+                    {% for key, label in [(0, t.settings_blur_0), (1, t.settings_blur_1), (2, t.settings_blur_2)] %}
+                    <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                        <input type="radio" name="blur" value="{{ key }}" class="accent-[color:var(--accent)]"
+                               {{ 'checked' if prefs.blur == key else '' }}>
+                        <span class="text-sm text-[color:var(--text)]">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <div class="flex justify-end">
+            <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                {{ t.settings_save }}
+            </button>
+        </div>
+    </form>
+
+    {# ════════════════════════════════════════════════════════════════════
+       TAB: Security (Password + PIN)
+       ════════════════════════════════════════════════════════════════════ #}
+    {% elif active_tab == 'security' %}
+    {# Password #}
     <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="password-h">
         <div>
             <h2 id="password-h" class="text-sm font-semibold text-[color:var(--text)]">{{ t.settings_password_title }}</h2>
@@ -277,12 +342,13 @@
         </form>
     </section>
 
+    {# PIN #}
     <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="pin-h">
         <div>
             <h2 id="pin-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
                 {{ icon('shield', 'w-4 h-4') }} {{ t.settings_pin_title or 'Security PIN' }}
             </h2>
-            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.settings_pin_hint or 'Protect sensitive operations (Media Vault, exposure drops) with a 4–16 digit PIN. Once verified, access is cached for 20 minutes.' }}</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.settings_pin_hint or 'Protect sensitive operations with a 4–16 digit PIN. Verified access cached for 20 minutes.' }}</p>
         </div>
         {% set pin_status = request.query_params.get('pin_status') %}
         {% if pin_status %}
@@ -291,23 +357,39 @@
         </p>
         {% endif %}
         <div id="pin-form-area" class="max-w-md space-y-3">
-            {# The form is loaded dynamically via HTMX from /settings/pin-form to reflect pin state #}
             <div hx-get="/settings/pin-form" hx-trigger="load" hx-swap="outerHTML">
                 <p class="text-xs text-[color:var(--text-muted)]">{{ icon('refresh', 'w-3.5 h-3.5 inline') }} Loading…</p>
             </div>
         </div>
     </section>
 
+    {# ════════════════════════════════════════════════════════════════════
+       TAB: Billing
+       ════════════════════════════════════════════════════════════════════ #}
+    {% elif active_tab == 'billing' %}
     <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="billing-h">
         <div>
             <h2 id="billing-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
-                {{ icon('sparkles', 'w-4 h-4') }} Подписка & Платёжные Шлюзы
+                {{ icon('sparkles', 'w-4 h-4') }} {{ t.settings_billing_title or 'Подписка & Платёжные Шлюзы' }}
             </h2>
-            <p class="text-xs text-[color:var(--text-muted)] mt-1">Текущий план: <strong class="capitalize">{{ user.subscription_tier or 'free' }}</strong>. Управление тирами, шлюзами (Stripe / Telegram Stars / Crypto / ЮKassa) и историей инвойсов.</p>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">
+                {{ t.settings_billing_hint or 'Текущий план:' }} <strong class="capitalize">{{ user.subscription_tier or 'free' }}</strong>.
+                {{ t.settings_billing_detail or 'Управление тирами, шлюзами и историей инвойсов.' }}
+            </p>
         </div>
         <a href="/billing" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
-            {{ icon('points', 'w-4 h-4') }} Перейти к Подписке
+            {{ icon('points', 'w-4 h-4') }} {{ t.settings_billing_cta or 'Перейти к Подписке' }}
         </a>
     </section>
+    {% endif %}
+
+    {# ── Status messages (after redirect) ── #}
+    {% set saved = request.query_params.get('saved') %}
+    {% if saved %}
+    <div class="fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg bg-emerald-500/90 text-white text-sm font-medium shadow-lg animate-pulse"
+         x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)">
+        {{ icon('check', 'w-4 h-4 inline') }} {{ t.settings_saved_notification or 'Настройки сохранены' }}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

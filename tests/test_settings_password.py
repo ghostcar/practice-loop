@@ -8,7 +8,7 @@ pytestmark = pytest.mark.anyio
 
 
 async def test_settings_renders_password_form(auth_client):
-    response = await auth_client.get("/settings")
+    response = await auth_client.get("/settings?tab=security")
     assert response.status_code == 200
     assert 'action="/settings/password"' in response.text
     assert 'autocomplete="current-password"' in response.text
