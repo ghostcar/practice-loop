@@ -213,3 +213,25 @@ async def toggle_discretion_endpoint(
     db.add(user)
     await db.flush()
     return RedirectResponse(url="/discretion/bailout", status_code=303)
+
+
+@router.get("/settings/pin-form", response_class=HTMLResponse)
+async def pin_form_fragment(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """HTMX fragment: PIN management form (set / change / clear)."""
+    locale = detect_locale(request, user.locale)
+    t = get_translations(locale)
+    return templates.TemplateResponse(
+        request=request,
+        name="components/pin_form_fragment.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "has_pin": user.pin_hash is not None,
+            "pin_status": request.query_params.get("pin_status"),
+        },
+    )

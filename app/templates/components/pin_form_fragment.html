@@ -1,0 +1,70 @@
+{% from "components/icon.html" import icon %}
+
+{% if pin_status %}
+<p class="text-sm {{ 'text-[color:var(--success)]' if pin_status in ('set','changed','cleared') else 'text-[color:var(--danger)]' }}" role="status">
+    {{ t['settings_pin_' + pin_status] }}
+</p>
+{% endif %}
+
+{% if has_pin %}
+<!-- PIN is set → show change + clear forms -->
+<form hx-post="/security/change-pin" hx-target="#pin-form-area" hx-swap="outerHTML" class="space-y-3 max-w-md">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_pin_current or 'Current PIN' }}
+        <input type="password" name="current_pin" required minlength="4" maxlength="16" autocomplete="off" inputmode="numeric"
+               class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+    </label>
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_pin_new or 'New PIN' }}
+        <input type="password" name="new_pin" required minlength="4" maxlength="16" autocomplete="off" inputmode="numeric"
+               class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+    </label>
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_pin_confirm or 'Confirm new PIN' }}
+        <input type="password" name="confirm_new_pin" required minlength="4" maxlength="16" autocomplete="off" inputmode="numeric"
+               class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+    </label>
+    <div class="flex items-center gap-3">
+        <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+            {{ t.settings_pin_change_btn or 'Change PIN' }}
+        </button>
+    </div>
+</form>
+
+<hr class="border-[color:var(--border)] my-4">
+
+<form hx-post="/security/clear-pin" hx-target="#pin-form-area" hx-swap="outerHTML" class="space-y-3 max-w-md"
+      onsubmit="return confirm('{{ t.settings_pin_clear_confirm or 'Remove PIN protection? You can set a new one later.' }}')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_pin_current or 'Current PIN' }}
+        <input type="password" name="current_pin" required minlength="4" maxlength="16" autocomplete="off" inputmode="numeric"
+               class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+    </label>
+    <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--danger)] text-white text-sm font-medium hover:opacity-90 transition-colors">
+        {{ t.settings_pin_clear_btn or 'Remove PIN' }}
+    </button>
+</form>
+
+{% else %}
+<!-- No PIN set → show set form -->
+<form hx-post="/security/set-pin" hx-target="#pin-form-area" hx-swap="outerHTML" class="space-y-3 max-w-md">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_pin_new or 'New PIN' }}
+        <input type="password" name="pin_code" required minlength="4" maxlength="16" autocomplete="off" inputmode="numeric"
+               placeholder="4–16 digits"
+               class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+    </label>
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_pin_confirm or 'Confirm PIN' }}
+        <input type="password" name="confirm_pin" required minlength="4" maxlength="16" autocomplete="off" inputmode="numeric"
+               placeholder="Same 4–16 digits"
+               class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+    </label>
+    <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+        {{ t.settings_pin_set_btn or 'Set PIN' }}
+    </button>
+</form>
+{% endif %}

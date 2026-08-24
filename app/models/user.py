@@ -35,6 +35,9 @@ class User(Base):
     # Step 23: Health adaptation user control preferences (migration 070)
     health_adaptation_mode: Mapped[str] = mapped_column(String(30), default="auto_reduce", nullable=False)
     health_adaptation_sensitivity: Mapped[str] = mapped_column(String(30), default="moderate", nullable=False)
+    # ADR-152: 2FA PIN for sensitive operations (Media Vault, exposure drops, etc.).
+    # bcrypt hash of the user-chosen PIN; None = PIN not set.
+    pin_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     timezone_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)

@@ -64,7 +64,9 @@ async def test_public_certificate_verification_page(auth_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_security_2fa_pin_verification(auth_client: AsyncClient, test_user: User):
-    """POST /security/verify-pin verifies 2FA PIN code."""
+    """POST /security/verify-pin verifies 2FA PIN code (ADR-152)."""
+    # Pin must be set first
+    await auth_client.post("/security/set-pin", data={"pin_code": "1234", "confirm_pin": "1234"})
     resp = await auth_client.post("/security/verify-pin", data={"pin_code": "1234"})
     assert resp.status_code == 200
     assert resp.json()["status"] == "verified"

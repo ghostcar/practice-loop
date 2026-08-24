@@ -1161,3 +1161,23 @@ manual 154). Прод не тронут — отдельный prod-импорт
 | ADR-149 | 2026-08-23 | csrf_token во всех нативных POST-формах (аудит auth-флоу) | Аудит страниц аутентификации в браузере (забытый пароль / смена пароля / logout) выявил: CSRF-middleware применяется только при авторизованной сессии, но 14 нативных POST-форм не несли hidden csrf_token (admin_ai_generator, admin_prompts ×4, agent_chat, discretion_bailout logout, insights_medical_exporter, insights_trajectory, persona_builder, quests claim, training_adaptive ×2, login, register) — сабмит для залогиненного давал 403 (нативный submit не шлёт X-CSRF-Token-заголовок, который добавляют fetch/htmx-обёртки app.js). Подтверждено в браузере на /discretion/bailout и /agent/chat (403). Фикс: hidden input `{{ csrf_token or '' }}` добавлен во все формы (context processor app/templates_setup.py даёт токен глобально; для авторизованных cookie всегда уже установлена). После фикса — 0 форм без токена, сабмиты bailout logout и agent chat работают (редирект вместо 403). Заодно проверены: смена пароля /settings/password (статусы invalid/length/mismatch/same/changed, редирект после смены, старый пароль → 401, новый → ок, ApiToken-инвалидация), logout через base (POST, куки сброшены), CSRF-гвард auth-страниц для авторизованных (ADR-148). Не реализовано: forgot/reset password (нет SMTP-инфраструктуры — только админский reset в admin.py); при добавлении email-доставки нужен флоу «забыли пароль». E2E 2 passed, 34 серверных passed. | принято |
 | ADR-150 | 2026-08-23 | Редирект на /login с уведомлением при истёкшем токене | HTML-обработчик 401 (main.py http_exception_handler) редиректил на /auth/login — POST-only эндпоинт, GET даёт 405: браузер с протухшим JWT попадал на error-страницу, а битая кука оставалась (каждая защищённая страница вечно давала 401). Исправление: 303 → /login?session_expired=1 + delete_cookie(access_token) (кука сбрасывается, цикл 401 прерывается); login.html показывает переведённое уведомление (RU/EN login_session_expired, янтарный alert role="alert", иконка warning) с приоритетом над registered-уведомлением; JSON-клиенты (mobile/bearer) по-прежнему получают голый 401. Тесты: +2 в tests/test_auth.py (303 + location + set-cookie очистка; рендер уведомления). Проверено в браузере: битый токен → /login?session_expired=1, alert виден. 22 auth + 34 смежных passed. | принято |
 | ADR-151 | 2026-08-23 | Enforcing CSP (nonce) + 5 иконок в пакет; закрытие Exit-гейтов R9/R10 | **CSP**: `Content-Security-Policy-Report-Only` → enforcing (ADR-151). Inline-скрипты (18 шаблонов, ~1300 строк) получили per-request nonce (secrets.token_urlsafe в security_headers_middleware ДО call_next; контекст-процессор `csp_nonce` в templates_setup). 60 inline-обработчиков в 36 шаблонах + 17 в JS-строках (innerHTML) мигрированы на data-action/data-change/data-input/data-confirm + делегаты в app.js (click/change/input/submit; `$this` в data-args → элемент; historyBack/copyImportUrl спец-кейсы). `script-src 'self' 'nonce-...'` без unsafe-inline; style-src оставлен unsafe-inline (Tailwind runtime). Обновлены тесты: test_audit_s57 (гейт: 0 inline-скриптов без nonce рекурсивно), test_audit_gatea (enforcing + nonce), test_catalog_personalize (data-action). Полный pytest **1366 passed**. **Иконки**: heat/cup/gift/journal/grid добавлены в пакет (147 иконок, генератор + svg/ + sprite синхронны), подключены: aftercare (Тёплый Компресс/Травяной Чай), quests (Забрать XP), nav «Журнал» (journal.svg вместо aftercare), insights_analytics (матрица → grid). **Гейты**: R9 Exit и R10 Exit в REFACTOR_ROADMAP_V2.md закрыты (R9 — чистый репозиторий; R10 — RC v1.0.0-rc1 готов, ADR-147). | принято |
+
+### ADR-152: Real 2FA PIN with Session Cache (replaces simulation)
+
+**Date:** 2026-08-24
+**Status:** Accepted
+
+Replaces the simulated PIN check (`pin_code == "1234" or len(pin_code) == 4`) with real bcrypt-hashed PIN stored in `users.pin_hash`, backed by an in-memory session cache (20-min TTL).
+
+**Changes:**
+- `users.pin_hash` column (String(255), nullable) — bcrypt hash of user's 4–16 digit PIN
+- `POST /security/set-pin` — set initial PIN
+- `POST /security/change-pin` — change PIN (requires current)
+- `POST /security/clear-pin` — remove PIN (requires current)
+- `POST /security/verify-pin` — real bcrypt check + cache TTL
+- `GET /security/pin-status` — has_pin + session_cached flags
+- In-memory `_PinCache` with 20-min TTL per user
+- UI: PIN section in settings.html via HTMX fragment (`components/pin_form_fragment.html`)
+- i18n keys EN/RU for all PIN operations
+- 10 new tests in `tests/test_pin.py`, 1 updated legacy test
+- Migration: `089_add_user_pin_hash`

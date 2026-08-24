@@ -277,6 +277,27 @@
         </form>
     </section>
 
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="pin-h">
+        <div>
+            <h2 id="pin-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('shield', 'w-4 h-4') }} {{ t.settings_pin_title or 'Security PIN' }}
+            </h2>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.settings_pin_hint or 'Protect sensitive operations (Media Vault, exposure drops) with a 4–16 digit PIN. Once verified, access is cached for 20 minutes.' }}</p>
+        </div>
+        {% set pin_status = request.query_params.get('pin_status') %}
+        {% if pin_status %}
+        <p class="text-sm {{ 'text-[color:var(--success)]' if pin_status in ('set','changed','cleared') else 'text-[color:var(--danger)]' }}" role="status">
+            {{ t['settings_pin_' + pin_status] }}
+        </p>
+        {% endif %}
+        <div id="pin-form-area" class="max-w-md space-y-3">
+            {# The form is loaded dynamically via HTMX from /settings/pin-form to reflect pin state #}
+            <div hx-get="/settings/pin-form" hx-trigger="load" hx-swap="outerHTML">
+                <p class="text-xs text-[color:var(--text-muted)]">{{ icon('refresh', 'w-3.5 h-3.5 inline') }} Loading…</p>
+            </div>
+        </div>
+    </section>
+
     <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="billing-h">
         <div>
             <h2 id="billing-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
