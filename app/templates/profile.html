@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/dashboard" class="hover:text-[color:var(--text)] transition-colors">{{ t.dashboard_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.nav_profile }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-5">
+    {# Status message #}
+    {% set profile_status = request.query_params.get('status') %}
+    {% if profile_status == 'updated' %}
+    <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-2">
+        {{ icon('check', 'w-4 h-4') }} {{ t.profile_saved or 'Профиль обновлён' }}
+    </div>
+    {% endif %}
+
+    {# ── Header Card ── #}
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            {# Avatar placeholder — initial letter #}
+            <div class="w-16 h-16 rounded-2xl bg-[color:var(--accent)] flex items-center justify-center text-2xl font-bold text-[color:var(--on-accent)] flex-shrink-0">
+                {{ (user.display_name or user.email)[0] | upper }}
+            </div>
+            <div class="flex-1 min-w-0">
+                <h1 class="pl-display text-2xl font-semibold text-[color:var(--text)]">
+                    {{ user.display_name or user.email.split('@')[0] }}
+                </h1>
+                <p class="text-sm text-[color:var(--text-muted)] mt-0.5">{{ user.email }}</p>
+                <div class="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-full bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)]">
+                        {{ icon('profile', 'w-3.5 h-3.5 inline') }} {{ t['account_role_' + user.role] }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)]">
+                        {{ icon('points', 'w-3.5 h-3.5 inline') }} {{ tier_label }}
+                    </span>
+                    {% if tg_linked %}
+                    <span class="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/30">
+                        {{ icon('telegram', 'w-3.5 h-3.5 inline') }} Telegram
+                    </span>
+                    {% endif %}
+                    {% if has_pin %}
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        {{ icon('shield', 'w-3.5 h-3.5 inline') }} PIN
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ── Stats Grid ── #}
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4 text-center">
+            <div class="text-2xl font-bold tabular-nums pl-accent-text">{{ level }}</div>
+            <div class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.dashboard_level_label or 'Уровень' }}</div>
+        </div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4 text-center">
+            <div class="text-2xl font-bold tabular-nums text-[color:var(--text)]">{{ progress.xp }}</div>
+            <div class="text-xs text-[color:var(--text-muted)] mt-1">XP</div>
+        </div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4 text-center">
+            <div class="text-2xl font-bold tabular-nums text-[color:var(--text)]">{{ progress.current_streak }}</div>
+            <div class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.dashboard_streak }}</div>
+        </div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-4 text-center">
+            <div class="text-2xl font-bold tabular-nums text-[color:var(--success)]">{{ total_completed }}</div>
+            <div class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.dashboard_done or 'Выполнено' }}</div>
+        </div>
+    </section>
+
+    {# ── XP Progress ── #}
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
+        <div class="flex items-end justify-between mb-2">
+            <span class="text-sm font-medium text-[color:var(--text)]">
+                {{ t.dashboard_level_label or 'Уровень' }} {{ level }} → {{ level + 1 }}
+            </span>
+            <span class="text-xs pl-mono pl-accent-text tabular-nums">{{ xp_current }} / {{ xp_next }}</span>
+        </div>
+        <div class="w-full h-2.5 bg-[color:var(--surface-soft)] rounded-full overflow-hidden">
+            <div class="h-full bg-[color:var(--accent)] rounded-full transition-all duration-700 ease-out" style="width: {{ xp_percent }}%"></div>
+        </div>
+    </section>
+
+    {# ── Edit Profile Form ── #}
+    <form method="post" action="/profile/update" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="edit-h">
+            <h2 id="edit-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('edit', 'w-4 h-4') }} {{ t.profile_edit_title or 'Редактировать профиль' }}
+            </h2>
+
+            {# Display name #}
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.settings_display_name }}
+                <input type="text" name="display_name" maxlength="100"
+                       value="{{ user.display_name or '' }}"
+                       placeholder="{{ t.settings_display_name_ph }}"
+                       class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+            </label>
+            <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_display_name_hint }}</p>
+
+            {# Locale #}
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.locale_label or 'Язык интерфейса' }}
+                <select name="locale"
+                        class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+                    {% for code, label in locale_labels.items() %}
+                    <option value="{{ code }}" {{ 'selected' if user.locale == code else '' }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            {# Timezone #}
+            <label class="block text-sm text-[color:var(--text-secondary)]">
+                {{ t.account_timezone or 'Часовой пояс' }}
+                <select name="timezone"
+                        class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+                    {% for tz, label in timezone_presets %}
+                    <option value="{{ tz }}" {{ 'selected' if user.timezone == tz else '' }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <div class="flex justify-end">
+                <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                    {{ t.settings_save }}
+                </button>
+            </div>
+        </section>
+    </form>
+
+    {# ── Account Info (read-only) ── #}
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="info-h">
+        <h2 id="info-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('database', 'w-4 h-4') }} {{ t.account_title or 'Информация аккаунта' }}
+        </h2>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.account_email }}</dt>
+                <dd class="mt-0.5 break-all text-[color:var(--text)]">{{ user.email }}</dd>
+            </div>
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.account_timezone }}</dt>
+                <dd class="mt-0.5 text-[color:var(--text)]">{{ user.timezone }}</dd>
+            </div>
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.account_created }}</dt>
+                <dd class="mt-0.5 text-[color:var(--text)]">{{ localtime(user.created_at, '%Y-%m-%d') }} ({{ account_age_days }} {{ t.profile_days or 'дней' }})</dd>
+            </div>
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.profile_last_activity or 'Последняя активность' }}</dt>
+                <dd class="mt-0.5 text-[color:var(--text)]">{{ localtime(last_activity, '%Y-%m-%d %H:%M') if last_activity else '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.profile_total_sessions or 'Всего сессий' }}</dt>
+                <dd class="mt-0.5 text-[color:var(--text)]">{{ total_sessions }}</dd>
+            </div>
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.profile_interrupted or 'Прервано' }}</dt>
+                <dd class="mt-0.5 text-[color:var(--text)]">{{ total_interrupted }}</dd>
+            </div>
+            <div>
+                <dt class="text-[color:var(--text-muted)] text-xs">{{ t.profile_modules_active or 'Активных модулей' }}</dt>
+                <dd class="mt-0.5 text-[color:var(--text)]">{{ enabled_modules_count }}</dd>
+            </div>
+        </dl>
+    </section>
+
+    {# ── Quick Links ── #}
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="links-h">
+        <h2 id="links-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('menu', 'w-4 h-4') }} {{ t.profile_quick_links or 'Быстрые ссылки' }}
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a href="/settings" class="flex items-center gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors">
+                {{ icon('settings', 'w-5 h-5 text-[color:var(--text-muted)]') }}
+                <div>
+                    <div class="text-sm font-medium text-[color:var(--text)]">{{ t.nav_settings }}</div>
+                    <div class="text-xs text-[color:var(--text-muted)]">{{ t.profile_link_settings or 'Внешний вид, модули, приватность' }}</div>
+                </div>
+            </a>
+            <a href="/settings#password-h" class="flex items-center gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors">
+                {{ icon('lock', 'w-5 h-5 text-[color:var(--text-muted)]') }}
+                <div>
+                    <div class="text-sm font-medium text-[color:var(--text)]">{{ t.account_change_password }}</div>
+                    <div class="text-xs text-[color:var(--text-muted)]">{{ t.profile_link_password or 'Изменить пароль входа' }}</div>
+                </div>
+            </a>
+            <a href="/settings#pin-h" class="flex items-center gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors">
+                {{ icon('shield', 'w-5 h-5 text-[color:var(--text-muted)]') }}
+                <div>
+                    <div class="text-sm font-medium text-[color:var(--text)]">PIN {{ t.settings_pin_title or '' }}</div>
+                    <div class="text-xs text-[color:var(--text-muted)]">{{ t.profile_link_pin or 'Настроить PIN-код' }}</div>
+                </div>
+            </a>
+            <a href="/privacy" class="flex items-center gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors">
+                {{ icon('privacy', 'w-5 h-5 text-[color:var(--text-muted)]') }}
+                <div>
+                    <div class="text-sm font-medium text-[color:var(--text)]">{{ t.account_privacy }}</div>
+                    <div class="text-xs text-[color:var(--text-muted)]">{{ t.profile_link_privacy or 'Экспорт, удаление данных' }}</div>
+                </div>
+            </a>
+            {% if user.role == 'admin' %}
+            <a href="/admin" class="flex items-center gap-3 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors">
+                {{ icon('database', 'w-5 h-5 text-[color:var(--text-muted)]') }}
+                <div>
+                    <div class="text-sm font-medium text-[color:var(--text)]">{{ t.nav_admin or 'Админ' }}</div>
+                    <div class="text-xs text-[color:var(--text-muted)]">{{ t.profile_link_admin or 'Панель управления' }}</div>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

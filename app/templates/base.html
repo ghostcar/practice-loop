@@ -77,6 +77,7 @@
     'privacy': t.privacy_title,
     'admin': t.admin_title_page,
     'social': t.nav_social,
+    'profile': t.nav_profile,
     'settings': t.nav_settings,
     'account': t.nav_account,
 } %}
@@ -813,9 +814,9 @@
                             <div class="text-[11px] text-[color:var(--text-muted)] mt-0.5 capitalize">{{ user.role if user else 'user' }} role</div>
                         </div>
                         <div class="py-1">
-                            <a href="/account" class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium pl-text-secondary hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
+                            <a href="/profile" class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium pl-text-secondary hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
                                 {{ icon('profile', 'w-4 h-4 text-[color:var(--accent)]') }}
-                                <span>{{ t.nav_account }}</span>
+                                <span>{{ t.nav_profile }}</span>
                             </a>
                             <a href="/settings" class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium pl-text-secondary hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text)] transition-colors" role="menuitem">
                                 {{ icon('settings', 'w-4 h-4') }}
@@ -894,9 +895,9 @@
                         {{ (user.display_name or t.user_display_fallback) if user else '' }}
                     </div>
                     <div class="space-y-1">
-                        <a href="/account" class="pl-nav-item">
+                        <a href="/profile" class="pl-nav-item">
                             {{ icon('profile', 'w-4 h-4') }}
-                            <span class="pl-nav-label">{{ t.nav_account }}</span>
+                            <span class="pl-nav-label">{{ t.nav_profile }}</span>
                         </a>
                         <a href="/settings" class="pl-nav-item">
                             {{ icon('settings', 'w-4 h-4') }}
