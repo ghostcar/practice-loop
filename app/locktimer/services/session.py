@@ -154,6 +154,17 @@ async def start_session(
     # Materialize initial occurrences (C4)
     await _materialize_session(db, session, slot_rules, task_rules, now)
 
+    # R5.4 / ADR-155: launch prep-protocols attached to this timer session
+    from app.services.protocol import create_protocol_runs_for_timer_event
+
+    await create_protocol_runs_for_timer_event(
+        db=db,
+        user_id=owner_id,
+        lock_session_id=session_id,
+        anchor_time=session.started_at or now,
+        category_filter="prep",
+    )
+
     return session
 
 
@@ -221,6 +232,18 @@ async def safety_stop(
     from app.locktimer.services.device import set_device_status
 
     await set_device_status(db, session.device_id, owner_id, "available")
+
+    # R5.4 / ADR-155: abort active protocol runs + launch recovery protocols
+    from app.services.protocol import complete_runs_for_timer_event, create_protocol_runs_for_timer_event
+
+    await complete_runs_for_timer_event(db=db, lock_session_id=session_id)
+    await create_protocol_runs_for_timer_event(
+        db=db,
+        user_id=owner_id,
+        lock_session_id=session_id,
+        anchor_time=now,
+        category_filter="recovery",
+    )
 
     await db.flush()
     return session

@@ -1220,3 +1220,20 @@ Added `ActorContext` (optional, defaults to `ActorContext(actor_id=user_id)`) to
 | notifications.py | dispatch_notification | `__audit__` key in payload → stored in Notification.body |
 
 Read-only services (media, uploads, media_registry, personal_export, smart_albums, pharma_enricher, health, insights, payment_gateways) do not require ActorContext — they delegate to ORM or external APIs without mutating state.
+
+### ADR-155: Protocol ↔ Timer bridge (R5.4 completed)
+
+**Date:** 2026-08-24
+**Status:** Accepted
+
+Soft integration: timer-bound protocols are launched/aborted alongside timer session lifecycle events. No protocols = timer behaviour unchanged.
+
+**Hooks:**
+- `start_session` → `create_protocol_runs_for_timer_event(category="prep")` — prep protocols launch
+- `safety_stop` → `complete_runs_for_timer_event()` aborts active runs → `create_protocol_runs_for_timer_event(category="recovery")` — recovery protocols launch
+
+**Bridge functions** in `app/services/protocol.py`:
+- `create_protocol_runs_for_timer_event()` — queries active timer_bound protocols by category, calls `start_protocol_run` for each
+- `complete_runs_for_timer_event()` — marks active runs as aborted, pending steps as skipped
+
+**UI:** `locktimer/session_detail.html` shows attached `protocol_runs` with status badges (active/completed/aborted), linked to `/protocols/run/{id}`.

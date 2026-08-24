@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.protocol import (
+    ProtocolAnchorType,
     ProtocolDefinition,
     ProtocolRun,
     ProtocolStep,
@@ -407,3 +408,86 @@ async def execute_protocol_step(
 
     await db.flush()
     return step_log
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Timer ↔ Protocol bridge (R5.4 / ADR-155)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def create_protocol_runs_for_timer_event(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    lock_session_id: uuid.UUID,
+    anchor_time: datetime.datetime,
+    *,
+    category_filter: str = "prep",
+) -> list[ProtocolRun]:
+    """Launch all active timer_bound protocols matching the event category.
+
+    Called when a timer session starts (prep) or completes/stops (recovery).
+    Does nothing if no matching protocols exist — timer operates unchanged.
+    """
+    result = await db.execute(
+        select(ProtocolDefinition).where(
+            ProtocolDefinition.user_id == user_id,
+            ProtocolDefinition.anchor_type == ProtocolAnchorType.TIMER_BOUND.value,
+            ProtocolDefinition.category == category_filter,
+            ProtocolDefinition.is_active.is_(True),
+        )
+    )
+    definitions = result.scalars().all()
+
+    runs: list[ProtocolRun] = []
+    for proto in definitions:
+        run = await start_protocol_run(
+            db=db,
+            user_id=user_id,
+            protocol_id=proto.id,
+            anchor_time=anchor_time,
+            lock_session_id=lock_session_id,
+        )
+        runs.append(run)
+        logger.info(
+            "Protocol '%s' (%s) started for timer session %s",
+            proto.title, category_filter, lock_session_id,
+        )
+
+    return runs
+
+
+async def complete_runs_for_timer_event(
+    db: AsyncSession,
+    lock_session_id: uuid.UUID,
+) -> list[ProtocolRun]:
+    """Finish all active protocol runs attached to this timer session.
+
+    Active runs → aborted (timer stopped before completion).
+    Completed runs are left alone.
+    """
+    result = await db.execute(
+        select(ProtocolRun).where(
+            ProtocolRun.lock_session_id == lock_session_id,
+            ProtocolRun.status.in_(["active", "scheduled"]),
+        )
+    )
+    runs = result.scalars().all()
+
+    for run in runs:
+        run.status = "aborted"
+        run.completed_at = datetime.datetime.now(datetime.UTC)
+        # Mark any pending step logs as skipped
+        step_res = await db.execute(
+            select(ProtocolStepLog).where(
+                ProtocolStepLog.run_id == run.id,
+                ProtocolStepLog.status == "pending",
+            )
+        )
+        for log in step_res.scalars().all():
+            log.status = "skipped"
+
+    if runs:
+        await db.flush()
+        logger.info("Aborted %d protocol run(s) for timer session %s", len(runs), lock_session_id)
+
+    return runs

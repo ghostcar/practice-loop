@@ -573,6 +573,33 @@
     {% endif %}
   </section>
 
+  {% if protocol_runs %}
+  <section class="mt-6 p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]" aria-labelledby="protocols-h">
+    <details open>
+      <summary class="text-sm font-semibold text-[color:var(--text)] cursor-pointer inline-flex items-center gap-1.5" id="protocols-h">
+        {{ icon('routine', 'w-4 h-4') }} Protocols ({{ protocol_runs | length }})
+      </summary>
+      <div class="mt-3 space-y-2 max-h-64 overflow-y-auto">
+        {% for pr in protocol_runs %}
+        <a href="/protocols/run/{{ pr.id }}" class="flex items-center justify-between px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] hover:border-[color:var(--accent)] transition-colors text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-medium text-[color:var(--text)]">{{ pr.title }}</span>
+            <span class="text-[color:var(--text-muted)]">{{ pr.total_steps }} steps</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold
+            {% if pr.status == 'active' %}bg-emerald-500/20 text-emerald-400
+            {% elif pr.status == 'completed' %}bg-sky-500/20 text-sky-400
+            {% elif pr.status == 'aborted' %}bg-red-500/20 text-red-400
+            {% else %}bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]{% endif %}">
+            {{ pr.status }}
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </details>
+  </section>
+  {% endif %}
+
 </div>
 {% endblock %}
 

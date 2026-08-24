@@ -348,6 +348,28 @@ async def locktimer_session_detail(
     except Exception:
         pass  # medication module may not be deployed yet
 
+    # R5.4 / ADR-155: protocol runs attached to this timer session
+    protocol_runs: list[dict] = []
+    try:
+        from app.models.protocol import ProtocolRun
+
+        pr_result = await db.execute(
+            select(ProtocolRun).where(
+                ProtocolRun.lock_session_id == session_id,
+            ).order_by(ProtocolRun.created_at.desc())
+        )
+        for pr in pr_result.scalars().all():
+            protocol_runs.append({
+                "id": str(pr.id),
+                "title": pr.frozen_steps_snapshot[0].get("title", "Untitled") if pr.frozen_steps_snapshot else "Untitled",
+                "status": pr.status,
+                "total_steps": len(pr.frozen_steps_snapshot or []),
+                "anchor_time": pr.anchor_time.isoformat() if pr.anchor_time else None,
+                "created_at": pr.created_at.isoformat() if pr.created_at else None,
+            })
+    except Exception:
+        pass
+
     return templates.TemplateResponse(
         request,
         "locktimer/session_detail.html",
@@ -355,6 +377,7 @@ async def locktimer_session_detail(
             "t": t,
             "user": current_user,
             "locale": locale,
+            "protocol_runs": protocol_runs,
             "session": _serialize_session(session, t),
             "med_schedules": med_schedules,
             "catalog_items": catalog_items,
