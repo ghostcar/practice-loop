@@ -96,6 +96,7 @@ async def test_insight_provider_registry(db_session: AsyncSession, test_user: Us
     assert "training" in insights
     assert "care" in insights
     assert "protocol" in insights
+    assert "medication" in insights  # ADR-153: MedicationInsightAdapter
     assert insights["health"]["recovery_score"] == 85
 
     # 2. Register a new domain (e.g. breathplay / biofeedback)

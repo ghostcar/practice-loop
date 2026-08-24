@@ -132,6 +132,87 @@ class ProtocolInsightAdapter:
         }
 
 
+class MedicationInsightAdapter:
+    """Provides medication adherence and stock-health metrics (ADR-153).
+
+    Queries real tables: medications, med_schedules, med_intakes, med_stocks.
+    """
+
+    async def get_context_summary(
+        self,
+        db: AsyncSession,
+        user_id: uuid.UUID,
+        period_days: int = 7,
+    ) -> dict[str, Any]:
+        from app.models.medication import MedIntake, MedSchedule, MedStock, Medication
+
+        since = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=period_days)
+
+        # Active medication count
+        med_count_res = await db.execute(
+            select(func.count(Medication.id)).where(
+                Medication.user_id == user_id,
+                Medication.is_active.is_(True),
+            )
+        )
+        active_medications = med_count_res.scalar() or 0
+
+        # Active schedules
+        sched_count_res = await db.execute(
+            select(func.count(MedSchedule.id)).where(
+                MedSchedule.user_id == user_id,
+                MedSchedule.is_active.is_(True),
+            )
+        )
+        active_schedules = sched_count_res.scalar() or 0
+
+        # Intake adherence for the period
+        intake_total_res = await db.execute(
+            select(func.count(MedIntake.id)).where(
+                MedIntake.user_id == user_id,
+                MedIntake.created_at >= since,
+            )
+        )
+        intake_total = intake_total_res.scalar() or 0
+
+        intake_taken_res = await db.execute(
+            select(func.count(MedIntake.id)).where(
+                MedIntake.user_id == user_id,
+                MedIntake.status == "taken",
+                MedIntake.created_at >= since,
+            )
+        )
+        intake_taken = intake_taken_res.scalar() or 0
+
+        adherence_rate = round(intake_taken / max(1, intake_total), 2) if intake_total > 0 else 0.0
+
+        # Low-stock / near-expiry warnings
+        low_stock_count = 0
+        near_expiry_count = 0
+        now_date = datetime.datetime.now(datetime.UTC).date()
+        cutoff = now_date + datetime.timedelta(days=30)
+
+        stocks_res = await db.execute(
+            select(MedStock).where(MedStock.user_id == user_id)
+        )
+        for s in stocks_res.scalars().all():
+            if s.low_stock_threshold is not None and s.quantity <= s.low_stock_threshold:
+                low_stock_count += 1
+            if s.expiry_date and s.expiry_date <= cutoff:
+                near_expiry_count += 1
+
+        return {
+            "domain": "medication",
+            "active_medications": active_medications,
+            "active_schedules": active_schedules,
+            "intakes_in_period": intake_total,
+            "intakes_taken": intake_taken,
+            "adherence_rate": adherence_rate,
+            "low_stock_count": low_stock_count,
+            "near_expiry_count": near_expiry_count,
+        }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Insight Provider Registry
 # ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +222,7 @@ INSIGHT_PROVIDERS: dict[str, InsightContextProviderPort] = {
     "training": TrainingInsightAdapter(),
     "care": CareInsightAdapter(),
     "protocol": ProtocolInsightAdapter(),
+    "medication": MedicationInsightAdapter(),
 }
 
 
