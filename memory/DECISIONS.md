@@ -1330,3 +1330,15 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 
 **Кросс-модульные переэкспорты:** `_cycle_phase`, `_day_of_cycle`, `_get_cycle_context`, `_health_summary`
 (используются в care_service, journal, today, dashboard, telegram, insights, tests)
+
+## ADR-164: journal.py → journal_service.py (Service Layer Extraction)
+
+**Статус:** принят, реализован.
+**Контекст:** journal.py (1117 строк) — монолит с бизнес-логикой и HTTP-хендлерами.
+
+**Решение:**
+- `app/services/journal_service.py` (987 строк) — entries CRUD, partners, timer bridge, media, serializers, LLM
+- `app/api/journal.py` (313 строк, было 1117) — тонкие HTTP-обёртки
+
+**Кросс-модульные переэкспорты:** `ensure_timer_slot_entry`, `get_pending_slot_entry`, `journal_summary`
+(используются в locktimer, today, dashboard, tests)

@@ -1,7 +1,7 @@
 ---
 schema_version: memory/v2alpha1
 id: K-SERVICE-LAYER-PATTERN
-kind: wiki
+kind: knowledge
 title: Thin Routes — Service Layer Pattern (ADR-161/162/163)
 status: active
 authority: technical
