@@ -41,6 +41,7 @@ from app.models.catalog import ActivityCatalogItem
 from app.models.life import InventoryItem
 from app.models.media import MediaAsset
 from app.models.user import User
+from app.services.errors import NotFoundError
 from app.timeutils import local_today
 
 logger = logging.getLogger(__name__)
@@ -153,7 +154,7 @@ async def validate_routine(db: AsyncSession, routine_id: str, user_id: uuid.UUID
         await db.execute(select(CareRoutine).where(CareRoutine.id == rid, CareRoutine.user_id == user_id))
     ).scalar_one_or_none()
     if routine is None:
-        raise ValueError("Routine not found")
+        raise NotFoundError("Routine not found")
     return rid
 
 
@@ -175,7 +176,7 @@ async def resolve_catalog_item(
         )
     ).scalar_one_or_none()
     if item is None:
-        raise ValueError("Catalog item not found")
+        raise NotFoundError("Catalog item not found")
     return item
 
 
@@ -192,7 +193,7 @@ async def resolve_inventory_item(
         await db.execute(select(InventoryItem).where(InventoryItem.id == iid, InventoryItem.user_id == user_id))
     ).scalar_one_or_none()
     if item is None:
-        raise ValueError("Inventory item not found")
+        raise NotFoundError("Inventory item not found")
     return item
 
 
@@ -216,7 +217,7 @@ async def resolve_products(
             await db.execute(select(CareProduct).where(CareProduct.id == pid, CareProduct.user_id == user_id))
         ).scalar_one_or_none()
         if product is None:
-            raise ValueError("Product not found")
+            raise NotFoundError("Product not found")
         seen.add(pid)
         out.append(pid)
     return out
@@ -665,7 +666,7 @@ async def delete_routine(db: AsyncSession, user_id: uuid.UUID, routine_id: uuid.
         await db.execute(select(CareRoutine).where(CareRoutine.id == routine_id, CareRoutine.user_id == user_id))
     ).scalar_one_or_none()
     if routine is None:
-        raise ValueError("Routine not found")
+        raise NotFoundError("Routine not found")
     entries = (
         (await db.execute(select(CareEntry).where(CareEntry.user_id == user_id, CareEntry.routine_id == routine_id)))
         .scalars()
@@ -725,7 +726,7 @@ async def delete_product(db: AsyncSession, user_id: uuid.UUID, product_id: uuid.
         await db.execute(select(CareProduct).where(CareProduct.id == product_id, CareProduct.user_id == user_id))
     ).scalar_one_or_none()
     if product is None:
-        raise ValueError("Product not found")
+        raise NotFoundError("Product not found")
     await db.execute(delete(CareEntryProduct).where(CareEntryProduct.product_id == product_id))
     await db.execute(delete(CareRoutineProduct).where(CareRoutineProduct.product_id == product_id))
     await db.delete(product)
@@ -782,7 +783,7 @@ async def delete_entry(db: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID
         await db.execute(select(CareEntry).where(CareEntry.id == entry_id, CareEntry.user_id == user_id))
     ).scalar_one_or_none()
     if entry is None:
-        raise ValueError("Care entry not found")
+        raise NotFoundError("Care entry not found")
     await db.delete(entry)
     await db.flush()
 
@@ -804,7 +805,7 @@ async def attach_entry_media(
         await db.execute(select(CareEntry).where(CareEntry.id == entry_id, CareEntry.user_id == user_id))
     ).scalar_one_or_none()
     if entry is None:
-        raise ValueError("Care entry not found")
+        raise NotFoundError("Care entry not found")
     asset = MediaAsset(
         owner_id=user_id,
         owner_type="care_entry",
@@ -837,7 +838,7 @@ async def attach_product_media(
         await db.execute(select(CareProduct).where(CareProduct.id == product_id, CareProduct.user_id == user_id))
     ).scalar_one_or_none()
     if product is None:
-        raise ValueError("Care product not found")
+        raise NotFoundError("Care product not found")
     asset = MediaAsset(
         owner_id=user_id,
         owner_type="care_product",
@@ -925,7 +926,7 @@ async def delete_course(db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UU
         await db.execute(select(CareCourse).where(CareCourse.id == course_id, CareCourse.user_id == user_id))
     ).scalar_one_or_none()
     if course is None:
-        raise ValueError("Course not found")
+        raise NotFoundError("Course not found")
     await db.delete(course)
     await db.flush()
 
@@ -939,7 +940,7 @@ async def _owned_course_session(db: AsyncSession, user_id: uuid.UUID, session_id
         )
     ).scalar_one_or_none()
     if session is None:
-        raise ValueError("Course session not found")
+        raise NotFoundError("Course session not found")
     return session
 
 
@@ -1056,7 +1057,7 @@ async def json_create_entry(db: AsyncSession, user_id: uuid.UUID, body: EntryBod
             )
         ).scalar_one_or_none()
         if routine is None:
-            raise ValueError("Routine not found")
+            raise NotFoundError("Routine not found")
         rid = body.routine_id
     resolved = await resolve_products(db, body.product_ids, user_id)
     cycle_phase, cycle_day = await cycle_snapshot(db, user_id, body.entry_date)
@@ -1088,7 +1089,7 @@ async def json_delete_entry(db: AsyncSession, user_id: uuid.UUID, entry_id: uuid
         await db.execute(select(CareEntry).where(CareEntry.id == entry_id, CareEntry.user_id == user_id))
     ).scalar_one_or_none()
     if entry is None:
-        raise ValueError("Care entry not found")
+        raise NotFoundError("Care entry not found")
     await db.execute(delete(CareEntryProduct).where(CareEntryProduct.entry_id == entry_id))
     await db.delete(entry)
     await db.flush()

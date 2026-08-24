@@ -18,6 +18,7 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.user import User
 from app.services import care_service as svc
+from app.services.errors import NotFoundError
 from app.services.media import save_media
 from app.templates_setup import templates
 
@@ -96,7 +97,7 @@ async def add_routine(
             frequency_days=frequency_days, notes=notes,
             catalog_item_id=catalog_item_id, product_ids=product_ids,
         )
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -110,7 +111,7 @@ async def delete_routine(
 ):
     try:
         await svc.delete_routine(db, user.id, routine_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -135,7 +136,7 @@ async def add_product(
             notes=notes, inventory_item_id=inventory_item_id,
             catalog_item_id=catalog_item_id, quantity=quantity, expiry_date=expiry_date,
         )
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -149,7 +150,7 @@ async def delete_product(
 ):
     try:
         await svc.delete_product(db, user.id, product_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -175,7 +176,7 @@ async def add_entry(
             duration_minutes=duration_minutes, skin_reaction=skin_reaction,
             notes=notes, product_ids=product_ids,
         )
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -192,7 +193,7 @@ async def add_entry_media(
     try:
         info = await save_media(file)
         await svc.attach_entry_media(db, user_id=user.id, entry_id=entry_id, file_info=info, caption=caption)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -209,7 +210,7 @@ async def add_product_media(
     try:
         info = await save_media(file)
         await svc.attach_product_media(db, user_id=user.id, product_id=product_id, file_info=info, caption=caption)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -223,7 +224,7 @@ async def delete_entry(
 ):
     try:
         await svc.delete_entry(db, user.id, entry_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -250,7 +251,7 @@ async def add_course(
             total_sessions=total_sessions, interval_days=interval_days,
             start_date=start_date, notes=notes, catalog_item_id=catalog_item_id,
         )
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -264,7 +265,7 @@ async def delete_course(
 ):
     try:
         await svc.delete_course(db, user.id, course_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -278,7 +279,7 @@ async def mark_session_done(
 ):
     try:
         await svc.mark_course_session_done(db, user.id, session_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -292,7 +293,7 @@ async def mark_session_skipped(
 ):
     try:
         await svc.mark_course_session_skipped(db, user.id, session_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/care", status_code=303)
 
@@ -318,7 +319,7 @@ async def json_add_routine(
 ):
     try:
         routine = await svc.json_create_routine(db, user.id, body)
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return svc.routine_json(routine)
 
@@ -331,7 +332,7 @@ async def json_add_entry(
 ):
     try:
         entry, product_ids = await svc.json_create_entry(db, user.id, body)
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     prod_map = {str(entry.id): [str(p) for p in product_ids]}
     return svc.entry_json(entry, prod_map)
@@ -345,7 +346,7 @@ async def json_delete_routine(
 ):
     try:
         await svc.json_delete_routine(db, user.id, routine_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return None
 
@@ -358,7 +359,7 @@ async def json_delete_entry(
 ):
     try:
         await svc.json_delete_entry(db, user.id, entry_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return None
 
@@ -379,7 +380,7 @@ async def json_add_product(
 ):
     try:
         product = await svc.json_create_product(db, user.id, body)
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return svc.product_json(product)
 
@@ -392,7 +393,7 @@ async def json_delete_product(
 ):
     try:
         await svc.json_delete_product(db, user.id, product_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return None
 
@@ -413,7 +414,7 @@ async def json_add_course(
 ):
     try:
         course = await svc.json_create_course(db, user.id, body)
-    except ValueError as e:
+    except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
     return svc.course_json(course)
 
@@ -426,7 +427,7 @@ async def json_delete_course(
 ):
     try:
         await svc.json_delete_course(db, user.id, course_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return None
 
@@ -439,7 +440,7 @@ async def json_mark_course_session_done(
 ):
     try:
         session = await svc.mark_course_session_done(db, user.id, session_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return {"id": str(session.id), "status": session.status, "completed_at": session.completed_at.isoformat()}
 
@@ -452,7 +453,7 @@ async def json_mark_course_session_skipped(
 ):
     try:
         session = await svc.mark_course_session_skipped(db, user.id, session_id)
-    except ValueError as e:
+    except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return {"id": str(session.id), "status": session.status, "completed_at": None}
 

@@ -362,8 +362,9 @@ def test_medication_module_positive_only_no_penalties():
     import inspect
 
     import app.api.medication as mod
+    import app.services.med_service as svc_mod
 
-    source = inspect.getsource(mod)
+    source = inspect.getsource(mod) + inspect.getsource(svc_mod)
     # positive hook present
     assert "on_medication_taken" in source
     # no negative gamification wiring in this module
