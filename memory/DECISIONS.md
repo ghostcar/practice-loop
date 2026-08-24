@@ -1397,3 +1397,15 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
   - `ValueError` используется для status conflicts (→ 409).
   - `create_session()` использует `**kwargs.pop("title", "Session")` для гибкости.
 - **Коммит:** (pending)
+
+## ADR-170: tasks.py → tasks_service.py (Thin Routes)
+- **Статус:** принят
+- **Дата:** 2026-08-24
+- **Контекст:** tasks.py 513 строк — генерация задач (LLM + deterministic + weekly), ручное создание, complete/interrupt.
+- **Решение:** Вынесены page context, LLM generation, deterministic fallback, weekly generation, manual task creation, entity lookup, complete/interrupt в `app/services/tasks_service.py` (377 строк).
+  HTTP-хендлеры в `app/api/tasks.py` (229 строк, было 513) — тонкие обёртки.
+- **Последствия:**
+  - `NotFoundError` для entity not found (cross-user, params form) → 404.
+  - `ValueError` для validation errors (no LLM, no practices) → redirect with error.
+  - `coerce_param()` вынесен как переиспользуемый helper.
+- **Коммит:** (pending)
