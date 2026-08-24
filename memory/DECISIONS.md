@@ -1304,3 +1304,17 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 **Паттерн:** каждый HTTP-хендлер — 3-10 строк: try → service call → except ValueError → redirect/JSON
 
 **Рефакторинг其他大型 файлов (care.py -> care_service.py) — ADR-161.**
+
+## ADR-162: medication.py → med_service.py (Service Layer Extraction)
+
+**Статус:** принят, реализован.
+**Контекст:** medication.py (1303 строк) — монолит с бизнес-логикой и HTTP-хендлерами.
+
+**Решение:**
+- `app/services/med_service.py` (1069 строк) — вся бизнес-логика: CRUD, расписания, приёмы, аптечки, экспорт, миграция
+- `app/api/medication.py` (536 строк, было 1303) — тонкие HTTP-обёртки
+- `app/services/errors.py` (7 строк) — `NotFoundError` для разделения 400/404
+
+**Паттерн «thin routes»**: каждый хендлер 3-10 строк: try → service call → except → redirect/JSON
+
+**Кросс-модульные импорты:** `_schedule_summary` переэкспортируется из `medication.py` → `med_service.schedule_summary`
