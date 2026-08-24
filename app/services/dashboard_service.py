@@ -262,9 +262,8 @@ async def _safe_summary(
             from app.api.aftercare import _aftercare_summary
             return await _aftercare_summary(db, user_id)
         elif module_name == "insights":
-            # Not yet decomposed into service
-            from app.api.insights import _insights_summary
-            return await _insights_summary(db, user_id)
+            from app.services.insights_service import insights_summary
+            return await insights_summary(db, user_id)
     except Exception:
         pass
     return None
