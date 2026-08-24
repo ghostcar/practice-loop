@@ -1374,3 +1374,14 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
   - `_safe_summary()` загружает модульные summary через service-файлы (med_service, health_service, journal_service) напрямую, а не через route re-exports.
   - aftercare и insights ещё не декомпозированы — импортируются из api модулей.
 - **Коммит:** (pending)
+
+## ADR-168: insights.py → insights_service.py (Thin Routes)
+- **Статус:** принят
+- **Дата:** 2026-08-24
+- **Контекст:** insights.py 635 строк — монолит с LLM-анализом, medical exporter, correlation matrix, report stats.
+- **Решение:** Вынесены serializers, dashboard summary, LLM run execution, delete, medical exporter, correlation matrix, report stats в `app/services/insights_service.py` (341 строк).
+  HTTP-хендлеры в `app/api/insights.py` (335 строк, было 635) — тонкие обёртки.
+- **Последствия:**
+  - `_insights_summary` re-export из insights_service для dashboard_service.
+  - Лёгкие статические страницы (trajectory, report) без бизнес-логики остаются в routes.
+- **Коммит:** (pending)

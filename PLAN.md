@@ -129,7 +129,7 @@
 - [ ] **P5 — Account recovery и hardening** — verified email change, password recovery, recovery codes, TOTP/passkeys, audit административных действий; не ослаблять текущий self-service password flow.
 - [ ] **P6 — Enforcing CSP и статический frontend build** — убрать inline JS/handlers и runtime Tailwind, собрать CSS, запретить исполнение внедрённых HTMX scripts, включить enforcing CSP после browser matrix.
 - [x] **P7 — Единый transaction owner** — 70 `db.commit()` удалены из 27 файлов (26 роутеров + 1 сервис); `LEGACY_COMMIT_ROUTERS` = empty set; boundary tests 3/3 ✅. 1380 тестов зелёные.
-- [x] **Service layer extraction (ADR-161..167)** — декомпозиция крупных роутеров по паттерну thin routes:
+- [x] **Service layer extraction (ADR-161..168)** — декомпозиция крупных роутеров по паттерну thin routes:
   - `care.py` (1417→478) → `care_service.py` (1161) — ADR-161
   - `medication.py` (1303→536) → `med_service.py` (1069) — ADR-162
   - `health.py` (970→385) → `health_service.py` (770) — ADR-163
@@ -137,8 +137,9 @@
   - `entities.py` (780→246) → `entities_service.py` (640) — ADR-165
   - `training.py` (750→299) → `training_service.py` (597) — ADR-166
   - `dashboard.py` (678→223) → `dashboard_service.py` (499) — ADR-167
+  - `insights.py` (635→335) → `insights_service.py` (341) — ADR-168
   - `app/services/errors.py` — shared `NotFoundError` для разделения 400/404
-  - Итого: 6265→2181 строк в роутерах (−65%), бизнес-логика в сервисах. 1380 тестов зелёные.
+  - Итого: 6900→2516 строк в роутерах (−64%), бизнес-логика в сервисах. 1380 тестов зелёные.
 - [ ] **P8 — Media storage abstraction** — volume→S3-compatible backend, checksum, derivatives, retention, orphan cleanup и включение бинарных данных в переносимый архив.
 - [ ] **P9 — Owner self-testing и UX backlog** — реальные циклы Today/Tasks/Sessions/Timer/Medication/Health/Care/Journal/Aftercare/LLM/BYOK; дефекты фиксировать browser regression до добавления крупных модулей.
 - [ ] **P10 — Mobile client после стабилизации портала** — выбрать Flutter/React Native; первый vertical slice: Today, задачи/сессии, Timer, журналы и push. До выбора закрыть оставшиеся JSON gaps реальным contract audit.
