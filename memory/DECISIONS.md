@@ -1342,3 +1342,12 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 
 **Кросс-модульные переэкспорты:** `ensure_timer_slot_entry`, `get_pending_slot_entry`, `journal_summary`
 (используются в locktimer, today, dashboard, tests)
+
+## ADR-165: entities.py → entities_service.py (Service Layer Extraction)
+
+**Статус:** принят, реализован.
+**Контекст:** entities.py (780 строк) — монолит с бизнес-логикой и HTTP-хендлерами.
+
+**Решение:**
+- `app/services/entities_service.py` (640 строк) — catalog/my pages, entity CRUD, opt-in, personalize fork
+- `app/api/entities.py` (246 строк, было 780) — тонкие HTTP-обёртки
