@@ -125,3 +125,16 @@
 | [ADR-119](ADR-119.md) | 2026-08-19 | P1g: полный каталог 18+ (принудительное продвижение всех 163 записей) | accepted |
 | [ADR-122](ADR-122.md) | 2026-08-19 | Отложенный Бэклог Социальных и Межпользовательских Фич (Deferred Social Scope) | accepted |
 | [ADR-123](ADR-123.md) | 2026-08-19 | Стратегическое Видение: Специализированный ИИ-Ассистент PracticeLoop (Autonomous Practice Agent) | accepted |
+| [ADR-138](ADR-138.md) | 2026-08-21 | R2.1–R2.3 / R10.2 (Flash-батч) | accepted |
+| [ADR-139](ADR-139.md) | 2026-08-21 | R2.1–R2.3 (Flash-батч v2, уточнение промптов) | accepted |
+| [ADR-140](ADR-140.md) | 2026-08-21 | R5.3 (Flash №4) — UI протоколов | accepted |
+| [ADR-141](ADR-141.md) | 2026-08-21 | R9/R10.1 (Flash №6–7) — удаление мёртвых шаблонов + навигация «5 разделов» | accepted |
+| [ADR-142](ADR-142.md) | 2026-08-21 | R2.5 (Flash №8) — модальное окно персонализации карточки каталога | accepted |
+| [ADR-143](ADR-143.md) | 2026-08-21 | R9.3 (Flash №9) — удаление мёртвого Python-кода и неиспользуемых импортов | accepted |
+| [ADR-144](ADR-144.md) | 2026-08-21 | R10.1 (Flash №10) — скрытие выключенных модулей в навигации по feature-флагам | accepted |
+| [ADR-146](ADR-146.md) | 2026-08-21 | R10.5 (Flash №11) — полный pytest-прогон, ruff-чистка, memoryctl, документация | accepted |
+| [ADR-147](ADR-147.md) | 2026-08-21 | RC v1.0.0-rc1 — сводный аудит (Release Candidate Exit) | accepted |
+| [ADR-148](ADR-148.md) | 2026-08-23 | Редирект авторизованных с /register и /login на /dashboard | accepted |
+| [ADR-149](ADR-149.md) | 2026-08-23 | csrf_token во всех нативных POST-формах (аудит auth-флоу) | accepted |
+| [ADR-150](ADR-150.md) | 2026-08-23 | Редирект на /login с уведомлением при истёкшем токене | accepted |
+| [ADR-151](ADR-151.md) | 2026-08-23 | Enforcing CSP (nonce) + 5 иконок в пакет; закрытие Exit-гейтов R9/R10 | accepted |
