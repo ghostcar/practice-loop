@@ -1181,3 +1181,25 @@ Replaces the simulated PIN check (`pin_code == "1234" or len(pin_code) == 4`) wi
 - i18n keys EN/RU for all PIN operations
 - 10 new tests in `tests/test_pin.py`, 1 updated legacy test
 - Migration: `089_add_user_pin_hash`
+
+### ADR-153: NotificationDispatcher channels are real (was stubs)
+
+**Date:** 2026-08-24
+**Status:** Accepted
+
+Replaced the stub notification channels (`logger.info` + always `return True`) with real implementations:
+
+| Channel | Before | After |
+|---|---|---|
+| InAppChannel | `logger.info` + True | Writes a `Notification` row into the `notifications` table (visible in /notifications) |
+| TelegramBotChannel | `logger.info` + True | Calls `send_telegram_notification` from bot.py → real aiogram send to `user.telegram_chat_id`; returns False when no linked chat |
+| EmailChannel | `logger.info` + True | Honest `logger.warning` + returns False (no SMTP infra) |
+| PushChannel (new) | none | Calls `dispatch_push` from app/push/dispatcher.py → M4 push registry |
+
+**Channel routing (default mode):**
+- If `channels` is explicitly passed → use as-is
+- Otherwise: `["in_app"]` always, + `"telegram"` if `user.telegram_chat_id` is set
+
+**DMS worker** now actually delivers alerts (was silently dropping them).
+
+**Reminders engine** already wrote real notifications (not affected).

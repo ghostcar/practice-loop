@@ -47,7 +47,7 @@ async def test_payment_gateway_registry(db_session: AsyncSession, test_user: Use
 
 @pytest.mark.asyncio
 async def test_notification_dispatcher(db_session: AsyncSession, test_user: User):
-    # 1. Dispatch to all channels
+    # 1. Default channels (in_app only for user without linked telegram)
     res = await dispatch_notification(
         db=db_session,
         user_id=test_user.id,
@@ -56,23 +56,36 @@ async def test_notification_dispatcher(db_session: AsyncSession, test_user: User
         message="Осталось 2 часа до контрольного чекина",
     )
     assert res.get("in_app") is True
-    assert res.get("telegram") is True
+    # User has no linked telegram → telegram not in default channels
+    assert "telegram" not in res
 
-    # 2. Register custom channel
+    # 2. Explicitly request telegram (will return False — no linked chat)
+    tg_res = await dispatch_notification(
+        db=db_session,
+        user_id=test_user.id,
+        event_type="dms_warning",
+        title="TG Test",
+        message="Explicit telegram channel",
+        channels=["in_app", "telegram"],
+    )
+    assert tg_res["in_app"] is True
+    assert tg_res["telegram"] is False  # no linked chat
+
+    # 3. Register custom channel
     class CustomPushChannel:
         async def send(self, db, user_id, event_type, title, message, payload=None):
             return True
 
-    register_notification_channel("push", CustomPushChannel())
+    register_notification_channel("custom_v2", CustomPushChannel())
     push_res = await dispatch_notification(
         db=db_session,
         user_id=test_user.id,
         event_type="test",
         title="Push test",
         message="Push message",
-        channels=["push"],
+        channels=["custom_v2"],
     )
-    assert push_res["push"] is True
+    assert push_res["custom_v2"] is True
 
 
 @pytest.mark.asyncio
