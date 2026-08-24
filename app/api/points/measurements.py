@@ -83,12 +83,10 @@ async def create_measurement(
         for k, v in data.model_dump(exclude={"measured_date", "time_of_day"}).items():
             setattr(existing, k, v)
         db.add(existing)
-        await db.commit()
         await db.refresh(existing)
         return BodyMeasurementOut.model_validate(existing)
 
     m = BodyMeasurement(user_id=user.id, **data.model_dump())
     db.add(m)
-    await db.commit()
     await db.refresh(m)
     return BodyMeasurementOut.model_validate(m)

@@ -55,5 +55,4 @@ async def _import_activity_logs(rows: list[dict], db: AsyncSession, user: User, 
         except Exception as e:
             logger.warning(f"Skip activity_log row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

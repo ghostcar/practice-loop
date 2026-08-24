@@ -69,7 +69,7 @@ async def upload_attachment(
         sort_order=next_order,
     )
     db.add(att)
-    await db.commit()
+    await db.flush()
     await db.refresh(att)
     return _serialize(att)
 
@@ -109,6 +109,5 @@ async def delete_attachment(
         raise HTTPException(404, "Attachment not found")
     path = att.file_path
     await db.delete(att)
-    await db.commit()
     delete_upload(path)
     return {"status": "deleted"}

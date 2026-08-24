@@ -245,8 +245,7 @@ async def create_template(
             policy=w.policy,
         )
         db.add(window)
-
-    await db.commit()
+        await db.flush()
     await db.refresh(tpl)
     return CalendarTemplateOut.model_validate(tpl)
 
@@ -267,7 +266,6 @@ async def delete_template(
     if not tpl:
         raise HTTPException(404, "Template not found")
     await db.delete(tpl)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -295,7 +293,7 @@ async def add_window(
 
     window = AvailabilityWindow(template_id=template_id, **data.model_dump())
     db.add(window)
-    await db.commit()
+    await db.flush()
     await db.refresh(window)
     return {"status": "created", "id": str(window.id)}
 
@@ -320,7 +318,6 @@ async def delete_window(
     if not w:
         raise HTTPException(404, "Window not found")
     await db.delete(w)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -367,7 +364,7 @@ async def create_override(
         label=data.label,
     )
     db.add(override)
-    await db.commit()
+    await db.flush()
     await db.refresh(override)
     out = CalendarOverrideOut.model_validate(override)
     out.template_name = tpl.name
@@ -390,7 +387,6 @@ async def delete_override(
     if not o:
         raise HTTPException(404, "Override not found")
     await db.delete(o)
-    await db.commit()
     return {"status": "deleted"}
 
 

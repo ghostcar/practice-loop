@@ -54,5 +54,4 @@ async def _import_schedule(rows: list[dict], db: AsyncSession, user: User, mode:
         except Exception as e:
             logger.warning(f"Skip schedule row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

@@ -52,7 +52,6 @@ async def _import_points_transactions(rows: list[dict], db: AsyncSession, user: 
         except Exception as e:
             logger.warning(f"Skip points_transaction row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}
 
 
@@ -75,5 +74,4 @@ async def _import_points_profiles(rows: list[dict], db: AsyncSession, user: User
         except Exception as e:
             logger.warning(f"Skip points_profile row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

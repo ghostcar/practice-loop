@@ -23,34 +23,7 @@ API_DIRS = [Path("app/api"), Path("app/platform/social/api")]
 
 # Legacy files that still call db.commit() themselves. New routers must NOT
 # be added here — instead move the transaction into a service (audit P1-5).
-LEGACY_COMMIT_ROUTERS: set[str] = {
-    "app/api/attachments.py",
-    "app/api/calendar.py",
-    "app/api/diets.py",
-    "app/api/importers/activity_logs.py",
-    "app/api/importers/body_parts.py",
-    "app/api/importers/categories.py",
-    "app/api/importers/entities.py",
-    "app/api/importers/inventory.py",
-    "app/api/importers/locations.py",
-    "app/api/importers/measurements.py",
-    "app/api/importers/points.py",
-    "app/api/importers/schedule.py",
-    "app/api/importers/training.py",
-    "app/api/media.py",
-    "app/api/points/balance.py",
-    "app/api/points/config.py",
-    "app/api/points/inventory.py",
-    "app/api/points/measurements.py",
-    "app/api/points/profiles.py",
-    "app/api/points/redemptions.py",
-    "app/api/points/schedule.py",
-    "app/api/references/locations.py",
-    "app/api/references/task_targets.py",
-    "app/api/task_flows.py",
-    "app/api/tasks.py",
-    "app/api/verification.py",
-}
+LEGACY_COMMIT_ROUTERS: set[str] = set()  # P7: all legacy db.commit() removed (ADR-160)
 
 COMMIT_RE = re.compile(r"await\s+(?:db|session|db_session)\.commit\(\)")
 

@@ -77,7 +77,6 @@ async def upload_inventory_image(
     old = item.image_path
     item.image_path = url
     db.add(item)
-    await db.commit()
     if old:
         delete_upload(old)
     return {"status": "ok", "image_path": url}
@@ -99,7 +98,6 @@ async def delete_inventory_image(
     old = item.image_path
     item.image_path = None
     db.add(item)
-    await db.commit()
     if old:
         delete_upload(old)
     return {"status": "ok"}
@@ -152,7 +150,6 @@ async def create_inventory_item(
 ):
     item = InventoryItem(user_id=user.id, **data.model_dump())
     db.add(item)
-    await db.commit()
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
 
@@ -173,7 +170,6 @@ async def update_inventory_item(
     for k, v in data.model_dump(exclude_none=True).items():
         setattr(item, k, v)
     db.add(item)
-    await db.commit()
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
 
@@ -191,7 +187,6 @@ async def delete_inventory_item(
     if not item:
         raise HTTPException(404, "Item not found")
     await db.delete(item)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -214,7 +209,6 @@ async def service_inventory_item(
     item.last_serviced_at = datetime.now(UTC)
     item.inventory_status = "available"
     db.add(item)
-    await db.commit()
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
 
@@ -283,5 +277,4 @@ async def log_equipment_maintenance_endpoint(
         notes=notes,
     )
     db.add(log_entry)
-    await db.commit()
     return RedirectResponse(url="/api/v2/inventory/maintenance", status_code=303)

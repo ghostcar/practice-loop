@@ -115,7 +115,7 @@ async def create_location(
         sort_order=data.sort_order,
     )
     db.add(loc)
-    await db.commit()
+    await db.flush()
     await db.refresh(loc)
     return TaskLocationOut.model_validate(loc)
 
@@ -140,7 +140,7 @@ async def update_location(
     for k, v in data.model_dump(exclude_none=True).items():
         setattr(loc, k, v)
     db.add(loc)
-    await db.commit()
+    await db.flush()
     await db.refresh(loc)
     return TaskLocationOut.model_validate(loc)
 
@@ -163,7 +163,7 @@ async def archive_location(
 
     loc.is_active = False
     db.add(loc)
-    await db.commit()
+    await db.flush()
     return {"status": "archived"}
 
 
@@ -189,7 +189,6 @@ async def delete_location(
         raise HTTPException(409, "Location has task references — archive it instead")
 
     await db.delete(loc)
-    await db.commit()
     return {"status": "deleted"}
 
 

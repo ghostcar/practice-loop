@@ -30,5 +30,4 @@ async def _import_training_days(rows: list[dict], db: AsyncSession, user: User, 
         except Exception as e:
             logger.warning(f"Skip training_day row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

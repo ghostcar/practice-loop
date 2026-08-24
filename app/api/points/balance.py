@@ -79,5 +79,4 @@ async def spend_points(
     )
     db.add(progress)
     db.add(txn)
-    await db.commit()
     return {"new_balance": progress.points_balance}

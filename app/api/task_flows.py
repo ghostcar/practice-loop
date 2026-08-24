@@ -121,6 +121,4 @@ async def transition_task(
             await set_next_due(db, user.id, log.entity_id)
         elif data.to_status in (SKIPPED, CANCELLED, STOPPED):
             await set_retry_block(db, user.id, log.entity_id)
-
-    await db.commit()
     return result

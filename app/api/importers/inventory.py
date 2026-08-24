@@ -45,5 +45,4 @@ async def _import_inventory(rows: list[dict], db: AsyncSession, user: User, mode
         except (ValueError, KeyError) as e:
             logger.warning(f"Skip inventory row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

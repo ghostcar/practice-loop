@@ -90,9 +90,8 @@ async def set_task_body_targets(
             actual_notes=t.actual_notes,
         )
         db.add(link)
+        await db.flush()
         created.append(link)
-
-    await db.commit()
     for link in created:
         await db.refresh(link)
     return [TaskBodyTargetOut.model_validate(link) for link in created]
@@ -114,7 +113,6 @@ async def delete_task_body_target(
         raise HTTPException(404, "Body target not found")
 
     await db.delete(target)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -166,9 +164,8 @@ async def set_task_location_usages(
             actual_notes=u.actual_notes,
         )
         db.add(link)
+        await db.flush()
         created.append(link)
-
-    await db.commit()
     for link in created:
         await db.refresh(link)
     return [TaskLocationUsageOut.model_validate(link) for link in created]
@@ -190,7 +187,6 @@ async def delete_task_location_usage(
         raise HTTPException(404, "Location usage not found")
 
     await db.delete(usage)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -255,9 +251,8 @@ async def set_task_inventory_usages(
             actual_notes=u.actual_notes,
         )
         db.add(link)
+        await db.flush()
         created.append(link)
-
-    await db.commit()
     for link in created:
         await db.refresh(link)
     return [TaskInventoryUsageOut.model_validate(link) for link in created]
@@ -279,7 +274,6 @@ async def delete_task_inventory_usage(
         raise HTTPException(404, "Inventory usage not found")
 
     await db.delete(usage)
-    await db.commit()
     return {"status": "deleted"}
 
 

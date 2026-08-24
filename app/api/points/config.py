@@ -51,5 +51,4 @@ async def update_gamification_config(
     entity = await require_entity_owner(entity_id, user, db)
     entity.gamification_config = config.model_dump()
     db.add(entity)
-    await db.commit()
     return {"status": "ok"}

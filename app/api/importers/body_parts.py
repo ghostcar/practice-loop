@@ -46,5 +46,4 @@ async def _import_body_parts(rows: list[dict], db: AsyncSession, user: User, mod
         except Exception as e:
             logger.warning(f"Skip body_part row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

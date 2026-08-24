@@ -270,7 +270,6 @@ async def generate_deterministic(
         user_prompt="Deterministic fallback — no LLM",
     )
     db.add(log)
-    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -460,7 +459,6 @@ async def create_manual_task(
         user_prompt="Manual creation (no LLM)",
     )
     db.add(log)
-    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -489,7 +487,6 @@ async def complete_task(
         from app.services.dead_mans_switch import record_activity_heartbeat
 
         await record_activity_heartbeat(db, user.id, switch_type="daily_task")
-    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -512,6 +509,5 @@ async def interrupt_task(
     # Block retry only when the state actually changed
     if not result["idempotent"] and log.entity_id:
         await set_retry_block(db, user.id, log.entity_id)
-    await db.commit()
 
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)

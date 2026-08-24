@@ -89,8 +89,6 @@ async def complete_redemption(
             activity_log_id=redemption.activity_log_id,
         )
         db.add(txn)
-
-    await db.commit()
     return {"status": "completed", "points_recovered": redemption.points_value}
 
 
@@ -113,5 +111,4 @@ async def skip_redemption(
 
     redemption.status = "skipped"
     db.add(redemption)
-    await db.commit()
     return {"status": "skipped"}

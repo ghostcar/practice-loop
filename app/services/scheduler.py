@@ -104,5 +104,6 @@ async def set_retry_block(
     if opt_in:
         opt_in.retry_not_before_at = now + timedelta(hours=block_hours)
         db.add(opt_in)
+        await db.flush()
 
     logger.debug("set_retry_block entity=%s block=%dh by actor %s", entity_id, block_hours, _ctx.actor_id)

@@ -47,5 +47,4 @@ async def _import_measurements(rows: list[dict], db: AsyncSession, user: User, m
         except (ValueError, KeyError) as e:
             logger.warning(f"Skip measurement row: {e}")
             skipped += 1
-    await db.commit()
     return {"status": "ok", "imported": imported, "skipped": skipped}

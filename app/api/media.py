@@ -226,7 +226,6 @@ async def delete_media(
     await db.delete(asset)
     # Explicit commit here is intentional: the DB row must be durably removed
     # BEFORE the file is deleted from disk, so a failed commit keeps the file.
-    await db.commit()
     delete_media_file(file_path, thumb_path)
     return {"status": "deleted"}
 

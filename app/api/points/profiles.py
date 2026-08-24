@@ -40,7 +40,7 @@ async def create_points_profile(
         is_default=data.is_default,
     )
     db.add(profile)
-    await db.commit()
+    await db.flush()
     await db.refresh(profile)
     return PointsProfileOut.model_validate(profile)
 
@@ -58,7 +58,6 @@ async def delete_points_profile(
     if not profile:
         raise HTTPException(404, "Profile not found")
     await db.delete(profile)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -84,5 +83,4 @@ async def assign_profile_to_entity(
     if entity.gamification_config and isinstance(entity.gamification_config, dict):
         entity.gamification_config["points"]["profile_id"] = str(profile_id)
     db.add(entity)
-    await db.commit()
     return {"status": "assigned", "profile_name": profile.name}

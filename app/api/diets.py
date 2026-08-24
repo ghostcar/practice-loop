@@ -227,7 +227,7 @@ async def create_diet(
 ):
     diet = Diet(user_id=user.id, **data.model_dump())
     db.add(diet)
-    await db.commit()
+    await db.flush()
     await db.refresh(diet)
     return _diet_dict(diet)
 
@@ -246,7 +246,7 @@ async def update_diet(
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(diet, k, v)
     db.add(diet)
-    await db.commit()
+    await db.flush()
     await db.refresh(diet)
     return _diet_dict(diet)
 
@@ -262,7 +262,6 @@ async def delete_diet(
     if not diet:
         raise HTTPException(404, "Diet not found")
     await db.delete(diet)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -286,7 +285,7 @@ async def add_diet_item(
     next_order = (max_o.scalar_one_or_none() or -1) + 1
     item = DietItem(diet_id=diet_id, sort_order=next_order, **data.model_dump())
     db.add(item)
-    await db.commit()
+    await db.flush()
     await db.refresh(item)
     return _item_dict(item)
 
@@ -308,7 +307,7 @@ async def update_diet_item(
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(item, k, v)
     db.add(item)
-    await db.commit()
+    await db.flush()
     await db.refresh(item)
     return _item_dict(item)
 
@@ -327,7 +326,6 @@ async def delete_diet_item(
     if not item:
         raise HTTPException(404, "Diet item not found")
     await db.delete(item)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -349,7 +347,7 @@ async def reorder_diet_items(
     for pos, iid in enumerate(payload.ids):
         items[iid].sort_order = pos
         db.add(items[iid])
-    await db.flush()
+        await db.flush()
     return {"status": "ok"}
 
 
@@ -388,7 +386,7 @@ async def create_consumption(
         **data.model_dump(exclude={"consumed_date"}),
     )
     db.add(consumption)
-    await db.commit()
+    await db.flush()
     await db.refresh(consumption)
     return _consumption_dict(consumption)
 
@@ -406,7 +404,6 @@ async def delete_consumption(
     if not consumption:
         raise HTTPException(404, "Consumption not found")
     await db.delete(consumption)
-    await db.commit()
     return {"status": "deleted"}
 
 
@@ -438,7 +435,6 @@ async def generate_diet_plan(
         )
     except (JsonRepairError, ValueError) as e:
         raise HTTPException(422, str(e)) from None
-    await db.commit()
     await db.refresh(diet)
     return _diet_dict(diet)
 
@@ -467,7 +463,6 @@ async def evaluate_diet_plan(
         evaluation = await evaluate_diet(db=db, diet=diet, llm_config=active_config, locale=locale, days=data.days)
     except (JsonRepairError, ValueError) as e:
         raise HTTPException(422, str(e)) from None
-    await db.commit()
     await db.refresh(diet)
     return {"evaluation": evaluation, "diet": _diet_dict(diet)}
 
@@ -515,7 +510,6 @@ async def create_synergy_review(
         )
     except (JsonRepairError, ValueError) as e:
         raise HTTPException(422, str(e)) from None
-    await db.commit()
     await db.refresh(review)
     return _review_dict(review)
 

@@ -56,7 +56,6 @@ async def create_schedule_rule(
 ):
     rule = ScheduleRule(user_id=user.id, **data.model_dump())
     db.add(rule)
-    await db.commit()
     await db.refresh(rule)
     return ScheduleRuleOut.model_validate(rule)
 
@@ -72,5 +71,4 @@ async def delete_schedule_rule(
     if not rule:
         raise HTTPException(404, "Rule not found")
     await db.delete(rule)
-    await db.commit()
     return {"status": "deleted"}

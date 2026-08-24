@@ -1278,3 +1278,16 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 **Owner always passes** (CapabilityAuthorizer returns True when actor_id == issuer_user_id). Delegated partners must have an active CapabilityGrantV2, D/s grant, SocialGrant, or CommunityMemberDelegation.
 
 **Verification:** 1380 tests pass.
+
+## ADR-160 — P7: Remove all legacy db.commit() from routers (ADR-015 debt closed)
+
+**Date:** 2026-08-24
+**Decision:** Remove all 70 `db.commit()` calls from 26 legacy router files in `app/api/`. Transactions are now exclusively owned by `get_db()` (auto-commit after endpoint).
+
+**Changes:**
+- Removed `await db.commit()` from 26 files (importers/*, points/*, core routers)
+- Added `await db.flush()` in 7 files where `db.refresh()` needed the object to be persisted first (calendar, diets, references, attachments, verification, points/profiles)
+- Added `await db.flush()` in `scheduler.py` service (`set_retry_block`) for same-session visibility
+- `LEGACY_COMMIT_ROUTERS` in `test_transaction_boundary.py` set to empty set
+
+**Verification:** 1380 tests pass, 0 `db.commit()` in `app/api/`, boundary test green.

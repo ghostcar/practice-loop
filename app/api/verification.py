@@ -107,7 +107,7 @@ async def create_challenge(
         expires_at=now + timedelta(minutes=body.ttl_minutes),
     )
     db.add(challenge)
-    await db.commit()
+    await db.flush()
     await db.refresh(challenge)
 
     response = _serialize(challenge)
@@ -149,7 +149,6 @@ async def verify_challenge(
     if challenge.state == "expired" or expires < now:
         if challenge.state == "active":
             challenge.state = "expired"
-            await db.commit()
         raise HTTPException(410, "Challenge has expired")
 
     # Increment attempt count
@@ -159,16 +158,12 @@ async def verify_challenge(
     if verify_code_constant_time(body.code, challenge.code_hmac):
         challenge.state = "consumed"
         challenge.consumed_at = now
-        await db.commit()
         return {"verified": True, "state": "consumed"}
 
     # Wrong code
     if challenge.attempt_count >= challenge.max_attempts:
         challenge.state = "failed"
-        await db.commit()
         raise HTTPException(403, "Verification failed — max attempts reached")
-
-    await db.commit()
     raise HTTPException(403, f"Invalid code ({challenge.attempt_count}/{challenge.max_attempts} attempts)")
 
 
@@ -199,6 +194,5 @@ async def get_challenge_status(
     expires = as_utc(challenge.expires_at)
     if challenge.state == "active" and expires < now:
         challenge.state = "expired"
-        await db.commit()
 
     return _serialize(challenge)
