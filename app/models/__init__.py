@@ -16,7 +16,7 @@ from app.models.community_agent import (  # noqa: E402
     CommunityTournament,
     CommunityTournamentEntry,
 )
-from app.models.community_leagues import UserLeagueTier  # noqa: E402
+from app.models.community_leagues import UserLeagueTier  # noqa: E402  # behind experimental_leagues flag
 from app.models.community_roles import CommunityMemberRole  # noqa: E402
 from app.models.dead_mans_switch import DeadMansSwitchRule  # noqa: E402
 from app.models.ds_suite import (  # noqa: E402

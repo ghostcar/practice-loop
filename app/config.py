@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # Community creation limit per user (0 = unlimited). Reserved for future monetization.
     community_creation_limit: int = 0
 
+    # Experimental draft models (ADR-R1.2) — behind flags for safe rollout.
+    experimental_leagues: bool = False
+    experimental_billing: bool = False
+
     # M3 Personal Suite (Шаг 11b) — Medication Organizer. Health-модуль, relief-only.
     medication_enabled: bool = True
 

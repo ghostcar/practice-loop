@@ -1255,3 +1255,26 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 - `app/main.py`: registers `sessions_router` + `sessions_json_router` from `app.api.sessions`
 
 **Verification:** 1380 tests pass.
+
+## ADR-157 — R1.2: Feature flags for draft models
+
+**Date:** 2026-08-24
+**Decision:** Added `experimental_leagues: bool = False` and `experimental_billing: bool = False` to `config.py`.
+
+**Rationale:** The `UserLeagueTier` model and `Promocodes` model exist in the codebase but have no routes or active logic. The flags guard them for safe future rollout per ROADMAP R1.2.
+
+## ADR-158 — R4.3: Protocol capability codes
+
+**Date:** 2026-08-24
+**Decision:** Added `_require_protocol_capability()` helper to `app/api/protocols.py` with `CapabilityAuthorizer.can_act()` checks on all mutation endpoints.
+
+**Capability codes registered:**
+- `protocol.create` — POST /protocols/create
+- `protocol.edit_definition` — POST /protocols/{id}/update
+- `protocol.delete` — POST /protocols/{id}/delete
+- `protocol.start` — POST /protocols/{id}/start
+- `protocol.confirm` — POST /protocols/runs/{id}/complete-step
+
+**Owner always passes** (CapabilityAuthorizer returns True when actor_id == issuer_user_id). Delegated partners must have an active CapabilityGrantV2, D/s grant, SocialGrant, or CommunityMemberDelegation.
+
+**Verification:** 1380 tests pass.

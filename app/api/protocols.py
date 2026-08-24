@@ -23,7 +23,7 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.protocol import ProtocolDefinition, ProtocolRun, ProtocolStepLog, ProtocolStepType, TimingSpecType
 from app.models.user import User
-from app.services.capability import ActorContext
+from app.services.capability import ActorContext, CapabilityAuthorizer
 from app.services.protocol import create_protocol_definition, execute_protocol_step, start_protocol_run
 from app.templates_setup import templates
 
@@ -189,6 +189,30 @@ def _builder_response(request, user, db, proto):
     )
 
 
+async def _require_protocol_capability(
+    db: AsyncSession,
+    user: User,
+    capability_code: str,
+    protocol_id: uuid.UUID | None = None,
+) -> None:
+    """Verify the user (or their delegate) has the required protocol capability.
+
+    Owner always passes. Delegated partners must have a matching CapabilityGrantV2,
+    D/s CapabilityGrant, SocialGrant, or CommunityMemberDelegation.
+    Capability codes: protocol.view, protocol.create, protocol.start,
+    protocol.confirm, protocol.edit_definition, protocol.delete.
+    """
+    actor = ActorContext(actor_id=user.id, actor_type="user", source="web")
+    allowed, reason = await CapabilityAuthorizer.can_act(
+        db=db, actor=actor, issuer_user_id=user.id,
+        capability_code=capability_code, resource_id=protocol_id,
+    )
+    if not allowed:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=403, detail=reason)
+
+
 # ── Мутации ───────────────────────────────────────────────────────────
 
 
@@ -237,6 +261,7 @@ async def protocols_create(
         category = "prep"
     if anchor_type not in ("independent", "session_bound", "timer_bound"):
         anchor_type = "session_bound"
+    await _require_protocol_capability(db, user, "protocol.create")
     steps = _parse_steps_form(steps_json)
     proto = await create_protocol_definition(
         db, user.id, title=title.strip()[:255], description=description.strip() or None,
@@ -258,6 +283,7 @@ async def protocols_update(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _require_protocol_capability(db, user, "protocol.edit_definition", protocol_id)
     proto = await _get_own_protocol(db, protocol_id, user.id)
     if category in CATEGORIES:
         proto.category = category
@@ -295,6 +321,7 @@ async def protocols_delete(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _require_protocol_capability(db, user, "protocol.delete", protocol_id)
     proto = await _get_own_protocol(db, protocol_id, user.id)
     await db.delete(proto)
     await db.flush()
@@ -309,6 +336,7 @@ async def protocols_start(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _require_protocol_capability(db, user, "protocol.start", protocol_id)
     proto = await _get_own_protocol(db, protocol_id, user.id)
     try:
         anchor = datetime.fromisoformat(anchor_time) if anchor_time else datetime.now(UTC)
@@ -331,6 +359,7 @@ async def protocols_complete_step(
     db: AsyncSession = Depends(get_db),
 ):
     """Отметить шаг выполненным (эмуляция, ADR-129)."""
+    await _require_protocol_capability(db, user, "protocol.confirm")
     run = (
         await db.execute(select(ProtocolRun).where(ProtocolRun.id == run_id, ProtocolRun.user_id == user.id))
     ).scalar_one_or_none()
