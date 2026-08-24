@@ -1351,3 +1351,15 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 **Решение:**
 - `app/services/entities_service.py` (640 строк) — catalog/my pages, entity CRUD, opt-in, personalize fork
 - `app/api/entities.py` (246 строк, было 780) — тонкие HTTP-обёртки
+
+## ADR-166: training.py → training_service.py (Thin Routes)
+- **Статус:** принят
+- **Дата:** 2026-08-24
+- **Контекст:** training.py 750 строк — монолит с бизнес-логикой, HTTP-хендлерами и вспомогательными функциями.
+- **Решение:** Вынесены все CRUD, LLM-пайплайн, serializers, validators в `app/services/training_service.py` (597 строк).
+  HTTP-хендлеры (299 строк) — только парсинг форм + вызов сервиса + ответ.
+- **Последствия:**
+  - `_render_log_entry_row` (UI-рендер) остался в training.py с re-export в тестах.
+  - `complete_once()` требует User object — в service делается lookup User по user_id.
+  - LLM-ошибки (JsonRepairError) ловятся broad `except Exception` → 303 redirect.
+- **Коммит:** (pending)
