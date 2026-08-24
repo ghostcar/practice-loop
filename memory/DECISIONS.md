@@ -1409,3 +1409,15 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
   - `ValueError` для validation errors (no LLM, no practices) → redirect with error.
   - `coerce_param()` вынесен как переиспользуемый helper.
 - **Коммит:** (pending)
+
+## ADR-171: ds.py → ds_service.py (Thin Routes)
+- **Статус:** принят
+- **Дата:** 2026-08-24
+- **Контекст:** ds.py 630 строк — D/s Suite: keyholder dashboard, portal, submissive CRUD, lock actions, duties, delegation (grants), check-ins, AI spin, TG code.
+- **Решение:** Вынесены все queries, CRUD, lock actions, duty verification, delegation (create/claim/revoke grants), check-ins (OCR), AI spin, TG code generation в `app/services/ds_service.py` (442 строки).
+  HTTP-хендлеры в `app/api/ds.py` (297 строк, было 630) — тонкие обёртки.
+- **Последствия:**
+  - `NotFoundError` для ownership checks (submissive, duty, grant) → 404.
+  - `claim_grant_invite()` возвращает string result ('success'/'rate_limited'/'invalid'/'self_claim') вместо raises.
+  - telegram-code endpoint возвращает redirect (303) на portal, не JSON.
+- **Коммит:** (pending)
