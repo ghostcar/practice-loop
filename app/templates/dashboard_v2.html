@@ -325,6 +325,7 @@
         </div>
     </div>
     {% elif block == 'medication' %}
+    {% if 'medication' in enabled_modules %}
     <!-- Medication summary (Step 11b — relief-only, informational) -->
     <div id="dash-block-medication" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between mb-3">
@@ -356,8 +357,10 @@
             {% endif %}
         </div>
         {% endif %}
-    </div>
+</div>
+{% endif %}
     {% elif block == 'health' %}
+    {% if 'health' in enabled_modules %}
     <!-- Health summary (Step 13 — relief-only, informational) -->
     <div id="dash-block-health" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between mb-3">
@@ -382,8 +385,10 @@
             {% endif %}
             {% endif %}
         </div>
-    </div>
+</div>
+{% endif %}
     {% elif block == 'journal' %}
+    {% if 'journal' in enabled_modules %}
     <!-- Sexual Journal summary (Step 14 — relief-only, informational) -->
     <div id="dash-block-journal" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between mb-3">
@@ -406,8 +411,10 @@
             {% endif %}
             {% endif %}
         </div>
-    </div>
+</div>
+{% endif %}
     {% elif block == 'care' %}
+    {% if 'care' in enabled_modules %}
     <!-- Personal Care summary (Step 15 — relief-only, informational) -->
     <div id="dash-block-care" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between mb-3">
@@ -428,8 +435,10 @@
             <span class="inline-flex items-center gap-1">{{ icon('check', 'w-3.5 h-3.5') }}{{ care_summary.routines }} {{ t.dash_care_routines }}</span>
             {% endif %}
         </div>
-    </div>
+</div>
+{% endif %}
     {% elif block == 'aftercare' %}
+    {% if 'aftercare' in enabled_modules %}
     <!-- Aftercare summary (C1 — relief-only, informational) -->
     <div id="dash-block-aftercare" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between mb-3">
@@ -449,8 +458,10 @@
             <span class="inline-flex items-center gap-1">{{ icon('aftercare', 'w-3.5 h-3.5') }}{{ aftercare_summary.total }} {{ t.dash_aftercare_total }}</span>
             {% endif %}
         </div>
-    </div>
+</div>
+{% endif %}
     {% elif block == 'insights' %}
+    {% if 'insights' in enabled_modules %}
     <!-- Personal Insights summary (Step 17 — relief-only, informational) -->
     <div id="dash-block-insights" class="pl-surface rounded-xl border border-[color:var(--border)] p-4">
         <div class="flex items-center justify-between mb-3">
@@ -474,8 +485,10 @@
             {% endif %}
             {% endif %}
         </div>
-    </div>
+</div>
+        {% endif %}
     {% elif block == 'timer' %}
+    {% if 'timer' in enabled_modules %}
     <!-- LockTimer active session card -->
     {% if locktimer_session %}
     <div id="dash-block-timer" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5 space-y-3">
@@ -527,6 +540,7 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}
     {% endif %}
     {% endif %}
     {% endfor %}

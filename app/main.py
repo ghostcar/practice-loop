@@ -276,6 +276,8 @@ from app.api.persona_builder import router as persona_builder_router  # noqa: E4
 from app.api.promocodes import router as promocodes_router  # noqa: E402
 from app.api.protocols import router as protocols_router  # noqa: E402
 from app.api.security_2fa import router as security_2fa_router  # noqa: E402
+from app.api.sessions import router as sessions_router  # noqa: E402
+from app.api.sessions import session_json_router as sessions_json_router  # noqa: E402
 from app.telegram.bot import tg_router  # noqa: E402
 
 app.include_router(tg_router)
@@ -300,6 +302,8 @@ app.include_router(health_dashboard_router)
 app.include_router(promocodes_router)
 app.include_router(certificates_router)
 app.include_router(security_2fa_router)
+app.include_router(sessions_router)
+app.include_router(sessions_json_router)
 
 # ---------------------------------------------------------------------------
 # Tracker routes
@@ -319,7 +323,6 @@ if composition.tracker_active:
     from app.api.catalog import json_router as catalog_json_router  # noqa: E402
     from app.api.catalog import router as catalog_router  # noqa: E402
     from app.api.dashboard import router as dashboard_router  # noqa: E402
-    from app.api.dashboard import session_json_router  # noqa: E402
     from app.api.diets import router as diets_router  # noqa: E402
     from app.api.dynamics import json_router as dynamics_json_router  # noqa: E402
     from app.api.dynamics import router as dynamics_router  # noqa: E402
@@ -354,7 +357,6 @@ if composition.tracker_active:
         tasks_router,
         training_router,
         dashboard_router,
-        session_json_router,
         points_router,
         task_flows_router,
         references_router,

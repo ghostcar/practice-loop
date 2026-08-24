@@ -1237,3 +1237,21 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 - `complete_runs_for_timer_event()` — marks active runs as aborted, pending steps as skipped
 
 **UI:** `locktimer/session_detail.html` shows attached `protocol_runs` with status badges (active/completed/aborted), linked to `/protocols/run/{id}`.
+
+## ADR-156 — Dashboard Refactor: Sessions Extraction + Module Gating
+
+**Date:** 2026-08-24
+**Decision:** Extract sessions from dashboard.py → app/api/sessions.py (616 lines). Gate all 7 dashboard summary blocks by `enabled_modules` from user prefs.
+
+**Rationale:**
+- dashboard.py was ~650 lines with sessions mixed in — hard to maintain
+- Dashboard summary blocks (medication, health, journal, care, aftercare, insights, timer) were always rendered even if the module was disabled via `prefs.enabled_modules`
+- No sessions → dashboard template had Jinja2 nesting bugs (orphan `</div>` outside `{% if enabled %}` checks, missing `{% endif %}` for outer if-elif chain)
+
+**Changes:**
+- Created `app/api/sessions.py` with all session CRUD + JSON API + interactive pages
+- `app/api/dashboard.py`: removed sessions, simplified imports, added `enabled_modules` to template context
+- `app/templates/dashboard_v2.html`: fixed nesting — moved `</div>` INSIDE `{% if 'module' in enabled_modules %}` for all 7 blocks, added closing `{% endif %}` for outer chain before `{% endfor %}`
+- `app/main.py`: registers `sessions_router` + `sessions_json_router` from `app.api.sessions`
+
+**Verification:** 1380 tests pass.
