@@ -1363,3 +1363,14 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
   - `complete_once()` требует User object — в service делается lookup User по user_id.
   - LLM-ошибки (JsonRepairError) ловятся broad `except Exception` → 303 redirect.
 - **Коммит:** (pending)
+
+## ADR-167: dashboard.py → dashboard_service.py (Thin Routes)
+- **Статус:** принят
+- **Дата:** 2026-08-24
+- **Контекст:** dashboard.py 678 строк — монолит с контекстом дашборда (today tasks, diets, training, schedule, meals, sessions, locktimer, модульные summary, alerts), achievements, notifications, privacy, Telegram linking.
+- **Решение:** Вынесены все queries, summaries, alerts, achievement CRUD, notification CRUD, TG code generation в `app/services/dashboard_service.py` (499 строк).
+  HTTP-хендлеры в `app/api/dashboard.py` (223 строк, было 678) — тонкие обёртки.
+- **Последствия:**
+  - `_safe_summary()` загружает модульные summary через service-файлы (med_service, health_service, journal_service) напрямую, а не через route re-exports.
+  - aftercare и insights ещё не декомпозированы — импортируются из api модулей.
+- **Коммит:** (pending)

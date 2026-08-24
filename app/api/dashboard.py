@@ -1,86 +1,34 @@
-"""Dashboard, achievements, notifications, privacy (ADR-156: sessions extracted)."""
+"""Dashboard, achievements, notifications, privacy (ADR-156/167).
+
+All business logic lives in app.services.dashboard_service (ADR-167).
+This file contains only HTTP parsing, response building, and dependency injection.
+"""
+
+from __future__ import annotations
 
 import json
-import secrets
 import uuid
-from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
-from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
-from app.config import settings
 from app.database import get_db
-from app.gamification.handler import get_or_create_progress
-from app.gamification.xp import xp_progress
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.achievement import Achievement, UserAchievement
-from app.models.activity_log import ActivityLog
-from app.models.diet import Diet
-from app.models.notification import Notification
-from app.models.session import ActivitySession
-from app.models.training import TrainingDay
 from app.models.user import User
 from app.security import ensure_csrf_cookie
-from app.services.personal_export import build_personal_export
+from app.services import dashboard_service as svc
 from app.templates_setup import templates
-from app.timeutils import local_today
-
-# Locale-aware date label for the dashboard header (DESIGN v2 §9).
-_DASH_WEEKDAYS = {
-    "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-    "ru": ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"],
-}
-_DASH_MONTHS = {
-    "en": [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ],
-    "ru": [
-        "января",
-        "февраля",
-        "марта",
-        "апреля",
-        "мая",
-        "июня",
-        "июля",
-        "августа",
-        "сентября",
-        "октября",
-        "ноября",
-        "декабря",
-    ],
-}
-
-
-# Sentinel for sorting items without a scheduled time to the end of the day list.
-_FAR_FUTURE = datetime(9999, 1, 1, tzinfo=UTC)
-
-
-def _today_label(day: datetime.date, locale: str) -> str:
-    """Human date in the user's locale, e.g. "Tuesday, 14 August 2026"."""
-    wd = _DASH_WEEKDAYS.get(locale, _DASH_WEEKDAYS["en"])[day.weekday()]
-    mo = _DASH_MONTHS.get(locale, _DASH_MONTHS["en"])[day.month - 1]
-    return f"{wd}, {day.day} {mo} {day.year}"
-
 
 router = APIRouter(tags=["dashboard-v2"])
 session_json_router = APIRouter(prefix="/api/v2/sessions", tags=["sessions"])
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Dashboard
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
@@ -94,313 +42,7 @@ async def dashboard(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    progress = await get_or_create_progress(db, user.id)
-    level, xp_current, xp_next = xp_progress(progress.xp)
-
-    # Today's scheduled tasks
-    today = local_today()
-    today_start = datetime(today.year, today.month, today.day, tzinfo=UTC)
-    today_end = today_start + timedelta(days=1)
-    today_tasks_result = await db.execute(
-        select(ActivityLog)
-        .where(
-            ActivityLog.user_id == user.id,
-            ActivityLog.scheduled_at >= today_start,
-            ActivityLog.scheduled_at < today_end,
-            ActivityLog.status.in_(["planned", "in_progress"]),
-        )
-        .order_by(ActivityLog.scheduled_at)
-        .limit(10)
-    )
-    today_tasks = list(today_tasks_result.scalars().all())
-
-    # Active diets summary
-    diets_result = await db.execute(
-        select(Diet).where(Diet.user_id == user.id, Diet.is_active.is_(True)).order_by(Diet.created_at).limit(3)
-    )
-    active_diets = list(diets_result.scalars().all())
-
-    # Today's training plans
-    training_result = await db.execute(
-        select(TrainingDay)
-        .where(
-            TrainingDay.user_id == user.id,
-            TrainingDay.target_date == today,
-        )
-        .order_by(TrainingDay.created_at)
-        .limit(3)
-    )
-    today_training = list(training_result.scalars().all())
-    # Get task counts for today's training
-    training_task_counts: dict = {}
-    if today_training:
-        td_ids = [td.id for td in today_training]
-
-        counts_result = await db.execute(
-            select(
-                ActivityLog.training_day_id,
-                func.count(ActivityLog.id),
-                func.sum(case((ActivityLog.status == "completed", 1), else_=0)),
-            )
-            .where(ActivityLog.training_day_id.in_(td_ids))
-            .group_by(ActivityLog.training_day_id)
-        )
-        for row in counts_result:
-            training_task_counts[str(row[0])] = {"total": row[1] or 0, "completed": row[2] or 0}
-
-    # Today's calendar schedule (reuse existing call)
-    from app.api.calendar import get_day_schedule
-
-    today_schedule = await get_day_schedule(db, user.id, today)
-
-    # Today's diet consumption count
-    from app.models.diet import DietConsumption
-
-    consumption_count_result = await db.execute(
-        select(func.count(DietConsumption.id)).where(
-            DietConsumption.user_id == user.id,
-            DietConsumption.consumed_date == today,
-        )
-    )
-    today_meals = consumption_count_result.scalar() or 0
-    result = await db.execute(
-        select(ActivityLog).where(ActivityLog.user_id == user.id).order_by(ActivityLog.created_at.desc()).limit(5)
-    )
-    recent_logs = result.scalars().all()
-
-    # Active sessions (multiple may run in parallel — migration 063)
-    sess_result = await db.execute(
-        select(ActivitySession)
-        .where(
-            ActivitySession.owner_id == user.id,
-            ActivitySession.status.in_(["created", "active"]),
-        )
-        .order_by(ActivitySession.created_at.desc())
-    )
-    active_sessions = sess_result.scalars().all()
-
-    # Notifications count
-    notif_count_result = await db.execute(
-        select(func.count(Notification.id)).where(
-            Notification.user_id == user.id,
-            not Notification.is_read,
-        )
-    )
-    unread_notifs = notif_count_result.scalar() or 0
-
-    # LockTimer active session (if timer operational)
-    locktimer_session = None
-    locktimer_slots_count = 0
-    locktimer_tasks_count = 0
-    try:
-        from app.platform.composition import composition
-
-        if composition.timer_operational:
-            from app.locktimer.repositories import get_active_session as get_lt_active
-
-            lt_active = await get_lt_active(db, user.id)
-            if lt_active:
-                from app.locktimer.repositories import list_slot_occurrences, list_task_occurrences
-
-                lt_slots = await list_slot_occurrences(db, lt_active.id, limit=50)
-                lt_tasks = await list_task_occurrences(db, lt_active.id, limit=50)
-                locktimer_session = {
-                    "id": str(lt_active.id),
-                    "state": lt_active.state,
-                    "duration_type": lt_active.duration_type,
-                    "timezone": lt_active.timezone,
-                    "started_at": lt_active.started_at,
-                    "effective_end_at": lt_active.effective_end_at,
-                }
-                locktimer_slots_count = len(lt_slots)
-                locktimer_tasks_count = len(lt_tasks)
-    except Exception:
-        pass  # LockTimer may not be deployed yet
-
-    # Medication summary (due today / expiring / low stock) — relief-only, informational.
-    med_summary = None
-    try:
-        from app.platform.composition import composition
-
-        if composition.medication_enabled:
-            from app.api.medication import _schedule_summary
-
-            med_summary = await _schedule_summary(db, user.id)
-    except Exception:
-        pass  # medication may not be deployed yet
-
-    # Health summary (today check-in / labs count / cycle phase) — relief-only.
-    health_summary = None
-    try:
-        from app.platform.composition import composition
-
-        if composition.health_enabled:
-            from app.api.health import _health_summary
-
-            health_summary = await _health_summary(db, user.id)
-    except Exception:
-        pass  # health may not be deployed yet
-
-    # Sexual Journal summary (entries 30d / last entry / avg satisfaction) — relief-only.
-    journal_summary = None
-    try:
-        from app.platform.composition import composition
-
-        if composition.journal_enabled:
-            from app.api.journal import _journal_summary
-
-            journal_summary = await _journal_summary(db, user.id)
-    except Exception:
-        pass  # journal may not be deployed yet
-
-    # Personal Care summary (procedures 30d / last / routines count) — relief-only.
-    care_summary = None
-    try:
-        from app.platform.composition import composition
-
-        if composition.care_enabled:
-            from app.services.care_service import get_care_summary
-
-            care_summary = await get_care_summary(db, user.id)
-    except Exception:
-        pass  # care may not be deployed yet
-
-    # Aftercare summary (entries total / last / kinds) — relief-only.
-    aftercare_summary = None
-    try:
-        from app.platform.composition import composition
-
-        if composition.aftercare_enabled:
-            from app.api.aftercare import _aftercare_summary
-
-            aftercare_summary = await _aftercare_summary(db, user.id)
-    except Exception:
-        pass  # aftercare may not be deployed yet
-
-    # Personal Insights summary (latest run / findings count) — relief-only.
-    insights_summary = None
-    try:
-        from app.platform.composition import composition
-
-        if composition.insights_enabled:
-            from app.api.insights import _insights_summary
-
-            insights_summary = await _insights_summary(db, user.id)
-    except Exception:
-        pass  # insights may not be deployed yet
-
-    # Tracker 'today' merge (view-level): combine scheduled tasks with due meds
-    # so the user sees everything due today in one place. No ActivityLog rows are
-    # created — medication stays a separate Health domain (ADR-085, relief-only).
-    today_items: list[dict] = [
-        {
-            "kind": "task",
-            "id": str(t.id),
-            "title": t.title_override or t.selected_entity_name or "(task)",
-            "status": t.status,
-            "at": t.scheduled_at,
-            "medication_id": None,
-        }
-        for t in today_tasks
-    ]
-    if med_summary and med_summary.get("due"):
-        for d in med_summary["due"]:
-            today_items.append(
-                {
-                    "kind": "med",
-                    "id": d["id"],
-                    "title": d["medication_name"],
-                    "status": "med",
-                    "at": None,
-                    "medication_id": d["medication_id"],
-                    "dose": d.get("dose"),
-                    "pending": d.get("pending", 1),
-                }
-            )
-    today_items.sort(key=lambda x: x["at"] or _FAR_FUTURE)
-    today_items = today_items[:10]
-
-    # Dashboard Alert Bar & Cockpit collector (Step 20)
-    dashboard_alerts: list[dict] = []
-    try:
-        from app.models.health import CycleSettings, HealthState
-
-        today_state = (
-            await db.execute(select(HealthState).where(HealthState.user_id == user.id, HealthState.event_date == today))
-        ).scalar_one_or_none()
-        c_settings = (
-            await db.execute(select(CycleSettings).where(CycleSettings.user_id == user.id))
-        ).scalar_one_or_none()
-
-        if today_state and today_state.post_session_drop:
-            dashboard_alerts.append(
-                {
-                    "type": "warning",
-                    "icon": "heart",
-                    "title": "Post-session Drop (Эмоциональный спад)",
-                    "message": (
-                        "Активирован режим бережного восстановления. "
-                        "Рекомендуются расслабляющие процедуры Ухода и Aftercare."
-                    ),
-                    "action_url": "/care",
-                    "action_label": "Протоколы Ухода",
-                }
-            )
-        elif today_state and today_state.recovery is not None and today_state.recovery <= 2:
-            dashboard_alerts.append(
-                {
-                    "type": "warning",
-                    "icon": "today",
-                    "title": f"Низкий уровень восстановления ({today_state.recovery}/5)",
-                    "message": "ИИ-Наблюдатель рекомендует снизить интенсивность физических тренировок и нагрузок.",
-                    "action_url": "/health",
-                    "action_label": "Дневник Здоровья",
-                }
-            )
-
-        if c_settings and c_settings.profile_type == "hrt_emulated" and (not today_state or not today_state.hrt_taken):
-            dashboard_alerts.append(
-                {
-                    "type": "info",
-                    "icon": "health",
-                    "title": "Напоминание ГТ / HRT",
-                    "message": "Не забудьте отметить сегодняшний приём гормональной терапии в Дневнике Здоровья.",
-                    "action_url": "/health",
-                    "action_label": "Отметить ГТ",
-                }
-            )
-    except Exception as exc:
-        import logging
-
-        logging.getLogger(__name__).warning("failed building dashboard alerts: %s", exc)
-
-    if med_summary and med_summary.get("due"):
-        dashboard_alerts.append(
-            {
-                "type": "info",
-                "icon": "medication",
-                "title": "Запланированный приём медикаментов",
-                "message": f"Ожидают приёма {len(med_summary['due'])} поз. на сегодня.",
-                "action_url": "/medications",
-                "action_label": "Принять",
-            }
-        )
-
-    if locktimer_session:
-        dashboard_alerts.append(
-            {
-                "type": "lock",
-                "icon": "lock",
-                "title": "Активен Контроль Доступа (Замок)",
-                "message": f"Режим: {locktimer_session['state']}. Ограничения активны.",
-                "action_url": "/timer/dashboard",
-                "action_label": "Статус замка",
-            }
-        )
-
-    from app.prefs import sanitize_prefs
-
-    enabled_modules = sanitize_prefs(user.prefs).get("enabled_modules", [])
+    ctx = await svc.get_dashboard_context(db, user, locale)
 
     response = templates.TemplateResponse(
         request=request,
@@ -411,44 +53,17 @@ async def dashboard(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "progress": progress,
-            "level": level,
-            "xp_current": xp_current,
-            "xp_next": xp_next,
-            "xp_percent": int(xp_current / max(xp_next, 1) * 100),
-            "recent_logs": recent_logs,
-            "active_sessions": active_sessions,
-            "unread_notifs": unread_notifs,
-            "tg_bot_username": settings.tg_bot_username,
             "active_nav": "dashboard",
-            "enabled_modules": enabled_modules,
-            "locktimer_session": locktimer_session,
-            "locktimer_slots_count": locktimer_slots_count,
-            "locktimer_tasks_count": locktimer_tasks_count,
-            "today_tasks": today_tasks,
-            "today_items": today_items,
-            "dashboard_alerts": dashboard_alerts,
-            "active_diets": active_diets,
-            "today_training": today_training,
-            "training_task_counts": training_task_counts,
-            "today_schedule": today_schedule,
-            "today_meals": today_meals,
-            "today_label": _today_label(today, locale),
-            "med_summary": med_summary,
-            "health_summary": health_summary,
-            "journal_summary": journal_summary,
-            "care_summary": care_summary,
-            "aftercare_summary": aftercare_summary,
-            "insights_summary": insights_summary,
+            **ctx,
         },
     )
-    # Set CSRF cookie ONLY if absent — re-issuing it here after render used to
-    # desync the HTML meta token from the browser cookie (audit: P0 login→dashboard 403).
     ensure_csrf_cookie(request, response)
     return response
 
 
-# --- Achievements ---
+# ─────────────────────────────────────────────────────────────────────────────
+# Achievements
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @router.get("/achievements", response_class=HTMLResponse)
@@ -457,53 +72,11 @@ async def achievements_board(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Achievement board: all (anonymized) + my."""
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    # All user achievements (anonymized)
-    all_result = await db.execute(
-        select(UserAchievement, Achievement)
-        .join(Achievement, UserAchievement.achievement_id == Achievement.id)
-        .where(not UserAchievement.is_hidden)
-        .order_by(UserAchievement.obtained_at.desc())
-        .limit(30)
-    )
-    all_achievements = []
-    for ua, ach in all_result:
-        all_achievements.append(
-            {
-                "code": ach.code,
-                "name": ach.name,
-                "description": ach.description,
-                "color": ach.color,
-                "obtained_at": ua.obtained_at,
-                "display_name": "Anonymous" if ua.user_id != user.id else "You",
-            }
-        )
-
-    # My achievements
-    my_result = await db.execute(
-        select(UserAchievement, Achievement)
-        .join(Achievement, UserAchievement.achievement_id == Achievement.id)
-        .where(UserAchievement.user_id == user.id)
-        .order_by(UserAchievement.obtained_at.desc())
-    )
-    my_achievements = []
-    for ua, ach in my_result:
-        my_achievements.append(
-            {
-                "id": ua.id,
-                "code": ach.code,
-                "name": ach.name,
-                "description": ach.description,
-                "color": ach.color,
-                "context": ua.context,
-                "obtained_at": ua.obtained_at,
-                "is_hidden": ua.is_hidden,
-            }
-        )
+    ctx = await svc.get_achievements_context(db, user.id)
 
     return templates.TemplateResponse(
         request=request,
@@ -514,9 +87,8 @@ async def achievements_board(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "all_achievements": all_achievements,
-            "my_achievements": my_achievements,
             "active_nav": "dashboard",
+            **ctx,
         },
     )
 
@@ -528,19 +100,13 @@ async def hide_achievement(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Toggle achievement visibility on public board."""
-    result = await db.execute(select(UserAchievement).where(UserAchievement.id == ua_id))
-    ua = result.scalar_one_or_none()
-    if ua and ua.user_id != user.id:
-        ua = None
-    if ua:
-        ua.is_hidden = not ua.is_hidden
-        db.add(ua)
-        await db.flush()
+    await svc.toggle_achievement_visibility(db, ua_id, user.id)
     return RedirectResponse(url="/achievements", status_code=303)
 
 
-# --- Notifications ---
+# ─────────────────────────────────────────────────────────────────────────────
+# Notifications
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @router.get("/notifications", response_class=HTMLResponse)
@@ -549,15 +115,11 @@ async def notifications_page(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """In-app notifications list."""
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    result = await db.execute(
-        select(Notification).where(Notification.user_id == user.id).order_by(Notification.created_at.desc()).limit(50)
-    )
-    notifications = result.scalars().all()
+    notifications = await svc.get_notifications(db, user.id)
 
     return templates.TemplateResponse(
         request=request,
@@ -581,19 +143,13 @@ async def mark_read(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Mark a notification as read."""
-    result = await db.execute(select(Notification).where(Notification.id == n_id))
-    n = result.scalar_one_or_none()
-    if n and n.user_id != user.id:
-        n = None
-    if n:
-        n.is_read = True
-        db.add(n)
-        await db.flush()
+    await svc.mark_notification_read(db, n_id, user.id)
     return RedirectResponse(url="/notifications", status_code=303)
 
 
-# --- Privacy ---
+# ─────────────────────────────────────────────────────────────────────────────
+# Privacy
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @router.get("/privacy", response_class=HTMLResponse)
@@ -601,7 +157,6 @@ async def privacy_page(
     request: Request,
     user: User = Depends(get_current_user),
 ):
-    """Privacy settings page."""
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
@@ -625,9 +180,9 @@ async def export_data(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Export the complete owner-scoped Personal manifest as JSON."""
-    data = await build_personal_export(db, user)
+    from app.services.personal_export import build_personal_export
 
+    data = await build_personal_export(db, user)
     return PlainTextResponse(
         json.dumps(data, indent=2, ensure_ascii=False, default=str),
         headers={"Content-Disposition": "attachment; filename=tracker-export.json"},
@@ -639,7 +194,6 @@ async def delete_account(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete account and all data. Returns logout redirect."""
     await db.delete(user)
     await db.flush()
 
@@ -648,7 +202,9 @@ async def delete_account(
     return response
 
 
-# --- Telegram linking ---
+# ─────────────────────────────────────────────────────────────────────────────
+# Telegram linking
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @router.post("/profile/telegram-link-code")
@@ -656,23 +212,12 @@ async def generate_telegram_link_code(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Generate a 6-character code for linking Telegram. Expires in 30 minutes."""
-    code = secrets.token_hex(3).upper()  # 6 hex chars
-    user.telegram_link_code = code
-    user.telegram_link_code_expires = datetime.now(UTC) + timedelta(minutes=30)
-    db.add(user)
-    await db.flush()
-    return JSONResponse({"code": code, "expires_in_minutes": 30})
+    result = await svc.generate_tg_link_code(db, user)
+    return JSONResponse(result)
 
 
 @router.get("/profile/telegram-status")
 async def telegram_status(
     user: User = Depends(get_current_user),
 ):
-    """Check if Telegram is linked."""
-    return JSONResponse(
-        {
-            "linked": user.telegram_chat_id is not None,
-            "code": user.telegram_link_code if not user.telegram_chat_id else None,
-        }
-    )
+    return JSONResponse(svc.get_tg_link_status(user))
