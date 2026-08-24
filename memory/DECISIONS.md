@@ -1318,3 +1318,15 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 **Паттерн «thin routes»**: каждый хендлер 3-10 строк: try → service call → except → redirect/JSON
 
 **Кросс-модульные импорты:** `_schedule_summary` переэкспортируется из `medication.py` → `med_service.schedule_summary`
+
+## ADR-163: health.py → health_service.py (Service Layer Extraction)
+
+**Статус:** принят, реализован.
+**Контекст:** health.py (970 строк) — монолит с бизнес-логикой и HTTP-хендлерами.
+
+**Решение:**
+- `app/services/health_service.py` (770 строк) — cycle helpers, state/labs/cycle CRUD, LLM analysis, body-cycle
+- `app/api/health.py` (385 строк, было 970) — тонкие HTTP-обёртки
+
+**Кросс-модульные переэкспорты:** `_cycle_phase`, `_day_of_cycle`, `_get_cycle_context`, `_health_summary`
+(используются в care_service, journal, today, dashboard, telegram, insights, tests)

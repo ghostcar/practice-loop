@@ -213,6 +213,9 @@ Telegram Bot v2 (10), Auto-Analysis Scheduler (11).
 
 - Чистый, модульный код, PEP-8; ruff и форматтеры.
 - Pydantic v2 для схем. Всегда `async/await` для БД и LLM.
+- **Thin Routes (ADR-161/162/163):** HTTP-хендлеры в `app/api/` — тонкие обёртки (3-10 строк:
+  try → service call → except → redirect/JSON). Бизнес-логика живёт в `app/services/*_service.py`.
+  Исключения: `NotFoundError` → 404, `ValueError` → 400. Переэкспорт через `from app.services.X import Y as _Y`.
 - Семантический HTML + TailwindCSS; интерактивность только через HTMX.
 - Все строки UI — через локализацию (EN/RU).
 - **Новый визуальный контракт — `DESIGN_V2.md`** («Тёмный архив»); `DESIGN.md` сохраняется как

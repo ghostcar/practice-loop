@@ -128,7 +128,13 @@
 - [ ] **P4 — Production observability** — error tracking без PII, request correlation ID, health/readiness monitoring, метрики и alerts для app/DB/schedulers/backups/Telegram/LLM.
 - [ ] **P5 — Account recovery и hardening** — verified email change, password recovery, recovery codes, TOTP/passkeys, audit административных действий; не ослаблять текущий self-service password flow.
 - [ ] **P6 — Enforcing CSP и статический frontend build** — убрать inline JS/handlers и runtime Tailwind, собрать CSS, запретить исполнение внедрённых HTMX scripts, включить enforcing CSP после browser matrix.
-- [ ] **P7 — Единый transaction owner** — поэтапно убрать legacy `db.commit()` из 28 allowlisted роутеров, перенести use cases в сервисы, добавить rollback/fault-injection tests.
+- [x] **P7 — Единый transaction owner** — 70 `db.commit()` удалены из 27 файлов (26 роутеров + 1 сервис); `LEGACY_COMMIT_ROUTERS` = empty set; boundary tests 3/3 ✅. 1380 тестов зелёные.
+- [x] **Service layer extraction (ADR-161/162/163)** — декомпозиция крупных роутеров по паттерну thin routes:
+  - `care.py` (1417→478) → `care_service.py` (1161)
+  - `medication.py` (1303→536) → `med_service.py` (1069)
+  - `health.py` (970→385) → `health_service.py` (770)
+  - `app/services/errors.py` — shared `NotFoundError` для разделения 400/404
+  - Итого: 3690→1399 строк в роутерах (−62%), бизнес-логика в сервисах. 1380 тестов зелёные.
 - [ ] **P8 — Media storage abstraction** — volume→S3-compatible backend, checksum, derivatives, retention, orphan cleanup и включение бинарных данных в переносимый архив.
 - [ ] **P9 — Owner self-testing и UX backlog** — реальные циклы Today/Tasks/Sessions/Timer/Medication/Health/Care/Journal/Aftercare/LLM/BYOK; дефекты фиксировать browser regression до добавления крупных модулей.
 - [ ] **P10 — Mobile client после стабилизации портала** — выбрать Flutter/React Native; первый vertical slice: Today, задачи/сессии, Timer, журналы и push. До выбора закрыть оставшиеся JSON gaps реальным contract audit.
