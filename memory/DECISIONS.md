@@ -1203,3 +1203,20 @@ Replaced the stub notification channels (`logger.info` + always `return True`) w
 **DMS worker** now actually delivers alerts (was silently dropping them).
 
 **Reminders engine** already wrote real notifications (not affected).
+
+### ADR-154: ActorContext in all mutation services (R8.1 completed)
+
+**Date:** 2026-08-24
+**Status:** Accepted
+
+Added `ActorContext` (optional, defaults to `ActorContext(actor_id=user_id)`) to all application services with DB mutations, closing the R8.1 gap.
+
+| Service | Functions | Audit storage |
+|---|---|---|
+| agency.py | set_user_agency_policy | `__audit__` key in constraints JSON |
+| dead_mans_switch.py | record_activity_heartbeat | debug log |
+| dynamic.py | create_dynamic_definition, start_dynamic_run, end_dynamic_run | `__audit__` key in frozen_dynamic_snapshot / agency_overlay JSON |
+| scheduler.py | set_next_due, set_retry_block | debug log |
+| notifications.py | dispatch_notification | `__audit__` key in payload → stored in Notification.body |
+
+Read-only services (media, uploads, media_registry, personal_export, smart_albums, pharma_enricher, health, insights, payment_gateways) do not require ActorContext — they delegate to ORM or external APIs without mutating state.

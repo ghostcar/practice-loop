@@ -23,6 +23,8 @@ from typing import Any, Protocol
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.capability import ActorContext
+
 logger = logging.getLogger(__name__)
 
 
@@ -216,6 +218,7 @@ async def dispatch_notification(
     message: str,
     channels: list[str] | None = None,
     payload: dict[str, Any] | None = None,
+    actor: ActorContext | None = None,
 ) -> dict[str, bool]:
     """Dispatch an alert to the effective notification channels.
 
@@ -223,6 +226,11 @@ async def dispatch_notification(
     is recorded as False so callers can observe delivery without the whole
     operation blowing up.
     """
+    # Attach actor context to payload for audit (R8.1).
+    _ctx = actor or ActorContext(actor_id=user_id, actor_type="system", source="scheduler")
+    audit_payload = dict(payload or {})
+    audit_payload["__audit__"] = {"actor_id": str(_ctx.actor_id), "source": _ctx.source}
+
     target_channels = await _resolve_user_channels(db, user_id, channels)
     results: dict[str, bool] = {}
 
@@ -234,12 +242,12 @@ async def dispatch_notification(
             continue
         try:
             results[ch_name] = await channel.send(
-                db=db,
-                user_id=user_id,
-                event_type=event_type,
-                title=title,
-                message=message,
-                payload=payload,
+                    db=db,
+                    user_id=user_id,
+                    event_type=event_type,
+                    title=title,
+                    message=message,
+                    payload=audit_payload,
             )
         except Exception as exc:
             logger.warning("Failed delivery on channel '%s': %s", ch_name, exc)

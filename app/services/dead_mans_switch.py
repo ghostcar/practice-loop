@@ -1,4 +1,4 @@
-"""Cross-Activity Dead Man's Switch Engine Service."""
+"""Cross-Activity Dead Man's Switch Engine Service (R8.1 audit)."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.dead_mans_switch import DeadMansSwitchRule
+from app.services.capability import ActorContext
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +21,12 @@ async def record_activity_heartbeat(
     user_id: uuid.UUID,
     switch_type: str,
     note: str | None = None,
+    actor: ActorContext | None = None,
 ) -> dict[str, Any]:
-    """Records user activity (wear checkin, task complete, meds, general heartbeat) and extends deadline."""
+    """Records user activity and extends deadline (R8.1 audit)."""
+    _ctx = actor or ActorContext(actor_id=user_id, actor_type="human", source="web")
     now = datetime.now(UTC)
 
-    # Find matching switch rule
     stmt = select(DeadMansSwitchRule).where(
         DeadMansSwitchRule.user_id == user_id,
         DeadMansSwitchRule.switch_type == switch_type,
@@ -32,15 +34,7 @@ async def record_activity_heartbeat(
     rule = (await db.execute(stmt)).scalar_one_or_none()
 
     if not rule:
-        # Auto-provision switch if not exists
-        interval = 24
-        if switch_type == "medication":
-            interval = 12
-        elif switch_type == "daily_task":
-            interval = 24
-        elif switch_type == "wear_checkin":
-            interval = 18
-
+        interval = {"medication": 12, "daily_task": 24, "wear_checkin": 18}.get(switch_type, 24)
         rule = DeadMansSwitchRule(
             user_id=user_id,
             switch_type=switch_type,
@@ -62,6 +56,7 @@ async def record_activity_heartbeat(
         rule.miss_count = 0
 
     await db.flush()
+    logger.debug("DMS heartbeat %s/%s by actor %s", user_id, switch_type, _ctx.actor_id)
 
     return {
         "status": "heartbeat_recorded",
@@ -77,7 +72,10 @@ async def record_activity_heartbeat(
 
 
 async def evaluate_all_dead_mans_switches(db: AsyncSession) -> dict[str, Any]:
-    """Checks all active Dead Man's Switch rules and applies warnings / penalty escalations on misses."""
+    """Checks all active DMS rules and applies warnings / penalty escalations.
+
+    This is a batch operation (no single actor), logged as system scheduler.
+    """
     now = datetime.now(UTC)
     stmt = select(DeadMansSwitchRule).where(
         DeadMansSwitchRule.is_enabled == True,  # noqa: E712
@@ -96,30 +94,24 @@ async def evaluate_all_dead_mans_switches(db: AsyncSession) -> dict[str, Any]:
         grace_limit = dl + timedelta(hours=r.grace_period_hours)
 
         if now > grace_limit:
-            # Overdue beyond grace period -> Penalty
             r.status = "triggered_penalty"
             r.miss_count += 1
-            violations.append(
-                {
+            violations.append({
+                "user_id": str(r.user_id),
+                "switch_type": r.switch_type,
+                "deadline": dl.isoformat(),
+                "miss_count": r.miss_count,
+                "penalty_xp": r.penalty_xp,
+            })
+            logger.warning("DMS TRIGGERED for user %s, switch: %s", r.user_id, r.switch_type)
+        elif now > dl:
+            if r.status != "warning":
+                r.status = "warning"
+                warnings_list.append({
                     "user_id": str(r.user_id),
                     "switch_type": r.switch_type,
                     "deadline": dl.isoformat(),
-                    "miss_count": r.miss_count,
-                    "penalty_xp": r.penalty_xp,
-                }
-            )
-            logger.warning(f"Dead Man's Switch TRIGGERED for user {r.user_id}, switch: {r.switch_type}")
-        elif now > dl:
-            # Within grace period -> Warning
-            if r.status != "warning":
-                r.status = "warning"
-                warnings_list.append(
-                    {
-                        "user_id": str(r.user_id),
-                        "switch_type": r.switch_type,
-                        "deadline": dl.isoformat(),
-                    }
-                )
+                })
 
     await db.flush()
 

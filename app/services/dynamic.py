@@ -1,4 +1,4 @@
-"""Dynamic Orchestration Service (Revision 2 / ADR-068 / ADR-106).
+"""Dynamic Orchestration Service (Revision 2 / ADR-068 / ADR-106 / R8.1 audit).
 
 Manages active operational modes and applies frozen agency & protocol snapshots.
 """
@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.dynamic import DynamicDefinition, DynamicRun
+from app.services.capability import ActorContext
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +29,10 @@ async def create_dynamic_definition(
     included_protocol_ids: list[str] | None = None,
     included_session_template_ids: list[str] | None = None,
     granted_capabilities: list[str] | None = None,
+    actor: ActorContext | None = None,
 ) -> DynamicDefinition:
-    """Create a new reusable dynamic mode specification."""
+    """Create a new reusable dynamic mode specification (R8.1 audit)."""
+    _ctx = actor or ActorContext(actor_id=user_id, actor_type="human", source="web")
     dynamic_def = DynamicDefinition(
         user_id=user_id,
         title=title,
@@ -41,6 +44,7 @@ async def create_dynamic_definition(
         granted_capabilities=granted_capabilities or [],
     )
     db.add(dynamic_def)
+    logger.debug("DynamicDefinition '%s' created by actor %s", title, _ctx.actor_id)
     await db.flush()
     return dynamic_def
 
@@ -65,14 +69,15 @@ async def start_dynamic_run(
     user_id: uuid.UUID,
     dynamic_id: uuid.UUID,
     duration_days: int | None = None,
+    actor: ActorContext | None = None,
 ) -> DynamicRun:
-    """Start a dynamic run, creating an immutable snapshot of all rules at launch."""
+    """Start a dynamic run, creating an immutable snapshot (R8.1 audit)."""
+    _ctx = actor or ActorContext(actor_id=user_id, actor_type="human", source="web")
     res = await db.execute(select(DynamicDefinition).where(DynamicDefinition.id == dynamic_id))
     dynamic_def = res.scalar_one_or_none()
     if dynamic_def is None:
         raise ValueError(f"DynamicDefinition {dynamic_id} not found")
 
-    # Deactivate existing active runs
     existing_active = await get_active_dynamic_run(db, user_id)
     if existing_active is not None:
         existing_active.status = "completed"
@@ -81,7 +86,6 @@ async def start_dynamic_run(
     now = datetime.datetime.now(datetime.UTC)
     expires_at = now + datetime.timedelta(days=duration_days) if duration_days else None
 
-    # Immutable frozen snapshot of rules
     snapshot = {
         "dynamic_id": str(dynamic_def.id),
         "title": dynamic_def.title,
@@ -91,6 +95,7 @@ async def start_dynamic_run(
         "included_session_template_ids": dynamic_def.included_session_template_ids,
         "granted_capabilities": dynamic_def.granted_capabilities,
         "started_at": now.isoformat(),
+        "__audit__": {"actor_id": str(_ctx.actor_id), "source": _ctx.source},
     }
 
     run = DynamicRun(
@@ -102,6 +107,7 @@ async def start_dynamic_run(
         frozen_dynamic_snapshot=snapshot,
     )
     db.add(run)
+    logger.debug("DynamicRun started by actor %s", _ctx.actor_id)
     await db.flush()
     return run
 
@@ -109,8 +115,9 @@ async def start_dynamic_run(
 async def end_dynamic_run(
     db: AsyncSession,
     run_id: uuid.UUID,
+    actor: ActorContext | None = None,
 ) -> DynamicRun:
-    """Explicitly conclude an active dynamic run."""
+    """Explicitly conclude an active dynamic run (R8.1 audit)."""
     res = await db.execute(select(DynamicRun).where(DynamicRun.id == run_id))
     run = res.scalar_one_or_none()
     if run is None:
@@ -118,5 +125,14 @@ async def end_dynamic_run(
 
     run.status = "completed"
     run.ended_at = datetime.datetime.now(datetime.UTC)
+    if isinstance(run.frozen_dynamic_snapshot, dict):
+        run.frozen_dynamic_snapshot = dict(run.frozen_dynamic_snapshot)
+        if actor:
+            run.frozen_dynamic_snapshot["__audit__"] = {
+                "actor_id": str(actor.actor_id),
+                "source": actor.source,
+            }
+
+    logger.debug("DynamicRun %s ended by actor %s", run_id, (actor and actor.actor_id) or "system")
     await db.flush()
     return run

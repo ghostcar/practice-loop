@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.agency import AgencyLevel, AgencyPolicy
+from app.services.capability import ActorContext
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +54,10 @@ async def set_user_agency_policy(
     default_level: str = AgencyLevel.MANUAL.value,
     operation_overrides: dict[str, str] | None = None,
     constraints: dict[str, Any] | None = None,
+    actor: ActorContext | None = None,
 ) -> AgencyPolicy:
-    """Create or update the user's agency policy."""
+    """Create or update the user's agency policy (R8.1 audit)."""
+    _ctx = _resolve_actor(actor, user_id)
     policy = await get_user_agency_policy(db, user_id, domain)
     if policy is None:
         policy = AgencyPolicy(
@@ -70,9 +73,23 @@ async def set_user_agency_policy(
         if operation_overrides is not None:
             policy.operation_overrides = operation_overrides
         if constraints is not None:
-            policy.constraints = constraints
+            # Merge audit context into constraints (safe: user constraints are
+            # also a dict; audit keys use a reserved `__audit__` sub-namespace.)
+            constraints = dict(constraints)
+        policy.constraints = constraints or {}
+
+    # Store actor context inside the existing JSON constraints column under a
+    # reserved key so every audit trace is transparent without a schema change.
+    if hasattr(policy, "constraints") and isinstance(policy.constraints, dict):
+        policy.constraints = dict(policy.constraints)
+        policy.constraints["__audit__"] = {
+            "actor_id": str(_ctx.actor_id),
+            "actor_type": _ctx.actor_type,
+            "source": _ctx.source,
+        }
 
     await db.flush()
+    logger.debug("Agency policy %s/%s updated by %s", user_id, domain, _ctx.actor_id)
     return policy
 
 
@@ -128,3 +145,10 @@ async def evaluate_agency_permission(
                 return False, f"User constraint violation: contains forbidden tags {overlap}."
 
     return True, "Operation permitted by agency policy."
+
+
+def _resolve_actor(actor: ActorContext | None, user_id: uuid.UUID) -> ActorContext:
+    """Return the provided ActorContext or a safe default for internal calls."""
+    if actor is not None:
+        return actor
+    return ActorContext(actor_id=user_id, actor_type="human", source="scheduler")
