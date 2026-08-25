@@ -75,7 +75,7 @@ async def get_tasks_page_context(
     attention: bool = False,
 ) -> dict:
     """Build tasks page context with filters, stats, entities."""
-    from app.api.calendar import get_day_schedule, is_available
+    from app.services.calendar_service import get_day_schedule, is_available
     from app.services.scheduler import get_due_practices
 
     query = select(ActivityLog).where(ActivityLog.user_id == user_id)

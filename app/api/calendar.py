@@ -1,11 +1,15 @@
-"""User Availability Calendar API: templates, windows, overrides, availability check."""
+"""User Availability Calendar API: templates, windows, overrides, availability check.
+
+Thin HTTP wrappers — business logic lives in app/services/calendar_service.py.
+"""
+
+from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
-from sqlalchemy import or_, select
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
@@ -13,7 +17,6 @@ from app.auth import get_optional_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate
 from app.models.user import User
 from app.schemas.calendar import (
     AvailabilityWindowCreate,
@@ -21,144 +24,26 @@ from app.schemas.calendar import (
     CalendarOverrideOut,
     CalendarTemplateCreate,
     CalendarTemplateOut,
-    DaySchedule,
+)
+from app.services.calendar_service import (
+    add_window,
+    create_override,
+    create_template,
+    delete_override,
+    delete_template,
+    delete_window,
+    get_day_schedule,
+    is_available,
+    list_overrides,
+    list_templates,
 )
 from app.templates_setup import templates
 from app.timeutils import local_today
 
 router = APIRouter(prefix="/calendar", tags=["calendar"])
 
-
-# ═══════════════════════════════════════════════
-# Availability check utility (also used by LLM)
-# ═══════════════════════════════════════════════
-
-
-async def is_available(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    target_time: datetime,
-    duration_minutes: int = 60,
-    intensity: str = "active",
-) -> tuple[bool, str | None, str | None, str | None]:
-    """Check if user is available for an activity at the given time.
-
-    Returns: (available, policy, window_label, template_name)
-    """
-    target_date = target_time.date()
-    end_time = (target_time + timedelta(minutes=duration_minutes)).time()
-
-    # 1. Check for CalendarOverride covering this date
-    override_result = await db.execute(
-        select(CalendarOverride).where(
-            CalendarOverride.user_id == user_id,
-            CalendarOverride.start_date <= target_date,
-            CalendarOverride.end_date >= target_date,
-        )
-    )
-    override = override_result.scalar_one_or_none()
-
-    if override:
-        template_id = override.template_id
-    else:
-        # 2. Default template
-        tpl_result = await db.execute(
-            select(CalendarTemplate).where(
-                CalendarTemplate.user_id == user_id,
-                CalendarTemplate.is_default.is_(True),
-            )
-        )
-        default_tpl = tpl_result.scalar_one_or_none()
-        if not default_tpl:
-            return True, "allowed", "free", None  # No template = always available
-        template_id = default_tpl.id
-
-    # 3. Find matching windows
-    dow = target_time.weekday()
-    window_result = await db.execute(
-        select(AvailabilityWindow).where(
-            AvailabilityWindow.template_id == template_id,
-            or_(
-                AvailabilityWindow.day_of_week == dow,
-                AvailabilityWindow.day_of_week == 7,  # Every day
-            ),
-            AvailabilityWindow.start_time <= end_time,
-            AvailabilityWindow.end_time >= target_time.time(),
-        )
-    )
-    window = window_result.scalar_one_or_none()
-
-    if not window:
-        # No matching window = default to disallowed
-        return False, "disallowed", None, None
-
-    # 4. Evaluate policy
-    if window.policy == "disallowed":
-        return False, window.policy, window.label, None
-    elif window.policy == "passive_only":
-        ok = intensity == "passive"
-        reason = None if ok else "Activity requires 'active' intensity but window is passive_only"
-        return ok, window.policy, window.label, reason
-    else:  # allowed
-        return True, window.policy, window.label, None
-
-
-async def get_day_schedule(db: AsyncSession, user_id: uuid.UUID, target_date: date) -> DaySchedule:
-    """Get the full resolved schedule for a day (for LLM context injection)."""
-    override_result = await db.execute(
-        select(CalendarOverride).where(
-            CalendarOverride.user_id == user_id,
-            CalendarOverride.start_date <= target_date,
-            CalendarOverride.end_date >= target_date,
-        )
-    )
-    override = override_result.scalar_one_or_none()
-
-    if override:
-        template_id = override.template_id
-        tpl_name = override.label or "Override"
-    else:
-        tpl_result = await db.execute(
-            select(CalendarTemplate).where(
-                CalendarTemplate.user_id == user_id,
-                CalendarTemplate.is_default.is_(True),
-            )
-        )
-        default_tpl = tpl_result.scalar_one_or_none()
-        if not default_tpl:
-            return DaySchedule(date=target_date, template_name="none", windows=[])
-        template_id = default_tpl.id
-        tpl_name = default_tpl.name
-
-    dow = target_date.weekday()
-    window_result = await db.execute(
-        select(AvailabilityWindow)
-        .where(
-            AvailabilityWindow.template_id == template_id,
-            or_(AvailabilityWindow.day_of_week == dow, AvailabilityWindow.day_of_week == 7),
-        )
-        .order_by(AvailabilityWindow.start_time)
-    )
-    windows = window_result.scalars().all()
-
-    return DaySchedule(
-        date=target_date,
-        template_name=tpl_name,
-        windows=[
-            {
-                "start": w.start_time.strftime("%H:%M"),
-                "end": w.end_time.strftime("%H:%M"),
-                "label": w.label,
-                "policy": w.policy,
-            }
-            for w in windows
-        ],
-    )
-
-
-# ═══════════════════════════════════════════════
-# Availability check endpoint
-# ═══════════════════════════════════════════════
+# Re-export utilities used by other services/LLM (kept for backward compatibility).
+__all__ = ["router", "is_available", "get_day_schedule"]
 
 
 @router.get("/check")
@@ -190,82 +75,32 @@ async def check_availability(
 
 
 @router.get("/templates", response_model=list[CalendarTemplateOut])
-async def list_templates(
+async def list_templates_api(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(CalendarTemplate)
-        .where(CalendarTemplate.user_id == user.id)
-        .order_by(CalendarTemplate.is_default.desc(), CalendarTemplate.created_at)
-    )
-    return [CalendarTemplateOut.model_validate(t) for t in result.scalars().all()]
+    return await list_templates(db, user.id)
 
 
 @router.post("/templates", response_model=CalendarTemplateOut)
-async def create_template(
+async def create_template_api(
     data: CalendarTemplateCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    # If setting as default, unset others
-    if data.is_default:
-        await db.execute(
-            select(CalendarTemplate).where(
-                CalendarTemplate.user_id == user.id,
-                CalendarTemplate.is_default.is_(True),
-            )
-        )
-        existing_defaults = (
-            (
-                await db.execute(
-                    select(CalendarTemplate).where(
-                        CalendarTemplate.user_id == user.id,
-                        CalendarTemplate.is_default.is_(True),
-                    )
-                )
-            )
-            .scalars()
-            .all()
-        )
-        for t in existing_defaults:
-            t.is_default = False
-
-    tpl = CalendarTemplate(user_id=user.id, name=data.name, is_default=data.is_default)
-    db.add(tpl)
-    await db.flush()
-
-    for w in data.windows:
-        window = AvailabilityWindow(
-            template_id=tpl.id,
-            day_of_week=w.day_of_week,
-            start_time=w.start_time,
-            end_time=w.end_time,
-            label=w.label,
-            policy=w.policy,
-        )
-        db.add(window)
-        await db.flush()
-    await db.refresh(tpl)
-    return CalendarTemplateOut.model_validate(tpl)
+    return await create_template(db, user.id, data)
 
 
 @router.delete("/templates/{template_id}")
-async def delete_template(
+async def delete_template_api(
     template_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(CalendarTemplate).where(
-            CalendarTemplate.id == template_id,
-            CalendarTemplate.user_id == user.id,
-        )
-    )
-    tpl = result.scalar_one_or_none()
-    if not tpl:
+    try:
+        await delete_template(db, user.id, template_id)
+    except ValueError:
         raise HTTPException(404, "Template not found")
-    await db.delete(tpl)
     return {"status": "deleted"}
 
 
@@ -275,49 +110,29 @@ async def delete_template(
 
 
 @router.post("/templates/{template_id}/windows")
-async def add_window(
+async def add_window_api(
     template_id: uuid.UUID,
     data: AvailabilityWindowCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    # Verify ownership
-    tpl_result = await db.execute(
-        select(CalendarTemplate).where(
-            CalendarTemplate.id == template_id,
-            CalendarTemplate.user_id == user.id,
-        )
-    )
-    if not tpl_result.scalar_one_or_none():
+    try:
+        return await add_window(db, user.id, template_id, data)
+    except ValueError:
         raise HTTPException(404, "Template not found")
-
-    window = AvailabilityWindow(template_id=template_id, **data.model_dump())
-    db.add(window)
-    await db.flush()
-    await db.refresh(window)
-    return {"status": "created", "id": str(window.id)}
 
 
 @router.delete("/templates/{template_id}/windows/{window_id}")
-async def delete_window(
+async def delete_window_api(
     template_id: uuid.UUID,
     window_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(AvailabilityWindow)
-        .join(CalendarTemplate)
-        .where(
-            AvailabilityWindow.id == window_id,
-            AvailabilityWindow.template_id == template_id,
-            CalendarTemplate.user_id == user.id,
-        )
-    )
-    w = result.scalar_one_or_none()
-    if not w:
+    try:
+        await delete_window(db, user.id, template_id, window_id)
+    except ValueError:
         raise HTTPException(404, "Window not found")
-    await db.delete(w)
     return {"status": "deleted"}
 
 
@@ -327,66 +142,35 @@ async def delete_window(
 
 
 @router.get("/overrides", response_model=list[CalendarOverrideOut])
-async def list_overrides(
+async def list_overrides_api(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(CalendarOverride).where(CalendarOverride.user_id == user.id).order_by(CalendarOverride.start_date.desc())
-    )
-    out = []
-    for o in result.scalars().all():
-        d = CalendarOverrideOut.model_validate(o)
-        if o.template:
-            d.template_name = o.template.name
-        out.append(d)
-    return out
+    return await list_overrides(db, user.id)
 
 
 @router.post("/overrides", response_model=CalendarOverrideOut)
-async def create_override(
+async def create_override_api(
     data: CalendarOverrideCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    # Verify template exists and user owns it
-    tpl = await db.get(CalendarTemplate, data.template_id)
-    if not tpl:
+    try:
+        return await create_override(db, user.id, data)
+    except ValueError:
         raise HTTPException(404, "Template not found")
-    if tpl.user_id != user.id:
-        raise HTTPException(404, "Template not found")
-
-    override = CalendarOverride(
-        user_id=user.id,
-        template_id=data.template_id,
-        start_date=data.start_date,
-        end_date=data.end_date,
-        label=data.label,
-    )
-    db.add(override)
-    await db.flush()
-    await db.refresh(override)
-    out = CalendarOverrideOut.model_validate(override)
-    out.template_name = tpl.name
-    return out
 
 
 @router.delete("/overrides/{override_id}")
-async def delete_override(
+async def delete_override_api(
     override_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(CalendarOverride).where(
-            CalendarOverride.id == override_id,
-            CalendarOverride.user_id == user.id,
-        )
-    )
-    o = result.scalar_one_or_none()
-    if not o:
+    try:
+        await delete_override(db, user.id, override_id)
+    except ValueError:
         raise HTTPException(404, "Override not found")
-    await db.delete(o)
     return {"status": "deleted"}
 
 
@@ -402,14 +186,11 @@ async def calendar_page(
     db: AsyncSession = Depends(get_db),
 ):
     if not user:
-        from fastapi.responses import RedirectResponse
-
         return RedirectResponse(url="/auth/login", status_code=303)
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
-    # Get today's schedule
     today_schedule = await get_day_schedule(db, user.id, local_today())
 
     return templates.TemplateResponse(

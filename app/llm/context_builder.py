@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.calendar import get_day_schedule
+from app.services.calendar_service import get_day_schedule
 from app.models.activity_log import ActivityLog
 from app.models.diet import Diet
 from app.models.entity import Entity

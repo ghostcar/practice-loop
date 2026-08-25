@@ -116,7 +116,7 @@ async def get_dashboard_context(db: AsyncSession, user: User, locale: str) -> di
             training_task_counts[str(row[0])] = {"total": row[1] or 0, "completed": row[2] or 0}
 
     # Today's calendar schedule
-    from app.api.calendar import get_day_schedule
+    from app.services.calendar_service import get_day_schedule
 
     today_schedule = await get_day_schedule(db, user.id, today)
 
