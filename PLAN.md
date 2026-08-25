@@ -141,8 +141,9 @@
   - `sessions.py` (616→371) → `sessions_service.py` (393) — ADR-169
   - `tasks.py` (513→229) → `tasks_service.py` (377) — ADR-170
   - `ds.py` (630→297) → `ds_service.py` (442) — ADR-171
+  - `diets.py` (529→386) → `diets_service.py` (422) — ADR-172
   - `app/services/errors.py` — shared `NotFoundError` для разделения 400/404
-  - Итого: 8659→3413 строк в роутерах (−61%), бизнес-логика в сервисах. 1380 тестов зелёные.
+  - Итого: 9288→3801 строк в роутерах (−59%), бизнес-логика в сервисах. 1380 тестов зелёные.
 - [ ] **P8 — Media storage abstraction** — volume→S3-compatible backend, checksum, derivatives, retention, orphan cleanup и включение бинарных данных в переносимый архив.
 - [ ] **P9 — Owner self-testing и UX backlog** — реальные циклы Today/Tasks/Sessions/Timer/Medication/Health/Care/Journal/Aftercare/LLM/BYOK; дефекты фиксировать browser regression до добавления крупных модулей.
 - [ ] **P10 — Mobile client после стабилизации портала** — выбрать Flutter/React Native; первый vertical slice: Today, задачи/сессии, Timer, журналы и push. До выбора закрыть оставшиеся JSON gaps реальным contract audit.

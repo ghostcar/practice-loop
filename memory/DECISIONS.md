@@ -1421,3 +1421,4 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
   - `claim_grant_invite()` возвращает string result ('success'/'rate_limited'/'invalid'/'self_claim') вместо raises.
   - telegram-code endpoint возвращает redirect (303) на portal, не JSON.
 - **Коммит:** (pending)
+| ADR-172 | Service layer extraction: diets.py → diets_service.py (529→386 thin routes, 422 service) | thin routes | 2026-08-25 | 1fc7b628 | accepted |

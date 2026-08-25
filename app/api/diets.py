@@ -1,44 +1,50 @@
-"""Diets API: combinable diet plans with food items + actual consumption.
+"""Diets API — thin HTTP wrappers over diets_service."""
 
-A user may create several diets (each aimed at a different direction/goal),
-toggle any subset active at once (combining diets), reorder items within a
-diet, log what they actually ate (diet_consumptions), and ask the LLM to
-generate a diet or evaluate adherence against the plan.
-"""
+from __future__ import annotations
 
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.llm.pipeline import (
-    analyze_diet_training_synergy,
-    evaluate_diet,
-    generate_diet,
-    get_active_llm_config,
-)
-from app.llm.repair import JsonRepairError
-from app.models.diet import Diet, DietConsumption, DietEvaluation, DietItem, DietTrainingReview
 from app.models.user import User
+from app.services.diets_service import (
+    DIET_DIRECTIONS,
+    add_diet_item,
+    create_consumption,
+    create_diet,
+    delete_consumption,
+    delete_diet,
+    delete_diet_item,
+    diet_dict,
+    evaluation_dict,
+    execute_diet_evaluation,
+    execute_diet_generation,
+    execute_synergy_analysis,
+    get_diets_page_context,
+    item_dict,
+    list_consumptions,
+    list_diets,
+    list_evaluations,
+    list_synergy_reviews,
+    reorder_diet_items,
+    review_dict,
+    update_diet,
+    update_diet_item,
+)
 from app.templates_setup import templates
-from app.timeutils import local_today
+from app.llm.repair import JsonRepairError
 
 router = APIRouter(prefix="/diets", tags=["diets"])
 
-# Allowed diet directions (why the diet exists). Free-form goal text is still
-# accepted, this list powers the UI selector + LLM generation.
-DIET_DIRECTIONS = {"weight_loss", "muscle_gain", "health", "energy", "endurance", "general", "other"}
-
-
-# ── Schemas ──
+# ── Pydantic request schemas ──
 
 
 class DietCreate(BaseModel):
@@ -101,73 +107,6 @@ class ReorderPayload(BaseModel):
     ids: list[uuid.UUID]
 
 
-# ── Serialization ──
-
-
-def _item_dict(it: DietItem) -> dict:
-    return {
-        "id": str(it.id),
-        "name": it.name,
-        "quantity": it.quantity,
-        "unit": it.unit,
-        "meal_time": it.meal_time,
-        "notes": it.notes,
-        "sort_order": it.sort_order,
-    }
-
-
-def _diet_dict(d: Diet, with_items: bool = True) -> dict:
-    out = {
-        "id": str(d.id),
-        "name": d.name,
-        "direction": d.direction,
-        "goal": d.goal,
-        "description": d.description,
-        "is_active": d.is_active,
-        "last_evaluation": d.last_evaluation,
-        "evaluated_at": d.evaluated_at.isoformat() if d.evaluated_at else None,
-        "created_at": d.created_at.isoformat() if d.created_at else None,
-    }
-    if with_items:
-        out["items"] = [_item_dict(i) for i in d.items]
-    return out
-
-
-def _consumption_dict(c: DietConsumption) -> dict:
-    return {
-        "id": str(c.id),
-        "name": c.name,
-        "quantity": c.quantity,
-        "unit": c.unit,
-        "meal_time": c.meal_time,
-        "diet_id": str(c.diet_id) if c.diet_id else None,
-        "consumed_date": c.consumed_date.isoformat(),
-        "notes": c.notes,
-        "created_at": c.created_at.isoformat() if c.created_at else None,
-    }
-
-
-def _evaluation_dict(ev: DietEvaluation) -> dict:
-    return {
-        "id": str(ev.id),
-        "score": ev.score,
-        "summary": ev.summary,
-        "findings": ev.findings or [],
-        "applied": ev.applied or [],
-        "created_at": ev.created_at.isoformat() if ev.created_at else None,
-    }
-
-
-def _review_dict(r: DietTrainingReview) -> dict:
-    return {
-        "id": str(r.id),
-        "period_start": r.period_start.isoformat(),
-        "period_end": r.period_end.isoformat(),
-        "analysis": r.analysis,
-        "created_at": r.created_at.isoformat() if r.created_at else None,
-    }
-
-
 # ── Page ──
 
 
@@ -181,11 +120,7 @@ async def diets_page(
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
-    result = await db.execute(
-        select(Diet).where(Diet.user_id == user.id).order_by(Diet.is_active.desc(), Diet.created_at.asc())
-    )
-    diets = [_diet_dict(d) for d in result.scalars().all()]
-    active_config = await get_active_llm_config(db, user.id)
+    ctx = await get_diets_page_context(db, user)
     return templates.TemplateResponse(
         request=request,
         name="diets.html",
@@ -195,11 +130,8 @@ async def diets_page(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "diets": diets,
-            "active_config": active_config,
-            "directions": sorted(DIET_DIRECTIONS),
-            "today": local_today().isoformat(),
             "active_nav": "diets",
+            **ctx,
         },
     )
 
@@ -208,60 +140,47 @@ async def diets_page(
 
 
 @router.get("/api")
-async def list_diets(
+async def list_diets_api(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """List all diets with items (for the JS-driven page)."""
-    result = await db.execute(
-        select(Diet).where(Diet.user_id == user.id).order_by(Diet.is_active.desc(), Diet.created_at.asc())
-    )
-    return [_diet_dict(d) for d in result.scalars().all()]
+    return await list_diets(db, user.id)
 
 
 @router.post("/api")
-async def create_diet(
+async def create_diet_api(
     data: DietCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    diet = Diet(user_id=user.id, **data.model_dump())
-    db.add(diet)
-    await db.flush()
-    await db.refresh(diet)
-    return _diet_dict(diet)
+    return await create_diet(db, user.id, **data.model_dump())
 
 
 @router.put("/api/{diet_id}")
-async def update_diet(
+async def update_diet_api(
     diet_id: uuid.UUID,
     data: DietUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
-    diet = result.scalar_one_or_none()
-    if not diet:
+    try:
+        return await update_diet(db, user.id, diet_id, **data.model_dump(exclude_unset=True))
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Diet not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(diet, k, v)
-    db.add(diet)
-    await db.flush()
-    await db.refresh(diet)
-    return _diet_dict(diet)
 
 
 @router.delete("/api/{diet_id}")
-async def delete_diet(
+async def delete_diet_api(
     diet_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
-    diet = result.scalar_one_or_none()
-    if not diet:
+    try:
+        await delete_diet(db, user.id, diet_id)
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Diet not found")
-    await db.delete(diet)
     return {"status": "deleted"}
 
 
@@ -269,261 +188,199 @@ async def delete_diet(
 
 
 @router.post("/api/{diet_id}/items")
-async def add_diet_item(
+async def add_item_api(
     diet_id: uuid.UUID,
     data: DietItemCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
-    diet = result.scalar_one_or_none()
-    if not diet:
+    try:
+        return await add_diet_item(db, user.id, diet_id, **data.model_dump())
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Diet not found")
-    max_o = await db.execute(
-        select(DietItem.sort_order).where(DietItem.diet_id == diet_id).order_by(DietItem.sort_order.desc()).limit(1)
-    )
-    next_order = (max_o.scalar_one_or_none() or -1) + 1
-    item = DietItem(diet_id=diet_id, sort_order=next_order, **data.model_dump())
-    db.add(item)
-    await db.flush()
-    await db.refresh(item)
-    return _item_dict(item)
 
 
 @router.put("/api/{diet_id}/items/{item_id}")
-async def update_diet_item(
+async def update_item_api(
     diet_id: uuid.UUID,
     item_id: uuid.UUID,
     data: DietItemUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(DietItem).join(Diet, Diet.id == DietItem.diet_id).where(DietItem.id == item_id, Diet.user_id == user.id)
-    )
-    item = result.scalar_one_or_none()
-    if not item:
+    try:
+        return await update_diet_item(db, user.id, item_id, **data.model_dump(exclude_unset=True))
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Diet item not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(item, k, v)
-    db.add(item)
-    await db.flush()
-    await db.refresh(item)
-    return _item_dict(item)
 
 
 @router.delete("/api/{diet_id}/items/{item_id}")
-async def delete_diet_item(
+async def delete_item_api(
     diet_id: uuid.UUID,
     item_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(DietItem).join(Diet, Diet.id == DietItem.diet_id).where(DietItem.id == item_id, Diet.user_id == user.id)
-    )
-    item = result.scalar_one_or_none()
-    if not item:
+    try:
+        await delete_diet_item(db, user.id, item_id)
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Diet item not found")
-    await db.delete(item)
     return {"status": "deleted"}
 
 
 @router.post("/api/{diet_id}/items/reorder")
-async def reorder_diet_items(
+async def reorder_items_api(
     diet_id: uuid.UUID,
     payload: ReorderPayload,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(DietItem)
-        .join(Diet, Diet.id == DietItem.diet_id)
-        .where(DietItem.diet_id == diet_id, Diet.user_id == user.id)
-    )
-    items = {i.id: i for i in result.scalars().all()}
-    if set(payload.ids) != set(items.keys()):
-        raise HTTPException(400, "ids must match all items of the diet")
-    for pos, iid in enumerate(payload.ids):
-        items[iid].sort_order = pos
-        db.add(items[iid])
-        await db.flush()
+    try:
+        await reorder_diet_items(db, user.id, diet_id, payload.ids)
+    except ValueError as e:
+        from fastapi import HTTPException
+        code = 400 if "must match" in str(e) else 404
+        raise HTTPException(code, str(e))
     return {"status": "ok"}
 
 
-# ── Actual consumption (the «fact» side) ──
+# ── Consumptions ──
 
 
 @router.get("/api/consumptions")
-async def list_consumptions(
+async def list_consumptions_api(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
     consumed_date: date | None = None,
 ):
-    """List what the user actually ate; filter by date if given."""
-    stmt = select(DietConsumption).where(DietConsumption.user_id == user.id)
-    if consumed_date:
-        stmt = stmt.where(DietConsumption.consumed_date == consumed_date)
-    stmt = stmt.order_by(DietConsumption.consumed_date.desc(), DietConsumption.created_at).limit(200)
-    result = await db.execute(stmt)
-    return [_consumption_dict(c) for c in result.scalars().all()]
+    return await list_consumptions(db, user.id, consumed_date)
 
 
 @router.post("/api/consumptions")
-async def create_consumption(
+async def create_consumption_api(
     data: ConsumptionCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Log a food the user actually consumed."""
-    if data.diet_id is not None:
-        diet_result = await db.execute(select(Diet).where(Diet.id == data.diet_id, Diet.user_id == user.id))
-        if diet_result.scalar_one_or_none() is None:
-            raise HTTPException(404, "Diet not found")
-    consumption = DietConsumption(
-        user_id=user.id,
-        consumed_date=data.consumed_date or local_today(),
-        **data.model_dump(exclude={"consumed_date"}),
-    )
-    db.add(consumption)
-    await db.flush()
-    await db.refresh(consumption)
-    return _consumption_dict(consumption)
+    try:
+        return await create_consumption(
+            db,
+            user.id,
+            name=data.name,
+            quantity=data.quantity,
+            unit=data.unit,
+            meal_time=data.meal_time,
+            diet_id=data.diet_id,
+            consumed_date=data.consumed_date,
+            notes=data.notes,
+        )
+    except ValueError:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Diet not found")
 
 
 @router.delete("/api/consumptions/{consumption_id}")
-async def delete_consumption(
+async def delete_consumption_api(
     consumption_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(DietConsumption).where(DietConsumption.id == consumption_id, DietConsumption.user_id == user.id)
-    )
-    consumption = result.scalar_one_or_none()
-    if not consumption:
+    try:
+        await delete_consumption(db, user.id, consumption_id)
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Consumption not found")
-    await db.delete(consumption)
     return {"status": "deleted"}
 
 
-# ── LLM: generate a diet plan ──
+# ── LLM: generate ──
 
 
 @router.post("/api/generate")
-async def generate_diet_plan(
+async def generate_diet_plan_api(
     data: DietGenerateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Ask the LLM to create a diet for a given direction/goal/preferences."""
-    active_config = await get_active_llm_config(db, user.id)
-    if active_config is None:
-        raise HTTPException(400, "No active LLM provider configured")
     locale = detect_locale(request, user.locale)
-    direction = data.direction if data.direction in DIET_DIRECTIONS else None
     try:
-        diet = await generate_diet(
-            db=db,
-            user_id=user.id,
-            llm_config=active_config,
-            locale=locale,
-            direction=direction,
-            goal=data.goal,
-            preferences=data.preferences,
+        return await execute_diet_generation(
+            db, user.id, locale,
+            direction=data.direction, goal=data.goal, preferences=data.preferences,
         )
-    except (JsonRepairError, ValueError) as e:
-        raise HTTPException(422, str(e)) from None
-    await db.refresh(diet)
-    return _diet_dict(diet)
+    except ValueError as e:
+        from fastapi import HTTPException
+        if "LLM provider" in str(e):
+            raise HTTPException(400, str(e))
+        raise HTTPException(422, str(e))
 
 
-# ── LLM: evaluate adherence + adjust plan ──
+# ── LLM: evaluate ──
 
 
 @router.post("/api/{diet_id}/evaluate")
-async def evaluate_diet_plan(
+async def evaluate_diet_plan_api(
     diet_id: uuid.UUID,
     data: DietEvaluateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Evaluate actual consumption against the plan and apply LLM adjustments."""
-    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
-    diet = result.scalar_one_or_none()
-    if not diet:
-        raise HTTPException(404, "Diet not found")
-    active_config = await get_active_llm_config(db, user.id)
-    if active_config is None:
-        raise HTTPException(400, "No active LLM provider configured")
     locale = detect_locale(request, user.locale)
     try:
-        evaluation = await evaluate_diet(db=db, diet=diet, llm_config=active_config, locale=locale, days=data.days)
-    except (JsonRepairError, ValueError) as e:
-        raise HTTPException(422, str(e)) from None
-    await db.refresh(diet)
-    return {"evaluation": evaluation, "diet": _diet_dict(diet)}
+        return await execute_diet_evaluation(db, user.id, diet_id, locale, days=data.days)
+    except ValueError as e:
+        from fastapi import HTTPException
+        if "Diet not found" in str(e):
+            raise HTTPException(404, str(e))
+        if "LLM provider" in str(e):
+            raise HTTPException(400, str(e))
+        raise HTTPException(422, str(e))
 
 
 # ── Evaluation history ──
 
 
 @router.get("/api/{diet_id}/evaluations")
-async def list_diet_evaluations(
+async def list_evaluations_api(
     diet_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Full history of LLM adherence evaluations for one diet (newest first)."""
-    result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user.id))
-    if result.scalar_one_or_none() is None:
+    try:
+        return await list_evaluations(db, user.id, diet_id)
+    except ValueError:
+        from fastapi import HTTPException
         raise HTTPException(404, "Diet not found")
-    ev_result = await db.execute(
-        select(DietEvaluation)
-        .where(DietEvaluation.diet_id == diet_id)
-        .order_by(DietEvaluation.created_at.desc(), DietEvaluation.id.desc())
-        .limit(50)
-    )
-    return [_evaluation_dict(ev) for ev in ev_result.scalars().all()]
 
 
-# ── LLM: diet ↔ training synergy ──
+# ── LLM: synergy ──
 
 
 @router.post("/api/synergy")
-async def create_synergy_review(
+async def create_synergy_api(
     data: SynergyRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Run an LLM analysis of how diets and training influence each other."""
-    active_config = await get_active_llm_config(db, user.id)
-    if active_config is None:
-        raise HTTPException(400, "No active LLM provider configured")
     locale = detect_locale(request, user.locale)
     try:
-        review = await analyze_diet_training_synergy(
-            db=db, user_id=user.id, llm_config=active_config, locale=locale, days=data.days
-        )
-    except (JsonRepairError, ValueError) as e:
-        raise HTTPException(422, str(e)) from None
-    await db.refresh(review)
-    return _review_dict(review)
+        return await execute_synergy_analysis(db, user.id, locale, days=data.days)
+    except ValueError as e:
+        from fastapi import HTTPException
+        if "LLM provider" in str(e):
+            raise HTTPException(400, str(e))
+        raise HTTPException(422, str(e))
 
 
 @router.get("/api/synergy")
-async def list_synergy_reviews(
+async def list_synergy_api(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """History of diet↔training synergy reviews (newest first)."""
-    result = await db.execute(
-        select(DietTrainingReview)
-        .where(DietTrainingReview.user_id == user.id)
-        .order_by(DietTrainingReview.created_at.desc(), DietTrainingReview.id.desc())
-        .limit(20)
-    )
-    return [_review_dict(r) for r in result.scalars().all()]
+    return await list_synergy_reviews(db, user.id)
