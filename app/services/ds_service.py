@@ -390,24 +390,33 @@ async def get_checkins_context(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 async def log_wear_checkin(
     db: AsyncSession, user_id: uuid.UUID, *,
-    managed_sub_id: str, tag_number: str, comfort_score: int, notes: str, photo_url: str,
+    managed_sub_id: str, tag_number: str, comfort_score: int, notes: str,
+    photo_url: str = "", photo_bytes: bytes | None = None,
 ) -> None:
-    """Log a wear check-in with optional OCR seal inspection."""
-    from app.media.ocr_seals import extract_seal_tag_from_photo
-
+    """Log a wear check-in with optional OCR seal inspection from real photo bytes."""
     sub_uuid = uuid.UUID(managed_sub_id)
     is_verified = bool(photo_url)
+    ocr_result: dict | None = None
 
-    if photo_url:
-        ocr_res = extract_seal_tag_from_photo(b"SAMPLE_TAG_PHOTO_BYTES", expected_tag=tag_number)
-        if ocr_res.get("is_match"):
+    if photo_bytes and tag_number:
+        from app.media.ocr_seals import extract_seal_tag_from_photo
+
+        ocr_result = extract_seal_tag_from_photo(photo_bytes, expected_tag=tag_number)
+        if ocr_result.get("is_match"):
             is_verified = True
+
+    # Append OCR result to notes if available
+    final_notes = notes
+    if ocr_result:
+        ocr_note = ocr_result.get("notes", "")
+        if ocr_note:
+            final_notes = f"{notes}\n[OCR] {ocr_note}" if notes else f"[OCR] {ocr_note}"
 
     checkin = WearCheckInLog(
         managed_sub_id=sub_uuid,
         tag_number=tag_number or None,
         comfort_score=comfort_score,
-        notes=notes,
+        notes=final_notes or None,
         photo_url=photo_url or None,
         is_verified_closed=is_verified,
     )
@@ -416,11 +425,20 @@ async def log_wear_checkin(
     await db.flush()
 
 
-def ocr_verify_seal(tag_number: str) -> dict:
-    """Run OCR seal inspection."""
+def ocr_verify_seal(photo_bytes: bytes | None = None, tag_number: str = "") -> dict:
+    """Run OCR seal inspection on real photo bytes."""
     from app.media.ocr_seals import extract_seal_tag_from_photo
 
-    return extract_seal_tag_from_photo(b"SAMPLE_TAG_BYTES", expected_tag=tag_number)
+    if not photo_bytes:
+        return {
+            "status": "error",
+            "extracted_tag": None,
+            "confidence": 0.0,
+            "is_match": False,
+            "low_confidence": True,
+            "notes": "No photo provided.",
+        }
+    return extract_seal_tag_from_photo(photo_bytes, expected_tag=tag_number or None)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

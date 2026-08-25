@@ -6,7 +6,7 @@ This file contains only HTTP parsing, response building, and dependency injectio
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -275,13 +275,16 @@ async def log_wear_checkin_endpoint(
     tag_number: str = Form(""),
     comfort_score: int = Form(5),
     notes: str = Form(""),
-    photo_url: str = Form(""),
+    photo: UploadFile | None = File(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    photo_bytes: bytes | None = None
+    if photo and photo.filename:
+        photo_bytes = await photo.read()
     await svc.log_wear_checkin(
         db, user.id, managed_sub_id=managed_sub_id, tag_number=tag_number,
-        comfort_score=comfort_score, notes=notes, photo_url=photo_url,
+        comfort_score=comfort_score, notes=notes, photo_bytes=photo_bytes,
     )
     return RedirectResponse(url="/ds/checkins", status_code=303)
 
@@ -289,7 +292,11 @@ async def log_wear_checkin_endpoint(
 @router.post("/api/v2/ds/checkins/ocr-verify")
 async def ocr_verify_seal_endpoint(
     tag_number: str = Form(""),
+    photo: UploadFile | None = File(default=None),
     user: User = Depends(get_current_user),
 ):
-    result = svc.ocr_verify_seal(tag_number)
+    photo_bytes: bytes | None = None
+    if photo and photo.filename:
+        photo_bytes = await photo.read()
+    result = svc.ocr_verify_seal(photo_bytes, tag_number)
     return JSONResponse({"status": "success", **result})

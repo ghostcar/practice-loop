@@ -65,10 +65,14 @@ def test_apply_privacy_mask(sample_image_bytes):
 
 
 def test_extract_seal_tag_from_photo(sample_image_bytes):
+    """v0.9.1: OCR engine returns status=success even when tesseract is unavailable."""
     res = extract_seal_tag_from_photo(sample_image_bytes, expected_tag="TAG-9842")
     assert res["status"] == "success"
-    assert res["is_match"] is True
-    assert "9842" in res["extracted_tag"]
+    # Without tesseract, no tags can be extracted from random sample bytes.
+    # The engine no longer simulates matches — it reports low confidence.
+    assert res["is_match"] is False
+    assert res["low_confidence"] is True
+    assert res["confidence"] < 0.75
 
 
 # ---------------------------------------------------------------------------

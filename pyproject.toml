@@ -35,6 +35,7 @@ dependencies = [
     "aiosqlite>=0.20,<0.21",
     "tzdata>=2024.1",
     "pillow>=10.3,<11",
+    "pytesseract>=0.3,<0.4",
 ]
 
 [project.optional-dependencies]

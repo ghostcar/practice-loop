@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     curl \
     postgresql-client \
+    tesseract-ocr \
+    tesseract-ocr-rus \
+    tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/wheels /wheels
