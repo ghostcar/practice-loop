@@ -6,8 +6,6 @@ This file contains only HTTP parsing, response building, and dependency injectio
 
 from __future__ import annotations
 
-import uuid
-
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -158,7 +156,7 @@ async def generate_submissive_telegram_code_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        code = await svc.generate_sub_tg_code(db, sub_id, user.id)
+        await svc.generate_sub_tg_code(db, sub_id, user.id)
     except NotFoundError:
         raise HTTPException(404, "Submissive profile not found") from None
     return RedirectResponse(url=f"/ds/portal?sub_id={sub_id}", status_code=303)

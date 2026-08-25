@@ -144,7 +144,7 @@ class MedicationInsightAdapter:
         user_id: uuid.UUID,
         period_days: int = 7,
     ) -> dict[str, Any]:
-        from app.models.medication import MedIntake, MedSchedule, MedStock, Medication
+        from app.models.medication import Medication, MedIntake, MedSchedule, MedStock
 
         since = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=period_days)
 

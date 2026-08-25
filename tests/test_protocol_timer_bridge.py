@@ -1,6 +1,5 @@
 """Integration tests: Protocol ↔ Timer bridge (R5.4 / ADR-155)."""
 
-import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest

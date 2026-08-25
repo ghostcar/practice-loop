@@ -13,6 +13,7 @@ Public API:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import uuid
@@ -28,7 +29,6 @@ from app.models.opt_in import UserEntityOptIn
 from app.schemas.entity import DESIRE_LEVELS
 from app.services.errors import NotFoundError
 from app.slugify import slugify
-from app.timeutils import local_today
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +202,6 @@ async def get_inventory_items(db: AsyncSession, user_id: uuid.UUID) -> list[dict
 async def get_catalog_page_context(
     db: AsyncSession, user, *, category: str | None = None, category_id: uuid.UUID | None = None
 ) -> dict:
-    from app.services.catalog_service import catalog_options
 
     cat_result = await db.execute(select(ActivityCategory).where(ActivityCategory.is_active.is_(True)))
     all_categories = list(cat_result.scalars().all())
@@ -431,10 +430,8 @@ async def update_entity(
 
     catalog_uuid = None
     if catalog_item_id.strip():
-        try:
+        with contextlib.suppress(ValueError):
             catalog_uuid = uuid.UUID(catalog_item_id.strip())
-        except ValueError:
-            pass
 
     care_uuids: list[str] | None = None
     if care_product_ids.strip():

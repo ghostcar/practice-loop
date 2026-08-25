@@ -83,7 +83,11 @@ def finding_view(f: InsightFinding) -> dict:
 async def insights_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """Краткая сводка для дашборда: последний запуск + число находок."""
     run = (
-        (await db.execute(select(InsightRun).where(InsightRun.user_id == user_id).order_by(InsightRun.created_at.desc())))
+        (await db.execute(
+            select(InsightRun)
+            .where(InsightRun.user_id == user_id)
+            .order_by(InsightRun.created_at.desc())
+        ))
         .scalars()
         .first()
     )
@@ -109,7 +113,11 @@ async def insights_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 async def get_insights_page_context(db: AsyncSession, user_id: uuid.UUID, run_id: uuid.UUID | None = None) -> dict:
     """Build insights page context: runs list + selected run."""
     runs = (
-        (await db.execute(select(InsightRun).where(InsightRun.user_id == user_id).order_by(InsightRun.created_at.desc())))
+        (await db.execute(
+            select(InsightRun)
+            .where(InsightRun.user_id == user_id)
+            .order_by(InsightRun.created_at.desc())
+        ))
         .scalars()
         .all()
     )
@@ -197,7 +205,8 @@ async def execute_insight_run(
 
 async def delete_insight_run(db: AsyncSession, run_id: uuid.UUID, user_id: uuid.UUID) -> bool:
     """Delete a past run + its findings. Returns True if deleted."""
-    run = (await db.execute(select(InsightRun).where(InsightRun.id == run_id, InsightRun.user_id == user_id))).scalar_one_or_none()
+    stmt = select(InsightRun).where(InsightRun.id == run_id, InsightRun.user_id == user_id)
+    run = (await db.execute(stmt)).scalar_one_or_none()
     if run is not None:
         await db.delete(run)
         await db.flush()
@@ -258,7 +267,12 @@ async def get_correlation_matrix(db: AsyncSession, user_id: uuid.UUID, days: int
     from app.models.locktimer import LockSession
 
     # Health states
-    h_stmt = select(HealthState).where(HealthState.user_id == user_id).order_by(HealthState.event_date.asc()).limit(days)
+    h_stmt = (
+        select(HealthState)
+        .where(HealthState.user_id == user_id)
+        .order_by(HealthState.event_date.asc())
+        .limit(days)
+    )
     health_states = (await db.execute(h_stmt)).scalars().all()
 
     health_matrix = []

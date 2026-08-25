@@ -19,7 +19,6 @@ from app.schemas.calendar import (
     DaySchedule,
 )
 
-
 # ═══════════════════════════════════════════════
 # Availability check utility (also used by LLM)
 # ═══════════════════════════════════════════════

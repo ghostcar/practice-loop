@@ -49,7 +49,7 @@ async def get_template(
         return get_template_download(template_type, format)
     except ValueError as e:
         code = 400 if "Format" in str(e) else 404
-        raise HTTPException(code, str(e))
+        raise HTTPException(code, str(e)) from None
 
 
 @router.get("", response_class=HTMLResponse)
@@ -129,7 +129,7 @@ async def export_full(
     try:
         return await export_full_data(db, user, format)
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from None
 
 
 @router.get("/export/{export_type}")
@@ -145,4 +145,4 @@ async def export_type(
         return await export_data_by_type(db, user, export_type, format, limit)
     except ValueError as e:
         code = 400 if "format" in str(e).lower() or "limit" in str(e).lower() else 404
-        raise HTTPException(code, str(e))
+        raise HTTPException(code, str(e)) from None

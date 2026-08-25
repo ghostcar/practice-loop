@@ -10,6 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.community_agent import (
+    create_community_tournament,
+    get_community_membership,
     get_or_create_community_top_agent,
     recalculate_tournament_standings,
 )
@@ -18,15 +20,11 @@ from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.community_agent import (
-    Community,
     CommunityMemberDelegation,
-    CommunityPost,
-    CommunityTournament,
     CommunityTournamentEntry,
 )
 from app.models.user import User
 from app.services.community_agent_service import (
-    do_create_tournament,
     do_join_tournament,
     do_run_quest_generation,
     get_agent_page_context,
@@ -56,10 +54,9 @@ async def community_agent_dashboard_page(
     try:
         ctx = await get_agent_page_context(db, c_uuid)
     except ValueError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from None
     community = ctx["community"]
 
-    from app.agent.community_agent import get_community_membership
     membership = await get_community_membership(db, c_uuid, user.id)
     if community.visibility == "private" and (not membership or membership.status != "active"):
         raise HTTPException(403, "Вступите в приватное сообщество, чтобы увидеть агента")
@@ -156,7 +153,6 @@ async def toggle_community_delegation_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     c_uuid = uuid.UUID(community_id)
-    from app.agent.community_agent import get_community_membership
     membership = await get_community_membership(db, c_uuid, user.id)
     if not membership or membership.status != "active":
         raise HTTPException(403, "Вступите в сообщество, чтобы делегировать профиль")

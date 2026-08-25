@@ -77,7 +77,7 @@ async def delete_entry_form(
     try:
         await delete_entry(db, user.id, entry_id)
     except ValueError:
-        raise HTTPException(404, "Entry not found")
+        raise HTTPException(404, "Entry not found") from None
     return RedirectResponse(url="/aftercare", status_code=303)
 
 
@@ -87,6 +87,7 @@ async def json_list_entries(
     user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy import select
+
     from app.models.aftercare import AftercareEntry
     rows = (await db.execute(
         select(AftercareEntry)
@@ -124,6 +125,7 @@ async def json_add_entry(
     # Validate journal_entry_id belongs to user
     if body.journal_entry_id:
         from sqlalchemy import select
+
         from app.models.journal import JournalEntry
         je = (await db.execute(
             select(JournalEntry).where(JournalEntry.id == uuid.UUID(body.journal_entry_id))
@@ -155,5 +157,5 @@ async def json_delete_entry(
     try:
         await delete_entry(db, user.id, entry_id)
     except ValueError:
-        raise HTTPException(404, "Entry not found")
+        raise HTTPException(404, "Entry not found") from None
     return JSONResponse(None, status_code=204)

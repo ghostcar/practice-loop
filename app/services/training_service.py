@@ -250,7 +250,6 @@ async def get_training_page_context(db: AsyncSession, user) -> dict:
 
 async def generate_plan(db: AsyncSession, user_id: uuid.UUID, plan_name: str | None, locale: str) -> None:
     from app.llm.pipeline import generate_daily_plan, get_active_llm_config
-    from app.llm.repair import JsonRepairError
 
     active_config = await get_active_llm_config(db, user_id)
     if active_config is None:
@@ -355,7 +354,10 @@ async def create_manual_task(
         if value is not None:
             params[key] = value
     for key in multi_keys:
-        values = form_data.getlist(f"param_{key}") if hasattr(form_data, "getlist") else form_data.get(f"param_{key}", [])
+        if hasattr(form_data, "getlist"):
+            values = form_data.getlist(f"param_{key}")
+        else:
+            values = form_data.get(f"param_{key}", [])
         if values:
             params[key] = values
 
@@ -426,7 +428,6 @@ async def analyze_day(
     db: AsyncSession, user_id: uuid.UUID, plan_id: uuid.UUID | None, locale: str
 ) -> None:
     from app.llm.pipeline import analyze_training_day, get_active_llm_config
-    from app.llm.repair import JsonRepairError
 
     if plan_id is None:
         today = get_today()
@@ -473,7 +474,9 @@ async def reorder_log_entries(db: AsyncSession, user_id: uuid.UUID, td_id: uuid.
     await db.flush()
 
 
-async def update_log_entry(db: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID, form_data: dict) -> TrainingLogEntry:
+async def update_log_entry(
+    db: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID, form_data: dict,
+) -> TrainingLogEntry:
     result = await db.execute(select(TrainingLogEntry).where(TrainingLogEntry.id == entry_id))
     entry = result.scalar_one_or_none()
     if entry is None or entry.user_id != user_id:
@@ -538,6 +541,7 @@ async def delete_log_entry(db: AsyncSession, user_id: uuid.UUID, entry_id: uuid.
 
 async def get_adaptive_page_context(db: AsyncSession, user) -> dict:
     from sqlalchemy.orm import selectinload
+
     from app.models.adaptive_training import AdaptiveProgram
 
     programs = (

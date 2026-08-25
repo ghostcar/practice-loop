@@ -293,7 +293,6 @@ async def json_analyze_partner_dynamics(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    from app.llm.pipeline import get_active_llm_config
     from app.services.llm_provider import get_active_llm_config as get_llm
 
     llm_config = await get_llm(db, user.id)
@@ -308,6 +307,8 @@ async def json_analyze_partner_dynamics(
 
 
 # Re-export helpers that other modules import from journal.py
-from app.services.journal_service import ensure_timer_slot_entry  # noqa: E402, F401
-from app.services.journal_service import get_pending_slot_entry  # noqa: E402, F401
+from app.services.journal_service import (
+    ensure_timer_slot_entry,  # noqa: E402, F401
+    get_pending_slot_entry,  # noqa: E402, F401
+)
 from app.services.journal_service import journal_summary as _journal_summary  # noqa: E402, F401

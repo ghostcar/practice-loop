@@ -84,7 +84,7 @@ async def admin_set_user_role(
     try:
         await set_user_role(db, user_id, role, admin.id)
     except ValueError as e:
-        raise HTTPException(409 if "demote" in str(e) else 400, str(e))
+        raise HTTPException(409 if "demote" in str(e) else 400, str(e)) from None
     return RedirectResponse(url="/admin/users?status=role", status_code=303)
 
 
@@ -96,7 +96,7 @@ async def admin_set_user_disabled(
     try:
         await set_user_disabled(db, user_id, disabled, admin.id)
     except ValueError as e:
-        raise HTTPException(409, str(e))
+        raise HTTPException(409, str(e)) from None
     return RedirectResponse(url="/admin/users?status=disabled", status_code=303)
 
 
@@ -109,7 +109,7 @@ async def admin_reset_user_password(
     try:
         await reset_user_password(db, user_id, new_password, confirm_password, admin.id)
     except ValueError as e:
-        raise HTTPException(409 if "own" in str(e).lower() else 400, str(e))
+        raise HTTPException(409 if "own" in str(e).lower() else 400, str(e)) from None
     return RedirectResponse(url="/admin/users?status=password", status_code=303)
 
 
@@ -189,7 +189,7 @@ async def update_prompt_item_route(
     try:
         await update_prompt_item(db, prompt_id, template_content)
     except ValueError:
-        raise HTTPException(404, "Prompt item not found")
+        raise HTTPException(404, "Prompt item not found") from None
     return RedirectResponse(url="/admin/prompts", status_code=303)
 
 
@@ -200,5 +200,5 @@ async def reset_prompt_item_route(
     try:
         await reset_prompt_item(db, prompt_id)
     except ValueError:
-        raise HTTPException(404, "Prompt item not found")
+        raise HTTPException(404, "Prompt item not found") from None
     return RedirectResponse(url="/admin/prompts", status_code=303)

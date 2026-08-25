@@ -262,9 +262,11 @@ async def json_get_run(
     user: User = Depends(get_current_user),
 ):
     from sqlalchemy import select as _select
+
     from app.models.insights import InsightRun
 
-    run = (await db.execute(_select(InsightRun).where(InsightRun.id == run_id, InsightRun.user_id == user.id))).scalar_one_or_none()
+    stmt = _select(InsightRun).where(InsightRun.id == run_id, InsightRun.user_id == user.id)
+    run = (await db.execute(stmt)).scalar_one_or_none()
     if run is None:
         raise HTTPException(404, "Insight run not found")
     return svc.run_view(run)

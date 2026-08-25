@@ -72,7 +72,6 @@ async def onboarding_complete(
     await _bootstrap_new_user(db, user)
 
     # After onboarding, go through consent for enabled modules
-    from app.config import settings
     from app.consent import missing_consents
     from app.prefs import sanitize_prefs
 

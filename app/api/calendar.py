@@ -100,7 +100,7 @@ async def delete_template_api(
     try:
         await delete_template(db, user.id, template_id)
     except ValueError:
-        raise HTTPException(404, "Template not found")
+        raise HTTPException(404, "Template not found") from None
     return {"status": "deleted"}
 
 
@@ -119,7 +119,7 @@ async def add_window_api(
     try:
         return await add_window(db, user.id, template_id, data)
     except ValueError:
-        raise HTTPException(404, "Template not found")
+        raise HTTPException(404, "Template not found") from None
 
 
 @router.delete("/templates/{template_id}/windows/{window_id}")
@@ -132,7 +132,7 @@ async def delete_window_api(
     try:
         await delete_window(db, user.id, template_id, window_id)
     except ValueError:
-        raise HTTPException(404, "Window not found")
+        raise HTTPException(404, "Window not found") from None
     return {"status": "deleted"}
 
 
@@ -158,7 +158,7 @@ async def create_override_api(
     try:
         return await create_override(db, user.id, data)
     except ValueError:
-        raise HTTPException(404, "Template not found")
+        raise HTTPException(404, "Template not found") from None
 
 
 @router.delete("/overrides/{override_id}")
@@ -170,7 +170,7 @@ async def delete_override_api(
     try:
         await delete_override(db, user.id, override_id)
     except ValueError:
-        raise HTTPException(404, "Override not found")
+        raise HTTPException(404, "Override not found") from None
     return {"status": "deleted"}
 
 

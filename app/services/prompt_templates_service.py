@@ -116,8 +116,6 @@ async def get_templates_page_context(db: AsyncSession, user) -> dict:
 
 def get_user_prompt_library_context(t) -> dict:
     """Build context for /prompts/library (categorized prompt library hub)."""
-    from app.models.prompt_library import PromptLibraryItem
-    from app.database import get_db  # noqa: F811
     # This needs a db session — handled at route level
     # Return just the structure hint; caller does the query
     return {}

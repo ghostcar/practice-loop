@@ -72,6 +72,10 @@ ignore = ["B008"]  # Depends in FastAPI defaults is idiomatic
 "tools/adult_catalog_promote.py" = ["C408", "E501"]
 # Alembic migration docstrings carry long RU/EN revision notes (content, not code).
 "alembic/versions/*.py" = ["E501"]
+# i18n strings are naturally long (RU/EN content, not code).
+"app/i18n/*.py" = ["E501"]
+# Intentional re-export block at module bottom for backwards compatibility.
+"app/api/journal.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

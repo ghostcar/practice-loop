@@ -18,7 +18,6 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.models.user import User
 from app.services.protocols_service import (
-    CATEGORIES,
     complete_protocol_step_from_form,
     create_protocol_from_form,
     delete_protocol_by_id,

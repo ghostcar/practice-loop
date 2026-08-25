@@ -175,7 +175,7 @@ async def json_create_item(
         try:
             cat_uuid = uuid.UUID(body.category_id.strip())
         except ValueError:
-            raise HTTPException(400, "Invalid category_id")
+            raise HTTPException(400, "Invalid category_id") from None
     domains_val = body.domains if isinstance(body.domains, list) else validate_domains(body.domains)
     item = ActivityCatalogItem(
         owner_id=user.id, name=body.name, description=body.description,

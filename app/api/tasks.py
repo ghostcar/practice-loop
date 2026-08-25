@@ -132,7 +132,7 @@ async def generate_weekly_endpoint(
     locale = detect_locale(request, user.locale)
     try:
         await svc.execute_weekly_generation(db, user.id, locale=locale, days=days)
-    except (ValueError, Exception) as e:
+    except (ValueError, Exception):
         return RedirectResponse(url="/tasks/?error=generation_failed", status_code=status.HTTP_303_SEE_OTHER)
     return RedirectResponse(url="/tasks/", status_code=status.HTTP_303_SEE_OTHER)
 

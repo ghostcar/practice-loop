@@ -16,9 +16,7 @@ from app.models.activity_log import ActivityLog
 from app.models.progress import UserProgress
 from app.models.session import ActivitySession
 from app.models.session_history import ActivitySessionHistory
-from app.models.user import User
 from app.services.errors import NotFoundError
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -195,7 +193,10 @@ async def create_session_from_template(db: AsyncSession, user_id: uuid.UUID, tem
         "contract": {
             "title": "Pair BDSM Contract Session",
             "notes": "Полная контрактная сессия с правилами, стоп-словами, эскалациями и заданиями.",
-            "rules": {"rules": [{"type": "contract_compliance", "safewords": ["RED", "YELLOW"]}], "ai_role": "observer"},
+            "rules": {
+                "rules": [{"type": "contract_compliance", "safewords": ["RED", "YELLOW"]}],
+                "ai_role": "observer",
+            },
         },
     }
     cfg = templates_dict.get(template_type, templates_dict["chastity"])
@@ -350,7 +351,10 @@ async def attach_task(
         task.session_id = session.id
         db.add(task)
         await record_session_event(db, session, user_id, "task_added",
-                                    details={"task_id": str(task.id), "title": task.title_override or task.selected_entity_name},
+                                    details={
+                                        "task_id": str(task.id),
+                                        "title": task.title_override or task.selected_entity_name,
+                                    },
                                     penalize_change=True)
         await db.flush()
 
@@ -372,9 +376,14 @@ async def detach_task(
         raise ValueError("Task not found")
     task.session_id = None
     db.add(task)
-    await record_session_event(db, session, user_id, "task_removed",
-                                details={"task_id": str(task.id), "title": task.title_override or task.selected_entity_name},
-                                penalize_change=True)
+    await record_session_event(
+        db, session, user_id, "task_removed",
+        details={
+            "task_id": str(task.id),
+            "title": task.title_override or task.selected_entity_name,
+        },
+        penalize_change=True,
+    )
     await db.flush()
 
 

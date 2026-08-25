@@ -91,12 +91,13 @@ async def execute_ai_generator(
     *, mode: str = "expanded", explicit_level: int = 4,
     remove_filters: bool = False, custom_directives: str = "",
 ) -> list:
+    import logging
+
     from app.llm.pipeline import get_active_llm_config
     from app.llm.pipeline.content_generator import (
         build_catalog_generation_prompt,
         generate_catalog_proposals,
     )
-    import logging
 
     logger = logging.getLogger(__name__)
     llm_config = await get_active_llm_config(db, admin_id)

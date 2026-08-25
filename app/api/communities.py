@@ -83,11 +83,11 @@ async def community_detail_page(
     try:
         c_uuid = uuid.UUID(community_id)
     except ValueError:
-        raise HTTPException(400, "Invalid community ID")
+        raise HTTPException(400, "Invalid community ID") from None
     try:
         ctx = await get_community_detail_context(db, c_uuid, user)
     except ValueError:
-        raise HTTPException(404, "Community not found")
+        raise HTTPException(404, "Community not found") from None
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
@@ -112,7 +112,7 @@ async def join_community_endpoint(
     try:
         redirect_url = await do_join_community(db, c_uuid, user.id, invite_code)
     except ValueError:
-        raise HTTPException(404, "Community not found")
+        raise HTTPException(404, "Community not found") from None
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
@@ -141,7 +141,7 @@ async def approve_member_endpoint(
         await do_approve_member(db, c_uuid, uuid.UUID(member_id), user.id, decision == "approve")
     except ValueError as e:
         code = 403 if "владелец" in str(e).lower() else 404
-        raise HTTPException(code, str(e))
+        raise HTTPException(code, str(e)) from None
     return RedirectResponse(url=f"/communities/{c_uuid}", status_code=303)
 
 
@@ -155,7 +155,7 @@ async def generate_invite_code_endpoint(
     try:
         code = await do_rotate_invite(db, c_uuid, user.id)
     except ValueError as e:
-        raise HTTPException(403, str(e))
+        raise HTTPException(403, str(e)) from None
     return RedirectResponse(url=f"/communities/{c_uuid}?invite={code}", status_code=303)
 
 
@@ -169,7 +169,7 @@ async def delete_community_endpoint(
     try:
         await do_delete_community(db, c_uuid, user.id)
     except ValueError as e:
-        raise HTTPException(403, str(e))
+        raise HTTPException(403, str(e)) from None
     return RedirectResponse(url="/communities", status_code=303)
 
 
@@ -183,7 +183,7 @@ async def transfer_ownership_endpoint(
     try:
         status = await do_transfer_ownership(db, c_uuid, uuid.UUID(new_owner_id), user.id)
     except ValueError as e:
-        raise HTTPException(403, str(e))
+        raise HTTPException(403, str(e)) from None
     if status == "not_member":
         raise HTTPException(400, "Новый владелец должен быть активным участником сообщества")
     if status == "already_owner":
@@ -202,7 +202,7 @@ async def add_moderator_endpoint(
     try:
         status = await do_add_moderator(db, c_uuid, uuid.UUID(user_id_), role_type, user.id)
     except ValueError as e:
-        raise HTTPException(403, str(e))
+        raise HTTPException(403, str(e)) from None
     if status == "invalid_role":
         raise HTTPException(400, "Неизвестная роль модератора")
     if status == "not_member":
@@ -223,7 +223,7 @@ async def remove_moderator_endpoint(
     try:
         removed = await do_remove_moderator(db, c_uuid, uuid.UUID(user_id_), role_type, user.id)
     except ValueError as e:
-        raise HTTPException(403, str(e))
+        raise HTTPException(403, str(e)) from None
     if not removed:
         raise HTTPException(400, "Роль не была назначена")
     return RedirectResponse(url=f"/communities/{c_uuid}?moderator=removed", status_code=303)

@@ -122,7 +122,7 @@ async def template_detail_page(
     try:
         ctx = await get_template_detail_context(db, user, template_id)
     except ValueError:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise HTTPException(status_code=404, detail="Template not found") from None
     return templates.TemplateResponse(
         request=request,
         name="prompt_template_detail.html",
@@ -164,7 +164,7 @@ async def create_template_action(
             source_key=source_key,
         )
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from None
     return RedirectResponse(url=f"/llm/templates/{tpl.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -184,7 +184,7 @@ async def create_from_library_action(
             db, user.id, key, name=name, template_type=template_type, locale=locale, t=t,
         )
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from None
     return RedirectResponse(url=f"/llm/templates/{tpl.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -214,7 +214,7 @@ async def update_template_action(
             is_active=is_active,
         )
     except ValueError as e:
-        raise HTTPException(404 if "not found" in str(e).lower() else 400, str(e))
+        raise HTTPException(404 if "not found" in str(e).lower() else 400, str(e)) from None
     return RedirectResponse(url=f"/llm/templates/{tpl.id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -228,7 +228,7 @@ async def delete_template_action(
     try:
         await delete_template(db, user.id, template_id)
     except ValueError:
-        raise HTTPException(404, detail="Template not found")
+        raise HTTPException(404, detail="Template not found") from None
     return RedirectResponse(url="/llm/templates", status_code=status.HTTP_303_SEE_OTHER)
 
 
@@ -245,7 +245,7 @@ async def generate_template_action(
         try:
             parsed = json.loads(params_json)
         except json.JSONDecodeError as e:
-            raise HTTPException(400, f"Params JSON invalid: {e}")
+            raise HTTPException(400, f"Params JSON invalid: {e}") from None
         if isinstance(parsed, dict):
             params = parsed
 
@@ -255,10 +255,10 @@ async def generate_template_action(
     except ValueError as e:
         msg = str(e)
         if "not found" in msg.lower():
-            raise HTTPException(404, msg)
+            raise HTTPException(404, msg) from None
         if "LLM provider" in msg:
-            raise HTTPException(409, msg)
-        raise HTTPException(400, msg)
+            raise HTTPException(409, msg) from None
+        raise HTTPException(400, msg) from None
 
     if outcome["type"] == "task":
         return RedirectResponse(
@@ -300,8 +300,8 @@ async def json_generate_template(
     except ValueError as e:
         msg = str(e)
         if "not found" in msg.lower():
-            raise HTTPException(404, msg)
+            raise HTTPException(404, msg) from None
         if "LLM provider" in msg:
-            raise HTTPException(409, msg)
-        raise HTTPException(400, msg)
+            raise HTTPException(409, msg) from None
+        raise HTTPException(400, msg) from None
     return JSONResponse(outcome)

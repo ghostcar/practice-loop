@@ -97,8 +97,9 @@ class PartnerBody(BaseModel):
 
 async def cycle_snapshot(db: AsyncSession, user_id: uuid.UUID, entry_date: date) -> tuple[str | None, int | None]:
     try:
-        from app.services.health_service import cycle_phase as _cycle_phase, day_of_cycle as _day_of_cycle
         from app.models.health import CycleEvent, CycleSettings
+        from app.services.health_service import cycle_phase as _cycle_phase
+        from app.services.health_service import day_of_cycle as _day_of_cycle
     except Exception:
         return None, None
     settings_row = (

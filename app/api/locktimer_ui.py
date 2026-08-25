@@ -361,7 +361,11 @@ async def locktimer_session_detail(
         for pr in pr_result.scalars().all():
             protocol_runs.append({
                 "id": str(pr.id),
-                "title": pr.frozen_steps_snapshot[0].get("title", "Untitled") if pr.frozen_steps_snapshot else "Untitled",
+                "title": (
+                    pr.frozen_steps_snapshot[0].get("title", "Untitled")
+                    if pr.frozen_steps_snapshot
+                    else "Untitled"
+                ),
                 "status": pr.status,
                 "total_steps": len(pr.frozen_steps_snapshot or []),
                 "anchor_time": pr.anchor_time.isoformat() if pr.anchor_time else None,

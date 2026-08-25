@@ -17,7 +17,6 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
-from app.models.session import ActivitySession
 from app.models.user import User
 from app.services import sessions_service as svc
 from app.services.errors import NotFoundError
@@ -291,7 +290,9 @@ async def json_sessions(user: User = Depends(get_current_user), db: AsyncSession
 @session_json_router.post("")
 async def json_create_session(data: _SessionCreateIn, user: User = Depends(get_current_user),
                               db: AsyncSession = Depends(get_db)):
-    session = await svc.create_session(db, user.id, title=data.title, notes=data.notes, session_rules=data.session_rules)
+    session = await svc.create_session(
+        db, user.id, title=data.title, notes=data.notes, session_rules=data.session_rules,
+    )
     return JSONResponse(svc.session_json(session), status_code=201)
 
 

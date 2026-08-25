@@ -22,10 +22,8 @@ from app.models.ds_suite import (
     ManagedSubmissive,
     WearCheckInLog,
 )
-from app.models.user import User
 from app.services.dead_mans_switch import record_activity_heartbeat
 from app.services.errors import NotFoundError
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers

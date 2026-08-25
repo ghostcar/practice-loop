@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.gamification.handler import on_task_completed, on_task_interrupted
 from app.llm.pipeline import generate_task, generate_weekly_tasks, get_active_llm_config
-from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
 from app.models.body_part import TaskBodyTarget
 from app.models.entity import Entity
@@ -337,7 +336,9 @@ async def create_manual_task_from_form(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def get_entity_for_params(db: AsyncSession, entity_id: uuid.UUID, user_id: uuid.UUID) -> tuple[Entity, list[dict]]:
+async def get_entity_for_params(
+    db: AsyncSession, entity_id: uuid.UUID, user_id: uuid.UUID,
+) -> tuple[Entity, list[dict]]:
     """Get entity and normalized param defs for the params form. Raises ValueError if not found."""
     ent_result = await db.execute(
         select(Entity).where(

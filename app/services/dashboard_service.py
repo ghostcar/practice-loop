@@ -5,7 +5,6 @@ Extracted from app/api/dashboard.py (ADR-167).  HTTP layer stays thin.
 
 from __future__ import annotations
 
-import json
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -25,7 +24,6 @@ from app.models.session import ActivitySession
 from app.models.training import TrainingDay
 from app.models.user import User
 from app.timeutils import local_today
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Locale-aware date label for the dashboard header (DESIGN v2 §9).
@@ -340,7 +338,10 @@ async def _build_dashboard_alerts(
                 "type": "warning",
                 "icon": "heart",
                 "title": "Post-session Drop (Эмоциональный спад)",
-                "message": "Активирован режим бережного восстановления. Рекомендуются расслабляющие процедуры Ухода и Aftercare.",
+                "message": (
+                    "Активирован режим бережного восстановления. "
+                    "Рекомендуются расслабляющие процедуры Ухода и Aftercare."
+                ),
                 "action_url": "/care",
                 "action_label": "Протоколы Ухода",
             })
