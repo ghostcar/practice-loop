@@ -75,12 +75,28 @@ async def list_comments(
     db: AsyncSession,
     target_type: str,
     target_id: uuid.UUID,
+    *,
+    viewer_id: uuid.UUID | None = None,
 ) -> list[SocialComment]:
-    result = await db.execute(
-        select(SocialComment)
-        .where(SocialComment.target_type == target_type, SocialComment.target_id == target_id)
-        .order_by(SocialComment.created_at.asc())
+    """List comments, hiding authors blocked by / blocking the viewer (H.2)."""
+    from app.platform.social.models import SocialBlock
+
+    query = select(SocialComment).where(
+        SocialComment.target_type == target_type,
+        SocialComment.target_id == target_id,
     )
+
+    if viewer_id is not None:
+        # Subquery: users blocked by or blocking the viewer
+        blocked = (
+            select(SocialBlock.blocked_id)
+            .where(SocialBlock.blocker_id == viewer_id, SocialBlock.is_active)
+            .union(select(SocialBlock.blocker_id).where(SocialBlock.blocked_id == viewer_id, SocialBlock.is_active))
+        ).subquery()
+        query = query.where(SocialComment.author_id.not_in(select(blocked.c.blocked_id)))
+
+    query = query.order_by(SocialComment.created_at.asc())
+    result = await db.execute(query)
     return list(result.scalars().all())
 
 

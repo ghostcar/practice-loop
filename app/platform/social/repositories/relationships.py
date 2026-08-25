@@ -15,6 +15,7 @@ from app.platform.social.models import (
 )
 
 INVITE_COOLDOWN_HOURS = 24
+INVITE_DAILY_LIMIT = 10  # abuse prevention: max invites sent per rolling 24h
 
 
 async def _is_blocked(db: AsyncSession, user_a: uuid.UUID, user_b: uuid.UUID) -> bool:
@@ -37,6 +38,36 @@ async def create_invitation(
     recipient_id: uuid.UUID,
     display_role: str = "viewer",
 ) -> SocialRelationship:
+    """Send a relationship invite — rate-limited (INVITE_DAILY_LIMIT per 24h).
+
+    Raises ValueError when the daily limit is exceeded.
+    """
+    from sqlalchemy import func
+
+    # Abused invite / block / cooldown guard
+    existing = await get_relationship_by_pair(db, requester_id, recipient_id)
+    if existing is not None:
+        if existing.status == "declined" and existing.cooldown_until and existing.cooldown_until > datetime.now(UTC):
+            raise ValueError("Invite is in cooldown after decline — try again later")
+        if existing.status == "pending":
+            raise ValueError("An invite is already pending")
+        if existing.status in ("accepted", "revoked"):
+            raise ValueError("Relationship already exists")
+
+    # Rate limit: count invites sent in the last 24h
+    since = datetime.now(UTC) - timedelta(hours=24)
+    count_res = await db.execute(
+        select(func.count())
+        .select_from(SocialRelationship)
+        .where(
+            SocialRelationship.requester_id == requester_id,
+            SocialRelationship.created_at >= since,
+        )
+    )
+    sent = int(count_res.scalar_one() or 0)
+    if sent >= INVITE_DAILY_LIMIT:
+        raise ValueError(f"Daily invite limit reached ({INVITE_DAILY_LIMIT}/24h) — try again later")
+
     rel = SocialRelationship(
         requester_id=requester_id,
         recipient_id=recipient_id,

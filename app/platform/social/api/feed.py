@@ -41,16 +41,29 @@ async def social_feed_page(
 
     publications = await list_feed(db, current_user.id, namespace=namespace, limit=30)
 
-    # Enrich with owner alias
+    # Enrich with owner alias + block-filtered comments
+    from app.platform.social.repositories import list_comments
+
     pub_data = []
     for pub in publications:
         owner_profile = await get_profile(db, pub.owner_id)
         subject = await get_subject(db, pub.subject_id)
+        comments = await list_comments(db, "publication", pub.id, viewer_id=current_user.id)
+        comment_data = []
+        for c in comments:
+            author_profile = await get_profile(db, c.author_id)
+            comment_data.append(
+                {
+                    "comment": c,
+                    "author_alias": author_profile.alias if author_profile else "unknown",
+                }
+            )
         pub_data.append(
             {
                 "pub": pub,
                 "owner_alias": owner_profile.alias if owner_profile else "unknown",
                 "subject_type": subject.subject_type if subject else "unknown",
+                "comments": comment_data,
             }
         )
 
