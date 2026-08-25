@@ -342,6 +342,7 @@ if composition.tracker_active:
     from app.api.llm_configs import router as llm_configs_router  # noqa: E402
     from app.api.media_vault import router as media_vault_router  # noqa: E402
     from app.api.media_verify import json_router as media_verify_json_router  # noqa: E402
+    from app.api.media_verify import ocr_router as media_verify_ocr_router  # noqa: E402
     from app.api.media_verify import page_router as media_verify_page_router  # noqa: E402
     from app.api.medication import json_router as medication_json_router  # noqa: E402
     from app.api.medication import router as medication_router  # noqa: E402
@@ -372,6 +373,7 @@ if composition.tracker_active:
         prompt_templates_json_router,
         media_verify_page_router,
         media_verify_json_router,
+        media_verify_ocr_router,
         media_vault_router,
         knowledge_router,
         protocols_router,

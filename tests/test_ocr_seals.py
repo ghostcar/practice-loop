@@ -44,7 +44,10 @@ def test_preprocess_for_ocr_binarizes():
     """Preprocessing produces only black and white pixels."""
     img = Image.new("L", (100, 100), color=128)
     result = _preprocess_for_ocr(img)
-    pixels = list(result.getdata())
+    try:
+        pixels = list(result.get_flattened_data())
+    except AttributeError:
+        pixels = list(result.getdata())
     unique = set(pixels)
     assert unique.issubset({0, 255}), f"Expected only 0/255, got {unique}"
 

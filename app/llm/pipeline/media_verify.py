@@ -136,6 +136,7 @@ async def verify_media_with_llm(
     expected_code: str | None = None,
     locale: str = "en",
     challenge=None,
+    ocr_info: dict | None = None,
 ) -> MediaVerificationResult:
     """Run an LLM photo-evaluation and persist the result row.
 
@@ -145,6 +146,8 @@ async def verify_media_with_llm(
     the LLM is asked to READ the code from the photo and the server compares
     it against the challenge HMAC (constant-time). The verdict is then
     server-derived (HMAC is the authority); the LLM is the OCR reader.
+
+    When ``ocr_info`` is provided (ADR-181), it's logged in reasoning for audit.
     """
     if verification_type not in VALID_TYPES:
         raise ValueError(f"Unsupported verification_type: {verification_type}")

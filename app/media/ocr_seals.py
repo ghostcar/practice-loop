@@ -50,8 +50,10 @@ def _preprocess_for_ocr(image: Image.Image) -> Image.Image:
     image = image.filter(ImageFilter.SHARPEN)
 
     # Adaptive binarization: median threshold
-    # Pillow <14: getdata is still the standard API
-    pixels = list(image.getdata())
+    try:
+        pixels = list(image.get_flattened_data())
+    except AttributeError:
+        pixels = list(image.getdata())
     if not pixels:
         return image
 

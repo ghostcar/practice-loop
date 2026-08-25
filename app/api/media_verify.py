@@ -1,19 +1,24 @@
-"""LLM media verification API (ADR-075, Step 7) — фото-оценка через vision.
+"""LLM media verification API (ADR-075, Step 7) + OCR engine (ADR-181, v0.9.1).
 
 Endpoints:
 - POST /api/v2/media/{asset_id}/verify        — JSON: запустить LLM-оценку фото
+- POST /api/v2/media/ocr-extract              — JSON: извлечь текст/код из фото через OCR
 - GET  /api/v2/media/{asset_id}/verification-results — история оценок для медиа
-- GET  /llm/verify                            — страница: выбор медиа + форма
-- POST /llm/verify                            — форма: запустить оценку
+- GET  /llm/verify                            — страница: выбор медиа + форма + OCR-таб
+- POST /llm/verify                            — форма: запустить оценку (LLM + OCR pre-flight)
+- POST /llm/verify/ocr                        — форма: OCR-извлечение текста из фото
 
 Логика (общая для JSON и формы):
 - ``code_match``:
-    - если передан ``expected_code`` — LLM сравнивает код на фото с ожидаемым;
-    - если есть активный VerificationChallenge для owner медиа — LLM читает код
+    - **OCR-first (ADR-181):** сначала локальный OCR (pytesseract) — если уверенность
+      >= 0.90 и код найден, возвращаем результат без LLM-вызова;
+    - если OCR не дал результата или низкая уверенность — fallback на LLM-vision;
+    - если передан ``expected_code`` — сравнивает код на фото с ожидаемым;
+    - если есть активный VerificationChallenge для owner медиа — читает код
       с фото, сервер сверяет HMAC (сервер — авторитет), при match и явном
       ``auto_consume`` challenge переводится в consumed;
     - иначе — 400 (нет основания для сравнения).
-- ``chastity_closed`` — LLM оценивает, закрыт ли замок/устройство на фото.
+- ``chastity_closed`` — только LLM-vision (OCR не применим).
 
 Вердикт LLM — вспомогательное доказательство; авторитетное завершение — HMAC.
 """
@@ -22,7 +27,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -38,12 +43,14 @@ from app.llm.pipeline.media_verify import (
     find_active_challenge,
     verify_media_with_llm,
 )
+from app.media.ocr_seals import extract_seal_tag_from_photo
 from app.models.media import MediaAsset, MediaVerificationResult, VerificationChallenge
 from app.models.user import User
 from app.templates_setup import templates
 
 page_router = APIRouter(tags=["media-verify"])
 json_router = APIRouter(prefix="/api/v2/media", tags=["media-verify"])
+ocr_router = APIRouter(tags=["media-verify"])
 
 
 class VerifyRequest(BaseModel):
@@ -64,6 +71,7 @@ def _serialize_result(r: MediaVerificationResult) -> dict:
         "llm_model": r.llm_model,
         "consumed_challenge_id": str(r.consumed_challenge_id) if r.consumed_challenge_id else None,
         "created_at": r.created_at.isoformat() if r.created_at else None,
+        "method": getattr(r, "method", None) or "llm",
     }
 
 
@@ -75,20 +83,32 @@ async def _run_verification(
     expected_code: str | None,
     auto_consume: bool,
     locale: str,
-) -> tuple[MediaVerificationResult, VerificationChallenge | None]:
-    """Run LLM verification, optionally consuming an active challenge."""
+) -> tuple[MediaVerificationResult, VerificationChallenge | None, dict | None]:
+    """Run verification (OCR-first for code_match, then LLM-vision).
+
+    Returns (result_row, consumed_challenge_or_None, ocr_info_or_None).
+    """
     from app.consent import require_consent
 
     await require_consent(db, user.id, "media_verification")
     if verification_type not in VALID_TYPES:
         raise HTTPException(400, f"Unsupported verification_type: {verification_type}")
 
-    llm_config = await get_active_llm_config(db, user.id)
-    if llm_config is None:
-        raise HTTPException(409, "No active LLM provider config — set one up in LLM Settings")
+    ocr_info: dict | None = None
+
+    # ── OCR-first for code_match (ADR-181) ──
+    if verification_type == "code_match":
+        ocr_info = _try_ocr_media(media)
+        if ocr_info and ocr_info.get("confidence", 0) >= 0.90:
+            # OCR high-confidence: use directly, no LLM call needed
+            return _build_ocr_result(db, user, media, ocr_info, expected_code, auto_consume, locale)
 
     challenge = None
     resolved_expected = expected_code
+    # ── LLM fallback ──
+    llm_config = await get_active_llm_config(db, user.id)
+    if llm_config is None:
+        raise HTTPException(409, "No active LLM provider config — set one up in LLM Settings")
     if verification_type == "code_match" and not resolved_expected:
         # Try to bind an active challenge for the media owner (if any).
         if media.owner_ref_id is not None:
@@ -108,7 +128,9 @@ async def _run_verification(
         expected_code=resolved_expected,
         locale=locale,
         challenge=challenge,
+        ocr_info=ocr_info,
     )
+    result.method = "llm"
 
     consumed = None
     if challenge is not None and auto_consume and result.verdict == "match":
@@ -122,13 +144,72 @@ async def _run_verification(
     # get_db() auto-commits after the endpoint (audit P1-5).
     await db.flush()
     await db.refresh(result)
-    return result, consumed
+    return result, consumed, ocr_info
 
 
 def _media_bind_label(media: MediaAsset) -> str:
     if media.owner_ref_id:
         return f"{media.owner_type}:{media.owner_ref_id}"
     return media.owner_type or "general"
+
+
+def _try_ocr_media(media: MediaAsset) -> dict | None:
+    """Attempt OCR on a media asset's file. Returns None if file missing."""
+    from pathlib import Path
+
+    from app.config import settings
+
+    if not media.file_path or not media.file_path.startswith("/uploads/"):
+        return None
+    rel = media.file_path[len("/uploads/") :]
+    candidate = (Path(settings.upload_dir).resolve() / rel).resolve()
+    if not str(candidate).startswith(str(Path(settings.upload_dir).resolve()) + "/"):
+        return None
+    if not candidate.is_file():
+        return None
+    try:
+        data = candidate.read_bytes()
+        return extract_seal_tag_from_photo(data)
+    except Exception:
+        return None
+
+
+async def _build_ocr_result(
+    db: AsyncSession,
+    user: User,
+    media: MediaAsset,
+    ocr_info: dict,
+    expected_code: str | None,
+    auto_consume: bool,
+    locale: str,
+) -> tuple[MediaVerificationResult, object | None, dict | None]:
+    """Build a MediaVerificationResult from high-confidence OCR."""
+    from app.services.media import compute_code_hmac
+
+    is_match = ocr_info.get("is_match", False)
+    confidence = int(ocr_info.get("confidence", 0) * 100)
+    extracted = ocr_info.get("extracted_tag")
+    reasoning = ocr_info.get("notes", f"OCR extracted: {extracted or 'none'}")
+
+    verdict = "match" if is_match else ("unclear" if not extracted else "mismatch")
+
+    expected_hmac = compute_code_hmac(expected_code) if expected_code else None
+
+    row = MediaVerificationResult(
+        owner_id=user.id,
+        media_id=media.id,
+        verification_type="code_match",
+        expected_code_hmac=expected_hmac,
+        verdict=verdict,
+        confidence=confidence,
+        reasoning=reasoning[:2000] or None,
+        llm_model="ocr:pytesseract",
+    )
+    db.add(row)
+    await db.flush()
+    row.method = "ocr"
+    consumed = None  # OCR doesn't auto-consume challenges yet
+    return row, consumed, ocr_info
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +232,7 @@ async def verify_media_json(
     if media.state != "ready":
         raise HTTPException(409, "Only finalized (ready) media can be verified")
 
-    result_row, consumed = await _run_verification(
+    result_row, consumed, _ocr = await _run_verification(
         db,
         user,
         media,
@@ -276,7 +357,7 @@ async def verify_page_post(
     if media.state != "ready":
         raise HTTPException(409, "Only finalized (ready) media can be verified")
 
-    result_row, consumed = await _run_verification(
+    result_row, consumed, _ocr = await _run_verification(
         db,
         user,
         media,
@@ -306,5 +387,63 @@ async def verify_page_post(
             "history": history,
             "has_llm_config": llm_config is not None,
             "result": data,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# OCR extract endpoints (ADR-181)
+# ---------------------------------------------------------------------------
+
+
+@ocr_router.post("/api/v2/media/ocr-extract")
+async def ocr_extract_endpoint(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+):
+    """Extract seal tag / text from a photo via local OCR (no LLM)."""
+    photo_bytes = await file.read()
+    result = extract_seal_tag_from_photo(photo_bytes)
+    return {"status": "success", **result}
+
+
+@page_router.post("/llm/verify/ocr")
+async def ocr_verify_form(
+    request: Request,
+    photo: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """OCR form: загрузить фото → извлечь текст через OCR."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    photo_bytes = await photo.read()
+    ocr_result = extract_seal_tag_from_photo(photo_bytes)
+
+    media_list, history = await _page_data(db, user)
+    llm_config = await get_active_llm_config(db, user.id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="media_verify.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "media_list": media_list,
+            "history": history,
+            "has_llm_config": llm_config is not None,
+            "ocr_result": {
+                "extracted_tag": ocr_result.get("extracted_tag"),
+                "confidence": int(ocr_result.get("confidence", 0) * 100),
+                "is_match": ocr_result.get("is_match", False),
+                "low_confidence": ocr_result.get("low_confidence", True),
+                "raw_ocr_snippet": ocr_result.get("raw_ocr_snippet", ""),
+                "notes": ocr_result.get("notes", ""),
+            },
         },
     )
