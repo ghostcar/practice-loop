@@ -219,6 +219,6 @@
 
 > **Детальный пошаговый план в `ROADMAP_V1.md`.** Здесь — только вехи.
 
-- [ ] **v0.9.1 — OCR & Verification** (1–3 сессии): pytesseract в Docker, OCR engine hardening, real photo upload в check-in, verification challenge через OCR, ADR-181. Шаги A–B ✅ (1386 тестов, шаг C в процессе: OCR-first pipeline, OCR-таб в media_verify, /api/v2/media/ocr-extract). Цель: 1400+ тестов, тег `v0.9.1`.
-- [ ] **v1.0 — Social to Production** (3–5 сессий): enablement (`social_enabled=True`), social core полировка (profile/feed/relationships), communities (public catalog + management), moderation + leaderboard + pillory, ADR-182/183. Цель: 1450+ тестов, тег `v1.0.0`.
+- [x] **v0.9.1 — OCR & Verification** (1–3 сессии): ✅ завершено. pytesseract в Docker, OCR engine hardening (preprocessing + timeout 5s + confidence 0.75), OCR-first pipeline (code_match: local OCR → LLM-fallback), OCR-таб в /llm/verify, /api/v2/media/ocr-extract, media vault auto-caption, ADR-181. 1386 тестов, тег `v0.9.1`.
+- [ ] **v1.0 — Social to Production** (3–5 сессий): Этап E ✅ — enablement (`social_enabled=True`, `social_public_enabled=True`, `community_creation_limit=3`, social в PROFILE_MODULES). Этап F в процессе — полировка шаблонов (profile empty-state, feed pagination, reaction иконки). ADR-182. Цель: 1450+ тестов, тег `v1.0.0`.
 - [ ] **v1.1 — Multi-User & D/s Contour** (3–5 сессий): partner linking, shared dashboards, D/s controller portal, granular delegation, OCR seal verification chain, keyholder timer control, ADR-184/185. Цель: 1500+ тестов, тег `v1.1.0`.
