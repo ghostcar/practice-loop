@@ -41,7 +41,7 @@
 | # | Долг | Приоритет | Evidence |
 |---|---|---|---|
 | C1 | 120 файлов импортируют User, 41 activity_log, 29 care — прямой ORM между доменами | P2 | grep `from app.models.` |
-| C2 | Бизнес-логика в роутерах: dashboard 223✅, care 478✅, medication 536✅, health 385✅, journal 313✅, entities 246✅, training 299✅, sessions 371✅, insights 335✅, tasks 229✅, ds 297✅, diets 386✅, prompt_templates 307✅ | Partial | care/med/health/journal/entities/training/dashboard/insights/sessions/tasks/ds/diets/prompt_templates вынесены в services (ADR-161..173) |
+| C2 | Бизнес-логика в роутерах: dashboard 223✅, care 478✅, medication 536✅, health 385✅, journal 313✅, entities 246✅, training 299✅, sessions 371✅, insights 335✅, tasks 229✅, ds 297✅, diets 386✅, prompt_templates 307✅, import_data 148✅ | Partial | care/med/health/journal/entities/training/dashboard/insights/sessions/tasks/ds/diets/prompt_templates/import_data вынесены в services (ADR-161..174) |
 | C3 | Telegram bot 1811 строк — логика в хендлерах | P1 | `app/telegram/bot.py` |
 | C4 | 3 scheduler-системы (services/reminders/training) без единой job-модели | P2 | app/services, app/reminders, app/training |
 | C5 | Дублирование owner-checks и timezone-логики | P2 | повсеместно |

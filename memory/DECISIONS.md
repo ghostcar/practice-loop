@@ -1423,3 +1423,4 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 - **Коммит:** (pending)
 | ADR-172 | Service layer extraction: diets.py → diets_service.py (529→386 thin routes, 422 service) | thin routes | 2026-08-25 | 1fc7b628 | accepted |
 | ADR-173 | Service layer extraction: prompt_templates.py → prompt_templates_service.py (505→307 thin routes, 350 service) | thin routes | 2026-08-25 | 085e9a85 | accepted |
+| ADR-174 | Service layer extraction: import_data.py → import_data_service.py (493→148 thin routes, 422 service) | thin routes | 2026-08-25 | 8b5c3953 | accepted |
