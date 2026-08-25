@@ -143,6 +143,27 @@ async def media_vault_upload(
         caption=(caption or "").strip()[:500] or None,
     )
     db.add(asset)
+
+    # OCR extraction (ADR-181): extract text/tag from uploaded photo (§C.4)
+    if asset.mime_type and asset.mime_type.startswith("image/"):
+        try:
+            from pathlib import Path
+
+            from app.config import settings
+            from app.media.ocr_seals import extract_seal_tag_from_photo
+
+            fp = asset.file_path
+            if fp and fp.startswith("/uploads/"):
+                rel = fp[len("/uploads/") :]
+                disk = (Path(settings.upload_dir).resolve() / rel).resolve()
+                if str(disk).startswith(str(Path(settings.upload_dir).resolve()) + "/") and disk.is_file():
+                    ocr_result = extract_seal_tag_from_photo(disk.read_bytes())
+                    tag = ocr_result.get("extracted_tag")
+                    if tag and not asset.caption:
+                        asset.caption = f"OCR: {tag}"[:500]
+        except Exception:
+            pass  # OCR is best-effort, never fail upload
+
     await db.flush()
     return RedirectResponse(url="/media", status_code=303)
 
