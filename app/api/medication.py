@@ -73,11 +73,19 @@ async def create_medication(
 ):
     try:
         await svc.create_medication(
-            db, user_id=user.id, name=name, kind=kind,
-            active_ingredient=active_ingredient, form=form, strength=strength,
-            manufacturer=manufacturer, storage_conditions=storage_conditions,
-            prescription_required=prescription_required, unit=unit,
-            instructions=instructions, notes=notes,
+            db,
+            user_id=user.id,
+            name=name,
+            kind=kind,
+            active_ingredient=active_ingredient,
+            form=form,
+            strength=strength,
+            manufacturer=manufacturer,
+            storage_conditions=storage_conditions,
+            prescription_required=prescription_required,
+            unit=unit,
+            instructions=instructions,
+            notes=notes,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -105,11 +113,21 @@ async def update_medication(
 ):
     try:
         await svc.update_medication(
-            db, user_id=user.id, medication_id=medication_id, name=name, kind=kind,
-            active_ingredient=active_ingredient, form=form, strength=strength,
-            manufacturer=manufacturer, storage_conditions=storage_conditions,
-            prescription_required=prescription_required, unit=unit,
-            instructions=instructions, notes=notes, is_active=is_active,
+            db,
+            user_id=user.id,
+            medication_id=medication_id,
+            name=name,
+            kind=kind,
+            active_ingredient=active_ingredient,
+            form=form,
+            strength=strength,
+            manufacturer=manufacturer,
+            storage_conditions=storage_conditions,
+            prescription_required=prescription_required,
+            unit=unit,
+            instructions=instructions,
+            notes=notes,
+            is_active=is_active,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -171,10 +189,16 @@ async def add_stock(
 ):
     try:
         await svc.create_stock(
-            db, user_id=user.id, medication_id=medication_id,
-            quantity=quantity, unit=unit, kit_id=kit_id,
-            lot_number=lot_number, expiry_date=expiry_date,
-            low_stock_threshold=low_stock_threshold, notes=notes,
+            db,
+            user_id=user.id,
+            medication_id=medication_id,
+            quantity=quantity,
+            unit=unit,
+            kit_id=kit_id,
+            lot_number=lot_number,
+            expiry_date=expiry_date,
+            low_stock_threshold=low_stock_threshold,
+            notes=notes,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -200,11 +224,18 @@ async def add_schedule(
 ):
     try:
         await svc.create_schedule(
-            db, user_id=user.id, medication_id=medication_id,
-            dose_quantity=dose_quantity, dose_unit=dose_unit,
-            frequency_type=frequency_type, times_per_day=times_per_day,
-            times_of_day=times_of_day, interval_hours=interval_hours,
-            days_of_week=days_of_week, start_date=start_date, end_date=end_date,
+            db,
+            user_id=user.id,
+            medication_id=medication_id,
+            dose_quantity=dose_quantity,
+            dose_unit=dose_unit,
+            frequency_type=frequency_type,
+            times_per_day=times_per_day,
+            times_of_day=times_of_day,
+            interval_hours=interval_hours,
+            days_of_week=days_of_week,
+            start_date=start_date,
+            end_date=end_date,
             instructions=instructions,
         )
     except ValueError as e:
@@ -263,9 +294,15 @@ async def record_intake_form(
             qty = None
     try:
         await svc.record_intake(
-            db, user_id=user.id, medication_id=medication_id,
-            schedule_id=sched_id, status=status, taken_at=taken_at,
-            quantity_taken=qty, notes=notes, gamification=True,
+            db,
+            user_id=user.id,
+            medication_id=medication_id,
+            schedule_id=sched_id,
+            status=status,
+            taken_at=taken_at,
+            quantity_taken=qty,
+            notes=notes,
+            gamification=True,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -507,10 +544,15 @@ async def json_record_intake(
 ):
     try:
         it = await svc.record_intake(
-            db, user_id=user.id, medication_id=medication_id,
-            schedule_id=body.schedule_id, status=body.status,
-            taken_at=body.taken_at, quantity_taken=body.quantity_taken,
-            notes=body.notes, gamification=True,
+            db,
+            user_id=user.id,
+            medication_id=medication_id,
+            schedule_id=body.schedule_id,
+            status=body.status,
+            taken_at=body.taken_at,
+            quantity_taken=body.quantity_taken,
+            notes=body.notes,
+            gamification=True,
         )
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None

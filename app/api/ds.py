@@ -42,8 +42,13 @@ async def keyholder_dashboard_page(
         request=request,
         name="ds_keyholder.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale,
-            "theme": theme, "active_nav": "ds", **ctx,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds",
+            **ctx,
         },
     )
 
@@ -64,8 +69,13 @@ async def ds_command_center_portal_page(
         request=request,
         name="ds_portal.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale,
-            "theme": theme, "active_nav": "ds_portal", **ctx,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds_portal",
+            **ctx,
         },
     )
 
@@ -113,8 +123,12 @@ async def assign_duty_endpoint(
 ):
     try:
         await svc.assign_duty(
-            db, user.id, managed_sub_id=managed_sub_id, title=title,
-            description=description, reward_penalty_xp=reward_penalty_xp,
+            db,
+            user.id,
+            managed_sub_id=managed_sub_id,
+            title=title,
+            description=description,
+            reward_penalty_xp=reward_penalty_xp,
         )
     except NotFoundError:
         raise HTTPException(404, "Submissive profile not found") from None
@@ -181,8 +195,13 @@ async def my_top_delegation_page(
         request=request,
         name="ds_my_top.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale,
-            "theme": theme, "active_nav": "ds", **ctx,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds",
+            **ctx,
         },
     )
 
@@ -263,8 +282,13 @@ async def wear_checkins_page(
         request=request,
         name="ds_checkins.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale,
-            "theme": theme, "active_nav": "ds", **ctx,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "ds",
+            **ctx,
         },
     )
 
@@ -283,8 +307,13 @@ async def log_wear_checkin_endpoint(
     if photo and photo.filename:
         photo_bytes = await photo.read()
     await svc.log_wear_checkin(
-        db, user.id, managed_sub_id=managed_sub_id, tag_number=tag_number,
-        comfort_score=comfort_score, notes=notes, photo_bytes=photo_bytes,
+        db,
+        user.id,
+        managed_sub_id=managed_sub_id,
+        tag_number=tag_number,
+        comfort_score=comfort_score,
+        notes=notes,
+        photo_bytes=photo_bytes,
     )
     return RedirectResponse(url="/ds/checkins", status_code=303)
 

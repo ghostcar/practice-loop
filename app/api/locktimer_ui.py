@@ -354,23 +354,25 @@ async def locktimer_session_detail(
         from app.models.protocol import ProtocolRun
 
         pr_result = await db.execute(
-            select(ProtocolRun).where(
+            select(ProtocolRun)
+            .where(
                 ProtocolRun.lock_session_id == session_id,
-            ).order_by(ProtocolRun.created_at.desc())
+            )
+            .order_by(ProtocolRun.created_at.desc())
         )
         for pr in pr_result.scalars().all():
-            protocol_runs.append({
-                "id": str(pr.id),
-                "title": (
-                    pr.frozen_steps_snapshot[0].get("title", "Untitled")
-                    if pr.frozen_steps_snapshot
-                    else "Untitled"
-                ),
-                "status": pr.status,
-                "total_steps": len(pr.frozen_steps_snapshot or []),
-                "anchor_time": pr.anchor_time.isoformat() if pr.anchor_time else None,
-                "created_at": pr.created_at.isoformat() if pr.created_at else None,
-            })
+            protocol_runs.append(
+                {
+                    "id": str(pr.id),
+                    "title": (
+                        pr.frozen_steps_snapshot[0].get("title", "Untitled") if pr.frozen_steps_snapshot else "Untitled"
+                    ),
+                    "status": pr.status,
+                    "total_steps": len(pr.frozen_steps_snapshot or []),
+                    "anchor_time": pr.anchor_time.isoformat() if pr.anchor_time else None,
+                    "created_at": pr.created_at.isoformat() if pr.created_at else None,
+                }
+            )
     except Exception:
         pass
 

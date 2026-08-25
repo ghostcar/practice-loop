@@ -206,9 +206,7 @@ async def get_med(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID
 
 
 async def get_kit(db: AsyncSession, user_id: uuid.UUID, kit_id: uuid.UUID) -> MedKit:
-    k = (
-        await db.execute(select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user_id))
-    ).scalar_one_or_none()
+    k = (await db.execute(select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user_id))).scalar_one_or_none()
     if k is None:
         raise NotFoundError("Kit not found")
     return k
@@ -804,10 +802,33 @@ async def get_json_export(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 _MEDICAL_INVENTORY_CATEGORIES = {"hygiene_supply", "consumable", "recovery_item", "other"}
 _MEDICAL_KEYWORDS = (
-    "мазь", "крем", "таблетк", "лекарств", "витамин", "бинт", "пластыр",
-    "йод", "зеленк", "спрей", "капл", "гель", "раствор", "аптечк",
-    "ointment", "cream", "tablet", "pill", "medicine", "medication",
-    "vitamin", "bandage", "plaster", "iodine", "spray", "drops", "gel",
+    "мазь",
+    "крем",
+    "таблетк",
+    "лекарств",
+    "витамин",
+    "бинт",
+    "пластыр",
+    "йод",
+    "зеленк",
+    "спрей",
+    "капл",
+    "гель",
+    "раствор",
+    "аптечк",
+    "ointment",
+    "cream",
+    "tablet",
+    "pill",
+    "medicine",
+    "medication",
+    "vitamin",
+    "bandage",
+    "plaster",
+    "iodine",
+    "spray",
+    "drops",
+    "gel",
 )
 
 

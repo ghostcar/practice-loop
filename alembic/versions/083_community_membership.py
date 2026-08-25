@@ -32,10 +32,7 @@ MISSING_TABLES = [
 
 def _has_column(conn, table: str, column: str) -> bool:
     res = conn.execute(
-        sa.text(
-            "SELECT 1 FROM information_schema.columns "
-            "WHERE table_name = :t AND column_name = :c"
-        ),
+        sa.text("SELECT 1 FROM information_schema.columns WHERE table_name = :t AND column_name = :c"),
         {"t": table, "c": column},
     )
     return res.scalar_one_or_none() is not None

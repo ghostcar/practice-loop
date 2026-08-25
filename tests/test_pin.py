@@ -85,14 +85,10 @@ class TestPinSetVerify:
         )
         assert resp.status_code == 200
         # Old PIN fails
-        resp = await async_client.post(
-            "/security/verify-pin", data={"pin_code": "1111"}
-        )
+        resp = await async_client.post("/security/verify-pin", data={"pin_code": "1111"})
         assert resp.status_code == 403
         # New PIN works
-        resp = await async_client.post(
-            "/security/verify-pin", data={"pin_code": "2222"}
-        )
+        resp = await async_client.post("/security/verify-pin", data={"pin_code": "2222"})
         assert resp.status_code == 200
 
     async def test_clear_pin_cycle(self, auth_headers: dict, async_client: AsyncClient):
@@ -101,14 +97,10 @@ class TestPinSetVerify:
             "/security/set-pin",
             data={"pin_code": "3333", "confirm_pin": "3333"},
         )
-        resp = await async_client.post(
-            "/security/clear-pin", data={"current_pin": "3333"}
-        )
+        resp = await async_client.post("/security/clear-pin", data={"current_pin": "3333"})
         assert resp.status_code == 200
         # After clear, verify should fail
-        resp = await async_client.post(
-            "/security/verify-pin", data={"pin_code": "3333"}
-        )
+        resp = await async_client.post("/security/verify-pin", data={"pin_code": "3333"})
         assert resp.status_code == 400
 
     async def test_pin_status_flow(self, auth_headers: dict, async_client: AsyncClient):

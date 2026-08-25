@@ -49,6 +49,7 @@ def _wants_htmx(request: Request) -> bool:
 def _htmx_redirect(path: str) -> JSONResponse:
     """Redirect HTMX client to a new URL (HX-Redirect header)."""
     from fastapi.responses import Response
+
     resp = Response(status_code=200)
     resp.headers["HX-Redirect"] = path
     return resp
@@ -92,9 +93,7 @@ def _validate_pin_format(pin: str) -> str:
     if not pin.isdigit():
         raise HTTPException(400, "PIN must consist of digits only.")
     if not (PIN_MIN_LENGTH <= len(pin) <= PIN_MAX_LENGTH):
-        raise HTTPException(
-            400, f"PIN must be {PIN_MIN_LENGTH}–{PIN_MAX_LENGTH} digits."
-        )
+        raise HTTPException(400, f"PIN must be {PIN_MIN_LENGTH}–{PIN_MAX_LENGTH} digits.")
     return pin
 
 

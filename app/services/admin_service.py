@@ -32,7 +32,10 @@ async def _managed_user(db: AsyncSession, user_id: uuid.UUID) -> User:
 
 
 async def set_user_role(
-    db: AsyncSession, user_id: uuid.UUID, role: str, admin_id: uuid.UUID,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    role: str,
+    admin_id: uuid.UUID,
 ) -> None:
     if role not in USER_ROLES:
         raise ValueError("Invalid role")
@@ -45,7 +48,10 @@ async def set_user_role(
 
 
 async def set_user_disabled(
-    db: AsyncSession, user_id: uuid.UUID, disabled: bool, admin_id: uuid.UUID,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    disabled: bool,
+    admin_id: uuid.UUID,
 ) -> None:
     target = await _managed_user(db, user_id)
     if target.id == admin_id and disabled:
@@ -58,8 +64,11 @@ async def set_user_disabled(
 
 
 async def reset_user_password(
-    db: AsyncSession, user_id: uuid.UUID, new_password: str,
-    confirm_password: str, admin_id: uuid.UUID,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    new_password: str,
+    confirm_password: str,
+    admin_id: uuid.UUID,
 ) -> None:
     target = await _managed_user(db, user_id)
     if target.id == admin_id:
@@ -76,20 +85,26 @@ async def reset_user_password(
 
 async def get_schema_builder_context(db: AsyncSession) -> dict:
     from app.models.entity import Entity
+
     entities = (await db.execute(select(Entity))).scalars().all()
     return {"entities": entities}
 
 
 async def get_catalog_editor_context(db: AsyncSession) -> dict:
     from app.models.entity import Entity
+
     entities = (await db.execute(select(Entity).order_by(Entity.created_at.desc()))).scalars().all()
     return {"items": entities}
 
 
 async def execute_ai_generator(
-    db: AsyncSession, admin_id: uuid.UUID,
-    *, mode: str = "expanded", explicit_level: int = 4,
-    remove_filters: bool = False, custom_directives: str = "",
+    db: AsyncSession,
+    admin_id: uuid.UUID,
+    *,
+    mode: str = "expanded",
+    explicit_level: int = 4,
+    remove_filters: bool = False,
+    custom_directives: str = "",
 ) -> list:
     import logging
 
@@ -104,13 +119,18 @@ async def execute_ai_generator(
     if not llm_config:
         return []
     sys_prompt, usr_prompt = build_catalog_generation_prompt(
-        mode=mode, explicit_level=explicit_level,
-        custom_directives=custom_directives, remove_filters=remove_filters,
+        mode=mode,
+        explicit_level=explicit_level,
+        custom_directives=custom_directives,
+        remove_filters=remove_filters,
     )
     try:
         return await generate_catalog_proposals(
-            db=db, user_id=admin_id, llm_config=llm_config,
-            system_prompt=sys_prompt, user_prompt=usr_prompt,
+            db=db,
+            user_id=admin_id,
+            llm_config=llm_config,
+            system_prompt=sys_prompt,
+            user_prompt=usr_prompt,
         )
     except Exception as e:
         logger.error(f"AI Catalog Generation failed: {e}")
@@ -122,9 +142,7 @@ async def get_prompts_hub_context(db: AsyncSession) -> dict:
     from app.prompt_library import seed_prompt_library
 
     await seed_prompt_library(db)
-    items = (await db.execute(
-        select(PromptLibraryItem).order_by(PromptLibraryItem.key)
-    )).scalars().all()
+    items = (await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))).scalars().all()
     system_prompts = [i for i in items if i.library_type == "system"]
     user_prompts = [i for i in items if i.library_type == "user"]
     return {"system_prompts": system_prompts, "user_prompts": user_prompts}
@@ -133,9 +151,7 @@ async def get_prompts_hub_context(db: AsyncSession) -> dict:
 async def update_prompt_item(db: AsyncSession, prompt_id: uuid.UUID, content: str) -> None:
     from app.models.prompt_library import PromptLibraryItem
 
-    item = (await db.execute(
-        select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id)
-    )).scalar_one_or_none()
+    item = (await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))).scalar_one_or_none()
     if not item:
         raise ValueError("Prompt item not found")
     item.template_content = content
@@ -148,9 +164,7 @@ async def reset_prompt_item(db: AsyncSession, prompt_id: uuid.UUID) -> None:
     from app.models.prompt_library import PromptLibraryItem
     from app.prompt_library import DEFAULT_PROMPT_REGISTRY
 
-    item = (await db.execute(
-        select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id)
-    )).scalar_one_or_none()
+    item = (await db.execute(select(PromptLibraryItem).where(PromptLibraryItem.id == prompt_id))).scalar_one_or_none()
     if not item:
         raise ValueError("Prompt item not found")
     for reg in DEFAULT_PROMPT_REGISTRY:

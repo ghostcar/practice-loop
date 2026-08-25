@@ -52,9 +52,7 @@ async def complete_onboarding(
     raw = sanitize_prefs(user.prefs) if hasattr(user, "prefs") else {}
     raw["onboarding_completed"] = True
     if enabled_modules is not None:
-        raw["enabled_modules"] = [
-            name for name in PROFILE_MODULES if name in enabled_modules
-        ]
+        raw["enabled_modules"] = [name for name in PROFILE_MODULES if name in enabled_modules]
     user.prefs = raw
     db.add(user)
     await db.flush()

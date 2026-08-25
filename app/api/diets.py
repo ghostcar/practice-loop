@@ -161,6 +161,7 @@ async def update_diet_api(
         return await update_diet(db, user.id, diet_id, **data.model_dump(exclude_unset=True))
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet not found") from None
 
 
@@ -174,6 +175,7 @@ async def delete_diet_api(
         await delete_diet(db, user.id, diet_id)
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet not found") from None
     return {"status": "deleted"}
 
@@ -192,6 +194,7 @@ async def add_item_api(
         return await add_diet_item(db, user.id, diet_id, **data.model_dump())
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet not found") from None
 
 
@@ -207,6 +210,7 @@ async def update_item_api(
         return await update_diet_item(db, user.id, item_id, **data.model_dump(exclude_unset=True))
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet item not found") from None
 
 
@@ -221,6 +225,7 @@ async def delete_item_api(
         await delete_diet_item(db, user.id, item_id)
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet item not found") from None
     return {"status": "deleted"}
 
@@ -236,6 +241,7 @@ async def reorder_items_api(
         await reorder_diet_items(db, user.id, diet_id, payload.ids)
     except ValueError as e:
         from fastapi import HTTPException
+
         code = 400 if "must match" in str(e) else 404
         raise HTTPException(code, str(e)) from None
     return {"status": "ok"}
@@ -273,6 +279,7 @@ async def create_consumption_api(
         )
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet not found") from None
 
 
@@ -286,6 +293,7 @@ async def delete_consumption_api(
         await delete_consumption(db, user.id, consumption_id)
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Consumption not found") from None
     return {"status": "deleted"}
 
@@ -303,11 +311,16 @@ async def generate_diet_plan_api(
     locale = detect_locale(request, user.locale)
     try:
         return await execute_diet_generation(
-            db, user.id, locale,
-            direction=data.direction, goal=data.goal, preferences=data.preferences,
+            db,
+            user.id,
+            locale,
+            direction=data.direction,
+            goal=data.goal,
+            preferences=data.preferences,
         )
     except ValueError as e:
         from fastapi import HTTPException
+
         if "LLM provider" in str(e):
             raise HTTPException(400, str(e)) from None
         raise HTTPException(422, str(e)) from None
@@ -329,6 +342,7 @@ async def evaluate_diet_plan_api(
         return await execute_diet_evaluation(db, user.id, diet_id, locale, days=data.days)
     except ValueError as e:
         from fastapi import HTTPException
+
         if "Diet not found" in str(e):
             raise HTTPException(404, str(e)) from None
         if "LLM provider" in str(e):
@@ -349,6 +363,7 @@ async def list_evaluations_api(
         return await list_evaluations(db, user.id, diet_id)
     except ValueError:
         from fastapi import HTTPException
+
         raise HTTPException(404, "Diet not found") from None
 
 
@@ -367,6 +382,7 @@ async def create_synergy_api(
         return await execute_synergy_analysis(db, user.id, locale, days=data.days)
     except ValueError as e:
         from fastapi import HTTPException
+
         if "LLM provider" in str(e):
             raise HTTPException(400, str(e)) from None
         raise HTTPException(422, str(e)) from None

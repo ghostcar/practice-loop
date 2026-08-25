@@ -52,7 +52,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["program_id"], ["adaptive_programs.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_adaptive_program_steps_program_id"), "adaptive_program_steps", ["program_id"], unique=False)
+    op.create_index(
+        op.f("ix_adaptive_program_steps_program_id"), "adaptive_program_steps", ["program_id"], unique=False
+    )
 
 
 def downgrade() -> None:

@@ -159,12 +159,8 @@ async def test_catalog_modal_renders_inventory_and_care_selectors(
         from app.models.care import CareProduct
         from app.models.life import InventoryItem
 
-        db_session.add(
-            CareProduct(user_id=test_user.id, name="Бальзам", category="care")
-        )
-        db_session.add(
-            InventoryItem(user_id=test_user.id, name="Кнут", category="impact_tool")
-        )
+        db_session.add(CareProduct(user_id=test_user.id, name="Бальзам", category="care"))
+        db_session.add(InventoryItem(user_id=test_user.id, name="Кнут", category="impact_tool"))
         await db_session.flush()
     except Exception:
         pytest.skip("care/inventory models unavailable")
@@ -178,5 +174,5 @@ async def test_catalog_modal_renders_inventory_and_care_selectors(
     html = resp.text
     assert 'class="pd-inv-cb' in html
     assert 'class="pd-care-cb' in html
-    assert '>Кнут</span>' in html
-    assert 'Бальзам' in html
+    assert ">Кнут</span>" in html
+    assert "Бальзам" in html

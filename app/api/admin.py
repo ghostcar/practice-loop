@@ -39,10 +39,18 @@ async def admin_page(request: Request, user: User = Depends(require_admin)):
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
-    return templates.TemplateResponse(request=request, name="admin.html", context={
-        "request": request, "t": t, "user": user, "locale": locale,
-        "theme": theme, "active_nav": "admin",
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "admin",
+        },
+    )
 
 
 @router.post("/seed-entities")
@@ -66,20 +74,30 @@ async def seed_references_endpoint(user: User = Depends(require_admin), db: Asyn
 
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users_page(
-    request: Request, user: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    request: Request,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     ctx = await get_user_list_context(db)
-    return templates.TemplateResponse(request, "admin_users.html", {
-        "t": get_translations(detect_locale(request, user.locale)),
-        "theme": detect_theme(user.theme), "user": user, "nav_key": "admin",
-        **ctx,
-    })
+    return templates.TemplateResponse(
+        request,
+        "admin_users.html",
+        {
+            "t": get_translations(detect_locale(request, user.locale)),
+            "theme": detect_theme(user.theme),
+            "user": user,
+            "nav_key": "admin",
+            **ctx,
+        },
+    )
 
 
 @router.post("/users/{user_id}/role")
 async def admin_set_user_role(
-    user_id: uuid.UUID, role: str = Form(...),
-    admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    user_id: uuid.UUID,
+    role: str = Form(...),
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         await set_user_role(db, user_id, role, admin.id)
@@ -90,8 +108,10 @@ async def admin_set_user_role(
 
 @router.post("/users/{user_id}/disabled")
 async def admin_set_user_disabled(
-    user_id: uuid.UUID, disabled: bool = Form(...),
-    admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    user_id: uuid.UUID,
+    disabled: bool = Form(...),
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         await set_user_disabled(db, user_id, disabled, admin.id)
@@ -102,9 +122,11 @@ async def admin_set_user_disabled(
 
 @router.post("/users/{user_id}/password")
 async def admin_reset_user_password(
-    user_id: uuid.UUID, new_password: str = Form(...),
+    user_id: uuid.UUID,
+    new_password: str = Form(...),
     confirm_password: str = Form(...),
-    admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         await reset_user_password(db, user_id, new_password, confirm_password, admin.id)
@@ -115,76 +137,131 @@ async def admin_reset_user_password(
 
 @router.get("/schema-builder", response_class=HTMLResponse)
 async def admin_schema_builder(
-    request: Request, admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    request: Request,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     ctx = await get_schema_builder_context(db)
     locale = detect_locale(request, admin.locale)
-    return templates.TemplateResponse(request=request, name="admin_schema_builder.html", context={
-        "request": request, "t": get_translations(locale), "user": admin,
-        "locale": locale, "theme": detect_theme(admin.theme), "active_nav": "admin",
-        **ctx,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_schema_builder.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": admin,
+            "locale": locale,
+            "theme": detect_theme(admin.theme),
+            "active_nav": "admin",
+            **ctx,
+        },
+    )
 
 
 @router.get("/catalog-editor", response_class=HTMLResponse)
 async def admin_catalog_editor(
-    request: Request, admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    request: Request,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     ctx = await get_catalog_editor_context(db)
     locale = detect_locale(request, admin.locale)
-    return templates.TemplateResponse(request=request, name="admin_catalog_editor.html", context={
-        "request": request, "t": get_translations(locale), "user": admin,
-        "locale": locale, "theme": detect_theme(admin.theme), "active_nav": "admin",
-        **ctx,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_catalog_editor.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": admin,
+            "locale": locale,
+            "theme": detect_theme(admin.theme),
+            "active_nav": "admin",
+            **ctx,
+        },
+    )
 
 
 @router.get("/ai-generator", response_class=HTMLResponse)
 async def admin_ai_generator_page(request: Request, admin: User = Depends(require_admin)):
     locale = detect_locale(request, admin.locale)
-    return templates.TemplateResponse(request=request, name="admin_ai_generator.html", context={
-        "request": request, "t": get_translations(locale), "user": admin,
-        "locale": locale, "theme": detect_theme(admin.theme), "active_nav": "admin",
-        "generated_items": [],
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_ai_generator.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": admin,
+            "locale": locale,
+            "theme": detect_theme(admin.theme),
+            "active_nav": "admin",
+            "generated_items": [],
+        },
+    )
 
 
 @router.post("/ai-generator/generate", response_class=HTMLResponse)
 async def admin_ai_generator_execute(
-    request: Request, mode: str = Form(default="expanded"),
-    explicit_level: int = Form(default=4), remove_filters: bool = Form(default=False),
+    request: Request,
+    mode: str = Form(default="expanded"),
+    explicit_level: int = Form(default=4),
+    remove_filters: bool = Form(default=False),
     custom_directives: str = Form(default=""),
-    admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     generated_items = await execute_ai_generator(
-        db, admin.id, mode=mode, explicit_level=explicit_level,
-        remove_filters=remove_filters, custom_directives=custom_directives,
+        db,
+        admin.id,
+        mode=mode,
+        explicit_level=explicit_level,
+        remove_filters=remove_filters,
+        custom_directives=custom_directives,
     )
     locale = detect_locale(request, admin.locale)
-    return templates.TemplateResponse(request=request, name="admin_ai_generator.html", context={
-        "request": request, "t": get_translations(locale), "user": admin,
-        "locale": locale, "theme": detect_theme(admin.theme), "active_nav": "admin",
-        "generated_items": generated_items,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_ai_generator.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": admin,
+            "locale": locale,
+            "theme": detect_theme(admin.theme),
+            "active_nav": "admin",
+            "generated_items": generated_items,
+        },
+    )
 
 
 @router.get("/prompts", response_class=HTMLResponse)
 async def admin_prompts_hub(
-    request: Request, user: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    request: Request,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     ctx = await get_prompts_hub_context(db)
     locale = detect_locale(request, user.locale)
-    return templates.TemplateResponse(request=request, name="admin_prompts.html", context={
-        "request": request, "t": get_translations(locale), "user": user,
-        "locale": locale, "theme": detect_theme(user.theme), "active_nav": "admin",
-        **ctx,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_prompts.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": user,
+            "locale": locale,
+            "theme": detect_theme(user.theme),
+            "active_nav": "admin",
+            **ctx,
+        },
+    )
 
 
 @router.post("/prompts/{prompt_id}/update")
 async def update_prompt_item_route(
-    prompt_id: uuid.UUID, template_content: str = Form(...),
-    user: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    prompt_id: uuid.UUID,
+    template_content: str = Form(...),
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         await update_prompt_item(db, prompt_id, template_content)
@@ -195,7 +272,9 @@ async def update_prompt_item_route(
 
 @router.post("/prompts/{prompt_id}/reset")
 async def reset_prompt_item_route(
-    prompt_id: uuid.UUID, user: User = Depends(require_admin), db: AsyncSession = Depends(get_db),
+    prompt_id: uuid.UUID,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         await reset_prompt_item(db, prompt_id)

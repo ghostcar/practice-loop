@@ -109,9 +109,7 @@ def test_full_personal_loop(page) -> None:
     # Dashboard page script must actually run (regression: head-included
     # dashboard.js used to no-op before DOM parse — no Chart instances).
     page.wait_for_timeout(2_000)
-    chart_ok = page.evaluate(
-        "() => !!(window.Chart && Chart.getChart && Chart.getChart('activity-chart'))"
-    )
+    chart_ok = page.evaluate("() => !!(window.Chart && Chart.getChart && Chart.getChart('activity-chart'))")
     assert chart_ok, "activity-chart has no Chart instance — dashboard.js dead"
     # Telegram linking card present and clickable (restored block).
     tg_btn = page.locator("#tg-link-btn")

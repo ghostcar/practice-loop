@@ -138,9 +138,7 @@ async def resolve_catalog_item(
     return cid
 
 
-async def resolve_care_products(
-    db: AsyncSession, care_product_ids: str, user_id: uuid.UUID
-) -> list[str] | None:
+async def resolve_care_products(db: AsyncSession, care_product_ids: str, user_id: uuid.UUID) -> list[str] | None:
     if not care_product_ids.strip():
         return None
     from app.models.care import CareProduct
@@ -559,9 +557,9 @@ async def personalize_entity(
                 reps_dict["max"] = reps_max
 
     care_ids = [x.strip() for x in assigned_care_ids.split(",") if x.strip()] if assigned_care_ids else None
-    inventory_ids = [
-        x.strip() for x in assigned_inventory_ids.split(",") if x.strip()
-    ] if assigned_inventory_ids else None
+    inventory_ids = (
+        [x.strip() for x in assigned_inventory_ids.split(",") if x.strip()] if assigned_inventory_ids else None
+    )
     if inventory_ids:
         custom_params["inventory_ids"] = {
             "type": "inventory_selector",

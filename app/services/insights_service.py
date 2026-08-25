@@ -83,11 +83,11 @@ def finding_view(f: InsightFinding) -> dict:
 async def insights_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """Краткая сводка для дашборда: последний запуск + число находок."""
     run = (
-        (await db.execute(
-            select(InsightRun)
-            .where(InsightRun.user_id == user_id)
-            .order_by(InsightRun.created_at.desc())
-        ))
+        (
+            await db.execute(
+                select(InsightRun).where(InsightRun.user_id == user_id).order_by(InsightRun.created_at.desc())
+            )
+        )
         .scalars()
         .first()
     )
@@ -113,11 +113,11 @@ async def insights_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 async def get_insights_page_context(db: AsyncSession, user_id: uuid.UUID, run_id: uuid.UUID | None = None) -> dict:
     """Build insights page context: runs list + selected run."""
     runs = (
-        (await db.execute(
-            select(InsightRun)
-            .where(InsightRun.user_id == user_id)
-            .order_by(InsightRun.created_at.desc())
-        ))
+        (
+            await db.execute(
+                select(InsightRun).where(InsightRun.user_id == user_id).order_by(InsightRun.created_at.desc())
+            )
+        )
         .scalars()
         .all()
     )
@@ -268,23 +268,22 @@ async def get_correlation_matrix(db: AsyncSession, user_id: uuid.UUID, days: int
 
     # Health states
     h_stmt = (
-        select(HealthState)
-        .where(HealthState.user_id == user_id)
-        .order_by(HealthState.event_date.asc())
-        .limit(days)
+        select(HealthState).where(HealthState.user_id == user_id).order_by(HealthState.event_date.asc()).limit(days)
     )
     health_states = (await db.execute(h_stmt)).scalars().all()
 
     health_matrix = []
     for h in health_states:
-        health_matrix.append({
-            "date": h.event_date.isoformat(),
-            "mood": h.mood or 0,
-            "energy": h.energy or 0,
-            "sleep_hours": h.sleep_hours or 0,
-            "post_session_drop": bool(h.post_session_drop),
-            "hrt_taken": bool(h.hrt_taken),
-        })
+        health_matrix.append(
+            {
+                "date": h.event_date.isoformat(),
+                "mood": h.mood or 0,
+                "energy": h.energy or 0,
+                "sleep_hours": h.sleep_hours or 0,
+                "post_session_drop": bool(h.post_session_drop),
+                "hrt_taken": bool(h.hrt_taken),
+            }
+        )
 
     # Lock sessions
     locks_stmt = select(LockSession).where(LockSession.owner_id == user_id).limit(20)
@@ -295,13 +294,15 @@ async def get_correlation_matrix(db: AsyncSession, user_id: uuid.UUID, days: int
         dur_h = 0.0
         if lock_sess.started_at and lock_sess.ended_at:
             dur_h = round((lock_sess.ended_at - lock_sess.started_at).total_seconds() / 3600.0, 1)
-        lock_matrix.append({
-            "lock_id": str(lock_sess.id)[:8],
-            "status": lock_sess.status,
-            "duration_hours": dur_h,
-            "extensions_count": len(lock_sess.extension_history or []),
-            "health_paused": lock_sess.is_health_paused,
-        })
+        lock_matrix.append(
+            {
+                "lock_id": str(lock_sess.id)[:8],
+                "status": lock_sess.status,
+                "duration_hours": dur_h,
+                "extensions_count": len(lock_sess.extension_history or []),
+                "health_paused": lock_sess.is_health_paused,
+            }
+        )
 
     # Partner satisfaction
     partners_stmt = select(JournalPartner).where(JournalPartner.user_id == user_id)
@@ -313,11 +314,13 @@ async def get_correlation_matrix(db: AsyncSession, user_id: uuid.UUID, days: int
             JournalEntry.user_id == user_id, JournalEntry.partner_id == p.id
         )
         avg_sat = (await db.execute(entries_stmt)).scalar() or 0.0
-        partner_matrix.append({
-            "partner_name": p.name,
-            "roles": p.roles or [],
-            "avg_satisfaction": round(float(avg_sat), 2),
-        })
+        partner_matrix.append(
+            {
+                "partner_name": p.name,
+                "roles": p.roles or [],
+                "avg_satisfaction": round(float(avg_sat), 2),
+            }
+        )
 
     return {
         "days": days,

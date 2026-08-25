@@ -66,17 +66,26 @@ async def catalog_page(
     cats = cat_result.scalars().all()
 
     return templates.TemplateResponse(
-        request=request, name="catalog_items.html",
+        request=request,
+        name="catalog_items.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale,
-            "items": [{
-                "id": str(it.id), "name": it.name,
-                "description": it.description,
-                "category_id": str(it.category_id) if it.category_id else None,
-                "category_title": it.category_rel.title if it.category_rel else None,
-                "tags": it.tags or [], "domains": it.domains or [],
-                "is_system": it.owner_id is None,
-            } for it in items],
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "items": [
+                {
+                    "id": str(it.id),
+                    "name": it.name,
+                    "description": it.description,
+                    "category_id": str(it.category_id) if it.category_id else None,
+                    "category_title": it.category_rel.title if it.category_rel else None,
+                    "tags": it.tags or [],
+                    "domains": it.domains or [],
+                    "is_system": it.owner_id is None,
+                }
+                for it in items
+            ],
             "CATALOG_DOMAINS": CATALOG_DOMAINS,
             "selected_domain": domain,
             "categories": cats,
@@ -86,10 +95,14 @@ async def catalog_page(
 
 @router.post("/catalog/items")
 async def create_item(
-    request: Request, name: str = Form(...),
-    description: str = Form(default=""), category_id: str = Form(default=""),
-    tags: str = Form(default=""), domains: str = Form(default=""),
-    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(default=""),
+    category_id: str = Form(default=""),
+    tags: str = Form(default=""),
+    domains: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     name = name.strip()[:200]
     if not name:
@@ -106,11 +119,13 @@ async def create_item(
             raise HTTPException(400, "Category not found")
 
     item = ActivityCatalogItem(
-        name=name, description=(description or "").strip() or None,
+        name=name,
+        description=(description or "").strip() or None,
         category_id=cat_uuid,
         tags=[x.strip() for x in tags.split(",") if x.strip()] if tags.strip() else None,
         domains=validate_domains(domains),
-        owner_id=user.id, is_public=False,
+        owner_id=user.id,
+        is_public=False,
     )
     db.add(item)
     await db.flush()
@@ -119,14 +134,18 @@ async def create_item(
 
 @router.post("/catalog/items/{item_id}/delete")
 async def delete_item(
-    item_id: uuid.UUID, user: User = Depends(get_current_user),
+    item_id: uuid.UUID,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    item = (await db.execute(
-        select(ActivityCatalogItem).where(
-            ActivityCatalogItem.id == item_id, ActivityCatalogItem.owner_id == user.id,
+    item = (
+        await db.execute(
+            select(ActivityCatalogItem).where(
+                ActivityCatalogItem.id == item_id,
+                ActivityCatalogItem.owner_id == user.id,
+            )
         )
-    )).scalar_one_or_none()
+    ).scalar_one_or_none()
     if not item:
         raise HTTPException(404, "Item not found")
     await db.delete(item)
@@ -147,17 +166,26 @@ async def public_catalog_page(
         .order_by(ActivityCatalogItem.name.asc())
     )
     items = items_result.scalars().all()
-    return templates.TemplateResponse(request=request, name="catalog_public.html", context={
-        "request": request, "t": get_translations(locale), "user": user,
-        "locale": locale, "items": items, "active_nav": "catalog",
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="catalog_public.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": user,
+            "locale": locale,
+            "items": items,
+            "active_nav": "catalog",
+        },
+    )
 
 
 # JSON API
 @json_router.get("")
 async def json_list_catalog(
     domain: str | None = Query(default=None),
-    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     if domain and domain not in CATALOG_DOMAINS:
         domain = None
@@ -167,7 +195,8 @@ async def json_list_catalog(
 
 @json_router.post("/items", status_code=201)
 async def json_create_item(
-    body: CatalogItemBody, user: User = Depends(get_current_user),
+    body: CatalogItemBody,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     cat_uuid = None
@@ -178,7 +207,9 @@ async def json_create_item(
             raise HTTPException(400, "Invalid category_id") from None
     domains_val = body.domains if isinstance(body.domains, list) else validate_domains(body.domains)
     item = ActivityCatalogItem(
-        owner_id=user.id, name=body.name, description=body.description,
+        owner_id=user.id,
+        name=body.name,
+        description=body.description,
         category_id=cat_uuid,
         tags=[x.strip() for x in body.tags.split(",") if x.strip()] if body.tags.strip() else None,
         domains=domains_val,
@@ -187,22 +218,30 @@ async def json_create_item(
     db.add(item)
     await db.flush()
     await db.refresh(item)
-    return JSONResponse({
-        "id": str(item.id), "name": item.name,
-        "owner_id": str(item.owner_id),
-    }, status_code=201)
+    return JSONResponse(
+        {
+            "id": str(item.id),
+            "name": item.name,
+            "owner_id": str(item.owner_id),
+        },
+        status_code=201,
+    )
 
 
 @json_router.delete("/items/{item_id}", status_code=204)
 async def json_delete_item(
-    item_id: uuid.UUID, user: User = Depends(get_current_user),
+    item_id: uuid.UUID,
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    item = (await db.execute(
-        select(ActivityCatalogItem).where(
-            ActivityCatalogItem.id == item_id, ActivityCatalogItem.owner_id == user.id,
+    item = (
+        await db.execute(
+            select(ActivityCatalogItem).where(
+                ActivityCatalogItem.id == item_id,
+                ActivityCatalogItem.owner_id == user.id,
+            )
         )
-    )).scalar_one_or_none()
+    ).scalar_one_or_none()
     if not item:
         raise HTTPException(404, "Item not found")
     await db.delete(item)

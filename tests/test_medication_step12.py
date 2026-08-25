@@ -260,9 +260,7 @@ class TestMedicationGamificationToggle:
         prefs = prefs_from_dict(test_user.prefs)
         assert prefs.med_gamification is True
 
-    async def test_prefs_gamification_disabled_awards_no_xp(
-        self, db_session, test_user: User, auth_client
-    ) -> None:
+    async def test_prefs_gamification_disabled_awards_no_xp(self, db_session, test_user: User, auth_client) -> None:
         from app.gamification.medication import on_medication_taken
         from app.models.medication import MedIntake, MedSchedule
         from app.prefs import raw_dict, sanitize_prefs
@@ -310,9 +308,7 @@ class TestMedicationGamificationToggle:
         assert len(intakes) == 1
         assert intakes[0].status == "taken"
 
-    async def test_prefs_gamification_enabled_awards_xp(
-        self, db_session, test_user: User
-    ) -> None:
+    async def test_prefs_gamification_enabled_awards_xp(self, db_session, test_user: User) -> None:
         from app.gamification.medication import on_medication_taken
         from app.models.medication import MedIntake, MedSchedule
 

@@ -125,4 +125,3 @@ def find_param_key(condition: str, params: dict) -> str | None:
         return None
     key = condition.split()[0] if " " in condition else condition
     return key if key in params else None
-

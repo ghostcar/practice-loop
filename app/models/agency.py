@@ -39,9 +39,7 @@ class AgencyPolicy(Base):
         index=True,
     )
     domain: Mapped[str] = mapped_column(String(50), nullable=False)  # sessions, timer, diet, training, care, protocols
-    default_level: Mapped[str] = mapped_column(
-        String(30), default=AgencyLevel.MANUAL.value, nullable=False
-    )
+    default_level: Mapped[str] = mapped_column(String(30), default=AgencyLevel.MANUAL.value, nullable=False)
     # Typed operation overrides: {"analyze": "automated", "propose": "assisted", "apply": "propose_and_confirm"}
     operation_overrides: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     # User-defined hard boundaries: {"max_duration_min": 60, "max_extension_hours": 24, "allowed_categories": [...]}

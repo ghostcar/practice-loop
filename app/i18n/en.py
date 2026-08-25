@@ -1131,8 +1131,7 @@ EN = {
     ),
     "settings_med_gamification_label": "Award XP and achievements for on-time intake",
     "settings_med_gamification_note": (
-        "Turn off to record intakes without game mechanics. Intake logging and "
-        "reminders keep working."
+        "Turn off to record intakes without game mechanics. Intake logging and reminders keep working."
     ),
     # Step 17f — Per-user reminders (ADR-098)
     "settings_section_reminders": "Reminders",

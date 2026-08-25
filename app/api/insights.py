@@ -307,7 +307,12 @@ async def json_run_insights(
 
     try:
         run = await svc.execute_insight_run(
-            db, user.id, start=start, end=end, chosen=chosen, locale=user.locale or "en",
+            db,
+            user.id,
+            start=start,
+            end=end,
+            chosen=chosen,
+            locale=user.locale or "en",
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None

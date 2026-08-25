@@ -181,7 +181,13 @@ async def create_from_library_action(
     t = get_translations(locale)
     try:
         tpl = await create_template_from_library(
-            db, user.id, key, name=name, template_type=template_type, locale=locale, t=t,
+            db,
+            user.id,
+            key,
+            name=name,
+            template_type=template_type,
+            locale=locale,
+            t=t,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -295,7 +301,11 @@ async def json_generate_template(
 ):
     try:
         outcome = await execute_generation(
-            db, user.id, template_id, user.locale or "en", body.params,
+            db,
+            user.id,
+            template_id,
+            user.locale or "en",
+            body.params,
         )
     except ValueError as e:
         msg = str(e)

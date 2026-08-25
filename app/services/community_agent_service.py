@@ -27,8 +27,11 @@ _MANAGE_ROLES = frozenset({"co_top", "tournament_organizer"})
 
 
 async def require_manager(
-    db: AsyncSession, community_id: uuid.UUID, user,
-    *, allow_tournament_organizer: bool = True,
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user,
+    *,
+    allow_tournament_organizer: bool = True,
 ) -> Community:
     community = (await db.execute(select(Community).where(Community.id == community_id))).scalar_one_or_none()
     if not community:
@@ -51,38 +54,73 @@ async def get_agent_page_context(db: AsyncSession, c_uuid: uuid.UUID) -> dict:
     if not community:
         raise ValueError("Community not found")
     agent = await get_or_create_community_top_agent(db, c_uuid)
-    posts = (await db.execute(
-        select(CommunityPost).where(CommunityPost.community_id == c_uuid)
-        .order_by(CommunityPost.created_at.desc()).limit(10)
-    )).scalars().all()
-    tourneys = (await db.execute(
-        select(CommunityTournament).where(CommunityTournament.community_id == c_uuid)
-        .order_by(CommunityTournament.created_at.desc()).limit(10)
-    )).scalars().all()
-    delegations = (await db.execute(
-        select(CommunityMemberDelegation).where(CommunityMemberDelegation.community_id == c_uuid)
-    )).scalars().all()
+    posts = (
+        (
+            await db.execute(
+                select(CommunityPost)
+                .where(CommunityPost.community_id == c_uuid)
+                .order_by(CommunityPost.created_at.desc())
+                .limit(10)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    tourneys = (
+        (
+            await db.execute(
+                select(CommunityTournament)
+                .where(CommunityTournament.community_id == c_uuid)
+                .order_by(CommunityTournament.created_at.desc())
+                .limit(10)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    delegations = (
+        (await db.execute(select(CommunityMemberDelegation).where(CommunityMemberDelegation.community_id == c_uuid)))
+        .scalars()
+        .all()
+    )
     return {
-        "community": community, "agent": agent, "recent_posts": posts,
-        "tournaments": tourneys, "delegations": delegations,
+        "community": community,
+        "agent": agent,
+        "recent_posts": posts,
+        "tournaments": tourneys,
+        "delegations": delegations,
     }
 
 
 async def do_create_tournament(
-    db: AsyncSession, c_uuid: uuid.UUID, user,
-    *, name: str, description: str = "", tournament_type: str = "points_race",
-    start_date=None, end_date=None,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    user,
+    *,
+    name: str,
+    description: str = "",
+    tournament_type: str = "points_race",
+    start_date=None,
+    end_date=None,
 ) -> CommunityTournament:
     await require_manager(db, c_uuid, user)
     return await create_community_tournament(
-        db, c_uuid, name=name, description=description,
-        tournament_type=tournament_type, created_by=user.id,
-        start_date=start_date, end_date=end_date,
+        db,
+        c_uuid,
+        name=name,
+        description=description,
+        tournament_type=tournament_type,
+        created_by=user.id,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 
 async def do_join_tournament(
-    db: AsyncSession, c_uuid: uuid.UUID, t_uuid: uuid.UUID, user,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    t_uuid: uuid.UUID,
+    user,
 ) -> CommunityTournamentEntry:
     membership = await get_community_membership(db, c_uuid, user.id)
     if not membership or membership.status != "active":
@@ -91,7 +129,9 @@ async def do_join_tournament(
 
 
 async def do_run_quest_generation(
-    db: AsyncSession, c_uuid: uuid.UUID, user,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    user,
 ) -> list:
     await require_manager(db, c_uuid, user)
     return await run_community_quest_generation(db, c_uuid, user.id)

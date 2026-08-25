@@ -20,7 +20,9 @@ def upgrade() -> None:
     # Upgrade training_days
     op.add_column("training_days", sa.Column("equipment_item_ids", JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column("training_days", sa.Column("discipline_notes", sa.Text(), nullable=True))
-    op.add_column("training_days", sa.Column("adapted_for_health", sa.Boolean(), server_default="false", nullable=False))
+    op.add_column(
+        "training_days", sa.Column("adapted_for_health", sa.Boolean(), server_default="false", nullable=False)
+    )
 
     # Upgrade training_log_entries
     op.add_column("training_log_entries", sa.Column("equipment_item_ids", JSONB(astext_type=sa.Text()), nullable=True))

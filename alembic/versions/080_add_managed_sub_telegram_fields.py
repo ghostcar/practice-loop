@@ -22,10 +22,16 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.add_column("managed_submissives", sa.Column("telegram_chat_id", sa.String(length=64), nullable=True))
     op.add_column("managed_submissives", sa.Column("telegram_link_code", sa.String(length=32), nullable=True))
-    op.add_column("managed_submissives", sa.Column("telegram_link_code_expires", sa.DateTime(timezone=True), nullable=True))
+    op.add_column(
+        "managed_submissives", sa.Column("telegram_link_code_expires", sa.DateTime(timezone=True), nullable=True)
+    )
 
-    op.create_index(op.f("ix_managed_submissives_telegram_chat_id"), "managed_submissives", ["telegram_chat_id"], unique=False)
-    op.create_index(op.f("ix_managed_submissives_telegram_link_code"), "managed_submissives", ["telegram_link_code"], unique=False)
+    op.create_index(
+        op.f("ix_managed_submissives_telegram_chat_id"), "managed_submissives", ["telegram_chat_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_managed_submissives_telegram_link_code"), "managed_submissives", ["telegram_link_code"], unique=False
+    )
 
 
 def downgrade() -> None:

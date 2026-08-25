@@ -33,9 +33,9 @@ UI/API  →  application services  →  domain services  →  ORM models (сво
 ```python
 class AgencyPolicy(Base):
     user_id: UUID
-    domain: str            # sessions | timer | diet | training | care | protocols | insights ...
-    level: str             # MANUAL | ANALYZE_ONLY | ASSISTED | PROPOSE_AND_CONFIRM | AUTOMATED_WITHIN_POLICY | DELEGATED_AI | DELEGATED_HUMAN
-    constraints: JSONB     # границы (max_strictness, allowed_entities, daily_limit...)
+    domain: str  # sessions | timer | diet | training | care | protocols | insights ...
+    level: str  # MANUAL | ANALYZE_ONLY | ASSISTED | PROPOSE_AND_CONFIRM | AUTOMATED_WITHIN_POLICY | DELEGATED_AI | DELEGATED_HUMAN
+    constraints: JSONB  # границы (max_strictness, allowed_entities, daily_limit...)
     updated_at: datetime
 ```
 
@@ -49,11 +49,11 @@ per-Dynamic snapshot, комбинация. **Рекомендация:** per-do
 к единой модели-ядру (адаптер сверху, таблицы можно сохранить):
 
 ```python
-class Capability(Base):   # целевое ядро (новые гранты)
+class Capability(Base):  # целевое ядро (новые гранты)
     id, issuer_id, recipient_id, actor_type  # user | agent | community_role
-    capability_code: str      # session.view / timer.extend / protocol.start / health.view_summary ...
-    resource_scope: JSONB     # {community_id?, subject_id?, entity_ids?}
-    constraints: JSONB        # {window?, max_per_day?, requires_confirm: true}
+    capability_code: str  # session.view / timer.extend / protocol.start / health.view_summary ...
+    resource_scope: JSONB  # {community_id?, subject_id?, entity_ids?}
+    constraints: JSONB  # {window?, max_per_day?, requires_confirm: true}
     valid_from, valid_until, state, accepted_at, revoked_at, metadata, audit
 ```
 

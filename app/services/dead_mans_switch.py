@@ -96,22 +96,26 @@ async def evaluate_all_dead_mans_switches(db: AsyncSession) -> dict[str, Any]:
         if now > grace_limit:
             r.status = "triggered_penalty"
             r.miss_count += 1
-            violations.append({
-                "user_id": str(r.user_id),
-                "switch_type": r.switch_type,
-                "deadline": dl.isoformat(),
-                "miss_count": r.miss_count,
-                "penalty_xp": r.penalty_xp,
-            })
+            violations.append(
+                {
+                    "user_id": str(r.user_id),
+                    "switch_type": r.switch_type,
+                    "deadline": dl.isoformat(),
+                    "miss_count": r.miss_count,
+                    "penalty_xp": r.penalty_xp,
+                }
+            )
             logger.warning("DMS TRIGGERED for user %s, switch: %s", r.user_id, r.switch_type)
         elif now > dl:
             if r.status != "warning":
                 r.status = "warning"
-                warnings_list.append({
-                    "user_id": str(r.user_id),
-                    "switch_type": r.switch_type,
-                    "deadline": dl.isoformat(),
-                })
+                warnings_list.append(
+                    {
+                        "user_id": str(r.user_id),
+                        "switch_type": r.switch_type,
+                        "deadline": dl.isoformat(),
+                    }
+                )
 
     await db.flush()
 

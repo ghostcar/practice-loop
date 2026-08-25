@@ -102,10 +102,19 @@ async def save_state(
 ):
     try:
         await svc.save_health_state(
-            db, user_id=user.id, event_date=event_date, mood=mood, energy=energy,
-            sleep_hours=sleep_hours, sleep_quality=sleep_quality, recovery=recovery,
-            skin_sensitivity=skin_sensitivity, post_session_drop=post_session_drop,
-            hrt_taken=hrt_taken, symptoms=symptoms, notes=notes,
+            db,
+            user_id=user.id,
+            event_date=event_date,
+            mood=mood,
+            energy=energy,
+            sleep_hours=sleep_hours,
+            sleep_quality=sleep_quality,
+            recovery=recovery,
+            skin_sensitivity=skin_sensitivity,
+            post_session_drop=post_session_drop,
+            hrt_taken=hrt_taken,
+            symptoms=symptoms,
+            notes=notes,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -151,8 +160,16 @@ async def add_lab(
 ):
     try:
         await svc.add_lab(
-            db, user_id=user.id, name=name, measured_at=measured_at, value=value,
-            unit=unit, ref_range=ref_range, lab_name=lab_name, flagged=flagged, notes=notes,
+            db,
+            user_id=user.id,
+            name=name,
+            measured_at=measured_at,
+            value=value,
+            unit=unit,
+            ref_range=ref_range,
+            lab_name=lab_name,
+            flagged=flagged,
+            notes=notes,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -185,8 +202,12 @@ async def save_cycle_settings(
 ):
     try:
         await svc.save_cycle_settings(
-            db, user_id=user.id, cycle_length=cycle_length, period_length=period_length,
-            contraception=contraception, notes=notes,
+            db,
+            user_id=user.id,
+            cycle_length=cycle_length,
+            period_length=period_length,
+            contraception=contraception,
+            notes=notes,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -205,8 +226,12 @@ async def add_cycle_event(
 ):
     try:
         await svc.add_cycle_event(
-            db, user_id=user.id, event_date=event_date, event_type=event_type,
-            value=value, notes=notes,
+            db,
+            user_id=user.id,
+            event_date=event_date,
+            event_type=event_type,
+            value=value,
+            notes=notes,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -238,8 +263,12 @@ async def log_body_cycle_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     await svc.log_body_cycle(
-        db, user_id=user.id, cycle_phase=cycle_phase,
-        energy_level=energy_level, soreness_level=soreness_level, notes=notes,
+        db,
+        user_id=user.id,
+        cycle_phase=cycle_phase,
+        energy_level=energy_level,
+        soreness_level=soreness_level,
+        notes=notes,
     )
     return RedirectResponse(url="/health/body-cycle", status_code=303)
 

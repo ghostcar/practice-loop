@@ -154,13 +154,9 @@ def extract_seal_tag_from_photo(
 
     notes_parts: list[str] = []
     if best_candidate:
-        notes_parts.append(
-            f"Tag {best_candidate} detected with {int(confidence * 100)}% confidence."
-        )
+        notes_parts.append(f"Tag {best_candidate} detected with {int(confidence * 100)}% confidence.")
     elif expected_tag:
-        notes_parts.append(
-            f"Expected tag {expected_tag} not found in photo."
-        )
+        notes_parts.append(f"Expected tag {expected_tag} not found in photo.")
     else:
         notes_parts.append("No tag detected in photo.")
 

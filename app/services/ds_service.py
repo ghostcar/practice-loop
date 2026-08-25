@@ -119,6 +119,7 @@ async def get_portal_context(db: AsyncSession, user_id: uuid.UUID, sub_id: str |
         )
 
     from app.analytics.engine import aggregate_keyholder_cohort_analytics
+
     cohort_analytics = await aggregate_keyholder_cohort_analytics(db, user_id)
 
     return {
@@ -135,7 +136,12 @@ async def get_portal_context(db: AsyncSession, user_id: uuid.UUID, sub_id: str |
 
 
 async def create_submissive(
-    db: AsyncSession, user_id: uuid.UUID, *, name: str, is_offline: bool, rules_notes: str,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    name: str,
+    is_offline: bool,
+    rules_notes: str,
 ) -> ManagedSubmissive:
     sub_profile = ManagedSubmissive(
         top_user_id=user_id,
@@ -174,8 +180,13 @@ async def lock_action(db: AsyncSession, sub_id: str, user_id: uuid.UUID, *, acti
 
 
 async def assign_duty(
-    db: AsyncSession, user_id: uuid.UUID, *, managed_sub_id: str, title: str,
-    description: str, reward_penalty_xp: int,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    managed_sub_id: str,
+    title: str,
+    description: str,
+    reward_penalty_xp: int,
 ) -> None:
     """Assign a duty to a submissive."""
     sub = await _get_owned_submissive(db, managed_sub_id, user_id)
@@ -256,7 +267,10 @@ async def get_delegation_context(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 
 async def create_grant_invite(
-    db: AsyncSession, user_id: uuid.UUID, *, selected_scopes: dict[str, bool],
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    selected_scopes: dict[str, bool],
 ) -> None:
     """Generate an invite code for a Top to claim delegation."""
     if not any(selected_scopes.values()):
@@ -389,9 +403,15 @@ async def get_checkins_context(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 
 async def log_wear_checkin(
-    db: AsyncSession, user_id: uuid.UUID, *,
-    managed_sub_id: str, tag_number: str, comfort_score: int, notes: str,
-    photo_url: str = "", photo_bytes: bytes | None = None,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    managed_sub_id: str,
+    tag_number: str,
+    comfort_score: int,
+    notes: str,
+    photo_url: str = "",
+    photo_bytes: bytes | None = None,
 ) -> None:
     """Log a wear check-in with optional OCR seal inspection from real photo bytes."""
     sub_uuid = uuid.UUID(managed_sub_id)

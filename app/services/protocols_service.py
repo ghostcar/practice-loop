@@ -57,18 +57,10 @@ def parse_steps_form(steps_json: str) -> list[dict[str, Any]]:
         steps.append(
             {
                 "title": str(item["title"])[:255],
-                "step_type": (
-                    item.get("step_type", "activity")
-                    if item.get("step_type") in STEP_TYPES
-                    else "activity"
-                ),
+                "step_type": (item.get("step_type", "activity") if item.get("step_type") in STEP_TYPES else "activity"),
                 "reference_id": item.get("reference_id") or None,
                 "timing_spec": {
-                    "type": (
-                        timing.get("type", "rel_after")
-                        if timing.get("type") in TIMING_TYPES
-                        else "rel_after"
-                    ),
+                    "type": (timing.get("type", "rel_after") if timing.get("type") in TIMING_TYPES else "rel_after"),
                     "offset_seconds": max(0, int(timing.get("offset_seconds", 0) or 0)),
                 },
                 "custom_params": item.get("custom_params") or {},
@@ -77,9 +69,7 @@ def parse_steps_form(steps_json: str) -> list[dict[str, Any]]:
     return steps
 
 
-async def get_own_protocol(
-    db: AsyncSession, protocol_id: uuid.UUID, user_id: uuid.UUID
-) -> ProtocolDefinition:
+async def get_own_protocol(db: AsyncSession, protocol_id: uuid.UUID, user_id: uuid.UUID) -> ProtocolDefinition:
     """Ownership-checked protocol fetch. Raises HTTPException 404."""
     proto = (
         await db.execute(
@@ -134,13 +124,9 @@ async def get_protocols_page_context(db: AsyncSession, user_id: uuid.UUID) -> di
     protos = list(protos_result.scalars().all())
 
     runs_result = await db.execute(
-        select(ProtocolRun)
-        .where(ProtocolRun.user_id == user_id)
-        .order_by(ProtocolRun.created_at.desc())
+        select(ProtocolRun).where(ProtocolRun.user_id == user_id).order_by(ProtocolRun.created_at.desc())
     )
-    active_runs = [
-        r for r in runs_result.scalars().all() if r.status in ("scheduled", "active")
-    ]
+    active_runs = [r for r in runs_result.scalars().all() if r.status in ("scheduled", "active")]
 
     return {
         "protocols": protos,
@@ -179,33 +165,23 @@ def get_builder_common_context() -> dict:
     }
 
 
-async def get_run_page_context(
-    db: AsyncSession, user_id: uuid.UUID, run_id: uuid.UUID
-) -> dict | None:
+async def get_run_page_context(db: AsyncSession, user_id: uuid.UUID, run_id: uuid.UUID) -> dict | None:
     """Build template context for /protocols/{id}/run. Returns None if not found."""
     run = (
-        await db.execute(
-            select(ProtocolRun).where(
-                ProtocolRun.id == run_id, ProtocolRun.user_id == user_id
-            )
-        )
+        await db.execute(select(ProtocolRun).where(ProtocolRun.id == run_id, ProtocolRun.user_id == user_id))
     ).scalar_one_or_none()
     if run is None:
         return None
 
     logs_result = await db.execute(
-        select(ProtocolStepLog)
-        .where(ProtocolStepLog.run_id == run.id)
-        .order_by(ProtocolStepLog.planned_at)
+        select(ProtocolStepLog).where(ProtocolStepLog.run_id == run.id).order_by(ProtocolStepLog.planned_at)
     )
     logs = list(logs_result.scalars().all())
 
     proto = None
     if run.protocol_id:
         proto = (
-            await db.execute(
-                select(ProtocolDefinition).where(ProtocolDefinition.id == run.protocol_id)
-            )
+            await db.execute(select(ProtocolDefinition).where(ProtocolDefinition.id == run.protocol_id))
         ).scalar_one_or_none()
 
     return {
@@ -335,11 +311,7 @@ async def complete_protocol_step_from_form(
     """Complete a step in an active protocol run."""
     await require_protocol_capability(db, user, "protocol.confirm")
     run = (
-        await db.execute(
-            select(ProtocolRun).where(
-                ProtocolRun.id == run_id, ProtocolRun.user_id == user.id
-            )
-        )
+        await db.execute(select(ProtocolRun).where(ProtocolRun.id == run_id, ProtocolRun.user_id == user.id))
     ).scalar_one_or_none()
     if run is None:
         return None

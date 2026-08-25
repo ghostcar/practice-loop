@@ -163,9 +163,9 @@ def build_plan(
     full_catalog: dict[str, Any],
 ) -> dict[str, Any]:
     """Build the full import plan: gate status + normalized entity rows."""
-    entities: list[dict[str, Any]] = [
-        _foundation_entity(card) for card in foundation.get("cards", [])
-    ] + [_candidate_entity(card) for card in full_catalog.get("cards", [])]
+    entities: list[dict[str, Any]] = [_foundation_entity(card) for card in foundation.get("cards", [])] + [
+        _candidate_entity(card) for card in full_catalog.get("cards", [])
+    ]
 
     return {
         "gate": {
@@ -219,11 +219,7 @@ def _plan_summary(plan: dict[str, Any]) -> str:
         by_risk[entity["risk_level"]] = by_risk.get(entity["risk_level"], 0) + 1
         key = "auto" if entity["automation_allowed"] else "manual"
         by_auto[key] += 1
-    return (
-        f"entities={len(entities)} "
-        f"risks={by_risk} "
-        f"automation={by_auto}"
-    )
+    return f"entities={len(entities)} risks={by_risk} automation={by_auto}"
 
 
 def render_plan(plan: dict[str, Any]) -> str:
@@ -238,8 +234,7 @@ def render_plan(plan: dict[str, Any]) -> str:
         "",
     ]
     lines.extend(
-        f"- {entity['slug']} [{entity['risk_level']}] "
-        f"auto={entity['automation_allowed']} {entity['real_name']}"
+        f"- {entity['slug']} [{entity['risk_level']}] auto={entity['automation_allowed']} {entity['real_name']}"
         for entity in plan["entities"]
     )
     return "\n".join(lines)
@@ -268,9 +263,7 @@ async def apply_plan(database_url: str, plan: dict[str, Any]) -> dict[str, Any]:
     imported = skipped = 0
     async with factory() as db:
         for entity_fields in plan["entities"]:
-            existing = await db.execute(
-                select(Entity.id).where(Entity.slug == entity_fields["slug"]).limit(1)
-            )
+            existing = await db.execute(select(Entity.id).where(Entity.slug == entity_fields["slug"]).limit(1))
             if existing.scalar_one_or_none() is not None:
                 skipped += 1
                 continue
@@ -283,11 +276,7 @@ async def apply_plan(database_url: str, plan: dict[str, Any]) -> dict[str, Any]:
 
 def _gate_error(plan: dict[str, Any]) -> str | None:
     gate = plan["gate"]
-    blockers = [
-        name
-        for name, allowed in gate.items()
-        if allowed is not True
-    ]
+    blockers = [name for name, allowed in gate.items() if allowed is not True]
     if blockers:
         return (
             "import gate closed: the following manifests do not set "

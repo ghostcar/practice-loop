@@ -39,16 +39,20 @@ async def catalog_options(
     for it in items:
         if domain and it.domains and domain not in it.domains:
             continue
-        out.append({
-            "id": str(it.id),
-            "name": it.name,
-            "owner_id": str(it.owner_id) if it.owner_id else None,
-        })
+        out.append(
+            {
+                "id": str(it.id),
+                "name": it.name,
+                "owner_id": str(it.owner_id) if it.owner_id else None,
+            }
+        )
     return out
 
 
 async def get_catalog_page_context(
-    db: AsyncSession, user_id: uuid.UUID, domain: str | None = None,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    domain: str | None = None,
 ):
     result = await db.execute(
         select(ActivityCatalogItem)
@@ -76,7 +80,8 @@ async def create_catalog_item(db: AsyncSession, user_id: uuid.UUID, **kwargs):
 async def delete_catalog_item(db: AsyncSession, user_id: uuid.UUID, item_id: uuid.UUID):
     result = await db.execute(
         select(ActivityCatalogItem).where(
-            ActivityCatalogItem.id == item_id, ActivityCatalogItem.owner_id == user_id,
+            ActivityCatalogItem.id == item_id,
+            ActivityCatalogItem.owner_id == user_id,
         )
     )
     item = result.scalar_one_or_none()

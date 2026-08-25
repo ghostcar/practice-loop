@@ -126,8 +126,7 @@ class EmailChannel:
         payload: dict[str, Any] | None = None,
     ) -> bool:
         logger.warning(
-            "[EmailNotification] SMTP not configured — email delivery skipped "
-            "(user=%s event=%s title=%s)",
+            "[EmailNotification] SMTP not configured — email delivery skipped (user=%s event=%s title=%s)",
             user_id,
             event_type,
             title,
@@ -242,12 +241,12 @@ async def dispatch_notification(
             continue
         try:
             results[ch_name] = await channel.send(
-                    db=db,
-                    user_id=user_id,
-                    event_type=event_type,
-                    title=title,
-                    message=message,
-                    payload=audit_payload,
+                db=db,
+                user_id=user_id,
+                event_type=event_type,
+                title=title,
+                message=message,
+                payload=audit_payload,
             )
         except Exception as exc:
             logger.warning("Failed delivery on channel '%s': %s", ch_name, exc)

@@ -70,7 +70,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["managed_sub_id"], ["managed_submissives.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_chastity_lock_logs_managed_sub_id"), "chastity_lock_logs", ["managed_sub_id"], unique=False)
+    op.create_index(
+        op.f("ix_chastity_lock_logs_managed_sub_id"), "chastity_lock_logs", ["managed_sub_id"], unique=False
+    )
 
 
 def downgrade() -> None:

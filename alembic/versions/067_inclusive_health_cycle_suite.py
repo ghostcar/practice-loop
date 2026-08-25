@@ -19,10 +19,17 @@ depends_on = None
 
 def upgrade() -> None:
     # Upgrade cycle_settings
-    op.add_column("cycle_settings", sa.Column("profile_type", sa.String(length=30), server_default="natural_menstrual", nullable=False))
+    op.add_column(
+        "cycle_settings",
+        sa.Column("profile_type", sa.String(length=30), server_default="natural_menstrual", nullable=False),
+    )
     op.add_column("cycle_settings", sa.Column("hrt_regimen", JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("cycle_settings", sa.Column("emulated_cycle_length", sa.Integer(), server_default="28", nullable=False))
-    op.add_column("cycle_settings", sa.Column("emulated_period_length", sa.Integer(), server_default="5", nullable=False))
+    op.add_column(
+        "cycle_settings", sa.Column("emulated_cycle_length", sa.Integer(), server_default="28", nullable=False)
+    )
+    op.add_column(
+        "cycle_settings", sa.Column("emulated_period_length", sa.Integer(), server_default="5", nullable=False)
+    )
 
     # Upgrade cycle_events
     op.add_column("cycle_events", sa.Column("bbt", sa.Float(), nullable=True))

@@ -44,8 +44,12 @@ async def sessions_live_page(
         request=request,
         name="sessions_live.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale,
-            "theme": theme, "active_nav": "sessions",
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
         },
     )
 
@@ -64,8 +68,13 @@ async def sessions_coop_page(
         request=request,
         name="sessions_coop.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale, "theme": theme,
-            "active_nav": "sessions", **ctx,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+            **ctx,
         },
     )
 
@@ -84,8 +93,13 @@ async def sessions_page(
         request=request,
         name="sessions.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale, "theme": theme,
-            "active_nav": "sessions", **ctx,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "sessions",
+            **ctx,
         },
     )
 
@@ -96,7 +110,8 @@ async def sessions_rules_builder_page(request: Request, user: User = Depends(get
     theme = detect_theme(user.theme)
     t = get_translations(locale)
     return templates.TemplateResponse(
-        request=request, name="sessions_rules_builder.html",
+        request=request,
+        name="sessions_rules_builder.html",
         context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "sessions"},
     )
 
@@ -107,7 +122,8 @@ async def sessions_wizard_page(request: Request, user: User = Depends(get_curren
     theme = detect_theme(user.theme)
     t = get_translations(locale)
     return templates.TemplateResponse(
-        request=request, name="sessions_wizard.html",
+        request=request,
+        name="sessions_wizard.html",
         context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "sessions"},
     )
 
@@ -118,7 +134,8 @@ async def sessions_ambient_page(request: Request, user: User = Depends(get_curre
     theme = detect_theme(user.theme)
     t = get_translations(locale)
     return templates.TemplateResponse(
-        request=request, name="sessions_ambient.html",
+        request=request,
+        name="sessions_ambient.html",
         context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "sessions"},
     )
 
@@ -185,9 +202,17 @@ async def create_custom_session(
     db: AsyncSession = Depends(get_db),
 ):
     await svc.create_custom_session(
-        db, user.id, title=title, ai_role=ai_role, notes=notes,
-        ext_wheel=ext_wheel, ext_pillory=ext_pillory, ext_tag_seal=ext_tag_seal,
-        ext_peer_review=ext_peer_review, ext_dice=ext_dice, ext_aftercare=ext_aftercare,
+        db,
+        user.id,
+        title=title,
+        ai_role=ai_role,
+        notes=notes,
+        ext_wheel=ext_wheel,
+        ext_pillory=ext_pillory,
+        ext_tag_seal=ext_tag_seal,
+        ext_peer_review=ext_peer_review,
+        ext_dice=ext_dice,
+        ext_aftercare=ext_aftercare,
     )
     return RedirectResponse(url="/sessions", status_code=303)
 
@@ -212,8 +237,10 @@ async def accept_session(s_id: uuid.UUID, user: User = Depends(get_current_user)
 
 @router.post("/sessions/{s_id}/tasks/attach")
 async def attach_session_task(
-    s_id: uuid.UUID, task_id: uuid.UUID = Form(...),
-    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+    s_id: uuid.UUID,
+    task_id: uuid.UUID = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         session = await svc.get_owned_session(db, s_id, user.id)
@@ -227,8 +254,10 @@ async def attach_session_task(
 
 @router.post("/sessions/{s_id}/tasks/{task_id}/detach")
 async def detach_session_task(
-    s_id: uuid.UUID, task_id: uuid.UUID,
-    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+    s_id: uuid.UUID,
+    task_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         session = await svc.get_owned_session(db, s_id, user.id)
@@ -241,8 +270,9 @@ async def detach_session_task(
 
 
 @router.post("/sessions/{s_id}/start")
-async def start_session(s_id: uuid.UUID, request: Request, user: User = Depends(get_current_user),
-                        db: AsyncSession = Depends(get_db)):
+async def start_session(
+    s_id: uuid.UUID, request: Request, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     try:
         session = await svc.get_owned_session(db, s_id, user.id)
         await svc.start_session(db, session, user.id)
@@ -254,8 +284,9 @@ async def start_session(s_id: uuid.UUID, request: Request, user: User = Depends(
 
 
 @router.post("/sessions/{s_id}/end")
-async def end_session(s_id: uuid.UUID, request: Request, user: User = Depends(get_current_user),
-                      db: AsyncSession = Depends(get_db)):
+async def end_session(
+    s_id: uuid.UUID, request: Request, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     try:
         session = await svc.get_owned_session(db, s_id, user.id)
         await svc.end_session(db, session, user.id)
@@ -288,17 +319,23 @@ async def json_sessions(user: User = Depends(get_current_user), db: AsyncSession
 
 
 @session_json_router.post("")
-async def json_create_session(data: _SessionCreateIn, user: User = Depends(get_current_user),
-                              db: AsyncSession = Depends(get_db)):
+async def json_create_session(
+    data: _SessionCreateIn, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     session = await svc.create_session(
-        db, user.id, title=data.title, notes=data.notes, session_rules=data.session_rules,
+        db,
+        user.id,
+        title=data.title,
+        notes=data.notes,
+        session_rules=data.session_rules,
     )
     return JSONResponse(svc.session_json(session), status_code=201)
 
 
 @session_json_router.post("/{session_id}/accept")
-async def json_accept_session(session_id: uuid.UUID, user: User = Depends(get_current_user),
-                              db: AsyncSession = Depends(get_db)):
+async def json_accept_session(
+    session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     try:
         session = await svc.get_owned_session(db, session_id, user.id)
         await svc.accept_session(db, session, user.id)
@@ -310,8 +347,9 @@ async def json_accept_session(session_id: uuid.UUID, user: User = Depends(get_cu
 
 
 @session_json_router.post("/{session_id}/start")
-async def json_start_session(session_id: uuid.UUID, user: User = Depends(get_current_user),
-                             db: AsyncSession = Depends(get_db)):
+async def json_start_session(
+    session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     try:
         session = await svc.get_owned_session(db, session_id, user.id)
         await svc.start_session(db, session, user.id)
@@ -323,8 +361,9 @@ async def json_start_session(session_id: uuid.UUID, user: User = Depends(get_cur
 
 
 @session_json_router.post("/{session_id}/end")
-async def json_end_session(session_id: uuid.UUID, user: User = Depends(get_current_user),
-                           db: AsyncSession = Depends(get_db)):
+async def json_end_session(
+    session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     try:
         session = await svc.get_owned_session(db, session_id, user.id)
         await svc.end_session(db, session, user.id)
@@ -336,8 +375,12 @@ async def json_end_session(session_id: uuid.UUID, user: User = Depends(get_curre
 
 
 @session_json_router.post("/{session_id}/tasks")
-async def json_attach_session_task(session_id: uuid.UUID, data: _SessionTaskIn,
-                                   user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def json_attach_session_task(
+    session_id: uuid.UUID,
+    data: _SessionTaskIn,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     try:
         session = await svc.get_owned_session(db, session_id, user.id)
         await svc.attach_task(db, session, data.task_id, user.id)
@@ -350,8 +393,12 @@ async def json_attach_session_task(session_id: uuid.UUID, data: _SessionTaskIn,
 
 
 @session_json_router.delete("/{session_id}/tasks/{task_id}", status_code=204)
-async def json_detach_session_task(session_id: uuid.UUID, task_id: uuid.UUID,
-                                   user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def json_detach_session_task(
+    session_id: uuid.UUID,
+    task_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     try:
         session = await svc.get_owned_session(db, session_id, user.id)
         await svc.detach_task(db, session, task_id, user.id)
@@ -363,8 +410,9 @@ async def json_detach_session_task(session_id: uuid.UUID, task_id: uuid.UUID,
 
 
 @session_json_router.get("/{session_id}/history")
-async def json_session_history(session_id: uuid.UUID, user: User = Depends(get_current_user),
-                               db: AsyncSession = Depends(get_db)):
+async def json_session_history(
+    session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
     try:
         await svc.get_owned_session(db, session_id, user.id)
     except NotFoundError as e:

@@ -123,6 +123,7 @@ async def register(
 
     # Mark onboarding as not completed
     from app.prefs import sanitize_prefs
+
     raw = sanitize_prefs(user.prefs)
     raw["onboarding_completed"] = False
     user.prefs = raw
@@ -132,6 +133,7 @@ async def register(
     response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER)
     loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
     from app.config import settings
+
     response.set_cookie(
         key="access_token",
         value=token,
@@ -142,6 +144,7 @@ async def register(
         path="/",
     )
     from app.security import set_csrf_cookie
+
     set_csrf_cookie(response, request)
     return response
 

@@ -47,9 +47,7 @@ async def catalog_page(
 ):
     # Auto-seed system catalog for new users — entity bootstrap only.
     # Opt-in + LLM presets are handled in onboarding (ADR-179).
-    exists = await db.execute(
-        select(Entity).where(Entity.owner_id.is_(None)).limit(1)
-    )
+    exists = await db.execute(select(Entity).where(Entity.owner_id.is_(None)).limit(1))
     if not exists.scalar_one_or_none():
         from app.seed import seed_entities
 
@@ -129,9 +127,17 @@ async def create_entity(
 ):
     try:
         await svc.create_entity(
-            db, user_id=user.id, real_name=real_name, type=type, category=category,
-            tags=tags, is_public=is_public, risk_level=risk_level, category_id=category_id,
-            catalog_item_id=catalog_item_id, care_product_ids=care_product_ids,
+            db,
+            user_id=user.id,
+            real_name=real_name,
+            type=type,
+            category=category,
+            tags=tags,
+            is_public=is_public,
+            risk_level=risk_level,
+            category_id=category_id,
+            catalog_item_id=catalog_item_id,
+            care_product_ids=care_product_ids,
         )
     except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
@@ -193,13 +199,25 @@ async def update_entity(
 ):
     try:
         await svc.update_entity(
-            db, user_id=user.id, user_role=user.role, entity_id=entity_id,
-            real_name=real_name, short_title=short_title, type=type,
-            category_id=category_id, risk_level=risk_level, adult_only=adult_only,
-            automation_allowed=automation_allowed, penalty_enabled=penalty_enabled,
-            is_public=is_public, tags=tags, role_tags=role_tags,
-            params_json=params_json, safety_json=safety_json,
-            catalog_item_id=catalog_item_id, care_product_ids=care_product_ids,
+            db,
+            user_id=user.id,
+            user_role=user.role,
+            entity_id=entity_id,
+            real_name=real_name,
+            short_title=short_title,
+            type=type,
+            category_id=category_id,
+            risk_level=risk_level,
+            adult_only=adult_only,
+            automation_allowed=automation_allowed,
+            penalty_enabled=penalty_enabled,
+            is_public=is_public,
+            tags=tags,
+            role_tags=role_tags,
+            params_json=params_json,
+            safety_json=safety_json,
+            catalog_item_id=catalog_item_id,
+            care_product_ids=care_product_ids,
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
@@ -225,8 +243,12 @@ async def toggle_opt_in(
 ):
     try:
         await svc.toggle_opt_in(
-            db, user_id=user.id, entity_id=entity_id,
-            is_opted_in=is_opted_in, rating=rating, desire_level=desire_level,
+            db,
+            user_id=user.id,
+            entity_id=entity_id,
+            is_opted_in=is_opted_in,
+            rating=rating,
+            desire_level=desire_level,
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
@@ -252,10 +274,17 @@ async def personalize_entity(
 ):
     try:
         await svc.personalize_entity(
-            db, user_id=user.id, entity_id=entity_id,
-            custom_name=custom_name, duration_min=duration_min, duration_max=duration_max,
-            reps_min=reps_min, reps_max=reps_max, desire_level=desire_level,
-            is_opted_in=is_opted_in, assigned_care_ids=assigned_care_ids,
+            db,
+            user_id=user.id,
+            entity_id=entity_id,
+            custom_name=custom_name,
+            duration_min=duration_min,
+            duration_max=duration_max,
+            reps_min=reps_min,
+            reps_max=reps_max,
+            desire_level=desire_level,
+            is_opted_in=is_opted_in,
+            assigned_care_ids=assigned_care_ids,
             assigned_inventory_ids=assigned_inventory_ids,
         )
     except NotFoundError as e:

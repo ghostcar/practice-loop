@@ -79,9 +79,7 @@ async def onboarding_complete(
     missing = await missing_consents(db, user.id, module_keys)
 
     if missing:
-        return RedirectResponse(
-            url="/consent/setup?required=" + ",".join(missing), status_code=303
-        )
+        return RedirectResponse(url="/consent/setup?required=" + ",".join(missing), status_code=303)
     return RedirectResponse(url="/dashboard", status_code=303)
 
 
@@ -111,12 +109,11 @@ async def _bootstrap_new_user(db: AsyncSession, user: User) -> None:
     exists = await db.execute(select(Entity).where(Entity.owner_id.is_(None)).limit(1))
     if not exists.scalar_one_or_none():
         from app.seed import seed_entities
+
         await seed_entities(db)
 
     # 2. Auto-opt-in to all public entities (neutral desire)
-    has_any = await db.execute(
-        select(UserEntityOptIn.id).where(UserEntityOptIn.user_id == user.id).limit(1)
-    )
+    has_any = await db.execute(select(UserEntityOptIn.id).where(UserEntityOptIn.user_id == user.id).limit(1))
     if not has_any.scalar_one_or_none():
         all_public = await db.execute(select(Entity).where(Entity.is_public.is_(True)))
         for entity in all_public.scalars().all():
@@ -130,11 +127,10 @@ async def _bootstrap_new_user(db: AsyncSession, user: User) -> None:
             )
 
     # 3. Seed LLM provider presets (Omniroute + Groq + OpenRouter)
-    has_cfg = await db.execute(
-        select(LLMProviderConfig.id).where(LLMProviderConfig.user_id == user.id).limit(1)
-    )
+    has_cfg = await db.execute(select(LLMProviderConfig.id).where(LLMProviderConfig.user_id == user.id).limit(1))
     if not has_cfg.scalar_one_or_none():
         from app.seed import seed_llm_presets
+
         await seed_llm_presets(db, user_id=user.id)
 
     await db.flush()

@@ -89,13 +89,26 @@ async def add_entry(
 ):
     try:
         await svc.create_entry(
-            db, user_id=user.id, entry_date=entry_date, partner_id=partner_id,
-            activity_type=activity_type, duration_minutes=duration_minutes,
-            desire_before=desire_before, arousal_before=arousal_before,
-            protection=protection, orgasms=orgasms, intensity=intensity,
-            satisfaction=satisfaction, pleasure=pleasure, reactions=reactions,
-            emotional_state=emotional_state, aftercare=aftercare, recovery=recovery,
-            notes=notes, activity_log_id=activity_log_id, catalog_item_id=catalog_item_id,
+            db,
+            user_id=user.id,
+            entry_date=entry_date,
+            partner_id=partner_id,
+            activity_type=activity_type,
+            duration_minutes=duration_minutes,
+            desire_before=desire_before,
+            arousal_before=arousal_before,
+            protection=protection,
+            orgasms=orgasms,
+            intensity=intensity,
+            satisfaction=satisfaction,
+            pleasure=pleasure,
+            reactions=reactions,
+            emotional_state=emotional_state,
+            aftercare=aftercare,
+            recovery=recovery,
+            notes=notes,
+            activity_log_id=activity_log_id,
+            catalog_item_id=catalog_item_id,
             care_product_ids=care_product_ids,
         )
     except (ValueError, NotFoundError) as e:
@@ -128,13 +141,25 @@ async def complete_entry(
 ):
     try:
         await svc.complete_entry(
-            db, user_id=user.id, entry_id=entry_id,
-            activity_type=activity_type, duration_minutes=duration_minutes,
-            desire_before=desire_before, arousal_before=arousal_before,
-            protection=protection, orgasms=orgasms, intensity=intensity,
-            satisfaction=satisfaction, pleasure=pleasure, reactions=reactions,
-            emotional_state=emotional_state, aftercare=aftercare, recovery=recovery,
-            notes=notes, catalog_item_id=catalog_item_id, care_product_ids=care_product_ids,
+            db,
+            user_id=user.id,
+            entry_id=entry_id,
+            activity_type=activity_type,
+            duration_minutes=duration_minutes,
+            desire_before=desire_before,
+            arousal_before=arousal_before,
+            protection=protection,
+            orgasms=orgasms,
+            intensity=intensity,
+            satisfaction=satisfaction,
+            pleasure=pleasure,
+            reactions=reactions,
+            emotional_state=emotional_state,
+            aftercare=aftercare,
+            recovery=recovery,
+            notes=notes,
+            catalog_item_id=catalog_item_id,
+            care_product_ids=care_product_ids,
         )
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None

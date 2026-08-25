@@ -352,9 +352,7 @@ async def validate_care_products(
     return [str(x) for x in parsed]
 
 
-async def resolve_catalog_item(
-    db: AsyncSession, catalog_item_id: str | uuid.UUID | None, user_id: uuid.UUID
-):
+async def resolve_catalog_item(db: AsyncSession, catalog_item_id: str | uuid.UUID | None, user_id: uuid.UUID):
     from app.models.catalog import ActivityCatalogItem
 
     if not catalog_item_id:
@@ -381,9 +379,7 @@ async def validate_partner(db: AsyncSession, partner_id: str, user_id: uuid.UUID
     if pid is None:
         return None
     partner = (
-        await db.execute(
-            select(JournalPartner).where(JournalPartner.id == pid, JournalPartner.user_id == user_id)
-        )
+        await db.execute(select(JournalPartner).where(JournalPartner.id == pid, JournalPartner.user_id == user_id))
     ).scalar_one_or_none()
     if partner is None:
         raise NotFoundError("Partner not found")

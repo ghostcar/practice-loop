@@ -21,9 +21,7 @@ def upgrade() -> None:
     op.create_check_constraint(
         "ck_activity_session_status", "activity_sessions", "status IN ('created', 'active', 'ended')"
     )
-    op.create_check_constraint(
-        "ck_adaptive_program_total_days", "adaptive_programs", "total_days BETWEEN 1 AND 365"
-    )
+    op.create_check_constraint("ck_adaptive_program_total_days", "adaptive_programs", "total_days BETWEEN 1 AND 365")
     op.create_check_constraint(
         "ck_adaptive_program_current_day", "adaptive_programs", "current_day BETWEEN 1 AND total_days"
     )
@@ -33,9 +31,7 @@ def upgrade() -> None:
     op.create_check_constraint(
         "ck_adaptive_program_status", "adaptive_programs", "status IN ('active', 'paused', 'completed')"
     )
-    op.create_unique_constraint(
-        "uq_adaptive_step_program_day", "adaptive_program_steps", ["program_id", "day_number"]
-    )
+    op.create_unique_constraint("uq_adaptive_step_program_day", "adaptive_program_steps", ["program_id", "day_number"])
     op.create_check_constraint("ck_adaptive_step_day_number", "adaptive_program_steps", "day_number >= 1")
     op.create_check_constraint(
         "ck_adaptive_step_status",

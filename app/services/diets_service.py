@@ -113,9 +113,7 @@ async def get_diets_page_context(db: AsyncSession, user) -> dict:
     from app.timeutils import local_today
 
     result = await db.execute(
-        select(Diet)
-        .where(Diet.user_id == user.id)
-        .order_by(Diet.is_active.desc(), Diet.created_at.asc())
+        select(Diet).where(Diet.user_id == user.id).order_by(Diet.is_active.desc(), Diet.created_at.asc())
     )
     diets_list = [diet_dict(d) for d in result.scalars().all()]
     active_config = await get_active_llm_config(db, user.id)
@@ -134,9 +132,7 @@ async def get_diets_page_context(db: AsyncSession, user) -> dict:
 
 async def list_diets(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
     result = await db.execute(
-        select(Diet)
-        .where(Diet.user_id == user_id)
-        .order_by(Diet.is_active.desc(), Diet.created_at.asc())
+        select(Diet).where(Diet.user_id == user_id).order_by(Diet.is_active.desc(), Diet.created_at.asc())
     )
     return [diet_dict(d) for d in result.scalars().all()]
 
@@ -187,10 +183,7 @@ async def _get_owned_diet(db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UU
 async def add_diet_item(db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UUID, **kwargs) -> dict:
     await _get_owned_diet(db, user_id, diet_id)
     max_o = await db.execute(
-        select(DietItem.sort_order)
-        .where(DietItem.diet_id == diet_id)
-        .order_by(DietItem.sort_order.desc())
-        .limit(1)
+        select(DietItem.sort_order).where(DietItem.diet_id == diet_id).order_by(DietItem.sort_order.desc()).limit(1)
     )
     next_order = (max_o.scalar_one_or_none() or -1) + 1
     item = DietItem(diet_id=diet_id, sort_order=next_order, **kwargs)
@@ -200,13 +193,9 @@ async def add_diet_item(db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UUID
     return item_dict(item)
 
 
-async def update_diet_item(
-    db: AsyncSession, user_id: uuid.UUID, item_id: uuid.UUID, **kwargs
-) -> dict:
+async def update_diet_item(db: AsyncSession, user_id: uuid.UUID, item_id: uuid.UUID, **kwargs) -> dict:
     result = await db.execute(
-        select(DietItem)
-        .join(Diet, Diet.id == DietItem.diet_id)
-        .where(DietItem.id == item_id, Diet.user_id == user_id)
+        select(DietItem).join(Diet, Diet.id == DietItem.diet_id).where(DietItem.id == item_id, Diet.user_id == user_id)
     )
     item = result.scalar_one_or_none()
     if not item:
@@ -220,13 +209,9 @@ async def update_diet_item(
     return item_dict(item)
 
 
-async def delete_diet_item(
-    db: AsyncSession, user_id: uuid.UUID, item_id: uuid.UUID
-) -> None:
+async def delete_diet_item(db: AsyncSession, user_id: uuid.UUID, item_id: uuid.UUID) -> None:
     result = await db.execute(
-        select(DietItem)
-        .join(Diet, Diet.id == DietItem.diet_id)
-        .where(DietItem.id == item_id, Diet.user_id == user_id)
+        select(DietItem).join(Diet, Diet.id == DietItem.diet_id).where(DietItem.id == item_id, Diet.user_id == user_id)
     )
     item = result.scalar_one_or_none()
     if not item:
@@ -234,9 +219,7 @@ async def delete_diet_item(
     await db.delete(item)
 
 
-async def reorder_diet_items(
-    db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UUID, ids: list[uuid.UUID]
-) -> None:
+async def reorder_diet_items(db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UUID, ids: list[uuid.UUID]) -> None:
     result = await db.execute(
         select(DietItem)
         .join(Diet, Diet.id == DietItem.diet_id)
@@ -256,15 +239,11 @@ async def reorder_diet_items(
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-async def list_consumptions(
-    db: AsyncSession, user_id: uuid.UUID, consumed_date: date | None = None
-) -> list[dict]:
+async def list_consumptions(db: AsyncSession, user_id: uuid.UUID, consumed_date: date | None = None) -> list[dict]:
     stmt = select(DietConsumption).where(DietConsumption.user_id == user_id)
     if consumed_date:
         stmt = stmt.where(DietConsumption.consumed_date == consumed_date)
-    stmt = stmt.order_by(
-        DietConsumption.consumed_date.desc(), DietConsumption.created_at
-    ).limit(200)
+    stmt = stmt.order_by(DietConsumption.consumed_date.desc(), DietConsumption.created_at).limit(200)
     result = await db.execute(stmt)
     return [consumption_dict(c) for c in result.scalars().all()]
 
@@ -273,9 +252,7 @@ async def create_consumption(db: AsyncSession, user_id: uuid.UUID, **kwargs) -> 
     diet_id = kwargs.pop("diet_id", None)
     consumed_date_val = kwargs.pop("consumed_date", None)
     if diet_id is not None:
-        diet_result = await db.execute(
-            select(Diet).where(Diet.id == diet_id, Diet.user_id == user_id)
-        )
+        diet_result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user_id))
         if diet_result.scalar_one_or_none() is None:
             raise ValueError("Diet not found")
     consumption = DietConsumption(
@@ -289,13 +266,9 @@ async def create_consumption(db: AsyncSession, user_id: uuid.UUID, **kwargs) -> 
     return consumption_dict(consumption)
 
 
-async def delete_consumption(
-    db: AsyncSession, user_id: uuid.UUID, consumption_id: uuid.UUID
-) -> None:
+async def delete_consumption(db: AsyncSession, user_id: uuid.UUID, consumption_id: uuid.UUID) -> None:
     result = await db.execute(
-        select(DietConsumption).where(
-            DietConsumption.id == consumption_id, DietConsumption.user_id == user_id
-        )
+        select(DietConsumption).where(DietConsumption.id == consumption_id, DietConsumption.user_id == user_id)
     )
     consumption = result.scalar_one_or_none()
     if not consumption:
@@ -358,9 +331,7 @@ async def execute_diet_evaluation(
     if active_config is None:
         raise ValueError("No active LLM provider configured")
     try:
-        evaluation = await evaluate_diet(
-            db=db, diet=diet, llm_config=active_config, locale=locale, days=days
-        )
+        evaluation = await evaluate_diet(db=db, diet=diet, llm_config=active_config, locale=locale, days=days)
     except (JsonRepairError, ValueError):
         raise
     await db.refresh(diet)
@@ -372,9 +343,7 @@ async def execute_diet_evaluation(
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-async def list_evaluations(
-    db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UUID
-) -> list[dict]:
+async def list_evaluations(db: AsyncSession, user_id: uuid.UUID, diet_id: uuid.UUID) -> list[dict]:
     result = await db.execute(select(Diet).where(Diet.id == diet_id, Diet.user_id == user_id))
     if result.scalar_one_or_none() is None:
         raise ValueError("Diet not found")

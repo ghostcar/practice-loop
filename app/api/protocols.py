@@ -161,9 +161,12 @@ async def protocols_create(
     db: AsyncSession = Depends(get_db),
 ):
     proto = await create_protocol_from_form(
-        db, user,
-        title=title, description=description,
-        category=category, anchor_type=anchor_type,
+        db,
+        user,
+        title=title,
+        description=description,
+        category=category,
+        anchor_type=anchor_type,
         steps_json=steps_json,
     )
     return RedirectResponse(url=f"/protocols/{proto.id}/edit", status_code=303)
@@ -182,9 +185,13 @@ async def protocols_update(
     db: AsyncSession = Depends(get_db),
 ):
     proto = await update_protocol_from_form(
-        db, user, protocol_id,
-        title=title, description=description,
-        category=category, anchor_type=anchor_type,
+        db,
+        user,
+        protocol_id,
+        title=title,
+        description=description,
+        category=category,
+        anchor_type=anchor_type,
         steps_json=steps_json,
     )
     return RedirectResponse(url=f"/protocols/{proto.id}/edit", status_code=303)
@@ -223,7 +230,11 @@ async def protocols_complete_step(
     db: AsyncSession = Depends(get_db),
 ):
     run = await complete_protocol_step_from_form(
-        db, user, run_id, step_log_id, result_payload,
+        db,
+        user,
+        run_id,
+        step_log_id,
+        result_payload,
     )
     if run is None:
         return RedirectResponse(url="/protocols", status_code=303)

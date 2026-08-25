@@ -40,6 +40,7 @@ async def dashboard(
     """Dashboard with real stats."""
     # Redirect new users to onboarding if they haven't completed it yet.
     from app.services.onboarding_service import should_redirect_to_onboarding
+
     if should_redirect_to_onboarding(user):
         return RedirectResponse(url="/onboarding", status_code=303)
 

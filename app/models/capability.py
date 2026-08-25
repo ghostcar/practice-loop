@@ -53,6 +53,5 @@ class CapabilityGrantV2(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<CapabilityGrantV2(issuer={self.issuer_id}, recipient={self.recipient_id},"
-            f" code={self.capability_code})>"
+            f"<CapabilityGrantV2(issuer={self.issuer_id}, recipient={self.recipient_id}, code={self.capability_code})>"
         )

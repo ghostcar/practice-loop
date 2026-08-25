@@ -122,9 +122,13 @@ async def create_manual_training_task(
     form = await request.form()
     try:
         await svc.create_manual_task(
-            db, user_id=user.id, entity_id=entity_id,
-            training_day_id=training_day_id, planned_comment=planned_comment,
-            form_data=form, locale=locale,
+            db,
+            user_id=user.id,
+            entity_id=entity_id,
+            training_day_id=training_day_id,
+            planned_comment=planned_comment,
+            form_data=form,
+            locale=locale,
         )
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from None
@@ -272,8 +276,12 @@ async def create_adaptive_program_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     await svc.create_adaptive_program(
-        db, user_id=user.id, title=title, focus_domain=focus_domain,
-        total_days=total_days, difficulty_level=difficulty_level,
+        db,
+        user_id=user.id,
+        title=title,
+        focus_domain=focus_domain,
+        total_days=total_days,
+        difficulty_level=difficulty_level,
     )
     return RedirectResponse(url="/training/adaptive", status_code=303)
 
@@ -289,8 +297,12 @@ async def log_step_feedback_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     await svc.log_step_feedback(
-        db, step_id=step_id, comfort_score=comfort_score,
-        actual_minutes=actual_minutes, notes=notes, user_id=user.id,
+        db,
+        step_id=step_id,
+        comfort_score=comfort_score,
+        actual_minutes=actual_minutes,
+        notes=notes,
+        user_id=user.id,
     )
     return RedirectResponse(url="/training/adaptive", status_code=303)
 

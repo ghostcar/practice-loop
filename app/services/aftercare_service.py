@@ -16,11 +16,13 @@ AFTERCARE_KINDS = ("physical", "emotional", "debrief", "hydration", "rest", "oth
 async def aftercare_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """Dashboard summary: entries in 30d / last entry / kinds count. Relief-only."""
     rows = (
-        (await db.execute(
-            select(AftercareEntry)
-            .where(AftercareEntry.user_id == user_id)
-            .order_by(AftercareEntry.entry_date.desc())
-        ))
+        (
+            await db.execute(
+                select(AftercareEntry)
+                .where(AftercareEntry.user_id == user_id)
+                .order_by(AftercareEntry.entry_date.desc())
+            )
+        )
         .scalars()
         .all()
     )
@@ -36,11 +38,17 @@ async def aftercare_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
 
 async def get_aftercare_page_context(db: AsyncSession, user_id: uuid.UUID):
-    rows = (await db.execute(
-        select(AftercareEntry)
-        .where(AftercareEntry.user_id == user_id)
-        .order_by(AftercareEntry.entry_date.desc())
-    )).scalars().all()
+    rows = (
+        (
+            await db.execute(
+                select(AftercareEntry)
+                .where(AftercareEntry.user_id == user_id)
+                .order_by(AftercareEntry.entry_date.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
     return {"entries": rows, "kinds": AFTERCARE_KINDS}
 
 
@@ -54,11 +62,14 @@ async def create_entry(db: AsyncSession, user_id: uuid.UUID, **kwargs) -> Afterc
 
 
 async def delete_entry(db: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID):
-    entry = (await db.execute(
-        select(AftercareEntry).where(
-            AftercareEntry.id == entry_id, AftercareEntry.user_id == user_id,
+    entry = (
+        await db.execute(
+            select(AftercareEntry).where(
+                AftercareEntry.id == entry_id,
+                AftercareEntry.user_id == user_id,
+            )
         )
-    )).scalar_one_or_none()
+    ).scalar_one_or_none()
     if not entry:
         raise ValueError("Entry not found")
     await db.delete(entry)

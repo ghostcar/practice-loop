@@ -57,9 +57,7 @@ class ProtocolDefinition(Base):
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     category: Mapped[str] = mapped_column(String(50), default="prep", nullable=False, index=True)
     # prep | recovery | routine | discipline
-    anchor_type: Mapped[str] = mapped_column(
-        String(30), default=ProtocolAnchorType.SESSION_BOUND.value, nullable=False
-    )
+    anchor_type: Mapped[str] = mapped_column(String(30), default=ProtocolAnchorType.SESSION_BOUND.value, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

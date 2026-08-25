@@ -46,7 +46,8 @@ async def tasks_page(
     t = get_translations(locale)
 
     ctx = await svc.get_tasks_page_context(
-        db, user.id,
+        db,
+        user.id,
         status_filter=status_filter,
         body_part_id=body_part_id,
         location_id=location_id,
@@ -93,7 +94,9 @@ async def generate_task_endpoint(
     locale = detect_locale(request, user.locale)
     try:
         await svc.execute_llm_generation(
-            db, user.id, locale=locale,
+            db,
+            user.id,
+            locale=locale,
             custom_prompt=custom_prompt.strip() or None,
             body_part_id=preferred_body_part.strip() or None,
             location_id=preferred_location.strip() or None,
@@ -187,7 +190,12 @@ async def create_manual_task(
     form = await request.form()
     try:
         await svc.create_manual_task_from_form(
-            db, user.id, entity_id, form_data=form, planned_comment=planned_comment, locale=locale,
+            db,
+            user.id,
+            entity_id,
+            form_data=form,
+            planned_comment=planned_comment,
+            locale=locale,
         )
     except NotFoundError:
         raise HTTPException(status_code=404, detail="Entity not found") from None

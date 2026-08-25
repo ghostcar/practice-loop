@@ -299,9 +299,7 @@ def get_template_download(template_type: str, format: str = "csv"):
 def get_import_page_context(app_url: str) -> dict:
     """Build template context for the import/export management page."""
     return {
-        "templates": {
-            k: {"label": v["label"], "csv_headers": v["csv_headers"]} for k, v in TEMPLATES.items()
-        },
+        "templates": {k: {"label": v["label"], "csv_headers": v["csv_headers"]} for k, v in TEMPLATES.items()},
         "export_types": list(EXPORT_TYPES),
         "app_url": app_url,
     }
@@ -398,9 +396,7 @@ async def export_full_data(db: AsyncSession, user, format: str = "json"):
     return JSONResponse(full)
 
 
-async def export_data_by_type(
-    db: AsyncSession, user, export_type: str, format: str = "json", limit: int = 10000
-):
+async def export_data_by_type(db: AsyncSession, user, export_type: str, format: str = "json", limit: int = 10000):
     """Export user data by type as JSON or CSV."""
     if export_type not in EXPORT_TYPES:
         raise ValueError(f"Unknown export type: {export_type}. Available: {list(EXPORT_TYPES)}")

@@ -36,9 +36,7 @@ VALID_SLUG_RE = r"^[a-z0-9][a-z0-9-]{2,63}$"
 
 
 async def _owned_count(db: AsyncSession, user_id: uuid.UUID) -> int:
-    res = await db.execute(
-        select(func.count()).select_from(Community).where(Community.owner_id == user_id)
-    )
+    res = await db.execute(select(func.count()).select_from(Community).where(Community.owner_id == user_id))
     return int(res.scalar_one() or 0)
 
 
@@ -60,10 +58,7 @@ async def get_community_list_context(db: AsyncSession, user) -> dict:
     my_membership = {c.id: m for c, m in mine_rows}
 
     public_res = await db.execute(
-        select(Community)
-        .where(Community.visibility == "public")
-        .order_by(Community.created_at.desc())
-        .limit(50)
+        select(Community).where(Community.visibility == "public").order_by(Community.created_at.desc()).limit(50)
     )
     public_communities = public_res.scalars().all()
 
@@ -97,9 +92,7 @@ async def get_community_detail_context(db: AsyncSession, c_uuid: uuid.UUID, user
     is_owner = membership is not None and membership.role == "owner" and membership.status == "active"
 
     members_res = await db.execute(
-        select(CommunityMember)
-        .where(CommunityMember.community_id == c_uuid)
-        .order_by(CommunityMember.joined_at)
+        select(CommunityMember).where(CommunityMember.community_id == c_uuid).order_by(CommunityMember.joined_at)
     )
     members = members_res.scalars().all()
     active_members = [m for m in members if m.status == "active"]
@@ -176,16 +169,19 @@ async def create_community_from_form(
         return None, "/communities?error=Сообщество с таким slug уже существует"
 
     community = await create_community(
-        db, name=name, slug=slug, description=description,
-        owner_id=user_id, visibility=visibility, require_approval=require_approval,
+        db,
+        name=name,
+        slug=slug,
+        description=description,
+        owner_id=user_id,
+        visibility=visibility,
+        require_approval=require_approval,
     )
     await db.flush()
     return community, None
 
 
-async def do_join_community(
-    db: AsyncSession, c_uuid: uuid.UUID, user_id: uuid.UUID, invite_code: str = ""
-) -> str:
+async def do_join_community(db: AsyncSession, c_uuid: uuid.UUID, user_id: uuid.UUID, invite_code: str = "") -> str:
     """Join a community. Returns redirect suffix."""
     community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
     if not community:
@@ -211,7 +207,11 @@ async def do_leave_community(db: AsyncSession, c_uuid: uuid.UUID, user_id: uuid.
 
 
 async def do_approve_member(
-    db: AsyncSession, c_uuid: uuid.UUID, member_id: uuid.UUID, user_id: uuid.UUID, approve: bool,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    member_id: uuid.UUID,
+    user_id: uuid.UUID,
+    approve: bool,
 ) -> None:
     """Owner approves/rejects a pending member."""
     community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
@@ -248,7 +248,10 @@ async def do_delete_community(db: AsyncSession, c_uuid: uuid.UUID, user_id: uuid
 
 
 async def do_transfer_ownership(
-    db: AsyncSession, c_uuid: uuid.UUID, new_owner_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    new_owner_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> str:
     """Transfer ownership. Returns status string."""
     community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
@@ -264,8 +267,11 @@ async def do_transfer_ownership(
 
 
 async def do_add_moderator(
-    db: AsyncSession, c_uuid: uuid.UUID, target_user_id: uuid.UUID,
-    role_type: str, user_id: uuid.UUID,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    target_user_id: uuid.UUID,
+    role_type: str,
+    user_id: uuid.UUID,
 ) -> str:
     """Assign a moderator role. Returns status."""
     community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
@@ -281,8 +287,11 @@ async def do_add_moderator(
 
 
 async def do_remove_moderator(
-    db: AsyncSession, c_uuid: uuid.UUID, target_user_id: uuid.UUID,
-    role_type: str, user_id: uuid.UUID,
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    target_user_id: uuid.UUID,
+    role_type: str,
+    user_id: uuid.UUID,
 ) -> bool:
     """Remove a moderator role. Returns True if removed."""
     community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()

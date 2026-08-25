@@ -192,9 +192,7 @@ class MedicationInsightAdapter:
         now_date = datetime.datetime.now(datetime.UTC).date()
         cutoff = now_date + datetime.timedelta(days=30)
 
-        stocks_res = await db.execute(
-            select(MedStock).where(MedStock.user_id == user_id)
-        )
+        stocks_res = await db.execute(select(MedStock).where(MedStock.user_id == user_id))
         for s in stocks_res.scalars().all():
             if s.low_stock_threshold is not None and s.quantity <= s.low_stock_threshold:
                 low_stock_count += 1

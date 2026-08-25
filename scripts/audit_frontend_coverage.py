@@ -5,6 +5,7 @@ Parses app/api/*.py statically:
 - resolves router prefix (APIRouter(prefix="...")) and include_router prefix in main.py
 - checks whether each final route path appears in any href/hx-* in app/templates/
 """
+
 import re
 from pathlib import Path
 
@@ -37,9 +38,7 @@ def parse_file(path: Path) -> list[tuple[str, str, str]]:
     src = path.read_text(encoding="utf-8", errors="ignore")
     # map each router variable -> its prefix
     var_prefix: dict[str, str] = {}
-    for m in re.finditer(
-        r'([a-z_0-9]*router)\s*=\s*APIRouter\(([^)]*)\)', src, re.S
-    ):
+    for m in re.finditer(r"([a-z_0-9]*router)\s*=\s*APIRouter\(([^)]*)\)", src, re.S):
         var = m.group(1)
         pm = re.search(r'prefix\s*=\s*["\']([^"\']+)["\']', m.group(2))
         if pm:
@@ -51,7 +50,7 @@ def parse_file(path: Path) -> list[tuple[str, str, str]]:
         init = path.parent / "__init__.py"
         if init.exists():
             isrc = init.read_text(encoding="utf-8", errors="ignore")
-            im = re.search(r'APIRouter\(([^)]*)\)', isrc)
+            im = re.search(r"APIRouter\(([^)]*)\)", isrc)
             if im:
                 pm = re.search(r'prefix\s*=\s*["\']([^"\']+)["\']', im.group(1))
                 if pm:
@@ -66,9 +65,7 @@ def parse_file(path: Path) -> list[tuple[str, str, str]]:
     ]
     tpls = [
         (m.start(), m.group(1))
-        for m in re.finditer(
-            r'TemplateResponse\([^)]*?name\s*=\s*["\']([a-z_/]+\.html)["\']', src, re.S
-        )
+        for m in re.finditer(r'TemplateResponse\([^)]*?name\s*=\s*["\']([a-z_/]+\.html)["\']', src, re.S)
     ]
     if not tpls:
         # legacy positional form: TemplateResponse(request, "tpl.html")

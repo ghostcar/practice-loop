@@ -98,19 +98,14 @@ def get_library_context(locale: str, t) -> dict:
 async def get_templates_page_context(db: AsyncSession, user) -> dict:
     """Build context for /llm/templates (user's private templates list)."""
     result = await db.execute(
-        select(PromptTemplate)
-        .where(PromptTemplate.user_id == user.id)
-        .order_by(PromptTemplate.created_at.desc())
+        select(PromptTemplate).where(PromptTemplate.user_id == user.id).order_by(PromptTemplate.created_at.desc())
     )
     templates_list = [serialize(pt) for pt in result.scalars().all()]
     llm_config = await get_active_llm_config(db, user.id)
     return {
         "templates": templates_list,
         "has_llm_config": llm_config is not None,
-        "library_prompts": [
-            {"key": p.key, "title": p.title_key, "category": p.category}
-            for p in list_prompts()
-        ],
+        "library_prompts": [{"key": p.key, "title": p.title_key, "category": p.category} for p in list_prompts()],
     }
 
 
@@ -125,9 +120,7 @@ async def get_user_prompt_library_items(db: AsyncSession) -> dict:
     """Query system + user prompts for /prompts/library."""
     from app.models.prompt_library import PromptLibraryItem
 
-    items = (
-        await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))
-    ).scalars().all()
+    items = (await db.execute(select(PromptLibraryItem).order_by(PromptLibraryItem.key))).scalars().all()
     system_prompts = [i for i in items if i.library_type == "system"]
     user_prompts = [i for i in items if i.library_type == "user"]
     return {
@@ -136,25 +129,17 @@ async def get_user_prompt_library_items(db: AsyncSession) -> dict:
     }
 
 
-async def get_template_detail_context(
-    db: AsyncSession, user, template_id: uuid.UUID
-) -> dict:
+async def get_template_detail_context(db: AsyncSession, user, template_id: uuid.UUID) -> dict:
     """Build context for /llm/templates/{id} (detail/edit page)."""
     result = await db.execute(
-        select(PromptTemplate).where(
-            PromptTemplate.id == template_id, PromptTemplate.user_id == user.id
-        )
+        select(PromptTemplate).where(PromptTemplate.id == template_id, PromptTemplate.user_id == user.id)
     )
     template = result.scalar_one_or_none()
     if template is None:
         raise ValueError("Template not found")
 
     data = serialize(template)
-    schema_json = (
-        json.dumps(template.params_schema, ensure_ascii=False, indent=2)
-        if template.params_schema
-        else ""
-    )
+    schema_json = json.dumps(template.params_schema, ensure_ascii=False, indent=2) if template.params_schema else ""
     data["params_schema_json"] = schema_json
     data["vars"] = extract_template_vars(template.system_prompt)
     llm_config = await get_active_llm_config(db, user.id)
@@ -250,9 +235,7 @@ async def update_template(
 ) -> PromptTemplate:
     """Update a private prompt template."""
     result = await db.execute(
-        select(PromptTemplate).where(
-            PromptTemplate.id == template_id, PromptTemplate.user_id == user_id
-        )
+        select(PromptTemplate).where(PromptTemplate.id == template_id, PromptTemplate.user_id == user_id)
     )
     template = result.scalar_one_or_none()
     if template is None:
@@ -272,14 +255,10 @@ async def update_template(
     return template
 
 
-async def delete_template(
-    db: AsyncSession, user_id: uuid.UUID, template_id: uuid.UUID
-) -> None:
+async def delete_template(db: AsyncSession, user_id: uuid.UUID, template_id: uuid.UUID) -> None:
     """Delete a private prompt template."""
     result = await db.execute(
-        select(PromptTemplate).where(
-            PromptTemplate.id == template_id, PromptTemplate.user_id == user_id
-        )
+        select(PromptTemplate).where(PromptTemplate.id == template_id, PromptTemplate.user_id == user_id)
     )
     template = result.scalar_one_or_none()
     if template is None:
@@ -301,9 +280,7 @@ async def execute_generation(
 ) -> dict:
     """Run LLM generation from a template, track usage, return outcome."""
     result = await db.execute(
-        select(PromptTemplate).where(
-            PromptTemplate.id == template_id, PromptTemplate.user_id == user_id
-        )
+        select(PromptTemplate).where(PromptTemplate.id == template_id, PromptTemplate.user_id == user_id)
     )
     template = result.scalar_one_or_none()
     if template is None:
@@ -341,8 +318,6 @@ async def execute_generation(
 async def list_templates(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
     """List all user templates as dicts (JSON API)."""
     result = await db.execute(
-        select(PromptTemplate)
-        .where(PromptTemplate.user_id == user_id)
-        .order_by(PromptTemplate.created_at.desc())
+        select(PromptTemplate).where(PromptTemplate.user_id == user_id).order_by(PromptTemplate.created_at.desc())
     )
     return [serialize(pt) for pt in result.scalars().all()]

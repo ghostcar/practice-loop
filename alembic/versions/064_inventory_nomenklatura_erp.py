@@ -18,7 +18,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("inventory_items", sa.Column("group_type", sa.String(length=50), server_default="equipment", nullable=False))
+    op.add_column(
+        "inventory_items", sa.Column("group_type", sa.String(length=50), server_default="equipment", nullable=False)
+    )
     op.create_index(op.f("ix_inventory_items_group_type"), "inventory_items", ["group_type"], unique=False)
     op.add_column("inventory_items", sa.Column("manufacturer", sa.String(length=200), nullable=True))
     op.add_column("inventory_items", sa.Column("model_name", sa.String(length=200), nullable=True))

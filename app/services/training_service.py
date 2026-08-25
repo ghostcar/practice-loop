@@ -424,9 +424,7 @@ async def complete_task(db: AsyncSession, user_id: uuid.UUID, log_id: uuid.UUID)
     return outcome
 
 
-async def analyze_day(
-    db: AsyncSession, user_id: uuid.UUID, plan_id: uuid.UUID | None, locale: str
-) -> None:
+async def analyze_day(db: AsyncSession, user_id: uuid.UUID, plan_id: uuid.UUID | None, locale: str) -> None:
     from app.llm.pipeline import analyze_training_day, get_active_llm_config
 
     if plan_id is None:
@@ -475,7 +473,10 @@ async def reorder_log_entries(db: AsyncSession, user_id: uuid.UUID, td_id: uuid.
 
 
 async def update_log_entry(
-    db: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID, form_data: dict,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    entry_id: uuid.UUID,
+    form_data: dict,
 ) -> TrainingLogEntry:
     result = await db.execute(select(TrainingLogEntry).where(TrainingLogEntry.id == entry_id))
     entry = result.scalar_one_or_none()

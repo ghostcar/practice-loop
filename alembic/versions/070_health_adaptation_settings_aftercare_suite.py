@@ -19,11 +19,18 @@ depends_on = None
 
 def upgrade() -> None:
     # Upgrade users table
-    op.add_column("users", sa.Column("health_adaptation_mode", sa.String(length=30), server_default="auto_reduce", nullable=False))
-    op.add_column("users", sa.Column("health_adaptation_sensitivity", sa.String(length=30), server_default="moderate", nullable=False))
+    op.add_column(
+        "users", sa.Column("health_adaptation_mode", sa.String(length=30), server_default="auto_reduce", nullable=False)
+    )
+    op.add_column(
+        "users",
+        sa.Column("health_adaptation_sensitivity", sa.String(length=30), server_default="moderate", nullable=False),
+    )
 
     # Upgrade care_routines
-    op.add_column("care_routines", sa.Column("aftercare_trigger_drop", sa.Boolean(), server_default="true", nullable=False))
+    op.add_column(
+        "care_routines", sa.Column("aftercare_trigger_drop", sa.Boolean(), server_default="true", nullable=False)
+    )
     op.add_column("care_routines", sa.Column("medication_ids", JSONB(astext_type=sa.Text()), nullable=True))
 
 

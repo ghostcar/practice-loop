@@ -57,9 +57,7 @@ async def submit_ai_proposal(
 
     policy = await get_user_agency_policy(db, user_id, domain)
     effective_level = (
-        policy.operation_overrides.get(operation, policy.default_level)
-        if policy
-        else AgencyLevel.MANUAL.value
+        policy.operation_overrides.get(operation, policy.default_level) if policy else AgencyLevel.MANUAL.value
     )
 
     allowed, reason = await evaluate_agency_permission(

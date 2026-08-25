@@ -43,9 +43,14 @@ async def community_list_page(
     t = get_translations(locale)
     ctx = await get_community_list_context(db, user)
     return templates.TemplateResponse(
-        request=request, name="community_list.html",
+        request=request,
+        name="community_list.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale, "theme": theme,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
             "active_nav": "communities",
             "creation_limit": getattr(settings, "community_creation_limit", 0),
             **ctx,
@@ -56,16 +61,23 @@ async def community_list_page(
 @router.post("/communities/create")
 async def create_community_endpoint(
     request: Request,
-    name: str = Form(...), slug: str = Form(...),
-    description: str = Form(""), visibility: str = Form("public"),
+    name: str = Form(...),
+    slug: str = Form(...),
+    description: str = Form(""),
+    visibility: str = Form("public"),
     require_approval: str = Form("off"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     limit = getattr(settings, "community_creation_limit", 0)
     community, error_url = await create_community_from_form(
-        db, user.id, name=name, slug=slug, description=description,
-        visibility=visibility, require_approval=require_approval == "on",
+        db,
+        user.id,
+        name=name,
+        slug=slug,
+        description=description,
+        visibility=visibility,
+        require_approval=require_approval == "on",
         creation_limit=limit,
     )
     if error_url:
@@ -92,9 +104,14 @@ async def community_detail_page(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
     return templates.TemplateResponse(
-        request=request, name="community_detail.html",
+        request=request,
+        name="community_detail.html",
         context={
-            "request": request, "t": t, "user": user, "locale": locale, "theme": theme,
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
             "active_nav": "communities",
             **ctx,
         },
@@ -103,7 +120,8 @@ async def community_detail_page(
 
 @router.post("/communities/{community_id}/join")
 async def join_community_endpoint(
-    community_id: str, request: Request,
+    community_id: str,
+    request: Request,
     invite_code: str = Form(""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -131,7 +149,8 @@ async def leave_community_endpoint(
 
 @router.post("/communities/{community_id}/approve")
 async def approve_member_endpoint(
-    community_id: str, member_id: str = Form(...),
+    community_id: str,
+    member_id: str = Form(...),
     decision: str = Form("approve"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -175,7 +194,8 @@ async def delete_community_endpoint(
 
 @router.post("/communities/{community_id}/transfer")
 async def transfer_ownership_endpoint(
-    community_id: str, new_owner_id: str = Form(...),
+    community_id: str,
+    new_owner_id: str = Form(...),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -193,7 +213,8 @@ async def transfer_ownership_endpoint(
 
 @router.post("/communities/{community_id}/moderators/add")
 async def add_moderator_endpoint(
-    community_id: str, user_id_: str = Form(..., alias="user_id"),
+    community_id: str,
+    user_id_: str = Form(..., alias="user_id"),
     role_type: str = Form(...),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -214,7 +235,8 @@ async def add_moderator_endpoint(
 
 @router.post("/communities/{community_id}/moderators/remove")
 async def remove_moderator_endpoint(
-    community_id: str, user_id_: str = Form(..., alias="user_id"),
+    community_id: str,
+    user_id_: str = Form(..., alias="user_id"),
     role_type: str = Form(...),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

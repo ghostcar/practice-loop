@@ -10,6 +10,7 @@ def test_prefs_new_block_visible_by_default():
     p3 = UserPrefs(dash_blocks={"order": ["header", "stats"], "hidden": ["tg"]})
     assert "tg" not in p3.dash_visible
 
+
 async def test_dashboard_renders_tg_card(auth_client):
     r = await auth_client.get("/dashboard")
     assert r.status_code == 200

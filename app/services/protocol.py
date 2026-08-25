@@ -450,7 +450,9 @@ async def create_protocol_runs_for_timer_event(
         runs.append(run)
         logger.info(
             "Protocol '%s' (%s) started for timer session %s",
-            proto.title, category_filter, lock_session_id,
+            proto.title,
+            category_filter,
+            lock_session_id,
         )
 
     return runs

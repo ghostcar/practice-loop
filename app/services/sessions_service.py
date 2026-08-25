@@ -119,7 +119,8 @@ async def get_sessions_page_context(db: AsyncSession, user_id: uuid.UUID) -> dic
             .where(ActivitySessionHistory.session_id.in_([s.id for s in sessions]))
             .order_by(ActivitySessionHistory.created_at.desc())
         )
-        if sessions else None
+        if sessions
+        else None
     )
     histories: dict[uuid.UUID, list[ActivitySessionHistory]] = {s.id: [] for s in sessions}
     if history_result is not None:
@@ -151,8 +152,7 @@ async def get_coop_page_context(db: AsyncSession, user_id: uuid.UUID) -> dict:
 
     relationships = await list_user_relationships(db, user_id)
     managed_subs = list(
-        (await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.top_user_id == user_id)))
-        .scalars().all()
+        (await db.execute(select(ManagedSubmissive).where(ManagedSubmissive.top_user_id == user_id))).scalars().all()
     )
     return {"relationships": relationships, "managed_subs": managed_subs}
 
@@ -201,8 +201,11 @@ async def create_session_from_template(db: AsyncSession, user_id: uuid.UUID, tem
     }
     cfg = templates_dict.get(template_type, templates_dict["chastity"])
     session = ActivitySession(
-        owner_id=user_id, status="created",
-        title=cfg["title"], notes=cfg["notes"], session_rules=cfg["rules"],
+        owner_id=user_id,
+        status="created",
+        title=cfg["title"],
+        notes=cfg["notes"],
+        session_rules=cfg["rules"],
     )
     db.add(session)
     await db.flush()
@@ -211,19 +214,35 @@ async def create_session_from_template(db: AsyncSession, user_id: uuid.UUID, tem
 
 
 async def create_custom_session(
-    db: AsyncSession, user_id: uuid.UUID, *, title: str, ai_role: str, notes: str,
-    ext_wheel: bool, ext_pillory: bool, ext_tag_seal: bool, ext_peer_review: bool,
-    ext_dice: bool, ext_aftercare: bool,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    title: str,
+    ai_role: str,
+    notes: str,
+    ext_wheel: bool,
+    ext_pillory: bool,
+    ext_tag_seal: bool,
+    ext_peer_review: bool,
+    ext_dice: bool,
+    ext_aftercare: bool,
 ) -> ActivitySession:
     """Create a custom session with user-specified rules."""
     session = ActivitySession(
-        owner_id=user_id, status="created",
-        title=title.strip()[:200], notes=notes.strip()[:1000] or None,
+        owner_id=user_id,
+        status="created",
+        title=title.strip()[:200],
+        notes=notes.strip()[:1000] or None,
         session_rules={
-            "ai_role": ai_role, "custom_session": True,
+            "ai_role": ai_role,
+            "custom_session": True,
             "extensions": {
-                "wheel": ext_wheel, "pillory": ext_pillory, "tag_seal": ext_tag_seal,
-                "peer_review": ext_peer_review, "dice": ext_dice, "aftercare": ext_aftercare,
+                "wheel": ext_wheel,
+                "pillory": ext_pillory,
+                "tag_seal": ext_tag_seal,
+                "peer_review": ext_peer_review,
+                "dice": ext_dice,
+                "aftercare": ext_aftercare,
             },
         },
     )
@@ -244,8 +263,9 @@ async def accept_session(db: AsyncSession, session: ActivitySession, user_id: uu
         raise ValueError("Only a created session can be accepted")
     if session.accepted_at is None:
         session.accepted_at = datetime.now(UTC)
-        await record_session_event(db, session, user_id, "accepted",
-                                    details={"task_ids": [str(log.id) for log in session.logs]})
+        await record_session_event(
+            db, session, user_id, "accepted", details={"task_ids": [str(log.id) for log in session.logs]}
+        )
         await db.flush()
 
 
@@ -256,8 +276,9 @@ async def start_session(db: AsyncSession, session: ActivitySession, user_id: uui
     now = datetime.now(UTC)
     if session.accepted_at is None:
         session.accepted_at = now
-        await record_session_event(db, session, user_id, "accepted",
-                                    details={"task_ids": [str(log.id) for log in session.logs]})
+        await record_session_event(
+            db, session, user_id, "accepted", details={"task_ids": [str(log.id) for log in session.logs]}
+        )
     session.status = "active"
     session.started_at = now
     await record_session_event(db, session, user_id, "started")
@@ -275,13 +296,20 @@ async def end_session(db: AsyncSession, session: ActivitySession, user_id: uuid.
 
 
 async def complete_live_session(
-    db: AsyncSession, user_id: uuid.UUID, session_id: str | None, notes: str,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    session_id: str | None,
+    notes: str,
 ) -> ActivitySession | None:
     """Complete an active live session. Returns session or None if not found."""
-    query = select(ActivitySession).where(
-        ActivitySession.owner_id == user_id,
-        ActivitySession.status == "active",
-    ).with_for_update()
+    query = (
+        select(ActivitySession)
+        .where(
+            ActivitySession.owner_id == user_id,
+            ActivitySession.status == "active",
+        )
+        .with_for_update()
+    )
     if session_id and session_id.strip():
         try:
             query = query.where(ActivitySession.id == uuid.UUID(session_id.strip()))
@@ -303,13 +331,20 @@ async def complete_live_session(
 
 
 async def interrupt_live_session(
-    db: AsyncSession, user_id: uuid.UUID, session_id: str | None, reason: str,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    session_id: str | None,
+    reason: str,
 ) -> ActivitySession | None:
     """Interrupt an active live session. Returns session or None if not found."""
-    query = select(ActivitySession).where(
-        ActivitySession.owner_id == user_id,
-        ActivitySession.status == "active",
-    ).with_for_update()
+    query = (
+        select(ActivitySession)
+        .where(
+            ActivitySession.owner_id == user_id,
+            ActivitySession.status == "active",
+        )
+        .with_for_update()
+    )
     if session_id and session_id.strip():
         try:
             query = query.where(ActivitySession.id == uuid.UUID(session_id.strip()))
@@ -336,7 +371,10 @@ async def interrupt_live_session(
 
 
 async def attach_task(
-    db: AsyncSession, session: ActivitySession, task_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    session: ActivitySession,
+    task_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> None:
     """Attach a task to a session."""
     if session.status == "ended":
@@ -350,24 +388,33 @@ async def attach_task(
     if task.session_id is None:
         task.session_id = session.id
         db.add(task)
-        await record_session_event(db, session, user_id, "task_added",
-                                    details={
-                                        "task_id": str(task.id),
-                                        "title": task.title_override or task.selected_entity_name,
-                                    },
-                                    penalize_change=True)
+        await record_session_event(
+            db,
+            session,
+            user_id,
+            "task_added",
+            details={
+                "task_id": str(task.id),
+                "title": task.title_override or task.selected_entity_name,
+            },
+            penalize_change=True,
+        )
         await db.flush()
 
 
 async def detach_task(
-    db: AsyncSession, session: ActivitySession, task_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    session: ActivitySession,
+    task_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> None:
     """Detach a task from a session."""
     if session.status == "ended":
         raise ValueError("Ended session cannot be changed")
     task_result = await db.execute(
         select(ActivityLog).where(
-            ActivityLog.id == task_id, ActivityLog.user_id == user_id,
+            ActivityLog.id == task_id,
+            ActivityLog.user_id == user_id,
             ActivityLog.session_id == session.id,
         )
     )
@@ -377,7 +424,10 @@ async def detach_task(
     task.session_id = None
     db.add(task)
     await record_session_event(
-        db, session, user_id, "task_removed",
+        db,
+        session,
+        user_id,
+        "task_removed",
         details={
             "task_id": str(task.id),
             "title": task.title_override or task.selected_entity_name,
@@ -394,9 +444,15 @@ async def detach_task(
 
 async def get_session_history(db: AsyncSession, session_id: uuid.UUID) -> list[dict]:
     """Get session history events."""
-    events = (await db.execute(
-        select(ActivitySessionHistory)
-        .where(ActivitySessionHistory.session_id == session_id)
-        .order_by(ActivitySessionHistory.created_at.asc())
-    )).scalars().all()
+    events = (
+        (
+            await db.execute(
+                select(ActivitySessionHistory)
+                .where(ActivitySessionHistory.session_id == session_id)
+                .order_by(ActivitySessionHistory.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
     return [event_view(e) for e in events]

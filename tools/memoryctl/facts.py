@@ -200,7 +200,13 @@ def _normalize_for_check(facts: dict) -> dict:
 
 
 def check_facts(root: Path) -> tuple[bool, str]:
-    """Verify FACTS.json is fresh (source anchor == current) and deterministic."""
+    """Verify FACTS.json is fresh and deterministic.
+
+    'Fresh' means the stored HEAD is reachable from the current HEAD via
+    commits that touch ONLY docs/state — i.e. the source code hasn't changed
+    since the facts were generated. This prevents self-staleness: committing
+    regenerated FACTS.json alone does not invalidate the manifest.
+    """
     json_path = root / "docs" / "state" / "FACTS.json"
     if not json_path.exists():
         return False, "docs/state/FACTS.json missing — run 'memoryctl facts'"
@@ -209,11 +215,35 @@ def check_facts(root: Path) -> tuple[bool, str]:
         stored = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         return False, f"FACTS.json is not valid JSON: {exc}"
-    if stored.get("git", {}).get("head") != current["git"].get("head"):
-        return (
-            False,
-            f"stale: FACTS.json HEAD={stored.get('git', {}).get('head')} != current HEAD={current['git'].get('head')}",
+
+    stored_head = stored.get("git", {}).get("head")
+    if not stored_head:
+        return False, "FACTS.json has no git.head anchor"
+
+    # If the stored HEAD equals current, it's trivially fresh.
+    if stored_head == current["git"].get("head"):
+        pass  # deterministic check below
+    else:
+        # Check whether the only changes since stored HEAD are in docs/state.
+        # `git diff stored_head..HEAD --name-only` — if all changed files
+        # are under docs/state/, the facts are still valid.
+        code, out = _run(
+            ["git", "diff", "--name-only", f"{stored_head}..HEAD"],
+            root,
         )
+        if code != 0:
+            return (
+                False,
+                f"stale: stored HEAD {stored_head[:12]} not reachable from current HEAD",
+            )
+        changed = [f for f in out.split("\n") if f.strip()]
+        only_docs_state = all(f.startswith("docs/state/") for f in changed)
+        if not only_docs_state:
+            return (
+                False,
+                f"stale: source code changed since FACTS.json HEAD {stored_head[:12]}",
+            )
+
     expected = json.dumps(_normalize_for_check(current), indent=2, ensure_ascii=False, sort_keys=True) + "\n"
     actual = json.dumps(_normalize_for_check(stored), indent=2, ensure_ascii=False, sort_keys=True) + "\n"
     if actual != expected:

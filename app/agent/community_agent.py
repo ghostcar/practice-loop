@@ -334,9 +334,7 @@ async def run_community_delegated_governance(
 # Ownership transfer & co-moderator roles
 # ---------------------------------------------------------------------------
 
-VALID_MODERATOR_ROLES = frozenset(
-    {"co_top", "keyholder", "trainer", "care_curator", "tournament_organizer"}
-)
+VALID_MODERATOR_ROLES = frozenset({"co_top", "keyholder", "trainer", "care_curator", "tournament_organizer"})
 
 
 def is_valid_moderator_role(role: str) -> bool:

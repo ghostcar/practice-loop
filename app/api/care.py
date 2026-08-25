@@ -92,10 +92,17 @@ async def add_routine(
 ):
     try:
         await svc.create_routine(
-            db, user_id=user.id, name=name, area=area, kind=kind,
-            place_name=place_name, place_address=place_address,
-            frequency_days=frequency_days, notes=notes,
-            catalog_item_id=catalog_item_id, product_ids=product_ids,
+            db,
+            user_id=user.id,
+            name=name,
+            area=area,
+            kind=kind,
+            place_name=place_name,
+            place_address=place_address,
+            frequency_days=frequency_days,
+            notes=notes,
+            catalog_item_id=catalog_item_id,
+            product_ids=product_ids,
         )
     except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
@@ -132,9 +139,16 @@ async def add_product(
 ):
     try:
         await svc.create_product(
-            db, user_id=user.id, name=name, category=category, brand=brand,
-            notes=notes, inventory_item_id=inventory_item_id,
-            catalog_item_id=catalog_item_id, quantity=quantity, expiry_date=expiry_date,
+            db,
+            user_id=user.id,
+            name=name,
+            category=category,
+            brand=brand,
+            notes=notes,
+            inventory_item_id=inventory_item_id,
+            catalog_item_id=catalog_item_id,
+            quantity=quantity,
+            expiry_date=expiry_date,
         )
     except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
@@ -171,10 +185,16 @@ async def add_entry(
 ):
     try:
         await svc.create_entry(
-            db, user_id=user.id, entry_date=entry_date, routine_id=routine_id,
-            place_name=place_name, place_address=place_address,
-            duration_minutes=duration_minutes, skin_reaction=skin_reaction,
-            notes=notes, product_ids=product_ids,
+            db,
+            user_id=user.id,
+            entry_date=entry_date,
+            routine_id=routine_id,
+            place_name=place_name,
+            place_address=place_address,
+            duration_minutes=duration_minutes,
+            skin_reaction=skin_reaction,
+            notes=notes,
+            product_ids=product_ids,
         )
     except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None
@@ -246,10 +266,17 @@ async def add_course(
 ):
     try:
         await svc.create_course(
-            db, user_id=user.id, name=name, area=area,
-            place_name=place_name, place_address=place_address,
-            total_sessions=total_sessions, interval_days=interval_days,
-            start_date=start_date, notes=notes, catalog_item_id=catalog_item_id,
+            db,
+            user_id=user.id,
+            name=name,
+            area=area,
+            place_name=place_name,
+            place_address=place_address,
+            total_sessions=total_sessions,
+            interval_days=interval_days,
+            start_date=start_date,
+            notes=notes,
+            catalog_item_id=catalog_item_id,
         )
     except (ValueError, NotFoundError) as e:
         raise HTTPException(400, str(e)) from None

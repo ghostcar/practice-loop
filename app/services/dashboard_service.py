@@ -35,12 +35,32 @@ _DASH_WEEKDAYS = {
 }
 _DASH_MONTHS = {
     "en": [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ],
     "ru": [
-        "января", "февраля", "марта", "апреля", "мая", "июня",
-        "июля", "августа", "сентября", "октября", "ноября", "декабря",
+        "января",
+        "февраля",
+        "марта",
+        "апреля",
+        "мая",
+        "июня",
+        "июля",
+        "августа",
+        "сентября",
+        "октября",
+        "ноября",
+        "декабря",
     ],
 }
 
@@ -57,6 +77,7 @@ def today_label(day: datetime.date, locale: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Dashboard page context
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def get_dashboard_context(db: AsyncSession, user: User, locale: str) -> dict:
     """Build the full dashboard context dict (all queries + summaries)."""
@@ -202,6 +223,7 @@ async def get_dashboard_context(db: AsyncSession, user: User, locale: str) -> di
 # LockTimer summary
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _get_locktimer_summary(db: AsyncSession, user_id: uuid.UUID) -> tuple:
     """Returns (session_dict_or_None, slots_count, tasks_count)."""
     try:
@@ -235,9 +257,13 @@ async def _get_locktimer_summary(db: AsyncSession, user_id: uuid.UUID) -> tuple:
 # Module summary loaders (safe wrappers)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _safe_summary(
-    module_name: str, flag_name: str, func_name: str,
-    db: AsyncSession, user_id: uuid.UUID,
+    module_name: str,
+    flag_name: str,
+    func_name: str,
+    db: AsyncSession,
+    user_id: uuid.UUID,
 ):
     """Load a module summary if the module is enabled."""
     try:
@@ -248,19 +274,24 @@ async def _safe_summary(
 
         if module_name == "medication":
             from app.services.med_service import schedule_summary
+
             return await schedule_summary(db, user_id)
         elif module_name == "health":
             from app.services.health_service import health_summary
+
             return await health_summary(db, user_id)
         elif module_name == "journal":
             from app.services.journal_service import journal_summary
+
             return await journal_summary(db, user_id)
         elif module_name == "aftercare":
             # Not yet decomposed into service
             from app.api.aftercare import _aftercare_summary
+
             return await _aftercare_summary(db, user_id)
         elif module_name == "insights":
             from app.services.insights_service import insights_summary
+
             return await insights_summary(db, user_id)
     except Exception:
         pass
@@ -275,6 +306,7 @@ async def _safe_summary_care(db: AsyncSession, user_id: uuid.UUID):
         if not composition.care_enabled:
             return None
         from app.services.care_service import get_care_summary
+
         return await get_care_summary(db, user_id)
     except Exception:
         pass
@@ -284,6 +316,7 @@ async def _safe_summary_care(db: AsyncSession, user_id: uuid.UUID):
 # ─────────────────────────────────────────────────────────────────────────────
 # Today items merge
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _merge_today_items(today_tasks: list, med_summary: dict | None) -> list[dict]:
     """Combine scheduled tasks with due meds for the 'today' view."""
@@ -320,8 +353,13 @@ def _merge_today_items(today_tasks: list, med_summary: dict | None) -> list[dict
 # Dashboard alert bar
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _build_dashboard_alerts(
-    db: AsyncSession, user_id: uuid.UUID, today, med_summary: dict | None, locktimer_session: dict | None,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    today,
+    med_summary: dict | None,
+    locktimer_session: dict | None,
 ) -> list[dict]:
     """Build dashboard alert bar from health state, meds, locktimer."""
     alerts: list[dict] = []
@@ -334,59 +372,70 @@ async def _build_dashboard_alerts(
         ).scalar_one_or_none()
 
         if today_state and today_state.post_session_drop:
-            alerts.append({
-                "type": "warning",
-                "icon": "heart",
-                "title": "Post-session Drop (Эмоциональный спад)",
-                "message": (
-                    "Активирован режим бережного восстановления. "
-                    "Рекомендуются расслабляющие процедуры Ухода и Aftercare."
-                ),
-                "action_url": "/care",
-                "action_label": "Протоколы Ухода",
-            })
+            alerts.append(
+                {
+                    "type": "warning",
+                    "icon": "heart",
+                    "title": "Post-session Drop (Эмоциональный спад)",
+                    "message": (
+                        "Активирован режим бережного восстановления. "
+                        "Рекомендуются расслабляющие процедуры Ухода и Aftercare."
+                    ),
+                    "action_url": "/care",
+                    "action_label": "Протоколы Ухода",
+                }
+            )
         elif today_state and today_state.recovery is not None and today_state.recovery <= 2:
-            alerts.append({
-                "type": "warning",
-                "icon": "today",
-                "title": f"Низкий уровень восстановления ({today_state.recovery}/5)",
-                "message": "ИИ-Наблюдатель рекомендует снизить интенсивность физических тренировок и нагрузок.",
-                "action_url": "/health",
-                "action_label": "Дневник Здоровья",
-            })
+            alerts.append(
+                {
+                    "type": "warning",
+                    "icon": "today",
+                    "title": f"Низкий уровень восстановления ({today_state.recovery}/5)",
+                    "message": "ИИ-Наблюдатель рекомендует снизить интенсивность физических тренировок и нагрузок.",
+                    "action_url": "/health",
+                    "action_label": "Дневник Здоровья",
+                }
+            )
 
         if c_settings and c_settings.profile_type == "hrt_emulated" and (not today_state or not today_state.hrt_taken):
-            alerts.append({
-                "type": "info",
-                "icon": "health",
-                "title": "Напоминание ГТ / HRT",
-                "message": "Не забудьте отметить сегодняшний приём гормональной терапии в Дневнике Здоровья.",
-                "action_url": "/health",
-                "action_label": "Отметить ГТ",
-            })
+            alerts.append(
+                {
+                    "type": "info",
+                    "icon": "health",
+                    "title": "Напоминание ГТ / HRT",
+                    "message": "Не забудьте отметить сегодняшний приём гормональной терапии в Дневнике Здоровья.",
+                    "action_url": "/health",
+                    "action_label": "Отметить ГТ",
+                }
+            )
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning("failed building dashboard alerts: %s", exc)
 
     if med_summary and med_summary.get("due"):
-        alerts.append({
-            "type": "info",
-            "icon": "medication",
-            "title": "Запланированный приём медикаментов",
-            "message": f"Ожидают приёма {len(med_summary['due'])} поз. на сегодня.",
-            "action_url": "/medications",
-            "action_label": "Принять",
-        })
+        alerts.append(
+            {
+                "type": "info",
+                "icon": "medication",
+                "title": "Запланированный приём медикаментов",
+                "message": f"Ожидают приёма {len(med_summary['due'])} поз. на сегодня.",
+                "action_url": "/medications",
+                "action_label": "Принять",
+            }
+        )
 
     if locktimer_session:
-        alerts.append({
-            "type": "lock",
-            "icon": "lock",
-            "title": "Активен Контроль Доступа (Замок)",
-            "message": f"Режим: {locktimer_session['state']}. Ограничения активны.",
-            "action_url": "/timer/dashboard",
-            "action_label": "Статус замка",
-        })
+        alerts.append(
+            {
+                "type": "lock",
+                "icon": "lock",
+                "title": "Активен Контроль Доступа (Замок)",
+                "message": f"Режим: {locktimer_session['state']}. Ограничения активны.",
+                "action_url": "/timer/dashboard",
+                "action_label": "Статус замка",
+            }
+        )
 
     return alerts
 
@@ -394,6 +443,7 @@ async def _build_dashboard_alerts(
 # ─────────────────────────────────────────────────────────────────────────────
 # Achievements
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def get_achievements_context(db: AsyncSession, user_id: uuid.UUID) -> dict:
     """Build achievements page context."""
@@ -407,14 +457,16 @@ async def get_achievements_context(db: AsyncSession, user_id: uuid.UUID) -> dict
     )
     all_achievements = []
     for ua, ach in all_result:
-        all_achievements.append({
-            "code": ach.code,
-            "name": ach.name,
-            "description": ach.description,
-            "color": ach.color,
-            "obtained_at": ua.obtained_at,
-            "display_name": "Anonymous" if ua.user_id != user_id else "You",
-        })
+        all_achievements.append(
+            {
+                "code": ach.code,
+                "name": ach.name,
+                "description": ach.description,
+                "color": ach.color,
+                "obtained_at": ua.obtained_at,
+                "display_name": "Anonymous" if ua.user_id != user_id else "You",
+            }
+        )
 
     # My achievements
     my_result = await db.execute(
@@ -425,16 +477,18 @@ async def get_achievements_context(db: AsyncSession, user_id: uuid.UUID) -> dict
     )
     my_achievements = []
     for ua, ach in my_result:
-        my_achievements.append({
-            "id": ua.id,
-            "code": ach.code,
-            "name": ach.name,
-            "description": ach.description,
-            "color": ach.color,
-            "context": ua.context,
-            "obtained_at": ua.obtained_at,
-            "is_hidden": ua.is_hidden,
-        })
+        my_achievements.append(
+            {
+                "id": ua.id,
+                "code": ach.code,
+                "name": ach.name,
+                "description": ach.description,
+                "color": ach.color,
+                "context": ua.context,
+                "obtained_at": ua.obtained_at,
+                "is_hidden": ua.is_hidden,
+            }
+        )
 
     return {"all_achievements": all_achievements, "my_achievements": my_achievements}
 
@@ -454,6 +508,7 @@ async def toggle_achievement_visibility(db: AsyncSession, ua_id: uuid.UUID, user
 # ─────────────────────────────────────────────────────────────────────────────
 # Notifications
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def get_notifications(db: AsyncSession, user_id: uuid.UUID) -> list:
     """Get user's notifications."""
@@ -480,6 +535,7 @@ async def mark_notification_read(db: AsyncSession, n_id: uuid.UUID, user_id: uui
 # ─────────────────────────────────────────────────────────────────────────────
 # Telegram linking
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def generate_tg_link_code(db: AsyncSession, user: User) -> dict:
     """Generate a 6-char code for Telegram linking (expires in 30 min)."""

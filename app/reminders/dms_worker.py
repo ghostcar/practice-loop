@@ -41,9 +41,7 @@ async def check_dead_mans_switches(db: AsyncSession) -> list[dict[str, Any]]:
 
     for r in rules:
         deadline = (
-            r.next_deadline_at.replace(tzinfo=datetime.UTC)
-            if r.next_deadline_at.tzinfo is None
-            else r.next_deadline_at
+            r.next_deadline_at.replace(tzinfo=datetime.UTC) if r.next_deadline_at.tzinfo is None else r.next_deadline_at
         )
         if deadline <= now:
             # Trigger DMS escalation

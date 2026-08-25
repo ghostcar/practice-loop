@@ -121,7 +121,8 @@ async def get_tasks_page_context(
             .where(ActivityTaskHistory.task_id.in_([log.id for log in recent_logs]))
             .order_by(ActivityTaskHistory.changed_at.desc())
         )
-        if recent_logs else None
+        if recent_logs
+        else None
     )
     task_histories: dict[uuid.UUID, list[ActivityTaskHistory]] = {log.id: [] for log in recent_logs}
     if history_result is not None:
@@ -137,9 +138,7 @@ async def get_tasks_page_context(
 
     # Auto-seed LLM presets if none exist (ADR-179: Omniroute first)
     if active_config is None:
-        existing_cfg = await db.execute(
-            select(LLMProviderConfig).where(LLMProviderConfig.user_id == user_id).limit(1)
-        )
+        existing_cfg = await db.execute(select(LLMProviderConfig).where(LLMProviderConfig.user_id == user_id).limit(1))
         if not existing_cfg.scalar_one_or_none():
             from app.seed import seed_llm_presets
 
@@ -147,6 +146,7 @@ async def get_tasks_page_context(
             active_config = await get_active_llm_config(db, user_id)
 
     from app.timeutils import local_today as _lt
+
     today_schedule = await get_day_schedule(db, user_id, _lt())
     now_available, now_policy, now_label, _ = await is_available(db, user_id, datetime.now(UTC), 60, "active")
 
@@ -246,7 +246,11 @@ async def execute_deterministic_task(db: AsyncSession, user_id: uuid.UUID) -> No
 
 
 async def execute_weekly_generation(
-    db: AsyncSession, user_id: uuid.UUID, *, locale: str, days: int = 7,
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    locale: str,
+    days: int = 7,
 ) -> None:
     """Batch-plan tasks for upcoming days. Raises ValueError or JsonRepairError."""
     llm_config = await get_active_llm_config(db, user_id)
@@ -337,7 +341,9 @@ async def create_manual_task_from_form(
 
 
 async def get_entity_for_params(
-    db: AsyncSession, entity_id: uuid.UUID, user_id: uuid.UUID,
+    db: AsyncSession,
+    entity_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> tuple[Entity, list[dict]]:
     """Get entity and normalized param defs for the params form. Raises ValueError if not found."""
     ent_result = await db.execute(

@@ -20,7 +20,9 @@ depends_on = None
 def upgrade() -> None:
     op.add_column("medications", sa.Column("analogues", JSONB(astext_type=sa.Text()), nullable=True))
     op.add_column("medications", sa.Column("manufacturer", sa.String(length=200), nullable=True))
-    op.add_column("medications", sa.Column("prescription_required", sa.Boolean(), server_default="false", nullable=False))
+    op.add_column(
+        "medications", sa.Column("prescription_required", sa.Boolean(), server_default="false", nullable=False)
+    )
     op.add_column("medications", sa.Column("storage_conditions", sa.String(length=200), nullable=True))
 
     # active_ingredient, form, strength were already nullable in baseline model — ensure index on active_ingredient

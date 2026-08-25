@@ -225,6 +225,4 @@ async def test_inline_script_legacy_allowlist_is_accurate():
         )
         if "<script>" in masked:
             unnonced_pages.append(str(tpl.relative_to(root)))
-    assert not unnonced_pages, (
-        f"inline scripts missing CSP nonce (would be blocked): {sorted(unnonced_pages)}"
-    )
+    assert not unnonced_pages, f"inline scripts missing CSP nonce (would be blocked): {sorted(unnonced_pages)}"

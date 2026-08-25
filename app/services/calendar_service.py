@@ -271,9 +271,7 @@ async def delete_window(
 
 async def list_overrides(db: AsyncSession, user_id: uuid.UUID) -> list[CalendarOverrideOut]:
     result = await db.execute(
-        select(CalendarOverride)
-        .where(CalendarOverride.user_id == user_id)
-        .order_by(CalendarOverride.start_date.desc())
+        select(CalendarOverride).where(CalendarOverride.user_id == user_id).order_by(CalendarOverride.start_date.desc())
     )
     out = []
     for o in result.scalars().all():
