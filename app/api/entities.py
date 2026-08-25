@@ -10,12 +10,14 @@ import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.models.entity import Entity
 from app.models.user import User
 from app.services import entities_service as svc
 from app.services.errors import NotFoundError
@@ -29,6 +31,12 @@ router = APIRouter(prefix="/entities", tags=["entities"])
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+@router.get("/", response_class=HTMLResponse)
+async def entities_root_redirect():
+    """Redirect /entities/ to /entities/catalog."""
+    return RedirectResponse(url="/entities/catalog", status_code=status.HTTP_303_SEE_OTHER)
+
+
 @router.get("/catalog", response_class=HTMLResponse)
 async def catalog_page(
     request: Request,
@@ -37,6 +45,16 @@ async def catalog_page(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    # Auto-seed system catalog for new users — entity bootstrap only.
+    # Opt-in + LLM presets are handled in onboarding (ADR-179).
+    exists = await db.execute(
+        select(Entity).where(Entity.owner_id.is_(None)).limit(1)
+    )
+    if not exists.scalar_one_or_none():
+        from app.seed import seed_entities
+
+        await seed_entities(db)
+
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)

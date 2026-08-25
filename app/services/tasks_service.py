@@ -18,6 +18,7 @@ from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
 from app.models.body_part import TaskBodyTarget
 from app.models.entity import Entity
+from app.models.llm_config import LLMProviderConfig
 from app.models.opt_in import UserEntityOptIn
 from app.models.task_history import ActivityTaskHistory
 from app.models.task_inventory import TaskInventoryUsage
@@ -134,6 +135,17 @@ async def get_tasks_page_context(
     status_stats = {row[0]: row[1] for row in stats_result.all()}
 
     active_config = await get_active_llm_config(db, user_id)
+
+    # Auto-seed LLM presets if none exist (ADR-179: Omniroute first)
+    if active_config is None:
+        existing_cfg = await db.execute(
+            select(LLMProviderConfig).where(LLMProviderConfig.user_id == user_id).limit(1)
+        )
+        if not existing_cfg.scalar_one_or_none():
+            from app.seed import seed_llm_presets
+
+            await seed_llm_presets(db, user_id=user_id)
+            active_config = await get_active_llm_config(db, user_id)
 
     from app.timeutils import local_today as _lt
     today_schedule = await get_day_schedule(db, user_id, _lt())

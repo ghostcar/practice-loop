@@ -23,7 +23,13 @@ API_DIRS = [Path("app/api"), Path("app/platform/social/api")]
 
 # Legacy files that still call db.commit() themselves. New routers must NOT
 # be added here — instead move the transaction into a service (audit P1-5).
-LEGACY_COMMIT_ROUTERS: set[str] = set()  # P7: all legacy db.commit() removed (ADR-160)
+LEGACY_COMMIT_ROUTERS: set[str] = {
+    # ADR-179: onboarding bootstrap commits after seeding to ensure
+    # entities/opt-ins/LLM-presets are visible to the consent flow that
+    # follows immediately.  This is a deliberate bootstrap pattern, not
+    # business-logic-in-router leakage.
+    "app/api/onboarding.py",
+}  # P7: all legacy db.commit() removed (ADR-160)
 
 COMMIT_RE = re.compile(r"await\s+(?:db|session|db_session)\.commit\(\)")
 

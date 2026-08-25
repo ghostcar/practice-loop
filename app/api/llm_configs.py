@@ -31,6 +31,16 @@ async def llm_configs_page(
     theme = detect_theme(user.theme)
     t = get_translations(locale)
 
+    # Auto-seed Omniroute preset for new users (ADR-179).
+    existing = await db.execute(
+        select(LLMProviderConfig).where(LLMProviderConfig.user_id == user.id)
+    )
+    if not existing.scalars().first():
+        from app.seed import seed_llm_presets
+        await seed_llm_presets(db, user_id=user.id)
+        # Re-query after seeding
+        pass
+
     result = await db.execute(
         select(LLMProviderConfig).where(LLMProviderConfig.user_id == user.id).order_by(LLMProviderConfig.provider_name)
     )

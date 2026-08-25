@@ -40,6 +40,10 @@ services:
       SOCIAL_TRACKER_ADAPTER_ENABLED: ${SOCIAL_TRACKER_ADAPTER_ENABLED:-false}
       SOCIAL_TIMER_ADAPTER_ENABLED: ${SOCIAL_TIMER_ADAPTER_ENABLED:-false}
       SOCIAL_PUBLIC_ENABLED: ${SOCIAL_PUBLIC_ENABLED:-false}
+      OMNIROUTE_HOST: ${OMNIROUTE_HOST:-http://host.docker.internal:20128}
+      OMNIROUTE_API_KEY: ${OMNIROUTE_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
