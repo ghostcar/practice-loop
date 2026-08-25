@@ -6,7 +6,7 @@
     <ol class="flex items-center gap-1.5">
         <li><a href="/social/profile" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_social }}</a></li>
         <li aria-hidden="true">/</li>
-        <li class="text-[color:var(--text-secondary)] font-medium">Позорный Столб</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">   Pillory / Позорный Столб</li>
     </ol>
 </nav>
 {% endblock %}
@@ -78,8 +78,10 @@
       </div>
     </div>
     {% else %}
-    <div class="col-span-3 pl-surface border border-[color:var(--border)] rounded-2xl p-12 text-center space-y-2">
+    <div class="col-span-3 pl-surface border border-[color:var(--border)] rounded-2xl p-12 text-center space-y-3">
+      {{ icon('lock', 'w-10 h-10 text-[color:var(--text-muted)] mx-auto') }}
       <p class="text-sm text-[color:var(--text-muted)]">На позорном столбе сейчас нет активных удержаний.</p>
+      <p class="text-xs text-[color:var(--text-muted)]">Когда участники опубликуют сессии с visibility=public, они появятся здесь.</p>
     </div>
     {% endfor %}
   </div>

@@ -6,7 +6,7 @@
     <ol class="flex items-center gap-1.5">
         <li><a href="/social/profile" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_social }}</a></li>
         <li aria-hidden="true">/</li>
-        <li class="text-[color:var(--text-secondary)] font-medium">Лидерборд</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">   Лидерборд / Hall of Fame</li>
     </ol>
 </nav>
 {% endblock %}
@@ -70,8 +70,10 @@
         </div>
       </div>
       {% else %}
-      <div class="py-8 text-center text-[color:var(--text-muted)] text-sm">
-        В публичном рейтинге пока нет участников. Включите переключатель discoverable в профиле!
+      <div class="py-10 text-center space-y-2">
+        {{ icon('trophy', 'w-10 h-10 text-[color:var(--text-muted)] mx-auto') }}
+        <p class="text-sm text-[color:var(--text-muted)]">В публичном рейтинге пока нет участников.</p>
+        <p class="text-xs text-[color:var(--text-muted)]">Включите переключатель discoverable в профиле, чтобы появиться здесь.</p>
       </div>
       {% endfor %}
     </div>

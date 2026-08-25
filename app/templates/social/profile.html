@@ -22,7 +22,13 @@
   {% if profile is none %}
   <!-- Create profile -->
   <div class="pl-surface border border-[color:var(--border)] rounded-xl p-6 space-y-4">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_create_profile }}</h2>
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-12 h-12 bg-[color:var(--dom-social)]/15 rounded-full flex items-center justify-center">{{ icon('profile', 'w-6 h-6 text-[color:var(--dom-social-text)]') }}</div>
+      <div>
+        <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_create_profile }}</h2>
+        <p class="text-xs text-[color:var(--text-muted)]">{{ t.social_profile_empty }}</p>
+      </div>
+    </div>
     <form action="/social/profile/create" method="post" class="space-y-4">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <div>
