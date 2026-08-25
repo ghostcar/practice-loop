@@ -281,7 +281,11 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dashboard_no_diets or "No active diets" }}</p>
+            <div class="text-center py-3">
+              <p class="text-sm text-[color:var(--text-muted)]">{{ t.dashboard_no_diets or "No active diets" }}</p>
+              <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_diets_hint', 'Create a diet plan to track your nutrition.') }}</p>
+              <a href="/diets" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_diets_cta', 'Create Diet Plan') }}</a>
+            </div>
             {% endif %}
             <div class="text-xs text-[color:var(--text-muted)] text-center mt-1">{{ today_meals }} {{ t.dashboard_meals_today or "meals logged today" }}</div>
         </div>
@@ -320,7 +324,11 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dashboard_no_training or "No training plans today" }}</p>
+            <div class="text-center py-3">
+              <p class="text-sm text-[color:var(--text-muted)]">{{ t.dashboard_no_training or "No training plans today" }}</p>
+              <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_training_hint', 'Generate a training plan with AI or create one manually.') }}</p>
+              <a href="/training" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_training_cta', 'Open Training') }}</a>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -345,7 +353,11 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.med_no_due }}</p>
+        <div class="text-center py-3">
+          <p class="text-sm text-[color:var(--text-muted)]">{{ t.med_no_due }}</p>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_med_hint', 'Add medication courses to track adherence and get reminders.') }}</p>
+          <a href="/medications" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_med_cta', 'Add Medication') }}</a>
+        </div>
         {% endif %}
         {% if med_summary and (med_summary.expiring or med_summary.low_stock) %}
         <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
@@ -375,7 +387,11 @@
             {% if health_summary.symptoms %}<span class="text-xs text-[color:var(--text-muted)]">{{ health_summary.symptoms | join(', ') }}</span>{% endif %}
         </div>
         {% else %}
-        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_health_checkin }}</p>
+        <div class="text-center py-3">
+          <p class="text-sm text-[color:var(--text-muted)]">{{ t.dash_health_checkin }}</p>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_health_hint', 'Log your daily health state, mood, and body measurements.') }}</p>
+          <a href="/health" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_health_cta', 'Check In') }}</a>
+        </div>
         {% endif %}
         <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
             {% if health_summary %}
@@ -401,7 +417,11 @@
             {% if journal_summary.last_type %}<span class="pl-text-secondary text-xs">{{ journal_summary.last_type }}</span>{% endif %}
         </div>
         {% else %}
-        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_journal_empty }}</p>
+        <div class="text-center py-3">
+          <p class="text-sm text-[color:var(--text-muted)]">{{ t.dash_journal_empty }}</p>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_journal_hint', 'Record your experiences, notes, and partner dynamics.') }}</p>
+          <a href="/journal" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_journal_cta', 'New Entry') }}</a>
+        </div>
         {% endif %}
         <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
             {% if journal_summary %}
@@ -427,7 +447,11 @@
             {% if care_summary.last_routine %}<span class="pl-text-secondary text-xs">{{ care_summary.last_routine }}</span>{% endif %}
         </div>
         {% else %}
-        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_care_empty }}</p>
+        <div class="text-center py-3">
+          <p class="text-sm text-[color:var(--text-muted)]">{{ t.dash_care_empty }}</p>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_care_hint', 'Track personal care routines, products, and comfort items.') }}</p>
+          <a href="/care" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_care_cta', 'Open Care') }}</a>
+        </div>
         {% endif %}
         <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
             {% if care_summary %}
@@ -451,7 +475,11 @@
             {% if aftercare_summary.last and aftercare_summary.last.kind %}<span class="pl-text-secondary text-xs">{{ t['aftercare_kind_' + aftercare_summary.last.kind] }}</span>{% endif %}
         </div>
         {% else %}
-        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_aftercare_empty }}</p>
+        <div class="text-center py-3">
+          <p class="text-sm text-[color:var(--text-muted)]">{{ t.dash_aftercare_empty }}</p>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_aftercare_hint', 'Set up aftercare plans for post-session recovery and comfort.') }}</p>
+          <a href="/aftercare" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_aftercare_cta', 'Open Aftercare') }}</a>
+        </div>
         {% endif %}
         <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
             {% if aftercare_summary %}
@@ -475,7 +503,11 @@
         </div>
         {% if insights_summary.last_summary %}<p class="text-sm pl-text-secondary mt-1">{{ insights_summary.last_summary }}</p>{% endif %}
         {% else %}
-        <p class="text-sm text-[color:var(--text-muted)] text-center py-3">{{ t.dash_insights_empty }}</p>
+        <div class="text-center py-3">
+          <p class="text-sm text-[color:var(--text-muted)]">{{ t.dash_insights_empty }}</p>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ t.get('dash_empty_insights_hint', 'Run AI analysis on your data to discover patterns and correlations.') }}</p>
+          <a href="/insights" class="inline-block mt-2 px-4 py-1.5 rounded-lg pl-accent-bg text-xs font-semibold hover:bg-[color:var(--accent-hover)] transition-all">{{ icon('plus', 'w-3.5 h-3.5') }} {{ t.get('dash_empty_insights_cta', 'Run Analysis') }}</a>
+        </div>
         {% endif %}
         <div class="mt-2 pt-2 border-t border-[color:var(--border)] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[color:var(--text-muted)]">
             {% if insights_summary %}
