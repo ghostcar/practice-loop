@@ -18,13 +18,17 @@ from app.services.communities_service import (
     create_community_from_form,
     do_add_moderator,
     do_approve_member,
+    do_ban_member,
+    do_create_post,
     do_delete_community,
     do_join_community,
     do_leave_community,
     do_remove_moderator,
     do_rotate_invite,
     do_transfer_ownership,
+    do_unban_member,
     get_community_detail_context,
+    get_community_feed_context,
     get_community_list_context,
 )
 from app.templates_setup import templates
@@ -116,6 +120,88 @@ async def community_detail_page(
             **ctx,
         },
     )
+
+
+@router.get("/communities/{community_id}/feed", response_class=HTMLResponse)
+async def community_feed_page(
+    community_id: str,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        c_uuid = uuid.UUID(community_id)
+    except ValueError:
+        raise HTTPException(400, "Invalid community ID") from None
+    try:
+        ctx = await get_community_feed_context(db, c_uuid, user)
+    except ValueError:
+        raise HTTPException(404, "Community not found") from None
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+    return templates.TemplateResponse(
+        request=request,
+        name="community_feed.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "active_nav": "communities",
+            **ctx,
+        },
+    )
+
+
+@router.post("/communities/{community_id}/feed/post")
+async def create_community_post_endpoint(
+    community_id: str,
+    request: Request,
+    title: str = Form(...),
+    content: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    c_uuid = uuid.UUID(community_id)
+    try:
+        await do_create_post(db, c_uuid, user, title=title, content=content)
+    except ValueError as e:
+        raise HTTPException(403, str(e)) from None
+    return RedirectResponse(url=f"/communities/{c_uuid}/feed", status_code=303)
+
+
+@router.post("/communities/{community_id}/members/ban")
+async def ban_member_endpoint(
+    community_id: str,
+    user_id: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    c_uuid = uuid.UUID(community_id)
+    try:
+        await do_ban_member(db, c_uuid, uuid.UUID(user_id), user.id)
+    except (ValueError, PermissionError) as e:
+        code = 403 if isinstance(e, PermissionError) else 404
+        raise HTTPException(code, str(e)) from None
+    return RedirectResponse(url=f"/communities/{c_uuid}?mod=ban", status_code=303)
+
+
+@router.post("/communities/{community_id}/members/unban")
+async def unban_member_endpoint(
+    community_id: str,
+    user_id: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    c_uuid = uuid.UUID(community_id)
+    try:
+        await do_unban_member(db, c_uuid, uuid.UUID(user_id), user.id)
+    except (ValueError, PermissionError) as e:
+        code = 403 if isinstance(e, PermissionError) else 404
+        raise HTTPException(code, str(e)) from None
+    return RedirectResponse(url=f"/communities/{c_uuid}?mod=unban", status_code=303)
 
 
 @router.post("/communities/{community_id}/join")

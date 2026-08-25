@@ -34,6 +34,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <a href="/communities/{{ community.id }}/feed" class="px-4 py-2 rounded-xl border border-[color:var(--border)] text-[color:var(--text-secondary)] text-xs font-semibold hover:bg-[color:var(--surface-soft)] transition-colors inline-flex items-center gap-1.5">
+                {{ icon('catalog', 'w-3.5 h-3.5') }} Лента
+            </a>
             {% set joined = request.query_params.get('joined') %}
             {% if joined == 'ok' %}
             <span class="text-xs text-emerald-400 font-semibold" role="status">Вы вступили в сообщество</span>
@@ -159,7 +162,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {% for m in members %}
             <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-2.5 rounded-lg flex items-center justify-between gap-2">
-                <span class="text-xs font-mono text-[color:var(--text)] truncate">{{ m.user_id }}</span>
+                <span class="text-xs font-mono text-[color:var(--text)] truncate" title="{{ m.user_id }}">{{ m.user_id[:8] }}…</span>
+                <div class="flex items-center gap-1.5 flex-shrink-0">
                 {% if m.role == 'owner' %}
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-950 text-amber-400 border border-amber-800">Владелец</span>
                 {% else %}
@@ -167,16 +171,47 @@
                 {% if m_roles %}
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-indigo-950 text-indigo-300 border border-indigo-800" title="{{ m_roles|join(', ') }}">Модератор</span>
                 {% endif %}
+                {% if can_moderate %}
+                <form action="/communities/{{ community.id }}/members/ban" method="POST" data-confirm="Забанить участника? Он потеряет доступ к сообществу.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <input type="hidden" name="user_id" value="{{ m.user_id }}">
+                    <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-semibold" title="Забанить">{{ icon('block', 'w-3 h-3') }}</button>
+                </form>
                 {% endif %}
+                {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
+
+        {% if can_moderate and banned_members %}
+        <div class="pt-3 border-t border-[color:var(--border)]">
+            <div class="text-[10px] uppercase font-bold text-[color:var(--text-muted)] mb-2">Забаненные ({{ banned_members|length }})</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {% for m in banned_members %}
+                <div class="bg-[color:var(--canvas-deep)] border border-red-800/40 p-2.5 rounded-lg flex items-center justify-between gap-2">
+                    <span class="text-xs font-mono text-[color:var(--text-muted)] truncate" title="{{ m.user_id }}">{{ m.user_id[:8] }}…</span>
+                    <form action="/communities/{{ community.id }}/members/unban" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="user_id" value="{{ m.user_id }}">
+                        <button type="submit" class="text-emerald-400 hover:text-emerald-300 text-xs font-semibold" title="Разбанить">{{ icon('unlock', 'w-3 h-3') }} Разбанить</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         {% else %}
         <p class="text-xs text-[color:var(--text-muted)]">Участников пока нет.</p>
         {% endif %}
     </section>
 
     {% set mod_flash = request.query_params.get('moderator') %}
+    {% if request.query_params.get('mod') == 'ban' %}
+    <p class="px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 text-xs" role="status">Участник забанен</p>
+    {% elif request.query_params.get('mod') == 'unban' %}
+    <p class="px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 text-xs" role="status">Участник разбанен</p>
+    {% endif %}
     {% if mod_flash == 'added' %}
     <p class="px-4 py-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 text-xs" role="status">Роль модератора назначена</p>
     {% elif mod_flash == 'removed' %}

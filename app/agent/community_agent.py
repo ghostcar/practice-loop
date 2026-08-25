@@ -175,6 +175,66 @@ async def recalculate_tournament_standings(
     return standings
 
 
+async def create_community_post(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    user_id: uuid.UUID,
+    title: str,
+    content: str,
+    post_type: str = "announcement",
+) -> CommunityPost:
+    """Create a member post in the community feed (G.3)."""
+    membership = await get_community_membership(db, community_id, user_id)
+    if not membership or membership.status != "active":
+        raise ValueError("Only active members can post in the community")
+
+    post = CommunityPost(
+        community_id=community_id,
+        user_id=user_id,
+        author_name=str(user_id),  # replaced with alias in service if available
+        post_type=post_type,
+        title=title.strip()[:200],
+        content=content.strip()[:5000],
+    )
+    db.add(post)
+    await db.flush()
+    return post
+
+
+async def ban_community_member(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+) -> str:
+    """Ban (revoke) an active member. Returns "banned" | "not_member" | "is_owner"."""
+    member = await get_community_membership(db, community_id, target_user_id)
+    if not member:
+        return "not_member"
+    if member.role == "owner":
+        return "is_owner"
+    if member.status == "revoked":
+        return "already_banned"
+    member.status = "revoked"
+    await db.flush()
+    return "banned"
+
+
+async def unban_community_member(
+    db: AsyncSession,
+    community_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+) -> str:
+    """Restore a revoked member to active. Returns "unbanned" | "not_member"."""
+    member = await get_community_membership(db, community_id, target_user_id)
+    if not member:
+        return "not_member"
+    if member.status != "revoked":
+        return "not_banned"
+    member.status = "active"
+    await db.flush()
+    return "unbanned"
+
+
 async def create_community(
     db: AsyncSession,
     name: str,

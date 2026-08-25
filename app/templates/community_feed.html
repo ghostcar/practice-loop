@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/communities" class="hover:text-[color:var(--text)] transition-colors">Сообщества</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/communities/{{ community.id }}" class="hover:text-[color:var(--text)] transition-colors">{{ community.name }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">Лента</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block title %}{{ community.name }} — Лента — PracticeLoop{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8 space-y-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('community', 'w-6 h-6') }}
+                {{ community.name }} — Лента
+            </h1>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">Объявления и посты участников сообщества.</p>
+        </div>
+        <a href="/communities/{{ community.id }}" class="px-3 py-1.5 rounded-lg border border-[color:var(--border)] text-xs font-medium hover:bg-[color:var(--surface-soft)] inline-flex items-center gap-1.5">
+            {{ icon('arrow-left', 'w-3.5 h-3.5') }} Назад
+        </a>
+    </div>
+
+    <!-- New post (members only) -->
+    {% if is_member %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-3" aria-labelledby="new-post-h">
+        <h2 id="new-post-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('edit', 'w-4 h-4') }} Новый пост
+        </h2>
+        <form action="/communities/{{ community.id }}/feed/post" method="POST" class="space-y-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div>
+                <label class="block text-xs text-[color:var(--text-secondary)] mb-1">Заголовок *</label>
+                <input type="text" name="title" required maxlength="200"
+                       class="w-full pl-surface-soft border border-[color:var(--border)] rounded-lg px-3 py-2 text-sm text-[color:var(--text)]"
+                       placeholder="О чём пост?">
+            </div>
+            <div>
+                <label class="block text-xs text-[color:var(--text-secondary)] mb-1">Текст *</label>
+                <textarea name="content" required rows="3" maxlength="5000"
+                          class="w-full pl-surface-soft border border-[color:var(--border)] rounded-lg px-3 py-2 text-sm text-[color:var(--text)]"
+                          placeholder="Поделитесь новостью, результатом, вопросом..."></textarea>
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-bold text-[color:var(--on-accent)] transition inline-flex items-center gap-1.5">
+                {{ icon('send', 'w-3.5 h-3.5') }} Опубликовать
+            </button>
+        </form>
+    </section>
+    {% endif %}
+
+    <!-- Posts -->
+    <section class="space-y-4" aria-labelledby="posts-h">
+        <h2 id="posts-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+            {{ icon('catalog', 'w-4 h-4') }} Посты ({{ posts|length }})
+        </h2>
+        {% if posts %}
+        {% for item in posts %}
+        <article class="pl-surface border border-[color:var(--border)] rounded-xl p-5 space-y-2">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-[color:var(--text)]">{{ item.author_label }}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-[color:var(--canvas-deep)] text-[color:var(--text-muted)]">
+                        {{ item.post.post_type }}
+                    </span>
+                </div>
+                <span class="text-xs text-[color:var(--text-muted)]">{{ localtime(item.post.created_at, '%Y-%m-%d %H:%M') if item.post.created_at else '' }}</span>
+            </div>
+            <h3 class="text-sm font-bold text-[color:var(--text)]">{{ item.post.title }}</h3>
+            <p class="text-sm text-[color:var(--text-secondary)] whitespace-pre-wrap">{{ item.post.content }}</p>
+        </article>
+        {% endfor %}
+        {% else %}
+        <div class="pl-surface-soft border border-dashed border-[color:var(--border)] rounded-xl p-8 text-center space-y-2">
+            {{ icon('catalog', 'w-8 h-8 mx-auto text-[color:var(--text-muted)]') }}
+            <p class="text-sm text-[color:var(--text-secondary)]">В ленте пока нет постов.</p>
+            {% if is_member %}
+            <p class="text-xs text-[color:var(--text-muted)]">Напишите первый пост — поделитесь новостью или результатом.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

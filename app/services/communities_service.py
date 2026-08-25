@@ -15,7 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.community_agent import (
     approve_community_member,
     assign_member_role,
+    ban_community_member,
     create_community,
+    create_community_post,
     get_community_membership,
     join_community,
     leave_community,
@@ -23,6 +25,7 @@ from app.agent.community_agent import (
     remove_member_role,
     rotate_community_invite_code,
     transfer_community_ownership,
+    unban_community_member,
 )
 from app.models.community_agent import (
     Community,
@@ -82,6 +85,104 @@ async def get_community_list_context(db: AsyncSession, user) -> dict:
     }
 
 
+async def get_community_feed_context(
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    user,
+    *,
+    limit: int = 30,
+) -> dict:
+    """Build context for the community feed page (G.3)."""
+    community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
+    if not community:
+        raise ValueError("Community not found")
+
+    membership = await get_community_membership(db, c_uuid, user.id)
+    is_member = membership is not None and membership.status == "active"
+    is_owner = membership is not None and membership.role == "owner" and membership.status == "active"
+
+    posts_res = await db.execute(
+        select(CommunityPost)
+        .where(CommunityPost.community_id == c_uuid)
+        .order_by(CommunityPost.created_at.desc())
+        .limit(min(limit, 100))
+    )
+    posts = posts_res.scalars().all()
+
+    # Resolve author aliases (social profile alias when available)
+    from app.platform.social.repo.profile import get_profile
+
+    post_data = []
+    for p in posts:
+        author_label = p.author_name
+        if p.user_id:
+            profile = await get_profile(db, p.user_id)
+            if profile and profile.alias:
+                author_label = f"@{profile.alias}"
+        post_data.append({"post": p, "author_label": author_label})
+
+    return {
+        "community": community,
+        "membership": membership,
+        "is_member": is_member,
+        "is_owner": is_owner,
+        "posts": post_data,
+    }
+
+
+async def do_create_post(
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    user,
+    *,
+    title: str,
+    content: str,
+) -> CommunityPost:
+    """Create a community feed post (member only)."""
+    return await create_community_post(db, c_uuid, user.id, title=title, content=content)
+
+
+async def do_ban_member(
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    target_user_id: uuid.UUID,
+    actor_user_id: uuid.UUID,
+) -> str:
+    """Ban a member — owner or moderator only."""
+    community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
+    if not community:
+        raise ValueError("Community not found")
+    if not await _can_moderate(db, c_uuid, actor_user_id, community):
+        raise PermissionError("Только владелец или модератор может банить участников")
+    return await ban_community_member(db, c_uuid, target_user_id)
+
+
+async def do_unban_member(
+    db: AsyncSession,
+    c_uuid: uuid.UUID,
+    target_user_id: uuid.UUID,
+    actor_user_id: uuid.UUID,
+) -> str:
+    """Unban a member — owner or moderator only."""
+    community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
+    if not community:
+        raise ValueError("Community not found")
+    if not await _can_moderate(db, c_uuid, actor_user_id, community):
+        raise PermissionError("Только владелец или модератор может разбанивать участников")
+    return await unban_community_member(db, c_uuid, target_user_id)
+
+
+async def _can_moderate(db: AsyncSession, c_uuid: uuid.UUID, user_id: uuid.UUID, community: Community) -> bool:
+    """Owner or any assigned moderator role can moderate."""
+    if community.owner_id == user_id:
+        return True
+    membership = await get_community_membership(db, c_uuid, user_id)
+    if not membership or membership.status != "active":
+        return False
+    roles = await list_member_roles(db, c_uuid)
+    return any(r.user_id == user_id for r in roles)
+
+
 async def get_community_detail_context(db: AsyncSession, c_uuid: uuid.UUID, user) -> dict:
     """Build context for /communities/{id} detail page."""
     community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
@@ -97,9 +198,11 @@ async def get_community_detail_context(db: AsyncSession, c_uuid: uuid.UUID, user
     members = members_res.scalars().all()
     active_members = [m for m in members if m.status == "active"]
     pending_members = [m for m in members if m.status == "pending"]
+    banned_members = [m for m in members if m.status == "revoked"]
 
     moderator_roles = await list_member_roles(db, c_uuid)
     user_moderator_roles = {r.role_type for r in moderator_roles if r.user_id == user.id}
+    can_moderate = is_owner or bool(user_moderator_roles)
 
     agent_res = await db.execute(select(CommunityTopAgent).where(CommunityTopAgent.community_id == c_uuid))
     agent = agent_res.scalar_one_or_none()
@@ -126,9 +229,11 @@ async def get_community_detail_context(db: AsyncSession, c_uuid: uuid.UUID, user
         "is_owner": is_owner,
         "members": active_members,
         "pending_members": pending_members,
+        "banned_members": banned_members,
         "member_count": len(active_members),
         "moderator_roles": moderator_roles,
         "user_moderator_roles": user_moderator_roles,
+        "can_moderate": can_moderate,
         "agent": agent,
         "recent_posts": recent_posts,
         "tournaments": tournaments,
