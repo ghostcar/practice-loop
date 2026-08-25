@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex flex-col items-center text-center gap-3 py-8 border-b border-[color:var(--border)]">
+    <div class="w-14 h-14 rounded-2xl pl-accent-soft border border-[color:var(--border)] flex items-center justify-center">
+      {{ icon('trophy', 'w-8 h-8 text-amber-500') }}
+    </div>
+    <h1 class="text-3xl font-bold text-[color:var(--text)]">{{ t.vitrina_title or 'Community Vitrina' }}</h1>
+    <p class="text-sm text-[color:var(--text-secondary)] max-w-xl">
+      {{ t.vitrina_subtitle or 'Anonymized showcase of community discipline, streaks and achievements. No personal data — only nicknames and metrics you choose to share.' }}
+    </p>
+    <div class="flex gap-3 mt-2">
+      <a href="/register" class="px-5 py-2 rounded-xl pl-accent-bg hover:bg-[color:var(--accent-hover)] text-xs font-bold transition-colors">
+        {{ t.nav_register }}
+      </a>
+      <a href="/login" class="px-5 py-2 rounded-xl border border-[color:var(--border)] text-xs font-bold text-[color:var(--text-secondary)] hover:text-[color:var(--text)] transition-colors">
+        {{ t.nav_login }}
+      </a>
+    </div>
+  </div>
+
+  <!-- Counters -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
+      <div class="text-3xl font-bold text-[color:var(--text)]">{{ profiles_count }}</div>
+      <div class="text-xs text-[color:var(--text-muted)] mt-1">{{ icon('users', 'w-3.5 h-3.5 inline') }} {{ t.vitrina_members or 'Community Members' }}</div>
+    </div>
+    <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
+      <div class="text-3xl font-bold text-[color:var(--text)]">{{ publications_count }}</div>
+      <div class="text-xs text-[color:var(--text-muted)] mt-1">{{ icon('send', 'w-3.5 h-3.5 inline') }} {{ t.vitrina_publications or 'Shared Achievements' }}</div>
+    </div>
+    <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 text-center">
+      <div class="text-3xl font-bold text-[color:var(--text)]">{{ kudos_count }}</div>
+      <div class="text-xs text-[color:var(--text-muted)] mt-1">{{ icon('flame', 'w-3.5 h-3.5 inline') }} {{ t.vitrina_kudos or 'Kudos Given' }}</div>
+    </div>
+  </div>
+
+  <!-- Top participants -->
+  <div>
+    <h2 class="text-xl font-bold text-[color:var(--text)] mb-4 inline-flex items-center gap-2">{{ icon('star', 'w-5 h-5') }} {{ t.vitrina_top or 'Top Disciplined' }}</h2>
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl p-6 divide-y divide-[color:var(--border)]">
+      {% for p in top_participants %}
+      <div class="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full pl-accent-soft border border-[color:var(--border)] flex items-center justify-center font-mono font-bold text-sm text-amber-500">
+            #{{ loop.index }}
+          </div>
+          <div>
+            <span class="text-sm font-bold text-[color:var(--text)] font-mono">@{{ p.alias }}</span>
+            <span class="text-xs text-[color:var(--text-muted)] block">{{ p.bio or '—' }}</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-5 text-right text-xs font-mono">
+          <div>
+            <span class="text-amber-400 font-bold block text-sm">{{ p.compliance }}%</span>
+            <span class="text-[color:var(--text-muted)] text-[11px]">{{ t.vitrina_compliance or 'Compliance' }}</span>
+          </div>
+          <div>
+            <span class="text-[color:var(--text)] font-bold block text-sm">{{ icon('flame', 'w-3.5 h-3.5 inline text-orange-500') }} {{ p.streak }}</span>
+            <span class="text-[color:var(--text-muted)] text-[11px]">{{ t.vitrina_streak or 'Day Streak' }}</span>
+          </div>
+          <div>
+            <span class="text-[color:var(--text)] font-bold block text-sm">Lv {{ p.level }}</span>
+            <span class="text-[color:var(--text-muted)] text-[11px]">{{ p.xp }} XP</span>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="py-10 text-center space-y-2">
+        {{ icon('users', 'w-10 h-10 text-[color:var(--text-muted)] mx-auto') }}
+        <p class="text-sm text-[color:var(--text-muted)]">{{ t.vitrina_empty or 'No participants yet — be the first!' }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent achievements -->
+  <div>
+    <h2 class="text-xl font-bold text-[color:var(--text)] mb-4 inline-flex items-center gap-2">{{ icon('trophy', 'w-5 h-5') }} {{ t.vitrina_achievements or 'Recent Community Achievements' }}</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for ach in recent_achievements %}
+      <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3">
+          {{ icon('trophy', 'w-5 h-5 text-amber-500') }}
+        </div>
+        <h3 class="font-semibold text-[color:var(--text)] text-sm">{{ ach.name }}</h3>
+        <p class="text-xs text-[color:var(--text-secondary)] mt-1">{{ ach.description }}</p>
+        <p class="text-[10px] text-[color:var(--text-muted)] mt-3 font-mono">{{ localtime(ach.obtained_at, '%Y-%m-%d') }} · {{ t.vitrina_anonymous or 'Anonymous' }}</p>
+      </div>
+      {% else %}
+      <div class="col-span-full text-center py-8">
+        <p class="text-xs text-[color:var(--text-muted)]">{{ t.vitrina_no_achievements or 'Community achievements will appear here.' }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -282,6 +282,7 @@ from app.api.protocols import router as protocols_router  # noqa: E402
 from app.api.security_2fa import router as security_2fa_router  # noqa: E402
 from app.api.sessions import router as sessions_router  # noqa: E402
 from app.api.sessions import session_json_router as sessions_json_router  # noqa: E402
+from app.api.vitrina import public_router as vitrina_public_router  # noqa: E402
 from app.telegram.bot import tg_router  # noqa: E402
 
 app.include_router(tg_router)
@@ -298,6 +299,7 @@ app.include_router(media_vault_v2_router)
 app.include_router(media_timeline_router)
 app.include_router(media_exposure_router)
 app.include_router(media_showcase_public_router)
+app.include_router(vitrina_public_router)
 app.include_router(media_albums_router)
 app.include_router(dms_router)
 app.include_router(dms_page_router)
