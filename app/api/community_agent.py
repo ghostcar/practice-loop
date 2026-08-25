@@ -1,8 +1,7 @@
-"""API Router for Autonomous Community Top Agent & Public Tournaments."""
+"""Community Agent Router — thin HTTP wrappers over community_agent_service."""
 
 from __future__ import annotations
 
-import logging
 import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -11,12 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.community_agent import (
-    create_community_tournament,
-    get_community_membership,
-    get_member_roles,
     get_or_create_community_top_agent,
-    join_community_tournament,
-    run_community_quest_generation,
+    recalculate_tournament_standings,
 )
 from app.api.auth import get_current_user
 from app.database import get_db
@@ -30,183 +25,92 @@ from app.models.community_agent import (
     CommunityTournamentEntry,
 )
 from app.models.user import User
+from app.services.community_agent_service import (
+    do_create_tournament,
+    do_join_tournament,
+    do_run_quest_generation,
+    get_agent_page_context,
+    require_manager,
+)
 from app.templates_setup import templates
 from app.tier_guard import require_feature
 
-logger = logging.getLogger(__name__)
-
 router = APIRouter(tags=["community_agent"])
 
-# Roles that grant agent-management privileges alongside the owner.
-#   co_top               — full agent governance (configure, quests, tournaments, cockpit)
-#   tournament_organizer — tournament creation + points
-_MANAGE_ROLES = frozenset({"co_top", "tournament_organizer"})
 
-
-async def _require_manager(
-    db: AsyncSession,
-    community_id: uuid.UUID,
-    user: User,
-    *,
-    allow_tournament_organizer: bool = True,
-) -> Community:
-    """Fetches community and enforces owner or co-manager privileges."""
-    community = (await db.execute(select(Community).where(Community.id == community_id))).scalar_one_or_none()
-    if not community:
-        raise HTTPException(404, "Community not found")
-    if community.owner_id == user.id:
-        return community
-    membership = await get_community_membership(db, community_id, user.id)
-    if not membership or membership.status != "active":
-        raise HTTPException(403, "Только владелец или модератор сообщества может выполнять это действие")
-    roles = await get_member_roles(db, community_id, user.id)
-    allowed = _MANAGE_ROLES if allow_tournament_organizer else {"co_top"}
-    if not (roles & allowed):
-        raise HTTPException(403, "Только владелец или модератор сообщества может выполнять это действие")
-    return community
-
-
-async def _is_manager(
-    db: AsyncSession,
-    community_id: uuid.UUID,
-    user: User,
-) -> bool:
-    """True if the user is the owner or holds a management moderator role."""
-    community = (await db.execute(select(Community).where(Community.id == community_id))).scalar_one_or_none()
-    if not community:
-        return False
-    if community.owner_id == user.id:
+async def _is_manager(db: AsyncSession, community_id: uuid.UUID, user: User) -> bool:
+    try:
+        await require_manager(db, community_id, user)
         return True
-    membership = await get_community_membership(db, community_id, user.id)
-    if not membership or membership.status != "active":
+    except ValueError:
         return False
-    roles = await get_member_roles(db, community_id, user.id)
-    return bool(roles & _MANAGE_ROLES)
 
 
 @router.get("/communities/{community_id}/agent", response_class=HTMLResponse)
 async def community_agent_dashboard_page(
-    community_id: str,
-    request: Request,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    community_id: str, request: Request,
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
     _access: None = Depends(require_feature("community_agent")),
 ):
-    """Community Top Agent Cockpit UI."""
+    c_uuid = uuid.UUID(community_id)
     try:
-        c_uuid = uuid.UUID(community_id)
-    except ValueError as err:
-        raise HTTPException(400, "Invalid community ID format") from err
+        ctx = await get_agent_page_context(db, c_uuid)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    community = ctx["community"]
 
-    community = (await db.execute(select(Community).where(Community.id == c_uuid))).scalar_one_or_none()
-    if not community:
-        raise HTTPException(404, "Community not found")
-
-    # Public communities visible to anyone; private ones require active membership.
+    from app.agent.community_agent import get_community_membership
     membership = await get_community_membership(db, c_uuid, user.id)
     if community.visibility == "private" and (not membership or membership.status != "active"):
         raise HTTPException(403, "Вступите в приватное сообщество, чтобы увидеть агента")
-
-    is_owner = bool(membership and membership.role == "owner" and membership.status == "active")
-    is_owner = is_owner or community.owner_id == user.id
+    is_owner = community.owner_id == user.id
     can_manage = is_owner or await _is_manager(db, c_uuid, user)
-
-    agent = await get_or_create_community_top_agent(db, c_uuid)
-
-    tournaments_res = await db.execute(
-        select(CommunityTournament)
-        .where(CommunityTournament.community_id == c_uuid)
-        .order_by(CommunityTournament.created_at.desc())
-    )
-    tournaments = tournaments_res.scalars().all()
-
-    delegations_res = await db.execute(
-        select(CommunityMemberDelegation).where(CommunityMemberDelegation.community_id == c_uuid)
-    )
-    delegations = delegations_res.scalars().all()
-
+    delegations = ctx["delegations"]
     user_delegation = next((d for d in delegations if d.user_id == user.id), None)
 
-    posts_res = await db.execute(
-        select(CommunityPost)
-        .where(CommunityPost.community_id == c_uuid)
-        .order_by(CommunityPost.created_at.desc())
-        .limit(5)
-    )
-    recent_posts = posts_res.scalars().all()
-
     locale = detect_locale(request, user.locale)
-    theme = detect_theme(user.theme)
-    t = get_translations(locale)
-
-    return templates.TemplateResponse(
-        request=request,
-        name="community_agent.html",
-        context={
-            "request": request,
-            "t": t,
-            "user": user,
-            "locale": locale,
-            "theme": theme,
-            "active_nav": "community",
-            "community": community,
-            "agent": agent,
-            "tournaments": tournaments,
-            "delegations": delegations,
-            "user_delegation": user_delegation,
-            "is_owner": is_owner,
-            "can_manage": can_manage,
-            "recent_posts": recent_posts,
-        },
-    )
+    return templates.TemplateResponse(request=request, name="community_agent.html", context={
+        "request": request, "t": get_translations(locale), "user": user,
+        "locale": locale, "theme": detect_theme(user.theme), "active_nav": "community",
+        "is_owner": is_owner, "can_manage": can_manage,
+        "user_delegation": user_delegation,
+        **{k: v for k, v in ctx.items() if k != "delegations"},
+        "delegations": delegations,
+    })
 
 
 @router.post("/communities/{community_id}/agent/configure")
 async def configure_community_agent_endpoint(
-    community_id: str,
-    persona_name: str = Form("Domina Veritas"),
+    community_id: str, persona_name: str = Form("Domina Veritas"),
     strictness_level: int = Form(3),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
-    """Updates Community Top Agent persona settings (owner / co_top moderator)."""
     c_uuid = uuid.UUID(community_id)
-    await _require_manager(db, c_uuid, user)
+    await require_manager(db, c_uuid, user)
     agent = await get_or_create_community_top_agent(db, c_uuid)
-
     agent.persona_name = persona_name.strip()
     agent.strictness_level = max(1, min(5, strictness_level))
     await db.flush()
-
     return JSONResponse({"status": "ok", "persona_name": agent.persona_name, "strictness": agent.strictness_level})
 
 
 @router.post("/communities/{community_id}/agent/quest/generate")
 async def generate_community_quest_endpoint(
-    community_id: str,
-    user: User = Depends(get_current_user),
+    community_id: str, user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Generates a group quest and posts feed announcement (owner / co_top moderator)."""
     c_uuid = uuid.UUID(community_id)
-    await _require_manager(db, c_uuid, user)
-    result = await run_community_quest_generation(db, c_uuid)
-    await db.flush()
+    result = await do_run_quest_generation(db, c_uuid, user)
     return JSONResponse(result)
 
 
 @router.post("/communities/{community_id}/agent/tournaments/create")
 async def create_tournament_endpoint(
-    community_id: str,
-    title: str = Form(...),
-    metric_type: str = Form("compliance"),
-    days: int = Form(14),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    community_id: str, title: str = Form(...),
+    metric_type: str = Form("compliance"), days: int = Form(14),
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
-    """Creates a public community tournament (owner / co_top / tournament_organizer)."""
     c_uuid = uuid.UUID(community_id)
-    await _require_manager(db, c_uuid, user)
     tournament = await create_community_tournament(db, c_uuid, title=title, metric_type=metric_type, days=days)
     await db.flush()
     return JSONResponse({"status": "ok", "tournament_id": str(tournament.id), "title": tournament.title})
@@ -214,49 +118,32 @@ async def create_tournament_endpoint(
 
 @router.post("/communities/{community_id}/agent/tournaments/{tournament_id}/join")
 async def join_tournament_endpoint(
-    community_id: str,
-    tournament_id: str,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    community_id: str, tournament_id: str,
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
-    """Member joins a public tournament (must be an active member)."""
     c_uuid = uuid.UUID(community_id)
-    membership = await get_community_membership(db, c_uuid, user.id)
-    if not membership or membership.status != "active":
-        raise HTTPException(403, "Вступите в сообщество, чтобы участвовать в турнирах")
     t_uuid = uuid.UUID(tournament_id)
-    entry = await join_community_tournament(db, t_uuid, user.id)
-    await db.flush()
+    entry = await do_join_tournament(db, c_uuid, t_uuid, user)
     return JSONResponse({"status": "ok", "entry_id": str(entry.id), "rank": entry.rank})
 
 
 @router.post("/communities/{community_id}/agent/tournaments/{tournament_id}/points")
 async def award_tournament_points_endpoint(
-    community_id: str,
-    tournament_id: str,
-    user_id: str = Form(...),
-    points: int = Form(...),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    community_id: str, tournament_id: str,
+    user_id_: str = Form(..., alias="user_id"), points: int = Form(...),
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
-    """Owner/moderator manually awards tournament points to a member."""
     c_uuid = uuid.UUID(community_id)
-    await _require_manager(db, c_uuid, user)
-
-    from app.agent.community_agent import recalculate_tournament_standings
-
+    await require_manager(db, c_uuid, user)
     t_uuid = uuid.UUID(tournament_id)
-    entry = (
-        await db.execute(
-            select(CommunityTournamentEntry).where(
-                CommunityTournamentEntry.tournament_id == t_uuid,
-                CommunityTournamentEntry.user_id == uuid.UUID(user_id),
-            )
+    entry = (await db.execute(
+        select(CommunityTournamentEntry).where(
+            CommunityTournamentEntry.tournament_id == t_uuid,
+            CommunityTournamentEntry.user_id == uuid.UUID(user_id_),
         )
-    ).scalar_one_or_none()
+    )).scalar_one_or_none()
     if not entry:
         raise HTTPException(404, "Участник не найден в турнире")
-
     entry.points = max(0, entry.points + int(points))
     await db.flush()
     await recalculate_tournament_standings(db, t_uuid)
@@ -265,101 +152,67 @@ async def award_tournament_points_endpoint(
 
 @router.post("/communities/{community_id}/agent/delegate")
 async def toggle_community_delegation_endpoint(
-    community_id: str,
-    user: User = Depends(get_current_user),
+    community_id: str, user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Toggles member profile delegation to the Community Top Agent (active members)."""
     c_uuid = uuid.UUID(community_id)
+    from app.agent.community_agent import get_community_membership
     membership = await get_community_membership(db, c_uuid, user.id)
     if not membership or membership.status != "active":
         raise HTTPException(403, "Вступите в сообщество, чтобы делегировать профиль")
-
-    existing = (
-        await db.execute(
-            select(CommunityMemberDelegation).where(
-                CommunityMemberDelegation.community_id == c_uuid,
-                CommunityMemberDelegation.user_id == user.id,
-            )
+    existing = (await db.execute(
+        select(CommunityMemberDelegation).where(
+            CommunityMemberDelegation.community_id == c_uuid,
+            CommunityMemberDelegation.user_id == user.id,
         )
-    ).scalar_one_or_none()
-
+    )).scalar_one_or_none()
     if existing:
         await db.delete(existing)
         status = "revoked"
     else:
-        delegation = CommunityMemberDelegation(
-            community_id=c_uuid,
-            user_id=user.id,
-            delegate_tasks=True,
-            delegate_training=True,
-            delegate_care=True,
-            delegate_timer=True,
+        db.add(CommunityMemberDelegation(
+            community_id=c_uuid, user_id=user.id,
+            delegate_tasks=True, delegate_training=True,
+            delegate_care=True, delegate_timer=True,
             compliance_score=100.0,
-        )
-        db.add(delegation)
+        ))
         status = "delegated"
-
     await db.flush()
     return JSONResponse({"status": status})
 
 
 @router.get("/communities/{community_id}/cockpit", response_class=HTMLResponse)
 async def community_cockpit_page(
-    community_id: str,
-    request: Request,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    community_id: str, request: Request,
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
     _access: None = Depends(require_feature("community_agent")),
 ):
-    """Community Agent Cockpit Owner/Moderator View."""
     c_uuid = uuid.UUID(community_id)
-    community = await _require_manager(db, c_uuid, user)
-
+    community = await require_manager(db, c_uuid, user)
     agent = await get_or_create_community_top_agent(db, c_uuid)
-
-    delegations_res = await db.execute(
+    delegations = (await db.execute(
         select(CommunityMemberDelegation).where(CommunityMemberDelegation.community_id == c_uuid)
-    )
-    delegations = delegations_res.scalars().all()
-
+    )).scalars().all()
     locale = detect_locale(request, user.locale)
-    theme = detect_theme(user.theme)
-    t = get_translations(locale)
-
-    return templates.TemplateResponse(
-        request=request,
-        name="community_cockpit.html",
-        context={
-            "request": request,
-            "t": t,
-            "user": user,
-            "locale": locale,
-            "theme": theme,
-            "community": community,
-            "agent": agent,
-            "delegations": delegations,
-            "is_owner": community.owner_id == user.id,
-            "can_manage": True,
-            "active_nav": "community_cockpit",
-        },
-    )
+    return templates.TemplateResponse(request=request, name="community_cockpit.html", context={
+        "request": request, "t": get_translations(locale),
+        "user": user, "locale": locale, "theme": detect_theme(user.theme),
+        "community": community, "agent": agent, "delegations": delegations,
+        "is_owner": community.owner_id == user.id, "can_manage": True,
+        "active_nav": "community_cockpit",
+    })
 
 
 @router.post("/communities/{community_id}/cockpit/update-persona")
 async def update_community_agent_persona_endpoint(
-    community_id: str,
-    persona_name: str = Form(...),
+    community_id: str, persona_name: str = Form(...),
     strictness_level: int = Form(...),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
-    """Updates Community Agent Persona configuration (owner / co_top moderator)."""
     c_uuid = uuid.UUID(community_id)
-    await _require_manager(db, c_uuid, user)
+    await require_manager(db, c_uuid, user)
     agent = await get_or_create_community_top_agent(db, c_uuid)
     agent.persona_name = persona_name
     agent.strictness_level = max(1, min(5, strictness_level))
-
     await db.flush()
     return JSONResponse({"status": "success", "persona_name": agent.persona_name, "strictness": agent.strictness_level})

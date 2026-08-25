@@ -511,7 +511,7 @@ def entry_json(e: JournalEntry) -> dict:
 
 
 async def get_journal_page_context(db: AsyncSession, user) -> dict:
-    from app.api.catalog import catalog_options
+    from app.services.catalog_service import catalog_options
 
     entries = (
         (

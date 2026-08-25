@@ -295,7 +295,7 @@ async def locktimer_session_detail(
     # Сквозной каталог (ADR-091): пикер причин/целей окон (домен timer).
     catalog_items: list[dict] = []
     try:
-        from app.api.catalog import catalog_options
+        from app.services.catalog_service import catalog_options
 
         catalog_items = await catalog_options(db, current_user.id, domain="timer")
     except Exception:

@@ -202,7 +202,7 @@ async def get_inventory_items(db: AsyncSession, user_id: uuid.UUID) -> list[dict
 async def get_catalog_page_context(
     db: AsyncSession, user, *, category: str | None = None, category_id: uuid.UUID | None = None
 ) -> dict:
-    from app.api.catalog import catalog_options
+    from app.services.catalog_service import catalog_options
 
     cat_result = await db.execute(select(ActivityCategory).where(ActivityCategory.is_active.is_(True)))
     all_categories = list(cat_result.scalars().all())
@@ -250,7 +250,7 @@ async def get_catalog_page_context(
 
 
 async def get_my_entities_page_context(db: AsyncSession, user) -> dict:
-    from app.api.catalog import catalog_options
+    from app.services.catalog_service import catalog_options
 
     result = await db.execute(
         select(Entity).where(Entity.owner_id == user.id).order_by(Entity.category, Entity.real_name)
@@ -268,7 +268,7 @@ async def get_my_entities_page_context(db: AsyncSession, user) -> dict:
 
 
 async def get_edit_entity_context(db: AsyncSession, entity_id: uuid.UUID, user) -> dict | None:
-    from app.api.catalog import catalog_options
+    from app.services.catalog_service import catalog_options
 
     result = await db.execute(select(Entity).where(Entity.id == entity_id))
     entity = result.scalar_one_or_none()
