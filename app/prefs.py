@@ -55,6 +55,7 @@ PROFILE_MODULES = (
     "catalog",
     "insights",
     "aftercare",
+    "social",
 )
 
 # Dashboard blocks in default order. Keys must match the `data-dash-block`

@@ -36,6 +36,7 @@ PROFILE_MODULES: tuple[str, ...] = (
     "catalog",
     "insights",
     "aftercare",
+    "social",
 )
 
 PURPOSES: dict[str, ConsentPurpose] = {

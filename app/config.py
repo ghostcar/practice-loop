@@ -34,10 +34,10 @@ class Settings(BaseSettings):
     # Feature flags — all default OFF for safe rollout (03A_PRODUCT_VARIANTS.md §7).
     locktimer_core_enabled: bool = False
     locktimer_verification_enabled: bool = False
-    social_enabled: bool = False
+    social_enabled: bool = True
     social_tracker_adapter_enabled: bool = False
     social_timer_adapter_enabled: bool = False
-    social_public_enabled: bool = False
+    social_public_enabled: bool = True
     locktimer_keyholder_enabled: bool = False
     locktimer_cloud_media_enabled: bool = False
 
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     monetization_enabled: bool = False
 
     # Community creation limit per user (0 = unlimited). Reserved for future monetization.
-    community_creation_limit: int = 0
+    community_creation_limit: int = 3
 
     # Experimental draft models (ADR-R1.2) — behind flags for safe rollout.
     experimental_leagues: bool = False

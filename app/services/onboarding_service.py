@@ -77,6 +77,7 @@ _MODULE_LABELS = {
     "catalog": "Catalog",
     "insights": "Insights",
     "aftercare": "Aftercare",
+    "social": "Social Network",
 }
 
 _MODULE_DESCRIPTIONS = {
@@ -89,4 +90,5 @@ _MODULE_DESCRIPTIONS = {
     "catalog": "Browse and manage task catalog with opt-in preferences.",
     "insights": "Analytics, correlation matrix, and medical export.",
     "aftercare": "Aftercare planning and comfort routines.",
+    "social": "Public profile, feeds, leaderboards, and community features.",
 }
