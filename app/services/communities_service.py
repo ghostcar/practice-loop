@@ -110,7 +110,7 @@ async def get_community_feed_context(
     posts = posts_res.scalars().all()
 
     # Resolve author aliases (social profile alias when available)
-    from app.platform.social.repo.profile import get_profile
+    from app.platform.social.repositories.profile import get_profile
 
     post_data = []
     for p in posts:

@@ -162,7 +162,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {% for m in members %}
             <div class="bg-[color:var(--canvas-deep)] border border-[color:var(--border)] p-2.5 rounded-lg flex items-center justify-between gap-2">
-                <span class="text-xs font-mono text-[color:var(--text)] truncate" title="{{ m.user_id }}">{{ m.user_id[:8] }}…</span>
+                <span class="text-xs font-mono text-[color:var(--text)] truncate" title="{{ m.user_id }}">{{ (m.user_id | string)[:8] }}…</span>
                 <div class="flex items-center gap-1.5 flex-shrink-0">
                 {% if m.role == 'owner' %}
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-950 text-amber-400 border border-amber-800">Владелец</span>
@@ -190,7 +190,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {% for m in banned_members %}
                 <div class="bg-[color:var(--canvas-deep)] border border-red-800/40 p-2.5 rounded-lg flex items-center justify-between gap-2">
-                    <span class="text-xs font-mono text-[color:var(--text-muted)] truncate" title="{{ m.user_id }}">{{ m.user_id[:8] }}…</span>
+                    <span class="text-xs font-mono text-[color:var(--text-muted)] truncate" title="{{ m.user_id }}">{{ (m.user_id | string)[:8] }}…</span>
                     <form action="/communities/{{ community.id }}/members/unban" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <input type="hidden" name="user_id" value="{{ m.user_id }}">
