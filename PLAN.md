@@ -3,6 +3,8 @@
 > **Правила файла:** только дополняется и корректируется (статус → ✅). Строки не удаляются.
 > Новые шаги добавляются в конец списка. Читаемый для владельца, кратко, без тех. деталей.
 > Технические детали — в `docs/memory-rfc/STAGE_PLAN.md`; продукты — в `ROADMAP.md` и `PRODUCT.md`.
+> **Дорожная карта v0.9.1 → v1.1:** детальный пошаговый план в `ROADMAP_V1.md`.
+
 
 > **Правило проверок (сессия 131):** полный `pytest tests/` (~9 мин) — только перед деплоем/релизом. При правке фронта/шаблонов — таргетный набор: `test_shell_v2 test_design_v2_9b test_design_v2_9c test_icon_pack test_audit_s57 test_phase3_task_ui test_locktimer_device test_media_verification test_dnd_diets_uploads` (~2 мин, 127 тестов). При правке конкретного модуля — его тест-файлы.
 > **Browser-тесты НЕ скипать (сессия 131, решение владельца):** playwright установлен (node `@playwright/test` 1.62 + браузеры chromium/firefox/webkit в `~/.cache/ms-playwright`; python-пакет — по требованию). Полноценный набор — `npx playwright test` (5 проектов: desktop/tablet/mobile chromium, firefox, webkit; smoke/a11y/usability против `E2E_BASE_URL`, default `http://127.0.0.1:8000` — живой прод). Старый pytest-e2e `tests/e2e/test_browser_smoke.py` — тоже не скипать (python playwright; `pip install playwright`). Файлы настроек (package.json, playwright.config.ts, tests/browser/, tools/browser/, docs/BROWSER_TESTING.md) — часть проекта, node_modules/ в git не заносится.
@@ -210,3 +212,13 @@
 - [x] Categorized Prompt Library Viewer (72 / ADR-124): центральная библиотека промптов по разделам `/prompts/library`.
 - [x] D/s Command Center & Mode Switcher (73): полнофункциональный мульти-субмиссивный кокпит `/ds/portal` с тумблером персонального/управленческого режима.
 - [x] Telegram Linking for Offline Submissives (74 / ADR-130): привязка оффлайн-профилей к Telegram-боту по кодам `SUB-XXXXXX` и прямые PUSH-уведомления.
+
+---
+
+## v1 Roadmap (2026-08-25)
+
+> **Детальный пошаговый план в `ROADMAP_V1.md`.** Здесь — только вехи.
+
+- [ ] **v0.9.1 — OCR & Verification** (1–3 сессии): pytesseract в Docker, OCR engine hardening, real photo upload в check-in, verification challenge через OCR, ADR-181. Цель: 1400+ тестов, тег `v0.9.1`.
+- [ ] **v1.0 — Social to Production** (3–5 сессий): enablement (`social_enabled=True`), social core полировка (profile/feed/relationships), communities (public catalog + management), moderation + leaderboard + pillory, ADR-182/183. Цель: 1450+ тестов, тег `v1.0.0`.
+- [ ] **v1.1 — Multi-User & D/s Contour** (3–5 сессий): partner linking, shared dashboards, D/s controller portal, granular delegation, OCR seal verification chain, keyholder timer control, ADR-184/185. Цель: 1500+ тестов, тег `v1.1.0`.
