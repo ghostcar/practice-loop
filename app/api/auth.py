@@ -118,8 +118,31 @@ async def register(
     db.add(user)
     await db.flush()
 
-    # Redirect to login with success message
-    response = RedirectResponse(url="/login?registered=1", status_code=status.HTTP_303_SEE_OTHER)
+    # Auto-login and redirect to onboarding wizard for new users.
+    token = create_access_token(user.id)
+
+    # Mark onboarding as not completed
+    from app.prefs import sanitize_prefs
+    raw = sanitize_prefs(user.prefs)
+    raw["onboarding_completed"] = False
+    user.prefs = raw
+    db.add(user)
+    await db.flush()
+
+    response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER)
+    loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
+    from app.config import settings
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=settings.app_env == "production" and not loopback,
+        samesite="lax",
+        max_age=86400,
+        path="/",
+    )
+    from app.security import set_csrf_cookie
+    set_csrf_cookie(response, request)
     return response
 
 

@@ -1426,3 +1426,4 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 | ADR-174 | Service layer extraction: import_data.py → import_data_service.py (493→148 thin routes, 422 service) | thin routes | 2026-08-25 | 8b5c3953 | accepted |
 | ADR-175 | Service layer extraction: calendar.py → calendar_service.py (426→207 thin routes, 323 service) | thin routes | 2026-08-25 | f6a83229 | accepted |
 | ADR-176 | Service layer extraction: protocols.py → protocols_service.py (404→230 thin routes, 360 service) | thin routes | 2026-08-25 | 1d5e74b6 | accepted |
+| ADR-177 | P0: Onboarding wizard — 3-step flow (LLM config → modules → consent → dashboard) with skip; stored in user.prefs.onboarding_completed | feature | 2026-08-25 | 07421c75 | accepted |

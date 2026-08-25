@@ -156,6 +156,7 @@ async def test_user(db_session: AsyncSession, _test_password_hash: str) -> User:
         password_hash=_test_password_hash,
         locale="en",
         theme="dark",
+        prefs={"onboarding_completed": True},
     )
     db_session.add(user)
     await db_session.flush()

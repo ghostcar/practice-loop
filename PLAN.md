@@ -147,7 +147,8 @@
   - `calendar.py` (426→207) → `calendar_service.py` (323) — ADR-175
   - `protocols.py` (404→230) → `protocols_service.py` (360) — ADR-176
   - `app/services/errors.py` — shared `NotFoundError` для разделения 400/404
-  - Итого: 11116→4693 строк в роутерах (−58%), бизнес-логика в сервисах. 1380 тестов зелёные.
+  - `onboarding.py` (новый) — 3-step wizard (LLM → modules → ready) — ADR-177
+  - Итого: 11116→4773 строк в роутерах (−57%), бизнес-логика в сервисах. 1380 тестов зелёные.
 - [ ] **P8 — Media storage abstraction** — volume→S3-compatible backend, checksum, derivatives, retention, orphan cleanup и включение бинарных данных в переносимый архив.
 - [ ] **P9 — Owner self-testing и UX backlog** — реальные циклы Today/Tasks/Sessions/Timer/Medication/Health/Care/Journal/Aftercare/LLM/BYOK; дефекты фиксировать browser regression до добавления крупных модулей.
 - [ ] **P10 — Mobile client после стабилизации портала** — выбрать Flutter/React Native; первый vertical slice: Today, задачи/сессии, Timer, журналы и push. До выбора закрыть оставшиеся JSON gaps реальным contract audit.

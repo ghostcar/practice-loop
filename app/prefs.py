@@ -134,6 +134,7 @@ class UserPrefs:
     reminder_time: str = ""  # HH:MM, "" = inherit settings.reminder_time
     reminder_tz: str = ""  # IANA name, "" = inherit settings.reminder_tz
     med_gamification: bool = True  # ADR-137: positive-only adherence XP (default ON)
+    onboarding_completed: bool = False  # P0: onboarding wizard completion flag
 
     # --- convenience ------------------------------------------------------
 
@@ -227,6 +228,9 @@ def sanitize_prefs(raw: dict | None) -> dict:
     # ADR-137: medication adherence gamification is configurable, default ON.
     # Absent value = ON (preserves legacy behavior for existing profiles).
     out["med_gamification"] = bool(raw.get("med_gamification", True))
+    # P0: onboarding wizard — only stored when explicitly set (not in sanitize defaults).
+    if "onboarding_completed" in raw:
+        out["onboarding_completed"] = bool(raw["onboarding_completed"])
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

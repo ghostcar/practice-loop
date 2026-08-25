@@ -78,6 +78,8 @@ async def save_settings(
     med_gamification: str = Form("off"),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
+    # Preserve onboarding_completed flag across saves (form doesn't carry it).
+    old_raw = user.prefs if isinstance(user.prefs, dict) else {}
     raw = sanitize_prefs(
         {
             "theme_choice": theme_choice,
@@ -100,6 +102,8 @@ async def save_settings(
             # ADR-137: checkbox sends "on" only when checked; unchecked =
             # missing field → "off". Stored as bool by sanitize_prefs.
             "med_gamification": med_gamification == "on",
+            # P0: preserve onboarding flag
+            "onboarding_completed": old_raw.get("onboarding_completed", False),
         }
     )
 
