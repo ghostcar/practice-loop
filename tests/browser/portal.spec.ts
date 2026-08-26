@@ -4,6 +4,9 @@ import { expect, test } from "@playwright/test";
 import { captureBrowserErrors, registerFreshUser } from "./helpers";
 
 test("@smoke core personal navigation works without browser errors", async ({ page }) => {
+  // 19 routes × (goto + 3 assertions) exceeds the default 30 s on a loaded
+  // machine — the test would abort mid-loop (ERR_ABORTED) on the timeout.
+  test.setTimeout(180_000);
   const errors = captureBrowserErrors(page);
   await registerFreshUser(page);
 
@@ -14,7 +17,7 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
     "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
   ];
   for (const route of routes) {
-    const response = await page.goto(route);
+    const response = await page.goto(route, { waitUntil: "domcontentloaded" });
     expect(response?.status(), `${route} response`).toBeLessThan(400);
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator("#pl-sidebar"), `${route} authenticated sidebar`).toBeVisible();
@@ -25,8 +28,10 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
 
 test("@smoke activity session can be created and accepted with visible audit", async ({ page }) => {
   await registerFreshUser(page);
-  await page.goto("/sessions");
-  await page.getByRole("button", { name: /new session/i }).click();
+  // Sessions are created from the wizard (template cards) and redirect to the
+  // /sessions list, where the accept / audit flow lives.
+  await page.goto("/sessions/wizard");
+  await page.locator('form[action="/sessions/create-from-template"] button[type="submit"]').first().click();
   await expect(page).toHaveURL(/\/sessions/);
   await page.getByRole("button", { name: /^accept$/i }).first().click();
   await expect(page.getByText(/changes to the task set apply an xp penalty/i)).toBeVisible();

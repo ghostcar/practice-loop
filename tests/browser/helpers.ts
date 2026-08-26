@@ -9,10 +9,17 @@ export async function registerFreshUser(page: Page): Promise<void> {
   await page.locator('input[name="password"]').fill(password);
   await page.locator('button[type="submit"]').click();
 
-  // Registration redirects to /login?registered=1 (no auto-login). Wait for the
+  // Registration auto-logs-in and redirects to the /onboarding wizard for new
+  // users (skip it), then the consent gate, then /dashboard. Wait for the
   // redirect to settle before branching — page.url() right after click() can
   // still be the register page (race, observed on WebKit).
-  await page.waitForURL(/(\/login|\/dashboard|\/consent\/setup)/, { timeout: 10_000 });
+  await page.waitForURL(/(\/login|\/dashboard|\/consent\/setup|\/onboarding)/, { timeout: 10_000 });
+  if (page.url().includes("/onboarding")) {
+    // Skip button only appears in the last wizard step (display:hidden until
+    // then) — submit the skip form directly, same as the button does via its
+    // form= attribute (includes the hidden csrf_token input).
+    await page.locator("#skip-form").evaluate((f) => (f as HTMLFormElement).submit());
+  }
   if (page.url().includes("/login")) {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);

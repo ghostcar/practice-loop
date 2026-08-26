@@ -25,7 +25,10 @@ self.addEventListener("activate", (event) => {
       );
     })
   );
-  self.clients.claim();
+  // NOTE: no self.clients.claim() — claim() detaches frames of already-open
+  // pages, aborting in-flight navigations with net::ERR_ABORTED (observed in
+  // E2E smoke: random route in the loop failed with "frame was detached").
+  // The new SW takes control on the next navigation, which is standard.
 });
 
 self.addEventListener("fetch", (event) => {
