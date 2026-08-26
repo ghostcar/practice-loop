@@ -171,7 +171,14 @@ class TrackerSocialAdapter:
 
 
 class TimerSocialAdapter:
-    """Skeleton adapter for Timer domain. Full implementation deferred."""
+    """SocialSubjectAdapter for LockTimer domain objects (LockSession).
+
+    Covers subject types:
+    - timer.session — redacted projection of a lock session
+
+    Redaction rules: NEVER expose ``random_seed_encrypted``, ``random_seed_commitment``
+    or any device-bound key material. Only state/planning metadata is shareable.
+    """
 
     namespace: str = "timer"
     version: int = 1
@@ -180,8 +187,21 @@ class TimerSocialAdapter:
         return ["timer.session", "timer.slot_occurrence", "timer.task_occurrence"]
 
     async def authorize_subject(self, db: Any, actor_id: str, subject_id: str) -> bool:
-        # Skeleton — any adapter implementing all methods is valid
-        return False
+        """Check ownership of a lock session by id."""
+        from uuid import UUID
+
+        from sqlalchemy import select
+
+        from app.models.locktimer import LockSession
+
+        try:
+            sid = UUID(subject_id)
+        except (ValueError, AttributeError):
+            return False
+        result = await db.execute(
+            select(LockSession).where(LockSession.id == sid, LockSession.owner_id == UUID(actor_id))
+        )
+        return result.scalar_one_or_none() is not None
 
     async def build_redacted_projection(
         self,
@@ -189,10 +209,57 @@ class TimerSocialAdapter:
         subject_id: str,
         requested_fields: set[str] | None = None,
     ) -> dict[str, Any]:
-        return {}
+        """Build an immutable redacted snapshot of a lock session.
+
+        Shareable: state, duration type, timezone, privacy mode, timestamps.
+        Never shareable: random seeds/commitments, device token material.
+        """
+        from uuid import UUID
+
+        from sqlalchemy import select
+
+        from app.models.locktimer import LockSession
+
+        try:
+            sid = UUID(subject_id)
+        except (ValueError, AttributeError):
+            return {}
+
+        result = await db.execute(select(LockSession).where(LockSession.id == sid))
+        session = result.scalar_one_or_none()
+        if session is None:
+            return {}
+
+        return {
+            "type": "timer.session",
+            "state": session.state,
+            "duration_type": session.duration_type,
+            "timezone": session.timezone,
+            "privacy_mode": getattr(session, "privacy_mode", "private"),
+            "created_at": session.created_at.isoformat() if session.created_at else None,
+            "requested_start_at": (
+                session.requested_start_at.isoformat() if getattr(session, "requested_start_at", None) else None
+            ),
+            "original_end_at": (
+                session.original_end_at.isoformat() if getattr(session, "original_end_at", None) else None
+            ),
+        }
 
     def list_shareable_capabilities(self, subject_id: str) -> list[dict[str, Any]]:
-        return []
+        return [
+            {
+                "name": "timer.session.view_summary",
+                "description": "View lock session summary (state, timing)",
+                "scope": "read",
+                "requires_grant_accept": True,
+            },
+            {
+                "name": "timer.session.verify",
+                "description": "Submit verification vote on this session",
+                "scope": "verify",
+                "requires_grant_accept": True,
+            },
+        ]
 
     async def validate_grant_constraints(
         self,
@@ -200,7 +267,13 @@ class TimerSocialAdapter:
         subject_id: str,
         grant_caps: dict[str, Any],
     ) -> list[str]:
-        return ["Timer adapter not yet implemented"]
+        """Validate grant caps against allowlisted capabilities."""
+        allowlisted = {c["name"] for c in self.list_shareable_capabilities(subject_id)}
+        errors: list[str] = []
+        for cap in grant_caps.get("caps", []):
+            if cap not in allowlisted:
+                errors.append(f"Capability '{cap}' not allowlisted for this subject")
+        return errors
 
     async def execute_authorized_action(
         self,
@@ -209,13 +282,14 @@ class TimerSocialAdapter:
         actor_id: str,
         grant_snapshot: dict[str, Any],
     ) -> dict[str, Any]:
-        return {"status": "not_implemented"}
+        """Execute a domain action. Currently a stub — actions are self-contained in S4."""
+        return {"status": "not_implemented", "action_id": action_id}
 
     async def on_revoke_or_block(self, db: Any, subject_id: str, actor_id: str) -> None:
         pass
 
     async def export_data(self, db: Any, subject_id: str) -> dict[str, Any]:
-        return {}
+        return await self.build_redacted_projection(db, subject_id)
 
     async def delete_or_pseudonymize(self, db: Any, subject_id: str) -> None:
         pass

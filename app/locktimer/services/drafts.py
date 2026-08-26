@@ -67,6 +67,16 @@ async def create_draft(
     )
     db.add(session)
     await db.flush()
+
+    # Auto-register a social subject for this lock session (best-effort,
+    # feature-flag gated) so it can be published without manual SQL.
+    try:
+        from app.platform.social.autoregister import ensure_subject_registered
+
+        await ensure_subject_registered(db, owner_id, "timer.session", str(session.id))
+    except Exception:  # noqa: BLE001 - social bridge must never break draft creation
+        pass
+
     return session
 
 

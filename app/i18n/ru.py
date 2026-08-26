@@ -762,6 +762,9 @@ RU = {
     "social_feed_my": "Мои публикации",
     "social_feed_my_empty": "Вы ещё ничего не публиковали.",
     "social_feed_withdraw": "Отозвать",
+    "social_feed_select_label": "Активность для публикации",
+    "social_feed_subjects_empty": "Нет доступных активностей. Завершите задачу в Трекере или создайте LockTimer-сессию — они появятся здесь автоматически.",
+    "social_feed_subjects_link": "Все мои субъекты",
     # S4 — Verification & Comments
     "social_verify_title": "Верификация",
     "social_verify_subtitle": "Запросите подтверждение у ваших связей",

@@ -756,6 +756,9 @@ EN = {
     "social_feed_my": "My Publications",
     "social_feed_my_empty": "You haven't published anything yet.",
     "social_feed_withdraw": "Withdraw",
+    "social_feed_select_label": "Activity to publish",
+    "social_feed_subjects_empty": "No publishable activities yet. Complete a task in Tracker or create a LockTimer session — they will appear here automatically.",
+    "social_feed_subjects_link": "All my subjects",
     # S4 — Verification & Comments
     "social_verify_title": "Verification",
     "social_verify_subtitle": "Request verification from your connections",

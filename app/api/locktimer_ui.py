@@ -103,6 +103,14 @@ async def locktimer_create_draft(
     db.add(session)
     await db.flush()
 
+    # Auto-register a social subject for this lock session (best-effort).
+    try:
+        from app.platform.social.autoregister import ensure_subject_registered
+
+        await ensure_subject_registered(db, current_user.id, "timer.session", str(session.id))
+    except Exception:  # noqa: BLE001
+        pass
+
     return RedirectResponse(f"/locktimer/sessions/{session.id}", status_code=303)
 
 

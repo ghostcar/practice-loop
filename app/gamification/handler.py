@@ -248,6 +248,15 @@ async def on_task_completed(
 
     await db.flush()
 
+    # Auto-register a social subject for this completed activity (best-effort,
+    # feature-flag gated) so it can be published without manual SQL.
+    try:
+        from app.platform.social.autoregister import ensure_subject_registered
+
+        await ensure_subject_registered(db, user_id, "tracker.activity_log", str(log.id))
+    except Exception:  # noqa: BLE001 - social bridge must never break completion
+        logger.debug("Social subject registration failed", exc_info=True)
+
     # Send Telegram notifications if user has linked account
     await _send_tg_notifications(db, user_id, notifications)
     # Push notifications (best-effort) — Mobile Foundation M4.

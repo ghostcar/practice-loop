@@ -37,19 +37,29 @@
     <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_feed_publish }}</h2>
     <form action="/social/publish" method="post" class="space-y-3">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      {% if owner_subjects %}
+      <label class="block text-xs font-semibold text-[color:var(--text-muted)]" for="publish-subject">{{ t.social_feed_select_label }}</label>
       <div class="flex gap-3 flex-wrap">
-        <input type="text" name="subject_id" required
-               class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-4 py-2 text-sm text-[color:var(--text)] flex-1"
-               placeholder="Subject UUID">
+        <select name="subject_id" id="publish-subject" required
+                class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)] flex-1 min-w-[220px]">
+          {% for s in owner_subjects %}
+          <option value="{{ s.id }}">{{ s.subject_type }} · {{ localtime(s.created_at, '%m-%d %H:%M') }}</option>
+          {% endfor %}
+        </select>
         <select name="visibility"
                 class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
           <option value="relationship_only">{{ t.social_feed_rel_only }}</option>
           <option value="unlisted">{{ t.social_feed_unlisted }}</option>
           <option value="public">{{ t.social_feed_public }}</option>
         </select>
-        <input type="hidden" name="snapshot_json" value='{"title":"Manual publish","summary":"No adapter"}'>
         <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white text-sm rounded-lg hover:bg-[color:var(--dom-social)]">{{ t.social_feed_publish_btn }}</button>
       </div>
+      {% else %}
+      <p class="text-xs text-[color:var(--text-muted)] bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded-lg px-3 py-2">
+        {{ icon('info', 'w-3.5 h-3.5 inline') }} {{ t.social_feed_subjects_empty }}
+        <a href="/social/subjects" class="underline hover:text-[color:var(--text)]">{{ t.social_feed_subjects_link }}</a>
+      </p>
+      {% endif %}
     </form>
   </section>
 

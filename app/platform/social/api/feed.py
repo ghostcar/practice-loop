@@ -11,12 +11,14 @@ from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale
 from app.models.user import User
+from app.platform.social import get_adapter_registry
 from app.platform.social.repositories import (
     create_publication,
     get_profile,
     get_subject,
     list_feed,
     list_owner_publications,
+    list_owner_subjects,
     withdraw_publication,
 )
 from app.templates_setup import templates
@@ -40,6 +42,7 @@ async def social_feed_page(
         return RedirectResponse(url="/social/profile", status_code=303)
 
     publications = await list_feed(db, current_user.id, namespace=namespace, limit=30)
+    owner_subjects = await list_owner_subjects(db, current_user.id)
 
     # Enrich with owner alias + block-filtered comments
     from app.platform.social.repositories import list_comments
@@ -89,6 +92,7 @@ async def social_feed_page(
             "profile": profile,
             "publications": pub_data,
             "own_publications": own_data,
+            "owner_subjects": owner_subjects,
             "current_namespace": namespace or "all",
         },
     )
@@ -99,15 +103,23 @@ async def social_publish(
     request: Request,
     subject_id: str = Form(...),
     visibility: str = Form("relationship_only"),
-    snapshot_json: str = Form("{}"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """POST /social/publish — publish a redacted snapshot of a domain subject."""
+    """POST /social/publish — publish a redacted snapshot of a domain subject.
+
+    The snapshot is ALWAYS rebuilt through the subject's registered adapter
+    (the redaction layer) — clients never craft snapshots themselves.
+    """
     import hashlib
     import json as _json
+    import uuid as _uuid
 
-    subject_uuid = __import__("uuid").UUID(subject_id)
+    try:
+        subject_uuid = _uuid.UUID(subject_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(400, "Invalid subject id") from None
+
     subject = await get_subject(db, subject_uuid)
     if subject is None or subject.owner_id != current_user.id:
         raise HTTPException(404, "Subject not found")
@@ -115,10 +127,14 @@ async def social_publish(
     if visibility not in ("relationship_only", "unlisted", "public"):
         raise HTTPException(400, "Invalid visibility")
 
-    try:
-        snapshot = _json.loads(snapshot_json)
-    except _json.JSONDecodeError:
-        raise HTTPException(400, "Invalid snapshot JSON") from None
+    namespace = subject.subject_type.split(".", 1)[0]
+    adapter = get_adapter_registry().get(namespace)
+    if adapter is None:
+        raise HTTPException(400, f"No adapter registered for namespace '{namespace}'")
+
+    snapshot = await adapter.build_redacted_projection(db, str(subject.domain_object_id))
+    if not snapshot:
+        raise HTTPException(400, "Adapter returned an empty projection — nothing to publish")
 
     snapshot_hash = hashlib.sha256(_json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
 
