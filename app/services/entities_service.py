@@ -200,7 +200,6 @@ async def get_inventory_items(db: AsyncSession, user_id: uuid.UUID) -> list[dict
 async def get_catalog_page_context(
     db: AsyncSession, user, *, category: str | None = None, category_id: uuid.UUID | None = None
 ) -> dict:
-
     cat_result = await db.execute(select(ActivityCategory).where(ActivityCategory.is_active.is_(True)))
     all_categories = list(cat_result.scalars().all())
     root_categories, subcategories = build_category_tree(all_categories)

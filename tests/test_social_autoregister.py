@@ -50,13 +50,17 @@ async def test_ensure_subject_registered_idempotent(
     assert second is None  # already registered — no duplicate
 
     rows = (
-        await db_session.execute(
-            select(SocialSubject).where(
-                SocialSubject.subject_type == "tracker.activity_log",
-                SocialSubject.domain_object_id == str(log.id),
+        (
+            await db_session.execute(
+                select(SocialSubject).where(
+                    SocialSubject.subject_type == "tracker.activity_log",
+                    SocialSubject.domain_object_id == str(log.id),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1
     # Projection built through the tracker adapter (real redacted snapshot).
     assert rows[0].projection_snapshot is not None
@@ -198,9 +202,7 @@ async def test_publish_endpoint_builds_snapshot_from_adapter(
         from app.platform.social.models import SocialPublication
 
         pub = (
-            await db_session.execute(
-                select(SocialPublication).where(SocialPublication.subject_id == subject.id)
-            )
+            await db_session.execute(select(SocialPublication).where(SocialPublication.subject_id == subject.id))
         ).scalar_one()
         assert pub.snapshot.get("type") == "tracker.activity_log"
         assert pub.snapshot.get("status") == "completed"
@@ -283,9 +285,7 @@ async def test_on_task_completed_auto_publishes(
         )
     ).scalar_one()
     pub = (
-        await db_session.execute(
-            select(SocialPublication).where(SocialPublication.subject_id == subj.id)
-        )
+        await db_session.execute(select(SocialPublication).where(SocialPublication.subject_id == subj.id))
     ).scalar_one_or_none()
     assert pub is not None
     assert pub.owner_id == test_user.id
@@ -329,10 +329,10 @@ async def test_auto_publish_idempotent(
         )
     ).scalar_one()
     rows = (
-        await db_session.execute(
-            select(SocialPublication).where(SocialPublication.subject_id == subj.id)
-        )
-    ).scalars().all()
+        (await db_session.execute(select(SocialPublication).where(SocialPublication.subject_id == subj.id)))
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1
 
 
@@ -371,9 +371,7 @@ async def test_auto_publish_disabled_by_pref(
     ).scalar_one_or_none()
     assert subj is not None  # subject still registered
     pub = (
-        await db_session.execute(
-            select(SocialPublication).where(SocialPublication.subject_id == subj.id)
-        )
+        await db_session.execute(select(SocialPublication).where(SocialPublication.subject_id == subj.id))
     ).scalar_one_or_none()
     assert pub is None  # ...but not published
 
@@ -411,9 +409,7 @@ async def test_auto_publish_uses_visibility_pref(
         )
     ).scalar_one()
     pub = (
-        await db_session.execute(
-            select(SocialPublication).where(SocialPublication.subject_id == subj.id)
-        )
+        await db_session.execute(select(SocialPublication).where(SocialPublication.subject_id == subj.id))
     ).scalar_one()
     assert pub.visibility == "public"
 
@@ -548,11 +544,15 @@ async def test_autoregister_noop_when_social_disabled(
     result = await ensure_subject_registered(db_session, test_user.id, "tracker.activity_log", str(log.id))
     assert result is None
     rows = (
-        await db_session.execute(
-            select(SocialSubject).where(
-                SocialSubject.subject_type == "tracker.activity_log",
-                SocialSubject.domain_object_id == str(log.id),
+        (
+            await db_session.execute(
+                select(SocialSubject).where(
+                    SocialSubject.subject_type == "tracker.activity_log",
+                    SocialSubject.domain_object_id == str(log.id),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(rows) == 0

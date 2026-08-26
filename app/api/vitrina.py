@@ -82,19 +82,13 @@ async def public_vitrina(
     ]
 
     # ── Community counters ──
-    profiles_count = (
-        await db.execute(select(func.count()).select_from(SocialProfile))
-    ).scalar_one()
+    profiles_count = (await db.execute(select(func.count()).select_from(SocialProfile))).scalar_one()
     publications_count = (
         await db.execute(
-            select(func.count())
-            .select_from(SocialPublication)
-            .where(SocialPublication.is_active.is_(True))
+            select(func.count()).select_from(SocialPublication).where(SocialPublication.is_active.is_(True))
         )
     ).scalar_one()
-    kudos_count = (
-        await db.execute(select(func.count()).select_from(SocialEncouragement))
-    ).scalar_one()
+    kudos_count = (await db.execute(select(func.count()).select_from(SocialEncouragement))).scalar_one()
 
     return templates.TemplateResponse(
         request=request,
