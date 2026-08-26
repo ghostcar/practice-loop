@@ -80,6 +80,11 @@
           {{ t.social_show_in_feed }}
         </label>
       </div>
+      <div class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded-lg px-3 py-2">
+        <input type="hidden" name="auto_publish" value="false">
+        <input type="checkbox" name="auto_publish" value="true" {% if user_prefs.social_auto_publish %}checked{% endif %}>
+        <span>{{ t.social_auto_publish }}</span>
+      </div>
       <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white rounded-lg hover:bg-[color:var(--dom-social)] transition">
         {{ t.social_save_btn }}
       </button>

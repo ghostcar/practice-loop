@@ -136,6 +136,7 @@ class UserPrefs:
     reminder_tz: str = ""  # IANA name, "" = inherit settings.reminder_tz
     med_gamification: bool = True  # ADR-137: positive-only adherence XP (default ON)
     onboarding_completed: bool = False  # P0: onboarding wizard completion flag
+    social_auto_publish: bool = True  # S1 bridge: auto-publish completed activities to the feed
 
     # --- convenience ------------------------------------------------------
 
@@ -232,6 +233,8 @@ def sanitize_prefs(raw: dict | None) -> dict:
     # P0: onboarding wizard — only stored when explicitly set (not in sanitize defaults).
     if "onboarding_completed" in raw:
         out["onboarding_completed"] = bool(raw["onboarding_completed"])
+    # S1 bridge: auto-publish completed activities to the feed. Absent value = ON.
+    out["social_auto_publish"] = bool(raw.get("social_auto_publish", True))
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

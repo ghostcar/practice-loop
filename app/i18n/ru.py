@@ -683,6 +683,7 @@ RU = {
     "social_save_btn": "Сохранить",
     "social_discoverable": "Разрешить поиск по псевдониму",
     "social_show_in_feed": "Показывать в публичной ленте",
+    "social_auto_publish": "Авто-публиковать завершённые активности в ленту (только для связей)",
     "social_profile_created": "Профиль создан",
     "social_consent_title": "Согласие на обработку",
     "social_consent_desc": (

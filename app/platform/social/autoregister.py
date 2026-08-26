@@ -25,8 +25,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.social import get_adapter_registry
-from app.platform.social.models import SocialSubject
-from app.platform.social.repositories import register_subject
+from app.platform.social.models import SocialPublication, SocialSubject
+from app.platform.social.repositories import create_publication, register_subject
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +94,92 @@ async def ensure_subject_registered(
             "Social subject auto-registration failed for %s %s", subject_type, domain_object_id, exc_info=True
         )
         return None
+
+
+async def ensure_auto_publish(
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    subject_type: str,
+    domain_object_id: str,
+    *,
+    visibility: str = "relationship_only",
+) -> bool:
+    """Auto-publish a freshly completed domain object to the social feed.
+
+    Called by domain hooks right after :func:`ensure_subject_registered`. Gates:
+
+    - ``social_enabled`` feature flag
+    - per-user ``social_auto_publish`` preference (default ON)
+    - visibility must be a valid level (``relationship_only`` default — safe)
+
+    Idempotent: if a publication already exists for the subject it is a no-op.
+    Best-effort: failures are logged and swallowed — the domain operation
+    (task completion) is never broken by social.
+    """
+    if not _social_enabled():
+        return False
+    if visibility not in ("relationship_only", "unlisted", "public"):
+        logger.warning("Invalid auto-publish visibility %r — skip", visibility)
+        return False
+
+    try:
+        # Per-user pref (lazy import — avoid cycles at module load).
+        from app.models.user import User
+        from app.prefs import prefs_from_dict
+
+        user_result = await db.execute(select(User).where(User.id == owner_id))
+        user = user_result.scalar_one_or_none()
+        if user is None:
+            return False
+        if not prefs_from_dict(user.prefs).social_auto_publish:
+            return False
+
+        # Resolve the subject (registered by the same hook just before).
+        subject_result = await db.execute(
+            select(SocialSubject).where(
+                SocialSubject.subject_type == subject_type,
+                SocialSubject.domain_object_id == str(domain_object_id),
+                SocialSubject.owner_id == owner_id,
+                SocialSubject.is_active.is_(True),
+            )
+        )
+        subject = subject_result.scalar_one_or_none()
+        if subject is None:
+            return False
+
+        # Idempotent: never double-publish the same subject.
+        existing_pub = await db.execute(
+            select(SocialPublication).where(
+                SocialPublication.subject_id == subject.id,
+                SocialPublication.is_active.is_(True),
+            )
+        )
+        if existing_pub.scalar_one_or_none() is not None:
+            return False
+
+        namespace = subject_type.split(".", 1)[0]
+        adapter = get_adapter_registry().get(namespace)
+        if adapter is None:
+            return False
+
+        snapshot = await adapter.build_redacted_projection(db, str(subject.domain_object_id))
+        if not snapshot:
+            return False
+
+        import hashlib
+        import json as _json
+
+        snapshot_hash = hashlib.sha256(_json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
+        await create_publication(
+            db,
+            owner_id,
+            subject.id,
+            visibility,
+            snapshot,
+            snapshot_hash,
+            namespace,
+        )
+        return True
+    except Exception:  # noqa: BLE001 - social must never break a domain transaction
+        logger.warning("Social auto-publish failed for %s %s", subject_type, domain_object_id, exc_info=True)
+        return False

@@ -39,6 +39,8 @@ async def social_profile_page(
     t = get_translations(locale)
     profile = await get_profile(db, current_user.id)
 
+    from app.prefs import prefs_from_dict
+
     return templates.TemplateResponse(
         request,
         "social/profile.html",
@@ -47,6 +49,7 @@ async def social_profile_page(
             "locale": locale,
             "user": current_user,
             "profile": profile,
+            "user_prefs": prefs_from_dict(current_user.prefs),
             "consent_accepted": await has_accepted_consent(db, current_user.id, CURRENT_CONSENT_VERSION),
             "consent_version": CURRENT_CONSENT_VERSION,
         },
@@ -92,11 +95,21 @@ async def social_profile_update(
     bio: str | None = Form(None),
     discoverable: bool | None = Form(None),
     show_in_feed: bool | None = Form(None),
+    auto_publish: bool | None = Form(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """POST /social/profile/update — update profile fields."""
     await update_profile(db, current_user.id, bio=bio, discoverable=discoverable, show_in_feed=show_in_feed)
+
+    # Auto-publish toggle lives in users.prefs (no schema change needed).
+    # The form always submits "true"/"false" (hidden field pairs the checkbox).
+    if auto_publish is not None:
+        from app.prefs import raw_dict, sanitize_prefs
+
+        raw = sanitize_prefs({**raw_dict(current_user.prefs), "social_auto_publish": auto_publish})
+        current_user.prefs = raw
+
     return RedirectResponse(url="/social/profile", status_code=303)
 
 

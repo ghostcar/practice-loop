@@ -679,6 +679,7 @@ EN = {
     "social_save_btn": "Save",
     "social_discoverable": "Allow alias search",
     "social_show_in_feed": "Show in public feed",
+    "social_auto_publish": "Auto-publish completed activities to the feed (relationships only)",
     "social_profile_created": "Profile created",
     "social_consent_title": "Privacy Consent",
     "social_consent_desc": "By accepting, you confirm you are an adult and agree to the platform privacy terms.",
