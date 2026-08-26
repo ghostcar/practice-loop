@@ -8,6 +8,14 @@ from collections.abc import AsyncGenerator
 os.environ.setdefault("LOCKTIMER_CORE_ENABLED", "true")
 os.environ.setdefault("KB_CONTEXT_ENABLED", "false")
 
+# Social platform — tests rely on the domain adapters being registered. Local
+# .env sets these, but CI (no .env) defaults them to False, which silently
+# turns ensure_subject_registered into a no-op and breaks the social tests.
+# setdefault keeps whatever the environment explicitly provides.
+os.environ.setdefault("SOCIAL_ENABLED", "true")
+os.environ.setdefault("SOCIAL_TRACKER_ADAPTER_ENABLED", "true")
+os.environ.setdefault("SOCIAL_TIMER_ADAPTER_ENABLED", "true")
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

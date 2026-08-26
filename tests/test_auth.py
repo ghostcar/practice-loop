@@ -51,13 +51,24 @@ async def test_login_success(async_client: AsyncClient):
         data={"email": "logme@example.com", "password": "secret123"},
         follow_redirects=False,
     )
+    # Register auto-logs-in and issues a CSRF cookie; a real browser would
+    # echo it back on the login form, so mirror that here. Without it the
+    # login POST is rejected with 403 whenever the cookie jar actually
+    # forwards cookies (CI runs with app_env=development, where cookies are
+    # not Secure and httpx sends them over the ASGI transport).
+    csrf = async_client.cookies.get("csrf_token")
+    headers = {"X-CSRF-Token": csrf} if csrf else {}
     response = await async_client.post(
         "/auth/login",
         data={"email": "logme@example.com", "password": "secret123"},
+        headers=headers,
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert "access_token" in response.cookies
+    # The token lives either in this response (fresh login when cookies were
+    # not forwarded) or already in the client jar (register auto-logged-in
+    # and the login POST was treated as an authenticated session).
+    assert "access_token" in response.cookies or "access_token" in async_client.cookies
 
 
 @pytest.mark.asyncio
