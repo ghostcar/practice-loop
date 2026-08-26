@@ -192,6 +192,7 @@
                 <div class="text-xs text-indigo-600 dark:text-indigo-400">{{ t.tasks_section_generate }}</div>
             </div>
         </a>
+        {% if not composition or composition.timer_operational %}
         <a href="/locktimer" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-center gap-2 hover:border-amber-400 transition-colors group">
             {{ icon('timer', 'w-6 h-6 text-amber-500 group-hover:scale-110 transition-transform') }}
             <div>
@@ -199,6 +200,7 @@
                 <div class="text-xs text-amber-700 dark:text-amber-400">{{ t.locktimer_title or "Lock Timer" }}</div>
             </div>
         </a>
+        {% endif %}
         <a href="/diets" class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-center gap-2 hover:border-emerald-400 transition-colors group">
             {{ icon('diet', 'w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform') }}
             <div>
