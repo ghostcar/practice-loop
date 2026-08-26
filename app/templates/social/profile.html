@@ -80,10 +80,22 @@
           {{ t.social_show_in_feed }}
         </label>
       </div>
-      <div class="flex items-center gap-2 text-sm text-[color:var(--text-secondary)] bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded-lg px-3 py-2">
-        <input type="hidden" name="auto_publish" value="false">
-        <input type="checkbox" name="auto_publish" value="true" {% if user_prefs.social_auto_publish %}checked{% endif %}>
-        <span>{{ t.social_auto_publish }}</span>
+      <div class="flex flex-col gap-2 text-sm text-[color:var(--text-secondary)] bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded-lg px-3 py-3">
+        <label class="flex items-center gap-2">
+          <input type="hidden" name="auto_publish" value="false">
+          <input type="checkbox" name="auto_publish" value="true" {% if user_prefs.social_auto_publish %}checked{% endif %}>
+          <span>{{ t.social_auto_publish }}</span>
+        </label>
+        <div class="flex items-center gap-2 pl-6">
+          <span class="text-xs font-semibold text-[color:var(--text-muted)]">{{ t.social_auto_publish_vis_label }}</span>
+          <select name="auto_publish_visibility" class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-2 py-1 text-xs text-[color:var(--text)]">
+            {% for v_key in ['relationship_only', 'unlisted', 'public'] %}
+            <option value="{{ v_key }}" {% if user_prefs.social_auto_publish_visibility == v_key %}selected{% endif %}>
+              {{ t['social_vis_' + v_key] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
       <button type="submit" class="px-6 py-2 bg-[color:var(--dom-social-btn)] text-white rounded-lg hover:bg-[color:var(--dom-social)] transition">
         {{ t.social_save_btn }}

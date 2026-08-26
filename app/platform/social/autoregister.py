@@ -131,8 +131,11 @@ async def ensure_auto_publish(
         user = user_result.scalar_one_or_none()
         if user is None:
             return False
-        if not prefs_from_dict(user.prefs).social_auto_publish:
+        user_prefs = prefs_from_dict(user.prefs)
+        if not user_prefs.social_auto_publish:
             return False
+        # Override visibility from per-user pref (validated in sanitize_prefs).
+        visibility = user_prefs.social_auto_publish_visibility
 
         # Resolve the subject (registered by the same hook just before).
         subject_result = await db.execute(

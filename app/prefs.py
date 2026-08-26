@@ -42,6 +42,7 @@ DENSITIES = ("comfortable", "compact")
 THEME_CHOICES = ("dark", "light", "system")
 DISCRETION_MODES = ("off", "always", "schedule")
 BLUR_LEVELS = (0, 1, 2)
+AUTO_PUBLISH_VISIBILITIES = ("relationship_only", "unlisted", "public")
 # LLM режимы (ADR-087): safe — нейтральный пересказ фактов (default);
 # expanded — рекомендации/советы/интерпретация (влияет на все LLM-блоки).
 LLM_MODES = ("safe", "expanded")
@@ -96,6 +97,7 @@ DEFAULT_PREFS: dict[str, Any] = {
     # settings.reminder_time / settings.reminder_tz.
     "reminder_time": "",
     "reminder_tz": "",
+    "social_auto_publish_visibility": "relationship_only",
 }
 
 DISCRETION_LABELS = (
@@ -137,6 +139,7 @@ class UserPrefs:
     med_gamification: bool = True  # ADR-137: positive-only adherence XP (default ON)
     onboarding_completed: bool = False  # P0: onboarding wizard completion flag
     social_auto_publish: bool = True  # S1 bridge: auto-publish completed activities to the feed
+    social_auto_publish_visibility: str = "relationship_only"
 
     # --- convenience ------------------------------------------------------
 
@@ -235,6 +238,8 @@ def sanitize_prefs(raw: dict | None) -> dict:
         out["onboarding_completed"] = bool(raw["onboarding_completed"])
     # S1 bridge: auto-publish completed activities to the feed. Absent value = ON.
     out["social_auto_publish"] = bool(raw.get("social_auto_publish", True))
+    _vis = raw.get("social_auto_publish_visibility")
+    out["social_auto_publish_visibility"] = _vis if _vis in AUTO_PUBLISH_VISIBILITIES else "relationship_only"
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

@@ -96,19 +96,24 @@ async def social_profile_update(
     discoverable: bool | None = Form(None),
     show_in_feed: bool | None = Form(None),
     auto_publish: bool | None = Form(None),
+    auto_publish_visibility: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """POST /social/profile/update — update profile fields."""
     await update_profile(db, current_user.id, bio=bio, discoverable=discoverable, show_in_feed=show_in_feed)
 
-    # Auto-publish toggle lives in users.prefs (no schema change needed).
-    # The form always submits "true"/"false" (hidden field pairs the checkbox).
-    if auto_publish is not None:
-        from app.prefs import raw_dict, sanitize_prefs
+    # Auto-publish prefs live in users.prefs (no schema change needed).
+    from app.prefs import raw_dict, sanitize_prefs
 
-        raw = sanitize_prefs({**raw_dict(current_user.prefs), "social_auto_publish": auto_publish})
-        current_user.prefs = raw
+    prefs_changed = auto_publish is not None or auto_publish_visibility is not None
+    if prefs_changed:
+        merged = raw_dict(current_user.prefs)
+        if auto_publish is not None:
+            merged["social_auto_publish"] = auto_publish
+        if auto_publish_visibility is not None:
+            merged["social_auto_publish_visibility"] = auto_publish_visibility
+        current_user.prefs = sanitize_prefs(merged)
 
     return RedirectResponse(url="/social/profile", status_code=303)
 

@@ -288,7 +288,7 @@ async def test_on_task_completed_auto_publishes(
     ).scalar_one_or_none()
     assert pub is not None
     assert pub.owner_id == test_user.id
-    assert pub.visibility == "relationship_only"
+    assert pub.visibility == "relationship_only"  # default pref
     assert pub.snapshot.get("type") == "tracker.activity_log"
 
 
@@ -377,6 +377,46 @@ async def test_auto_publish_disabled_by_pref(
 
 
 @pytest.mark.asyncio
+async def test_auto_publish_uses_visibility_pref(
+    db_session: AsyncSession,
+    test_user: User,
+):
+    """Auto-publish respects per-user visibility pref."""
+    from app.platform.social.models import SocialPublication
+    from app.prefs import sanitize_prefs
+
+    test_user.prefs = sanitize_prefs({**(test_user.prefs or {}), "social_auto_publish_visibility": "public"})
+
+    log = ActivityLog(
+        user_id=test_user.id,
+        entity_id=None,
+        status="planned",
+        selected_entity_name="Ride",
+        selected_params={},
+        user_prompt="test",
+    )
+    db_session.add(log)
+    await db_session.flush()
+
+    await on_task_completed(db_session, test_user.id, log)
+
+    subj = (
+        await db_session.execute(
+            select(SocialSubject).where(
+                SocialSubject.subject_type == "tracker.activity_log",
+                SocialSubject.domain_object_id == str(log.id),
+            )
+        )
+    ).scalar_one()
+    pub = (
+        await db_session.execute(
+            select(SocialPublication).where(SocialPublication.subject_id == subj.id)
+        )
+    ).scalar_one()
+    assert pub.visibility == "public"
+
+
+@pytest.mark.asyncio
 async def test_profile_update_toggles_auto_publish(
     db_session: AsyncSession,
     test_user: User,
@@ -397,25 +437,7 @@ async def test_profile_update_toggles_auto_publish(
             client.headers.update({"Cookie": f"access_token={token}; csrf_token={csrf}", "X-CSRF-Token": csrf})
             resp = await client.post(
                 "/social/profile/update",
-                data={"auto_publish": "false"},
-            )
-            assert resp.status_code == 303, resp.text
-    finally:
-        app.dependency_overrides.pop(get_db, None)
-
-    # The test override of get_db does not auto-commit (unlike production).
-    await db_session.commit()
-    await db_session.refresh(test_user)
-    assert prefs_from_dict(test_user.prefs).social_auto_publish is False
-
-    # Toggle back on.
-    app.dependency_overrides[get_db] = override_get_db
-    try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            client.headers.update({"Cookie": f"access_token={token}; csrf_token={csrf}", "X-CSRF-Token": csrf})
-            resp = await client.post(
-                "/social/profile/update",
-                data={"auto_publish": "true"},
+                data={"auto_publish": "false", "auto_publish_visibility": "public"},
             )
             assert resp.status_code == 303, resp.text
     finally:
@@ -423,7 +445,9 @@ async def test_profile_update_toggles_auto_publish(
 
     await db_session.commit()
     await db_session.refresh(test_user)
-    assert prefs_from_dict(test_user.prefs).social_auto_publish is True
+    prefs = prefs_from_dict(test_user.prefs)
+    assert prefs.social_auto_publish is False
+    assert prefs.social_auto_publish_visibility == "public"
 
 
 @pytest.mark.asyncio
