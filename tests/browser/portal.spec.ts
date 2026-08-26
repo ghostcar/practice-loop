@@ -11,11 +11,18 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
   await registerFreshUser(page);
 
   const routes = [
-    "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training", "/locktimer",
+    "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training",
     "/settings", "/account", "/media", "/api/v2/points/page", "/api/v2/inventory/page",
     "/api/v2/measurements/page", "/api/v2/schedule/page", "/api/v2/body-parts/page", "/consent",
     "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
   ];
+  // /locktimer is a feature-gated route (timer_operational): it only exists in
+  // the running app when the timer module is enabled. Probe the sidebar instead
+  // of hardcoding it, so the test passes with any product composition.
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  if ((await page.locator('a[href="/locktimer"]').count()) > 0) {
+    routes.push("/locktimer");
+  }
   for (const route of routes) {
     const response = await page.goto(route, { waitUntil: "domcontentloaded" });
     expect(response?.status(), `${route} response`).toBeLessThan(400);
