@@ -50,7 +50,10 @@ def _register_and_login(page, email: str, password: str) -> None:
 
     if "/onboarding" in page.url:
         # New-user wizard — skip it (module consents are granted on /consent/setup).
-        page.click('button[form="skip-form"]')
+        # The skip button lives in the last wizard step and is display:hidden
+        # until then, so submit the skip form directly (same as the button does
+        # via the form= attribute; the hidden csrf_token input is included).
+        page.locator("#skip-form").evaluate("(f) => f.submit()")
         page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=20_000)
 
     if "/login" in page.url:
