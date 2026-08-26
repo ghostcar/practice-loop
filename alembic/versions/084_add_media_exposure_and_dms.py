@@ -7,6 +7,7 @@ Revises: 083_community_membership
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy import inspect
 from sqlalchemy.dialects import postgresql
 
 from alembic import op
@@ -17,8 +18,14 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
+def _has_table(name: str) -> bool:
+    return name in inspect(op.get_bind()).get_table_names()
+
+
 def upgrade() -> None:
-    # 1. media_exposure_drops
+    # 1. media_exposure_drops (idempotent — 083 may have created it from metadata)
+    if _has_table("media_exposure_drops"):
+        return
     op.create_table(
         "media_exposure_drops",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
@@ -55,7 +62,9 @@ def upgrade() -> None:
         ),
     )
 
-    # 2. dead_mans_switch_rules
+    # 2. dead_mans_switch_rules (idempotent)
+    if _has_table("dead_mans_switch_rules"):
+        return
     op.create_table(
         "dead_mans_switch_rules",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
