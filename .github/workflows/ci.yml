@@ -87,6 +87,9 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://tracker:tracker@localhost:5432/tracker_test
 
   # ── Memory v2 lint (required — STAGE_PLAN Шаг 3, Session 119) ──
+  # facts must run before lint: FACTS.json is anchored to HEAD, so any code
+  # commit makes it stale.  Regenerating first ensures the freshness check
+  # passes on every CI run without requiring a separate commit.
   memory-lint:
     runs-on: ubuntu-latest
     steps:
@@ -94,6 +97,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: python -m tools.memoryctl facts
       - run: python -m tools.memoryctl lint
       - run: python -m tools.memoryctl facts --check
 
