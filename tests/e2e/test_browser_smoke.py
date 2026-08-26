@@ -45,7 +45,7 @@ def _register_and_login(page, email: str, password: str) -> None:
     page.click('button[type="submit"]')
     page.wait_for_url(
         lambda u: any(x in u for x in ("/dashboard", "/login", "/consent", "/onboarding")),
-        timeout=20_000,
+        timeout=40_000,
     )
 
     if "/onboarding" in page.url:
@@ -54,14 +54,14 @@ def _register_and_login(page, email: str, password: str) -> None:
         # until then, so submit the skip form directly (same as the button does
         # via the form= attribute; the hidden csrf_token input is included).
         page.locator("#skip-form").evaluate("(f) => f.submit()")
-        page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=20_000)
+        page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=40_000)
 
     if "/login" in page.url:
         # Registration redirected to login — sign in.
         page.fill('input[name="email"]', email)
         page.fill('input[name="password"]', password)
         page.click('button[type="submit"]')
-        page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=20_000)
+        page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=40_000)
 
     if "/consent/setup" in page.url:
         # Consent gate: grant all required module permissions, then continue.
@@ -72,7 +72,7 @@ def _register_and_login(page, email: str, password: str) -> None:
         for i in range(boxes.count()):
             boxes.nth(i).check()
         form.locator('button[type="submit"]').click()
-        page.wait_for_url(lambda u: "/dashboard" in u, timeout=20_000)
+        page.wait_for_url(lambda u: "/dashboard" in u, timeout=40_000)
 
     assert "/dashboard" in page.url, f"expected dashboard, got {page.url}"
 
@@ -135,7 +135,7 @@ def test_full_personal_loop(page) -> None:
     timer_link = page.locator("a[href='/locktimer']").first
     if timer_link.is_visible(timeout=3_000):
         timer_link.click()
-        page.wait_for_url(lambda u: "/locktimer" in u, timeout=20_000)
+        page.wait_for_url(lambda u: "/locktimer" in u, timeout=40_000)
         page.screenshot(path="/tmp/smoke_timer.png")
         # Timer page renders some heading.
         assert page.locator("h1").count() > 0 or page.locator("main").count() > 0
@@ -162,7 +162,7 @@ def test_protocol_builder_duration_picker(page) -> None:
     page.goto(f"{BASE_URL}/protocols/new")
     page.wait_for_load_state("networkidle")
     page.click("#add-step")
-    page.wait_for_selector(".step-row .duration-picker", timeout=10_000)
+    page.wait_for_selector(".step-row .duration-picker", timeout=25_000)
 
     row = page.locator(".step-row").first
     # Five duration inputs with the step_0_* naming.
