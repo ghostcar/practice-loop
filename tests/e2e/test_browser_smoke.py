@@ -35,15 +35,23 @@ def _fresh_email() -> str:
 def _register_and_login(page, email: str, password: str) -> None:
     """Register a fresh user and land on /dashboard, passing the consent gate.
 
-    New users are redirected /login?registered=1 after registration, and after
-    login they must grant module permissions on /consent/setup before the
-    dashboard becomes available (auth.py:149).
+    Current flow: register auto-logs-in and redirects to /onboarding (wizard for
+    new users); onboarding can be skipped and leads to /consent/setup (module
+    permissions) before /dashboard is available.
     """
     page.goto(f"{BASE_URL}/register")
     page.fill('input[name="email"]', email)
     page.fill('input[name="password"]', password)
     page.click('button[type="submit"]')
-    page.wait_for_url(lambda u: "/dashboard" in u or "/login" in u or "/consent" in u, timeout=20_000)
+    page.wait_for_url(
+        lambda u: any(x in u for x in ("/dashboard", "/login", "/consent", "/onboarding")),
+        timeout=20_000,
+    )
+
+    if "/onboarding" in page.url:
+        # New-user wizard — skip it (module consents are granted on /consent/setup).
+        page.click('button[form="skip-form"]')
+        page.wait_for_url(lambda u: "/dashboard" in u or "/consent" in u, timeout=20_000)
 
     if "/login" in page.url:
         # Registration redirected to login — sign in.
