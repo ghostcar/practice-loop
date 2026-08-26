@@ -1,6 +1,6 @@
 // PracticeLoop Service Worker (PWA Offline Cache & Push Dispatches)
 
-const CACHE_NAME = "practiceloop-v2";
+const CACHE_NAME = "practiceloop-v3";
 const ASSETS_TO_CACHE = [
   "/static/icons/sprite.svg",
   "/static/tailwindcss.js",
