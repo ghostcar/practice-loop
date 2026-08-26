@@ -19,6 +19,8 @@ async def create_publication(
     snapshot: dict,
     snapshot_hash: str,
     subject_namespace: str,
+    *,
+    source: str = "manual",
 ) -> SocialPublication:
     pub = SocialPublication(
         owner_id=owner_id,
@@ -27,6 +29,7 @@ async def create_publication(
         snapshot=snapshot,
         snapshot_hash=snapshot_hash,
         subject_namespace=subject_namespace,
+        source=source,
     )
     db.add(pub)
     await db.flush()

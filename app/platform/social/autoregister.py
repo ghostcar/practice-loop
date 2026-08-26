@@ -181,6 +181,7 @@ async def ensure_auto_publish(
             snapshot,
             snapshot_hash,
             namespace,
+            source="auto",
         )
         return True
     except Exception:  # noqa: BLE001 - social must never break a domain transaction

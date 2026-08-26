@@ -207,6 +207,7 @@ async def test_publish_endpoint_builds_snapshot_from_adapter(
         assert "cleaned_response" in pub.snapshot
         # The hardcoded client stub must never be stored.
         assert pub.snapshot.get("title") != "Manual publish"
+        assert pub.source == "manual"  # endpoint uses default
     finally:
         app.dependency_overrides.pop(get_db, None)
 
@@ -289,6 +290,7 @@ async def test_on_task_completed_auto_publishes(
     assert pub is not None
     assert pub.owner_id == test_user.id
     assert pub.visibility == "relationship_only"  # default pref
+    assert pub.source == "auto"
     assert pub.snapshot.get("type") == "tracker.activity_log"
 
 
@@ -474,6 +476,51 @@ async def test_profile_page_renders_auto_publish_toggle(
             resp = await client.get("/social/profile")
         assert resp.status_code == 200, resp.text[:500]
         assert 'name="auto_publish"' in resp.text
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.mark.asyncio
+async def test_feed_renders_auto_badge(
+    db_session: AsyncSession,
+    test_user: User,
+):
+    """Auto-published items show the 'auto' badge in the feed."""
+    from app.database import get_db
+    from app.main import app
+    from app.platform.social.repositories import create_profile
+
+    await create_profile(db_session, test_user.id, "alice_badge", "alice_badge")
+
+    # Create an auto-published publication directly.
+    log = ActivityLog(
+        user_id=test_user.id,
+        entity_id=None,
+        status="completed",
+        selected_entity_name="Yoga",
+        selected_params={},
+        user_prompt="test",
+    )
+    db_session.add(log)
+    await db_session.flush()
+    await ensure_subject_registered(db_session, test_user.id, "tracker.activity_log", str(log.id))
+
+    from app.platform.social.autoregister import ensure_auto_publish
+
+    await ensure_auto_publish(db_session, test_user.id, "tracker.activity_log", str(log.id))
+
+    async def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    csrf = secrets.token_hex(32)
+    token = create_access_token(test_user.id)
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            client.headers.update({"Cookie": f"access_token={token}; csrf_token={csrf}", "X-CSRF-Token": csrf})
+            resp = await client.get("/social/feed")
+        assert resp.status_code == 200, resp.text
+        assert "auto" in resp.text.lower()  # auto badge rendered
     finally:
         app.dependency_overrides.pop(get_db, None)
 

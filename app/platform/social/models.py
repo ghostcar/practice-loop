@@ -368,6 +368,9 @@ class SocialPublication(Base):
     # Subject namespace for feed filtering (tracker.* / timer.*)
     subject_namespace: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
 
+    # Origin: "manual" (user-initiated) | "auto" (domain event auto-publish)
+    source: Mapped[str] = mapped_column(String(20), default="manual", nullable=False)
+
     # Lifecycle: active → withdrawn (never edited)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
