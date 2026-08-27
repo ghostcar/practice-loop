@@ -46,7 +46,7 @@
           <option value="{{ s.id }}">{{ s.subject_type }} · {{ localtime(s.created_at, '%m-%d %H:%M') }}</option>
           {% endfor %}
         </select>
-        <select name="visibility"
+        <select name="visibility" aria-label="{{ t.social_auto_publish_vis_label }}"
                 class="rounded-lg border border-[color:var(--border-strong)] pl-surface px-3 py-2 text-sm text-[color:var(--text)]">
           <option value="relationship_only">{{ t.social_feed_rel_only }}</option>
           <option value="unlisted">{{ t.social_feed_unlisted }}</option>
@@ -105,7 +105,7 @@
               <input type="hidden" name="target_type" value="publication">
               <input type="hidden" name="target_id" value="{{ item.pub.id }}">
               <input type="hidden" name="redirect_url" value="/social/feed">
-              <select name="reason_code" class="w-full text-xs border rounded-lg px-2 py-1 pl-surface-soft dark:border-[color:var(--border)]">
+              <select name="reason_code" aria-label="{{ t.social_report_reason }}" class="w-full text-xs border rounded-lg px-2 py-1 pl-surface-soft dark:border-[color:var(--border)]">
                 <option value="harassment">Harassment</option>
                 <option value="privacy">Privacy violation</option>
                 <option value="non_consensual">Non-consensual</option>

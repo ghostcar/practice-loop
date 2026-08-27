@@ -31,7 +31,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2">
                 <span class="text-xs font-semibold text-[color:var(--text)]">Роль Ассистента:</span>
-                <select name="persona_role" class="px-3 py-1.5 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] font-semibold">
+                <select name="persona_role" aria-label="Роль Ассистента" class="px-3 py-1.5 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)] font-semibold">
                     <option value="keyholder" {% if persona_role == 'keyholder' or not persona_role %}selected{% endif %}>Ключник (Keyholder Control)</option>
                     <option value="controller" {% if persona_role == 'controller' %}selected{% endif %}>Ведущий / Верхний (Controller)</option>
                     <option value="care_guide" {% if persona_role == 'care_guide' %}selected{% endif %}>Заботливый Гид (Aftercare Guide)</option>

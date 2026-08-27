@@ -292,6 +292,14 @@ Key test suites:
   `test_tournament_rewards.py`, `test_automation_triggers_and_tts.py`,
   `test_voice_hydration.py`, `test_llm_exchange.py`, `test_encrypted_media_vault_and_ai.py`,
   `test_ds_portal_suite.py`, `test_multi_top_and_digest.py`, `test_persona_health_and_duels.py`
+- `test_localization.py` — i18n consistency: EN/RU parity, placeholders, template & JS keys,
+  page-i18n JSON blocks, locale detection (15 tests)
+
+Browser E2E (`npm run test:browser`, `--grep @smoke` in CI):
+- `portal.spec.ts` — 7 tests: 2×`@smoke` (navigation, session flow), `@a11y`
+  (axe wcag2a/2aa across **34 routes × dark/light**), 3×`@usability` (keyboard focus,
+  no horizontal overflow, reduced motion, timer discoverability).
+- Run the a11y audit alone with `npm run test:a11y`; usability with `npm run test:usability`.
 
 ---
 

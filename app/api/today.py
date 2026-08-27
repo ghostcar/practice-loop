@@ -155,6 +155,7 @@ async def today_page(
             "t": t,
             "theme": theme,
             "user": user,
+            "locale": locale,
             "nav_key": "today",
             "today_label": _today_label(today, locale),
             "tasks": tasks,

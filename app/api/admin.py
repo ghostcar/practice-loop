@@ -86,6 +86,7 @@ async def admin_users_page(
             "t": get_translations(detect_locale(request, user.locale)),
             "theme": detect_theme(user.theme),
             "user": user,
+            "locale": detect_locale(request, user.locale),
             "nav_key": "admin",
             **ctx,
         },

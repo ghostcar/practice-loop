@@ -203,12 +203,12 @@
         <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.care_courses_title }}</h2>
         <form action="/care/courses" method="post" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <input name="name" placeholder="{{ t.care_course_name_ph }}" required class="col-span-2 px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-            <select name="area" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <input name="name" placeholder="{{ t.care_course_name_ph }}" aria-label="{{ t.care_course_name_ph }}" required class="col-span-2 px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <select name="area" aria-label="{{ t.care_area }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
                 {% for a in care_areas %}<option value="{{ a }}">{{ t['care_area_' + a] }}</option>{% endfor %}
             </select>
             <input name="total_sessions" type="number" min="1" max="200" value="4" aria-label="{{ t.care_course_sessions }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-            <input name="interval_days" type="number" min="1" max="3650" placeholder="{{ t.care_course_interval_ph }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            <input name="interval_days" type="number" min="1" max="3650" placeholder="{{ t.care_course_interval_ph }}" aria-label="{{ t.care_course_interval_ph }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             <input name="start_date" type="date" aria-label="{{ t.care_course_start }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             <input name="place_name" placeholder="{{ t.care_place_name }}" aria-label="{{ t.care_place_name }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             <input name="place_address" placeholder="{{ t.care_place_address }}" aria-label="{{ t.care_place_address }}" class="px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">

@@ -45,7 +45,7 @@
         <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-2">
             <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('timer', 'w-4 h-4') }}{{ t.today_timer }}</h2>
             <div class="flex items-center gap-3 flex-wrap text-sm">
-                <span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">{{ timer.state }}</span>
+                <span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">{{ timer.state }}</span>
                 {% if timer.effective_end_at %}<span class="text-xs pl-text-muted">{{ t.today_timer_until }} {{ localtime(timer.effective_end_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
                 <span class="text-xs pl-text-muted">{{ timer.slots_count }} {{ t.today_timer_slots }} · {{ timer.tasks_count }} {{ t.today_timer_tasks }}</span>
             </div>
@@ -151,7 +151,7 @@
             <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('aftercare', 'w-4 h-4') }}{{ t.today_journal }}</h2>
             <div class="flex items-center gap-3 flex-wrap text-sm">
                 {% if journal_summary.last_date %}<span class="text-xs pl-text-muted">{{ t.today_last }} {{ journal_summary.last_date }}</span>{% endif %}
-                {% if journal_summary.pending %}<span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">{{ journal_summary.pending }} {{ t.today_journal_pending }}</span>{% endif %}
+                {% if journal_summary.pending %}<span class="px-2 py-0.5 text-xs rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">{{ journal_summary.pending }} {{ t.today_journal_pending }}</span>{% endif %}
             </div>
             <a href="/journal" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1">{{ t.today_open }} {{ icon('arrow-right', 'w-3 h-3') }}</a>
         </section>

@@ -1,9 +1,9 @@
 # Practice Loop — Текущее состояние
 
 > Версия: **v0.8.1-actual**
-> Обновлено: **2026-08-21**
-> Git-коммит: `20dc2d73`
-> Тесты: **1327 passed, 1 skipped** (17+ тестовых сюитов)
+> Обновлено: **2026-08-27**
+> Git-коммит: `df2fc589` (HEAD на момент обновления)
+> Тесты: **1438 passed, 3 skipped** (полный pytest, ~5.5 мин)
 
 ---
 
@@ -11,14 +11,46 @@
 
 | Проверка | Результат |
 |---|---|
-| pytest (SQLite in-memory) | ✅ **1327 passed, 1 skipped** |
+| pytest (полный, SQLite in-memory) | ✅ **1438 passed, 3 skipped** |
+| CI GitHub Actions (6 джобов) | ✅ lint · memory-lint · migrations · test · docker · e2e |
+| E2E Playwright portal.spec.ts | ✅ 7/7 (2×smoke, a11y, 3×usability) |
+| @a11y axe (34 роута × dark/light) | ✅ 0 serious/critical нарушений |
+| Локализация (`tests/test_localization.py`) | ✅ 15 тестов: parity EN/RU, плейсхолдеры, ключи шаблонов, page-i18n JSON, JS-ключи |
 | ruff check | ✅ 0 errors |
 | ruff format | ✅ чисто |
-| memoryctl lint | ✅ 0 issues |
+| memoryctl lint + facts | ✅ 0 issues, facts fresh |
 | Watchdog: icon-pack sprite | ✅ все иконки покрыты |
 | Watchdog: audit-s57 | ✅ inline-script allowlist точный |
 | Watchdog: transaction-boundary | ✅ commit-router allowlist точный |
 | Docker `/healthz` | ✅ `ok` |
+
+---
+
+## Сессия 41 — аудит локализации, a11y и CI (2026-08-27)
+
+- **Локализация (системный i18n-баг)**: JS читал `T.<flat>`/`I18N.<short>`, а переводы лежали
+  в `t.*` → все JS-строки резолвились в `undefined` (пустые ссылки и подписи). Починены
+  dashboard/calendar/import/inventory (флаттен `t`) и diets.js (короткие ключи → `diets_*`,
+  44 замены).
+- **26 недостающих i18n-ключей** добавлены в EN/RU (dash_empty_* ×16, onboard_step* ×6,
+  points_title, measurements_title, med_archive, social_profile_empty) — раньше RU-пользователи
+  видели английские дефолты, а часть `{{ t.x }}` рендерилась пустой.
+- **`<html lang="">`**: 7 роутов не передавали `locale` в контекст шаблона (account, admin_users,
+  consent, consent_setup, dms_dashboard, media_showcase_item ×5, today) — починено, `lang`
+  теперь всегда заполнен.
+- **@a11y расширен с 8 до 34 роутов** (все доступные нав-страницы, dark+light). Починены:
+  unlabeled selects/inputs (locations, care, measurements, diets, training, sessions_wizard,
+  body_parts, social/*), пустой `lang` (выше), цветовые контрасты: статусные токены light-темы
+  `--success/--warning/--danger/--info` затемнены до WCAG 4.5:1, amber-600→700 на светлых
+  фонах, инвентарь `--accent`→`--accent-text`, amber-кнопка в llm_exchange.
+- **`tests/test_localization.py`** (15 тестов): parity EN/RU, пустые значения, согласованность
+  `{var}`-плейсхолдеров, статические ключи шаблонов, динамические префиксы (`t['prefix_' + x]`),
+  page-i18n JSON-блоки, i18n-ключи из JS, unit-тесты `detect_locale`.
+- **CI**: добавлены `timeout-minutes` всем джобам + кеш pip; починена миграция 083 (создание
+  `communities` до FK, убран отравляющий `rollback`), 084 идемпотентна, миграция 090
+  (недостающие колонки users); тесты логина/social сделаны независимыми от окружения;
+  e2e-флоу обновлён под onboarding и session wizard; sw.js убран `clients.claim()`;
+  `/locktimer` и dashboard quick-card за гейтом `timer_operational`.
 
 ---
 

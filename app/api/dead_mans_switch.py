@@ -203,5 +203,6 @@ async def dms_dashboard_page(
             "rules": items,
             "t": t,
             "theme": theme,
+            "locale": locale,
         },
     )

@@ -44,10 +44,10 @@
       if (!hint) {
         const h = el('div', 'p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg text-sm text-emerald-700 dark:text-emerald-300');
         h.id = 'combined-hint';
-        h.textContent = I18N.combined + ': ' + active.map((d) => d.name).join(' + ');
+        h.textContent = I18N.diets_combined_hint + ': ' + active.map((d) => d.name).join(' + ');
         list.prepend(h);
       } else {
-        hint.textContent = I18N.combined + ': ' + active.map((d) => d.name).join(' + ');
+        hint.textContent = I18N.diets_combined_hint + ': ' + active.map((d) => d.name).join(' + ');
       }
     } else if (hint) {
       hint.remove();
@@ -62,38 +62,38 @@
     const left = el('div', 'flex-1 min-w-0');
     const titleRow = el('div', 'flex items-center gap-2 flex-wrap');
     titleRow.appendChild(el('h3', 'font-semibold text-slate-800 dark:text-slate-100', d.name));
-    if (d.is_active) titleRow.appendChild(el('span', 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', I18N.active));
+    if (d.is_active) titleRow.appendChild(el('span', 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300', I18N.diets_active));
     left.appendChild(titleRow);
-    if (d.goal) left.appendChild(el('p', 'text-xs text-[color:var(--text-secondary)] mt-1', I18N.goal + ': ' + d.goal));
+    if (d.goal) left.appendChild(el('p', 'text-xs text-[color:var(--text-secondary)] mt-1', I18N.diets_goal + ': ' + d.goal));
     if (d.direction) left.appendChild(el('span', 'text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 mt-1 inline-block', d.direction));
     if (d.description) left.appendChild(el('p', 'text-xs text-[color:var(--text-muted)] mt-0.5', d.description));
     head.appendChild(left);
 
     const actions = el('div', 'flex items-center gap-2 flex-shrink-0 flex-wrap');
     const histBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-fuchsia-400');
-    histBtn.textContent = I18N.eval_history_btn;
-    histBtn.title = I18N.eval_history;
+    histBtn.textContent = I18N.diets_eval_history_btn;
+    histBtn.title = I18N.diets_eval_history;
     histBtn.onclick = () => showHistory(d.id, card);
     actions.appendChild(histBtn);
     if (HAS_LLM) {
       const evalBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-gradient-to-r from-fuchsia-500 to-indigo-500 hover:from-fuchsia-600 hover:to-indigo-600 text-white inline-flex items-center gap-1');
       evalBtn.appendChild(window.plIcon('ai', 'w-4 h-4'));
-      evalBtn.appendChild(document.createTextNode(I18N.evaluate_btn));
-      evalBtn.title = I18N.evaluate_btn;
+      evalBtn.appendChild(document.createTextNode(I18N.diets_evaluate_btn));
+      evalBtn.title = I18N.diets_evaluate_btn;
       evalBtn.onclick = () => evaluateDiet(d.id);
       actions.appendChild(evalBtn);
     }
     const activeBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] border ' + (d.is_active ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-emerald-400'));
-    activeBtn.textContent = d.is_active ? I18N.active : I18N.inactive;
-    activeBtn.title = I18N.active;
+    activeBtn.textContent = d.is_active ? I18N.diets_active : I18N.diets_inactive;
+    activeBtn.title = I18N.diets_active;
     activeBtn.onclick = () => toggleDiet(d.id, !d.is_active);
     actions.appendChild(activeBtn);
 
-    const editBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-400', I18N.edit);
+    const editBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-400', I18N.diets_btn_edit);
     editBtn.onclick = () => editDiet(d);
     actions.appendChild(editBtn);
 
-    const delBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-red-500 hover:border-red-400', I18N.delete);
+    const delBtn = el('button', 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-red-500 hover:border-red-400', I18N.diets_btn_delete);
     delBtn.onclick = () => deleteDiet(d.id);
     actions.appendChild(delBtn);
     head.appendChild(actions);
@@ -105,7 +105,7 @@
     photosWrap.dataset.dietPhotos = d.id;
     const photoBtn = el('label', 'px-3 py-1.5 rounded-lg text-xs font-medium min-h-[44px] cursor-pointer bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-400 inline-flex items-center gap-1');
     photoBtn.appendChild(window.plIcon('camera', 'w-4 h-4'));
-    photoBtn.appendChild(document.createTextNode(I18N.photo_add));
+    photoBtn.appendChild(document.createTextNode(I18N.diets_photo_add));
     const photoInput = el('input', 'hidden');
     photoInput.type = 'file';
     photoInput.accept = 'image/*';
@@ -128,7 +128,7 @@
     if (d.items && d.items.length) {
       d.items.forEach((it) => itemsWrap.appendChild(renderItemRow(d.id, it)));
     } else {
-      itemsWrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)] py-2', I18N.no_items));
+      itemsWrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)] py-2', I18N.diets_no_items));
     }
     body.appendChild(itemsWrap);
 
@@ -137,39 +137,39 @@
       const ev = d.last_evaluation;
       const evBlock = el('div', 'mt-3 p-3 rounded-lg bg-fuchsia-50 dark:bg-fuchsia-950/20 border border-fuchsia-200 dark:border-fuchsia-800/50');
       const evHead = el('div', 'flex items-center gap-3 mb-1');
-      evHead.appendChild(el('span', 'text-xs font-semibold text-fuchsia-700 dark:text-fuchsia-300', I18N.eval_title));
+      evHead.appendChild(el('span', 'text-xs font-semibold text-fuchsia-700 dark:text-fuchsia-300', I18N.diets_eval_title));
       const scoreColor = ev.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ev.score >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-700 dark:text-red-400';
-      evHead.appendChild(el('span', 'text-sm font-bold ' + scoreColor, I18N.eval_score + ': ' + Math.round(ev.score) + '/100'));
+      evHead.appendChild(el('span', 'text-sm font-bold ' + scoreColor, I18N.diets_eval_score + ': ' + Math.round(ev.score) + '/100'));
       evBlock.appendChild(evHead);
       evBlock.appendChild(el('p', 'text-xs text-slate-600 dark:text-slate-300', ev.summary || ''));
       if (ev.findings && ev.findings.length) {
-        evBlock.appendChild(el('p', 'text-xs font-semibold text-[color:var(--text-secondary)] mt-2', I18N.eval_findings + ':'));
+        evBlock.appendChild(el('p', 'text-xs font-semibold text-[color:var(--text-secondary)] mt-2', I18N.diets_eval_findings + ':'));
         ev.findings.forEach((f) => evBlock.appendChild(el('li', 'text-xs text-[color:var(--text-secondary)] ml-4 list-disc', f)));
       }
       if (ev.applied && ev.applied.length) {
-        evBlock.appendChild(el('p', 'text-xs text-emerald-600 dark:text-emerald-400 mt-2', I18N.eval_applied + ' (' + ev.applied.length + ')'));
+        evBlock.appendChild(el('p', 'text-xs text-emerald-600 dark:text-emerald-400 mt-2', I18N.diets_eval_applied + ' (' + ev.applied.length + ')'));
       }
       body.appendChild(evBlock);
     }
 
     const addForm = el('form', 'mt-3 flex flex-wrap gap-2 items-center');
     const iName = el('input', 'flex-1 min-w-[140px] px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
-    iName.placeholder = I18N.ph_item;
+    iName.placeholder = I18N.diets_ph_item;
     iName.required = true;
     const iQty = el('input', 'w-16 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
-    iQty.placeholder = I18N.ph_qty;
+    iQty.placeholder = I18N.diets_ph_qty;
     iQty.type = 'number';
     iQty.step = 'any';
     const iUnit = el('input', 'w-16 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
-    iUnit.placeholder = I18N.ph_unit;
+    iUnit.placeholder = I18N.diets_ph_unit;
     iUnit.maxLength = 20;
     const iMeal = el('input', 'w-20 px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
-    iMeal.placeholder = I18N.ph_meal;
+    iMeal.placeholder = I18N.diets_ph_meal;
     iMeal.maxLength = 30;
     const iNotes = el('input', 'flex-1 min-w-[120px] px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100');
-    iNotes.placeholder = I18N.ph_notes;
+    iNotes.placeholder = I18N.diets_ph_notes;
     iNotes.maxLength = 2000;
-    const iBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.add_item);
+    const iBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.diets_btn_add_item);
     iBtn.type = 'submit';
     [iName, iQty, iUnit, iMeal, iNotes, iBtn].forEach((c) => addForm.appendChild(c));
     addForm.addEventListener('submit', async (e) => {
@@ -198,12 +198,12 @@
     row.dataset.id = it.id;
     const grip = el('span', 'text-slate-300 dark:text-slate-600 select-none', '⠿');
     const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400', it.name);
-    name.title = I18N.item_edit;
+    name.title = I18N.diets_item_edit;
     const meta = el('span', 'text-xs text-[color:var(--text-muted)] flex-shrink-0');
     meta.textContent = [qtyStr(it), it.meal_time].filter(Boolean).join(' · ');
     const editBtn = el('button', 'text-[color:var(--text-muted)] hover:text-indigo-600 text-xs px-1 min-h-[44px]', '');
     editBtn.appendChild(window.plIcon('edit', 'w-4 h-4'));
-    editBtn.title = I18N.item_edit;
+    editBtn.title = I18N.diets_item_edit;
     const del = el('button', 'text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs px-1 min-h-[44px]', '');
     del.appendChild(window.plIcon('close', 'w-4 h-4'));
     del.onclick = () => deleteItem(dietId, it.id);
@@ -251,21 +251,21 @@
     const fQty = el('input', 'w-16 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
     fQty.type = 'number';
     fQty.step = 'any';
-    fQty.placeholder = I18N.ph_qty;
+    fQty.placeholder = I18N.diets_ph_qty;
     fQty.value = it.quantity == null ? '' : it.quantity;
     const fUnit = el('input', 'w-16 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
-    fUnit.placeholder = I18N.ph_unit;
+    fUnit.placeholder = I18N.diets_ph_unit;
     fUnit.maxLength = 20;
     fUnit.value = it.unit || '';
     const fMeal = el('input', 'w-20 px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
-    fMeal.placeholder = I18N.ph_meal;
+    fMeal.placeholder = I18N.diets_ph_meal;
     fMeal.maxLength = 30;
     fMeal.value = it.meal_time || '';
     const fNotes = el('input', 'flex-1 min-w-[120px] px-2 py-1.5 text-xs bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100');
-    fNotes.placeholder = I18N.ph_notes;
+    fNotes.placeholder = I18N.diets_ph_notes;
     fNotes.maxLength = 2000;
     fNotes.value = it.notes || '';
-    const fBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.save_item);
+    const fBtn = el('button', 'px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg min-h-[44px]', I18N.diets_btn_save_item);
     fBtn.type = 'submit';
     const fCancel = el('button', 'px-3 py-1.5 text-xs font-medium rounded-lg min-h-[44px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300', '');
     fCancel.appendChild(window.plIcon('close', 'w-4 h-4'));
@@ -312,7 +312,7 @@
   }
 
   async function deleteDiet(id) {
-    if (!confirm(I18N.delete + '?')) return;
+    if (!confirm(I18N.diets_btn_delete + '?')) return;
     await api('/diets/api/' + id, 'DELETE');
     diets = diets.filter((x) => x.id !== id);
     renderDiets();
@@ -410,10 +410,10 @@
     const wrap = document.getElementById('consumptions');
     wrap.innerHTML = '';
     if (!items.length) {
-      wrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.consumed + ': —'));
+      wrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.diets_consumed + ': —'));
       return;
     }
-    wrap.appendChild(el('p', 'text-xs font-semibold text-[color:var(--text-secondary)]', I18N.consumed + ' (' + items.length + '):'));
+    wrap.appendChild(el('p', 'text-xs font-semibold text-[color:var(--text-secondary)]', I18N.diets_consumed + ' (' + items.length + '):'));
     items.forEach((c) => {
       const row = el('div', 'flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40');
       const name = el('span', 'flex-1 text-sm text-slate-700 dark:text-slate-300 min-w-0 truncate', c.name);
@@ -447,7 +447,7 @@
       img.onclick = () => window.open(a.file_path, '_blank');
       const delBtn = el('button', 'absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center', '');
       delBtn.appendChild(window.plIcon('close', 'w-3 h-3'));
-      delBtn.title = I18N.photo_delete;
+      delBtn.title = I18N.diets_photo_delete;
       delBtn.onclick = async () => {
         await api('/attachments/' + a.id, 'DELETE');
         await loadDietPhotos(dietId);
@@ -466,9 +466,9 @@
     const res = await fetch('/diets/api/' + dietId + '/evaluations');
     const evals = await res.json();
     const body = el('div', 'mt-3 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700');
-    body.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2', I18N.eval_history + ' — ' + d.name));
+    body.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2', I18N.diets_eval_history + ' — ' + d.name));
     if (!evals.length) {
-      body.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.eval_history_empty));
+      body.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.diets_eval_history_empty));
     } else {
       evals.forEach((ev) => {
         const item = el('div', 'border-t border-slate-100 dark:border-slate-700 pt-2 mt-2 first:border-t-0 first:pt-0 first:mt-0');
@@ -497,7 +497,7 @@
     const reviews = await res.json();
     wrap.innerHTML = '';
     if (!reviews.length) {
-      wrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.synergy_empty));
+      wrap.appendChild(el('p', 'text-xs text-[color:var(--text-muted)]', I18N.diets_synergy_empty));
       return;
     }
     reviews.forEach((r) => renderSynergyReview(wrap, r));
@@ -507,19 +507,19 @@
     const a = r.analysis || {};
     const block = el('div', 'p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60');
     const head = el('div', 'flex items-center gap-2 mb-1 flex-wrap');
-    head.appendChild(el('span', 'text-xs font-semibold text-amber-700 dark:text-amber-300', I18N.synergy_period + ': ' + r.period_start + ' — ' + r.period_end));
+    head.appendChild(el('span', 'text-xs font-semibold text-amber-700 dark:text-amber-300', I18N.diets_synergy_period + ': ' + r.period_start + ' — ' + r.period_end));
     if (r.created_at) head.appendChild(el('span', 'text-xs text-[color:var(--text-muted)]', window.localDateISO(r.created_at)));
     block.appendChild(head);
     block.appendChild(el('p', 'text-sm text-slate-700 dark:text-slate-200', a.summary || ''));
     if (a.correlations && a.correlations.length) {
-      block.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2', I18N.synergy_correlations + ':'));
+      block.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2', I18N.diets_synergy_correlations + ':'));
       a.correlations.forEach((c) => {
-        const dirLabel = c.direction === 'training_to_diet' ? I18N.synergy_t2d : I18N.synergy_d2t;
+        const dirLabel = c.direction === 'training_to_diet' ? I18N.diets_synergy_training_to_diet : I18N.diets_synergy_diet_to_training;
         block.appendChild(el('li', 'text-xs text-slate-600 dark:text-slate-300 ml-4 list-disc', '[' + dirLabel + '] ' + c.text));
       });
     }
     if (a.adjustments && a.adjustments.length) {
-      block.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2', I18N.synergy_adjustments + ':'));
+      block.appendChild(el('p', 'text-xs font-semibold text-slate-600 dark:text-slate-300 mt-2', I18N.diets_synergy_adjustments + ':'));
       a.adjustments.forEach((adj) => block.appendChild(el('li', 'text-xs text-slate-600 dark:text-slate-300 ml-4 list-disc', adj)));
     }
     wrap.appendChild(block);

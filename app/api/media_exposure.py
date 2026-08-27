@@ -206,6 +206,7 @@ async def view_showcase_drop_page(
                 "error": "Ссылка недействительна или файл уже удален.",
                 "t": t,
                 "theme": theme,
+                "locale": locale,
             },
             status_code=404,
         )
@@ -227,6 +228,7 @@ async def view_showcase_drop_page(
                     "error": "Время экспозиции истекло. Снимок автоматически скрыт.",
                     "t": t,
                     "theme": theme,
+                    "locale": locale,
                 },
                 status_code=410,
             )
@@ -239,6 +241,7 @@ async def view_showcase_drop_page(
                 "error": "Этот снимок был одноразовым и уже самоуничтожен.",
                 "t": t,
                 "theme": theme,
+                "locale": locale,
             },
             status_code=410,
         )
@@ -266,6 +269,7 @@ async def view_showcase_drop_page(
                 "token": token,
                 "t": t,
                 "theme": theme,
+                "locale": locale,
             },
         )
 
@@ -287,5 +291,6 @@ async def view_showcase_drop_page(
             "view_count": drop.view_count,
             "t": t,
             "theme": theme,
+            "locale": locale,
         },
     )

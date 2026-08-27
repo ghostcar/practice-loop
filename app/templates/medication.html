@@ -197,7 +197,7 @@
                     <div class="min-w-0">
                         <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-2">
                             {{ m.name }}
-                            {% if m.prescription_required %}<span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-600 font-semibold border border-amber-500/20">Rx</span>{% endif %}
+                            {% if m.prescription_required %}<span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-700 font-semibold border border-amber-500/20">Rx</span>{% endif %}
                             {% if not m.is_active %}<span class="text-xs pl-text-muted">({{ t.med_archive if t.get('med_archive') else 'inactive' }})</span>{% endif %}
                         </h3>
                         <p class="text-xs pl-text-muted">

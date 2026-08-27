@@ -103,6 +103,7 @@ async def consent_page(
             "t": t,
             "user": user,
             "theme": theme,
+            "locale": locale,
             "nav_key": "consent",
             "records": [_record_json(r) for r in records],
             "latest": await _latest_consents(db, user.id),
@@ -159,13 +160,15 @@ async def consent_setup_page(
 ):
     keys = [key for key in required.split(",") if key] or [key for key, item in PURPOSES.items() if item.module]
     keys = [key for key in keys if key in PURPOSES]
+    locale = detect_locale(request, user.locale)
     return templates.TemplateResponse(
         request,
         "consent_setup.html",
         {
-            "t": get_translations(detect_locale(request, user.locale)),
+            "t": get_translations(locale),
             "user": user,
             "theme": detect_theme(user.theme),
+            "locale": locale,
             "nav_key": "consent",
             "required": await missing_consents(db, user.id, keys),
         },

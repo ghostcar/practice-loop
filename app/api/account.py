@@ -14,13 +14,15 @@ router = APIRouter(tags=["account"])
 
 @router.get("/account", response_class=HTMLResponse)
 async def account_page(request: Request, user: User = Depends(get_current_user)):
+    locale = detect_locale(request, user.locale)
     return templates.TemplateResponse(
         request,
         "account.html",
         {
-            "t": get_translations(detect_locale(request, user.locale)),
+            "t": get_translations(locale),
             "theme": detect_theme(user.theme),
             "user": user,
+            "locale": locale,
             "nav_key": "account",
         },
     )

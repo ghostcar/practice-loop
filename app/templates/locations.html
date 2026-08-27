@@ -49,10 +49,10 @@
 
  <!-- Search + filter -->
  <div class="flex gap-3 mb-4">
- <input id="loc-search" type="text" placeholder="{{ t.locations_search_ph }}"
+ <input id="loc-search" type="text" placeholder="{{ t.locations_search_ph }}" aria-label="{{ t.locations_search_ph }}"
  class="flex-1 pl-surface border border-[color:var(--border)] rounded-xl px-4 py-2.5 text-sm text-[color:var(--text)]"
  data-input="renderList">
- <select id="loc-type-filter" data-change="renderList"
+ <select id="loc-type-filter" data-change="renderList" aria-label="{{ t.locations_type_filter }}"
  class="pl-surface border border-[color:var(--border)] rounded-xl px-3 py-2.5 text-sm text-[color:var(--text)]">
  <option value="">{{ t.locations_type_all }}</option>
  <option value="home">Home</option><option value="room">Room</option><option value="bathroom">Bathroom</option>

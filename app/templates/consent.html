@@ -57,7 +57,7 @@
                 {% for r in records %}
                 <li class="py-2 flex items-start gap-2 flex-wrap">
                     <span class="px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] pl-text-secondary">{{ t['consent_type_' + r.consent_type] }} · v{{ r.version }}</span>
-                    <span class="px-2 py-0.5 text-xs rounded-full {% if r.state == 'granted' %}bg-emerald-500/15 text-emerald-600 dark:text-emerald-400{% else %}bg-amber-500/15 text-amber-600 dark:text-amber-400{% endif %}">{{ t['consent_state_' + r.state] }}</span>
+                    <span class="px-2 py-0.5 text-xs rounded-full {% if r.state == 'granted' %}bg-emerald-500/15 text-emerald-600 dark:text-emerald-400{% else %}bg-amber-500/15 text-amber-700 dark:text-amber-400{% endif %}">{{ t['consent_state_' + r.state] }}</span>
                     <span class="text-xs pl-text-muted">{{ r.granted_at[:10] if r.granted_at else '' }}</span>
                     {% if r.scope %}<span class="pl-text-secondary w-full">{{ r.scope }}</span>{% endif %}
                 </li>

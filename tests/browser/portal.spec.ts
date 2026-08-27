@@ -47,12 +47,22 @@ test("@smoke activity session can be created and accepted with visible audit", a
 });
 
 test("@a11y authenticated shell has no serious axe violations (dark + light)", async ({ page }) => {
-  // 2 real theme passes × 5 routes of axe runs exceed the default 30 s timeout
-  test.setTimeout(180_000);
+  // 34 routes × 2 theme passes of axe runs exceed the default 30 s timeout
+  test.setTimeout(420_000);
   await registerFreshUser(page);
+  // Full page audit (Session 41): the original 8 routes plus every remaining
+  // nav page a fresh user can reach. /prompts is feature-gated (404 without
+  // the flag) and /social/* redirect to /social/profile when no profile
+  // exists yet — both verified by the smoke probe.
   const routes = [
-    "/dashboard", "/tasks/", "/entities/catalog", "/locktimer", "/settings",
-    "/achievements", "/media", "/api/v2/points/page",
+    "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training",
+    "/settings", "/account", "/media", "/achievements", "/profile",
+    "/consent", "/import", "/calendar", "/diets", "/sessions",
+    "/locations", "/journal", "/medications", "/health", "/notifications",
+    "/care", "/aftercare", "/insights", "/llm/exchange", "/locktimer",
+    "/api/v2/points/page", "/api/v2/inventory/page", "/api/v2/measurements/page",
+    "/api/v2/schedule/page", "/api/v2/body-parts/page",
+    "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
   ];
 
   // DoD §20: dark/light одинаково приглушены. `dark:`-варианты Tailwind следуют
