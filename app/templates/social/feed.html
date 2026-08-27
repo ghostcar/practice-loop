@@ -163,7 +163,7 @@
   <section class="space-y-3">
     <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.social_feed_my }}</h2>
     {% if own_publications %}
-    {% for item in own_data %}
+    {% for item in own_publications %}
     <div class="pl-surface border border-[color:var(--border)] rounded-xl p-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="text-xs font-mono pl-surface-soft px-2 py-0.5 rounded text-[color:var(--text-secondary)]">{{ item.subject_type }}</span>
