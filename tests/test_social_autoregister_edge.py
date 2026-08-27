@@ -73,9 +73,7 @@ async def test_locksession_auto_publish_respects_visibility_pref(
     if "timer" not in get_adapter_registry():
         register_adapter(TimerSocialAdapter())
 
-    test_user.prefs = sanitize_prefs(
-        {**(test_user.prefs or {}), "social_auto_publish_visibility": "public"}
-    )
+    test_user.prefs = sanitize_prefs({**(test_user.prefs or {}), "social_auto_publish_visibility": "public"})
 
     session = await create_draft(db_session, owner_id=test_user.id)
 
@@ -100,9 +98,7 @@ async def test_locksession_no_publish_when_pref_disabled(
     if "timer" not in get_adapter_registry():
         register_adapter(TimerSocialAdapter())
 
-    test_user.prefs = sanitize_prefs(
-        {**(test_user.prefs or {}), "social_auto_publish": False}
-    )
+    test_user.prefs = sanitize_prefs({**(test_user.prefs or {}), "social_auto_publish": False})
 
     session = await create_draft(db_session, owner_id=test_user.id)
 
@@ -214,9 +210,7 @@ async def test_autoregister_skips_when_adapter_missing(
     registry = get_adapter_registry()
     saved = registry.pop("fake_ns", None)
     try:
-        result = await ensure_subject_registered(
-            db_session, test_user.id, "fake_ns.my_obj", "obj-123"
-        )
+        result = await ensure_subject_registered(db_session, test_user.id, "fake_ns.my_obj", "obj-123")
         assert result is None
     finally:
         if saved is not None:
@@ -250,9 +244,7 @@ async def test_autopublish_skips_when_projection_empty(
         empty_projection,
     )
 
-    result = await ensure_auto_publish(
-        db_session, test_user.id, "tracker.activity_log", str(log.id)
-    )
+    result = await ensure_auto_publish(db_session, test_user.id, "tracker.activity_log", str(log.id))
     assert result is False
 
     pubs = await list_owner_publications(db_session, test_user.id)
@@ -284,18 +276,14 @@ async def test_feed_hides_badge_for_manual_publication(
     )
     db_session.add(log)
     await db_session.flush()
-    subj = await ensure_subject_registered(
-        db_session, test_user.id, "tracker.activity_log", str(log.id)
-    )
+    subj = await ensure_subject_registered(db_session, test_user.id, "tracker.activity_log", str(log.id))
 
     import hashlib
     import json as _json
 
     snap = {"type": "tracker.activity_log", "status": "planned"}
     h = hashlib.sha256(_json.dumps(snap, sort_keys=True).encode()).hexdigest()
-    await create_publication(
-        db_session, test_user.id, subj.id, "public", snap, h, "tracker", source="manual"
-    )
+    await create_publication(db_session, test_user.id, subj.id, "public", snap, h, "tracker", source="manual")
 
     async def override_get_db():
         yield db_session
@@ -337,18 +325,14 @@ async def test_source_column_default_is_manual(
     )
     db_session.add(log)
     await db_session.flush()
-    subj = await ensure_subject_registered(
-        db_session, test_user.id, "tracker.activity_log", str(log.id)
-    )
+    subj = await ensure_subject_registered(db_session, test_user.id, "tracker.activity_log", str(log.id))
 
     import hashlib
     import json as _json
 
     snap = {"type": "tracker.activity_log"}
     h = hashlib.sha256(_json.dumps(snap, sort_keys=True).encode()).hexdigest()
-    pub = await create_publication(
-        db_session, test_user.id, subj.id, "public", snap, h, "tracker"
-    )
+    pub = await create_publication(db_session, test_user.id, subj.id, "public", snap, h, "tracker")
     assert pub.source == "manual"
 
 
