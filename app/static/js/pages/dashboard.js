@@ -10,7 +10,12 @@
   let T = {};
   try {
     const el = document.getElementById('page-i18n');
-    if (el) T = JSON.parse(el.textContent) || {};
+    if (el) {
+      const raw = JSON.parse(el.textContent) || {};
+      // page-i18n nests translations under `t` ({t: {...}, tg_bot_username: ...});
+      // flatten so T.dashboard_* lookups work, keeping top-level page data.
+      T = raw.t && typeof raw.t === 'object' ? Object.assign({}, raw.t, raw) : raw;
+    }
   } catch (e) {
     console.warn('Dashboard page i18n:', e);
   }
@@ -126,7 +131,7 @@
         el.innerHTML =
           '<p class="text-sm text-[color:var(--text-muted)]">' +
           escapeHtml(T.dashboard_no_categories || '') +
-          ' <a href="/entities/catalog" class="text-indigo-500 underline">' +
+          ' <a href="/entities/catalog" class="text-indigo-600 dark:text-indigo-400 underline">' +
           escapeHtml(T.dashboard_browse_catalog || '') +
           '</a>.</p>';
       } else {
@@ -202,7 +207,8 @@
       const rate = rateData.overall_rate;
       const big = document.getElementById('completion-rate-big');
       big.textContent = rate + '%';
-      big.style.color = rate >= 75 ? '#2F7657' : rate >= 40 ? '#9A6415' : '#A83B4A';
+      // Theme-aware status colors (WCAG contrast on both themes, DESIGN v2 §20)
+      big.style.color = rate >= 75 ? 'var(--success)' : rate >= 40 ? 'var(--warning)' : 'var(--danger)';
       document.getElementById('completion-stats').innerHTML =
         `<div class="flex justify-between"><span>${escapeHtml(T.dashboard_completion_completed || '')}</span><span class="font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">${rateData.completed_tasks}</span></div>
              <div class="flex justify-between"><span>${escapeHtml(T.dashboard_completion_total || '')}</span><span class="font-medium text-slate-700 dark:text-slate-300 tabular-nums">${rateData.total_tasks}</span></div>`;

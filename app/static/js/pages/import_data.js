@@ -5,7 +5,11 @@
   let T = {};
   try {
     const el = document.getElementById('page-i18n');
-    if (el) T = JSON.parse(el.textContent) || {};
+    if (el) {
+      const raw = JSON.parse(el.textContent) || {};
+      // page-i18n nests translations under `t`; flatten so T.import_* works.
+      T = raw.t && typeof raw.t === 'object' ? Object.assign({}, raw.t, raw) : raw;
+    }
   } catch (e) {
     console.warn('Import page i18n:', e);
   }
