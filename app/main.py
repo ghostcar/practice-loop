@@ -245,10 +245,10 @@ app.include_router(verification_router)
 
 from app.api.account import router as account_router  # noqa: E402
 from app.api.auth import router as auth_router  # noqa: E402
+from app.api.llm_configs import router as llm_configs_router  # noqa: E402
 from app.api.onboarding import router as onboarding_router  # noqa: E402
 from app.api.profile import router as profile_router  # noqa: E402
 from app.api.push import router as push_router  # noqa: E402
-from app.api.llm_configs import router as llm_configs_router  # noqa: E402
 from app.api.settings import router as settings_router  # noqa: E402
 from app.api.tokens import router as tokens_router  # noqa: E402
 
