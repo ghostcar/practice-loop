@@ -209,7 +209,7 @@
 | 14 иконок не в sprite (award, check-circle-2, cpu, file-text, grid, journal, layers, repeat, share-2, shield-check, sliders, user-check, volume-2, zap) | Временно заменены ближайшими аналогами | Medium |
 | Проверить schema drift через `alembic check` в локальном окружении | Перечисленные модели v0.8.1 уже покрыты миграцией `082_add_missing_module_tables`; локальная проверка требует корректных PostgreSQL credentials | Medium |
 | Мобильное приложение не реализовано | Запланировано (M4) | Roadmap |
-| `llm_exchange.html` содержит inline-script (в allowlist) | Нужен вынос в ES-модуль | Low |
+| `llm_exchange.html` содержит inline-script | Закрыто: логика находится в `app/static/js/pages/llm_exchange.js`, S57 audit подтверждён | — |
 | Broadcast Engine, Voice TTS, PDF-отчёты (HTML), AI-сравнение медиа, антиспуфинг, multi-sig — частично payload-заглушки / симулированные результаты | Реальная интеграция — в roadmap | Medium |
 
 ---

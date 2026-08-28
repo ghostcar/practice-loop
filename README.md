@@ -285,7 +285,7 @@ ruff==0.5.7 format --check app/ cli.py tests/ seed_prod.py
 
 Key test suites:
 - `test_icon_pack.py` — sprite coverage & no-emoji watchdog
-- `test_audit_s57.py` — inline script allowlist, DSL safety
+- `test_audit_s57.py` — отсутствие несанкционированных inline scripts, DSL safety
 - `test_transaction_boundary.py` — commit isolation
 - `test_cross_user_auth.py` — cross-user authorization (22 tests)
 - `test_6_next_extensions.py` — Broadcast, Promocodes, Reports, Readiness, Certificates, 2FA
