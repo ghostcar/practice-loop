@@ -47,7 +47,7 @@ test("@smoke activity session can be created and accepted with visible audit", a
 });
 
 test("@a11y authenticated shell has no serious axe violations (dark + light)", async ({ page }) => {
-  // 44 routes × 2 theme passes of axe runs exceed the default 30 s timeout
+  // 47 routes × 2 theme passes of axe runs exceed the default 30 s timeout
   test.setTimeout(600_000);
   await registerFreshUser(page);
   // Full page audit (Session 41): the original 8 routes plus every remaining
@@ -55,8 +55,9 @@ test("@a11y authenticated shell has no serious axe violations (dark + light)", a
   // the flag) and /social/* redirect to /social/profile when no profile
   // exists yet — both verified by the smoke probe.
   // Session 42: outside-the-sidebar pages — billing showcase, dead man's
-  // switch cockpit, communities (list + a created community's detail/feed)
-  // and every /insights sub-page a user with no analytics data can open.
+  // switch cockpit, communities (list + a created community's detail/feed),
+  // every /insights sub-page a user with no analytics data can open, the
+  // social leaderboard/pillory and the public certificate verifier.
   const routes = [
     "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training",
     "/settings", "/account", "/media", "/achievements", "/profile",
@@ -66,6 +67,8 @@ test("@a11y authenticated shell has no serious axe violations (dark + light)", a
     "/api/v2/points/page", "/api/v2/inventory/page", "/api/v2/measurements/page",
     "/api/v2/schedule/page", "/api/v2/body-parts/page",
     "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
+    "/social/leaderboard", "/social/pillory",
+    "/certificates/probe-a11y-cert/verify",
     "/billing", "/dms", "/communities",
     "/insights/analytics", "/insights/trajectory", "/insights/report",
     "/insights/export-medical", "/analytics/graph",
@@ -120,7 +123,7 @@ test("@a11y authenticated shell has no serious axe violations (dark + light)", a
 test("@a11y admin pages have no serious axe violations (dark + light)", async ({ page }) => {
   // /admin/* is role-gated (R2: require_admin) — a fresh user gets 403, so
   // this audit registers a user and promotes it via SQL (helpers.ts).
-  // 6 routes × 2 theme passes of axe runs exceed the default 30 s timeout.
+  // 7 routes × 2 theme passes of axe runs exceed the default 30 s timeout.
   test.setTimeout(300_000);
   const email = `browser-admin-${Date.now()}@example.com`;
   await registerFreshUser(page, email);
@@ -129,6 +132,7 @@ test("@a11y admin pages have no serious axe violations (dark + light)", async ({
   const routes = [
     "/admin", "/admin/users", "/admin/schema-builder",
     "/admin/catalog-editor", "/admin/ai-generator", "/admin/prompts",
+    "/admin/tiers",
   ];
 
   const setTheme = async (theme: string) => {

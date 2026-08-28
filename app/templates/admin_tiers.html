@@ -62,6 +62,7 @@
                             {% for tier in tiers %}
                             <td class="py-3.5 px-4 text-center">
                                 <input type="checkbox" name="grant_{{ tier.code }}_{{ fc_code }}"
+                                    aria-label="{{ tier.name }}: {{ fc_title }}"
                                     class="w-4 h-4 rounded border-archive-700 bg-archive-950 text-amber-500 focus:ring-amber-400"
                                     {% set tier_fc_granted = false %}
                                     {% for g in tier.grants %}
@@ -90,7 +91,7 @@
 
             <div>
                 <label class="block text-xs text-archive-400 mb-1">Модуль / Функция:</label>
-                <select name="feature_code" class="w-full bg-archive-950 border border-archive-800 text-archive-200 text-xs rounded-lg p-2.5">
+                <select name="feature_code" aria-label="Модуль / Функция" class="w-full bg-archive-950 border border-archive-800 text-archive-200 text-xs rounded-lg p-2.5">
                     {% for fc_code, fc_title in feature_codes %}
                     <option value="{{ fc_code }}">{{ fc_title }}</option>
                     {% endfor %}
@@ -99,7 +100,7 @@
 
             <div>
                 <label class="block text-xs text-archive-400 mb-1">Мин. Тир для Акции:</label>
-                <select name="target_min_tier_code" class="w-full bg-archive-950 border border-archive-800 text-archive-200 text-xs rounded-lg p-2.5">
+                <select name="target_min_tier_code" aria-label="Мин. Тир для Акции" class="w-full bg-archive-950 border border-archive-800 text-archive-200 text-xs rounded-lg p-2.5">
                     {% for tier in tiers %}
                     <option value="{{ tier.code }}">{{ tier.name }}</option>
                     {% endfor %}
@@ -108,7 +109,7 @@
 
             <div>
                 <label class="block text-xs text-archive-400 mb-1">Длительность (дней):</label>
-                <input type="number" name="days" value="7" min="1" max="365" class="w-full bg-archive-950 border border-archive-800 text-archive-200 text-xs rounded-lg p-2.5">
+                <input type="number" name="days" value="7" min="1" max="365" aria-label="Дней активности" class="w-full bg-archive-950 border border-archive-800 text-archive-200 text-xs rounded-lg p-2.5">
             </div>
 
             <div class="flex items-end">
