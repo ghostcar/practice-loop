@@ -17,6 +17,9 @@ from app.templates_setup import templates
 
 router = APIRouter(prefix="/llm-configs", tags=["llm-configs"])
 
+# This router is registered at platform level: BYOK settings are available in
+# tracker, timer, combined, and future product variants.
+
 
 # --- Page ---
 

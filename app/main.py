@@ -248,6 +248,7 @@ from app.api.auth import router as auth_router  # noqa: E402
 from app.api.onboarding import router as onboarding_router  # noqa: E402
 from app.api.profile import router as profile_router  # noqa: E402
 from app.api.push import router as push_router  # noqa: E402
+from app.api.llm_configs import router as llm_configs_router  # noqa: E402
 from app.api.settings import router as settings_router  # noqa: E402
 from app.api.tokens import router as tokens_router  # noqa: E402
 
@@ -258,6 +259,9 @@ app.include_router(settings_router)
 app.include_router(onboarding_router)
 app.include_router(push_router)
 app.include_router(tokens_router)
+# User-owned LLM provider settings are a platform capability and must remain
+# available in every product variant, independently of Tracker routes.
+app.include_router(llm_configs_router)
 
 from app.api.admin_tiers import router as admin_tiers_router  # noqa: E402
 from app.api.billing import router as billing_router  # noqa: E402
@@ -341,7 +345,6 @@ if composition.tracker_active:
     from app.api.journal import json_router as journal_json_router  # noqa: E402
     from app.api.journal import router as journal_router  # noqa: E402
     from app.api.knowledge import router as knowledge_router  # noqa: E402
-    from app.api.llm_configs import router as llm_configs_router  # noqa: E402
     from app.api.media_vault import router as media_vault_router  # noqa: E402
     from app.api.media_verify import json_router as media_verify_json_router  # noqa: E402
     from app.api.media_verify import ocr_router as media_verify_ocr_router  # noqa: E402

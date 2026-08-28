@@ -11,6 +11,14 @@ from app.models.llm_config import LLMProviderConfig
 
 
 @pytest.mark.asyncio
+async def test_llm_configs_page_is_registered(auth_client: AsyncClient):
+    """User LLM settings stay available as a platform route."""
+    response = await auth_client.get("/llm-configs/", follow_redirects=False)
+    assert response.status_code == 200
+    assert "Add Provider" in response.text
+
+
+@pytest.mark.asyncio
 async def test_create_llm_config(auth_client: AsyncClient, db_session: AsyncSession, test_user, monkeypatch):
     """Add a new LLM provider config."""
 
