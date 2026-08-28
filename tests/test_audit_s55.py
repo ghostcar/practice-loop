@@ -306,7 +306,11 @@ async def test_llm_config_update_cross_user(auth_client, db_session, test_user):
 
 
 @pytest.mark.asyncio
-async def test_llm_config_create_accepts_mode(auth_client, db_session, test_user):
+async def test_llm_config_create_accepts_mode(auth_client, db_session, test_user, monkeypatch):
+    async def connection_ok(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr("app.api.llm_configs.check_llm_connection", connection_ok)
     await auth_client.post(
         "/api/v2/consent",
         json={"consent_type": "byok_provider", "state": "granted"},
