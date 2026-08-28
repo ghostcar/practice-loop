@@ -41,7 +41,7 @@
             {% if joined == 'ok' %}
             <span class="text-xs text-emerald-400 font-semibold" role="status">Вы вступили в сообщество</span>
             {% elif joined == 'pending' %}
-            <span class="text-xs text-amber-400 font-semibold" role="status">Заявка отправлена — ожидает одобрения</span>
+            <span class="text-xs text-amber-900 dark:text-amber-400 font-semibold" role="status">Заявка отправлена — ожидает одобрения</span>
             {% endif %}
             {% set inv = request.query_params.get('invite') %}
             {% if inv %}
@@ -57,7 +57,7 @@
                 </a>
                 <form action="/communities/{{ community.id }}/delete" method="POST" data-confirm="Удалить сообщество навсегда?">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                    <button type="submit" class="px-3 py-2 rounded-xl border border-red-800/60 text-red-400 text-xs font-semibold hover:bg-red-950/40 transition-colors inline-flex items-center gap-1.5">
+                    <button type="submit" class="px-3 py-2 rounded-xl border border-red-800/60 text-red-700 dark:text-red-400 text-xs font-semibold hover:bg-red-950/40 transition-colors inline-flex items-center gap-1.5">
                         {{ icon('delete', 'w-3.5 h-3.5') }} Удалить
                     </button>
                 </form>
@@ -123,7 +123,7 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <input type="hidden" name="member_id" value="{{ m.id }}">
                         <input type="hidden" name="decision" value="reject">
-                        <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-800/60 text-red-400 text-[11px] font-semibold hover:bg-red-950/40 transition-colors">
+                        <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-800/60 text-red-700 dark:text-red-400 text-[11px] font-semibold hover:bg-red-950/40 transition-colors">
                             Отклонить
                         </button>
                     </form>
@@ -175,7 +175,7 @@
                 <form action="/communities/{{ community.id }}/members/ban" method="POST" data-confirm="Забанить участника? Он потеряет доступ к сообществу.">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <input type="hidden" name="user_id" value="{{ m.user_id }}">
-                    <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-semibold" title="Забанить">{{ icon('block', 'w-3 h-3') }}</button>
+                    <button type="submit" class="text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-semibold" title="Забанить">{{ icon('block', 'w-3 h-3') }}</button>
                 </form>
                 {% endif %}
                 {% endif %}
@@ -271,7 +271,7 @@
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                             <input type="hidden" name="user_id" value="{{ r.user_id }}">
                             <input type="hidden" name="role_type" value="{{ r.role_type }}">
-                            <button type="submit" class="text-red-400 hover:text-red-300 text-xs font-semibold" title="Снять роль">{{ icon('close', 'w-3 h-3') }}</button>
+                            <button type="submit" class="text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-semibold" title="Снять роль">{{ icon('close', 'w-3 h-3') }}</button>
                         </form>
                     </span>
                 </div>
@@ -308,7 +308,7 @@
                 {{ icon('ai', 'w-4 h-4') }} ИИ-Верхний Сообщества
             </h2>
             {% if membership and membership.status == 'active' %}
-            <a href="/communities/{{ community.id }}/agent" class="text-xs text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-1">
+            <a href="/communities/{{ community.id }}/agent" class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold inline-flex items-center gap-1">
                 Перейти к агенту {{ icon('arrow-right', 'w-3 h-3') }}
             </a>
             {% endif %}

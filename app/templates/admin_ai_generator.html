@@ -38,7 +38,7 @@
             <!-- Mode Selector -->
             <div>
                 <label class="block text-xs font-bold text-[color:var(--text)] mb-1">Режим работы ИИ:</label>
-                <select name="mode" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)]">
+                <select name="mode" aria-label="Режим генерации" class="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text)]">
                     <option value="expanded" selected>Расширенный режим (Expanded 18+)</option>
                     <option value="safe">Безопасный режим (Safe)</option>
                 </select>
@@ -48,8 +48,8 @@
             <div>
                 <label class="block text-xs font-bold text-[color:var(--text)] mb-1">Уровень откровенности (1-5):</label>
                 <div class="flex items-center gap-3">
-                    <input type="range" name="explicit_level" min="1" max="5" value="4" class="w-full accent-[color:var(--accent)] h-2 rounded-lg bg-[color:var(--surface-soft)] cursor-pointer">
-                    <span class="font-bold text-xs text-[color:var(--accent)]">Level 4</span>
+                    <input type="range" name="explicit_level" min="1" max="5" value="4" aria-label="Явный уровень контента" class="w-full accent-[color:var(--accent)] h-2 rounded-lg bg-[color:var(--surface-soft)] cursor-pointer">
+                    <span class="font-bold text-xs text-[color:var(--accent-text)]">Level 4</span>
                 </div>
             </div>
 

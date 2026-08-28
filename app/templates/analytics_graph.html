@@ -29,7 +29,7 @@
             {{ icon('activity', 'w-5 h-5 text-emerald-400') }}
             <div class="text-xs">
                 <span class="text-archive-400">Найдено Корреляций:</span>
-                <span class="font-bold text-emerald-400 font-mono text-sm ml-1">{{ analytics.matrix|length }}</span>
+                <span class="font-bold text-emerald-800 dark:text-emerald-400 font-mono text-sm ml-1">{{ analytics.matrix|length }}</span>
             </div>
         </div>
     </div>
@@ -52,7 +52,7 @@
 
                     <div class="text-right">
                         <span class="text-[10px] uppercase font-mono text-archive-400">Коэффициент r</span>
-                        <div class="text-sm font-bold font-mono text-amber-400">{{ "%.2f"|format(pair.r) }}</div>
+                        <div class="text-sm font-bold font-mono text-amber-900 dark:text-amber-400">{{ "%.2f"|format(pair.r) }}</div>
                     </div>
                 </div>
                 {% endfor %}

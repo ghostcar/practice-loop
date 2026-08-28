@@ -92,17 +92,13 @@
 
           <form action="/admin/prompts/{{ prompt.id }}/update" method="POST" class="space-y-3">
               <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
-            <textarea
-              name="template_content"
-              rows="4"
-              class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-3 text-sm text-[color:var(--text)] font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+            <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label><textarea name="template_content" rows="4" aria-label="Содержимое шаблона" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-3 text-sm text-[color:var(--text)] font-mono focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
             >{{ prompt.template_content }}</textarea>
 
             <div class="flex justify-end">
               <button
                 type="submit"
-                class="px-4 py-2 text-xs font-medium bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+                class="px-4 py-2 text-xs font-medium bg-amber-600 hover:bg-amber-500 text-amber-950 rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
               >
                 Сохранить Промпт
               </button>
@@ -150,11 +146,7 @@
 
           <form action="/admin/prompts/{{ prompt.id }}/update" method="POST" class="space-y-3">
               <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-            <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label>
-            <textarea
-              name="template_content"
-              rows="4"
-              class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-3 text-sm text-[color:var(--text)] font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+            <label class="block text-xs font-medium text-[color:var(--text-secondary)]">Содержимое шаблона (доступны плейсхолдеры `{% raw %}{{{var}}}{% endraw %}`):</label><textarea name="template_content" rows="4" aria-label="Содержимое шаблона" class="w-full bg-[color:var(--canvas-deep)] border border-[color:var(--border-strong)] rounded-lg p-3 text-sm text-[color:var(--text)] font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
             >{{ prompt.template_content }}</textarea>
 
             <div class="flex justify-end">

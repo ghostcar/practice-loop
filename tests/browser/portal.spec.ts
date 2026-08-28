@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-import { captureBrowserErrors, registerFreshUser } from "./helpers";
+import { captureBrowserErrors, promoteToAdmin, registerFreshUser } from "./helpers";
 
 test("@smoke core personal navigation works without browser errors", async ({ page }) => {
   // 19 routes × (goto + 3 assertions) exceeds the default 30 s on a loaded
@@ -47,13 +47,16 @@ test("@smoke activity session can be created and accepted with visible audit", a
 });
 
 test("@a11y authenticated shell has no serious axe violations (dark + light)", async ({ page }) => {
-  // 34 routes × 2 theme passes of axe runs exceed the default 30 s timeout
-  test.setTimeout(420_000);
+  // 44 routes × 2 theme passes of axe runs exceed the default 30 s timeout
+  test.setTimeout(600_000);
   await registerFreshUser(page);
   // Full page audit (Session 41): the original 8 routes plus every remaining
   // nav page a fresh user can reach. /prompts is feature-gated (404 without
   // the flag) and /social/* redirect to /social/profile when no profile
   // exists yet — both verified by the smoke probe.
+  // Session 42: outside-the-sidebar pages — billing showcase, dead man's
+  // switch cockpit, communities (list + a created community's detail/feed)
+  // and every /insights sub-page a user with no analytics data can open.
   const routes = [
     "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training",
     "/settings", "/account", "/media", "/achievements", "/profile",
@@ -63,7 +66,20 @@ test("@a11y authenticated shell has no serious axe violations (dark + light)", a
     "/api/v2/points/page", "/api/v2/inventory/page", "/api/v2/measurements/page",
     "/api/v2/schedule/page", "/api/v2/body-parts/page",
     "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
+    "/billing", "/dms", "/communities",
+    "/insights/analytics", "/insights/trajectory", "/insights/report",
+    "/insights/export-medical", "/analytics/graph",
   ];
+
+  // Create a real community so its detail and feed pages (dynamic URLs) get
+  // audited too — the create form is a plain POST with a hidden csrf token.
+  await page.goto("/communities");
+  await page.locator('form[action="/communities/create"] input[name="name"]').fill("A11y Audit Community");
+  await page.locator('form[action="/communities/create"] input[name="slug"]').fill(`a11y-audit-${Date.now()}`);
+  await page.locator('form[action="/communities/create"] button[type="submit"]').click();
+  await page.waitForURL(/\/communities\/[0-9a-f-]{36}/);
+  const communityPath = new URL(page.url()).pathname;
+  routes.push(communityPath, `${communityPath}/feed`);
 
   // DoD §20: dark/light одинаково приглушены. `dark:`-варианты Tailwind следуют
   // классу на <html>, а НЕ prefers-color-scheme — поэтому для light-прогона тему
@@ -90,6 +106,49 @@ test("@a11y authenticated shell has no serious axe violations (dark + light)", a
     await setTheme(scheme);
     for (const route of routes) {
       await page.goto(route);
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+        .analyze();
+      const blocking = results.violations.filter((violation) =>
+        ["serious", "critical"].includes(violation.impact ?? ""),
+      );
+      expect(blocking, `${route} (${scheme}): ${JSON.stringify(blocking, null, 2)}`).toEqual([]);
+    }
+  }
+});
+
+test("@a11y admin pages have no serious axe violations (dark + light)", async ({ page }) => {
+  // /admin/* is role-gated (R2: require_admin) — a fresh user gets 403, so
+  // this audit registers a user and promotes it via SQL (helpers.ts).
+  // 6 routes × 2 theme passes of axe runs exceed the default 30 s timeout.
+  test.setTimeout(300_000);
+  const email = `browser-admin-${Date.now()}@example.com`;
+  await registerFreshUser(page, email);
+  promoteToAdmin(email);
+
+  const routes = [
+    "/admin", "/admin/users", "/admin/schema-builder",
+    "/admin/catalog-editor", "/admin/ai-generator", "/admin/prompts",
+  ];
+
+  const setTheme = async (theme: string) => {
+    await page.goto("/dashboard");
+    const status = await page.evaluate(async (t) => {
+      const r = await fetch("/settings/theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `theme=${encodeURIComponent(t)}`,
+      });
+      return r.status;
+    }, theme);
+    expect(status, `POST /settings/theme ${theme}`).toBeLessThan(400);
+  };
+
+  for (const scheme of ["dark", "light"] as const) {
+    await setTheme(scheme);
+    for (const route of routes) {
+      const response = await page.goto(route);
+      expect(response?.status(), `${route} response`).toBeLessThan(400);
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .analyze();

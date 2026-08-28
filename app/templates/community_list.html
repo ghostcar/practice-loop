@@ -110,7 +110,7 @@
                 <div class="flex items-center gap-3 mt-3 text-[11px] text-[color:var(--text-muted)]">
                     <span class="inline-flex items-center gap-1">{{ icon('users', 'w-3 h-3') }} {{ member_counts.get(c.id, 0) }} участников</span>
                     {% if mem and mem.role == 'owner' %}
-                    <span class="text-amber-400 font-semibold">Владелец</span>
+                    <span class="text-amber-900 dark:text-amber-400 font-semibold">Владелец</span>
                     {% endif %}
                 </div>
             </a>
@@ -142,7 +142,7 @@
                 <div class="flex items-center gap-3 mt-3 text-[11px] text-[color:var(--text-muted)]">
                     <span class="inline-flex items-center gap-1">{{ icon('users', 'w-3 h-3') }} {{ member_counts.get(c.id, 0) }}</span>
                     {% if c.require_approval %}
-                    <span class="text-amber-400">по одобрению</span>
+                    <span class="text-amber-900 dark:text-amber-400">по одобрению</span>
                     {% endif %}
                 </div>
             </a>

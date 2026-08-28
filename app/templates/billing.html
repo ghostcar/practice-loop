@@ -82,7 +82,7 @@
                 <div class="space-y-2">
                     <span class="text-xs font-mono text-archive-400 uppercase">Стандартный</span>
                     <h3 class="text-xl font-bold text-archive-100">Standard</h3>
-                    <div class="text-2xl font-bold text-amber-400">$9.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <div class="text-2xl font-bold text-amber-700 dark:text-amber-400">$9.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
                     <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Неограниченно сессий</span></li>
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Экспорт Внешней ИИ-Модели</span></li>
@@ -93,7 +93,7 @@
                 <form action="/billing/checkout" method="POST" class="space-y-2">
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="standard">
-                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                    <select name="gateway" aria-label="Способ оплаты" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
                         <option value="stripe">Stripe (Международный)</option>
                         <option value="telegram_stars">Telegram Stars</option>
                         <option value="crypto">Crypto (TON/USDT)</option>
@@ -108,9 +108,9 @@
             <!-- Pro Tier -->
             <div class="bg-archive-900 border border-amber-800/80 rounded-xl p-5 shadow flex flex-col justify-between space-y-4">
                 <div class="space-y-2">
-                    <span class="text-xs font-mono text-amber-400 uppercase font-semibold">Персональный ИИ</span>
+                    <span class="text-xs font-mono text-amber-900 dark:text-amber-400 uppercase font-semibold">Персональный ИИ</span>
                     <h3 class="text-xl font-bold text-archive-100">Pro</h3>
-                    <div class="text-2xl font-bold text-amber-400">$19.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <div class="text-2xl font-bold text-amber-700 dark:text-amber-400">$19.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
                     <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>ИИ-Агент PracticeLoop</span></li>
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>10-Модульная Аналитика</span></li>
@@ -121,7 +121,7 @@
                 <form action="/billing/checkout" method="POST" class="space-y-2">
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="pro">
-                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                    <select name="gateway" aria-label="Способ оплаты" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
                         <option value="stripe">Stripe (Международный)</option>
                         <option value="telegram_stars">Telegram Stars</option>
                         <option value="crypto">Crypto (TON/USDT)</option>
@@ -138,7 +138,7 @@
                 <div class="space-y-2">
                     <span class="text-xs font-mono text-archive-400 uppercase">Ключник D/s</span>
                     <h3 class="text-xl font-bold text-archive-100">DS Master</h3>
-                    <div class="text-2xl font-bold text-amber-400">$29.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <div class="text-2xl font-bold text-amber-700 dark:text-amber-400">$29.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
                     <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Всё из Pro +</span></li>
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>D/s Command Center</span></li>
@@ -149,7 +149,7 @@
                 <form action="/billing/checkout" method="POST" class="space-y-2">
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="ds_master">
-                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                    <select name="gateway" aria-label="Способ оплаты" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
                         <option value="stripe">Stripe (Международный)</option>
                         <option value="telegram_stars">Telegram Stars</option>
                         <option value="crypto">Crypto (TON/USDT)</option>
@@ -166,7 +166,7 @@
                 <div class="space-y-2">
                     <span class="text-xs font-mono text-archive-400 uppercase">Сообщества</span>
                     <h3 class="text-xl font-bold text-archive-100">Guild</h3>
-                    <div class="text-2xl font-bold text-amber-400">$49.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
+                    <div class="text-2xl font-bold text-amber-700 dark:text-amber-400">$49.99<span class="text-xs font-normal text-archive-400">/мес</span></div>
                     <ul class="text-xs text-archive-300 space-y-2 pt-2 border-t border-archive-800">
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>Всё из DS Master +</span></li>
                         <li class="flex items-center gap-2">{{ icon('check', 'w-3.5 h-3.5 text-emerald-400') }} <span>ИИ-Верхний Сообщества</span></li>
@@ -177,7 +177,7 @@
                 <form action="/billing/checkout" method="POST" class="space-y-2">
                     <input type="hidden" name="csrf_token" value="{{ request.cookies.get('csrf_token', '') }}">
                     <input type="hidden" name="tier_code" value="guild_master">
-                    <select name="gateway" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
+                    <select name="gateway" aria-label="Способ оплаты" class="w-full bg-archive-950 border border-archive-800 text-[11px] text-archive-200 rounded p-1.5 mb-1">
                         <option value="stripe">Stripe (Международный)</option>
                         <option value="telegram_stars">Telegram Stars</option>
                         <option value="crypto">Crypto (TON/USDT)</option>
@@ -207,7 +207,7 @@
                     <span class="text-archive-400"> ({{ inv.gateway }})</span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="font-mono text-amber-400 font-bold">${{ inv.amount }} {{ inv.currency }}</span>
+                    <span class="font-mono text-amber-900 dark:text-amber-400 font-bold">${{ inv.amount }} {{ inv.currency }}</span>
                     <span class="px-2 py-0.5 rounded text-[10px] uppercase font-mono {% if inv.status == 'paid' %}bg-emerald-950 text-emerald-400 border border-emerald-800{% else %}bg-archive-800 text-archive-400{% endif %}">
                         {{ inv.status }}
                     </span>

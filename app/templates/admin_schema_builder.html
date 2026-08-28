@@ -27,7 +27,7 @@
   <!-- Entity / Catalog Selector -->
   <div class="pl-surface rounded-xl border border-[color:var(--border)] p-6 space-y-4">
     <h3 class="text-sm font-semibold text-[color:var(--text)]">Выберите активность для настройки параметров:</h3>
-    <select id="schema-entity-select" class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)]">
+    <select id="schema-entity-select" aria-label="Сущность" class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm text-[color:var(--text)]">
       <option value="">-- Выберите активную задачу из каталога --</option>
       {% for entity in entities %}
       <option value="{{ entity.id }}">{{ entity.real_name }} {% if entity.type %}({{ entity.type }}){% endif %}</option>

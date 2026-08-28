@@ -196,9 +196,9 @@ async def dms_dashboard_page(
         )
 
     return templates.TemplateResponse(
-        "dms_dashboard.html",
-        {
-            "request": request,
+        request=request,
+        name="dms_dashboard.html",
+        context={
             "user": user,
             "rules": items,
             "t": t,

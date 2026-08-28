@@ -39,7 +39,7 @@
         <form method="post" action="/admin/users/{{ managed.id }}/password" class="pl-surface-soft rounded-lg p-3 space-y-2">
           <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
           <div class="text-xs pl-text-muted">{{ t.admin_users_reset_password }}</div>
-          {% if managed.id == user.id %}<a href="/settings#password-h" class="text-sm text-[color:var(--accent)]">{{ t.account_change_password }}</a>{% else %}
+          {% if managed.id == user.id %}<a href="/settings#password-h" class="text-sm text-[color:var(--accent-text)]">{{ t.account_change_password }}</a>{% else %}
           <input type="password" name="new_password" required minlength="6" maxlength="128" autocomplete="new-password" placeholder="{{ t.settings_password_new }}" class="w-full rounded border border-[color:var(--border)] pl-surface px-2 py-2 text-sm">
           <input type="password" name="confirm_password" required minlength="6" maxlength="128" autocomplete="new-password" placeholder="{{ t.settings_password_confirm }}" class="w-full rounded border border-[color:var(--border)] pl-surface px-2 py-2 text-sm">
           <button class="pl-accent-bg rounded px-3 py-2 text-sm" type="submit">{{ t.admin_users_reset }}</button>{% endif %}

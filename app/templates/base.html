@@ -354,7 +354,7 @@
             --border-strong: #aa9788;
             --text: #302722;
             --text-secondary: #65584f;
-            --text-muted: #6b5e53; /* WCAG 4.88:1 canvas / 5.34 surface / 4.58 soft */
+            --text-muted: #645749; /* WCAG 5.03:1 canvas-deep / 5.6 canvas / 6.0 surface */
             --accent: #8d4945;
             --accent-hover: #743a37;
             --accent-soft: #e7cfca;
@@ -372,7 +372,7 @@
             --dom-social-btn: #4f6675; /* WCAG 5.76:1 with on-accent (button bg) */
             --dom-dynamics: #85586b;
             /* Semantic status tokens (light) — darkened for WCAG 4.5:1 on soft/surface */
-            --success: #52705a;
+            --success: #4a6651;
             --warning: #7d552a;
             --danger: #8f3d3d;
             --info: #4a6a80;
@@ -439,7 +439,7 @@
             --dom-social-text: #86a3b5; /* WCAG 6.48:1 on dark surface */
             --dom-social-btn: #4f6d80; /* WCAG 5.10:1 with on-accent (button bg) */
             --dom-dynamics: #956779;
-            --success: #73977d;
+            --success: #7fa388;
             --warning: #c19358;
             --danger: #b75555;
             --info: #668aa1;
@@ -516,7 +516,7 @@
         .text-archive-300 { color: var(--archive-300); }
         .text-archive-400 { color: var(--archive-400); }
         .text-archive-500 { color: var(--archive-500); }
-        .text-archive-950 { color: var(--on-accent); }
+        .text-archive-950 { color: #451a03; } /* amber-950: 6.4:1 on the amber-500 action buttons that use it (theme-independent) */
         .hover\:bg-archive-850:hover { background-color: var(--archive-850); }
         .hover\:bg-archive-700:hover { background-color: var(--archive-700); }
         .hover\:border-archive-700:hover { border-color: var(--archive-700); }
@@ -614,7 +614,7 @@
         .pl-text-muted { color: var(--text-muted); }
         .pl-accent-text { color: var(--accent-text); }
         .pl-accent-bg { background-color: var(--accent); color: var(--on-accent); }
-        .pl-accent-soft { background-color: var(--accent-soft); color: var(--accent); }
+        .pl-accent-soft { background-color: var(--accent-soft); color: var(--accent-text); }
         .pl-border-c { border-color: var(--border); }
         .pl-border-strong-c { border-color: var(--border-strong); }
         .pl-display { font-family: 'Source Serif 4', Georgia, serif; }
@@ -803,7 +803,7 @@
                         </span>
                         <span class="truncate max-w-[130px] text-xs font-medium pl-text">{{ (user.display_name or t.user_display_fallback) if user else '' }}</span>
                         {% if user and user.role == 'admin' %}
-                        <span class="px-1.5 py-0.5 text-[9px] uppercase font-extrabold tracking-wider rounded bg-[color:var(--accent-soft)] text-[color:var(--accent)] border border-[color:var(--border-strong)]">Admin</span>
+                        <span class="px-1.5 py-0.5 text-[9px] uppercase font-extrabold tracking-wider rounded bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border-strong)]">Admin</span>
                         {% endif %}
                         {{ icon('chevron-down', 'w-3.5 h-3.5 text-[color:var(--text-muted)]') }}
                     </button>
