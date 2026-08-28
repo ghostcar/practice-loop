@@ -10,7 +10,7 @@ Consensual adult activity tracker. Privacy-first, single-user by default, multi-
 
 ### Core
 - **Practice Catalog** — system + personal activities with params schemas, risk levels, opt-in per user
-- **LLM Hybrid Pipeline** — AI picks tasks *from your approved catalog*, never generates content; full/abstract provider modes
+- **LLM Hybrid Pipeline** — AI picks tasks *from your approved catalog*, never generates content; full/abstract provider modes; provider connectivity is checked before saving credentials
 - **Task Engine** — 11-state machine, LLM + deterministic generation, subtasks checklist
 - **Sessions** — time-boxed activity sessions with accepted-freeze, append-only audit, cooperative mode
 - **Gamification** — XP, levels, streaks, combos, achievements, configurable penalties + escalation + redemption, weekly challenges

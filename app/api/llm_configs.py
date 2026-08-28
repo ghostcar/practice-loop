@@ -10,6 +10,7 @@ from app.database import get_db
 from app.encryption import encrypt_api_key, mask_api_key
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.llm.client import check_llm_connection
 from app.models.llm_config import LLMProviderConfig
 from app.models.user import User
 from app.templates_setup import templates
@@ -77,6 +78,21 @@ async def llm_configs_page(
     )
 
 
+@router.post("/check")
+async def check_llm_config(
+    api_base_url: str = Form(...),
+    api_key: str = Form(default=""),
+    model_name: str = Form(...),
+    user: User = Depends(get_current_user),
+):
+    """Check provider connectivity without persisting the submitted key."""
+    try:
+        await check_llm_connection(api_base_url, api_key or None, model_name)
+    except (RuntimeError, ValueError):
+        return RedirectResponse(url="/llm-configs/?connection=failed", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/llm-configs/?connection=ok", status_code=status.HTTP_303_SEE_OTHER)
+
+
 # --- CRUD ---
 
 
@@ -97,6 +113,11 @@ async def create_llm_config(
 
     if not await has_consent(db, user.id, "byok_provider"):
         return RedirectResponse(url="/consent/setup?required=byok_provider", status_code=status.HTTP_303_SEE_OTHER)
+    try:
+        await check_llm_connection(api_base_url, api_key or None, model_name)
+    except (RuntimeError, ValueError):
+        return RedirectResponse(url="/llm-configs/?connection=failed", status_code=status.HTTP_303_SEE_OTHER)
+
     encrypted = encrypt_api_key(api_key) if api_key else None
     # HTML form values: "true"/"false"/"on"/"1" accepted as True
     store_raw = store_raw_response.strip().lower() in {"true", "on", "1", "yes"}

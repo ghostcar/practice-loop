@@ -11,8 +11,13 @@ from app.models.llm_config import LLMProviderConfig
 
 
 @pytest.mark.asyncio
-async def test_create_llm_config(auth_client: AsyncClient, db_session: AsyncSession, test_user):
+async def test_create_llm_config(auth_client: AsyncClient, db_session: AsyncSession, test_user, monkeypatch):
     """Add a new LLM provider config."""
+
+    async def connection_ok(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr("app.api.llm_configs.check_llm_connection", connection_ok)
     await auth_client.post(
         "/api/v2/consent",
         json={"consent_type": "byok_provider", "state": "granted"},
@@ -40,6 +45,34 @@ async def test_create_llm_config(auth_client: AsyncClient, db_session: AsyncSess
     assert cfg.model_name == "llama-3.3-70b"
     assert not cfg.is_active
     assert cfg.api_key_encrypted is not None
+
+
+@pytest.mark.asyncio
+async def test_create_llm_config_does_not_persist_on_failed_check(
+    auth_client: AsyncClient, db_session: AsyncSession, test_user, monkeypatch
+):
+    async def connection_failed(*args, **kwargs):
+        raise RuntimeError("LLM connection check failed")
+
+    monkeypatch.setattr("app.api.llm_configs.check_llm_connection", connection_failed)
+    await auth_client.post(
+        "/api/v2/consent",
+        json={"consent_type": "byok_provider", "state": "granted"},
+    )
+    response = await auth_client.post(
+        "/llm-configs/",
+        data={
+            "provider_name": "Unavailable",
+            "api_base_url": "https://provider.invalid/v1",
+            "api_key": "secret-key",
+            "model_name": "missing-model",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert response.headers["location"].endswith("connection=failed")
+    result = await db_session.execute(select(LLMProviderConfig).where(LLMProviderConfig.user_id == test_user.id))
+    assert result.scalars().all() == []
 
 
 @pytest.mark.asyncio

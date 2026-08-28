@@ -76,7 +76,7 @@
 ### 3. LLM-пайплайн
 - Гибридная генерация: LLM выбирает из опт-ин набора, не создаёт контент
 - Режимы: `full` (имена) / `abstract` (opaque ID)
-- BYOK: Omniroute (по умолчанию), Groq, OpenRouter
+- BYOK: Omniroute (по умолчанию), Groq, OpenRouter; подключение проверяется через OpenAI-compatible `models.list()` до сохранения конфигурации
 - JSON repair: `json.loads` → `json_repair` → regex → 3 попытки → ошибка + «Повторить»
 - Usage-метрики (токены, стоимость) хранятся всегда; `raw_llm_response` — опционально
 - Prompt-библиотека (`/llm/templates`)
