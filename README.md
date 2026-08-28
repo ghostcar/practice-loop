@@ -79,7 +79,7 @@ Consensual adult activity tracker. Privacy-first, single-user by default, multi-
 - **Billing & Multi-Gateway Payments** — subscription tiers + promotions, Stripe / Telegram Stars / Crypto / ЮKassa checkout, webhooks, invoices
 - **Promocodes & Gift Subscriptions** — `POST /billing/promocodes/claim`
 - **Digital Achievement Certificates** — public verification at `GET /certificates/{id}/verify`
-- **2FA PIN Shield** — `POST /security/verify-pin` for Media Vault and D/s controls
+- **2FA protection** — optional authenticator-app TOTP (`/security/totp/*`) plus legacy PIN Shield (`POST /security/verify-pin`) for Media Vault and D/s controls
 - **Media Vault v2 One-Time Links** — burn-on-read tokens at `/media/one-time-token`
 - **Import/Export** — CSV/JSON templates, full data export, API push
 - **Admin Panel** — catalog seed, LLM presets, user management, tier management
@@ -94,7 +94,7 @@ Consensual adult activity tracker. Privacy-first, single-user by default, multi-
 | Backend | FastAPI (Python 3.11+), SQLAlchemy 2.0 async, Pydantic v2 |
 | Database | PostgreSQL 15 (prod), SQLite (dev/tests) |
 | Migrations | Alembic |
-| Auth | JWT cookies, CSRF double-submit |
+| Auth | JWT cookies, CSRF double-submit, optional TOTP + PIN sensitive-operation verification |
 | Frontend | Jinja2, TailwindCSS, HTMX, Chart.js, ES modules |
 | LLM | OpenAI-compatible API (BYOK): Omniroute (default), Groq, OpenRouter |
 | Bot | aiogram 3.x (Telegram) |

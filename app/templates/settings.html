@@ -343,6 +343,16 @@
     </section>
 
     {# PIN #}
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="totp-h">
+        <div>
+            <h2 id="totp-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">{{ icon('shield', 'w-4 h-4') }} {{ t.settings_totp_title or 'Authenticator app (TOTP)' }}</h2>
+            <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.settings_totp_hint or 'Optional additional protection for sensitive operations.' }}</p>
+        </div>
+        <div hx-get="/settings/totp-form" hx-trigger="load" hx-swap="outerHTML">
+            <p class="text-xs text-[color:var(--text-muted)]">Loading…</p>
+        </div>
+    </section>
+
     <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="pin-h">
         <div>
             <h2 id="pin-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">

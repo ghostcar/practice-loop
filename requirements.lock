@@ -149,6 +149,8 @@ python-jose[cryptography]==3.3.0
     # via practice-loop (pyproject.toml)
 python-multipart==0.0.32
     # via practice-loop (pyproject.toml)
+pyotp==2.9.0
+    # via practice-loop (pyproject.toml)
 pyyaml==6.0.2
     # via uvicorn
 regex==2026.7.19

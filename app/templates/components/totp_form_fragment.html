@@ -1,0 +1,42 @@
+{% from "components/icon.html" import icon %}
+<div id="totp-form-area" class="space-y-3 max-w-md">
+    {% if totp_status == 'enabled' %}
+    <p class="text-sm text-[color:var(--success)]" role="status">{{ t.settings_totp_enabled or 'TOTP is enabled.' }}</p>
+    <form hx-post="/security/totp/disable" hx-target="#totp-form-area" hx-swap="outerHTML" class="space-y-2">
+        <label class="block text-sm text-[color:var(--text-secondary)]">
+            {{ t.settings_totp_code or 'Authenticator code' }}
+            <input type="text" name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                   aria-label="{{ t.settings_totp_code or 'Authenticator code' }}"
+                   class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+        </label>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--danger)] text-white text-sm font-medium">
+            {{ t.settings_totp_disable or 'Disable TOTP' }}
+        </button>
+    </form>
+{% elif totp_status == 'pending' %}
+    <p class="text-xs text-[color:var(--text-secondary)]">{{ t.settings_totp_scan_hint or 'Add this account to your authenticator, then enter the current six-digit code.' }}</p>
+    <label class="block text-sm text-[color:var(--text-secondary)]">
+        {{ t.settings_totp_uri or 'Provisioning URI' }}
+        <textarea readonly rows="3" aria-label="{{ t.settings_totp_uri or 'Provisioning URI' }}"
+                  class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-xs text-[color:var(--text)]">{{ provisioning_uri }}</textarea>
+    </label>
+    <form hx-post="/security/totp/confirm" hx-target="#totp-form-area" hx-swap="outerHTML" class="space-y-2">
+        <label class="block text-sm text-[color:var(--text-secondary)]">
+            {{ t.settings_totp_code or 'Authenticator code' }}
+            <input type="text" name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                   aria-label="{{ t.settings_totp_code or 'Authenticator code' }}"
+                   class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+        </label>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium">
+            {{ t.settings_totp_confirm or 'Confirm and enable' }}
+        </button>
+    </form>
+{% else %}
+    <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_totp_hint or 'Use an authenticator app for an additional protection layer on sensitive operations.' }}</p>
+    <form hx-post="/security/totp/setup" hx-target="#totp-form-area" hx-swap="outerHTML">
+        <button type="submit" class="px-4 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium">
+            {{ t.settings_totp_setup or 'Set up TOTP' }}
+        </button>
+    </form>
+{% endif %}
+</div>

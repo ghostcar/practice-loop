@@ -18,6 +18,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 
+import pyotp
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import get_current_user
 from app.auth import hash_password, verify_password
 from app.database import get_db
+from app.encryption import decrypt_api_key, encrypt_api_key
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -105,6 +107,31 @@ def _pin_hash(plain: str) -> str:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+
+async def _totp_fragment_response(request: Request, user: User):
+    """Render the settings fragment after an HTMX TOTP mutation."""
+    from app.i18n import get_translations
+    from app.i18n.helpers import detect_locale
+    from app.templates_setup import templates
+
+    locale = detect_locale(request, user.locale)
+    secret = decrypt_api_key(user.totp_secret_encrypted) if user.totp_secret_encrypted else None
+    status = "enabled" if user.totp_enabled else "pending" if secret else "disabled"
+    uri = None
+    if secret and not user.totp_enabled:
+        uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="Practice Loop")
+    return templates.TemplateResponse(
+        request=request,
+        name="components/totp_form_fragment.html",
+        context={
+            "request": request,
+            "t": get_translations(locale),
+            "user": user,
+            "totp_status": status,
+            "provisioning_uri": uri,
+        },
+    )
 
 
 @router.post("/verify-pin")
@@ -236,6 +263,98 @@ async def clear_security_pin(
     return JSONResponse({"status": "ok", "message": "PIN removed."})
 
 
+@router.post("/totp/setup")
+async def setup_totp(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a pending TOTP secret and return a provisioning URI once."""
+    secret = pyotp.random_base32()
+    user.totp_secret_encrypted = encrypt_api_key(secret)
+    user.totp_enabled = False
+    db.add(user)
+    await db.flush()
+    uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="Practice Loop")
+    if _wants_htmx(request):
+        return await _totp_fragment_response(request, user)
+    return JSONResponse({"status": "pending", "provisioning_uri": uri})
+
+
+@router.post("/totp/confirm")
+async def confirm_totp(
+    request: Request,
+    code: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Enable TOTP only after verifying the authenticator's current code."""
+    if not user.totp_secret_encrypted:
+        raise HTTPException(400, "TOTP setup has not been started.")
+    if user.totp_enabled:
+        raise HTTPException(400, "TOTP is already enabled.")
+    try:
+        secret = decrypt_api_key(user.totp_secret_encrypted)
+    except Exception as exc:
+        raise HTTPException(500, "TOTP secret cannot be decrypted.") from exc
+    if not pyotp.TOTP(secret).verify(code.strip(), valid_window=1):
+        raise HTTPException(403, "Invalid authenticator code.")
+    user.totp_enabled = True
+    db.add(user)
+    await db.flush()
+    if _wants_htmx(request):
+        return await _totp_fragment_response(request, user)
+    return JSONResponse({"status": "enabled"})
+
+
+@router.post("/totp/verify")
+async def verify_totp(
+    request: Request,
+    code: str = Form(...),
+    user: User = Depends(get_current_user),
+):
+    """Verify TOTP for a sensitive-operation session cache."""
+    if not user.totp_enabled or not user.totp_secret_encrypted:
+        raise HTTPException(400, "TOTP is not enabled.")
+    try:
+        secret = decrypt_api_key(user.totp_secret_encrypted)
+    except Exception as exc:
+        raise HTTPException(500, "TOTP secret cannot be decrypted.") from exc
+    if not pyotp.TOTP(secret).verify(code.strip(), valid_window=1):
+        raise HTTPException(403, "Invalid authenticator code.")
+    _pin_cache.set(str(user.id))
+    return JSONResponse({"status": "verified", "method": "totp"})
+
+
+@router.post("/totp/disable")
+async def disable_totp(
+    request: Request,
+    code: str = Form(...),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Disable TOTP after a valid current authenticator code."""
+    if not user.totp_enabled or not user.totp_secret_encrypted:
+        raise HTTPException(400, "TOTP is not enabled.")
+    secret = decrypt_api_key(user.totp_secret_encrypted)
+    if not pyotp.TOTP(secret).verify(code.strip(), valid_window=1):
+        raise HTTPException(403, "Invalid authenticator code.")
+    user.totp_secret_encrypted = None
+    user.totp_enabled = False
+    db.add(user)
+    _pin_cache.clear(str(user.id))
+    await db.flush()
+    if _wants_htmx(request):
+        return await _totp_fragment_response(request, user)
+    return JSONResponse({"status": "disabled"})
+
+
+@router.get("/totp-status")
+async def totp_status(user: User = Depends(get_current_user)):
+    """Return TOTP state without exposing the secret."""
+    return JSONResponse({"enabled": bool(user.totp_enabled and user.totp_secret_encrypted)})
+
+
 @router.get("/pin-status")
 async def pin_status(
     user: User = Depends(get_current_user),
@@ -245,6 +364,7 @@ async def pin_status(
     return JSONResponse(
         {
             "has_pin": user.pin_hash is not None,
+            "has_totp": bool(user.totp_enabled and user.totp_secret_encrypted),
             "session_cached": _pin_cache.is_cached(user_key),
         }
     )

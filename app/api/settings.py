@@ -217,6 +217,45 @@ async def toggle_discretion_endpoint(
     return RedirectResponse(url="/discretion/bailout", status_code=303)
 
 
+@router.get("/settings/totp-form", response_class=HTMLResponse)
+async def totp_form_fragment(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """HTMX fragment for optional TOTP setup and management."""
+    locale = detect_locale(request, user.locale)
+    t = get_translations(locale)
+    totp_status = "enabled" if user.totp_enabled else "pending" if user.totp_secret_encrypted else "disabled"
+    provisioning_uri = None
+    if totp_status == "pending":
+        import pyotp
+
+        from app.encryption import decrypt_api_key
+
+        secret = decrypt_api_key(user.totp_secret_encrypted)
+        provisioning_uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="Practice Loop")
+    return templates.TemplateResponse(
+        request=request,
+        name="components/totp_form_fragment.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "totp_status": totp_status,
+            "provisioning_uri": provisioning_uri,
+        },
+    )
+
+
+@router.post("/settings/totp-form", response_class=HTMLResponse)
+async def totp_form_after_setup(
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    """Return the TOTP fragment after an HTMX mutation."""
+    return await totp_form_fragment(request, user)
+
+
 @router.get("/settings/pin-form", response_class=HTMLResponse)
 async def pin_form_fragment(
     request: Request,

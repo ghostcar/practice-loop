@@ -118,7 +118,7 @@
 - Экспорт для врача
 
 ### 11. Медиа-Хранилище (Media Vault)
-- **AES-256-GCM** шифрование при хранении (app/media/crypto.py)
+- **AES-256-GCM** шифрование при хранении (app/media/crypto.py); TOTP-секреты шифруются Fernet через credentials key
 - Анти-утечка: водяные знаки с user_id + timestamp (app/media/watermark.py, Pillow)
 - Извлечение ключевых кадров из видео-доказательств (app/media/video_frames.py)
 - EXIF-аудит + pHash/dHash антиспуфинговый движок (app/media/anti_spoofing.py)
@@ -218,7 +218,7 @@
 
 - Запустить `alembic check` локально с корректным `DATABASE_URL` и подтвердить отсутствие schema drift
 - Добавить 14 недостающих иконок в sprite-pack
-- Реализовать настоящую 2FA (TOTP, не только PIN)
+- Расширить TOTP: recovery-коды и опциональная обязательная проверка при входе; текущая реализация защищает чувствительные операции и сохраняет PIN fallback
 - Написать реальную интеграцию Telegram broadcast/voice TTS с aiogram 3.x и STT-движком
 - Заменить симуляции AI-агентов (media_comparison, anti_spoofing, multi_sig, pdf_reports)
   реальными вызовами

@@ -38,6 +38,9 @@ class User(Base):
     # ADR-152: 2FA PIN for sensitive operations (Media Vault, exposure drops, etc.).
     # bcrypt hash of the user-chosen PIN; None = PIN not set.
     pin_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # TOTP secret is encrypted at rest; enabled only after first-code confirmation.
+    totp_secret_encrypted: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    totp_enabled: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     timezone_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
