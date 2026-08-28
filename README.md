@@ -248,7 +248,7 @@ app/
 | `UserLeagueTier` | Community league tier (Bronze/Silver/Gold/Master) |
 | `Quest` / `UserQuest` | Daily/weekly/streak quests with XP claims |
 | `SubscriptionTier` / `TierFeatureGrant` | Billing tiers + feature grants |
-| `PaymentInvoice` | Multi-gateway payment records |
+| `PaymentInvoice` | Multi-gateway payment records; schema created by migration `082_add_missing_module_tables` |
 | `CommunityTournament` / `CommunityTournamentEntry` | Public tournaments + leaderboards |
 | `CommunityMemberRole` | Co-governance roles (co_top, keyholder, trainer, ...) |
 | `AutomationTrigger` | AI-generated condition/action rules |

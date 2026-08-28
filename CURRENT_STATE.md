@@ -207,7 +207,7 @@
 | Проблема | Статус | Приоритет |
 |---|---|---|
 | 14 иконок не в sprite (award, check-circle-2, cpu, file-text, grid, journal, layers, repeat, share-2, shield-check, sliders, user-check, volume-2, zap) | Временно заменены ближайшими аналогами | Medium |
-| Alembic миграции не охватывают новые модели v0.8.1: PromoCode, UserAgentPersona, UserDuel, UserLeagueTier, SubscriptionTier, TierFeatureGrant, TemporaryFeaturePromotion, PaymentInvoice, AutomationTrigger, OneTimeMediaToken, Community/CommunityPost/CommunityTopAgent/CommunityMemberDelegation/CommunityTournament/CommunityTournamentEntry, CommunityMemberRole | Нужны новые миграции. Покрыты: 072 quests, 073 prompt library, 074 adaptive, 075 body_cycle, 076 equipment_maintenance, 077–081 D/s (managed_submissives, duties, lock_logs, grants, wear_check_ins) | High |
+| Проверить schema drift через `alembic check` в локальном окружении | Перечисленные модели v0.8.1 уже покрыты миграцией `082_add_missing_module_tables`; локальная проверка требует корректных PostgreSQL credentials | Medium |
 | Мобильное приложение не реализовано | Запланировано (M4) | Roadmap |
 | `llm_exchange.html` содержит inline-script (в allowlist) | Нужен вынос в ES-модуль | Low |
 | Broadcast Engine, Voice TTS, PDF-отчёты (HTML), AI-сравнение медиа, антиспуфинг, multi-sig — частично payload-заглушки / симулированные результаты | Реальная интеграция — в roadmap | Medium |
@@ -216,7 +216,7 @@
 
 ## Следующие шаги (предлагаемые)
 
-- Создать Alembic-миграции для новых моделей v0.8.1 (см. таблицу тех. долгов)
+- Запустить `alembic check` локально с корректным `DATABASE_URL` и подтвердить отсутствие schema drift
 - Добавить 14 недостающих иконок в sprite-pack
 - Реализовать настоящую 2FA (TOTP, не только PIN)
 - Написать реальную интеграцию Telegram broadcast/voice TTS с aiogram 3.x и STT-движком
