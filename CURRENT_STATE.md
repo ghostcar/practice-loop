@@ -206,7 +206,7 @@
 
 | Проблема | Статус | Приоритет |
 |---|---|---|
-| 14 иконок не в sprite (award, check-circle-2, cpu, file-text, grid, journal, layers, repeat, share-2, shield-check, sliders, user-check, volume-2, zap) | Временно заменены ближайшими аналогами | Medium |
+| Непокрытые иконки в sprite-pack | Закрыто: Jinja/JS icon-pack watchdog проходит, raw SVG и emoji-иконки вне разрешённых content-исключений отсутствуют | — |
 | Проверить schema drift через `alembic check` в локальном окружении | Перечисленные модели v0.8.1 уже покрыты миграцией `082_add_missing_module_tables`; локальная проверка требует корректных PostgreSQL credentials | Medium |
 | Мобильное приложение не реализовано | Запланировано (M4) | Roadmap |
 | `llm_exchange.html` содержит inline-script | Закрыто: логика находится в `app/static/js/pages/llm_exchange.js`, S57 audit подтверждён | — |
@@ -217,7 +217,7 @@
 ## Следующие шаги (предлагаемые)
 
 - Запустить `alembic check` локально с корректным `DATABASE_URL` и подтвердить отсутствие schema drift
-- Добавить 14 недостающих иконок в sprite-pack
+- Поддерживать icon-pack watchdog при добавлении новых UI-компонентов
 - Расширить TOTP: recovery-коды и опциональная обязательная проверка при входе; текущая реализация защищает чувствительные операции и сохраняет PIN fallback
 - Написать реальную интеграцию Telegram broadcast/voice TTS с aiogram 3.x и STT-движком
 - Заменить симуляции AI-агентов (media_comparison, anti_spoofing, multi_sig, pdf_reports)
