@@ -278,8 +278,9 @@ Modes:
 # Full suite (SQLite in-memory, 1300+ tests)
 pytest tests/ -v
 
-# Lint + format
-ruff check app/ && ruff format --check app/
+# Lint + format (pinned to the CI version)
+ruff==0.5.7 check app/ cli.py tests/ seed_prod.py
+ruff==0.5.7 format --check app/ cli.py tests/ seed_prod.py
 ```
 
 Key test suites:
