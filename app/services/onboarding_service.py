@@ -1,7 +1,7 @@
 """Onboarding Service — business logic for new-user setup wizard.
 
 After registration, new users go through a 3-step onboarding:
-  1. LLM Provider (link to /llm/configs)
+  1. LLM Provider (link to /llm-configs/)
   2. Module selection (which features to enable)
   3. Ready → complete → consent → dashboard
 

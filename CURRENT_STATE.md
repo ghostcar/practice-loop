@@ -79,7 +79,7 @@
 - BYOK: Omniroute (по умолчанию), Groq, OpenRouter; подключение проверяется через OpenAI-compatible `models.list()` до сохранения конфигурации
 - JSON repair: `json.loads` → `json_repair` → regex → 3 попытки → ошибка + «Повторить»
 - Usage-метрики (токены, стоимость) хранятся всегда; `raw_llm_response` — опционально
-- Prompt-библиотека (`/llm/templates`)
+- Prompt-библиотека (`/llm/prompts`) и приватные шаблоны (`/llm/templates`)
 
 ### 4. Задачи (ActivityLog)
 - 11-состояний (draft/planned/in_progress/completed/partially_completed/skipped/cancelled/stopped/substituted/not_applicable/review_needed)
