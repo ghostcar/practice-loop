@@ -2,7 +2,7 @@
 
 > Версия: **v0.8.1-actual**
 > Обновлено: **2026-08-28**
-> Git-коммит: `268cd8ee` (код; memory refresh — `21d1a0aa`)
+> Git-коммит: `b400de01` (документация и память; кодовый аудит — `268cd8ee`)
 > Тесты: **1436 passed, 3 skipped** (полный pytest, ~4.5 мин; текущий прогон)
 
 ---
@@ -18,7 +18,7 @@
 | Локализация (`tests/test_localization.py`) | ✅ 15 тестов: parity EN/RU, плейсхолдеры, ключи шаблонов, page-i18n JSON, JS-ключи |
 | ruff check | ✅ 0 errors |
 | ruff format | ✅ чисто |
-| memoryctl lint + facts | ✅ 0 issues, facts fresh |
+| memoryctl lint + facts | ✅ 0 issues, facts fresh (`b400de01`) |
 | Watchdog: icon-pack sprite | ✅ все иконки покрыты |
 | Watchdog: audit-s57 | ✅ inline-script allowlist точный |
 | Watchdog: transaction-boundary | ✅ commit-router allowlist точный |
