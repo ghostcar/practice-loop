@@ -1,6 +1,6 @@
 # Practice Loop — карта документации
 
-> Актуально на: 27 августа 2026 года.
+> Актуально на: 28 августа 2026 года.
 > Назначение: не допускать смешения целевого продукта, фактического кода, планов и исторических
 > спецификаций.
 
@@ -106,6 +106,7 @@
 | Изменена архитектура | ADR, `TARGET_ARCHITECTURE.md`/`AGENTS.md`, memory |
 | Изменён UI contract | `DESIGN.md`, visual acceptance evidence, memory |
 | Новый release/deploy | README/runbook, `CURRENT_STATE.md`, memory |
+| Расширен тестовый/a11y-охват | README, `FUNCTIONAL.md`, `CURRENT_STATE.md`, memory |
 | Только технический refactor | memory и ADR при необходимости; Vision не переписывается |
 
 ## 6. Правила для агента

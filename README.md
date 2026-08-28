@@ -296,9 +296,12 @@ Key test suites:
   page-i18n JSON blocks, locale detection (15 tests)
 
 Browser E2E (`npm run test:browser`, `--grep @smoke` in CI):
-- `portal.spec.ts` — 7 tests: 2×`@smoke` (navigation, session flow), `@a11y`
-  (axe wcag2a/2aa across **34 routes × dark/light**), 3×`@usability` (keyboard focus,
-  no horizontal overflow, reduced motion, timer discoverability).
+- `portal.spec.ts` — 8 tests: 2×`@smoke` (navigation, session flow), 2×`@a11y`
+  (axe wcag2a/2aa/wcag21a/aa across **47 user routes + 7 admin routes × dark/light**),
+  4×`@usability` (keyboard focus, no horizontal overflow, reduced motion, timer discoverability).
+  Protected/off-navigation coverage includes `/admin/tiers`, `/social/leaderboard`,
+  `/social/pillory`, `/certificates/{id}/verify`, billing, DMS, communities and insights pages.
+  The admin test promotes a disposable test user via SQL only; no production self-promotion path exists.
 - Run the a11y audit alone with `npm run test:a11y`; usability with `npm run test:usability`.
 
 ---

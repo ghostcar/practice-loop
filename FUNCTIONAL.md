@@ -1501,19 +1501,31 @@ Timer. Модуль доступен через `/aftercare` и `/api/v2/afterca
   медикаменты, инсайты, матрица согласий, LockTimer, соцсеть).
 - Мёртвые шаблоны прототипа удалены (R9.1): `dashboard.html`, `components/live_camera_observer.html`.
 
-## 61. Качество: локализация и доступность (2026-08-27)
+## 61. Качество: локализация и доступность (2026-08-28)
+
+### Session 42 — защищённые страницы и формы
+
+- `portal.spec.ts`: a11y-маршруты расширены до 47 пользовательских + 7 admin-страниц.
+- Проверены dark/light и axe tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`.
+- Отдельно проверены `/social/leaderboard`, `/social/pillory`, `/certificates/{id}/verify`, `/admin/tiers`.
+- Результат: 0 serious/critical violations.
+
+
 
 - **i18n консистентность** — `tests/test_localization.py` (15 тестов): строгий parity EN/RU
   (ключи 1:1, без пустых значений), согласованность `{var}`-плейсхолдеров, проверка всех
   статических `t.<key>` в шаблонах и JS-ключей (`T.*`, `I18N.*`, `i18n.*`) на наличие в обоих
   словарях, валидность `page-i18n` JSON-блоков, покрытие динамических префиксов
   (`t['health_phase_' + x]` и т.п.), unit-тесты `detect_locale`.
-- **Полный a11y-аудит** — `@a11y` e2e (axe wcag2a/2aa, серьёзные/критические нарушений нет)
-  покрывает 34 роута × темы dark/light: все нав-страницы, social, api/v2 страницы, locktimer.
-  Починено: `<html lang>` на 7 роутах (locale в контекст), aria-лейблы для selects/inputs
-  (locations, care, measurements, diets, training, sessions_wizard, body_parts, social),
-  контрасты: статусные токены light-темы (`--success/--warning/--danger/--info`) затемнены до
-  WCAG 4.5:1, amber-600→700 на светлых фонах, инвентарь на `--accent-text`.
+- **Полный a11y-аудит** — `@a11y` e2e (axe wcag2a/2aa/wcag21a/wcag21aa, серьёзные/критические нарушений нет)
+  покрывает 47 пользовательских + 7 admin-роутов × темы dark/light: нав-страницы, social,
+  billing, DMS, communities, insights, analytics, `/admin/*`, `/admin/tiers` и публичный
+  `/certificates/{id}/verify`.
+  В аудите исправлены: `/dms` (500 из-за legacy TemplateResponse), `<html lang>` на 7 роутax,
+  aria-лейблы для selects/inputs/textarea/checkbox/range, контрасты status/accent/archive
+  токенов и цветных статусов в обеих темах; добавлен тест admin-контекста через DB promotion.
+- **Защищённые роуты**: `/admin/tiers` проверяется реальным admin-контекстом через тестовый DB promotion;
+  `/social/leaderboard` и `/social/pillory` — authenticated; `/certificates/{id}/verify` — public.
 - **CI** — 6 джобов (lint, memory-lint, migrations, test, docker, e2e), все зелёные;
   `timeout-minutes` + кеш pip; миграции 083/084 идемпотентны, добавлена 090 (колонки users);
   e2e-флоу обновлён под onboarding/session-wizard; `/locktimer` за feature-гейтом.

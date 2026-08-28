@@ -1,9 +1,9 @@
 # Practice Loop — Текущее состояние
 
 > Версия: **v0.8.1-actual**
-> Обновлено: **2026-08-27**
-> Git-коммит: `df2fc589` (HEAD на момент обновления)
-> Тесты: **1438 passed, 3 skipped** (полный pytest, ~5.5 мин)
+> Обновлено: **2026-08-28**
+> Git-коммит: `268cd8ee` (код; memory refresh — `21d1a0aa`)
+> Тесты: **1436 passed, 3 skipped** (полный pytest, ~4.5 мин; текущий прогон)
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Проверка | Результат |
 |---|---|
-| pytest (полный, SQLite in-memory) | ✅ **1438 passed, 3 skipped** |
+| pytest (полный, SQLite in-memory) | ✅ **1436 passed, 3 skipped** |
 | CI GitHub Actions (6 джобов) | ✅ lint · memory-lint · migrations · test · docker · e2e |
-| E2E Playwright portal.spec.ts | ✅ 7/7 (2×smoke, a11y, 3×usability) |
-| @a11y axe (34 роута × dark/light) | ✅ 0 serious/critical нарушений |
+| E2E Playwright portal.spec.ts | ✅ smoke/usability + `@a11y` shell (47 routes × dark/light) + admin (7 routes × dark/light) |
+| @a11y axe (47 user routes + 7 admin routes × dark/light) | ✅ 0 serious/critical нарушений |
 | Локализация (`tests/test_localization.py`) | ✅ 15 тестов: parity EN/RU, плейсхолдеры, ключи шаблонов, page-i18n JSON, JS-ключи |
 | ruff check | ✅ 0 errors |
 | ruff format | ✅ чисто |
@@ -26,8 +26,12 @@
 
 ---
 
-## Сессия 41 — аудит локализации, a11y и CI (2026-08-27)
+## Сессия 42 — аудит защищённых и вне-навигационных роутов (2026-08-28)
 
+- **Расширенный a11y-аудит**: проверены `/billing`, `/dms`, `/communities` (list/detail/feed), `/insights/*`, `/analytics/graph`, `/social/leaderboard`, `/social/pillory`, публичный `/certificates/{id}/verify`, а также `/admin/*` и `/admin/tiers` с реальным admin-контекстом.
+- `/dms` исправлен: keyword-сигнатура `TemplateResponse` устранила 500 из-за некорректной передачи request/context.
+- Контраст: исправлены `.pl-accent-soft`, `text-archive-950`, amber/emerald/purple/red классы на светлых фонах, admin seed-кнопки, Admin badge и status-токены.
+- Добавлены доступные имена select/input/textarea/checkbox элементов в billing, insights и admin-формах.
 - **Локализация (системный i18n-баг)**: JS читал `T.<flat>`/`I18N.<short>`, а переводы лежали
   в `t.*` → все JS-строки резолвились в `undefined` (пустые ссылки и подписи). Починены
   dashboard/calendar/import/inventory (флаттен `t`) и diets.js (короткие ключи → `diets_*`,
@@ -38,7 +42,7 @@
 - **`<html lang="">`**: 7 роутов не передавали `locale` в контекст шаблона (account, admin_users,
   consent, consent_setup, dms_dashboard, media_showcase_item ×5, today) — починено, `lang`
   теперь всегда заполнен.
-- **@a11y расширен с 8 до 34 роутов** (все доступные нав-страницы, dark+light). Починены:
+- **@a11y расширен с 8 до 47 пользовательских роутов + 7 admin-роутов** (все доступные нав-страницы, dark+light). Починены:
   unlabeled selects/inputs (locations, care, measurements, diets, training, sessions_wizard,
   body_parts, social/*), пустой `lang` (выше), цветовые контрасты: статусные токены light-темы
   `--success/--warning/--danger/--info` затемнены до WCAG 4.5:1, amber-600→700 на светлых
