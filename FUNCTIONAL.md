@@ -372,19 +372,19 @@ sidebar (иконки + подписи).
 Таблицы новых модулей v0.8.1:
 - **Quests (§44)**: `quests`, `user_quests` (миграция 072).
 - **Billing (§45)**: `subscription_tiers`, `tier_feature_grants`, `temporary_feature_promotions`,
-  `payment_invoices`, `promocodes` (без миграций — технический долг, см. CURRENT_STATE.md).
+  `payment_invoices`, `promo_codes` (миграции 082 и последующие изменения).
 - **Community (§46)**: `communities`, `community_posts`, `community_top_agents`,
   `community_member_delegations`, `community_tournaments`, `community_tournament_entries`,
-  `community_member_roles` (без миграций — тех. долг).
-- **Automation (§46)**: `automation_triggers` (без миграций — тех. долг).
-- **Media Vault v2 (§51)**: `one_time_media_tokens` (без миграций — тех. долг).
+  `community_member_roles` (миграции 082–083 и последующие изменения).
+- **Automation (§46)**: `automation_triggers` (миграция 082).
+- **Media Vault v2 (§51)**: `one_time_media_tokens` (миграция 082).
 - **Адаптивные программы (§38.1)**: `adaptive_programs`, `adaptive_program_steps` (миграция 074).
 - **Обслуживание инвентаря (§38.4)**: `equipment_maintenance_logs` (миграция 076).
 - **D/s-делегирование (§49)**: `managed_submissives`, `assigned_duties`, `chastity_lock_logs`,
   `capability_grants`, `capability_grant_claim_attempts`, `wear_check_in_logs`
   (миграции 077–081).
-- **AI-персоны (§40)**: `user_agent_personas`; **Лиги/Дуэли (§39)**: `user_league_tiers`,
-  `user_duels` (без миграций — тех. долг).
+- **AI-персоны (§40)**: `user_agent_personas` (миграция 082); **Лиги/Дуэли (§39)**:
+  `user_league_tiers`, `user_duels` (миграция 082).
 
 ---
 

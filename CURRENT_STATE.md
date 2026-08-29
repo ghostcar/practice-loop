@@ -2,8 +2,8 @@
 
 > Версия: **v0.8.1-actual**
 > Обновлено: **2026-08-28**
-> Git-коммит: `b400de01` (документация и память; кодовый аудит — `268cd8ee`)
-> Тесты: **1436 passed, 3 skipped** (полный pytest, ~4.5 мин; текущий прогон)
+> Git-коммит: `0c638d0a` (актуальный main; ссылки LLM и memory обновлены)
+> Тесты: **1444 passed, 4 skipped** (полный pytest в Python 3.11, 2026-08-29)
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Проверка | Результат |
 |---|---|
-| pytest (полный, SQLite in-memory) | ✅ **1436 passed, 3 skipped** |
+| pytest (полный, SQLite in-memory) | ✅ **1444 passed, 4 skipped** (Python 3.11, 2026-08-29) |
 | CI GitHub Actions (6 джобов) | ✅ lint · memory-lint · migrations · test · docker · e2e |
 | E2E Playwright portal.spec.ts | ✅ smoke/usability + `@a11y` shell (47 routes × dark/light) + admin (7 routes × dark/light) |
 | @a11y axe (47 user routes + 7 admin routes × dark/light) | ✅ 0 serious/critical нарушений |
