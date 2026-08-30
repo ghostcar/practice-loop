@@ -1,6 +1,6 @@
 {
   "alembic": {
-    "checked_at": "2026-08-28T10:04:08Z",
+    "checked_at": "2026-08-29T08:51:18Z",
     "command": "alembic heads",
     "heads": [
       "091_add_totp_2fa"
@@ -8,13 +8,13 @@
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-28T10:04:08Z",
+  "generated_at": "2026-08-29T08:51:18Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:0313809c871367ff0aa0f8776755916448278b17f616e2b22963f05e08294f88",
+    "diff_hash": "sha256:1a9da98c90f9e1127ebc6d6bddf98ac5193187b1c656c0dcc430fa7aec46255c",
     "dirty": true,
-    "head": "0c638d0a8895c72da62f08e79fd7efeb61c41af2"
+    "head": "794e7213c57b451fe1fbce376ed7d1a0ab5baec4"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",

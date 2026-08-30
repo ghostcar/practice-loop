@@ -1,6 +1,6 @@
 # Practice Loop
 
-> **v0.8.1-actual** — Personal-first activity tracker with LLM-assisted planning, advanced gamification, encrypted media vault, D/s delegation, and community features.
+> **v0.8.1-actual** (documentation refreshed 2026-08-30) — Personal-first activity tracker with LLM-assisted planning, advanced gamification, encrypted media vault, D/s delegation, and community features.
 
 Consensual adult activity tracker. Privacy-first, single-user by default, multi-user model-ready.
 
@@ -288,7 +288,7 @@ Key test suites:
 - `test_audit_s57.py` — отсутствие несанкционированных inline scripts, DSL safety
 - `test_transaction_boundary.py` — commit isolation
 - `test_cross_user_auth.py` — cross-user authorization (22 tests)
-- `test_6_next_extensions.py` — Broadcast, Promocodes, Reports, Readiness, Certificates, 2FA
+- `test_6_next_extensions.py` — Broadcast, Promocodes, Reports, Readiness, Certificates, PIN/TOTP 2FA
 - v0.8.1: `test_billing_and_gateways.py`, `test_community_top_agent.py`,
   `test_tournament_rewards.py`, `test_automation_triggers_and_tts.py`,
   `test_voice_hydration.py`, `test_llm_exchange.py`, `test_encrypted_media_vault_and_ai.py`,

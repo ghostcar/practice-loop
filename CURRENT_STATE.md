@@ -2,7 +2,7 @@
 
 > Версия: **v0.8.1-actual**
 > Обновлено: **2026-08-28**
-> Git-коммит: `0c638d0a` (актуальный main; ссылки LLM и memory обновлены)
+> Git-коммит: обновляется автоматически при каждом release/status refresh; подробная история — в Git
 > Тесты: **1444 passed, 4 skipped** (полный pytest в Python 3.11, 2026-08-29)
 
 ---
@@ -18,7 +18,7 @@
 | Локализация (`tests/test_localization.py`) | ✅ 15 тестов: parity EN/RU, плейсхолдеры, ключи шаблонов, page-i18n JSON, JS-ключи |
 | ruff check | ✅ 0 errors (`ruff==0.5.7`) |
 | ruff format | ✅ чисто (`ruff==0.5.7`, единая версия с CI) |
-| memoryctl lint + facts | ✅ 0 issues, facts fresh (`b400de01`) |
+| memoryctl lint + facts | ✅ 0 issues; facts generated from current checkout |
 | Watchdog: icon-pack sprite | ✅ все иконки покрыты |
 | Watchdog: audit-s57 | ✅ inline-script allowlist точный |
 | Watchdog: transaction-boundary | ✅ commit-router allowlist точный |
@@ -210,7 +210,7 @@
 | Проверить schema drift через `alembic check` в локальном окружении | Перечисленные модели v0.8.1 уже покрыты миграцией `082_add_missing_module_tables`; локальная проверка требует корректных PostgreSQL credentials | Medium |
 | Мобильное приложение не реализовано | Запланировано (M4) | Roadmap |
 | `llm_exchange.html` содержит inline-script | Закрыто: логика находится в `app/static/js/pages/llm_exchange.js`, S57 audit подтверждён | — |
-| Broadcast Engine, Voice TTS, PDF-отчёты (HTML), AI-сравнение медиа, антиспуфинг, multi-sig — частично payload-заглушки / симулированные результаты | Реальная интеграция — в roadmap | Medium |
+| Часть внешних интеграций (TTS, некоторые AI/media adapters) | Ограничения и статус указаны в соответствующих разделах FUNCTIONAL.md и ROADMAP.md; не считать production-интеграцией без provider-backed проверки | Medium |
 
 ---
 
