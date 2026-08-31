@@ -1,23 +1,23 @@
 {
   "alembic": {
-    "checked_at": "2026-08-29T08:51:18Z",
+    "checked_at": "2026-08-31T10:09:57Z",
     "command": "alembic heads",
     "heads": [
-      "091_add_totp_2fa"
+      "093_portal_selection"
     ]
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-08-29T08:51:18Z",
+  "generated_at": "2026-08-31T10:09:57Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "dirty": true,
-    "head": "794e7213c57b451fe1fbce376ed7d1a0ab5baec4"
+    "diff_hash": null,
+    "dirty": false,
+    "head": "986485a4099cab6afa0ed263eeba559e2a3a0ac4"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
   "schema_version": "memory/v2alpha1",
-  "tests": [],
-  "notes": ["LLM catalog migration 092 and text/vision user selections are present; regenerate this manifest after commit."]
+  "tests": []
 }
