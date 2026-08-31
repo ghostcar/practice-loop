@@ -175,7 +175,7 @@
  {% endfor %}
  </div>
  </div>
- <script>
+ <script nonce="{{ csp_nonce }}">
  document.querySelectorAll('[data-models-target]').forEach(function (providerSelect) {
    providerSelect.addEventListener('change', async function () {
      const target = document.getElementById(providerSelect.dataset.modelsTarget);
