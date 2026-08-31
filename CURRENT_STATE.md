@@ -1,7 +1,7 @@
 # Practice Loop — Текущее состояние
 
 > Версия: **v0.8.1-actual**
-> Обновлено: **2026-08-28**
+> Обновлено: **2026-08-31**
 > Git-коммит: обновляется автоматически при каждом release/status refresh; подробная история — в Git
 > Тесты: **1444 passed, 4 skipped** (полный pytest в Python 3.11, 2026-08-29)
 
@@ -23,6 +23,19 @@
 | Watchdog: audit-s57 | ✅ inline-script allowlist точный |
 | Watchdog: transaction-boundary | ✅ commit-router allowlist точный |
 | Docker `/healthz` | ✅ `ok` |
+| Onboarding regression tests | ✅ **7 passed** (CSP-safe handlers, localized modes/modules, LLM resolver) |
+| Onboarding live HTTP smoke | ✅ login → `/onboarding` 200; RU labels; no inline handlers; 4-step markup |
+
+---
+
+## Сессия 43 — onboarding mode flow, локализация и CSP (2026-08-31)
+
+- Исправлен первый запуск: четыре шага `AI mode → modules → optional LLM → ready` с уровнями `none` / `portal` / `personal`.
+- Кнопки и переключатели больше не используют CSP-блокируемые `onclick`/`onchange`; события подключаются через nonce-скрипт и `addEventListener`.
+- Подписи и описания режимов AI и модулей переведены через EN/RU i18n; ручной режим корректно пропускает LLM-шаг.
+- Portal quick-pick принимает только локальный `return_to` на `/onboarding` и возвращает пользователя на шаг 3 после выбора.
+- Добавлена регрессия `tests/test_onboarding_llm_link.py`; таргетный прогон: **7 passed**. Docker app healthy, `/healthz` = `ok`.
+- ADR-177 помечен устаревшим; актуальный контракт зафиксирован в ADR-184.
 
 ---
 

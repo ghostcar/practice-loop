@@ -149,7 +149,7 @@
   - `calendar.py` (426→207) → `calendar_service.py` (323) — ADR-175
   - `protocols.py` (404→230) → `protocols_service.py` (360) — ADR-176
   - `app/services/errors.py` — shared `NotFoundError` для разделения 400/404
-  - `onboarding.py` (новый) — 3-step wizard (LLM → modules → ready) — ADR-177
+  - `onboarding.py` — initial 3-step wizard; superseded by the 4-step mode → modules → optional LLM → ready flow (ADR-184)
   - `communities/admin/catalog/community_agent/aftercare` (5 файлов) — ADR-178
   - Итого: ~5440 строк во всех роутерах (−51%), 21 service-файл. 1380 тестов зелёные.
 - [ ] **P8 — Media storage abstraction** — volume→S3-compatible backend, checksum, derivatives, retention, orphan cleanup и включение бинарных данных в переносимый архив.

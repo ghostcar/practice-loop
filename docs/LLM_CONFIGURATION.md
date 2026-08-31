@@ -7,7 +7,7 @@ Practice Loop supports two provider scopes and two capabilities.
 - **Portal provider** — deployment-managed provider metadata and optional credentials from `.env`. It is visible to users as a shared option and is not editable through the user UI.
 - **Personal provider** — user-owned BYOK configuration. The API key is encrypted in the database and is never exposed to another user or to the portal catalog.
 
-A portal provider must not be used as an implicit credential source for another user's request. The runtime resolver therefore uses a user's explicit personal configuration for execution. This keeps portal availability separate from secret ownership.
+A portal provider is used only when the user explicitly selects portal mode/capability. For that explicit portal selection, the runtime resolver may use the deployment-managed key from `PORTAL_LLM_PROVIDERS_JSON`; it never exposes that key to the user or uses it for another user's personal configuration. A database-backed global provider still requires a matching personal BYOK credential.
 
 ## Capabilities
 

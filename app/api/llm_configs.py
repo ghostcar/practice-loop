@@ -183,6 +183,7 @@ async def select_llm_capability(
     global_provider_id: uuid.UUID | None = Form(default=None),
     user_config_id: uuid.UUID | None = Form(default=None),
     portal_provider_id: str | None = Form(default=None),
+    return_to: str | None = Form(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -281,6 +282,11 @@ async def select_llm_capability(
     selection.portal_provider_id = portal_provider_id
     selection.model_name = model_name
     await db.flush()
+    # Onboarding quick-pick must return to the wizard; normal settings forms
+    # keep the existing settings-page redirect. Only allow local app paths.
+    if return_to and (return_to == "/onboarding" or return_to.startswith("/onboarding?")):
+        separator = "&" if "?" in return_to else "?"
+        return RedirectResponse(url=f"{return_to}{separator}llm=saved", status_code=status.HTTP_303_SEE_OTHER)
     return RedirectResponse(url="/llm-configs/?selection=saved", status_code=status.HTTP_303_SEE_OTHER)
 
 

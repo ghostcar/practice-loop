@@ -37,7 +37,7 @@ async def onboarding_page(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """3-step onboarding wizard for new users."""
+    """4-step onboarding wizard for new users."""
     # Already completed? Skip.
     if is_onboarding_complete(user.prefs):
         return RedirectResponse(url="/dashboard", status_code=303)
@@ -53,6 +53,13 @@ async def onboarding_page(
     sel_result = await db.execute(select(LLMUserSelection).where(LLMUserSelection.user_id == user.id))
     llm_selections = {s.capability: s for s in sel_result.scalars().all()}
     llm_status = request.query_params.get("llm")
+    requested_mode = request.query_params.get("mode")
+    current_mode = requested_mode if requested_mode in {"none", "portal", "personal"} else ctx["ai_participation"]
+    ctx["ai_participation"] = current_mode
+    try:
+        initial_step = max(1, min(4, int(request.query_params.get("step", "1"))))
+    except (TypeError, ValueError):
+        initial_step = 1
 
     response = templates.TemplateResponse(
         request=request,
@@ -66,6 +73,7 @@ async def onboarding_page(
             "portal_providers": portal_providers,
             "llm_selections": llm_selections,
             "llm_status": llm_status,
+            "initial_step": initial_step,
             **ctx,
         },
     )

@@ -33,8 +33,8 @@ def get_onboarding_context(user) -> dict:
         "profile_modules": [
             {
                 "key": m,
-                "label": _MODULE_LABELS.get(m, m.capitalize()),
-                "description": _MODULE_DESCRIPTIONS.get(m, ""),
+                "label_key": _MODULE_LABEL_KEYS.get(m, m),
+                "description_key": _MODULE_DESCRIPTION_KEYS.get(m, m),
                 "enabled": m in enabled,
             }
             for m in PROFILE_MODULES
@@ -44,18 +44,18 @@ def get_onboarding_context(user) -> dict:
         "ai_participation_options": [
             {
                 "key": "none",
-                "label": _AI_PARTICIPATION_LABELS["none"],
-                "description": _AI_PARTICIPATION_DESCRIPTIONS["none"],
+                "label_key": _AI_PARTICIPATION_LABELS["none"],
+                "description_key": _AI_PARTICIPATION_DESCRIPTIONS["none"],
             },
             {
                 "key": "portal",
-                "label": _AI_PARTICIPATION_LABELS["portal"],
-                "description": _AI_PARTICIPATION_DESCRIPTIONS["portal"],
+                "label_key": _AI_PARTICIPATION_LABELS["portal"],
+                "description_key": _AI_PARTICIPATION_DESCRIPTIONS["portal"],
             },
             {
                 "key": "personal",
-                "label": _AI_PARTICIPATION_LABELS["personal"],
-                "description": _AI_PARTICIPATION_DESCRIPTIONS["personal"],
+                "label_key": _AI_PARTICIPATION_LABELS["personal"],
+                "description_key": _AI_PARTICIPATION_DESCRIPTIONS["personal"],
             },
         ],
     }
@@ -90,42 +90,42 @@ def should_redirect_to_onboarding(user) -> bool:
 # ── AI participation labels / descriptions ──
 
 _AI_PARTICIPATION_LABELS = {
-    "none": "Without AI",
-    "portal": "Portal AI (recommended)",
-    "personal": "My own key (BYOK)",
+    "none": "onboard_ai_none_label",
+    "portal": "onboard_ai_portal_label",
+    "personal": "onboard_ai_personal_label",
 }
 
 _AI_PARTICIPATION_DESCRIPTIONS = {
-    "none": "Manual task entry only. No auto-generation, no analysis. You can enable AI later in Settings.",
-    "portal": "Use deployment-managed providers. No key needed from you. Some may be a paid service.",
-    "personal": "Bring your own API key. Your key is encrypted and never shared. Full control over usage and cost.",
+    "none": "onboard_ai_none_desc",
+    "portal": "onboard_ai_portal_desc",
+    "personal": "onboard_ai_personal_desc",
 }
 
 
 # ── Module labels / descriptions ──
 
-_MODULE_LABELS = {
-    "tracker": "Task Tracker",
-    "timer": "Lock Timer",
-    "medication": "Medication",
-    "health": "Health",
-    "journal": "Journal",
-    "care": "Care",
-    "catalog": "Catalog",
-    "insights": "Insights",
-    "aftercare": "Aftercare",
-    "social": "Social Network",
+_MODULE_LABEL_KEYS = {
+    "tracker": "onboard_module_tracker",
+    "timer": "onboard_module_timer",
+    "medication": "onboard_module_medication",
+    "health": "onboard_module_health",
+    "journal": "onboard_module_journal",
+    "care": "onboard_module_care",
+    "catalog": "onboard_module_catalog",
+    "insights": "onboard_module_insights",
+    "aftercare": "onboard_module_aftercare",
+    "social": "onboard_module_social",
 }
 
-_MODULE_DESCRIPTIONS = {
-    "tracker": "Generate and complete daily tasks with LLM assistance.",
-    "timer": "Timer-based lock sessions with device binding.",
-    "medication": "Track medication courses and adherence.",
-    "health": "Log health state, body measurements, and labs.",
-    "journal": "Personal journal entries and partner dynamics.",
-    "care": "Care products, routines, and aftercare checklists.",
-    "catalog": "Browse and manage task catalog with opt-in preferences.",
-    "insights": "Analytics, correlation matrix, and medical export.",
-    "aftercare": "Aftercare planning and comfort routines.",
-    "social": "Public profile, feeds, leaderboards, and community features.",
+_MODULE_DESCRIPTION_KEYS = {
+    "tracker": "onboard_module_tracker_desc",
+    "timer": "onboard_module_timer_desc",
+    "medication": "onboard_module_medication_desc",
+    "health": "onboard_module_health_desc",
+    "journal": "onboard_module_journal_desc",
+    "care": "onboard_module_care_desc",
+    "catalog": "onboard_module_catalog_desc",
+    "insights": "onboard_module_insights_desc",
+    "aftercare": "onboard_module_aftercare_desc",
+    "social": "onboard_module_social_desc",
 }

@@ -12,6 +12,7 @@ Consensual adult activity tracker. Privacy-first, single-user by default, multi-
 - **Practice Catalog** — system + personal activities with params schemas, risk levels, opt-in per user
 - **LLM Hybrid Pipeline** — AI picks tasks *from your approved catalog*, never generates content; full/abstract provider modes; provider connectivity is checked before saving credentials
 - **Task Engine** — 11-state machine, LLM + deterministic generation, subtasks checklist
+- **First-run onboarding** — four steps: AI participation mode, modules, optional LLM setup, and ready/consent; portal quick-pick or personal BYOK
 - **Sessions** — time-boxed activity sessions with accepted-freeze, append-only audit, cooperative mode
 - **Gamification** — XP, levels, streaks, combos, achievements, configurable penalties + escalation + redemption, weekly challenges
 
@@ -273,7 +274,7 @@ Modes:
 - **abstract**: opaque IDs only (for strict content-filtering providers)
 
 Provider selection:
-- Each user can select separate `text` and `vision` providers/models at `/llm-configs/`; chat and image processing may use different providers. Personal BYOK usage is controlled per product section by deployment policy.
+- Each user can select separate `text` and `vision` providers/models at `/llm-configs/`; chat and image processing may use different providers. Personal BYOK usage is controlled per product section by deployment policy. First-run onboarding offers `none`, `portal`, and `personal` AI participation modes, with a portal quick-pick returning to the wizard after selection.
 - The portal model pool is shared metadata managed by administrators; optional portal credentials are deployment secrets from `PORTAL_LLM_PROVIDERS_JSON`, while personal provider connections remain user-owned and isolated. See [`docs/LLM_CONFIGURATION.md`](docs/LLM_CONFIGURATION.md).
 - Personal BYOK providers remain private; their model list is fetched from the provider's OpenAI-compatible `models.list()` endpoint.
 - The admin pool exposes only provider metadata and capability-tagged models; API keys are never stored in the global catalog.

@@ -44,16 +44,16 @@
             <input type="radio" name="ai_participation_radio" value="{{ opt.key }}"
                    class="mt-1 accent-[color:var(--accent)]"
                    {% if ai_participation == opt.key %}checked{% endif %}
-                   onchange="selectAiMode('{{ opt.key }}')">
+                   data-ai-mode="{{ opt.key }}">
             <div class="flex-1 min-w-0">
-              <span class="text-sm font-semibold text-[color:var(--text)]">{{ opt.label }}</span>
-              <p class="text-[11px] text-[color:var(--text-muted)] mt-0.5">{{ opt.description }}</p>
+              <span class="text-sm font-semibold text-[color:var(--text)]">{{ t.get(opt.label_key, opt.key) }}</span>
+              <p class="text-[11px] text-[color:var(--text-muted)] mt-0.5">{{ t.get(opt.description_key, '') }}</p>
             </div>
           </label>
           {%- endfor -%}
         </div>
 
-        <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md w-full">
+        <button type="button" data-go-step="2" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md w-full">
           {{ t.get('onboard_continue', 'Continue') }} {{ icon('arrow-right', 'w-3.5 h-3.5') }}
         </button>
         <p class="mt-3 text-[10px] text-[color:var(--text-muted)]">{{ t.get('onboard_change_later', 'You can change this later in Settings.') }}</p>
@@ -78,18 +78,18 @@
           <label class="flex items-start gap-3 p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] cursor-pointer hover:border-[color:var(--accent)] transition-colors {% if mod.enabled %}border-emerald-500/40{% endif %}">
             <input type="checkbox" name="modules" value="{{ mod.key }}" class="mt-0.5 rounded accent-emerald-500" {% if mod.enabled %}checked{% endif %}>
             <div>
-              <span class="text-xs font-semibold text-[color:var(--text)]">{{ mod.label }}</span>
-              <p class="text-[11px] text-[color:var(--text-muted)]">{{ mod.description }}</p>
+              <span class="text-xs font-semibold text-[color:var(--text)]">{{ t.get(mod.label_key, mod.key) }}</span>
+              <p class="text-[11px] text-[color:var(--text-muted)]">{{ t.get(mod.description_key, '') }}</p>
             </div>
           </label>
           {% endfor %}
         </form>
 
         <div class="flex justify-center gap-3">
-          <button type="button" onclick="goToStep(1)" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
+          <button type="button" data-go-step="1" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
             {{ icon('arrow-left', 'w-3.5 h-3.5') }} {{ t.get('onboard_back', 'Back') }}
           </button>
-          <button type="button" onclick="goToStep(3)" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
+          <button type="button" data-go-step="3" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
             {{ t.get('onboard_continue', 'Continue') }} {{ icon('arrow-right', 'w-3.5 h-3.5') }}
           </button>
         </div>
@@ -117,14 +117,15 @@
                 {{ icon('cloud-upload', 'w-5 h-5 mt-0.5 text-[color:var(--accent)] flex-shrink-0') }}
                 <div class="min-w-0">
                   <p class="text-xs font-semibold text-[color:var(--text)]">{{ provider.name }}</p>
-                  <p class="text-[11px] text-[color:var(--text-muted)]">{{ provider.models | length }} model(s)
-                    {%- if provider.models and provider.models[0].supports_vision %} · vision-capable{%- endif -%}
+                  <p class="text-[11px] text-[color:var(--text-muted)]">{{ t.get('onboard_text_capability', 'Text') }} · {{ provider.models | length }} {{ t.get('onboard_models_count', 'models') }}
+                    {%- if provider.models and provider.models[0].supports_vision %} · {{ t.get('onboard_vision_capable', 'vision-capable') }}{%- endif -%}
                   </p>
                   {%- if provider.paid_service %}<p class="text-[10px] text-amber-600 dark:text-amber-400">{{ t.get('onboard_paid', 'may be a paid service') }}</p>{%- endif -%}
                 </div>
               </div>
               <form action="/llm-configs/select" method="post" class="flex-shrink-0">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                <input type="hidden" name="return_to" value="/onboarding?step=3">
                 <input type="hidden" name="capability" value="text">
                 <input type="hidden" name="portal_provider_id" value="{{ provider.id }}">
                 {%- set first_text_model = (provider.models | selectattr('supports_vision','equalto',false) | list)[0] if provider.models else none -%}
@@ -170,10 +171,10 @@
         </div>
 
         <div class="flex justify-center gap-3 mt-6">
-          <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
+          <button type="button" data-go-step="2" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
             {{ icon('arrow-left', 'w-3.5 h-3.5') }} {{ t.get('onboard_back', 'Back') }}
           </button>
-          <button type="button" onclick="goToStep(4)" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
+          <button type="button" data-go-step="4" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
             {{ t.get('onboard_continue', 'Continue') }} {{ icon('arrow-right', 'w-3.5 h-3.5') }}
           </button>
         </div>
@@ -196,7 +197,7 @@
         </div>
 
         <div class="flex justify-center gap-3">
-          <button type="button" onclick="goToStep(3)" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
+          <button type="button" data-go-step="3" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
             {{ icon('arrow-left', 'w-3.5 h-3.5') }} {{ t.get('onboard_back', 'Back') }}
           </button>
           <button type="submit" form="onboard-form" class="px-6 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
@@ -211,7 +212,7 @@
       <!-- Skip form -->
       <form id="skip-form" action="/onboarding/skip" method="post" class="hidden">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-        <input type="hidden" name="ai_participation" value="{{ ai_participation }}">
+        <input type="hidden" name="ai_participation" id="skip_ai_participation" value="{{ ai_participation }}">
       </form>
 
     </div>
@@ -219,13 +220,16 @@
 </div>
 
 <script nonce="{{ csp_nonce }}">
+  document.addEventListener('DOMContentLoaded', () => {
   let selectedAiMode = '{{ ai_participation }}';
+  const initialStep = {{ initial_step|default(1) }};
 
   function selectAiMode(mode) {
     selectedAiMode = mode;
-    document.getElementById('ai_participation_input').value = mode;
-    // Skip-form also carries the chosen mode.
-    document.querySelectorAll('#skip-form input[name=ai_participation]').forEach(i => i.value = mode);
+    const participationInput = document.getElementById('ai_participation_input');
+    if (participationInput) participationInput.value = mode;
+    const skipParticipationInput = document.getElementById('skip_ai_participation');
+    if (skipParticipationInput) skipParticipationInput.value = mode;
     // Highlight the selected card.
     document.querySelectorAll('.ai-mode-card').forEach(c => {
       if (c.dataset.mode === mode) {
@@ -236,11 +240,24 @@
     });
     // Show/hide step 3 content based on mode.
     const hasLlm = mode !== 'none';
-    document.getElementById('step-dot-3').style.visibility = hasLlm ? 'visible' : 'hidden';
-    document.querySelector('[data-connector="2-3"]').style.visibility = hasLlm ? 'visible' : 'hidden';
+    const stepDot3 = document.getElementById('step-dot-3');
+    const connector = document.querySelector('[data-connector="2-3"]');
+    if (stepDot3) stepDot3.style.visibility = hasLlm ? 'visible' : 'hidden';
+    if (connector) connector.style.visibility = hasLlm ? 'visible' : 'hidden';
   }
 
   function goToStep(n) {
+    // In manual mode there is no LLM setup screen. Forward navigation from
+    // modules skips step 3; the final-step Back button returns to modules.
+    const visiblePanel = document.querySelector('.step-panel:not(.hidden)');
+    const currentStep = visiblePanel ? Number(visiblePanel.id.replace('step-', '')) : 1;
+    if (n === 3 && selectedAiMode === 'none') n = currentStep === 4 ? 2 : 4;
+    if (n === 4 && selectedAiMode === 'none') {
+      // Keep the final step visually adjacent to the modules step.
+      document.querySelectorAll('.step-dot').forEach(d => {
+        d.style.visibility = d.dataset.step === '3' ? 'hidden' : '';
+      });
+    }
     document.querySelectorAll('.step-panel').forEach(p => p.classList.add('hidden'));
     document.getElementById('step-' + n).classList.remove('hidden');
     document.querySelectorAll('.step-dot').forEach(d => {
@@ -270,11 +287,21 @@
       container.appendChild(span);
     });
     if (boxes.length === 0) {
-      container.innerHTML = '<span class="text-[10px] text-[color:var(--text-muted)]">No modules selected — you can enable them later in Settings.</span>';
+      container.textContent = '{{ t.get('onboard_no_modules', 'No modules selected — you can enable them later in Settings.') }}';
     }
   }
 
-  // Initial highlight
+  // CSP-safe event wiring: inline onclick/onchange handlers are forbidden.
+  document.querySelectorAll('[data-ai-mode]').forEach(input => {
+    input.addEventListener('change', () => selectAiMode(input.value));
+  });
+  document.querySelectorAll('[data-go-step]').forEach(button => {
+    button.addEventListener('click', () => goToStep(Number(button.dataset.goStep)));
+  });
+
+  // Initial highlight and restore the step after a quick-pick redirect.
   selectAiMode(selectedAiMode);
+  goToStep(initialStep);
+  });
 </script>
 {% endblock %}
