@@ -75,13 +75,9 @@ def _validate_proposal_items(raw_items: list, allowed: dict) -> list[dict]:
 
 
 async def _get_active_llm_config(db: AsyncSession, user_id: uuid.UUID) -> LLMProviderConfig | None:
-    result = await db.execute(
-        select(LLMProviderConfig).where(
-            LLMProviderConfig.user_id == user_id,
-            LLMProviderConfig.is_active.is_(True),
-        )
-    )
-    return result.scalars().first()
+    from app.llm.resolver import resolve_llm_config
+
+    return await resolve_llm_config(db, user_id, "text")
 
 
 # ---------------------------------------------------------------------------

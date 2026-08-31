@@ -274,6 +274,7 @@ Modes:
 
 Provider selection:
 - Each user can select separate `text` and `vision` providers/models at `/llm-configs/`.
+- The portal model pool is shared metadata managed by administrators; credentials and personal provider connections remain user-owned and isolated.
 - Personal BYOK providers remain private; their model list is fetched from the provider's OpenAI-compatible `models.list()` endpoint.
 - The admin pool exposes only provider metadata and capability-tagged models; API keys are never stored in the global catalog.
 - Runtime callers should resolve the relevant capability selection before invoking text or image pipelines; legacy active-config fallback remains for compatibility.

@@ -207,7 +207,7 @@ async def json_verify_checkin(
     if body.verification_type not in ("chastity_closed", "code_match"):
         raise HTTPException(400, "Unsupported verification_type")
 
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
     if llm_config is None:
         raise HTTPException(409, "No active LLM provider config")
 

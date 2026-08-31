@@ -17,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.insights import INSIGHT_SECTIONS, InsightFinding, InsightRun
-from app.models.llm_config import LLMProviderConfig
 from app.models.user import User
 from app.prefs import prefs_from_dict
 
@@ -32,18 +31,9 @@ async def run_auto_insights(db: AsyncSession) -> int:
         prefs = prefs_from_dict(user.prefs)
         if not prefs.insights_auto:
             continue
-        config = (
-            (
-                await db.execute(
-                    select(LLMProviderConfig).where(
-                        LLMProviderConfig.user_id == user.id,
-                        LLMProviderConfig.is_active.is_(True),
-                    )
-                )
-            )
-            .scalars()
-            .first()
-        )
+        from app.llm.resolver import resolve_llm_config
+
+        config = await resolve_llm_config(db, user.id, "text")
         if config is None:
             continue
         try:

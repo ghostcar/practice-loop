@@ -216,7 +216,7 @@ async def json_verify_photo_llm(
     from app.llm.pipeline import get_active_llm_config
     from app.llm.pipeline.photo_verifier import verify_photo_with_llm
 
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
     if not llm_config:
         from fastapi import HTTPException
 
@@ -244,7 +244,7 @@ async def json_recognize_inventory_photo(
     from app.llm.pipeline import get_active_llm_config
     from app.llm.pipeline.photo_verifier import recognize_inventory_from_photo
 
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
     if not llm_config:
         from fastapi import HTTPException
 

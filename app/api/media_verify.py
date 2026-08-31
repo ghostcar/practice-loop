@@ -106,7 +106,7 @@ async def _run_verification(
     challenge = None
     resolved_expected = expected_code
     # ── LLM fallback ──
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
     if llm_config is None:
         raise HTTPException(409, "No active LLM provider config — set one up in LLM Settings")
     if verification_type == "code_match" and not resolved_expected:
@@ -317,7 +317,7 @@ async def verify_page(
     t = get_translations(locale)
 
     media_list, history = await _page_data(db, user)
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
 
     return templates.TemplateResponse(
         request=request,
@@ -372,7 +372,7 @@ async def verify_page_post(
     data["media_label"] = _media_bind_label(media)
 
     media_list, history = await _page_data(db, user)
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
 
     return templates.TemplateResponse(
         request=request,
@@ -423,7 +423,7 @@ async def ocr_verify_form(
     ocr_result = extract_seal_tag_from_photo(photo_bytes)
 
     media_list, history = await _page_data(db, user)
-    llm_config = await get_active_llm_config(db, user.id)
+    llm_config = await get_active_llm_config(db, user.id, "vision")
 
     return templates.TemplateResponse(
         request=request,

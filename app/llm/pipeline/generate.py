@@ -8,7 +8,6 @@ import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.llm import client, context_builder, validator
@@ -404,26 +403,7 @@ async def generate_weekly_tasks(
 async def get_active_llm_config(
     db: AsyncSession, user_id: uuid.UUID, capability: str = "text"
 ) -> LLMProviderConfig | None:
-    """Resolve the user's selected capability, with legacy active-config fallback."""
-    from app.models.llm_catalog import LLMUserSelection
+    """Compatibility wrapper for the portal/personal capability resolver."""
+    from app.llm.resolver import resolve_llm_config
 
-    selection = await db.scalar(
-        select(LLMUserSelection).where(
-            LLMUserSelection.user_id == user_id,
-            LLMUserSelection.capability == capability,
-        )
-    )
-    if selection and selection.user_config_id:
-        return await db.scalar(
-            select(LLMProviderConfig).where(
-                LLMProviderConfig.id == selection.user_config_id,
-                LLMProviderConfig.user_id == user_id,
-            )
-        )
-    result = await db.execute(
-        select(LLMProviderConfig).where(
-            LLMProviderConfig.user_id == user_id,
-            LLMProviderConfig.is_active,
-        )
-    )
-    return result.scalars().first()
+    return await resolve_llm_config(db, user_id, capability)
