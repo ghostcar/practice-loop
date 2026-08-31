@@ -35,9 +35,7 @@ async def test_personal_selection_wins_for_capability(db_session: AsyncSession, 
 
 
 @pytest.mark.asyncio
-async def test_portal_selection_uses_matching_personal_credentials(
-    db_session: AsyncSession, test_user
-):
+async def test_portal_selection_uses_matching_personal_credentials(db_session: AsyncSession, test_user):
     provider = LLMGlobalProvider(name="Portal", api_base_url="https://portal.example/v1")
     db_session.add(provider)
     await db_session.flush()
@@ -66,9 +64,7 @@ async def test_portal_selection_uses_matching_personal_credentials(
 
 
 @pytest.mark.asyncio
-async def test_portal_selection_does_not_read_another_users_credentials(
-    db_session: AsyncSession, test_user
-):
+async def test_portal_selection_does_not_read_another_users_credentials(db_session: AsyncSession, test_user):
     provider = LLMGlobalProvider(name="Private Portal", api_base_url="https://private.example/v1")
     db_session.add(provider)
     await db_session.flush()

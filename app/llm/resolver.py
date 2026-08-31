@@ -79,20 +79,24 @@ async def resolve_llm_config(
                 # Portal metadata selects the provider; credentials remain
                 # personal and must be explicitly attached by the user.
                 return await db.scalar(
-                    select(LLMProviderConfig).where(
+                    select(LLMProviderConfig)
+                    .where(
                         LLMProviderConfig.user_id == user_id,
                         LLMProviderConfig.api_base_url == provider.api_base_url,
-                    ).order_by(LLMProviderConfig.is_active.desc(), LLMProviderConfig.created_at.desc())
+                    )
+                    .order_by(LLMProviderConfig.is_active.desc(), LLMProviderConfig.created_at.desc())
                 )
         if selection.portal_provider_id:
             # Env-backed portal provider: use the deployment key directly.
             return _portal_config_from_env(selection.portal_provider_id, selection.model_name)
 
     legacy = await db.scalar(
-        select(LLMProviderConfig).where(
+        select(LLMProviderConfig)
+        .where(
             LLMProviderConfig.user_id == user_id,
             LLMProviderConfig.is_active.is_(True),
-        ).order_by(LLMProviderConfig.created_at.desc())
+        )
+        .order_by(LLMProviderConfig.created_at.desc())
     )
     if legacy is not None:
         return legacy

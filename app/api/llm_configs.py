@@ -144,11 +144,13 @@ async def list_provider_models(
         if global_provider is None:
             raise HTTPException(status_code=404, detail="Provider not found")
         result = await db.execute(
-            select(LLMGlobalModel).where(
+            select(LLMGlobalModel)
+            .where(
                 LLMGlobalModel.provider_id == provider_uuid,
                 LLMGlobalModel.enabled,
                 (LLMGlobalModel.supports_vision if capability == "vision" else LLMGlobalModel.supports_text),
-            ).order_by(LLMGlobalModel.model_name)
+            )
+            .order_by(LLMGlobalModel.model_name)
         )
         return {"models": [{"id": str(model.id), "name": model.model_name} for model in result.scalars().all()]}
 
@@ -378,9 +380,7 @@ async def update_llm_config(
 
     # When credentials or model change, re-verify the connection first.
     credentials_changed = (
-        (base_url and base_url != config.api_base_url)
-        or bool(new_key)
-        or (model and model != config.model_name)
+        (base_url and base_url != config.api_base_url) or bool(new_key) or (model and model != config.model_name)
     )
     if credentials_changed:
         try:

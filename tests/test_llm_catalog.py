@@ -33,9 +33,7 @@ async def test_models_are_filtered_by_capability(auth_client: AsyncClient, db_se
 
 
 @pytest.mark.asyncio
-async def test_user_selection_accepts_only_catalog_model(
-    auth_client: AsyncClient, db_session: AsyncSession, test_user
-):
+async def test_user_selection_accepts_only_catalog_model(auth_client: AsyncClient, db_session: AsyncSession, test_user):
     provider = LLMGlobalProvider(name="Catalog2", api_base_url="https://example.test/v1")
     db_session.add(provider)
     await db_session.flush()
@@ -68,9 +66,7 @@ async def test_user_selection_accepts_only_catalog_model(
 
 
 @pytest.mark.asyncio
-async def test_selection_cannot_use_another_users_config(
-    auth_client: AsyncClient, db_session: AsyncSession, test_user
-):
+async def test_selection_cannot_use_another_users_config(auth_client: AsyncClient, db_session: AsyncSession, test_user):
     other_config = LLMProviderConfig(
         user_id=uuid.UUID("00000000-0000-0000-0000-000000000099"),
         provider_name="Other",
@@ -90,15 +86,11 @@ async def test_selection_cannot_use_another_users_config(
         follow_redirects=False,
     )
     assert response.status_code == 404
-    assert await db_session.scalar(
-        select(LLMUserSelection).where(LLMUserSelection.user_id == test_user.id)
-    ) is None
+    assert await db_session.scalar(select(LLMUserSelection).where(LLMUserSelection.user_id == test_user.id)) is None
 
 
 @pytest.mark.asyncio
-async def test_byok_models_endpoint_requires_ownership(
-    auth_client: AsyncClient, db_session: AsyncSession
-):
+async def test_byok_models_endpoint_requires_ownership(auth_client: AsyncClient, db_session: AsyncSession):
     other_config = LLMProviderConfig(
         user_id=uuid.UUID("00000000-0000-0000-0000-000000000099"),
         provider_name="Other2",
