@@ -140,7 +140,12 @@
  <!-- Capability selections -->
  <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 mb-6">
  <h2 class="text-lg font-semibold text-[color:var(--text)] mb-1">LLM capability selection</h2>
- <p class="text-sm text-[color:var(--text-secondary)] mb-4">Choose separate providers and models for text and image processing.</p>
+ <p class="text-sm text-[color:var(--text-secondary)] mb-4">Choose separate providers and models for text and image processing. Chat and vision may use different providers.</p>
+ {% if personal_llm_sections %}
+ <div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-sm text-amber-900 dark:text-amber-200" role="note">Personal providers are enabled only for: {{ personal_llm_sections|join(', ') }}. Portal provider usage may be billable.</div>
+ {% else %}
+ <div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-sm text-amber-900 dark:text-amber-200" role="note">Personal providers are disabled by portal policy. Portal provider usage may be billable.</div>
+ {% endif %}
  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
  {% for capability, label in [('text', 'Text generation'), ('vision', 'Image processing')] %}
  <form action="/llm-configs/select" method="post" class="rounded-xl border border-[color:var(--border)] p-4 space-y-3">
@@ -151,16 +156,20 @@
  <select name="global_provider_id" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" data-models-target="models-{{ capability }}" required>
  <option value="">Select provider</option>
  {% for provider in global_providers %}
- <option value="{{ provider.id }}">{{ provider.name }}</option>
+ <option value="global:{{ provider.id }}">{{ provider.name }} (portal catalog)</option>
  {% endfor %}
  {% for provider in portal_providers %}
  <option value="portal:{{ provider.name }}">{{ provider.name }} (portal)</option>
+ {% endfor %}
+ {% for cfg in configs %}
+ <option value="personal:{{ cfg.id }}">{{ cfg.provider_name }} (personal)</option>
  {% endfor %}
  </select></label>
  <label class="block text-xs text-[color:var(--text-secondary)]">Model
  <select id="models-{{ capability }}" name="model_name" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" required>
  <option value="">Select provider first</option>
  </select></label>
+ <p class="text-xs text-[color:var(--text-muted)]">Portal providers are deployment-managed. Personal providers are available only in sections enabled by the deployment policy. Some portal providers may charge for usage.</p>
  <button type="submit" class="px-3 py-2 rounded-lg pl-accent-bg text-white text-xs font-medium">Save selection</button>
  </form>
  {% endfor %}
@@ -173,11 +182,13 @@
      target.innerHTML = '<option value="">Loading models…</option>';
      try {
        const providerValue = providerSelect.value;
+       const queryName = providerValue.startsWith('personal:') ? 'user_config_id' : 'provider_id';
        if (providerValue.startsWith('portal:')) {
          target.innerHTML = '<option value="">Portal models are deployment-managed</option>';
          return;
        }
-       const response = await fetch('/llm-configs/models?provider_id=' + encodeURIComponent(providerValue) + '&capability=' + encodeURIComponent(providerSelect.closest('form').querySelector('[name="capability"]').value));
+       const rawId = providerValue.replace(/^[^:]+:/, '');
+       const response = await fetch('/llm-configs/models?' + queryName + '=' + encodeURIComponent(rawId) + '&capability=' + encodeURIComponent(providerSelect.closest('form').querySelector('[name="capability"]').value));
        const data = await response.json();
        target.innerHTML = data.models.map(function (model) {
          return '<option value="' + model.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '">' + model.name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</option>';

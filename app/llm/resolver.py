@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.llm.policy import is_personal_allowed
 from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider, LLMUserSelection
 from app.models.llm_config import LLMProviderConfig
 
@@ -15,6 +16,7 @@ async def resolve_llm_config(
     db: AsyncSession,
     user_id: uuid.UUID,
     capability: str = "text",
+    section: str = "assistant",
 ) -> LLMProviderConfig | None:
     """Return a runtime config for the user's personal or portal selection.
 
@@ -33,7 +35,7 @@ async def resolve_llm_config(
         )
     )
     if selection is not None:
-        if selection.user_config_id:
+        if selection.user_config_id and is_personal_allowed(section):
             return await db.scalar(
                 select(LLMProviderConfig).where(
                     LLMProviderConfig.id == selection.user_config_id,

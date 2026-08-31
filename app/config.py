@@ -123,6 +123,10 @@ class Settings(BaseSettings):
     # "api_key":"...","models":[{"name":"...","vision":true}]}]
     portal_llm_providers_json: str = "[]"
 
+    # Sections where personal BYOK providers are allowed. Empty means none;
+    # JSON array, e.g. ["tasks", "training"]. Portal remains available everywhere.
+    personal_llm_sections_json: str = "[]"
+
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = _PLACEHOLDER_TG_SECRET

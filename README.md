@@ -273,7 +273,7 @@ Modes:
 - **abstract**: opaque IDs only (for strict content-filtering providers)
 
 Provider selection:
-- Each user can select separate `text` and `vision` providers/models at `/llm-configs/`.
+- Each user can select separate `text` and `vision` providers/models at `/llm-configs/`; chat and image processing may use different providers. Personal BYOK usage is controlled per product section by deployment policy.
 - The portal model pool is shared metadata managed by administrators; optional portal credentials are deployment secrets from `PORTAL_LLM_PROVIDERS_JSON`, while personal provider connections remain user-owned and isolated. See [`docs/LLM_CONFIGURATION.md`](docs/LLM_CONFIGURATION.md).
 - Personal BYOK providers remain private; their model list is fetched from the provider's OpenAI-compatible `models.list()` endpoint.
 - The admin pool exposes only provider metadata and capability-tagged models; API keys are never stored in the global catalog.

@@ -21,14 +21,19 @@ class PortalProvider:
     api_key: str | None
     models: tuple[PortalModel, ...]
     supports_text: bool = True
+    sections: tuple[str, ...] = ()
+    paid_service: bool = True
+
+    def supports(self, capability: str, section: str | None = None) -> bool:
+        if capability == "text" and not self.supports_text:
+            return False
+        if capability == "vision" and not any(model.supports_vision for model in self.models):
+            return False
+        return not self.sections or section is None or section in self.sections
 
 
 def get_portal_providers() -> tuple[PortalProvider, ...]:
-    """Parse and validate the env-backed portal provider pool.
-
-    Invalid entries are ignored rather than breaking application startup; the
-    admin can correct the secret configuration and restart the deployment.
-    """
+    """Parse and validate the env-backed portal provider pool."""
     try:
         raw = json.loads(settings.portal_llm_providers_json or "[]")
     except (TypeError, ValueError):
@@ -55,6 +60,7 @@ def get_portal_providers() -> tuple[PortalProvider, ...]:
                         supports_vision=bool(model.get("vision", False)),
                     )
                 )
+        sections = tuple(str(section).strip() for section in item.get("sections", []) if str(section).strip())
         providers.append(
             PortalProvider(
                 name=name,
@@ -62,6 +68,8 @@ def get_portal_providers() -> tuple[PortalProvider, ...]:
                 api_key=str(item.get("api_key") or "") or None,
                 models=tuple(models),
                 supports_text=bool(item.get("supports_text", True)),
+                sections=sections,
+                paid_service=bool(item.get("paid_service", True)),
             )
         )
     return tuple(providers)

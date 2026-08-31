@@ -16,7 +16,17 @@ Selections are stored independently for:
 - `text` — generation, planning, insights, and text-oriented assistants;
 - `vision` — image verification and image processing.
 
-The user selects the provider and model in `/llm-configs/`. Models from a database-backed portal provider are limited to enabled catalog entries; personal models are fetched from that user's provider `models.list()` endpoint.
+The user selects the provider and model in `/llm-configs/`. Models from a database-backed portal provider are limited to enabled catalog entries; personal models are fetched from that user's provider `models.list()` endpoint. Text and vision selections are independent, so chat can use provider A while image processing uses provider B.
+
+## Section policy
+
+Personal BYOK access is disabled by default. Configure allowed product sections with `PERSONAL_LLM_SECTIONS_JSON`, for example:
+
+```dotenv
+PERSONAL_LLM_SECTIONS_JSON='["tasks","training","insights"]'
+```
+
+Sections not listed in this policy must use portal providers. The settings page shows the policy state and warns that portal usage may be billable.
 
 ## Portal providers in `.env`
 

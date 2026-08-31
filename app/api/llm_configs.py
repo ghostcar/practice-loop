@@ -74,10 +74,10 @@ async def llm_configs_page(
     global_providers = list(global_result.scalars().all())
     # Environment-backed portal providers are read-only metadata. Credentials
     # are never sent to templates or API responses.
+    from app.llm.policy import available_sections, personal_llm_sections
     from app.llm.portal import get_portal_providers
 
     portal_providers = get_portal_providers()
-    global_providers.extend(portal_providers)
     selection_result = await db.execute(select(LLMUserSelection).where(LLMUserSelection.user_id == user.id))
     selections = {selection.capability: selection for selection in selection_result.scalars().all()}
 
@@ -93,6 +93,8 @@ async def llm_configs_page(
             "configs": configs_data,
             "global_providers": global_providers,
             "portal_providers": portal_providers,
+            "llm_sections": available_sections(),
+            "personal_llm_sections": personal_llm_sections(),
             "selections": selections,
         },
     )
@@ -168,6 +170,8 @@ async def select_llm_capability(
         raise HTTPException(status_code=400, detail="A provider is required")
     if global_provider_id and user_config_id:
         raise HTTPException(status_code=400, detail="Select either a global or personal provider")
+    if global_provider_id and str(global_provider_id).startswith("portal:"):
+        raise HTTPException(status_code=400, detail="Portal provider selection must use a catalog ID")
     if global_provider_id:
         provider = await db.scalar(
             select(LLMGlobalProvider).where(
