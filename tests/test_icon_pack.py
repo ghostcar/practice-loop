@@ -112,6 +112,6 @@ def test_no_emoji_icons_in_js() -> None:
     for path in (TEMPLATES_DIR.parent / "static" / "js").rglob("*.js"):
         if EMOJI_RE.search(path.read_text(encoding="utf-8")):
             offenders.append(str(path))
-    assert set(offenders) == LEGACY_EMOJI_JS_FILES, (
-        f"emoji JS allowlist drift: actual={offenders}, expected={sorted(LEGACY_EMOJI_JS_FILES)}"
-    )
+    assert (
+        set(offenders) == LEGACY_EMOJI_JS_FILES
+    ), f"emoji JS allowlist drift: actual={offenders}, expected={sorted(LEGACY_EMOJI_JS_FILES)}"
