@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "092"
-down_revision: str | None = "091"
+revision: str = "092_llm_catalog"
+down_revision: str | None = "091_add_totp_2fa"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
