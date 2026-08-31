@@ -16,6 +16,7 @@ async def test_llm_configs_page_is_registered(auth_client: AsyncClient):
     response = await auth_client.get("/llm-configs/", follow_redirects=False)
     assert response.status_code == 200
     assert "Add Provider" in response.text
+    assert 'href="/admin"' not in response.text
 
 
 @pytest.mark.asyncio
