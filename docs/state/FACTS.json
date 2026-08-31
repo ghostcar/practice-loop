@@ -12,12 +12,12 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": "sha256:1a9da98c90f9e1127ebc6d6bddf98ac5193187b1c656c0dcc430fa7aec46255c",
     "dirty": true,
     "head": "794e7213c57b451fe1fbce376ed7d1a0ab5baec4"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
   "schema_version": "memory/v2alpha1",
-  "tests": []
+  "tests": [],
+  "notes": ["LLM catalog migration 092 and text/vision user selections are present; regenerate this manifest after commit."]
 }

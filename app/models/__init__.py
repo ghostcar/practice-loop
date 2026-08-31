@@ -30,6 +30,7 @@ from app.models.ds_suite import (  # noqa: E402
 from app.models.duels import UserDuel  # noqa: E402
 from app.models.dynamic import DynamicDefinition, DynamicRun  # noqa: E402
 from app.models.equipment_maintenance import EquipmentMaintenanceLog  # noqa: E402
+from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider, LLMUserSelection  # noqa: E402
 from app.models.media_exposure import MediaExposureDrop  # noqa: E402
 from app.models.media_vault import OneTimeMediaToken  # noqa: E402
 from app.models.monetization import (  # noqa: E402
@@ -54,6 +55,9 @@ from app.models.quest import Quest, UserQuest  # noqa: E402
 
 __all__ = [
     "Base",
+    "LLMGlobalModel",
+    "LLMGlobalProvider",
+    "LLMUserSelection",
     "AdaptiveProgram",
     "AdaptiveProgramStep",
     "AgencyLevel",

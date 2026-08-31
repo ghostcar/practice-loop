@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="animate-fade-in space-y-6">
+  <div>
+    <h1 class="text-3xl font-bold text-[color:var(--text)]">Global LLM pool</h1>
+    <p class="mt-1 text-sm text-[color:var(--text-secondary)]">Manage providers and the models visible to users.</p>
+  </div>
+  <form action="/admin/llm-pool/providers" method="post" class="pl-surface rounded-2xl border border-[color:var(--border)] p-5 grid gap-3 md:grid-cols-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+    <input name="name" required placeholder="Provider name" class="rounded-lg border border-[color:var(--border)] pl-surface-soft px-3 py-2 text-[color:var(--text)]">
+    <input name="api_base_url" required placeholder="https://api.example/v1" class="rounded-lg border border-[color:var(--border)] pl-surface-soft px-3 py-2 text-[color:var(--text)]">
+    <label class="flex items-center gap-2 text-sm text-[color:var(--text)]"><input type="checkbox" name="supports_text" value="true" checked> Text</label>
+    <label class="flex items-center gap-2 text-sm text-[color:var(--text)]"><input type="checkbox" name="supports_vision" value="true"> Vision</label>
+    <button class="rounded-lg pl-accent-bg px-4 py-2 text-sm font-medium text-white md:col-span-4">Add provider</button>
+  </form>
+  {% for provider in providers %}
+  <section class="pl-surface rounded-2xl border border-[color:var(--border)] p-5">
+    <div class="flex items-center justify-between gap-4">
+      <div><h2 class="font-semibold text-[color:var(--text)]">{{ provider.name }}</h2><p class="text-xs text-[color:var(--text-muted)]">{{ provider.api_base_url }}</p></div>
+      <span class="text-xs text-[color:var(--text-secondary)]">{% if provider.supports_text %}text{% endif %}{% if provider.supports_text and provider.supports_vision %} · {% endif %}{% if provider.supports_vision %}vision{% endif %}</span>
+    </div>
+    <div class="mt-4 space-y-2">
+      {% for model in provider.models %}<div class="flex items-center justify-between rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--text)]"><span>{{ model.model_name }}</span><span class="text-xs text-[color:var(--text-muted)]">{% if model.supports_text %}text {% endif %}{% if model.supports_vision %}vision{% endif %}</span></div>{% endfor %}
+    </div>
+    <form action="/admin/llm-pool/providers/{{ provider.id }}/models" method="post" class="mt-4 flex flex-wrap gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+      <input name="model_name" required placeholder="Model ID from provider" class="flex-1 rounded-lg border border-[color:var(--border)] pl-surface-soft px-3 py-2 text-sm text-[color:var(--text)]">
+      <label class="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]"><input type="checkbox" name="supports_text" value="true" checked> text</label>
+      <label class="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]"><input type="checkbox" name="supports_vision" value="true"> vision</label>
+      <button class="rounded-lg border border-[color:var(--border)] px-3 py-2 text-xs text-[color:var(--text)]">Add model</button>
+    </form>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

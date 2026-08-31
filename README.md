@@ -255,7 +255,9 @@ app/
 | `ManagedSubmissive` / `CapabilityGrant` | D/s delegation model (ADR-129) |
 | `BodyCycleLog` | Health cycle + daily check-in data |
 | `PromoCode` | Promotional codes for tier grants |
-| `LLMProviderConfig` | BYOK provider: URL, key (encrypted), model, usage stats |
+| `LLMProviderConfig` | User-owned BYOK provider: URL, encrypted key, legacy/default model, usage stats |
+| `LLMGlobalProvider` / `LLMGlobalModel` | Admin-managed provider pool and capability-tagged model catalog |
+| `LLMUserSelection` | Per-user `text` / `vision` provider and model selection |
 
 ### LLM Pipeline
 
@@ -269,6 +271,12 @@ Catalog (opt-in) → Context Builder → LLM → JSON Repair → Validator → A
 Modes:
 - **full** (default): LLM sees practice names, descriptions, categories
 - **abstract**: opaque IDs only (for strict content-filtering providers)
+
+Provider selection:
+- Each user can select separate `text` and `vision` providers/models at `/llm-configs/`.
+- Personal BYOK providers remain private; their model list is fetched from the provider's OpenAI-compatible `models.list()` endpoint.
+- The admin pool exposes only provider metadata and capability-tagged models; API keys are never stored in the global catalog.
+- Runtime callers should resolve the relevant capability selection before invoking text or image pipelines; legacy active-config fallback remains for compatibility.
 
 ---
 

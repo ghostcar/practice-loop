@@ -18,17 +18,21 @@
  <h1 class="text-3xl font-bold text-[color:var(--text)]">{{ t.llm_providers_title }}</h1>
  <p class="text-[color:var(--text-secondary)] mt-1">{{ t.llm_subtitle }}</p>
  </div>
+ {% if user and user.role == 'admin' %}
  <a href="/admin"
  class="px-4 py-2 rounded-xl border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] text-sm font-medium transition-colors">
  ← Admin
  </a>
+ {% endif %}
  </div>
 
  <!-- Existing configs -->
  {% set connection = request.query_params.get('connection') %}
  {% if connection %}
- <div class="mb-4 rounded-xl border p-3 text-sm {{ 'border-emerald-700 text-emerald-700 dark:text-emerald-400' if connection == 'ok' else 'border-red-700 text-red-700 dark:text-red-400' }}" role="status">
-     {{ 'Connection successful. The provider can be saved.' if connection == 'ok' else 'Connection failed. Nothing was saved.' }}
+ <div class="mb-4 rounded-xl border p-3 text-sm {{ 'border-emerald-700 text-emerald-700 dark:text-emerald-400' if connection in ('ok', 'saved') else 'border-red-700 text-red-700 dark:text-red-400' }}" role="status" aria-live="polite">
+     {% if connection == 'ok' %}{{ t.llm_check_ok }}
+     {% elif connection == 'saved' %}{{ t.llm_saved }}
+     {% else %}{{ t.llm_check_failed }}{% endif %}
  </div>
  {% endif %}
  <div class="space-y-4 mb-8">
@@ -46,33 +50,13 @@
  <div class="text-sm text-[color:var(--text-secondary)] space-y-0.5">
  <div>URL: <code class="text-xs pl-surface-soft px-1.5 py-0.5 rounded">{{ cfg.api_base_url }}</code></div>
  <div>Model: <span class="font-mono text-xs">{{ cfg.model_name }}</span></div>
- <div>Mode: <span class="font-mono text-xs">{{ cfg.llm_mode }}</span></div>
+ <div>Mode: <span class="font-mono text-xs">{{ 'Full' if cfg.llm_mode == 'full' else 'Abstract' }}</span></div>
  <div>Store raw responses: <span class="font-mono text-xs">{{ "Yes (30-day TTL)" if cfg.store_raw_response else "No (privacy mode)" }}</span></div>
  <div>Key: <span class="font-mono text-xs">{{ cfg.api_key_masked or '(not set)' }}</span></div>
  <div>Usage: <span class="font-mono text-xs">{{ cfg.total_tokens }} tokens · ${{ "%.4f" % cfg.total_cost }}</span></div>
  </div>
  </div>
  <div class="flex items-center gap-2 flex-shrink-0">
- <form action="/llm-configs/{{ cfg.id }}/update" method="post">
- <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
- <div class="flex items-center gap-3 mr-1">
- <select name="llm_mode" title="{{ t.llm_mode_label }}"
- class="text-xs rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
- <option value="full" {% if cfg.llm_mode == 'full' %}selected{% endif %}>full</option>
- <option value="abstract" {% if cfg.llm_mode == 'abstract' %}selected{% endif %}>abstract</option>
- </select>
- <label class="flex items-center gap-1.5 cursor-pointer text-xs text-[color:var(--text-secondary)]">
- <input type="checkbox" name="store_raw_response" value="1"
- {% if cfg.store_raw_response %}checked{% endif %}
- class="rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]">
- raw
- </label>
- <button type="submit"
- class="px-3 py-1.5 rounded-lg pl-surface-soft text-[color:var(--text-secondary)] text-xs font-medium hover:bg-[color:var(--surface-soft)] transition-colors">
- {{ t.llm_save }}
- </button>
- </div>
- </form>
  {% if not cfg.is_active %}
  <form action="/llm-configs/{{ cfg.id }}/set-active" method="post">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -82,6 +66,55 @@
  </button>
  </form>
  {% endif %}
+ <details class="relative">
+ <summary class="cursor-pointer list-none px-3 py-1.5 rounded-lg pl-surface-soft text-[color:var(--text-secondary)] text-xs font-medium hover:bg-[color:var(--surface-soft)] transition-colors">{{ t.llm_edit }}</summary>
+ <div class="absolute right-0 mt-2 w-80 z-20 rounded-2xl border border-[color:var(--border)] pl-surface shadow-2xl p-4">
+ <h4 class="text-sm font-semibold text-[color:var(--text)] mb-3">{{ t.llm_edit_title }}</h4>
+ <form action="/llm-configs/{{ cfg.id }}/update" method="post" class="space-y-3">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <div>
+ <label class="block text-xs font-medium text-[color:var(--text)] mb-1">{{ t.llm_edit_provider_name }}</label>
+ <input name="provider_name" value="{{ cfg.provider_name }}"
+ class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ </div>
+ <div>
+ <label class="block text-xs font-medium text-[color:var(--text)] mb-1">{{ t.llm_edit_base_url }}</label>
+ <input name="api_base_url" value="{{ cfg.api_base_url }}"
+ class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ </div>
+ <div>
+ <label class="block text-xs font-medium text-[color:var(--text)] mb-1">{{ t.llm_edit_model }}</label>
+ <input name="model_name" value="{{ cfg.model_name }}"
+ class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ </div>
+ <div>
+ <label class="block text-xs font-medium text-[color:var(--text)] mb-1">{{ t.llm_edit_key }}</label>
+ <input name="api_key" type="password" placeholder="{{ t.llm_edit_keep_key }}"
+ class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ </div>
+ <div>
+ <label class="block text-xs font-medium text-[color:var(--text)] mb-1">{{ t.llm_mode_label }}</label>
+ <select name="llm_mode"
+ class="w-full px-3 py-2 rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
+ <option value="full" {% if cfg.llm_mode == 'full' %}selected{% endif %}>Full — {{ t.llm_mode_full }}</option>
+ <option value="abstract" {% if cfg.llm_mode == 'abstract' %}selected{% endif %}>Abstract — {{ t.llm_mode_abstract }}</option>
+ </select>
+ </div>
+ <label class="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+ <input type="checkbox" name="store_raw_response" value="1"
+ {% if cfg.store_raw_response %}checked{% endif %}
+ class="rounded border-[color:var(--border)] text-indigo-600 dark:text-indigo-400 focus:ring-[color:var(--focus)]">
+ {{ t.llm_store_raw_label }}
+ </label>
+ <div class="flex gap-2 pt-1">
+ <button type="submit"
+ class="flex-1 px-3 py-2 rounded-lg pl-accent-bg hover:bg-[color:var(--accent-hover)] text-white text-xs font-medium transition-colors">
+ {{ t.llm_save }}
+ </button>
+ </div>
+ </form>
+ </div>
+ </details>
  <form action="/llm-configs/{{ cfg.id }}/delete" method="post"
  data-confirm="Delete {{ cfg.provider_name }} config?">
  <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -103,6 +136,50 @@
  </div>
  {% endif %}
  </div>
+
+ <!-- Capability selections -->
+ <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 mb-6">
+ <h2 class="text-lg font-semibold text-[color:var(--text)] mb-1">LLM capability selection</h2>
+ <p class="text-sm text-[color:var(--text-secondary)] mb-4">Choose separate providers and models for text and image processing.</p>
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+ {% for capability, label in [('text', 'Text generation'), ('vision', 'Image processing')] %}
+ <form action="/llm-configs/select" method="post" class="rounded-xl border border-[color:var(--border)] p-4 space-y-3">
+ <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+ <input type="hidden" name="capability" value="{{ capability }}">
+ <h3 class="font-medium text-[color:var(--text)]">{{ label }}</h3>
+ <label class="block text-xs text-[color:var(--text-secondary)]">Provider
+ <select name="global_provider_id" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" data-models-target="models-{{ capability }}" required>
+ <option value="">Select provider</option>
+ {% for provider in global_providers %}
+ <option value="{{ provider.id }}">{{ provider.name }}</option>
+ {% endfor %}
+ </select></label>
+ <label class="block text-xs text-[color:var(--text-secondary)]">Model
+ <select id="models-{{ capability }}" name="model_name" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" required>
+ <option value="">Select provider first</option>
+ </select></label>
+ <button type="submit" class="px-3 py-2 rounded-lg pl-accent-bg text-white text-xs font-medium">Save selection</button>
+ </form>
+ {% endfor %}
+ </div>
+ </div>
+ <script>
+ document.querySelectorAll('[data-models-target]').forEach(function (providerSelect) {
+   providerSelect.addEventListener('change', async function () {
+     const target = document.getElementById(providerSelect.dataset.modelsTarget);
+     target.innerHTML = '<option value="">Loading models…</option>';
+     try {
+       const response = await fetch('/llm-configs/models?provider_id=' + encodeURIComponent(providerSelect.value) + '&capability=' + encodeURIComponent(providerSelect.closest('form').querySelector('[name="capability"]').value));
+       const data = await response.json();
+       target.innerHTML = data.models.map(function (model) {
+         return '<option value="' + model.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '">' + model.name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</option>';
+       }).join('') || '<option value="">No models available</option>';
+     } catch (error) {
+       target.innerHTML = '<option value="">Unable to load models</option>';
+     }
+   });
+ });
+ </script>
 
  <!-- Add new config -->
  <div class="pl-surface rounded-2xl border border-[color:var(--border)] p-6">
@@ -138,8 +215,8 @@
  <label class="block text-sm font-medium text-[color:var(--text)] mb-1">{{ t.llm_mode_label }}</label>
  <select name="llm_mode"
  class="w-full px-4 py-2.5 rounded-xl border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--focus)]">
- <option value="full">full — {{ t.llm_mode_full }}</option>
- <option value="abstract">abstract — {{ t.llm_mode_abstract }}</option>
+ <option value="full">Full — {{ t.llm_mode_full }}</option>
+ <option value="abstract">Abstract — {{ t.llm_mode_abstract }}</option>
  </select>
  </div>
  <div class="sm:col-span-2">

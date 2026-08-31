@@ -41,18 +41,23 @@ def get_openai_client(base_url: str, api_key: str | None = None) -> AsyncOpenAI:
     return AsyncOpenAI(base_url=base_url, api_key=key, timeout=60.0)
 
 
-async def check_llm_connection(base_url: str, api_key: str | None, model_name: str) -> None:
-    """Verify an OpenAI-compatible provider before storing its credentials."""
+async def list_llm_models(base_url: str, api_key: str | None) -> list[str]:
+    """Return model IDs advertised by an OpenAI-compatible provider."""
     client = get_openai_client(base_url.strip().rstrip("/"), api_key)
     try:
         models = await client.models.list()
-        available = {item.id for item in models.data}
-        if available and model_name not in available:
-            raise ValueError(f"Model '{model_name}' is not available")
+        return sorted({item.id for item in models.data})
     except Exception as exc:
         raise RuntimeError("LLM connection check failed") from exc
     finally:
         await client.close()
+
+
+async def check_llm_connection(base_url: str, api_key: str | None, model_name: str) -> None:
+    """Verify an OpenAI-compatible provider before storing its credentials."""
+    available = await list_llm_models(base_url, api_key)
+    if available and model_name not in available:
+        raise ValueError(f"Model '{model_name}' is not available")
 
 
 async def call_llm(

@@ -6,12 +6,14 @@ import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import require_admin
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider
 from app.models.user import User
 from app.seed import seed_llm_presets
 from app.seed_body_parts import seed_body_parts
@@ -51,6 +53,73 @@ async def admin_page(request: Request, user: User = Depends(require_admin)):
             "active_nav": "admin",
         },
     )
+
+
+@router.get("/llm-pool", response_class=HTMLResponse)
+async def admin_llm_pool(
+    request: Request,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    providers = (await db.execute(select(LLMGlobalProvider).order_by(LLMGlobalProvider.name))).scalars().all()
+    return templates.TemplateResponse(
+        request,
+        "admin_llm_pool.html",
+        {
+            "request": request,
+            "t": get_translations(detect_locale(request, user.locale)),
+            "user": user,
+            "locale": detect_locale(request, user.locale),
+            "theme": detect_theme(user.theme),
+            "active_nav": "admin",
+            "providers": providers,
+        },
+    )
+
+
+@router.post("/llm-pool/providers")
+async def admin_create_llm_provider(
+    name: str = Form(...),
+    api_base_url: str = Form(...),
+    supports_text: bool = Form(default=True),
+    supports_vision: bool = Form(default=False),
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    db.add(
+        LLMGlobalProvider(
+            name=name.strip(),
+            api_base_url=api_base_url.strip(),
+            supports_text=supports_text,
+            supports_vision=supports_vision,
+        )
+    )
+    await db.flush()
+    return RedirectResponse(url="/admin/llm-pool", status_code=303)
+
+
+@router.post("/llm-pool/providers/{provider_id}/models")
+async def admin_add_llm_model(
+    provider_id: uuid.UUID,
+    model_name: str = Form(...),
+    supports_text: bool = Form(default=True),
+    supports_vision: bool = Form(default=False),
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    provider = await db.scalar(select(LLMGlobalProvider).where(LLMGlobalProvider.id == provider_id))
+    if provider is None:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    db.add(
+        LLMGlobalModel(
+            provider_id=provider.id,
+            model_name=model_name.strip(),
+            supports_text=supports_text,
+            supports_vision=supports_vision,
+        )
+    )
+    await db.flush()
+    return RedirectResponse(url="/admin/llm-pool", status_code=303)
 
 
 @router.post("/seed-entities")
