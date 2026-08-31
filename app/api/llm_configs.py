@@ -186,6 +186,14 @@ async def select_llm_capability(
     if sum(sources) != 1:
         raise HTTPException(status_code=400, detail="Select exactly one provider source")
     if user_config_id:
+        owned = await db.scalar(
+            select(LLMProviderConfig.id).where(
+                LLMProviderConfig.id == user_config_id,
+                LLMProviderConfig.user_id == user.id,
+            )
+        )
+        if owned is None:
+            raise HTTPException(status_code=404, detail="Config not found")
         from app.llm.policy import is_personal_allowed
 
         if not is_personal_allowed("assistant"):
