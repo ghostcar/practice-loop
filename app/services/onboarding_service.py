@@ -1,9 +1,10 @@
 """Onboarding Service — business logic for new-user setup wizard.
 
-After registration, new users go through a 3-step onboarding:
-  1. LLM Provider (link to /llm-configs/)
+After registration, new users go through a 4-step onboarding:
+  1. AI participation mode (none / portal / personal)
   2. Module selection (which features to enable)
-  3. Ready → complete → consent → dashboard
+  3. LLM setup (only when AI participation is not "none")
+  4. Ready → complete → consent → dashboard
 
 Tracks completion via ``user.prefs.onboarding_completed`` (JSONB, no migration).
 """
@@ -12,7 +13,7 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.prefs import PROFILE_MODULES, sanitize_prefs
+from app.prefs import AI_PARTICIPATION, PROFILE_MODULES, sanitize_prefs
 
 
 def is_onboarding_complete(raw_prefs: dict | None) -> bool:
@@ -39,6 +40,24 @@ def get_onboarding_context(user) -> dict:
             for m in PROFILE_MODULES
         ],
         "onboarding_completed": prefs.get("onboarding_completed", False),
+        "ai_participation": prefs.get("ai_participation", "portal"),
+        "ai_participation_options": [
+            {
+                "key": "none",
+                "label": _AI_PARTICIPATION_LABELS["none"],
+                "description": _AI_PARTICIPATION_DESCRIPTIONS["none"],
+            },
+            {
+                "key": "portal",
+                "label": _AI_PARTICIPATION_LABELS["portal"],
+                "description": _AI_PARTICIPATION_DESCRIPTIONS["portal"],
+            },
+            {
+                "key": "personal",
+                "label": _AI_PARTICIPATION_LABELS["personal"],
+                "description": _AI_PARTICIPATION_DESCRIPTIONS["personal"],
+            },
+        ],
     }
 
 
@@ -47,12 +66,15 @@ async def complete_onboarding(
     user,
     *,
     enabled_modules: list[str] | None = None,
+    ai_participation: str | None = None,
 ) -> None:
     """Mark onboarding as complete and persist module choices."""
     raw = sanitize_prefs(user.prefs) if hasattr(user, "prefs") else {}
     raw["onboarding_completed"] = True
     if enabled_modules is not None:
         raw["enabled_modules"] = [name for name in PROFILE_MODULES if name in enabled_modules]
+    if ai_participation is not None and ai_participation in AI_PARTICIPATION:
+        raw["ai_participation"] = ai_participation
     user.prefs = raw
     db.add(user)
     await db.flush()
@@ -63,6 +85,21 @@ def should_redirect_to_onboarding(user) -> bool:
     if not hasattr(user, "prefs"):
         return False
     return not is_onboarding_complete(user.prefs)
+
+
+# ── AI participation labels / descriptions ──
+
+_AI_PARTICIPATION_LABELS = {
+    "none": "Without AI",
+    "portal": "Portal AI (recommended)",
+    "personal": "My own key (BYOK)",
+}
+
+_AI_PARTICIPATION_DESCRIPTIONS = {
+    "none": "Manual task entry only. No auto-generation, no analysis. You can enable AI later in Settings.",
+    "portal": "Use deployment-managed providers. No key needed from you. Some may be a paid service.",
+    "personal": "Bring your own API key. Your key is encrypted and never shared. Full control over usage and cost.",
+}
 
 
 # ── Module labels / descriptions ──

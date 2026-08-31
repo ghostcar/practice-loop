@@ -7,9 +7,32 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.encryption import encrypt_api_key
 from app.llm.policy import personal_allowed_for_runtime
+from app.llm.portal import get_portal_providers
 from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider, LLMUserSelection
 from app.models.llm_config import LLMProviderConfig
+
+
+def _portal_config_from_env(portal_id: str, model_name: str) -> LLMProviderConfig | None:
+    """Build an in-memory LLMProviderConfig from an env-backed portal provider.
+
+    The env key is encrypted into ``api_key_encrypted`` so downstream callers
+    that decrypt it (call_llm) work unchanged. The object is not persisted.
+    """
+    provider = next((p for p in get_portal_providers() if p.id == portal_id), None)
+    if provider is None:
+        return None
+    cfg = LLMProviderConfig(
+        provider_name=provider.name,
+        api_base_url=provider.base_url,
+        api_key_encrypted=encrypt_api_key(provider.api_key) if provider.api_key else None,
+        model_name=model_name,
+        is_active=True,
+        llm_mode="full",
+        store_raw_response=False,
+    )
+    return cfg
 
 
 async def resolve_llm_config(
@@ -20,10 +43,13 @@ async def resolve_llm_config(
 ) -> LLMProviderConfig | None:
     """Return a runtime config for the user's personal or portal selection.
 
-    Portal catalog entries deliberately contain no credentials. Runtime uses a
-    user's BYOK credential when a personal selection exists; a portal selection
-    is therefore usable only when the user has a matching personal config for
-    that provider URL/name. Legacy active-config fallback is retained.
+    Selection precedence (per capability):
+    1. Personal BYOK config (``user_config_id``) — only when policy allows.
+    2. DB-backed global provider (``global_provider_id``) — metadata from the
+       admin catalog; credentials come from a matching personal config.
+    3. Env-backed portal provider (``portal_provider_id``) — credentials read
+       from the deployment environment; no DB row needed.
+    4. Legacy active-config fallback.
     """
     if capability not in {"text", "vision"}:
         raise ValueError("capability must be text or vision")
@@ -58,6 +84,9 @@ async def resolve_llm_config(
                         LLMProviderConfig.api_base_url == provider.api_base_url,
                     ).order_by(LLMProviderConfig.is_active.desc(), LLMProviderConfig.created_at.desc())
                 )
+        if selection.portal_provider_id:
+            # Env-backed portal provider: use the deployment key directly.
+            return _portal_config_from_env(selection.portal_provider_id, selection.model_name)
 
     legacy = await db.scalar(
         select(LLMProviderConfig).where(
@@ -68,9 +97,6 @@ async def resolve_llm_config(
     if legacy is not None:
         return legacy
 
-    # Env-backed portal providers have no DB credentials. They are surfaced as
-    # catalog options, but runtime still requires an explicit personal config.
-    # This prevents accidentally treating a global secret as a user's BYOK key.
     return None
 
 

@@ -78,11 +78,17 @@ async def onboarding_page(
 async def onboarding_complete(
     request: Request,
     modules: list[str] = Form(default=[]),
+    ai_participation: str = Form(default="portal"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Save module choices, mark onboarding complete, bootstrap catalog + LLM, proceed to consent."""
-    await complete_onboarding(db, user, enabled_modules=modules if modules else None)
+    """Save module + AI participation choices, mark onboarding complete, bootstrap catalog + LLM."""
+    await complete_onboarding(
+        db,
+        user,
+        enabled_modules=modules if modules else None,
+        ai_participation=ai_participation,
+    )
 
     # Bootstrap: seed system entities, auto-opt-in, seed LLM presets (ADR-179)
     await _bootstrap_new_user(db, user)
@@ -102,11 +108,12 @@ async def onboarding_complete(
 @router.post("/onboarding/skip")
 async def onboarding_skip(
     request: Request,
+    ai_participation: str = Form(default="portal"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Skip onboarding — mark complete with defaults."""
-    await complete_onboarding(db, user)
+    await complete_onboarding(db, user, ai_participation=ai_participation)
     await _bootstrap_new_user(db, user)
     return RedirectResponse(url="/dashboard", status_code=303)
 

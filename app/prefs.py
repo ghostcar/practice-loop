@@ -46,6 +46,12 @@ AUTO_PUBLISH_VISIBILITIES = ("relationship_only", "unlisted", "public")
 # LLM режимы (ADR-087): safe — нейтральный пересказ фактов (default);
 # expanded — рекомендации/советы/интерпретация (влияет на все LLM-блоки).
 LLM_MODES = ("safe", "expanded")
+# AI participation levels chosen at onboarding. Controls whether LLM features
+# are surfaced and which provider scope the user relies on.
+# - "none": no LLM features; manual-only task entry and no auto-analysis.
+# - "portal": use deployment-managed env providers (key in .env, not DB).
+# - "personal": bring-your-own-key; user stores an encrypted API key.
+AI_PARTICIPATION = ("none", "portal", "personal")
 PROFILE_MODULES = (
     "tracker",
     "timer",
@@ -87,6 +93,9 @@ DEFAULT_PREFS: dict[str, Any] = {
     "blur": 0,
     "theme_choice": "dark",
     "llm_mode": "safe",
+    # AI participation level (ADR-087 extension): defaults to "portal" so new
+    # users get working LLM features without immediately needing a BYOK key.
+    "ai_participation": "portal",
     # Profile-level feature activation. A newly enabled module requires its
     # durable module consent before use (ADR-104).
     "enabled_modules": list(PROFILE_MODULES),
@@ -131,6 +140,7 @@ class UserPrefs:
     blur: int = 0
     theme_choice: str = "dark"
     llm_mode: str = "safe"
+    ai_participation: str = "portal"  # none | portal | personal
     enabled_modules: list[str] = field(default_factory=lambda: list(PROFILE_MODULES))
     insights_auto: bool = False
     insights_auto_days: int = 7
@@ -218,6 +228,9 @@ def sanitize_prefs(raw: dict | None) -> dict:
     out["theme_choice"] = raw.get("theme_choice") if raw.get("theme_choice") in THEME_CHOICES else "dark"
     out["blur"] = raw.get("blur") if raw.get("blur") in BLUR_LEVELS else 0
     out["llm_mode"] = raw.get("llm_mode") if raw.get("llm_mode") in LLM_MODES else "safe"
+    out["ai_participation"] = (
+        raw.get("ai_participation") if raw.get("ai_participation") in AI_PARTICIPATION else "portal"
+    )
     requested_modules = raw.get("enabled_modules")
     if not isinstance(requested_modules, list):
         requested_modules = list(PROFILE_MODULES)
