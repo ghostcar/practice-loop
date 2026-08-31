@@ -62,5 +62,8 @@ class LLMUserSelection(Base):
     global_provider_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("llm_global_providers.id", ondelete="SET NULL"), nullable=True
     )
+    # Env-backed portal provider id (e.g. "portal:0:Omniroute (local)").
+    # Stored as a plain string because env portal providers have no DB row.
+    portal_provider_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
     model_name: Mapped[str] = mapped_column(String(200), nullable=False)
     user: Mapped[User] = relationship("User")

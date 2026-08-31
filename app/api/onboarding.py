@@ -20,6 +20,7 @@ from app.models.llm_catalog import LLMUserSelection
 from app.models.llm_config import LLMProviderConfig
 from app.models.opt_in import UserEntityOptIn
 from app.models.user import User
+from app.security import ensure_csrf_cookie
 from app.services.onboarding_service import (
     complete_onboarding,
     get_onboarding_context,
@@ -53,7 +54,7 @@ async def onboarding_page(
     llm_selections = {s.capability: s for s in sel_result.scalars().all()}
     llm_status = request.query_params.get("llm")
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="onboarding.html",
         context={
@@ -68,6 +69,9 @@ async def onboarding_page(
             **ctx,
         },
     )
+    # Issue a CSRF cookie so the quick-pick POST on step 1 succeeds.
+    ensure_csrf_cookie(request, response)
+    return response
 
 
 @router.post("/onboarding/complete")

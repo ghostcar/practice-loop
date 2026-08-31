@@ -103,20 +103,24 @@ async def llm_configs_page(
 @router.get("/models")
 async def list_provider_models(
     request: Request,
-    provider_id: uuid.UUID | None = None,
+    provider_id: str | None = None,
     user_config_id: uuid.UUID | None = None,
     capability: str = "text",
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return catalog models or models advertised by an owned BYOK provider."""
+    """Return catalog models or models advertised by an owned BYOK provider.
+
+    ``provider_id`` accepts either a UUID (global catalog provider) or a
+    portal provider id (``portal:<n>:<name>``).
+    """
     if capability not in {"text", "vision"}:
         raise HTTPException(status_code=400, detail="Invalid LLM capability")
     if bool(provider_id) == bool(user_config_id):
         raise HTTPException(status_code=400, detail="Exactly one provider is required")
 
-    if provider_id and str(provider_id).startswith("portal:"):
-        portal_id = str(provider_id)
+    if provider_id and provider_id.startswith("portal:"):
+        portal_id = provider_id
         from app.llm.portal import get_portal_providers
 
         portal_provider = next((item for item in get_portal_providers() if item.id == portal_id), None)
@@ -130,14 +134,18 @@ async def list_provider_models(
         ]
         return {"models": models}
     if provider_id:
+        try:
+            provider_uuid = uuid.UUID(provider_id)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid provider id") from None
         global_provider = await db.scalar(
-            select(LLMGlobalProvider).where(LLMGlobalProvider.id == provider_id, LLMGlobalProvider.enabled)
+            select(LLMGlobalProvider).where(LLMGlobalProvider.id == provider_uuid, LLMGlobalProvider.enabled)
         )
         if global_provider is None:
             raise HTTPException(status_code=404, detail="Provider not found")
         result = await db.execute(
             select(LLMGlobalModel).where(
-                LLMGlobalModel.provider_id == provider_id,
+                LLMGlobalModel.provider_id == provider_uuid,
                 LLMGlobalModel.enabled,
                 (LLMGlobalModel.supports_vision if capability == "vision" else LLMGlobalModel.supports_text),
             ).order_by(LLMGlobalModel.model_name)
@@ -268,6 +276,7 @@ async def select_llm_capability(
         db.add(selection)
     selection.global_provider_id = global_provider_id
     selection.user_config_id = user_config_id
+    selection.portal_provider_id = portal_provider_id
     selection.model_name = model_name
     await db.flush()
     return RedirectResponse(url="/llm-configs/?selection=saved", status_code=status.HTTP_303_SEE_OTHER)
