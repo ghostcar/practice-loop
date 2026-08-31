@@ -116,7 +116,19 @@ async def list_provider_models(
         raise HTTPException(status_code=400, detail="Exactly one provider is required")
 
     if provider_id and str(provider_id).startswith("portal:"):
-        raise HTTPException(status_code=400, detail="Portal providers are configured by the deployment administrator")
+        portal_id = str(provider_id)
+        from app.llm.portal import get_portal_providers
+
+        portal_provider = next((item for item in get_portal_providers() if item.id == portal_id), None)
+        if portal_provider is None:
+            raise HTTPException(status_code=404, detail="Portal provider not found")
+        models = [
+            {"id": model.name, "name": model.name}
+            for model in portal_provider.models
+            if (capability == "text" and portal_provider.supports_text)
+            or (capability == "vision" and model.supports_vision)
+        ]
+        return {"models": models}
     if provider_id:
         global_provider = await db.scalar(
             select(LLMGlobalProvider).where(LLMGlobalProvider.id == provider_id, LLMGlobalProvider.enabled)
@@ -160,18 +172,37 @@ async def select_llm_capability(
     model_name: str = Form(...),
     global_provider_id: uuid.UUID | None = Form(default=None),
     user_config_id: uuid.UUID | None = Form(default=None),
+    portal_provider_id: str | None = Form(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Set the user's text or vision provider/model selection."""
     if capability not in {"text", "vision"}:
         raise HTTPException(status_code=400, detail="Invalid LLM capability")
-    if not global_provider_id and not user_config_id:
-        raise HTTPException(status_code=400, detail="A provider is required")
-    if global_provider_id and user_config_id:
-        raise HTTPException(status_code=400, detail="Select either a global or personal provider")
+    sources = [bool(global_provider_id), bool(user_config_id), bool(portal_provider_id)]
+    if sum(sources) != 1:
+        raise HTTPException(status_code=400, detail="Select exactly one provider source")
+    if user_config_id:
+        from app.llm.policy import is_personal_allowed
+
+        if not is_personal_allowed("assistant"):
+            raise HTTPException(status_code=403, detail="Personal providers are disabled for this section")
+    if portal_provider_id and portal_provider_id.startswith("portal:"):
+        from app.llm.portal import get_portal_providers
+
+        portal_provider = next((item for item in get_portal_providers() if item.id == portal_provider_id), None)
+        if portal_provider is None:
+            raise HTTPException(status_code=404, detail="Portal provider not found")
+        model = next((item for item in portal_provider.models if item.name == model_name), None)
+        model_unavailable = (
+            model is None
+            or (capability == "vision" and not model.supports_vision)
+            or (capability == "text" and not portal_provider.supports_text)
+        )
+        if model_unavailable:
+            raise HTTPException(status_code=400, detail="Model is not available for this capability")
     if global_provider_id and str(global_provider_id).startswith("portal:"):
-        raise HTTPException(status_code=400, detail="Portal provider selection must use a catalog ID")
+        raise HTTPException(status_code=400, detail="Portal provider selection must use the portal provider field")
     if global_provider_id:
         provider = await db.scalar(
             select(LLMGlobalProvider).where(

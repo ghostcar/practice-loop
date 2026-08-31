@@ -153,13 +153,13 @@
  <input type="hidden" name="capability" value="{{ capability }}">
  <h3 class="font-medium text-[color:var(--text)]">{{ label }}</h3>
  <label class="block text-xs text-[color:var(--text-secondary)]">Provider
- <select name="global_provider_id" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" data-models-target="models-{{ capability }}" required>
+ <select name="portal_provider_id" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" data-models-target="models-{{ capability }}" required>
  <option value="">Select provider</option>
  {% for provider in global_providers %}
  <option value="global:{{ provider.id }}">{{ provider.name }} (portal catalog)</option>
  {% endfor %}
  {% for provider in portal_providers %}
- <option value="portal:{{ provider.name }}">{{ provider.name }} (portal)</option>
+ <option value="{{ provider.id }}">{{ provider.name }} (portal)</option>
  {% endfor %}
  {% for cfg in configs %}
  <option value="personal:{{ cfg.id }}">{{ cfg.provider_name }} (personal)</option>
@@ -182,9 +182,12 @@
      target.innerHTML = '<option value="">Loading models…</option>';
      try {
        const providerValue = providerSelect.value;
-       const queryName = providerValue.startsWith('personal:') ? 'user_config_id' : 'provider_id';
+       const queryName = providerValue.startsWith('personal:') ? 'user_config_id' : providerValue.startsWith('portal:') ? 'provider_id' : 'provider_id';
        if (providerValue.startsWith('portal:')) {
-         target.innerHTML = '<option value="">Portal models are deployment-managed</option>';
+         const rawPortalId = providerValue;
+         const response = await fetch('/llm-configs/models?provider_id=' + encodeURIComponent(rawPortalId) + '&capability=' + encodeURIComponent(providerSelect.closest('form').querySelector('[name="capability"]').value));
+         const data = await response.json();
+         target.innerHTML = data.models.map(function (model) { return '<option value="' + model.name + '">' + model.name + '</option>'; }).join('') || '<option value="">No models available</option>';
          return;
        }
        const rawId = providerValue.replace(/^[^:]+:/, '');

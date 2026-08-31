@@ -16,6 +16,7 @@ class PortalModel:
 
 @dataclass(frozen=True)
 class PortalProvider:
+    id: str
     name: str
     base_url: str
     api_key: str | None
@@ -63,6 +64,7 @@ def get_portal_providers() -> tuple[PortalProvider, ...]:
         sections = tuple(str(section).strip() for section in item.get("sections", []) if str(section).strip())
         providers.append(
             PortalProvider(
+                id=f"portal:{len(providers)}:{name}",
                 name=name,
                 base_url=base_url,
                 api_key=str(item.get("api_key") or "") or None,
