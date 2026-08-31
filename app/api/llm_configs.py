@@ -179,6 +179,9 @@ async def select_llm_capability(
     """Set the user's text or vision provider/model selection."""
     if capability not in {"text", "vision"}:
         raise HTTPException(status_code=400, detail="Invalid LLM capability")
+    if portal_provider_id and portal_provider_id.startswith("global:"):
+        global_provider_id = uuid.UUID(portal_provider_id.removeprefix("global:"))
+        portal_provider_id = None
     sources = [bool(global_provider_id), bool(user_config_id), bool(portal_provider_id)]
     if sum(sources) != 1:
         raise HTTPException(status_code=400, detail="Select exactly one provider source")
