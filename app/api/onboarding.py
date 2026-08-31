@@ -14,7 +14,9 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.llm.portal import get_portal_providers
 from app.models.entity import Entity
+from app.models.llm_catalog import LLMUserSelection
 from app.models.llm_config import LLMProviderConfig
 from app.models.opt_in import UserEntityOptIn
 from app.models.user import User
@@ -44,6 +46,13 @@ async def onboarding_page(
     t = get_translations(locale)
     ctx = get_onboarding_context(user)
 
+    # Portal LLM providers available for quick-pick on step 1.
+    portal_providers = get_portal_providers()
+    # Existing capability selections (so we can show "already selected").
+    sel_result = await db.execute(select(LLMUserSelection).where(LLMUserSelection.user_id == user.id))
+    llm_selections = {s.capability: s for s in sel_result.scalars().all()}
+    llm_status = request.query_params.get("llm")
+
     return templates.TemplateResponse(
         request=request,
         name="onboarding.html",
@@ -53,6 +62,9 @@ async def onboarding_page(
             "user": user,
             "locale": locale,
             "theme": theme,
+            "portal_providers": portal_providers,
+            "llm_selections": llm_selections,
+            "llm_status": llm_status,
             **ctx,
         },
     )

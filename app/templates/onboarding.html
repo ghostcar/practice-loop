@@ -22,35 +22,64 @@
         </div>
         <h2 class="text-xl font-bold text-[color:var(--text)] mb-2">{{ t.get('onboard_step1_title', 'Connect Your LLM Provider') }}</h2>
         <p class="text-sm text-[color:var(--text-secondary)] mb-6">
-          {{ t.get('onboard_step1_desc', 'PracticeLoop uses AI to generate personalized tasks, analyze training, and provide insights. Set up your LLM provider to unlock all features.') }}
+          {{ t.get('onboard_step1_desc', 'PracticeLoop uses AI to generate personalized tasks, analyze training, and provide insights. Pick a provider below — you can change it anytime in Settings.') }}
         </p>
 
-        <div class="space-y-3 mb-6 text-left">
-          <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-start gap-3">
-            {{ icon('settings', 'w-5 h-5 mt-0.5 text-[color:var(--accent)] flex-shrink-0') }}
-            <div>
-              <p class="text-xs font-semibold text-[color:var(--text)]">Omniroute (auto-configured)</p>
-              <p class="text-[11px] text-[color:var(--text-muted)]">Local gateway — no setup needed. Active by default.</p>
-            </div>
-          </div>
-          <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-start gap-3">
-            {{ icon('cloud-upload', 'w-5 h-5 mt-0.5 text-[color:var(--accent)] flex-shrink-0') }}
-            <div>
-              <p class="text-xs font-semibold text-[color:var(--text)]">Groq / OpenRouter (free tier)</p>
-              <p class="text-[11px] text-[color:var(--text-muted)]">Bring your own key for more model options.</p>
-            </div>
-          </div>
+        {%- if llm_status -%}
+        <div class="mb-4 rounded-xl border p-3 text-xs text-left {{ 'border-emerald-600 text-emerald-700 dark:text-emerald-400' if llm_status in ('ok','saved') else 'border-red-600 text-red-700 dark:text-red-400' }}" role="status" aria-live="polite">
+          {%- if llm_status == 'saved' -%}{{ t.get('llm_saved', 'Provider saved.') }}
+          {%- elif llm_status == 'ok' -%}{{ t.get('llm_check_ok', 'Connection successful.') }}
+          {%- else -%}{{ t.get('llm_check_failed', 'Connection failed — check URL, key and model name.') }}{%- endif -%}
         </div>
+        {%- endif -%}
 
-        <div class="flex justify-center gap-3">
-          <a href="/llm-configs/" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all">
-            {{ icon('settings', 'w-3.5 h-3.5') }} Configure Now
-          </a>
-          <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md">
-            Continue {{ icon('arrow-right', 'w-3.5 h-3.5') }}
-          </button>
+        {%- if portal_providers -%}
+        <div class="space-y-2.5 mb-5 text-left">
+          {%- for provider in portal_providers -%}
+          <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-start justify-between gap-3">
+            <div class="flex items-start gap-2.5 min-w-0">
+              {{ icon('cloud', 'w-5 h-5 mt-0.5 text-[color:var(--accent)] flex-shrink-0') }}
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-[color:var(--text)]">{{ provider.name }} <span class="text-[10px] text-[color:var(--text-muted)] font-normal">(portal)</span></p>
+                {%- if provider.supports_text -%}
+                <p class="text-[11px] text-[color:var(--text-muted)]">Text · {{ provider.models | length }} model(s)
+                  {%- if provider.models and provider.models[0].supports_vision %} · vision-capable{%- endif -%}
+                </p>
+                {%- else -%}
+                <p class="text-[11px] text-[color:var(--text-muted)]">Vision · {{ provider.models | length }} model(s)</p>
+                {%- endif -%}
+                {%- if provider.paid_service %}<p class="text-[10px] text-amber-600 dark:text-amber-400">⚠ may be a paid service</p>{%- endif -%}
+              </div>
+            </div>
+            <form action="/llm-configs/select" method="post" class="flex-shrink-0">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+              <input type="hidden" name="capability" value="{{ 'vision' if not provider.supports_text else 'text' }}">
+              <input type="hidden" name="portal_provider_id" value="{{ provider.id }}">
+              {%- set first_model = provider.models[0] if provider.models else none -%}
+              <input type="hidden" name="model_name" value="{{ first_model.name if first_model else '' }}">
+              <button type="submit"
+                      class="px-3 py-1.5 rounded-lg pl-accent-bg text-white text-[11px] font-semibold hover:bg-[color:var(--accent-hover)] transition-colors whitespace-nowrap">
+                {{ t.get('onboard_use', 'Use') }}
+              </button>
+            </form>
+          </div>
+          {%- endfor -%}
         </div>
-        <p class="mt-3 text-[10px] text-[color:var(--text-muted)]">You can always configure providers later in Settings.</p>
+        {%- else -%}
+        <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] mb-5 text-left">
+          <p class="text-xs text-[color:var(--text-muted)]">No portal providers configured by deployment. You can set up your own key below.</p>
+        </div>
+        {%- endif -%}
+
+        <div class="flex flex-col gap-2.5">
+          <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 rounded-xl pl-accent-bg text-xs font-bold hover:bg-[color:var(--accent-hover)] transition-all shadow-md w-full">
+            {{ t.get('onboard_continue', 'Continue') }} {{ icon('arrow-right', 'w-3.5 h-3.5') }}
+          </button>
+          <a href="/llm-configs/" target="_blank" rel="noopener" class="px-5 py-2.5 rounded-xl pl-surface border border-[color:var(--border)] text-xs font-semibold hover:border-[color:var(--accent)] transition-all w-full inline-flex items-center justify-center gap-1.5">
+            {{ icon('key', 'w-3.5 h-3.5') }} {{ t.get('onboard_add_own_key', 'I\'ll add my own key (opens settings in new tab)') }}
+          </a>
+        </div>
+        <p class="mt-3 text-[10px] text-[color:var(--text-muted)]">{{ t.get('onboard_change_later', 'You can change providers later in Settings → LLM.') }}</p>
       </div>
 
       <!-- Step 2: Module Selection -->
