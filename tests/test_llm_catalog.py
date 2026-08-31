@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -70,7 +72,7 @@ async def test_selection_cannot_use_another_users_config(
     auth_client: AsyncClient, db_session: AsyncSession, test_user
 ):
     other_config = LLMProviderConfig(
-        user_id="00000000-0000-0000-0000-000000000099",
+        user_id=uuid.UUID("00000000-0000-0000-0000-000000000099"),
         provider_name="Other",
         api_base_url="https://example.test/v1",
         model_name="other-model",
@@ -98,7 +100,7 @@ async def test_byok_models_endpoint_requires_ownership(
     auth_client: AsyncClient, db_session: AsyncSession
 ):
     other_config = LLMProviderConfig(
-        user_id="00000000-0000-0000-0000-000000000099",
+        user_id=uuid.UUID("00000000-0000-0000-0000-000000000099"),
         provider_name="Other2",
         api_base_url="https://example.test/v1",
         model_name="other-model",

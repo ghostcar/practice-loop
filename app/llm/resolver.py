@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.llm.policy import is_personal_allowed
+from app.llm.policy import personal_allowed_for_runtime
 from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider, LLMUserSelection
 from app.models.llm_config import LLMProviderConfig
 
@@ -35,7 +35,7 @@ async def resolve_llm_config(
         )
     )
     if selection is not None:
-        if selection.user_config_id and is_personal_allowed(section):
+        if selection.user_config_id and personal_allowed_for_runtime(section):
             return await db.scalar(
                 select(LLMProviderConfig).where(
                     LLMProviderConfig.id == selection.user_config_id,

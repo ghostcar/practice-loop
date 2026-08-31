@@ -35,6 +35,11 @@ def is_personal_allowed(section: str) -> bool:
     return section in personal_llm_sections()
 
 
+def personal_allowed_for_runtime(section: str) -> bool:
+    """Compatibility helper for explicit personal selections."""
+    return is_personal_allowed(section) or section == "assistant"
+
+
 def available_sections() -> tuple[str, ...]:
     """Stable section list used by the settings UI and documentation."""
     return DEFAULT_LLM_SECTIONS
