@@ -57,12 +57,19 @@ async def resolve_llm_config(
                     ).order_by(LLMProviderConfig.is_active.desc(), LLMProviderConfig.created_at.desc())
                 )
 
-    return await db.scalar(
+    legacy = await db.scalar(
         select(LLMProviderConfig).where(
             LLMProviderConfig.user_id == user_id,
             LLMProviderConfig.is_active.is_(True),
         ).order_by(LLMProviderConfig.created_at.desc())
     )
+    if legacy is not None:
+        return legacy
+
+    # Env-backed portal providers have no DB credentials. They are surfaced as
+    # catalog options, but runtime still requires an explicit personal config.
+    # This prevents accidentally treating a global secret as a user's BYOK key.
+    return None
 
 
 async def is_catalog_model_available(

@@ -71,7 +71,13 @@ async def llm_configs_page(
     global_result = await db.execute(
         select(LLMGlobalProvider).where(LLMGlobalProvider.enabled).order_by(LLMGlobalProvider.name)
     )
-    global_providers = global_result.scalars().all()
+    global_providers = list(global_result.scalars().all())
+    # Environment-backed portal providers are read-only metadata. Credentials
+    # are never sent to templates or API responses.
+    from app.llm.portal import get_portal_providers
+
+    portal_providers = get_portal_providers()
+    global_providers.extend(portal_providers)
     selection_result = await db.execute(select(LLMUserSelection).where(LLMUserSelection.user_id == user.id))
     selections = {selection.capability: selection for selection in selection_result.scalars().all()}
 
@@ -86,6 +92,7 @@ async def llm_configs_page(
             "theme": theme,
             "configs": configs_data,
             "global_providers": global_providers,
+            "portal_providers": portal_providers,
             "selections": selections,
         },
     )
@@ -106,6 +113,8 @@ async def list_provider_models(
     if bool(provider_id) == bool(user_config_id):
         raise HTTPException(status_code=400, detail="Exactly one provider is required")
 
+    if provider_id and str(provider_id).startswith("portal:"):
+        raise HTTPException(status_code=400, detail="Portal providers are configured by the deployment administrator")
     if provider_id:
         global_provider = await db.scalar(
             select(LLMGlobalProvider).where(LLMGlobalProvider.id == provider_id, LLMGlobalProvider.enabled)

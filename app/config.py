@@ -118,6 +118,11 @@ class Settings(BaseSettings):
     omniroute_api_key: str | None = None
     omniroute_embedding_model: str = "openrouter/openai/text-embedding-3-small"
 
+    # Portal LLM catalog. Metadata and credentials are supplied from .env;
+    # never commit this value. JSON shape: [{"name":"...","base_url":"...",
+    # "api_key":"...","models":[{"name":"...","vision":true}]}]
+    portal_llm_providers_json: str = "[]"
+
     # Telegram
     tg_bot_token: str | None = None
     tg_webhook_secret: str = _PLACEHOLDER_TG_SECRET

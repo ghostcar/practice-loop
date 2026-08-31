@@ -153,6 +153,9 @@
  {% for provider in global_providers %}
  <option value="{{ provider.id }}">{{ provider.name }}</option>
  {% endfor %}
+ {% for provider in portal_providers %}
+ <option value="portal:{{ provider.name }}">{{ provider.name }} (portal)</option>
+ {% endfor %}
  </select></label>
  <label class="block text-xs text-[color:var(--text-secondary)]">Model
  <select id="models-{{ capability }}" name="model_name" class="mt-1 w-full rounded-lg border border-[color:var(--border)] pl-surface-soft text-[color:var(--text)] px-3 py-2" required>
@@ -169,7 +172,12 @@
      const target = document.getElementById(providerSelect.dataset.modelsTarget);
      target.innerHTML = '<option value="">Loading models…</option>';
      try {
-       const response = await fetch('/llm-configs/models?provider_id=' + encodeURIComponent(providerSelect.value) + '&capability=' + encodeURIComponent(providerSelect.closest('form').querySelector('[name="capability"]').value));
+       const providerValue = providerSelect.value;
+       if (providerValue.startsWith('portal:')) {
+         target.innerHTML = '<option value="">Portal models are deployment-managed</option>';
+         return;
+       }
+       const response = await fetch('/llm-configs/models?provider_id=' + encodeURIComponent(providerValue) + '&capability=' + encodeURIComponent(providerSelect.closest('form').querySelector('[name="capability"]').value));
        const data = await response.json();
        target.innerHTML = data.models.map(function (model) {
          return '<option value="' + model.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '">' + model.name.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</option>';
