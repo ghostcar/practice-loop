@@ -19,6 +19,7 @@ from app.schemas.references import BodyPartOut, BodyPartTreeNode
 from app.templates_setup import templates
 
 router = APIRouter(tags=["body-parts"])
+page_router = APIRouter(tags=["body-parts-page"])
 
 
 @router.get("/body-parts", response_model=list[BodyPartOut])
@@ -74,7 +75,8 @@ async def body_parts_tree(
     return _build(None)
 
 
-@router.get("/body-parts/page", response_class=HTMLResponse)
+@page_router.get("/body-parts", response_class=HTMLResponse)
+@page_router.get("/body-parts/page", response_class=HTMLResponse)
 async def body_parts_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -93,7 +95,7 @@ async def body_parts_page(
             "user": user,
             "locale": locale,
             "theme": theme,
-            "active_nav": "admin",
+            "active_nav": "body_parts",
         },
     )
 

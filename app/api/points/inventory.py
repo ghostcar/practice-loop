@@ -277,4 +277,4 @@ async def log_equipment_maintenance_endpoint(
         notes=notes,
     )
     db.add(log_entry)
-    return RedirectResponse(url="/api/v2/inventory/maintenance", status_code=303)
+    return RedirectResponse(url="/inventory/maintenance", status_code=303)

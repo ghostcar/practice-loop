@@ -14,9 +14,11 @@ from app.models.user import User
 from app.templates_setup import templates
 
 router = APIRouter(tags=["v2"])
+page_router = APIRouter(tags=["pages"])
 
 
-@router.get("/measurements/page", response_class=HTMLResponse)
+@page_router.get("/measurements", response_class=HTMLResponse)
+@page_router.get("/measurements/page", response_class=HTMLResponse)
 async def measurements_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -32,7 +34,8 @@ async def measurements_page(
     )
 
 
-@router.get("/inventory/page", response_class=HTMLResponse)
+@page_router.get("/inventory", response_class=HTMLResponse)
+@page_router.get("/inventory/page", response_class=HTMLResponse)
 async def inventory_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -44,11 +47,12 @@ async def inventory_page(
     return templates.TemplateResponse(
         request=request,
         name="inventory.html",
-        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme},
+        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "inventory"},
     )
 
 
-@router.get("/schedule/page", response_class=HTMLResponse)
+@page_router.get("/schedule", response_class=HTMLResponse)
+@page_router.get("/schedule/page", response_class=HTMLResponse)
 async def schedule_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -60,11 +64,12 @@ async def schedule_page(
     return templates.TemplateResponse(
         request=request,
         name="schedule.html",
-        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme},
+        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "schedule"},
     )
 
 
-@router.get("/points/page", response_class=HTMLResponse)
+@page_router.get("/points", response_class=HTMLResponse)
+@page_router.get("/points/page", response_class=HTMLResponse)
 async def points_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -76,5 +81,5 @@ async def points_page(
     return templates.TemplateResponse(
         request=request,
         name="points.html",
-        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme},
+        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, "active_nav": "points"},
     )

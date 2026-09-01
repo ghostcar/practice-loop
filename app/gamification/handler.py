@@ -209,7 +209,7 @@ async def on_task_completed(
                     type="threshold",
                     title=title,
                     body=body,
-                    link="/api/v2/points/page",
+                    link="/points",
                 )
                 db.add(n)
                 notifications.append(n)
@@ -225,7 +225,7 @@ async def on_task_completed(
                     type="threshold",
                     title=title,
                     body=body,
-                    link="/api/v2/points/page",
+                    link="/points",
                 )
                 db.add(n)
                 notifications.append(n)
@@ -241,7 +241,7 @@ async def on_task_completed(
                     type="threshold",
                     title=title,
                     body=body,
-                    link="/api/v2/points/page",
+                    link="/points",
                 )
                 db.add(n)
                 notifications.append(n)
