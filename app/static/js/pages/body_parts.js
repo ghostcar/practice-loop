@@ -34,7 +34,7 @@
     if (sys) filtered = filtered.filter(function (n) { return n.body_system === sys; });
     if (q) {
       filtered = filtered.filter(function (n) {
-        return (n.title || '').toLowerCase().indexOf(q) !== -1 ||
+        return (n.title_ru || n.title_en || n.slug || '').toLowerCase().indexOf(q) !== -1 ||
                (n.slug || '').toLowerCase().indexOf(q) !== -1;
       });
     }
@@ -44,13 +44,14 @@
   };
 
   function renderTree(nodes, highlightIds, expandAll) {
-    treeEl.innerHTML = nodes.map(function (n) { return renderNode(n, 0, highlightIds, expandAll); }).join('');
+    treeEl.innerHTML = (nodes || []).map(function (n) { return renderNode(n, 0, highlightIds, expandAll); }).join('');
   }
 
   function renderNode(node, depth, highlightIds, expandAll) {
     var hasChildren = node.children && node.children.length > 0;
     var highlighted = highlightIds ? highlightIds[node.id] : true;
     if (!highlighted && !hasChildren) return '';
+    var title = node.title_ru || node.title_en || node.slug || '';
     var indent = depth * 16;
     var dotColor = node.is_sensitive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600';
     var id = 'bp-' + node.id;
@@ -62,7 +63,7 @@
       html += '<span class="w-5"></span>';
     }
     html += '<span class="w-2 h-2 rounded-full ' + dotColor + ' flex-shrink-0"></span>';
-    html += '<span class="text-sm text-slate-700 dark:text-slate-200">' + escHtml(node.title) + '</span>';
+    html += '<span class="text-sm text-slate-700 dark:text-slate-200">' + escHtml(title) + '</span>';
     html += '<span class="text-xs text-[color:var(--text-muted)] ml-auto">' + escHtml(node.slug || '') + '</span>';
     html += '</div>';
     if (hasChildren) {
