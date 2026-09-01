@@ -29,12 +29,12 @@
  <select id="bp-system" data-change="filterTree" aria-label="{{ t.body_parts_system_all }}"
  class="pl-surface border border-[color:var(--border)] rounded-xl px-3 py-2.5 text-sm text-[color:var(--text)]">
  <option value="">{{ t.body_parts_system_all }}</option>
- <option value="general">General</option>
- <option value="head_neck">Head &amp; Neck</option>
- <option value="torso">Torso</option>
- <option value="upper_limb">Upper limbs</option>
- <option value="lower_limb">Lower limbs</option>
- <option value="intimate">Intimate</option>
+ <option value="general">{{ t.get('body_parts_system_general', 'General') }}</option>
+ <option value="head_neck">{{ t.get('body_parts_system_head_neck', 'Head & Neck') }}</option>
+ <option value="torso">{{ t.get('body_parts_system_torso', 'Torso') }}</option>
+ <option value="upper_limb">{{ t.get('body_parts_system_upper_limb', 'Upper limbs') }}</option>
+ <option value="lower_limb">{{ t.get('body_parts_system_lower_limb', 'Lower limbs') }}</option>
+ <option value="intimate">{{ t.get('body_parts_system_intimate', 'Intimate') }}</option>
  </select>
  </div>
 
@@ -46,7 +46,7 @@
  <!-- Legend -->
  <div class="mt-4 flex gap-4 text-xs text-[color:var(--text-secondary)]">
  <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span> {{ t.body_parts_sensitive }}</span>
- <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full pl-surface-soft "></span> Standard</span>
+ <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full pl-surface-soft "></span> {{ t.get('body_parts_standard', 'Standard') }}</span>
  </div>
 </div>
 {% endblock %}

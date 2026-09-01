@@ -64,7 +64,8 @@
     }
     html += '<span class="w-2 h-2 rounded-full ' + dotColor + ' flex-shrink-0"></span>';
     html += '<span class="text-sm text-slate-700 dark:text-slate-200">' + escHtml(title) + '</span>';
-    html += '<span class="text-xs text-[color:var(--text-muted)] ml-auto">' + escHtml(node.slug || '') + '</span>';
+    html += '<span class="text-xs text-[color:var(--text-muted)] ml-auto" aria-hidden="true">' +
+      (node.is_sensitive ? '•' : '') + '</span>';
     html += '</div>';
     if (hasChildren) {
       html += '<div id="' + id + '" class="' + (expandAll ? '' : 'hidden') + '">';

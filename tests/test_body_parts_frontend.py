@@ -9,3 +9,4 @@ def test_body_parts_frontend_uses_api_titles_not_missing_title_field() -> None:
     assert "node.title_ru || node.title_en || node.slug" in source
     assert "escHtml(title)" in source
     assert "n.title_ru || n.title_en || n.slug" in source
+    assert "node.slug || ''" not in source

@@ -522,6 +522,13 @@ RU = {
     "body_parts_search_ph": "Поиск зон…",
     "body_parts_system_all": "Все системы",
     "body_parts_sensitive": "Чувствительная",
+    "body_parts_standard": "Обычная",
+    "body_parts_system_general": "Общее",
+    "body_parts_system_head_neck": "Голова и шея",
+    "body_parts_system_torso": "Торс",
+    "body_parts_system_upper_limb": "Верхние конечности",
+    "body_parts_system_lower_limb": "Нижние конечности",
+    "body_parts_system_intimate": "Интимная зона",
     # Locations catalog
     "locations_title": "Места",
     "locations_subtitle": "Системные и личные места для задач",

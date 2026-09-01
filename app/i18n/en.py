@@ -520,6 +520,13 @@ EN = {
     "body_parts_search_ph": "Search zones…",
     "body_parts_system_all": "All systems",
     "body_parts_sensitive": "Sensitive",
+    "body_parts_standard": "Standard",
+    "body_parts_system_general": "General",
+    "body_parts_system_head_neck": "Head & Neck",
+    "body_parts_system_torso": "Torso",
+    "body_parts_system_upper_limb": "Upper limbs",
+    "body_parts_system_lower_limb": "Lower limbs",
+    "body_parts_system_intimate": "Intimate",
     # Locations catalog
     "locations_title": "Locations",
     "locations_subtitle": "System and personal places for tasks",
