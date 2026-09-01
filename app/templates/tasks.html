@@ -80,7 +80,9 @@
     {% else %}
     <div class="mb-6 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
         <span aria-hidden="true">•</span> {{ t.tasks_section_active }}: <strong>{{ active_config.provider_name }}</strong> ({{ active_config.model_name }})
-        <span class="text-xs text-emerald-700 dark:text-emerald-300 ml-2">{{ active_config.total_tokens }} tokens · ${{ "%.4f" % active_config.total_cost }}</span>
+        {% if active_config.total_tokens is not none or active_config.total_cost is not none %}
+        <span class="text-xs text-emerald-700 dark:text-emerald-300 ml-2">{{ active_config.total_tokens or 0 }} tokens · ${{ "%.4f" % (active_config.total_cost or 0) }}</span>
+        {% endif %}
     </div>
     {% endif %}
 
