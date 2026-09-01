@@ -1,4 +1,4 @@
-"""Seed data: hierarchical body part reference (update2.md §1).
+"""Seed data: hierarchical body part reference (39 records, update2.md §1).
 
 Idempotent: upsert by slug so repeated invocations are safe.
 """

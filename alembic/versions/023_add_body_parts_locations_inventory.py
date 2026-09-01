@@ -6,7 +6,7 @@ Create Date: 2026-08-11
 
 update2.md — normalised references and task-level links:
 
-1. body_parts — hierarchical body zone reference (40 seed records).
+1. body_parts — hierarchical body zone reference (39 seed records).
 2. task_body_targets — task → body zone links with role/side/intensity/snapshot.
 3. task_locations — system + user-custom location reference (16 seed).
 4. task_location_usages — task → location links with role/snapshot.
