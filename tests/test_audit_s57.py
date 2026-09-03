@@ -178,7 +178,7 @@ async def test_base_html_has_no_font_cdn(auth_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_pages_use_external_js_modules(auth_client: AsyncClient):
-    for path in ("/dashboard", "/training/", "/api/v2/points/page", "/import"):
+    for path in ("/dashboard", "/training/", "/points", "/import"):
         resp = await auth_client.get(path)
         assert resp.status_code == 200, path
         # No inline <script> bodies on page templates (shared bootstrap is app.js).

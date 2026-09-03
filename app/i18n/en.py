@@ -1565,6 +1565,7 @@ EN = {
     "consent_type_module:catalog": "Catalog",
     "consent_type_module:insights": "Insights",
     "consent_type_module:aftercare": "Aftercare",
+    "consent_type_module:social": "Social features and communities",
     "consent_disclosure_byok_provider": (
         "You selected and connected this provider, endpoint, and key yourself. Requests and necessary data will be "
         "sent to it under its own terms; you are responsible for choosing and configuring it. Practice Loop remains "
@@ -1584,6 +1585,7 @@ EN = {
     "consent_disclosure_module:catalog": "Allow catalog data to be stored and processed.",
     "consent_disclosure_module:insights": "Allow profile and history data to be analyzed.",
     "consent_disclosure_module:aftercare": "Allow aftercare data to be stored and processed.",
+    "consent_disclosure_module:social": "Allow social data and community features to work.",
     # C4 — Today projection (единый экран дня, §10.1)
     "today_title": "Today",
     "today_timer": "Chastity Timer",

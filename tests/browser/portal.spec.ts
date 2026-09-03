@@ -12,8 +12,8 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
 
   const routes = [
     "/dashboard", "/today", "/tasks/", "/entities/catalog", "/training",
-    "/settings", "/account", "/media", "/api/v2/points/page", "/api/v2/inventory/page",
-    "/api/v2/measurements/page", "/api/v2/schedule/page", "/api/v2/body-parts/page", "/consent",
+    "/settings", "/account", "/media", "/points", "/inventory",
+    "/measurements", "/schedule", "/body-parts", "/consent",
     "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
   ];
   // /locktimer is a feature-gated route (timer_operational): it only exists in
@@ -31,6 +31,26 @@ test("@smoke core personal navigation works without browser errors", async ({ pa
     await expect(page.locator('a[href="/login"]'), `${route} must not show guest login`).toHaveCount(0);
     expect(errors.splice(0), `${route} browser errors`).toEqual([]);
   }
+});
+
+test("@smoke body zones are shown as localized groups without implementation names", async ({ page }) => {
+  await registerFreshUser(page);
+  await page.goto("/body-parts");
+
+  const reference = page.locator("#bp-tree");
+  await expect(reference.locator("section")).toHaveCount(6);
+  await expect(reference).toContainText("Голова и шея");
+  await expect(reference).toContainText("Поясница");
+  await expect(reference).not.toContainText(/whole_body|head_neck|torso_chest|upper_limb/);
+
+  await page.locator("#bp-search").fill("поясница");
+  await expect(reference).toContainText("Поясница");
+  await expect(reference).not.toContainText("Бёдра");
+
+  await page.locator("#bp-search").fill("");
+  await page.locator("#bp-system").selectOption("lower_limb");
+  await expect(reference).toContainText("Бёдра");
+  await expect(reference).not.toContainText("Поясница");
 });
 
 test("@smoke activity session can be created and accepted with visible audit", async ({ page }) => {
@@ -64,8 +84,8 @@ test("@a11y authenticated shell has no serious axe violations (dark + light)", a
     "/consent", "/import", "/calendar", "/diets", "/sessions",
     "/locations", "/journal", "/medications", "/health", "/notifications",
     "/care", "/aftercare", "/insights", "/llm/exchange", "/locktimer",
-    "/api/v2/points/page", "/api/v2/inventory/page", "/api/v2/measurements/page",
-    "/api/v2/schedule/page", "/api/v2/body-parts/page",
+    "/points", "/inventory", "/measurements",
+    "/schedule", "/body-parts",
     "/social/profile", "/social/relationships", "/social/feed", "/social/subjects",
     "/social/leaderboard", "/social/pillory",
     "/certificates/probe-a11y-cert/verify",

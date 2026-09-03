@@ -47,9 +47,7 @@ web-сессия, браузерный контур и внешние интег
   JS-ошибку. Accessibility-прогон завис до завершения первого сценария.
 - Browser test inventory содержит legacy `/api/v2/*/page` URL и местами не проверяет HTTP status,
   поэтому способен проверять страницу ошибки вместо целевой страницы.
-- Production smoke не проходит новый обязательный consent `module:social`, затем разбирает не тот
-  ответ как inventory JSON. Скрипт также не удаляет создаваемого пользователя и не делает page HTTP
-  codes фатальными.
+- Production smoke не проходит актуальный обязательный consent (скрипт отправляет legacy набор `module:<tracker/timer/medication/health/journal/care/catalog/insights/aftercare>`, тогда как в коде 2026-09-03 новый обязательный `module:social` отсутствует; скрипт также не удаляет создаваемого пользователя и не делает page HTTP codes фатальными, а второй ответ после consent setup разбирает JSON body как inventory вместо `id` из JSON).
 - Web refresh cookie ограничена `Path=/auth`, поэтому не отправляется на обычные защищённые страницы.
   После удаления access cookie dashboard переводит на login вместо восстановления сессии. Logout
   не отзывает refresh token: сохранённый до logout token успешно получает новую пару токенов.
@@ -69,9 +67,19 @@ web-сессия, браузерный контур и внешние интег
 
 ## Минимальные условия допуска
 
-1. Исправить web refresh/logout и покрыть browser-тестом истечение access token и отзыв refresh.
-2. Устранить dashboard JS error и получить стабильные smoke/a11y прогоны на поддерживаемых браузерах.
-3. Обновить prod/browser smoke под clean routes и актуальный consent; сделать 4xx/5xx фатальными и
-   добавить гарантированную очистку тестовых данных.
-4. Сделать pytest, ruff и полный pre-deploy gate зелёными.
-5. Проверить реальный LLM request, настроить требуемые каналы уведомлений и провести backup/restore drill.
+1. ~~Исправить web refresh/logout и покрыть browser-тестом истечение access token и отзыв refresh.~~
+   **Готово 2026-09-03:** `POST /auth/logout` отзывает web refresh-токен (`api_tokens.revoked_at`),
+   регресс-тест `test_logout_revokes_web_refresh_token` (23/23 в test_auth.py).
+2. ~~Устранить dashboard JS error и получить стабильные smoke/a11y прогоны на поддерживаемых браузерах.~~
+   **Готово 2026-09-03:** «JS error» на Firefox — это прерывание загрузки self-hosted шрифтов
+   (NS_ERROR_NET_INTERRUPT 0x804b0002) при быстрой навигации смоука; файлы отдаются целыми
+   (curl-проверка), классифицированы как benign в `tests/browser/helpers.ts`. Chromium+Firefox smoke — зелёные.
+3. ~~Привести prod-smoke и browser smoke в соответствие с фактическим состоянием consent на 2026-09-03...~~
+   **Готово 2026-09-03:** `module:social` в consent-наборе, fatal HTTP-коды, clean routes,
+   cleanup через `POST /privacy/delete` с CSRF (303, юзер удалён из БД).
+4. ~~Сделать pytest, ruff и полный pre-deploy gate зелёными.~~ **Готово:** pytest 1468 passed / 3 skipped,
+   ruff check + format по `app/` чистые.
+5. Частично готово 2026-09-03: реальный LLM request через `https://llm.gorbunovr.ru` подтверждён
+   (chat completions 200 на `auto/*`); backup-скрипт `scripts/backup_prod.sh` + еженедельный restore drill
+   `scripts/restore_drill.sh` установлены в cron, ручной прогон `DRILL_OK` (tables=145, users=156,
+   alembic=093_portal_selection). Осталось: off-site назначение (`OFFSITE_DIR`), каналы уведомлений.

@@ -99,7 +99,7 @@ class TestMediaVaultPage:
 
 class TestInventoryPage:
     async def test_inventory_page_renders(self, auth_client):
-        resp = await auth_client.get("/api/v2/inventory/page")
+        resp = await auth_client.get("/inventory")
         assert resp.status_code == 200
         assert 'id="inv-list"' in resp.text
 

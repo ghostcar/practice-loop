@@ -1570,6 +1570,7 @@ RU = {
     "consent_type_module:catalog": "Каталог",
     "consent_type_module:insights": "Аналитика",
     "consent_type_module:aftercare": "Поддержка после активности",
+    "consent_type_module:social": "Социальные функции и сообщества",
     "consent_disclosure_byok_provider": (
         "Вы сами выбрали и подключили этого провайдера, его адрес и ключ. Запросы и необходимые данные будут "
         "передаваться ему по его собственным условиям; ответственность за выбор и настройку провайдера несёте вы. "
@@ -1589,6 +1590,7 @@ RU = {
     "consent_disclosure_module:catalog": "Разрешить хранение и обработку данных каталога.",
     "consent_disclosure_module:insights": "Разрешить анализ данных профиля и истории.",
     "consent_disclosure_module:aftercare": "Разрешить хранение и обработку данных поддержки.",
+    "consent_disclosure_module:social": "Разрешить работу с социальными данными и сообществами.",
     # C4 — Today projection (единый экран дня, §10.1)
     "today_title": "Сегодня",
     "today_timer": "Таймер верности",

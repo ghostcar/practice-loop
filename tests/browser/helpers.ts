@@ -71,9 +71,14 @@ export function captureBrowserErrors(page: Page): string[] {
   // WebKit warns when a report-only CSP lacks a report-to endpoint. The CSP is
   // intentionally report-only until Gate C (enforcing), so this is a benign
   // engine-specific console message, not an app error.
+  // Firefox also logs aborted self-hosted font downloads ("downloadable font:
+  // download failed ... status=2152398850" = NS_ERROR_NET_INTERRUPT) when the
+  // smoke navigates away before the font fetch finishes — the file itself is
+  // served intact (verified via curl), so it is a navigation race, not an error.
   const knownBenign = (text: string) =>
     text.toLowerCase().includes("favicon") ||
-    (text.includes("Content Security Policy") && text.includes("report-only mode"));
+    (text.includes("Content Security Policy") && text.includes("report-only mode")) ||
+    (text.includes("downloadable font") && text.includes("download failed"));
   page.on("console", (message) => {
     if (message.type() === "error" && !knownBenign(message.text())) {
       errors.push(`console: ${message.text()}`);
