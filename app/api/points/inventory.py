@@ -150,6 +150,7 @@ async def create_inventory_item(
 ):
     item = InventoryItem(user_id=user.id, **data.model_dump())
     db.add(item)
+    await db.flush()  # persist before refresh (ADR-160: get_db owns commit)
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
 
@@ -170,6 +171,7 @@ async def update_inventory_item(
     for k, v in data.model_dump(exclude_none=True).items():
         setattr(item, k, v)
     db.add(item)
+    await db.flush()  # persist before refresh (ADR-160: get_db owns commit)
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
 
@@ -209,6 +211,7 @@ async def service_inventory_item(
     item.last_serviced_at = datetime.now(UTC)
     item.inventory_status = "available"
     db.add(item)
+    await db.flush()  # persist before refresh (ADR-160: get_db owns commit)
     await db.refresh(item)
     return InventoryItemOut.model_validate(item)
 
