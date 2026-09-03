@@ -62,34 +62,37 @@ docker compose exec app alembic downgrade <target_revision>
 
 ## 5. Backup & Restore
 
-### Backup (cron daily)
+### Automated backup + restore drill (installed 2026-09-03)
 
-```bash
-#!/bin/bash
-BACKUP_DIR=/opt/backups
-RETENTION=30
-DB_NAME=tracker
-DB_USER=tracker
-FILE="$BACKUP_DIR/tracker_$(date +%Y%m%d_%H%M).sql.gz"
-pg_dump -U $DB_USER -h localhost $DB_NAME | gzip > "$FILE"
-# Ротация
-ls -t $BACKUP_DIR/tracker_*.sql.gz | tail -n +$((RETENTION+1)) | xargs -r rm
+Scripts: `scripts/backup_prod.sh`, `scripts/restore_drill.sh`. Cron (user `roman`):
+
+```
+0 3 * * * BACKUP_DIR=/home/roman/backups ~/tracker/scripts/backup_prod.sh >> /var/log/pl-backup.log 2>&1
+0 5 * * 0 BACKUP_DIR=/home/roman/backups ~/tracker/scripts/restore_drill.sh >> /var/log/pl-restore-drill.log 2>&1
 ```
 
-### Media backup
+- Daily: `pg_dump` + uploads-volume archive, gzip-integrity + dump-header check, 14-day retention.
+- Weekly (Sun 05:00): automatic restore drill into throwaway DB `tracker_restore_drill`
+  (tables / users / alembic head verified, DB dropped afterwards).
+- Off-site: set `OFFSITE_DIR=/mnt/backup-remote` in the cron line to rsync backups to a second
+  location (NFS/CIFS/sshfs mount). Error notification: `NOTIFY_ON_ERROR` template (see script header).
+- Move the backup dir to `/opt/backups` (or any mounted volume) once created; the cron
+  `BACKUP_DIR` value is the single place to change.
+- Verified 2026-09-03: manual run `BACKUP_OK tracker_20260903_0505 (272K)` and
+  `DRILL_OK (tracker_restore_drill restored ... tables=145 users=156 alembic=093_portal_selection)`.
+
+### Manual backup
 
 ```bash
-# Том uploads — отдельный backup (rsync или tar)
-tar -czf /opt/backups/uploads_$(date +%Y%m%d).tar.gz /var/lib/docker/volumes/tracker_uploads/_data/
+BACKUP_DIR=/home/roman/backups scripts/backup_prod.sh
 ```
 
-### Restore drill (quarterly)
+### Manual restore drill
 
 ```bash
-createdb -U tracker -h localhost tracker_restore
-gunzip -c backup_*.sql.gz | psql -U tracker -h localhost tracker_restore
-# Проверить: таблицы, counts, snapshot hash, media manifest
-# Удалить: dropdb tracker_restore
+BACKUP_DIR=/home/roman/backups scripts/restore_drill.sh          # newest backup
+BACKUP_FILE=/home/roman/backups/tracker_YYYYMMDD_HHMM.sql.gz scripts/restore_drill.sh
+KEEP_DRILL_DB=1 BACKUP_DIR=/home/roman/backups scripts/restore_drill.sh   # keep for inspection
 ```
 
 ## 6. Health Checks
