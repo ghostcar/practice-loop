@@ -26,10 +26,18 @@ from pathlib import Path
 VERIFIED_AT = "2026-08-13T00:00:00Z"
 LEGACY_SOURCE = "memory/DECISIONS.md"
 
+# Canonical legacy status is russian; english statuses (ADR-172..178 era) and a few
+# synonyms are accepted case-insensitively so mixed-format registries still compile.
 _STATUS_MAP = {
     "принято": "accepted",
+    "принят": "accepted",
+    "реализовано": "accepted",
     "отложено": "proposed",
     "отклонено": "rejected",
+    "accepted": "accepted",
+    "proposed": "proposed",
+    "rejected": "rejected",
+    "superseded": "superseded",
 }
 
 # Provisional decision_type classification for the table-only ADRs (draft).
@@ -67,16 +75,25 @@ class LegacyAdr:
 
 
 ROW_PREFIX_RE = re.compile(r"^\|\s*ADR-(\d{3,})\s*\|")
-SECTION_RE = re.compile(r"^###\s+ADR-(\d{3,})\s+—\s+(.+)$")
+# Section headers: canonical is ``### ADR-NNN — Title``; legacy variants use H2 and/or
+# a colon separator (``## ADR-161: ...``, ``### ADR-152: ...``). All are accepted.
+SECTION_RE = re.compile(r"^#{2,3}\s+ADR-(\d{3,})\s*[—:–]\s*(.+)$")
+
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def parse_legacy(text: str) -> dict[int, LegacyAdr]:
-    """Parse the DECISIONS.md registry table + detailed sections."""
+    """Parse the DECISIONS.md registry table + detailed sections.
+
+    HTML comment blocks (``<!-- ... -->``) are skipped entirely — they hold retired
+    rows and the format contract, and must never become ADRs.
+    """
     rows: dict[int, LegacyAdr] = {}
     sections: dict[int, tuple[str, str]] = {}
     section_order: list[int] = []
     current_section: int | None = None
     section_lines: list[str] = []
+    in_comment = False
 
     def flush_section() -> None:
         nonlocal current_section, section_lines
@@ -87,16 +104,44 @@ def parse_legacy(text: str) -> dict[int, LegacyAdr]:
         section_lines = []
 
     for line in text.splitlines():
+        stripped = line.strip()
+        if in_comment:
+            if "-->" in stripped:
+                in_comment = False
+            continue
+        if stripped.startswith("<!--"):
+            if "-->" not in stripped:
+                in_comment = True
+            continue
         m = ROW_PREFIX_RE.match(line)
         if m:
             num = int(m.group(1))
             cells = [c.strip() for c in line.split("|")]
-            # cells = ['', 'ADR-NNN', date, topic, decision…, status, '']
-            # decision may itself contain '|' (e.g. ADR-048), so rejoin the middle cells.
-            date = cells[2] if len(cells) > 2 else ""
-            topic = cells[3] if len(cells) > 3 else ""
             status = cells[-2] if len(cells) >= 2 else ""
-            decision = "|".join(c for c in cells[4:-2]) if len(cells) > 5 else ""
+            # Two row layouts exist:
+            #   canonical: | ADR | date | topic | decision… | status |  (date in cell 2)
+            #   legacy-6:  | ADR | topic | category | date | commit | status | (date in cell 4)
+            date_idx = 2
+            if not (len(cells) > 2 and _DATE_RE.match(cells[2])):
+                date_idx = 4 if len(cells) > 4 and _DATE_RE.match(cells[4]) else 0
+            if date_idx:
+                date = cells[date_idx]
+                topic = cells[2] if date_idx == 4 else (cells[3] if len(cells) > 3 else "")
+                if date_idx == 4:
+                    # legacy-6: | ADR | topic | category | date | commit | status |
+                    decision = " | ".join(
+                        c for i, c in enumerate(cells[3:-2], start=3) if c and i != date_idx
+                    )
+                else:  # canonical: | ADR | date | topic | decision… | status |
+                    # The decision is authored as ONE cell; literal pipes inside it
+                    # (e.g. ``tracker|timer|combined``) reach us as extra fragments
+                    # after split('|'). Re-join with the bare pipe to reconstruct
+                    # the original value (identity for single-cell rows).
+                    decision = "|".join(cells[4:-2]).strip()
+            else:  # unrecognized layout — keep a minimal record
+                date = ""
+                topic = cells[3] if len(cells) > 3 else ""
+                decision = ""
             rows[num] = LegacyAdr(
                 num=num,
                 date=date,
@@ -106,11 +151,11 @@ def parse_legacy(text: str) -> dict[int, LegacyAdr]:
                 body=None,
             )
             continue
-        m = SECTION_RE.match(line)
-        if m:
+        sm = SECTION_RE.match(line)
+        if sm:
             flush_section()
-            current_section = int(m.group(1))
-            sections[current_section] = (m.group(2).strip(), "")
+            current_section = int(sm.group(1))
+            sections[current_section] = (sm.group(2).strip(), "")
             section_order.append(current_section)
             continue
         if current_section is not None:
@@ -127,7 +172,60 @@ def parse_legacy(text: str) -> dict[int, LegacyAdr]:
     for num, (title, _) in sections.items():
         if num in rows and rows[num].topic == "":
             rows[num].topic = title
+
+    # Promote section-only ADRs (no table row) into the registry: the section IS the
+    # decision record. Date/status come from the body's ``**Date:**``/``**Status:**``
+    # lines when present; default status is принято (historical registry default).
+    for num, (title, _body) in sections.items():
+        if num in rows:
+            continue
+        date, status = _date_status_from_section(text, num)
+        rows[num] = LegacyAdr(
+            num=num, date=date, topic=title, decision="", status=status, body=None
+        )
+        rows[num].body = _extract_section_body(text, num)
     return rows
+
+
+def _date_status_from_section(text: str, num: int) -> tuple[str, str]:
+    body = _extract_section_body(text, num) or ""
+    date = ""
+    status = "принято"
+    for line in body.splitlines():
+        m = re.match(r"\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})", line.strip())
+        if m:
+            date = m.group(1)
+            continue
+        m = re.match(r"\*\*Статус:\*\*\s*(.+?)\.?$", line.strip())
+        if m:
+            status = m.group(1).strip().rstrip(".")
+            continue
+        m = re.match(r"\*\*Status:\*\*\s*(.+?)\.?$", line.strip())
+        if m:
+            status = m.group(1).strip().rstrip(".")
+    return date, _normalize_section_status(status)
+
+
+def _normalize_section_status(raw: str) -> str:
+    """Map free-form section status lines onto the legacy status vocabulary.
+
+    Sections written by different agents use either a clean status word or an
+    implementation report ("✅ Реализовано, 8 новых тестов, ..."). Reports marked
+    with a checkmark or containing 'реализован' mean the decision was accepted.
+    """
+    cleaned = raw.strip().lstrip("✅✔☑").strip()
+    key = cleaned.split(",")[0].strip().lower().rstrip(".")
+    if key in ("принято", "отложено", "отклонено"):
+        return key
+    if key in _STATUS_MAP:
+        # english/synonym statuses translate back to the legacy vocabulary;
+        # 'superseded' has no legacy equivalent and is kept as-is
+        return {"accepted": "принято", "proposed": "отложено", "rejected": "отклонено"}.get(
+            _STATUS_MAP[key], key
+        )
+    if raw.startswith(("✅", "✔", "☑")) or "реализован" in cleaned.lower():
+        return "принято"
+    return raw
 
 
 def _extract_section_body(text: str, num: int) -> str | None:
@@ -159,13 +257,15 @@ def decision_type(num: int) -> str:
 
 
 def _status(num: int, legacy: str) -> str:
-    mapped = _STATUS_MAP.get(legacy.strip())
+    # Compound statuses ("принят, реализован") resolve by their first token.
+    key = legacy.strip().lower().rstrip(".").split(",")[0].strip()
+    mapped = _STATUS_MAP.get(key)
     if mapped is None:
         raise ValueError(f"ADR-{num:03d}: unknown legacy status {legacy!r}")
     return mapped
 
 
-def _frontmatter(adr: LegacyAdr, head: str) -> str:
+def _frontmatter(adr: LegacyAdr, head: str, verified_at: str = VERIFIED_AT) -> str:
     status = _status(adr.num, adr.status)
     accepted_at = f"{adr.date}T00:00:00Z" if (adr.date and status == "accepted") else "null"
     return (
@@ -190,7 +290,7 @@ def _frontmatter(adr: LegacyAdr, head: str) -> str:
         f"  - path: {LEGACY_SOURCE}\n"
         f"    anchor: ADR-{adr.num:03d}\n"
         "    relation: origin\n"
-        f"last_verified_at: {VERIFIED_AT}\n"
+        f"last_verified_at: {verified_at}\n"
         f"last_verified_commit: {head}\n"
         "review_on: source-change\n"
         "---\n"
@@ -236,10 +336,30 @@ def compile_adrs(root: Path, head: str | None = None) -> list[int]:
     out_dir = root / "docs" / "adr"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    marker = "Compiled by `memoryctl adr compile`"
     for num in sorted(adrs):
         adr = adrs[num]
         path = out_dir / f"ADR-{num:03d}.md"
-        path.write_text(_frontmatter(adr, head) + "\n" + _body(adr) + "\n", encoding="utf-8")
+        # Provenance preservation: keep last_verified_at/commit from the existing
+        # generated file so a recompile with a new HEAD produces no diff when the
+        # underlying row/section data is unchanged.
+        head_at = VERIFIED_AT
+        head_sha = head
+        if path.exists():
+            existing = path.read_text(encoding="utf-8")
+            if marker not in existing:
+                # Hand-maintained ADR (owner/agent reviewed) — never overwrite.
+                continue
+            m_at = re.search(r"^last_verified_at:\s*(.+)$", existing, re.M)
+            m_sha = re.search(r"^last_verified_commit:\s*([0-9a-f]{40})\s*$", existing, re.M)
+            if m_at:
+                head_at = m_at.group(1).strip()
+            if m_sha:
+                head_sha = m_sha.group(1)
+        content = _frontmatter(adr, head_sha, verified_at=head_at) + "\n" + _body(adr) + "\n"
+        if path.exists() and path.read_text(encoding="utf-8") == content:
+            continue  # no churn
+        path.write_text(content, encoding="utf-8")
 
     (out_dir / "README.md").write_text(_render_index(sorted(adrs), adrs), encoding="utf-8")
     return sorted(adrs)

@@ -125,6 +125,11 @@
 | [ADR-119](ADR-119.md) | 2026-08-19 | P1g: полный каталог 18+ (принудительное продвижение всех 163 записей) | accepted |
 | [ADR-122](ADR-122.md) | 2026-08-19 | Отложенный Бэклог Социальных и Межпользовательских Фич (Deferred Social Scope) | accepted |
 | [ADR-123](ADR-123.md) | 2026-08-19 | Стратегическое Видение: Специализированный ИИ-Ассистент PracticeLoop (Autonomous Practice Agent) | accepted |
+| [ADR-124](ADR-124.md) | 2026-08-20 | Двухуровневая Библиотека Промптов (System & User Prompts) и Админ-Хаб (/admin/prompts) | accepted |
+| [ADR-125](ADR-125.md) | 2026-08-20 | Dynamic Adaptive Training Program Engine & Interactive Hub (/training/adaptive) | accepted |
+| [ADR-135](ADR-135.md) | 2026-08-21 | Передача владения сообществом и со-модераторы (CommunityMemberRole) | accepted |
+| [ADR-136](ADR-136.md) | 2026-08-21 | Рекомпозиция продукта: R0-аудит и 5 документов примирения (Master Brief) | accepted |
+| [ADR-137](ADR-137.md) | 2026-08-21 | Лекарства: настраиваемая positive-only геймификация (смягчение PD-013, ADR-085) | accepted |
 | [ADR-138](ADR-138.md) | 2026-08-21 | R2.1–R2.3 / R10.2 (Flash-батч) | accepted |
 | [ADR-139](ADR-139.md) | 2026-08-21 | R2.1–R2.3 (Flash-батч v2, уточнение промптов) | accepted |
 | [ADR-140](ADR-140.md) | 2026-08-21 | R5.3 (Flash №4) — UI протоколов | accepted |
@@ -138,3 +143,36 @@
 | [ADR-149](ADR-149.md) | 2026-08-23 | csrf_token во всех нативных POST-формах (аудит auth-флоу) | accepted |
 | [ADR-150](ADR-150.md) | 2026-08-23 | Редирект на /login с уведомлением при истёкшем токене | accepted |
 | [ADR-151](ADR-151.md) | 2026-08-23 | Enforcing CSP (nonce) + 5 иконок в пакет; закрытие Exit-гейтов R9/R10 | accepted |
+| [ADR-152](ADR-152.md) | 2026-08-24 | Real 2FA PIN with Session Cache (replaces simulation) | accepted |
+| [ADR-153](ADR-153.md) | 2026-08-24 | NotificationDispatcher channels are real (was stubs) | accepted |
+| [ADR-154](ADR-154.md) | 2026-08-24 | ActorContext in all mutation services (R8.1 completed) | accepted |
+| [ADR-155](ADR-155.md) | 2026-08-24 | Protocol ↔ Timer bridge (R5.4 completed) | accepted |
+| [ADR-156](ADR-156.md) | 2026-08-24 | Dashboard Refactor: Sessions Extraction + Module Gating | accepted |
+| [ADR-157](ADR-157.md) | 2026-08-24 | R1.2: Feature flags for draft models | accepted |
+| [ADR-158](ADR-158.md) | 2026-08-24 | R4.3: Protocol capability codes | accepted |
+| [ADR-160](ADR-160.md) | 2026-08-24 | P7: Remove all legacy db.commit() from routers (ADR-015 debt closed) | accepted |
+| [ADR-161](ADR-161.md) | 2026-08-24 | care.py → care_service.py (Service Layer Extraction) | accepted |
+| [ADR-162](ADR-162.md) | 2026-08-24 | medication.py → med_service.py (Service Layer Extraction) | accepted |
+| [ADR-163](ADR-163.md) | 2026-08-24 | health.py → health_service.py (Service Layer Extraction) | accepted |
+| [ADR-164](ADR-164.md) | 2026-08-24 | journal.py → journal_service.py (Service Layer Extraction) | accepted |
+| [ADR-165](ADR-165.md) | 2026-08-24 | entities.py → entities_service.py (Service Layer Extraction) | accepted |
+| [ADR-166](ADR-166.md) | 2026-08-24 | training.py → training_service.py (Thin Routes) | accepted |
+| [ADR-167](ADR-167.md) | 2026-08-24 | dashboard.py → dashboard_service.py (Thin Routes) | accepted |
+| [ADR-168](ADR-168.md) | 2026-08-24 | insights.py → insights_service.py (Thin Routes) | accepted |
+| [ADR-169](ADR-169.md) | 2026-08-24 | sessions.py → sessions_service.py (Thin Routes) | accepted |
+| [ADR-170](ADR-170.md) | 2026-08-24 | tasks.py → tasks_service.py (Thin Routes) | accepted |
+| [ADR-171](ADR-171.md) | 2026-08-24 | ds.py → ds_service.py (Thin Routes) | accepted |
+| [ADR-172](ADR-172.md) | 2026-08-25 | Service layer extraction: diets.py → diets_service.py (529→386 thin routes, 422 service) | accepted |
+| [ADR-173](ADR-173.md) | 2026-08-25 | Service layer extraction: prompt_templates.py → prompt_templates_service.py (505→307 thin routes, 350 service) | accepted |
+| [ADR-174](ADR-174.md) | 2026-08-25 | Service layer extraction: import_data.py → import_data_service.py (493→148 thin routes, 422 service) | accepted |
+| [ADR-175](ADR-175.md) | 2026-08-25 | Service layer extraction: calendar.py → calendar_service.py (426→207 thin routes, 323 service) | accepted |
+| [ADR-176](ADR-176.md) | 2026-08-25 | Service layer extraction: protocols.py → protocols_service.py (404→230 thin routes, 360 service) | accepted |
+| [ADR-177](ADR-177.md) | 2026-08-25 | Initial onboarding wizard — 3-step flow (superseded by ADR-184) | accepted |
+| [ADR-178](ADR-178.md) | 2026-08-25 | Service layer extraction: communities/admin/catalog/community_agent/aftercare (5 files, ~1713 lines total) | accepted |
+| [ADR-180](ADR-180.md) | 2026-08-25 | Roadmap v0.9.1 → v1.1 (OCR→Social→Multi+D/s) | accepted |
+| [ADR-181](ADR-181.md) | 2026-08-25 | OCR-first verification pipeline — local pytesseract + LLM-vision fallback (v0.9.1) | accepted |
+| [ADR-182](ADR-182.md) | 2026-08-25 | Platform Social enablement — default ON for v1.0 rollout | accepted |
+| [ADR-183](ADR-183.md) | 2026-08-25 | v1.0 Stage I: public Vitrina + launch | accepted |
+| [ADR-184](ADR-184.md) | 2026-08-31 | Онбординг: режим участия AI → модули → LLM → готово | accepted |
+| [ADR-185](ADR-185.md) | 2026-09-01 | Tasks page tolerates missing LLM usage cost | accepted |
+| [ADR-186](ADR-186.md) | 2026-09-03 | Web session hardening: browser refresh-token rotation + logout revocation | accepted |

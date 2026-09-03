@@ -62,6 +62,26 @@ recommended.
    - ADR/wiki/question proposals are `proposed`/`derived` — product/safety
      decisions are never auto-accepted.
 
+## ADR registry format (canonical, mandatory)
+
+`memory/DECISIONS.md` rows follow exactly one layout (the format contract is
+also embedded as an HTML comment at the top of the file):
+
+```
+| ADR-NNN | YYYY-MM-DD | Тема | Краткое решение | статус |
+```
+
+- `статус` — only `принято` | `отложено` | `отклонено` (english synonyms are
+  accepted by the parser for legacy rows, never for new ones).
+- Detailed section (optional): `### ADR-NNN — Тема` — H3 + em-dash exactly.
+  A `**Date:**`/`**Status:**` block inside lets section-only ADRs compile.
+- Skipped numbers get a tombstone comment: `<!-- ADR-NNN: номер не использован -->`.
+- Decision text must avoid literal `|` (the parser reconstructs them, but the
+  canonical row keeps one cell per field).
+- `docs/adr/ADR-*.md` without the `Compiled by` marker are hand-written and are
+  NEVER overwritten by `adr compile`; generated files keep their provenance
+  timestamps on recompile (no churn). Verify with `adr check` (bidirectional).
+
 ## Invariants
 
 - Preflight is mandatory for code changes in the supported workflow; bypass is

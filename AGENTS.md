@@ -239,6 +239,8 @@ Telegram Bot v2 (10), Auto-Analysis Scheduler (11).
   `memory/OPEN_QUESTIONS.md` (v1 FROZEN — не дописывать). **В конце каждой сессии ОБЯЗАТЕЛЬНО
   обнови активную память БЕЗ дополнительных запросов** — это твоя прямая обязанность, а не опция:
   решения — в `memory/DECISIONS.md` сразу (компиляция `memoryctl adr compile` в `docs/adr/`),
+  формат строки реестра — канонический: `| ADR-NNN | YYYY-MM-DD | Тема | Решение | статус |`,
+  статус — только `принято | отложено | отклонено`; секция (опционально) — `### ADR-NNN — Тема`;
   новые знания — в `docs/wiki/`, вопросы — в `docs/questions/`, факты — `memoryctl facts`,
   рабочий preflight — `memoryctl bootstrap`/`sentinel`/`impact`, запуск агента — `bin/practice-agent`,
   workflow — `.agents/skills/project-memory/SKILL.md`. История сессий — Git history
