@@ -1471,4 +1471,34 @@ Soft integration: timer-bound protocols are launched/aborted alongside timer ses
 | ADR-183 | 2026-08-25 | v1.0 Stage I: public Vitrina + launch | Публичная витрина `/vitrina` (public_router, без авторизации): обезличенный топ участников (discoverable social profiles + реальные UserProgress XP/level/streak/compliance), последние достижения сообщества (is_hidden=false, рендер Anonymous), счётчики сообщества (профили/публикации/kudos). Email и user id не рендерятся. Ссылка с лендинга для анонимов. ADR-183 в docs/adr/. Этап I завершён: CI green (1397 тестов, ruff 0, memoryctl 0/0), тег v1.0.0. | принято |
 | ADR-185 | 2026-09-01 | Tasks page tolerates missing LLM usage cost | Render usage metrics only when present and coerce absent numeric values to zero; page must not fail on nullable provider usage fields | принято |
 | ADR-184 | 2026-08-31 | Онбординг: режим участия AI → модули → LLM → готово | Новый пользовательский flow состоит из 4 шагов: (1) режим участия AI `none`/`portal`/`personal`, (2) модули, (3) настройка LLM только если AI включён, (4) готово → consent → dashboard. Portal quick-pick использует env-backed провайдер без запроса ключа; BYOK открывается в пользовательских настройках. Навигация шагов работает через CSP-safe `addEventListener`, все подписи и описания берутся из EN/RU i18n. Выбор portal-провайдера возвращает в онбординг через allowlisted `return_to`. | принято |
-| ADR-186 | 2026-09-03 | Web session hardening: browser refresh-token rotation + logout revocation | Браузерные сессии получают opaque `refresh_token` cookie (path=/auth) с бэкендом в `ApiToken` (platform=web). Middleware в `app/main.py` ротирует истёкший access cookie one-time-use и выставляет обе cookie; `POST /auth/logout` отзывает refresh token серверно (закрывает находку logout-revocation из K-FUNCTIONAL-READINESS-2026-09-03). Времена жизни: access cookie 30d, refresh window 90d (`jwt_expire_minutes`, `refresh_token_expire_days`). Параметр login `next` ограничен same-site относительными путями. Сопутствующие работы readiness 2026-09-03: prod smoke переведён на clean routes + `module:social` consent + фатальные 4xx/5xx + очистка тестового пользователя; скрипты backup/restore drill (`scripts/backup_prod.sh`, `scripts/restore_drill.sh`) поставлены в cron по RUNBOOK §5; Omniroute gateway переведён на `https://llm.gorbunovr.ru`; полный pytest 1469 зелёный. | принято |
+| ADR-186 | 2026-09-03 | Web session hardening: browser refresh-token rotation + logout revocation | Web-сессии: refresh-токены вращаются при каждом обновлении access-токена, logout отзывает активный refresh (ApiToken.revoked_at). Secure/HttpOnly/SameSite=Lax cookies, регрессионные тесты. | принято |
+
+### ADR-178 — Service layer extraction: communities/admin/catalog/community_agent/aftercare (P2)
+**Date:** 2026-08-25
+**Decision:** Финальный этап P2 «Thin Routes» (продолжение ADR-161–171, 172–176): последние 5 роутеров
+переведены на сервисный слой, HTTP-хендлеры — тонкие обёртки (try → service call → except → redirect/JSON):
+- `communities.py` (425→228 строк) → `communities_service.py` (296)
+- `admin.py` (397→203) → `admin_service.py` (161)
+- `catalog.py` (392→208) → `catalog_service.py` (84) + переиспользуемый `catalog_options()`
+- `community_agent.py` (365→217) → `community_agent_service.py` (97)
+- `aftercare.py` (271→158) → `aftercare_service.py` (63)
+
+4 кросс-модульных импортёра переведены на прямые импорты из сервисов.
+**Rationale:** ~1713 строк бизнес-логики в HTTP-слое мешали переиспользованию (Telegram-бот,
+фоновые задачи) и тестированию; после P2 в `app/api/` не осталось «толстых» роутеров.
+**Verification:** 1380 тестов зелёные, memoryctl lint 0/0. **Коммит:** 175457f2.
+
+### ADR-180 — Roadmap v0.9.1 → v1.1 (OCR → Social → Multi+D/s)
+**Date:** 2026-08-25
+**Decision:** Зафиксирован трёхэтапный план развития в `ROADMAP_V1.md` (227 строк, 12 разделов A–L
+с пошаговыми задачами, контрольными точками и явными deferred). Базовый коммит: 5fcf0f18 (CI green —
+ruff 0, 1380 тестов, memoryctl 0/0):
+1. **v0.9.1 — OCR & Verification** (1–3 сессии): pytesseract + LLM-vision fallback — фундамент для
+   D/s check-in пломб, Social-верификации фото и Media Vault (реализован в ADR-181).
+2. **v1.0 — Social to Production** (3–5 сессий): enablement, профили, фид, сообщества, модерация,
+   лидерборд.
+3. **v1.1 — Multi-User & D/s Contour** (3–5 сессий): partner linking, делегирование (ADR-129),
+   keyholder-контур.
+
+**Rationale:** OCR — недостающий фундамент всех последующих контуров; принцип плана — каждый этап
+автономный, тестируемый, деплоимый. **Коммит:** 4f0abb23.
