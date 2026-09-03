@@ -73,3 +73,11 @@ node_modules/
 
 # Database backups (production dumps)
 backups/
+
+# Local secrets backups (never commit)
+.env.bak*
+.playwright-mcp/
+
+# Root-owned test artifacts (moved aside when dirs were created by root)
+playwright-report.root-owned/
+test-results.root-owned/
