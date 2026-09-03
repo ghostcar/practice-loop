@@ -403,12 +403,12 @@ def _omniroute_preset() -> dict:
     """Build the Omniroute preset from settings (ADR-070, Session 120).
 
     Host/key come from .env (OMNIROUTE_HOST / OMNIROUTE_API_KEY) — the same
-    vars the memory vector pilot uses. Falls back to the old local-gateway URL
-    with no key for legacy dev setups.
+    vars the memory vector pilot uses. Falls back to the public gateway
+    with no key when unset.
     """
     from app.config import settings
 
-    host = (settings.omniroute_host or "http://host.docker.internal:20128").rstrip("/")
+    host = (settings.omniroute_host or "https://llm.gorbunovr.ru").rstrip("/")
     if not host.endswith("/v1"):
         host = f"{host}/v1"
     return {
