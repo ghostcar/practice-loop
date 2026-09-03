@@ -1,88 +1,95 @@
-// Body Parts catalog page: tree rendering, search, filter (DESIGN.md 15.4).
+// Body-zone reference: localized grouped list, search, and area filter.
 (function () {
   'use strict';
 
   var treeEl = document.getElementById('bp-tree');
   if (!treeEl) return;
 
-  // Fetch tree on load
+  var locale = treeEl.dataset.locale || 'ru';
+  var systemLabels = {};
+  var systemSelect = document.getElementById('bp-system');
+  Array.prototype.forEach.call(systemSelect.options, function (option) {
+    if (option.value) systemLabels[option.value] = option.textContent;
+  });
+
   (async function () {
     try {
       var r = await fetch('/api/v2/body-parts/tree');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
       var tree = await r.json();
       window._bpTree = tree;
-      window._bpFlat = flattenTree(tree);
-      renderTree(tree);
+      renderGroups(tree);
     } catch (e) {
-      treeEl.innerHTML = '<div class="p-4 text-sm text-red-700 dark:text-red-400">Failed to load body parts</div>';
+      treeEl.innerHTML = '<div class="p-4 text-sm text-red-700 dark:text-red-400" role="alert">' +
+        escHtml(treeEl.dataset.loadError || '') + '</div>';
     }
   })();
 
-  function flattenTree(nodes, out) {
-    out = out || [];
-    for (var i = 0; i < nodes.length; i++) {
-      out.push(nodes[i]);
-      if (nodes[i].children) flattenTree(nodes[i].children, out);
-    }
-    return out;
-  }
-
   window.filterTree = function () {
-    var q = (document.getElementById('bp-search').value || '').toLowerCase();
-    var sys = document.getElementById('bp-system').value;
-    var filtered = window._bpFlat || [];
-    if (sys) filtered = filtered.filter(function (n) { return n.body_system === sys; });
-    if (q) {
-      filtered = filtered.filter(function (n) {
-        return (n.title_ru || n.title_en || n.slug || '').toLowerCase().indexOf(q) !== -1 ||
-               (n.slug || '').toLowerCase().indexOf(q) !== -1;
-      });
-    }
-    var ids = {};
-    filtered.forEach(function (n) { ids[n.id] = true; });
-    renderTree(window._bpTree, ids, q ? true : false);
+    var q = (document.getElementById('bp-search').value || '').trim().toLowerCase();
+    renderGroups(window._bpTree || [], q, systemSelect.value);
   };
 
-  function renderTree(nodes, highlightIds, expandAll) {
-    treeEl.innerHTML = (nodes || []).map(function (n) { return renderNode(n, 0, highlightIds, expandAll); }).join('');
+  function renderGroups(nodes, query, selectedSystem) {
+    var grouped = {};
+    (nodes || []).forEach(function (node) {
+      var system = node.body_system || 'general';
+      if (!grouped[system]) grouped[system] = [];
+      grouped[system].push(node);
+    });
+
+    var order = Array.prototype.map.call(systemSelect.options, function (option) { return option.value; });
+    var html = order.filter(Boolean).map(function (system) {
+      if (selectedSystem && selectedSystem !== system) return '';
+      var rows = (grouped[system] || []).map(function (node) {
+        return renderNode(node, 0, query || '');
+      }).join('');
+      if (!rows) return '';
+      return '<section class="border-b border-[color:var(--border)] last:border-b-0" data-body-system="' +
+        escHtml(system) + '">' +
+        '<h2 class="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[color:var(--text-secondary)] pl-surface-soft">' +
+        escHtml(systemLabels[system] || systemLabels.general || '') + '</h2>' +
+        '<ul class="divide-y divide-[color:var(--border)]" role="list">' + rows + '</ul></section>';
+    }).join('');
+
+    treeEl.innerHTML = html || '<div class="p-6 text-center text-sm text-[color:var(--text-muted)]">' +
+      escHtml(treeEl.dataset.empty || '') + '</div>';
   }
 
-  function renderNode(node, depth, highlightIds, expandAll) {
+  function renderNode(node, depth, query) {
     var hasChildren = node.children && node.children.length > 0;
-    var highlighted = highlightIds ? highlightIds[node.id] : true;
-    if (!highlighted && !hasChildren) return '';
-    var title = node.title_ru || node.title_en || node.slug || '';
-    var indent = depth * 16;
-    var dotColor = node.is_sensitive ? 'bg-rose-400' : 'bg-slate-300 dark:bg-slate-600';
-    var id = 'bp-' + node.id;
-    var html = '<div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors' +
-      (highlighted ? '' : ' opacity-30') + '" style="padding-left:' + (indent + 16) + 'px">';
-    if (hasChildren) {
-      html += '<button data-action="_bpToggle" data-arg1=\"' + id + '\" class="w-5 h-5 flex items-center justify-center text-[color:var(--text-muted)] hover:text-slate-600 dark:hover:text-slate-300 text-xs transition-transform\" id=\"' + id + '-btn\">\u25b8</button>';
-    } else {
-      html += '<span class="w-5"></span>';
+    var title = getTitle(node);
+    var matches = !query || searchableTitle(node).indexOf(query) !== -1;
+    var childRows = hasChildren ? node.children.map(function (child) {
+      return renderNode(child, depth + 1, matches ? '' : query);
+    }).join('') : '';
+    if (!matches && !childRows) return '';
+
+    var html = '<li><div class="flex min-h-11 items-center gap-3 px-4 py-2.5" style="padding-left:' +
+      (16 + depth * 24) + 'px">';
+    html += '<span class="w-1.5 h-1.5 rounded-full bg-[color:var(--text-muted)] flex-shrink-0" aria-hidden="true"></span>';
+    html += '<span class="text-sm ' + (hasChildren ? 'font-medium' : '') + ' text-[color:var(--text)]">' +
+      escHtml(title) + '</span>';
+    if (node.is_sensitive) {
+      html += '<span class="ml-auto rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">' +
+        escHtml(treeEl.dataset.sensitive || '') + '</span>';
     }
-    html += '<span class="w-2 h-2 rounded-full ' + dotColor + ' flex-shrink-0"></span>';
-    html += '<span class="text-sm text-slate-700 dark:text-slate-200">' + escHtml(title) + '</span>';
-    html += '<span class="text-xs text-[color:var(--text-muted)] ml-auto" aria-hidden="true">' +
-      (node.is_sensitive ? '•' : '') + '</span>';
     html += '</div>';
     if (hasChildren) {
-      html += '<div id="' + id + '" class="' + (expandAll ? '' : 'hidden') + '">';
-      html += node.children.map(function (c) { return renderNode(c, depth + 1, highlightIds, expandAll); }).join('');
-      html += '</div>';
+      html += '<ul class="border-t border-[color:var(--border)] divide-y divide-[color:var(--border)]" role="list">' +
+        childRows + '</ul>';
     }
-    return html;
+    return html + '</li>';
   }
 
-  window._bpToggle = function (id) {
-    var el = document.getElementById(id);
-    var btn = document.getElementById(id + '-btn');
-    if (el) {
-      el.classList.toggle('hidden');
-      if (btn) btn.textContent = el.classList.contains('hidden') ? '\u25b8' : '\u25be';
-    }
-  };
+  function getTitle(node) {
+    if (locale.indexOf('en') === 0 && node.title_en) return node.title_en;
+    return node.title_ru || node.title_en || '';
+  }
+
+  function searchableTitle(node) {
+    return String(getTitle(node) + ' ' + (node.title_ru || '') + ' ' + (node.title_en || '')).toLowerCase();
+  }
 
   function escHtml(s) {
     var d = document.createElement('div');
