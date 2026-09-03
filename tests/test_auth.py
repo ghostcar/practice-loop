@@ -87,6 +87,67 @@ async def test_logout(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_logout_revokes_web_refresh_token(
+    async_client: AsyncClient, test_user: User, db_session: AsyncSession
+):
+    """Regression (K-FUNCTIONAL-READINESS-2026-09-03): logout must revoke the
+    browser refresh token. Previously only the cookies were cleared, so a
+    refresh cookie captured before logout kept minting fresh token pairs via
+    the middleware rotation path.
+    """
+    from app.auth import hash_refresh_token
+    from app.models.api_token import ApiToken
+
+    # Login issues a web-platform refresh token (rotated by the middleware).
+    resp = await async_client.post(
+        "/auth/login",
+        data={"email": test_user.email, "password": "secret123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+    # Extract the raw refresh token from Set-Cookie directly: with a production
+    # APP_ENV the cookie is Secure and httpx would not replay it over http://test.
+    raw_refresh = None
+    for cookie in resp.headers.get_list("set-cookie"):
+        if cookie.startswith("refresh_token="):
+            raw_refresh = cookie.split("=", 1)[1].split(";", 1)[0]
+    assert raw_refresh, "login must set the refresh_token cookie"
+
+    stored = (
+        await db_session.execute(
+            select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh))
+        )
+    ).scalar_one_or_none()
+    assert stored is not None and stored.revoked_at is None, "token must be active before logout"
+
+    # Logout with the captured refresh cookie revokes it server-side.
+    csrf = async_client.cookies.get("csrf_token") or ""
+    resp = await async_client.post(
+        "/auth/logout",
+        cookies={"refresh_token": raw_refresh, "csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 303
+
+    # Re-select through the test session (the handler flushed in its own
+    # savepoint; expire the cached object to see the committed row state).
+    db_session.expire_all()
+    stored = (
+        await db_session.execute(
+            select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh))
+        )
+    ).scalar_one_or_none()
+    assert stored is not None and stored.revoked_at is not None, "refresh token must be revoked after logout"
+
+    # The captured cookie no longer mints a new session via /api/v2/auth/refresh.
+    resp = await async_client.post(
+        "/api/v2/auth/refresh", json={"refresh_token": raw_refresh}
+    )
+    assert resp.status_code in (401, 403), "revoked token must not refresh"
+
+
+@pytest.mark.asyncio
 async def test_dashboard_requires_auth(async_client: AsyncClient):
     """Dashboard without auth returns 401."""
     response = await async_client.get("/dashboard", follow_redirects=False)

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
@@ -5,14 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import (
     create_access_token,
+    generate_refresh_token,
     get_current_user,
     get_optional_user,
     hash_password,
+    hash_refresh_token,
     verify_password,
 )
 from app.database import get_db
 from app.i18n import get_supported_locales, get_translations
 from app.i18n.helpers import detect_locale
+from app.models.api_token import ApiToken
 from app.models.user import User
 from app.security import set_csrf_cookie
 from app.templates_setup import templates
@@ -131,8 +136,19 @@ async def register(
     await db.flush()
 
     response = RedirectResponse(url="/onboarding", status_code=status.HTTP_303_SEE_OTHER)
-    loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
     from app.config import settings
+
+    raw_refresh = generate_refresh_token()
+    db.add(
+        ApiToken(
+            user_id=user.id,
+            token_hash=hash_refresh_token(raw_refresh),
+            platform="web",
+            expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days),
+        )
+    )
+    await db.flush()
+    loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
 
     response.set_cookie(
         key="access_token",
@@ -140,8 +156,17 @@ async def register(
         httponly=True,
         secure=settings.app_env == "production" and not loopback,
         samesite="lax",
-        max_age=86400,
+        max_age=settings.jwt_expire_minutes * 60,
         path="/",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=raw_refresh,
+        httponly=True,
+        secure=settings.app_env == "production" and not loopback,
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 86400,
+        path="/auth",
     )
     from app.security import set_csrf_cookie
 
@@ -157,6 +182,7 @@ async def login(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
+    next: str = Form(default=""),
     db: AsyncSession = Depends(get_db),
     user: User | None = Depends(get_optional_user),
 ):
@@ -180,6 +206,7 @@ async def login(
                 "t": t,
                 "locale": locale,
                 "error": t["error_invalid_credentials"],
+                "email": email.strip(),
             },
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
@@ -193,8 +220,29 @@ async def login(
     missing = await missing_consents(db, user.id, module_keys)
 
     token = create_access_token(user.id)
+    raw_refresh = generate_refresh_token()
+    db.add(
+        ApiToken(
+            user_id=user.id,
+            token_hash=hash_refresh_token(raw_refresh),
+            platform="web",
+            expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days),
+        )
+    )
+    await db.flush()
     target = "/consent/setup?required=" + ",".join(missing) if missing else "/dashboard"
+    # Only relative local paths may be used as a post-login destination.
+    target = target if target.startswith("/") and not target.startswith("//") else "/dashboard"
     response = RedirectResponse(url=target, status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        key="last_login_email",
+        value=user.email,
+        max_age=365 * 24 * 60 * 60,
+        httponly=False,
+        secure=settings.app_env == "production" and request.url.hostname not in ("127.0.0.1", "localhost", "::1"),
+        samesite="lax",
+        path="/login",
+    )
     # Secure is meaningful only over HTTPS. On plain-http loopback (local dev,
     # browser E2E) strict engines (WebKit) drop a Secure cookie entirely; the
     # flag there is both useless and harmful. Real deployments (non-loopback)
@@ -206,8 +254,17 @@ async def login(
         httponly=True,
         secure=settings.app_env == "production" and not loopback,
         samesite="lax",
-        max_age=86400,  # 24 hours
+        max_age=settings.jwt_expire_minutes * 60,
         path="/",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=raw_refresh,
+        httponly=True,
+        secure=settings.app_env == "production" and not loopback,
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 86400,
+        path="/auth",
     )
     set_csrf_cookie(response, request)
     return response
@@ -217,10 +274,30 @@ async def login(
 
 
 @router.post("/auth/logout")
-async def logout():
-    """Clear auth cookie and redirect to home. POST only."""
+async def logout(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Revoke the session's refresh token, clear auth cookies, redirect home.
+
+    POST only (audit: GET logout is a CSRF/logout vector). Revocation closes
+    the audit finding: a refresh cookie captured before logout must no longer
+    mint new access tokens (the middleware rotation path checks revoked_at).
+    """
+    raw_refresh = request.cookies.get("refresh_token")
+    if raw_refresh:
+        from app.models.api_token import ApiToken
+
+        record = (
+            await db.execute(select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh)))
+        ).scalar_one_or_none()
+        if record is not None and record.revoked_at is None:
+            record.revoked_at = datetime.now(UTC)
+            await db.flush()
+
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/auth")
     response.delete_cookie("csrf_token", path="/")
     return response
 

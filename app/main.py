@@ -149,6 +149,30 @@ async def security_headers_middleware(request: Request, call_next):
     nonce = secrets.token_urlsafe(16)
     request.state.csp_nonce = nonce
     response = await call_next(request)
+    refreshed_access = getattr(request.state, "refreshed_access_token", None)
+    refreshed_refresh = getattr(request.state, "refreshed_refresh_token", None)
+    if refreshed_access:
+        loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
+        response.set_cookie(
+            "access_token",
+            refreshed_access,
+            httponly=True,
+            secure=settings.app_env == "production" and not loopback,
+            samesite="lax",
+            max_age=settings.jwt_expire_minutes * 60,
+            path="/",
+        )
+    if refreshed_refresh:
+        loopback = request.url.hostname in ("127.0.0.1", "localhost", "::1")
+        response.set_cookie(
+            "refresh_token",
+            refreshed_refresh,
+            httponly=True,
+            secure=settings.app_env == "production" and not loopback,
+            samesite="lax",
+            max_age=settings.refresh_token_expire_days * 86400,
+            path="/auth",
+        )
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -558,6 +582,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             # with a notice, and drop the stale cookie so the client doesn't
             # keep sending it (each protected page would re-401 otherwise).
             response = RedirectResponse(url="/login?session_expired=1", status_code=303)
+            # Keep a valid refresh cookie so the next request can restore the session.
             response.delete_cookie("access_token", path="/")
             return response
         return await _render_error_page(request, exc.status_code, str(exc.detail or ""))

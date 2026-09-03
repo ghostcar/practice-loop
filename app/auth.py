@@ -98,6 +98,48 @@ def hash_refresh_token(raw_token: str) -> str:
 # --- Auth dependency ---
 
 
+async def _user_from_refresh_cookie(request: Request, db: AsyncSession) -> User | None:
+    """Rotate a valid browser refresh cookie and return its user.
+
+    The replacement access token is attached to the response by middleware;
+    dependency resolution itself cannot mutate the eventual response safely,
+    so this helper only provides the validated user. Expired access cookies are
+    refreshed by the request middleware.
+    """
+    raw = request.cookies.get("refresh_token")
+    if not raw:
+        return None
+    from app.models.api_token import ApiToken
+    from app.timeutils import as_utc
+
+    record = (
+        await db.execute(select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw)))
+    ).scalar_one_or_none()
+    now = datetime.now(UTC)
+    if record is None or record.revoked_at is not None or as_utc(record.expires_at) <= now:
+        return None
+    user = (
+        await db.execute(select(User).where(User.id == record.user_id, User.disabled_at.is_(None)))
+    ).scalar_one_or_none()
+    if user is None:
+        return None
+    request.state.refreshed_access_token = create_access_token(user.id)
+    record.revoked_at = now
+    record.last_used_at = now
+    replacement = generate_refresh_token()
+    record2 = ApiToken(
+        user_id=user.id,
+        token_hash=hash_refresh_token(replacement),
+        platform="web",
+        expires_at=now + timedelta(days=settings.refresh_token_expire_days),
+        rotated_from_id=record.id,
+    )
+    db.add(record2)
+    request.state.refreshed_refresh_token = replacement
+    await db.flush()
+    return user
+
+
 async def get_current_user(
     request: Request,
     token: str | None = Depends(oauth2_scheme),
@@ -107,6 +149,10 @@ async def get_current_user(
     if token is None:
         token = request.cookies.get("access_token")
         if token is None:
+            refreshed = await _user_from_refresh_cookie(request, db)
+            if refreshed is not None:
+                _load_prefs_context(refreshed)
+                return refreshed
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Not authenticated",
@@ -114,6 +160,10 @@ async def get_current_user(
 
     user_id = decode_access_token(token)
     if user_id is None:
+        refreshed = await _user_from_refresh_cookie(request, db)
+        if refreshed is not None:
+            _load_prefs_context(refreshed)
+            raise HTTPException(status_code=401, detail="Access token refreshed; retry request")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
