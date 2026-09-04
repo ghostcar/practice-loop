@@ -1379,6 +1379,15 @@ EN = {
     "med_preset_three_after_meal": "3 times a day after meals",
     "med_preset_interval_hours": "every N hours",
     "med_preset_weekly_days": "on selected weekdays",
+    # Smart input (ADR-189, phase D)
+    "med_smart_parse": "Parse",
+    "med_smart_placeholder": "Type the regimen: \"3 times a day before meals for 20 days\"",
+    "med_smart_empty": "Type how to take it in words",
+    "med_working": "Parsing…",
+    "med_parse_error": (
+        "Could not parse the text. Describe it in words: how many times a day, before/after "
+        "meals, how many days — e.g. \"2 times a day after meals for 10 days\". Or use presets."
+    ),
     # Kits (ADR-189, phase A)
     "med_add_to_kit": "Kit",
     "med_stock_qty_label": "Stock (qty)",

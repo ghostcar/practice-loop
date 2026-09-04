@@ -258,6 +258,10 @@
                     <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('plus', 'w-3.5 h-3.5') }}{{ t.med_course_add_item }}</summary>
                     <form action="/med-courses/{{ c.id }}/items" method="post" class="mt-2 grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <div class="col-span-2 flex flex-col sm:flex-row gap-1.5">
+                            <input type="text" class="regimen-parse-input flex-1 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]" placeholder="{{ t.med_smart_placeholder }}">
+                            <button type="button" class="btn-regimen-parse px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center justify-center gap-1 min-h-[36px]">{{ icon('sparkles', 'w-3.5 h-3.5') }}{{ t.med_smart_parse }}</button>
+                        </div>
                         <label class="text-xs pl-text-secondary col-span-2">* {{ t.med_name }}
                             <select name="medication_id" required class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                                 {% for m in meds %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
@@ -487,6 +491,10 @@
                         </form>
                         <form action="/medications/{{ m.id }}/schedule" method="post" class="grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]" data-schedule-form>
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <div class="col-span-2 flex flex-col sm:flex-row gap-1.5">
+                                <input type="text" class="regimen-parse-input flex-1 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]" placeholder="{{ t.med_smart_placeholder }}">
+                                <button type="button" class="btn-regimen-parse px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center justify-center gap-1 min-h-[36px]">{{ icon('sparkles', 'w-3.5 h-3.5') }}{{ t.med_smart_parse }}</button>
+                            </div>
                             <div class="col-span-2 flex flex-wrap gap-1.5">
                                 <span class="text-xs pl-text-secondary w-full">{{ t.med_preset_choose }}</span>
                                 {% for p in regimen_presets %}
@@ -665,6 +673,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         form.addEventListener('input', updatePreview);
         updatePreview();
+    });
+
+    // ADR-189 (фаза D): умный ввод — свободный текст → предзаполнение формы (подтверждает пользователь)
+    document.querySelectorAll('form').forEach(function(form) {
+        const btn = form.querySelector('.btn-regimen-parse');
+        if (!btn) return;
+        const input = form.querySelector('.regimen-parse-input');
+        const isScheduleForm = form.hasAttribute('data-schedule-form');
+        btn.addEventListener('click', async function() {
+            const raw = (input ? input.value : '').trim();
+            if (!raw) {
+                alert('{{ t.med_smart_empty }}');
+                return;
+            }
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '{{ t.med_working }}';
+            try {
+                const fd = new FormData();
+                fd.append('text', raw);
+                const csrfInput = document.querySelector('input[name="csrf_token"]');
+                if (csrfInput) fd.append('csrf_token', csrfInput.value);
+                const res = await fetch('/medications/parse-regimen', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.status === 'ok' && data.params) {
+                    Object.keys(data.params).forEach(function(k) {
+                        const el = form.querySelector('[name="' + k + '"]');
+                        if (el) el.value = data.params[k];
+                    });
+                    if (isScheduleForm) form.dispatchEvent(new Event('input', { bubbles: true }));
+                } else {
+                    alert(data.message || '{{ t.med_parse_error }}');
+                }
+            } catch (e) {
+                console.error('Regimen parse error:', e);
+                alert('{{ t.med_parse_error }}');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        });
     });
 });
 </script>

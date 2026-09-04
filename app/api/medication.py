@@ -166,6 +166,25 @@ async def autofill_medication_info(
     return {"status": "ok", "data": info}
 
 
+@router.post("/medications/parse-regimen")
+async def parse_regimen_text(
+    request: Request,
+    text: str = Form(default=""),
+    user: User = Depends(get_current_user),
+):
+    """ADR-189 (фаза D): свободный текст режима → параметры для предзаполнения формы.
+
+    Парсер ничего не сохраняет: результат подтверждает пользователь перед submit.
+    """
+    locale = detect_locale(request, user.locale)
+    t = get_translations(locale)
+    try:
+        params = svc.parse_regimen_text(text)
+    except ValueError:
+        return {"status": "error", "message": t["med_parse_error"]}
+    return {"status": "ok", "params": params}
+
+
 @router.post("/medications/{medication_id}/delete")
 async def delete_medication(
     request: Request,
@@ -439,9 +458,7 @@ async def create_kit(
         except ValueError:
             raise HTTPException(400, "Invalid location") from None
     try:
-        await svc.create_kit(
-            db, user_id=user.id, name=name, location=location, notes=notes, location_id=loc_uuid
-        )
+        await svc.create_kit(db, user_id=user.id, name=name, location=location, notes=notes, location_id=loc_uuid)
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
     return RedirectResponse(url="/medications", status_code=303)
@@ -713,6 +730,18 @@ async def json_delete_course(
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return None
+
+
+@json_router.post("/regimen/parse")
+async def json_parse_regimen(
+    body: svc.RegimenParseBody,
+    user: User = Depends(get_current_user),
+):
+    """ADR-189 (фаза D, mobile parity): текст режима → структурированные параметры."""
+    try:
+        return svc.parse_regimen_text(body.text)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from None
 
 
 @json_router.post("/{medication_id}/intake", status_code=201)

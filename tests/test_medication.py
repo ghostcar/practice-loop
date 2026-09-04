@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import hash_password
 from app.models.medication import MedCourse, Medication, MedIntake, MedKit, MedSchedule, MedStock
 from app.models.user import User
+from app.services.med_service import parse_regimen_text
 
 
 async def _create_medication(client, name: str = "Ibuprofen") -> str:
@@ -585,9 +586,7 @@ async def _course_id(db: AsyncSession, user_id, name: str) -> str:
 
 
 async def db_session_exec(db: AsyncSession, model, user_id, name: str):
-    return (
-        await db.execute(select(model).where(model.user_id == user_id, model.name == name))
-    ).scalar_one()
+    return (await db.execute(select(model).where(model.user_id == user_id, model.name == name))).scalar_one()
 
 
 @pytest.mark.asyncio
@@ -612,9 +611,7 @@ async def test_course_create_and_add_item(auth_client, test_user, db_session):
     )
     assert resp.status_code == 303, resp.text
 
-    s = (
-        await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == uuid.UUID(cid)))
-    ).scalar_one()
+    s = (await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == uuid.UUID(cid)))).scalar_one()
     assert s.food_relation == "before_meal"
     assert s.end_date == date(2026, 9, 19)  # 10 дней с 10.09
     assert s.times_per_day == 3
@@ -682,9 +679,7 @@ async def test_schedule_summary_groups_slots(auth_client, test_user, db_session)
     assert any(m["medication_name"] == "Metformin" for s in data["slots"] for m in s["meds"])
 
     sched = (await db_session.execute(select(MedSchedule))).scalar_one()
-    resp = await auth_client.post(
-        "/med-intakes/batch", data={"schedule_ids": str(sched.id), "slot_time": "08:00"}
-    )
+    resp = await auth_client.post("/med-intakes/batch", data={"schedule_ids": str(sched.id), "slot_time": "08:00"})
     assert resp.status_code == 303, resp.text
     data = (await auth_client.get("/api/v2/medications/today")).json()
     slot_08 = next(s for s in data["slots"] if s["time"] == "08:00")
@@ -701,9 +696,7 @@ async def test_kit_linked_to_location(auth_client, test_user, db_session):
     db_session.add(loc)
     await db_session.flush()
 
-    resp = await auth_client.post(
-        "/med-kits", data={"name": "Shelf kit", "location_id": str(loc.id), "location": ""}
-    )
+    resp = await auth_client.post("/med-kits", data={"name": "Shelf kit", "location_id": str(loc.id), "location": ""})
     assert resp.status_code == 303, resp.text
     kit = (await db_session.execute(select(MedKit).where(MedKit.user_id == test_user.id))).scalar_one()
     assert kit.location_id == loc.id
@@ -746,3 +739,136 @@ async def test_dashboard_merge_med_group(auth_client, test_user, db_session):
     assert len(groups) == 1
     assert groups[0]["slot_time"] == "07:30"
     assert {m["schedule_id"] for m in groups[0]["meds"]} == {"s1", "s2"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase D (ADR-189): умный ввод — свободный текст → параметры режима
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _assert_regimen(text: str, expected: dict):
+    parsed = parse_regimen_text(text)
+    for key, val in expected.items():
+        assert parsed[key] == val, f"{text}: {key}={parsed.get(key)!r} != {val!r}"
+
+
+def test_parse_regimen_russian_phrases():
+    cases = [
+        (
+            "3 раза в день до еды 20 дней",
+            {"frequency_type": "daily", "times_per_day": 3, "food_relation": "before_meal", "duration_days": 20},
+        ),
+        (
+            "2 раза в день после еды 10 дней",
+            {"frequency_type": "daily", "times_per_day": 2, "food_relation": "after_meal", "duration_days": 10},
+        ),
+        ("1 раз в день утром", {"frequency_type": "daily", "times_per_day": 1, "times_of_day": "08:00"}),
+        ("натощак за 30 мин до завтрака", {"frequency_type": "daily", "food_relation": "empty_stomach"}),
+        ("каждые 6 часов", {"frequency_type": "interval", "interval_hours": 6.0}),
+        ("раз в день", {"frequency_type": "daily", "times_per_day": 1}),
+        ("ежедневно", {"frequency_type": "daily", "times_per_day": 1}),
+    ]
+    for text, expected in cases:
+        _assert_regimen(text, expected)
+
+
+def test_parse_regimen_dose_and_weekdays():
+    cases = [
+        (
+            "1 таблетка каждые 8 часов с понедельника",
+            {"frequency_type": "interval", "interval_hours": 8.0, "dose_quantity": 1.0, "dose_unit": "tablet"},
+        ),
+        (
+            "по 2 таблетки 2 раза в день во время еды с 15.09 на 10 дней",
+            {
+                "frequency_type": "daily",
+                "times_per_day": 2,
+                "food_relation": "during_meal",
+                "duration_days": 10,
+                "dose_quantity": 2.0,
+                "dose_unit": "tablet",
+            },
+        ),
+        ("по понедельникам и средам", {"frequency_type": "weekly", "days_of_week": "0,2"}),
+        (
+            "по будням в 08:00 и 20:00",
+            {"frequency_type": "weekly", "days_of_week": "0,1,2,3,4", "times_of_day": "08:00, 20:00"},
+        ),
+    ]
+    for text, expected in cases:
+        _assert_regimen(text, expected)
+
+
+def test_parse_regimen_english_phrases():
+    cases = [
+        (
+            "1 time a day before meals for 20 days",
+            {"frequency_type": "daily", "times_per_day": 1, "food_relation": "before_meal", "duration_days": 20},
+        ),
+        (
+            "1 capsule every 8 hours for 5 days",
+            {"frequency_type": "interval", "interval_hours": 8.0, "duration_days": 5, "dose_unit": "capsule"},
+        ),
+        ("2 times a day after meals", {"frequency_type": "daily", "times_per_day": 2, "food_relation": "after_meal"}),
+        ("every Monday and Wednesday", {"frequency_type": "weekly", "days_of_week": "0,2"}),
+    ]
+    for text, expected in cases:
+        _assert_regimen(text, expected)
+
+
+@pytest.mark.parametrize("text", ["", "пить чаще", "принимать по настроению", "abc 123 ??"])
+def test_parse_regimen_garbage_rejected(text: str):
+    with pytest.raises(ValueError):
+        parse_regimen_text(text)
+
+
+def test_parse_regimen_never_sets_end_date():
+    """Парсер предлагает параметры (длительность/старт), но не материализует end_date."""
+    parsed = parse_regimen_text("3 раза в день до еды 20 дней")
+    assert "end_date" not in parsed
+    assert "duration_days" in parsed
+
+
+@pytest.mark.asyncio
+async def test_page_parse_regimen_endpoint(auth_client, test_user):
+    """POST /medications/parse-regimen → ok+params; мусор → error без сохранения."""
+    resp = await auth_client.post("/medications/parse-regimen", data={"text": "3 раза в день до еды 20 дней"})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["status"] == "ok"
+    assert body["params"]["times_per_day"] == 3
+    assert body["params"]["food_relation"] == "before_meal"
+    assert body["params"]["duration_days"] == 20
+
+    resp = await auth_client.post("/medications/parse-regimen", data={"text": "пить чаще"})
+    body = resp.json()
+    assert body["status"] == "error"
+    assert body["message"]
+
+
+@pytest.mark.asyncio
+async def test_json_parse_regimen_endpoint(auth_client):
+    """JSON (mobile parity): POST /api/v2/medications/regimen/parse."""
+    resp = await auth_client.post(
+        "/api/v2/medications/regimen/parse", json={"text": "1 capsule every 6 hours for 7 days"}
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["frequency_type"] == "interval"
+    assert body["interval_hours"] == 6.0
+    assert body["duration_days"] == 7
+    assert body["dose_unit"] == "capsule"
+
+    resp = await auth_client.post("/api/v2/medications/regimen/parse", json={"text": "непонятно"})
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_persists_nothing(auth_client, test_user, db_session):
+    """Умный ввод ничего не сохраняет: после разбора не появляется расписаний/приёмов."""
+    await _create_medication(auth_client, "Cleanup med")
+    await auth_client.post("/medications/parse-regimen", data={"text": "3 раза в день до еды 20 дней"})
+    scheds = (await db_session.execute(select(MedSchedule).where(MedSchedule.user_id == test_user.id))).scalars().all()
+    intakes = (await db_session.execute(select(MedIntake).where(MedIntake.user_id == test_user.id))).scalars().all()
+    assert scheds == []
+    assert intakes == []
