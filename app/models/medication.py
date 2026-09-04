@@ -330,6 +330,16 @@ class MedIntake(Base):
     schedule_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("med_schedules.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # ADR-190 (фаза F): приём выполнен заменителем — medication_id = фактический
+    # препарат, substituted_for_id = тот, вместо которого он принят
+    substituted_for_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("medications.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    # ADR-190 (фаза G): явное подтверждение превышения суточной дозы
+    ul_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # когда должно было быть
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # фактическое время
@@ -341,7 +351,10 @@ class MedIntake(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user: Mapped[User] = relationship("User", lazy="selectin")
-    medication: Mapped[Medication] = relationship("Medication", lazy="selectin")
+    medication: Mapped[Medication] = relationship("Medication", lazy="selectin", foreign_keys=[medication_id])
+    substituted_for: Mapped[Medication | None] = relationship(
+        "Medication", lazy="selectin", foreign_keys=[substituted_for_id]
+    )
     schedule: Mapped[MedSchedule | None] = relationship("MedSchedule", lazy="selectin")
 
     def __repr__(self) -> str:

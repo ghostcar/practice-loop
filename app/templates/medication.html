@@ -53,6 +53,22 @@
                     <span class="font-medium text-[color:var(--text)]">{{ d.medication_name }}</span>
                     <span class="pl-text-muted text-sm"> · {{ d.dose }}{% if d.times_of_day %} · {{ d.times_of_day | join(', ') }}{% endif %}</span>
                     <span class="text-xs pl-text-muted"> · {{ d.pending }} {{ t.med_doses_due }}</span>
+                    {% if d.insufficient %}
+                    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                        <span class="inline-flex items-center gap-1 text-[color:var(--warning)]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_stock_short }}: {{ d.stock_total }} / {{ d.stock_needed_today }}</span>
+                        {% if d.exceeds_daily %}<span class="inline-flex items-center gap-1 text-[color:var(--danger)]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_exceeds_daily }}</span>{% endif %}
+                        {% if d.substitute %}
+                        <form action="/med-intakes" method="post" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <input type="hidden" name="medication_id" value="{{ d.substitute.medication_id }}">
+                            <input type="hidden" name="schedule_id" value="{{ d.id }}">
+                            <input type="hidden" name="status" value="taken">
+                            <input type="hidden" name="quantity_taken" value="{{ d.substitute.qty_per_intake }}">
+                            <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('refresh', 'w-3.5 h-3.5') }}{{ t.med_substitute_action }}: {{ d.substitute.name }} ({{ d.substitute.qty_per_intake }})</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <form action="/med-intakes" method="post" class="inline">
@@ -62,6 +78,16 @@
                         <input type="hidden" name="status" value="taken">
                         <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[44px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
                     </form>
+                    {% if d.ul_pending %}
+                    <form action="/med-intakes" method="post" class="inline" title="{{ t.med_ul_override_hint }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                        <input type="hidden" name="schedule_id" value="{{ d.id }}">
+                        <input type="hidden" name="status" value="taken">
+                        <input type="hidden" name="ul_confirmed" value="1">
+                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-700 border border-amber-500/20 inline-flex items-center gap-1 min-h-[36px]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_take_override }}</button>
+                    </form>
+                    {% endif %}
                     <form action="/med-intakes" method="post" class="inline">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
@@ -84,6 +110,42 @@
         <p class="pl-text-muted text-sm inline-flex items-center gap-1.5">{{ icon('check-circle', 'w-4 h-4') }}{{ t.med_no_due }}</p>
         {% endif %}
     </section>
+
+    <!-- Daily-dose check (ADR-190, phase G) -->
+    {% set dlim = summary.limits %}
+    {% if dlim and (dlim.warnings or dlim.allowed) %}
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('warning', 'w-4 h-4') }}{{ t.med_daily_limits_title }}</h2>
+        {% if dlim.warnings %}
+        <ul class="space-y-2">
+            {% for w in dlim.warnings %}
+            <li class="p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-1">
+                <div class="text-xs font-medium text-[color:var(--text)] inline-flex items-center gap-1.5">
+                    {{ icon('warning', 'w-3.5 h-3.5 text-[color:var(--danger)]') }}{{ w.substance }}{% if w.inn %}<span class="pl-text-muted font-normal">({{ w.inn }})</span>{% endif %}
+                    <span class="text-[color:var(--danger)] font-semibold">{{ '%.4g'|format(w.planned) }} {{ w.unit }} / {{ '%.4g'|format(w.max) }} {{ w.unit }}</span>
+                </div>
+                <p class="text-xs pl-text-secondary">{{ t.med_daily_planned }}: {% for mref in w.meds %}<span class="inline-flex items-center gap-1">{{ mref.name }} {% if not mref.allow_ul_override %}{{ icon('warning', 'w-3 h-3 text-[color:var(--warning)]') }}{% endif %}</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                {% if w.note %}<p class="text-[11px] pl-text-muted italic">{{ w.note }}</p>{% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if dlim.allowed %}
+        <ul class="space-y-2">
+            {% for w in dlim.allowed %}
+            <li class="p-3 rounded-lg bg-sky-500/5 border border-sky-500/15 space-y-1">
+                <div class="text-xs font-medium text-[color:var(--text)] inline-flex items-center gap-1.5">
+                    {{ icon('shield-check', 'w-3.5 h-3.5 text-sky-600') }}{{ w.substance }}{% if w.inn %}<span class="pl-text-muted font-normal">({{ w.inn }})</span>{% endif %}
+                    <span class="text-sky-700 font-semibold">{{ '%.4g'|format(w.planned) }} {{ w.unit }} / {{ '%.4g'|format(w.max) }} {{ w.unit }}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/10 text-sky-700 border border-sky-500/20">{{ t.med_ul_override_short }}</span>
+                </div>
+                <p class="text-xs pl-text-secondary">{{ t.med_daily_planned }}: {% for mref in w.meds %}{{ mref.name }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </section>
+    {% endif %}
 
     <!-- Expiring / low stock -->
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
@@ -494,6 +556,29 @@
                         <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
                 </div>
+
+                <!-- Equivalents (ADR-190, phase F) -->
+                {% if m.equivalents %}
+                <details class="text-sm mt-1">
+                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('refresh', 'w-3.5 h-3.5') }}{{ t.med_equivalents }} ({{ m.equivalents_count }})</summary>
+                    <div class="mt-2 space-y-1.5">
+                        {% for e in m.equivalents %}
+                        <div class="p-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <span class="font-medium text-[color:var(--text)] text-xs">{{ e.name }}</span>
+                                {% if e.composition_label %}<span class="pl-text-muted text-[11px]"> · {{ e.composition_label }}</span>{% endif %}
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold border {% if e.match == 'auto' %}bg-emerald-500/10 text-emerald-700 border-emerald-500/20{% else %}bg-amber-500/10 text-amber-700 border-amber-500/20{% endif %}">{{ t.med_equiv_auto if e.match == 'auto' else t.med_equiv_offer }}</span>
+                                {% if e.stock_rows %}
+                                <ul class="text-[11px] pl-text-muted mt-0.5 space-y-0.5">
+                                    {% for sr in e.stock_rows %}<li>{{ icon('inventory', 'w-3 h-3') }}{{ sr.kit_name or '—' }}{% if sr.location %} · {{ sr.location }}{% endif %} · {{ sr.quantity }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
 
                 <!-- Stocks -->
                 {% if m.stocks %}

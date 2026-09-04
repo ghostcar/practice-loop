@@ -179,6 +179,21 @@ async def autofill_medication_info(
     return {"status": "ok", "data": info}
 
 
+@router.get("/medications/{medication_id}/equivalents")
+async def equivalents_page(
+    request: Request,
+    medication_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """ADR-190 (фаза F): блок «Эквиваленты» для карточки препарата."""
+    try:
+        data = await svc.get_equivalents(db, user.id, medication_id)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    return data
+
+
 @router.post("/medications/parse-regimen")
 async def parse_regimen_text(
     request: Request,
@@ -425,6 +440,7 @@ async def record_intake_form(
     taken_at: str = Form(default=""),
     quantity_taken: str = Form(default=""),
     notes: str = Form(default=""),
+    ul_confirmed: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -447,6 +463,7 @@ async def record_intake_form(
             taken_at=taken_at,
             quantity_taken=qty,
             notes=notes,
+            ul_confirmed=ul_confirmed.strip().lower() in {"1", "on", "true", "yes"},
             gamification=True,
         )
     except ValueError as e:
@@ -757,6 +774,19 @@ async def json_parse_regimen(
         raise HTTPException(400, str(e)) from None
 
 
+@json_router.get("/{medication_id}/equivalents")
+async def json_equivalents(
+    medication_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """ADR-190 (фаза F, mobile parity): заменители по составу."""
+    try:
+        return await svc.get_equivalents(db, user.id, medication_id)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+
+
 @json_router.post("/autofill")
 async def json_autofill(
     body: svc.AutofillBody,
@@ -787,6 +817,8 @@ async def json_record_intake(
             taken_at=body.taken_at,
             quantity_taken=body.quantity_taken,
             notes=body.notes,
+            substituted_for_id=body.substituted_for_id,
+            ul_confirmed=body.ul_confirmed,
             gamification=True,
         )
     except NotFoundError as e:

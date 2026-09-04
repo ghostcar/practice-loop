@@ -1420,6 +1420,16 @@ RU = {
     "med_search_btn": "Найти",
     "med_search_clear": "Сбросить",
     "med_by_substance": "По действующему веществу",
+    # Замена и суточные пределы (ADR-190, фазы F/G)
+    "med_stock_short": "Не хватает остатка",
+    "med_substitute_action": "Заменить на",
+    "med_take_override": "Принять с превышением",
+    "med_exceeds_daily": "превышает суточный предел",
+    "med_daily_limits_title": "Контроль суточной дозы",
+    "med_daily_planned": "Планируется на день",
+    "med_equivalents": "Эквиваленты",
+    "med_equiv_auto": "авто-замена",
+    "med_equiv_offer": "предложение",
     # Курсы приёма (ADR-189, фаза C)
     "med_courses_title": "Курсы приёма",
     "med_course_new": "Новый курс",

@@ -26,9 +26,11 @@ from app.models.medication import (
 )
 from app.models.user import User
 from app.services.med_service import (
+    equivalent_candidates,
     normalize_substance,
     parse_components_payload,
     parse_regimen_text,
+    variant_for_day,
 )
 
 
@@ -1079,3 +1081,250 @@ async def test_json_autofill_404_and_ok(auth_client):
     resp = await auth_client.post("/api/v2/medications/autofill", json={"name": "Нурофен"})
     assert resp.status_code == 200
     assert resp.json()["components"][0]["name"] == "Ибупрофен"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADR-190, phases F/G: substitution, sufficiency, daily limits, pack variants
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _pure_med(
+    name: str, form: str, comps: list[tuple[str, str, float | None, str | None]], *, kind="medication"
+) -> Medication:
+    m = Medication(id=uuid.uuid4(), user_id=uuid.uuid4(), name=name, kind=kind, form=form, is_active=True)
+    rows = []
+    for sub_name, norm, amount, unit in comps:
+        sub = MedSubstance(name=sub_name, norm_key=norm)
+        rows.append(MedComponent(medication_id=m.id, substance=sub, amount=amount, unit=unit, sort_order=len(rows)))
+    m.components = rows
+    return m
+
+
+def _pure_stock(m: Medication, qty: float) -> MedStock:
+    return MedStock(id=uuid.uuid4(), user_id=m.user_id, medication_id=m.id, quantity=qty, unit="таблетки")
+
+
+def test_variant_for_day_rotation():
+    fem = Medication(id=uuid.uuid4(), user_id=uuid.uuid4(), name="Фемостон 2/10", kind="medication", form="таблетки")
+    white = MedVariant(id=uuid.uuid4(), medication_id=fem.id, name="белые 1–14", count_per_pack=14, sort_order=0)
+    grey = MedVariant(id=uuid.uuid4(), medication_id=fem.id, name="серые 15–28", count_per_pack=14, sort_order=1)
+    fem.variants = [white, grey]
+    start = date(2026, 9, 1)
+    sched = MedSchedule(id=uuid.uuid4(), user_id=fem.user_id, medication_id=fem.id, start_date=start, times_per_day=1)
+    assert variant_for_day(fem, sched, date(2026, 9, 1)) is white  # 1–14
+    assert variant_for_day(fem, sched, date(2026, 9, 14)) is white
+    assert variant_for_day(fem, sched, date(2026, 9, 15)) is grey  # 15–28
+    assert variant_for_day(fem, sched, date(2026, 9, 28)) is grey
+    assert variant_for_day(fem, sched, date(2026, 9, 29)) is white  # цикл 28 дней
+
+
+def test_equivalent_candidates_auto_offer_rules():
+    src = _pure_med("Нурофен 400", "таблетки", [("Ибупрофен", "ибупрофен", 400.0, "мг")])
+    gen400 = _pure_med("Ибупрофен 400", "таблетки", [("Ибупрофен", "ибупрофен", 400.0, "мг")])
+    gen200 = _pure_med("Ибупрофен 200", "таблетки", [("Ибупрофен", "ибупрофен", 200.0, "мг")])
+    caps = _pure_med("Ибупрофен капс", "капсулы", [("Ибупрофен", "ибупрофен", 400.0, "мг")])
+    combo = _pure_med(
+        "Некст", "таблетки", [("Ибупрофен", "ибупрофен", 400.0, "мг"), ("Парацетамол", "парацетамол", 500.0, "мг")]
+    )
+    balm = _pure_med("Ибупрофен гель", "гель", [("Ибупрофен", "ибупрофен", 50.0, "мг")], kind="supply")  # другой kind
+    meds = [src, gen400, gen200, caps, combo, balm]
+    stocks = {str(m.id): [_pure_stock(m, 30.0)] for m in meds}
+    cands = equivalent_candidates(src, meds, stocks)
+    by_name = {c["name"]: c for c in cands}
+    assert by_name["Ибупрофен 400"]["match"] == "auto"
+    assert by_name["Ибупрофен 400"]["qty_ratio_per_unit"] == pytest.approx(1.0)
+    assert by_name["Ибупрофен 200"]["match"] == "auto"
+    assert by_name["Ибупрофен 200"]["qty_ratio_per_unit"] == pytest.approx(2.0)  # 1×400 = 2×200
+    assert by_name["Ибупрофен капс"]["match"] == "offer"  # форма отличается
+    assert by_name["Некст"]["match"] == "offer"  # неполный набор компонентов
+    assert "Ибупрофен гель" not in by_name  # другой kind
+    assert all(c["stock_total"] == 30.0 for c in cands)
+
+
+@pytest.mark.asyncio
+async def test_substitution_intake_records_substituted_for(auth_client, test_user, db_session):
+    """Приём заменителем: medication_id = фактический, substituted_for_id = оригинал."""
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Панадол 500",
+            "kind": "medication",
+            "form": "таблетки",
+            "components": [{"name": "Парацетамол", "amount": 500, "unit": "мг"}],
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    orig_id = resp.json()["id"]
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Парацетамол-дженерик 500",
+            "kind": "medication",
+            "form": "таблетки",
+            "components": [{"name": "Парацетамол", "amount": 500, "unit": "мг"}],
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    sub_id = resp.json()["id"]
+    resp = await auth_client.post(
+        "/api/v2/medications/schedules",
+        json={"medication_id": orig_id, "dose_quantity": 1, "frequency_type": "daily", "times_per_day": 1},
+    )
+    assert resp.status_code == 201, resp.text
+    sched_id = resp.json()["id"]
+    # принимаем дженерик вместо оригинала
+    resp = await auth_client.post(
+        f"/api/v2/medications/{sub_id}/intake",
+        json={"schedule_id": sched_id, "status": "taken", "quantity_taken": 1},
+    )
+    assert resp.status_code == 201, resp.text
+    intake = (await db_session.execute(select(MedIntake).where(MedIntake.user_id == test_user.id))).scalar_one()
+    assert str(intake.medication_id) == sub_id
+    assert str(intake.substituted_for_id) == orig_id
+    assert "Замена" in (intake.notes or "")
+
+
+@pytest.mark.asyncio
+async def test_today_shortage_and_auto_substitute(auth_client, test_user, db_session):
+    """Не хватает остатка на день — в «сегодня» появляется авто-заменитель."""
+    # источник: остаток 1, план 2/день
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Витамин C оригинал",
+            "kind": "supplement",
+            "form": "таблетки",
+            "components": [{"name": "Аскорбиновая кислота", "amount": 500, "unit": "мг"}],
+        },
+    )
+    src_id = resp.json()["id"]
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Витамин C аналог",
+            "kind": "supplement",
+            "form": "таблетки",
+            "components": [{"name": "Аскорбиновая кислота", "amount": 500, "unit": "мг"}],
+        },
+    )
+    alt_id = resp.json()["id"]
+    await auth_client.post("/api/v2/medications/stocks", json={"medication_id": src_id, "quantity": 1})
+    await auth_client.post("/api/v2/medications/stocks", json={"medication_id": alt_id, "quantity": 12})
+    resp = await auth_client.post(
+        "/api/v2/medications/schedules",
+        json={"medication_id": src_id, "dose_quantity": 1, "frequency_type": "daily", "times_per_day": 2},
+    )
+    assert resp.status_code == 201, resp.text
+    today = (await auth_client.get("/api/v2/medications/today")).json()
+    due = [d for d in today["due"] if d["medication_id"] == src_id]
+    assert due and due[0]["insufficient"] is True
+    assert due[0]["stock_total"] == 1
+    assert due[0]["stock_needed_today"] == 2
+    sub = due[0]["substitute"]
+    assert sub and sub["medication_id"] == alt_id
+    assert sub["qty_per_intake"] == 1
+
+
+@pytest.mark.asyncio
+async def test_daily_limits_warning_and_override(auth_client, test_user, db_session):
+    """Превышение суточного предела: сумма по веществу; allowed только когда все препараты разрешили."""
+    db_session.add(
+        MedSubstance(
+            name="Колекальциферол (витамин D3)",
+            norm_key=normalize_substance("Колекальциферол (витамин D3)"),
+            inn="Colecalciferol",
+            daily_max_amt=100,
+            daily_max_unit="мкг",
+            daily_max_note="взрослым до 100 мкг/сут",
+        )
+    )
+    await db_session.flush()
+    # с разрешением — 250 мкг/сут
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Витамин D максимум",
+            "kind": "supplement",
+            "form": "капли",
+            "allow_ul_override": True,
+            "components": [{"name": "Колекальциферол (витамин D3)", "amount": 250, "unit": "мкг"}],
+        },
+    )
+    med_allow = resp.json()["id"]
+    await auth_client.post(
+        "/api/v2/medications/schedules",
+        json={"medication_id": med_allow, "dose_quantity": 1, "frequency_type": "daily", "times_per_day": 1},
+    )
+    today = (await auth_client.get("/api/v2/medications/today")).json()
+    allowed = {w["substance"]: w for w in today["limits"]["allowed"]}
+    assert today["limits"]["warnings"] == []
+    assert "Колекальциферол (витамин D3)" in allowed
+    assert allowed["Колекальциферол (витамин D3)"]["planned"] == pytest.approx(250.0)
+    # + без разрешения 250 мкг/сут → сумма 500 → warning (одно вещество, один бакет)
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Витамин D форте",
+            "kind": "supplement",
+            "form": "таблетки",
+            "components": [{"name": "Колекальциферол (витамин D3)", "amount": 250, "unit": "мкг"}],
+        },
+    )
+    med_id = resp.json()["id"]
+    resp = await auth_client.post(
+        "/api/v2/medications/schedules",
+        json={"medication_id": med_id, "dose_quantity": 1, "frequency_type": "daily", "times_per_day": 1},
+    )
+    sched_id = resp.json()["id"]
+    today = (await auth_client.get("/api/v2/medications/today")).json()
+    warnings = {w["substance"]: w for w in today["limits"]["warnings"]}
+    assert today["limits"]["allowed"] == []
+    assert "Колекальциферол (витамин D3)" in warnings
+    assert warnings["Колекальциферол (витамин D3)"]["planned"] == pytest.approx(500.0)
+    assert warnings["Колекальциферол (витамин D3)"]["max"] == 100.0
+    names = {r["name"] for r in warnings["Колекальциферол (витамин D3)"]["meds"]}
+    assert names == {"Витамин D форте", "Витамин D максимум"}
+    # приём с подтверждением превышения
+    resp = await auth_client.post(
+        f"/api/v2/medications/{med_id}/intake",
+        json={"schedule_id": sched_id, "status": "taken", "ul_confirmed": True},
+    )
+    assert resp.status_code == 201, resp.text
+    intake = (
+        await db_session.execute(
+            select(MedIntake).where(MedIntake.user_id == test_user.id, MedIntake.medication_id == uuid.UUID(med_id))
+        )
+    ).scalar_one()
+    assert intake.ul_confirmed is True
+    assert "подтверждено" in (intake.notes or "").lower()
+
+
+@pytest.mark.asyncio
+async def test_equivalents_endpoint_page_and_json(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Бепантен плюс",
+            "kind": "medication",
+            "form": "мазь",
+            "components": [{"name": "Декспантенол"}],
+        },
+    )
+    med_id = resp.json()["id"]
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Декспантенол дженерик",
+            "kind": "medication",
+            "form": "мазь",
+            "components": [{"name": "Декспантенол"}],
+        },
+    )
+    await auth_client.post("/api/v2/medications/stocks", json={"medication_id": resp.json()["id"], "quantity": 5})
+    data = (await auth_client.get(f"/api/v2/medications/{med_id}/equivalents")).json()
+    assert data["total"] == 1
+    assert data["candidates"][0]["match"] == "auto"
+    assert data["candidates"][0]["stock_total"] == 5.0
+    page = await auth_client.get(f"/medications/{med_id}/equivalents")
+    assert page.status_code == 200
+    assert page.json()["candidates"][0]["name"] == "Декспантенол дженерик"

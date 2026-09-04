@@ -249,6 +249,8 @@ class IntakeBody(BaseModel):
     taken_at: str | None = None
     quantity_taken: float | None = None
     notes: str | None = None
+    substituted_for_id: uuid.UUID | None = None
+    ul_confirmed: bool = False
 
 
 class CourseItemBody(BaseModel):
@@ -607,6 +609,294 @@ async def get_substances(db: AsyncSession, user_id: uuid.UUID, *, limit: int = 3
     return [
         {"id": str(s.id), "name": s.name, "inn": s.inn, "norm_key": s.norm_key, "is_custom": s.is_custom} for s in subs
     ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Замена по составу и суточные пределы (ADR-190, фазы F/G)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Единицы, конвертируемые в мг (и обратно)
+UNIT_TO_MG: dict[str, float] = {"мкг": 0.001, "мг": 1.0, "г": 1000.0}
+# Фактор «МЕ → мкг» для известных веществ (норм-ключи); 1 мкг = 40 МЕ (вит. D)
+ME_TO_MCG: dict[str, float] = {"колекальциферол": 40.0, "colecalciferol": 40.0}
+
+
+def _norm_unit(unit: str | None) -> str:
+    return (unit or "").strip().lower()
+
+
+def to_mg(amount: float | None, unit: str | None) -> float | None:
+    """Количество в мг (для единиц мкг/мг/г); иное (МЕ/мл/…) → None."""
+    if amount is None:
+        return None
+    factor = UNIT_TO_MG.get(_norm_unit(unit))
+    return amount * factor if factor is not None else None
+
+
+def _convert_unit(value: float, unit: str | None, substance_key: str, target_unit: str | None) -> float | None:
+    """Пересчёт value из unit в target_unit (мкг/мг/г и МЕ↔мкг для известных веществ)."""
+    u, t = _norm_unit(unit), _norm_unit(target_unit)
+    if u == t or not t:
+        return value
+    if u in UNIT_TO_MG and t in UNIT_TO_MG:
+        return value * UNIT_TO_MG[u] / UNIT_TO_MG[t]
+    factor = ME_TO_MCG.get(substance_key)
+    if factor is None:
+        return None
+    if u == "ме" and t == "мкг":
+        return value / factor
+    if u == "мкг" and t == "ме":
+        return value * factor
+    return None
+
+
+def _norm_form(form: str | None) -> str:
+    return re.sub(r"\s+", " ", (form or "").strip().lower())
+
+
+def med_substance_keys(m: Medication) -> set[str]:
+    """Набор действующих веществ препарата (norm_key) — сигнатура для замены."""
+    return {c.substance.norm_key for c in m.components or [] if c.substance and c.substance.norm_key}
+
+
+def med_substance_mg_map(m: Medication) -> dict[str, float]:
+    """norm_key → мг на единицу формы (максимум по компонентам; пересчёт доз в мг)."""
+    out: dict[str, float] = {}
+    for c in m.components or []:
+        if not c.substance or not c.substance.norm_key:
+            continue
+        mg = to_mg(c.amount, c.unit)
+        if mg is not None:
+            out[c.substance.norm_key] = max(out.get(c.substance.norm_key, 0.0), mg)
+    return out
+
+
+def variant_for_day(m: Medication, sched: MedSchedule | None, day: date) -> MedVariant | None:
+    """Вариант пачки, активный в день day (ADR-190, фаза G: схемы пачек).
+
+    Фемостон 2/10: варианты «белые 1–14» и «серые 15–28» (цикл 28 дней),
+    отсчёт от start_date расписания. Без вариантов/дат старта — None/первый.
+    """
+    vs = sorted(m.variants or [], key=lambda v: v.sort_order or 0)
+    if not vs:
+        return None
+    if len(vs) == 1:
+        return vs[0]
+    lengths = [max(1, v.count_per_pack or 1) for v in vs]
+    total = sum(lengths)
+    start = sched.start_date if sched else None
+    if start is None:
+        return vs[0]
+    pos = (day - start).days
+    if pos < 0:
+        return vs[0]
+    pos %= total
+    for v, ln in zip(vs, lengths, strict=False):
+        if pos < ln:
+            return v
+        pos -= ln
+    return vs[0]
+
+
+def day_components(m: Medication, sched: MedSchedule | None, day: date) -> list[MedComponent]:
+    """Компоненты препарата, релевантные для дня (с учётом варианта пачки)."""
+    v = variant_for_day(m, sched, day)
+    if not (m.variants or []):
+        return list(m.components or [])
+    return [c for c in m.components or [] if c.variant_id is None or (v is not None and c.variant_id == v.id)]
+
+
+def _stock_available(stocks: list[MedStock], today: date | None = None) -> float:
+    """Сумма остатков по неистёкшим партиям."""
+    today = today or local_today()
+    return round(sum(float(st.quantity or 0) for st in stocks if st.expiry_date is None or st.expiry_date >= today), 3)
+
+
+def equivalent_candidates(
+    source: Medication,
+    meds: list[Medication],
+    stocks_by_med: dict[str, list[MedStock]],
+) -> list[dict]:
+    """Кандидаты-заменители по составу (ADR-190, фаза F).
+
+    Правила (спека §6):
+    - тот же набор компонентов (norm_key) + та же форма → **auto**,
+      доза пересчитывается по мг (1×500 вместо 2×250); без мг — авто при равенстве
+      строки strength;
+    - иной набор / иная форма / поливитамины → **offer** (показ состава и остатков).
+    Порядок детерминированный: auto по имени, затем offer по имени.
+    """
+    src_keys = med_substance_keys(source)
+    if not src_keys:
+        return []
+    src_mg = med_substance_mg_map(source)
+    src_form = _norm_form(source.form)
+    src_strength = re.sub(r"\s+", " ", (source.strength or "").strip().lower())
+    out: list[dict] = []
+    for cand in meds:
+        if cand.id == source.id or not cand.is_active or cand.kind != source.kind:
+            continue
+        stocks = stocks_by_med.get(str(cand.id), [])
+        if _stock_available(stocks) <= 0:
+            continue
+        keys = med_substance_keys(cand)
+        if not (keys & src_keys):
+            continue
+        full = keys == src_keys
+        form_eq = bool(src_form) and src_form == _norm_form(cand.form)
+        cand_mg = med_substance_mg_map(cand)
+        cand_strength = re.sub(r"\s+", " ", (cand.strength or "").strip().lower())
+        shared = [k for k in src_keys if k in src_mg and k in cand_mg]
+        match = "offer"
+        ratio: float | None = None
+        if full and (form_eq or not src_form):
+            if shared:
+                ratios = [src_mg[k] / cand_mg[k] for k in shared if cand_mg[k]]
+                if ratios and all(abs(r - ratios[0]) < 1e-6 for r in ratios):
+                    match = "auto"
+                    ratio = ratios[0]
+            # дозировки не парсятся в мг: автовыбор при равенстве строки strength
+            # (обе пустые = «дозировка не указана» — тоже считаем равными)
+            if match == "offer" and (
+                (src_strength and src_strength == cand_strength) or (not src_strength and not cand_strength)
+            ):
+                match = "auto"
+        stock_rows = []
+        for st in stocks:
+            if st.expiry_date is not None and st.expiry_date < local_today():
+                continue
+            stock_rows.append(
+                {
+                    "id": str(st.id),
+                    "quantity": float(st.quantity or 0),
+                    "unit": st.unit,
+                    "kit_name": st.kit.name if st.kit else None,
+                    "location": kit_location_label(st.kit) if st.kit else "",
+                    "expiry_date": st.expiry_date.isoformat() if st.expiry_date else None,
+                }
+            )
+        out.append(
+            {
+                "medication_id": str(cand.id),
+                "name": cand.name,
+                "form": cand.form,
+                "strength": cand.strength,
+                "manufacturer": cand.manufacturer,
+                "composition_label": composition_label(cand),
+                "match": match,
+                "qty_ratio_per_unit": round(ratio, 4) if ratio is not None else None,
+                "stock_total": _stock_available(stocks),
+                "stock_rows": stock_rows,
+            }
+        )
+    out.sort(key=lambda x: (0 if x["match"] == "auto" else 1, (x["name"] or "").lower()))
+    return out
+
+
+async def load_meds_graph(db: AsyncSession, user_id: uuid.UUID) -> list[Medication]:
+    """Все препараты пользователя с компонентами/веществами/вариантами (async selectinload)."""
+    return (
+        (
+            await db.execute(
+                select(Medication)
+                .where(Medication.user_id == user_id)
+                .options(
+                    selectinload(Medication.components).selectinload(MedComponent.substance),
+                    selectinload(Medication.components).selectinload(MedComponent.variant),
+                    selectinload(Medication.variants),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+def daily_limit_exceedances(
+    meds: list[Medication],
+    schedules: list[MedSchedule],
+    stocks: list[MedStock],
+    day: date | None = None,
+) -> dict:
+    """Сверка планируемого на день приёма с суточными пределами веществ (ADR-190, фаза G).
+
+    Для каждого вещества с daily_max_*: сумма компонентов всех активных расписаний дня
+    (с учётом варианта пачки) vs предел (мкг/мг/г и МЕ↔мкг для известных веществ).
+    Возвращает {"warnings": [...], "allowed": [...]} — превышения без разрешения и
+    с разрешением (все препараты вещества имеют allow_ul_override).
+    """
+    today = day or local_today()
+    med_by_id = {str(m.id): m for m in meds}
+    # per substance: {amount_total_mg-ish accum by unit, meds list}
+    accum: dict[str, dict] = {}
+    for s in schedules:
+        if doses_today(s, today) <= 0:
+            continue
+        m = med_by_id.get(str(s.medication_id))
+        if m is None:
+            continue
+        per_day_doses = doses_today(s, today)
+        contrib_mg = per_day_doses * float(s.dose_quantity or 1.0)
+        for c in day_components(m, s, today):
+            sub = c.substance
+            if sub is None or not sub.norm_key or sub.daily_max_amt is None:
+                continue
+            key = sub.norm_key
+            bucket = accum.setdefault(
+                key,
+                {
+                    "substance": sub.name,
+                    "inn": sub.inn,
+                    "max": float(sub.daily_max_amt),
+                    "unit": sub.daily_max_unit,
+                    "note": sub.daily_max_note,
+                    "amount": 0.0,
+                    "meds": {},
+                },
+            )
+            # значение компонента в единицах предела
+            if to_mg(c.amount, c.unit) is not None:
+                conv = _convert_unit(to_mg(c.amount, c.unit), "мг", key, bucket["unit"]) or to_mg(c.amount, c.unit)
+            else:
+                conv = _convert_unit(float(c.amount or 0), c.unit, key, bucket["unit"])
+                if conv is None:
+                    continue
+            contribution = conv * contrib_mg
+            bucket["amount"] += contribution
+            med_ref = bucket["meds"].setdefault(
+                str(m.id), {"name": m.name, "allow_ul_override": bool(m.allow_ul_override), "amount": 0.0}
+            )
+            med_ref["amount"] += contribution
+    warnings: list[dict] = []
+    allowed: list[dict] = []
+    for _key, bucket in accum.items():
+        if bucket["unit"] and bucket["amount"] <= bucket["max"] + 1e-9:
+            continue
+        meds_list = [
+            {
+                "medication_id": mid,
+                "name": r["name"],
+                "allow_ul_override": r["allow_ul_override"],
+                "amount": round(r.get("amount", 0.0), 4),
+            }
+            for mid, r in bucket["meds"].items()
+        ]
+        entry = {
+            "substance": bucket["substance"],
+            "inn": bucket["inn"],
+            "planned": round(bucket["amount"], 4),
+            "max": bucket["max"],
+            "unit": bucket["unit"],
+            "note": bucket["note"],
+            "meds": sorted(meds_list, key=lambda x: x["name"].lower()),
+        }
+        if all(r["allow_ul_override"] for r in meds_list):
+            allowed.append(entry)
+        else:
+            warnings.append(entry)
+    warnings.sort(key=lambda x: -(x["planned"] - x["max"]))
+    allowed.sort(key=lambda x: -(x["planned"] - x["max"]))
+    return {"warnings": warnings, "allowed": allowed}
 
 
 async def get_schedule(db: AsyncSession, user_id: uuid.UUID, schedule_id: uuid.UUID) -> MedSchedule:
@@ -1213,10 +1503,31 @@ async def json_create_course(db: AsyncSession, user_id: uuid.UUID, body) -> MedC
 
 
 async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
-    """Today: schedules with pending doses + expiring stocks + low stock."""
+    """Today: schedules with pending doses + sufficiency/substitution + daily limits.
+
+    ADR-190: на каждый due/slot добавляются остатки, признак нехватки и авто-заменитель
+    (фаза F); в результат — сверка суточных пределов (фаза G, ключ ``limits``).
+    """
     today = local_today()
+    meds = await load_meds_graph(db, user_id)
+    med_by_id = {str(m.id): m for m in meds}
+    stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
+    stocks_by_med: dict[str, list[MedStock]] = {}
+    for st in stocks:
+        stocks_by_med.setdefault(str(st.medication_id), []).append(st)
     schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user_id))).scalars().all()
     intakes = (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
+
+    # ADR-190 (фаза G): сверка суточных пределов на день
+    limits = daily_limit_exceedances(meds, schedules, stocks, today)
+    exceed_med_ids: set[str] = set()
+    warn_med_ids: set[str] = set()
+    for entry in limits["warnings"] + limits["allowed"]:
+        for r in entry["meds"]:
+            exceed_med_ids.add(r["medication_id"])
+    for entry in limits["warnings"]:
+        for r in entry["meds"]:
+            warn_med_ids.add(r["medication_id"])
 
     taken_today: dict[str, int] = {}
     taken_by_hour: dict[tuple[str, int], bool] = {}
@@ -1228,6 +1539,43 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
             taken_today[str(it.schedule_id)] = taken_today.get(str(it.schedule_id), 0) + 1
             taken_by_hour[(str(it.schedule_id), taken_dt.hour)] = True
 
+    # кэш заменителей для препаратов, у которых сегодня не хватает остатков
+    equiv_cache: dict[str, list[dict]] = {}
+
+    def _row_stock(s: MedSchedule, expected: int) -> dict:
+        med = med_by_id.get(str(s.medication_id)) or s.medication
+        stock_total = _stock_available(stocks_by_med.get(str(s.medication_id), []))
+        needed_today = round(expected * float(s.dose_quantity or 1.0), 3)
+        insufficient = stock_total < needed_today
+        substitute = None
+        if insufficient and med is not None:
+            if str(med.id) not in equiv_cache:
+                equiv_cache[str(med.id)] = equivalent_candidates(med, meds, stocks_by_med)
+            for cand in equiv_cache[str(med.id)]:
+                if cand["match"] == "auto":
+                    ratio = cand.get("qty_ratio_per_unit")
+                    qty = float(s.dose_quantity or 1.0) * ratio if ratio is not None else float(s.dose_quantity or 1.0)
+                    substitute = {
+                        "medication_id": cand["medication_id"],
+                        "name": cand["name"],
+                        "form": cand["form"],
+                        "strength": cand["strength"],
+                        "composition_label": cand["composition_label"],
+                        "stock_total": cand["stock_total"],
+                        "qty_per_intake": round(qty, 3),
+                    }
+                    break
+        return {
+            "medication_id": str(s.medication_id),
+            "medication_name": med.name if med else "",
+            "stock_total": stock_total,
+            "stock_needed_today": needed_today,
+            "insufficient": insufficient,
+            "substitute": substitute,
+            "exceeds_daily": str(s.medication_id) in exceed_med_ids,
+            "ul_pending": str(s.medication_id) in warn_med_ids,
+        }
+
     due = []
     slots: dict[str, list] = {}
     for s in schedules:
@@ -1237,12 +1585,12 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
         done = taken_today.get(str(s.id), 0)
         pending = max(0, expected - done)
         dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
+        extra = _row_stock(s, expected)
         if pending > 0:
             due.append(
                 {
                     "id": str(s.id),
-                    "medication_id": str(s.medication_id),
-                    "medication_name": s.medication.name if s.medication else "",
+                    **extra,
                     "dose": dose,
                     "pending": pending,
                     "times_of_day": schedule_times(s) or s.times_of_day,
@@ -1262,8 +1610,7 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
             slots.setdefault(tm, []).append(
                 {
                     "schedule_id": str(s.id),
-                    "medication_id": str(s.medication_id),
-                    "medication_name": s.medication.name if s.medication else "",
+                    **extra,
                     "dose": dose,
                     "taken": taken,
                 }
@@ -1278,7 +1625,6 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
         for k, v in sorted(slots.items(), key=lambda kv: (kv[0] == "any", kv[0]))
     ]
 
-    stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
     expiring = []
     low = []
     for st in stocks:
@@ -1303,7 +1649,14 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
                 }
             )
 
-    return {"due": due, "slots": slot_list, "expiring": expiring, "low_stock": low, "today": today.isoformat()}
+    return {
+        "due": due,
+        "slots": slot_list,
+        "expiring": expiring,
+        "low_stock": low,
+        "limits": limits,
+        "today": today.isoformat(),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1321,7 +1674,7 @@ async def get_med_page_context(
     q: str = "",
 ) -> dict:
     """Build full template context for GET /medications page."""
-    meds = (
+    meds_all = (
         (await db.execute(select(Medication).where(Medication.user_id == user.id).order_by(Medication.name)))
         .scalars()
         .all()
@@ -1329,7 +1682,7 @@ async def get_med_page_context(
     q = (q or "").strip()
     if q:
         ql = q.lower()
-        meds = [m for m in meds if med_matches_query(m, ql)]
+        meds_all = [m for m in meds_all if med_matches_query(m, ql)]
     kits = (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
     stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user.id))).scalars().all()
     schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
@@ -1338,7 +1691,9 @@ async def get_med_page_context(
     t = t or {}
     stocks_by_med: dict[str, list] = {}
     stocks_by_kit: dict[str, list] = {}
+    stocks_obj_by_med: dict[str, list] = {}
     for st in stocks:
+        stocks_obj_by_med.setdefault(str(st.medication_id), []).append(st)
         stocks_by_med.setdefault(str(st.medication_id), []).append(
             {
                 "id": str(st.id),
@@ -1377,11 +1732,22 @@ async def get_med_page_context(
             }
         )
 
+    # ADR-190 (фаза F): карточка препарата — блок «Эквиваленты»
+    equiv_cache: dict[str, list[dict]] = {}
+
+    def _equivalents_for(m) -> list[dict]:
+        if str(m.id) not in equiv_cache:
+            equiv_cache[str(m.id)] = equivalent_candidates(m, meds_all, stocks_obj_by_med)
+        return equiv_cache[str(m.id)]
+
     meds_data = []
-    for m in meds:
+    for m in meds_all:
         d = med_dict(m)
         d["stocks"] = stocks_by_med.get(str(m.id), [])
         d["schedules"] = schedules_by_med.get(str(m.id), [])
+        cands = _equivalents_for(m)
+        d["equivalents"] = cands[:5]
+        d["equivalents_count"] = len(cands)
         meds_data.append(d)
 
     # ADR-190 (фаза E): группировка «по действующему веществу»
@@ -1811,9 +2177,18 @@ async def record_intake(
     taken_at: str | None = None,
     quantity_taken: float | None = None,
     notes: str | None = None,
+    substituted_for_id: uuid.UUID | None = None,
+    ul_confirmed: bool = False,
     gamification: bool = True,
 ) -> MedIntake:
-    """Record an intake event. If gamification=True, triggers XP/achievements for 'taken'."""
+    """Record an intake event.
+
+    ADR-190 (фаза F): если medication_id отличается от препарата расписания
+    (или передан substituted_for_id) — приём выполнен заменителем:
+    medication_id = фактический препарат, substituted_for_id = вместо кого,
+    notes — автотекст замены. Фаза G: ul_confirmed — «принять с превышением».
+    Если gamification=True, для 'taken' начисляется XP/achievements.
+    """
     m = await get_med(db, user_id, medication_id)
     sched = None
     if schedule_id:
@@ -1828,15 +2203,29 @@ async def record_intake(
             taken_dt = None
     if status == "taken" and taken_dt is None:
         taken_dt = local_now()
+
+    notes_parts = [(notes or "").strip()]
+    substituted = substituted_for_id
+    if substituted is None and sched is not None and sched.medication_id != m.id:
+        substituted = sched.medication_id  # заменитель выбран в UI «На сегодня»
+    if substituted is not None and substituted != m.id:
+        original = await get_med(db, user_id, substituted)
+        notes_parts.append(f"Замена: вместо «{original.name}» принят «{m.name}»")
+    if ul_confirmed:
+        notes_parts.append("Превышение суточной дозы подтверждено пользователем")
+    note_text = " · ".join(p for p in notes_parts if p) or None
+
     it = MedIntake(
         user_id=user_id,
         medication_id=m.id,
         schedule_id=sched.id if sched else None,
+        substituted_for_id=substituted if substituted != m.id else None,
+        ul_confirmed=bool(ul_confirmed),
         scheduled_at=local_now(),
         taken_at=taken_dt,
         status=status,
         quantity_taken=quantity_taken,
-        notes=(notes or "").strip() or None,
+        notes=note_text,
     )
     db.add(it)
     await db.flush()
@@ -1922,6 +2311,28 @@ async def autofill_info(db: AsyncSession, user_id: uuid.UUID, name: str, locale:
     from app.services.pharma_enricher import enrich_medication_info
 
     return await enrich_medication_info(db, user_id, name, locale=locale)
+
+
+async def get_equivalents(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID) -> dict:
+    """ADR-190 (фаза F): заменители препарата по составу + остатки по аптечкам."""
+    m = await get_med(db, user_id, medication_id)
+    meds = await load_meds_graph(db, user_id)
+    stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
+    stocks_by_med: dict[str, list[MedStock]] = {}
+    for st in stocks:
+        stocks_by_med.setdefault(str(st.medication_id), []).append(st)
+    candidates = equivalent_candidates(m, meds, stocks_by_med)
+    return {
+        "source": {
+            "medication_id": str(m.id),
+            "name": m.name,
+            "form": m.form,
+            "strength": m.strength,
+            "composition_label": composition_label(m),
+        },
+        "candidates": candidates[:8],
+        "total": len(candidates),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
