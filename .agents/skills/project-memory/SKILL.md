@@ -30,6 +30,14 @@ review_on: source-change
 
 # Project Memory workflow (Memory v2)
 
+## Language of owner communication (mandatory)
+
+All communication with the owner is **Russian-only**: progress notes, work summaries,
+problem explanations, plans, verification results, commit summaries and final reports.
+English is allowed only inside code, identifiers, file/command names, exact quotations,
+or unprocessed output from external tools; all explanatory text around those fragments
+must remain in Russian. This applies regardless of the language of the owner’s request.
+
 This skill is the single documented workflow for project memory. It keeps
 retrieval, impact checking and closing deterministic and reviewable.
 
