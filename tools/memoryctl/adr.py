@@ -80,6 +80,7 @@ ROW_PREFIX_RE = re.compile(r"^\|\s*ADR-(\d{3,})\s*\|")
 SECTION_RE = re.compile(r"^#{2,3}\s+ADR-(\d{3,})\s*[—:–]\s*(.+)$")
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_COMMIT_RE = re.compile(r"(?<![0-9a-f])([0-9a-f]{40})(?![0-9a-f])")
 
 
 def parse_legacy(text: str) -> dict[int, LegacyAdr]:
@@ -129,9 +130,8 @@ def parse_legacy(text: str) -> dict[int, LegacyAdr]:
                 topic = cells[2] if date_idx == 4 else (cells[3] if len(cells) > 3 else "")
                 if date_idx == 4:
                     # legacy-6: | ADR | topic | category | date | commit | status |
-                    decision = " | ".join(
-                        c for i, c in enumerate(cells[3:-2], start=3) if c and i != date_idx
-                    )
+                    decision_cells = [c for i, c in enumerate(cells[3:-2], start=3) if c and i != date_idx]
+                    decision = " | ".join(decision_cells)
                 else:  # canonical: | ADR | date | topic | decision… | status |
                     # The decision is authored as ONE cell; literal pipes inside it
                     # (e.g. ``tracker|timer|combined``) reach us as extra fragments
@@ -181,7 +181,12 @@ def parse_legacy(text: str) -> dict[int, LegacyAdr]:
             continue
         date, status = _date_status_from_section(text, num)
         rows[num] = LegacyAdr(
-            num=num, date=date, topic=title, decision="", status=status, body=None
+            num=num,
+            date=date,
+            topic=title,
+            decision="",
+            status=status,
+            body=None,
         )
         rows[num].body = _extract_section_body(text, num)
     return rows
@@ -220,9 +225,11 @@ def _normalize_section_status(raw: str) -> str:
     if key in _STATUS_MAP:
         # english/synonym statuses translate back to the legacy vocabulary;
         # 'superseded' has no legacy equivalent and is kept as-is
-        return {"accepted": "принято", "proposed": "отложено", "rejected": "отклонено"}.get(
-            _STATUS_MAP[key], key
-        )
+        return {
+            "accepted": "принято",
+            "proposed": "отложено",
+            "rejected": "отклонено",
+        }.get(_STATUS_MAP[key], key)
     if raw.startswith(("✅", "✔", "☑")) or "реализован" in cleaned.lower():
         return "принято"
     return raw
@@ -259,6 +266,20 @@ def decision_type(num: int) -> str:
     return _DECISION_TYPE_OVERRIDES.get(num, "technical")
 
 
+def _implementation_commits(adr: LegacyAdr) -> tuple[str, ...]:
+    """Return full commit SHAs explicitly recorded in an ADR's decision text."""
+    found: list[str] = []
+    for text in (adr.decision, adr.body or ""):
+        for sha in _COMMIT_RE.findall(text):
+            if sha not in found:
+                found.append(sha)
+    return tuple(found)
+
+
+def _implementation_ref(adr: LegacyAdr, sha: str) -> str:
+    return f"  - type: git_commit\n    sha: {sha}\n    anchor: ADR-{adr.num:03d}\n    relation: implementation\n"
+
+
 def _status(num: int, legacy: str) -> str:
     # Compound statuses ("принят, реализован") resolve by their first token.
     key = legacy.strip().lower().rstrip(".").split(",")[0].strip()
@@ -293,7 +314,8 @@ def _frontmatter(adr: LegacyAdr, head: str, verified_at: str = VERIFIED_AT) -> s
         f"  - path: {LEGACY_SOURCE}\n"
         f"    anchor: ADR-{adr.num:03d}\n"
         "    relation: origin\n"
-        f"last_verified_at: {verified_at}\n"
+        + "".join(_implementation_ref(adr, sha) for sha in _implementation_commits(adr))
+        + f"last_verified_at: {verified_at}\n"
         f"last_verified_commit: {head}\n"
         "review_on: source-change\n"
         "---\n"
@@ -343,9 +365,9 @@ def compile_adrs(root: Path, head: str | None = None) -> list[int]:
     for num in sorted(adrs):
         adr = adrs[num]
         path = out_dir / f"ADR-{num:03d}.md"
-        # Provenance preservation: keep last_verified_at/commit from the existing
-        # generated file so a recompile with a new HEAD produces no diff when the
-        # underlying row/section data is unchanged.
+        # Preserve verification metadata for unchanged generated ADRs, but never
+        # report verification before the ADR date. Explicit implementation SHAs
+        # are stronger provenance than the compile snapshot for restored records.
         head_at = VERIFIED_AT
         head_sha = head
         if path.exists():
@@ -359,7 +381,12 @@ def compile_adrs(root: Path, head: str | None = None) -> list[int]:
                 head_at = m_at.group(1).strip()
             if m_sha:
                 head_sha = m_sha.group(1)
-        content = _frontmatter(adr, head_sha, verified_at=head_at) + "\n" + _body(adr) + "\n"
+        if adr.date:
+            head_at = max(head_at, f"{adr.date}T00:00:00Z")
+        implementation_commits = _implementation_commits(adr)
+        if implementation_commits:
+            head_sha = implementation_commits[-1]
+        content = _frontmatter(adr, head_sha, verified_at=head_at) + "\n" + _body(adr).rstrip("\n") + "\n"
         if path.exists() and path.read_text(encoding="utf-8") == content:
             continue  # no churn
         path.write_text(content, encoding="utf-8")

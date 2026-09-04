@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from tools.memoryctl.adr import (
+    _normalize_section_status,
+    _status,
     check_bidirectional,
     compile_adrs,
     parse_legacy,
-    _status,
 )
-from tools.memoryctl.adr import _normalize_section_status
 
 MARKER = "Compiled by `memoryctl adr compile`"
 
@@ -149,8 +149,10 @@ def test_section_only_adr_promoted_with_date_and_status():
 
 
 def test_decision_with_literal_pipes_roundtrips():
-    text = """| ADR-048 | 2026-08-11 | Варианты приложения | `APP_PRODUCT_VARIANT=tracker|timer|combined` управляет registry | принято |
-"""
+    text = (
+        "| ADR-048 | 2026-08-11 | Варианты приложения | "
+        "`APP_PRODUCT_VARIANT=tracker|timer|combined` управляет registry | принято |\n"
+    )
     adrs = parse_legacy(text)
     assert adrs[48].decision == "`APP_PRODUCT_VARIANT=tracker|timer|combined` управляет registry"
 
@@ -164,6 +166,44 @@ def test_compile_never_overwrites_hand_written_files(tmp_path):
     (adr_dir / "ADR-001.md").write_text(handwritten, encoding="utf-8")
     compile_adrs(tmp_path, head="a" * 40)
     assert (adr_dir / "ADR-001.md").read_text(encoding="utf-8") == handwritten
+
+
+def test_compile_adds_body_commit_provenance_and_normalizes_metadata(tmp_path):
+    (tmp_path / "memory").mkdir()
+    legacy = """| ADR-120 | 2026-08-19 | Quests | Added quests | принято |
+
+### ADR-120 — Quests
+**Date:** 2026-08-19
+**Decision:** Implemented in commit `53a0979487e7a3f7881259aceea94ecb2add843e`.
+"""
+    (tmp_path / "memory" / "DECISIONS.md").write_text(legacy, encoding="utf-8")
+    adr_dir = tmp_path / "docs" / "adr"
+    adr_dir.mkdir(parents=True)
+    (adr_dir / "ADR-120.md").write_text(
+        """---
+ schema_version: memory/v2alpha1
+ id: ADR-120
+ kind: adr
+ title: old
+ status: accepted
+ accepted_at: 2026-08-19T00:00:00Z
+ last_verified_at: 2026-08-13T00:00:00Z
+ last_verified_commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+---
+
+# old
+
+> Compiled by `memoryctl adr compile`
+""".replace("\n ", "\n"),
+        encoding="utf-8",
+    )
+    compile_adrs(tmp_path, head="b" * 40)
+    generated = (adr_dir / "ADR-120.md").read_text(encoding="utf-8")
+    assert "last_verified_at: 2026-08-19T00:00:00Z" in generated
+    assert "last_verified_commit: 53a0979487e7a3f7881259aceea94ecb2add843e" in generated
+    assert "sha: 53a0979487e7a3f7881259aceea94ecb2add843e" in generated
+    assert generated.endswith("relying on it.\n")
+    assert not generated.endswith("\n\n")
 
 
 def test_compile_preserves_provenance_and_is_churn_free(tmp_path):
