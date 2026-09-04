@@ -21,14 +21,16 @@ from __future__ import annotations
 import contextlib
 import csv
 import io
+import json
 import logging
 import re
 import uuid
 from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.medication import (
     COURSE_STATUSES,
@@ -36,12 +38,15 @@ from app.models.medication import (
     FREQUENCY_TYPES,
     INTAKE_STATUSES,
     MED_KINDS,
+    MedComponent,
     MedCourse,
     Medication,
     MedIntake,
     MedKit,
     MedSchedule,
     MedStock,
+    MedSubstance,
+    MedVariant,
 )
 from app.services.errors import NotFoundError
 from app.timeutils import local_date, local_now, local_today
@@ -169,6 +174,24 @@ def regimen_to_text(s: MedSchedule, t: dict) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+class ComponentItem(BaseModel):
+    substance: str | None = None
+    name: str | None = None  # алиас substance
+    inn: str | None = None
+    amount: float | None = None
+    unit: str | None = None
+    variant: str | None = None
+
+    def row(self) -> dict:
+        return {
+            "substance": (self.substance or self.name or "").strip(),
+            "inn": (self.inn or "").strip() or None,
+            "amount": self.amount,
+            "unit": (self.unit or "").strip() or None,
+            "variant": (self.variant or "").strip() or None,
+        }
+
+
 class MedicationBody(BaseModel):
     name: str
     kind: str = "medication"
@@ -178,6 +201,8 @@ class MedicationBody(BaseModel):
     unit: str | None = None
     instructions: str | None = None
     notes: str | None = None
+    allow_ul_override: bool = False
+    components: list[ComponentItem] | None = None
     is_active: bool = True
 
 
@@ -255,9 +280,49 @@ class RegimenParseBody(BaseModel):
     text: str
 
 
+class AutofillBody(BaseModel):
+    name: str
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Serializers
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def composition_rows(m: Medication) -> list[dict]:
+    """Компоненты препарата в порядке sort_order: вещество + дозировка + вариант пачки."""
+    rows = []
+    for c in sorted(m.components or [], key=lambda x: (x.sort_order or 0, x.created_at or datetime.min)):
+        rows.append(
+            {
+                "substance": c.substance.name if c.substance else "",
+                "inn": c.substance.inn if c.substance else None,
+                "amount": float(c.amount) if c.amount is not None else None,
+                "unit": c.unit,
+                "variant": c.variant.name if c.variant else None,
+            }
+        )
+    return rows
+
+
+def composition_label(m: Medication) -> str:
+    """Короткая подпись состава: «Эстрадиол 2 мг + Дидрогестерон 10 мг».
+
+    Возвращает '' если компонентов нет (legacy active_ingredient — запасной текст).
+    """
+    rows = composition_rows(m)
+    if not rows:
+        return ""
+    parts: list[str] = []
+    for r in rows:
+        amount = f"{r['amount']:g}" if r["amount"] is not None else ""
+        unit = r["unit"] or ""
+        dose = f" {amount} {unit}".rstrip() if (amount or unit) else ""
+        label = f"{r['substance']}{dose}"
+        if r["variant"] and len({x["variant"] for x in rows}) > 1:
+            label += f" ({r['variant']})"
+        parts.append(label)
+    return " + ".join(parts)
 
 
 def med_dict(m: Medication) -> dict:
@@ -275,6 +340,9 @@ def med_dict(m: Medication) -> dict:
         "unit": m.unit,
         "instructions": m.instructions,
         "notes": m.notes,
+        "allow_ul_override": m.allow_ul_override,
+        "components": composition_rows(m),
+        "composition_label": composition_label(m),
         "is_active": m.is_active,
     }
 
@@ -361,11 +429,184 @@ async def get_med(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID
     return m
 
 
+def med_matches_query(m: Medication, ql: str) -> bool:
+    """Поиск карточки по названию, legacy active_ingredient и компонентам (имя/МНН/синонимы)."""
+    if ql in (m.name or "").lower():
+        return True
+    if m.active_ingredient and ql in m.active_ingredient.lower():
+        return True
+    for c in m.components or []:
+        s = c.substance
+        if s is None:
+            continue
+        if ql in (s.name or "").lower():
+            return True
+        if s.inn and ql in s.inn.lower():
+            return True
+        if any(ql in (syn or "").lower() for syn in (s.synonyms or [])):
+            return True
+    return False
+
+
 async def get_kit(db: AsyncSession, user_id: uuid.UUID, kit_id: uuid.UUID) -> MedKit:
     k = (await db.execute(select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user_id))).scalar_one_or_none()
     if k is None:
         raise NotFoundError("Kit not found")
     return k
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Substances / composition (ADR-190, phase E)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Должен совпадать с _norm_key в миграции 097 (ADR-190 §3.1).
+_NORM_STRIP_RE = re.compile(r"[^a-zа-я0-9 ]")
+
+
+def normalize_substance(name: str) -> str:
+    """Канонический ключ вещества: trim → lower → ё→е → знаки препинания → схлопывание пробелов."""
+    s = (name or "").strip().lower().replace("ё", "е")
+    s = _NORM_STRIP_RE.sub(" ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+async def find_or_create_substance(
+    db: AsyncSession,
+    *,
+    name: str,
+    inn: str | None = None,
+    synonyms: list[str] | None = None,
+    daily_max_amt: float | None = None,
+    daily_max_unit: str | None = None,
+    daily_max_note: str | None = None,
+    is_custom: bool = True,
+) -> MedSubstance:
+    """Найти вещество по norm_key или создать (пользовательские строки)."""
+    norm = normalize_substance(name)
+    if not norm:
+        raise ValueError("Substance name is required")
+    sub = (await db.execute(select(MedSubstance).where(MedSubstance.norm_key == norm))).scalar_one_or_none()
+    if sub is None:
+        sub = MedSubstance(
+            name=(name or "").strip()[:200],
+            norm_key=norm,
+            inn=(inn or "").strip()[:200] or None,
+            synonyms=synonyms or None,
+            daily_max_amt=daily_max_amt,
+            daily_max_unit=(daily_max_unit or "").strip()[:10] or None,
+            daily_max_note=(daily_max_note or "").strip()[:300] or None,
+            is_custom=is_custom,
+        )
+        db.add(sub)
+        await db.flush()
+    else:
+        # Обогащение справочника: INN/предел добавляются при первом известном случае.
+        changed = False
+        if inn and not sub.inn:
+            sub.inn = inn[:200]
+            changed = True
+        if daily_max_amt is not None and sub.daily_max_amt is None:
+            sub.daily_max_amt = daily_max_amt
+            sub.daily_max_unit = (daily_max_unit or "").strip()[:10] or None
+            sub.daily_max_note = (daily_max_note or "").strip()[:300] or None
+            changed = True
+        if changed:
+            db.add(sub)
+            await db.flush()
+    return sub
+
+
+def parse_components_payload(raw) -> list[dict]:
+    """Распарсить payload состава (JSON-строка формы или list JSON API) в нормализованные строки.
+
+    Строка: {"substance|name": str, "inn"?, "amount"?, "unit"?, "variant"?}.
+    Пустые/битые строки пропускаются; дубликат «вещество+вариант» схлопывается (первый выигрывает).
+    """
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        data = raw
+    elif isinstance(raw, str):
+        try:
+            data = json.loads(raw or "[]")
+        except (ValueError, TypeError):
+            raise ValueError("components: invalid JSON") from None
+    else:
+        return []
+    if not isinstance(data, list):
+        raise ValueError("components must be a list")
+    rows: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        sub_name = (item.get("substance") or item.get("name") or "").strip()
+        if not sub_name:
+            continue
+        variant = (item.get("variant") or "").strip() or None
+        norm = normalize_substance(sub_name)
+        key = (norm, normalize_substance(variant) if variant else "")
+        if key in seen:
+            continue
+        seen.add(key)
+        amount = item.get("amount")
+        if isinstance(amount, str):
+            amount = amount.strip() or None
+        try:
+            amount = float(amount) if amount not in (None, "") else None
+        except (TypeError, ValueError):
+            amount = None
+        rows.append(
+            {
+                "substance": sub_name,
+                "inn": (item.get("inn") or "").strip() or None,
+                "amount": amount,
+                "unit": (item.get("unit") or "").strip() or None,
+                "variant": variant,
+            }
+        )
+    return rows
+
+
+async def sync_med_components(db: AsyncSession, m: Medication, raw_components) -> None:
+    """Пересоздать состав препарата из payload (варианты пачки группируются по имени)."""
+    rows = parse_components_payload(raw_components)
+    await db.execute(delete(MedComponent).where(MedComponent.medication_id == m.id))
+    await db.execute(delete(MedVariant).where(MedVariant.medication_id == m.id))
+    variant_ids: dict[str, MedVariant] = {}
+    for order, row in enumerate(rows):
+        substance = await find_or_create_substance(db, name=row["substance"], inn=row.get("inn"))
+        variant: MedVariant | None = None
+        if row.get("variant"):
+            variant = variant_ids.get(row["variant"])
+            if variant is None:
+                variant = MedVariant(
+                    medication_id=m.id,
+                    name=row["variant"][:100],
+                    sort_order=len(variant_ids),
+                )
+                db.add(variant)
+                await db.flush()
+                variant_ids[row["variant"]] = variant
+        db.add(
+            MedComponent(
+                medication_id=m.id,
+                variant_id=variant.id if variant else None,
+                substance_id=substance.id,
+                amount=row.get("amount"),
+                unit=row.get("unit"),
+                sort_order=order,
+            )
+        )
+    await db.flush()
+
+
+async def get_substances(db: AsyncSession, user_id: uuid.UUID, *, limit: int = 300) -> list[dict]:
+    """Справочник веществ для подсказок формы (системные + созданные пользователем)."""
+    subs = (await db.execute(select(MedSubstance).order_by(MedSubstance.name).limit(limit))).scalars().all()
+    return [
+        {"id": str(s.id), "name": s.name, "inn": s.inn, "norm_key": s.norm_key, "is_custom": s.is_custom} for s in subs
+    ]
 
 
 async def get_schedule(db: AsyncSession, user_id: uuid.UUID, schedule_id: uuid.UUID) -> MedSchedule:
@@ -1077,6 +1318,7 @@ async def get_med_page_context(
     migrated: int = 0,
     skipped: int = 0,
     t: dict | None = None,
+    q: str = "",
 ) -> dict:
     """Build full template context for GET /medications page."""
     meds = (
@@ -1084,6 +1326,10 @@ async def get_med_page_context(
         .scalars()
         .all()
     )
+    q = (q or "").strip()
+    if q:
+        ql = q.lower()
+        meds = [m for m in meds if med_matches_query(m, ql)]
     kits = (await db.execute(select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name))).scalars().all()
     stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user.id))).scalars().all()
     schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
@@ -1137,6 +1383,41 @@ async def get_med_page_context(
         d["stocks"] = stocks_by_med.get(str(m.id), [])
         d["schedules"] = schedules_by_med.get(str(m.id), [])
         meds_data.append(d)
+
+    # ADR-190 (фаза E): группировка «по действующему веществу»
+    substance_groups: dict[str, dict] = {}
+    for d in meds_data:
+        total_stock = round(sum(float(st["quantity"] or 0) for st in d["stocks"]), 3)
+        for comp in d["components"]:
+            sub_name = comp["substance"]
+            if not sub_name:
+                continue
+            key = normalize_substance(sub_name)
+            group = substance_groups.get(key)
+            if group is None:
+                group = {"name": sub_name, "inn": comp.get("inn"), "meds": []}
+                substance_groups[key] = group
+            if not any(x["medication_id"] == d["id"] for x in group["meds"]):
+                group["meds"].append(
+                    {
+                        "medication_id": d["id"],
+                        "name": d["name"],
+                        "form": d["form"],
+                        "strength": d["strength"],
+                        "stock_total": total_stock,
+                    }
+                )
+    substance_groups_list = sorted(
+        (
+            {
+                "name": g["name"],
+                "inn": g["inn"],
+                "meds": sorted(g["meds"], key=lambda x: x["name"].lower()),
+            }
+            for g in substance_groups.values()
+        ),
+        key=lambda g: g["name"].lower(),
+    )
 
     from app.models.life import InventoryItem
 
@@ -1192,8 +1473,13 @@ async def get_med_page_context(
     )
     locs_data = [{"id": str(loc.id), "path": location_path(loc), "is_custom": loc.is_custom} for loc in locs]
 
+    substances = await get_substances(db, user.id)
+
     return {
         "meds": meds_data,
+        "substance_groups": substance_groups_list,
+        "substances": substances,
+        "search_q": q,
         "kits": kits_data,
         "courses": courses_data,
         "locations": locs_data,
@@ -1232,6 +1518,8 @@ async def create_medication(
     notes: str,
     kit_id: str = "",
     stock_quantity: str = "",
+    components: str | list | None = None,
+    allow_ul_override: bool = False,
 ) -> Medication:
     name = name.strip()[:200]
     if not name:
@@ -1250,9 +1538,18 @@ async def create_medication(
         unit=(unit or "").strip()[:20] or None,
         instructions=(instructions or "").strip() or None,
         notes=(notes or "").strip() or None,
+        allow_ul_override=allow_ul_override,
     )
     db.add(m)
     await db.flush()
+    # ADR-190 (фаза E): состав (компоненты). Без явного состава legacy-текст
+    # active_ingredient превращается в один компонент без дозировки.
+    if components:
+        await sync_med_components(db, m, components)
+    elif (active_ingredient or "").strip():
+        await sync_med_components(
+            db, m, [{"substance": active_ingredient.strip(), "inn": None, "amount": None, "unit": None}]
+        )
     # ADR-189 (фаза A): если выбрана аптечка — сразу создаём партию в ней
     if kit_id and kit_id not in ("", "__none__"):
         kit = await get_kit(db, user_id, uuid.UUID(kit_id))
@@ -1290,6 +1587,8 @@ async def update_medication(
     instructions: str,
     notes: str,
     is_active: str,
+    components: str | list | None = None,
+    allow_ul_override: bool = False,
 ) -> Medication:
     m = await get_med(db, user_id, medication_id)
     m.name = name.strip()[:200] or m.name
@@ -1304,9 +1603,13 @@ async def update_medication(
     m.unit = (unit or "").strip()[:20] or None
     m.instructions = (instructions or "").strip() or None
     m.notes = (notes or "").strip() or None
+    m.allow_ul_override = allow_ul_override
     m.is_active = is_active.strip().lower() in {"1", "on", "true", "yes"}
     db.add(m)
     await db.flush()
+    # ADR-190: пересинхронизация состава при сохранении формы
+    if components:
+        await sync_med_components(db, m, components)
     return m
 
 
@@ -1615,10 +1918,10 @@ async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid
     return analogs_data
 
 
-async def autofill_info(db: AsyncSession, user_id: uuid.UUID, name: str) -> dict:
+async def autofill_info(db: AsyncSession, user_id: uuid.UUID, name: str, locale: str = "ru") -> dict | None:
     from app.services.pharma_enricher import enrich_medication_info
 
-    return await enrich_medication_info(db, user_id, name)
+    return await enrich_medication_info(db, user_id, name, locale=locale)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1883,6 +2186,25 @@ def _validate_name(name: str) -> str:
     return name
 
 
+async def _reload_med_graph(db: AsyncSession, m: Medication) -> Medication:
+    """Перечитать препарат с составом и вариантами (async selectinload).
+
+    Свежесозданные объекты не имеют загруженных relationships; sync-сериализация
+    (med_dict в JSON-роутах) спровоцировала бы lazy-load → MissingGreenlet.
+    """
+    return (
+        await db.execute(
+            select(Medication)
+            .where(Medication.id == m.id)
+            .options(
+                selectinload(Medication.components).selectinload(MedComponent.substance),
+                selectinload(Medication.components).selectinload(MedComponent.variant),
+                selectinload(Medication.variants),
+            )
+        )
+    ).scalar_one()
+
+
 async def json_create_medication(db: AsyncSession, user_id: uuid.UUID, body: MedicationBody) -> Medication:
     name = _validate_name(body.name)
     kind = body.kind if body.kind in MED_KINDS else "medication"
@@ -1896,11 +2218,18 @@ async def json_create_medication(db: AsyncSession, user_id: uuid.UUID, body: Med
         unit=(body.unit or "").strip()[:20] or None,
         instructions=(body.instructions or "").strip() or None,
         notes=(body.notes or "").strip() or None,
+        allow_ul_override=body.allow_ul_override,
         is_active=body.is_active,
     )
     db.add(m)
     await db.flush()
-    return m
+    if body.components:
+        await sync_med_components(db, m, [c.row() for c in body.components])
+    elif (body.active_ingredient or "").strip():
+        await sync_med_components(
+            db, m, [{"substance": body.active_ingredient.strip(), "inn": None, "amount": None, "unit": None}]
+        )
+    return await _reload_med_graph(db, m)
 
 
 async def json_update_medication(
@@ -1916,9 +2245,12 @@ async def json_update_medication(
     m.unit = (body.unit or "").strip()[:20] or None
     m.instructions = (body.instructions or "").strip() or None
     m.notes = (body.notes or "").strip() or None
+    m.allow_ul_override = body.allow_ul_override
     m.is_active = body.is_active
     await db.flush()
-    return m
+    if body.components:
+        await sync_med_components(db, m, [c.row() for c in body.components])
+    return await _reload_med_graph(db, m)
 
 
 async def json_create_stock(db: AsyncSession, user_id: uuid.UUID, body: StockBody) -> MedStock:

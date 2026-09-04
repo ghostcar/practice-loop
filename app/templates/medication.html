@@ -335,9 +335,19 @@
                     {% for k in kinds %}<option value="{{ k }}">{{ t['med_kind_' + k] }}</option>{% endfor %}
                 </select>
             </label>
-            <label class="text-xs pl-text-secondary">МНН / Действующее вещество
-                <input type="text" id="med-active-ing" name="active_ingredient" placeholder="напр. Декспантенол" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-            </label>
+            <!-- ADR-190 (фаза E): состав (действующие вещества) -->
+            <div class="sm:col-span-2 space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs pl-text-secondary inline-flex items-center gap-1.5">{{ icon('sparkles', 'w-3.5 h-3.5') }}{{ t.med_composition }}</span>
+                    <button type="button" id="btn-add-component" class="px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('plus', 'w-3 h-3') }}{{ t.med_comp_add }}</button>
+                </div>
+                <div id="med-components-rows" class="space-y-1.5"></div>
+                <input type="hidden" id="med-components-json" name="components" value="[]">
+                <datalist id="med-substance-list">
+                    {% for s in substances %}<option value="{{ s.name }}">{{ s.name }}{% if s.inn %} — {{ s.inn }}{% endif %}</option>{% endfor %}
+                </datalist>
+                <p class="text-[11px] pl-text-muted">{{ t.med_comp_hint }}</p>
+            </div>
             <label class="text-xs pl-text-secondary">{{ t.med_form }}
                 <input type="text" id="med-form-input" name="form" placeholder="мазь, таблетки, гель…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
             </label>
@@ -353,6 +363,10 @@
             <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
                 <input type="checkbox" id="med-prescription-cb" name="prescription_required" value="1" class="w-4 h-4">
                 По рецепту (Rx)
+            </label>
+            <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4" title="{{ t.med_ul_override_hint }}">
+                <input type="checkbox" id="med-ul-override-cb" name="allow_ul_override" value="1" class="w-4 h-4">
+                {{ t.med_ul_override }}
             </label>
             <label class="text-xs pl-text-secondary">{{ t.med_unit }}
                 <input type="text" id="med-unit-input" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
@@ -373,6 +387,45 @@
         </form>
     </details>
 
+    <!-- Search by name / substance (ADR-190, phase E) -->
+    <section class="pl-surface border border-[color:var(--border)] rounded-xl p-3">
+        <form action="/medications" method="get" class="flex flex-col sm:flex-row gap-2">
+            <label class="text-xs pl-text-secondary flex-1 inline-flex items-center gap-2">
+                {{ icon('search', 'w-4 h-4') }}
+                <span class="sr-only">{{ t.med_search }}</span>
+                <input type="text" name="q" value="{{ search_q or '' }}" placeholder="{{ t.med_search_placeholder }}" class="mt-0 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <button type="submit" class="px-4 py-2 rounded-lg text-sm font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('search', 'w-4 h-4') }}{{ t.med_search_btn }}</button>
+            {% if search_q %}<a href="/medications" class="px-4 py-2 rounded-lg text-sm pl-text-muted inline-flex items-center justify-center min-h-[44px]">{{ icon('delete', 'w-3.5 h-3.5') }}{{ t.med_search_clear }}</a>{% endif %}
+        </form>
+    </section>
+
+    <!-- Grouped by active substance (ADR-190, phase E) -->
+    {% if substance_groups %}
+    <section class="space-y-2">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('sparkles', 'w-4 h-4') }}{{ t.med_by_substance }}</h2>
+        <div class="grid grid-cols-1 gap-3">
+            {% for g in substance_groups %}
+            <details class="pl-surface border border-[color:var(--border)] rounded-xl p-3">
+                <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none flex-wrap">
+                    {{ icon('medication', 'w-4 h-4') }}{{ g.name }}
+                    {% if g.inn %}<span class="text-xs pl-text-muted">({{ g.inn }})</span>{% endif %}
+                    <span class="text-xs pl-text-muted">· {{ g.meds | length }}</span>
+                </summary>
+                <ul class="mt-2 divide-y divide-[color:var(--border)] text-sm">
+                    {% for md in g.meds %}
+                    <li class="py-1.5 flex items-center justify-between gap-2">
+                        <span class="text-[color:var(--text)]">{{ md.name }}{% if md.form %} <span class="pl-text-muted text-xs">· {{ md.form }}</span>{% endif %}</span>
+                        <span class="pl-text-muted text-xs">{% if md.stock_total %}{{ icon('inventory', 'w-3 h-3') }}{{ md.stock_total }}{% endif %} {% if md.strength %}· {{ md.strength }}{% endif %}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </details>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <!-- Medications list -->
     <section class="space-y-4">
         <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted">{{ t.nav_medication }}</h2>
@@ -385,16 +438,29 @@
                         <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-2">
                             {{ m.name }}
                             {% if m.prescription_required %}<span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-700 font-semibold border border-amber-500/20">Rx</span>{% endif %}
+                            {% if m.allow_ul_override %}<span class="px-2 py-0.5 rounded text-xs bg-sky-500/10 text-sky-700 font-semibold border border-sky-500/20" title="{{ t.med_ul_override_hint }}">{{ icon('warning', 'w-3 h-3') }}{{ t.med_ul_override_short }}</span>{% endif %}
                             {% if not m.is_active %}<span class="text-xs pl-text-muted">({{ t.med_archive if t.get('med_archive') else 'inactive' }})</span>{% endif %}
                         </h3>
                         <p class="text-xs pl-text-muted">
                             {{ t['med_kind_' + m.kind] if t.get('med_kind_' + m.kind) else m.kind }}
-                            {% if m.active_ingredient %} · МНН: <strong class="text-[color:var(--text)]">{{ m.active_ingredient }}</strong>{% endif %}
                             {% if m.strength %} · {{ m.strength }}{% endif %}
                             {% if m.form %} · {{ m.form }}{% endif %}
                             {% if m.manufacturer %} · {{ m.manufacturer }}{% endif %}
                             {% if m.storage_conditions %} · {{ m.storage_conditions }}{% endif %}
                         </p>
+                        {% if m.components %}
+                        <div class="mt-1.5 flex flex-wrap gap-1.5">
+                            {% for c in m.components %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs text-[color:var(--text-secondary)]" title="{{ c.inn or '' }}">
+                                {{ c.substance }}
+                                {% if c.amount is not none %} · {{ '%g' % c.amount }} {{ c.unit or '' }}{% endif %}
+                                {% if c.variant %}<span class="pl-text-muted text-[10px]">({{ c.variant }})</span>{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% elif m.active_ingredient %}
+                        <p class="text-xs pl-text-muted mt-0.5">· {{ t.med_composition }}: <strong class="text-[color:var(--text)]">{{ m.active_ingredient }}</strong></p>
+                        {% endif %}
                         {% if m.instructions %}<p class="text-sm pl-text-secondary mt-1">{{ m.instructions }}</p>{% endif %}
 
                         <!-- Analogues section -->
@@ -559,35 +625,99 @@
 
 <script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
-    const autofillBtn = document.getElementById('btn-autofill-pharma');
-    if (!autofillBtn) return;
+    const L = {
+        notFound: "{{ t.med_autofill_not_found }}",
+        enterName: "{{ t.med_autofill_enter }}",
+        searching: "{{ t.med_autofill_search }}",
+        add: "{{ t.med_comp_add }}",
+        subPh: "{{ t.med_comp_substance_ph }}",
+        dosePh: "{{ t.med_comp_dose_ph }}",
+        unitPh: "{{ t.med_comp_unit_ph }}",
+        variantPh: "{{ t.med_comp_variant_ph }}",
+        remove: "{{ t.med_comp_remove }}"
+    };
 
-    autofillBtn.addEventListener('click', async function() {
-        const nameInput = document.getElementById('med-name-input');
-        const name = nameInput ? nameInput.value.trim() : '';
-        if (!name) {
-            alert('Введите название препарата для автозаполнения!');
-            return;
-        }
+    // ── ADR-190: состав (редактор строк вещество+доза+единица+вариант) ──
+    const rowsEl = document.getElementById('med-components-rows');
+    const jsonEl = document.getElementById('med-components-json');
+    const addCompBtn = document.getElementById('btn-add-component');
 
-        const originalText = autofillBtn.innerHTML;
-        autofillBtn.disabled = true;
-        autofillBtn.innerText = 'Поиск...';
-
-        try {
-            const formData = new FormData();
-            formData.append('name', name);
-            const csrfInput = document.querySelector('input[name="csrf_token"]');
-            if (csrfInput) formData.append('csrf_token', csrfInput.value);
-
-            const res = await fetch('/medications/autofill-info', {
-                method: 'POST',
-                body: formData
+    function medCompSerialize() {
+        if (!rowsEl || !jsonEl) return;
+        const rows = [];
+        rowsEl.querySelectorAll('.med-comp-row').forEach(function(tr) {
+            const sub = tr.querySelector('.med-comp-substance').value.trim();
+            if (!sub) return;
+            const amountRaw = tr.querySelector('.med-comp-amount').value.trim();
+            const amount = amountRaw === '' ? null : Number(amountRaw);
+            rows.push({
+                substance: sub,
+                amount: (amount !== null && !isNaN(amount)) ? amount : null,
+                unit: tr.querySelector('.med-comp-unit').value.trim() || null,
+                variant: tr.querySelector('.med-comp-variant').value.trim() || null
             });
-            const data = await res.json();
-            if (data.status === 'ok' && data.data) {
+        });
+        jsonEl.value = JSON.stringify(rows);
+    }
+    function medCompAddRow(data) {
+        if (!rowsEl) return;
+        data = data || {};
+        const div = document.createElement('div');
+        div.className = 'med-comp-row grid grid-cols-12 gap-1.5 items-center';
+        const esc = function(v) { return String(v == null ? '' : v).replace(/"/g, '&quot;'); };
+        div.innerHTML =
+            '<input type="text" list="med-substance-list" placeholder="' + L.subPh + '" value="' + esc(data.substance) + '" class="med-comp-substance col-span-5 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="number" step="any" value="' + esc(data.amount) + '" placeholder="' + L.dosePh + '" class="med-comp-amount col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" value="' + esc(data.unit) + '" placeholder="' + L.unitPh + '" class="med-comp-unit col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" value="' + esc(data.variant) + '" placeholder="' + L.variantPh + '" class="med-comp-variant col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<button type="button" aria-label="' + L.remove + '" class="med-comp-del col-span-1 inline-flex items-center justify-center text-[color:var(--text-muted)] min-h-[36px]">×</button>';
+        div.querySelector('.med-comp-del').addEventListener('click', function() { div.remove(); medCompSerialize(); });
+        div.querySelectorAll('.med-comp-substance, .med-comp-amount, .med-comp-unit, .med-comp-variant')
+            .forEach(function(el) { el.addEventListener('input', medCompSerialize); });
+        rowsEl.appendChild(div);
+        medCompSerialize();
+    }
+    if (addCompBtn && rowsEl) {
+        addCompBtn.addEventListener('click', function() { medCompAddRow(); });
+    }
+
+    // ── Автопоиск по наименованию → поля формы + состав ──
+    const autofillBtn = document.getElementById('btn-autofill-pharma');
+    if (autofillBtn && rowsEl) {
+        autofillBtn.addEventListener('click', async function() {
+            const nameInput = document.getElementById('med-name-input');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) {
+                alert(L.enterName);
+                return;
+            }
+            const originalText = autofillBtn.innerHTML;
+            autofillBtn.disabled = true;
+            autofillBtn.innerText = L.searching;
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                const csrfInput = document.querySelector('input[name="csrf_token"]');
+                if (csrfInput) formData.append('csrf_token', csrfInput.value);
+                const res = await fetch('/medications/autofill-info', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.status === 'not_found') {
+                    alert(data.message || L.notFound);
+                    return;
+                }
+                if (data.status !== 'ok' || !data.data) {
+                    alert(L.notFound);
+                    return;
+                }
                 const info = data.data;
-                if (info.active_ingredient) document.getElementById('med-active-ing').value = info.active_ingredient;
+                // состав — строки компонентов (приоритет над legacy-текстом)
+                rowsEl.innerHTML = '';
+                const comps = Array.isArray(info.components) && info.components.length
+                    ? info.components
+                    : (info.active_ingredient ? [{ substance: info.active_ingredient }] : []);
+                comps.forEach(function(c) {
+                    medCompAddRow({ substance: c.substance || c.name, amount: c.amount, unit: c.unit, variant: c.variant });
+                });
                 if (info.form) document.getElementById('med-form-input').value = info.form;
                 if (info.strength) document.getElementById('med-strength-input').value = info.strength;
                 if (info.manufacturer) document.getElementById('med-manufacturer-input').value = info.manufacturer;
@@ -601,14 +731,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     const kindSelect = document.getElementById('med-kind-select');
                     if (kindSelect) kindSelect.value = info.kind;
                 }
+            } catch (e) {
+                console.error('Autofill error:', e);
+                alert(L.notFound);
+            } finally {
+                autofillBtn.disabled = false;
+                autofillBtn.innerHTML = originalText;
             }
-        } catch (e) {
-            console.error('Autofill error:', e);
-        } finally {
-            autofillBtn.disabled = false;
-            autofillBtn.innerHTML = originalText;
-        }
-    });
+        });
+    }
 
     // ADR-189: пресеты режима + живой предпросмотр текста
     const R_LABELS = {

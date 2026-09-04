@@ -36,6 +36,7 @@ json_router = APIRouter(prefix="/api/v2/medications", tags=["medication"])
 @router.get("/medications", response_class=HTMLResponse)
 async def medications_page(
     request: Request,
+    q: str = "",
     migrated: int = 0,
     skipped: int = 0,
     db: AsyncSession = Depends(get_db),
@@ -44,7 +45,7 @@ async def medications_page(
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
-    ctx = await svc.get_med_page_context(db, user, migrated=migrated, skipped=skipped, t=t)
+    ctx = await svc.get_med_page_context(db, user, migrated=migrated, skipped=skipped, t=t, q=q)
     return templates.TemplateResponse(
         request=request,
         name="medication.html",
@@ -73,6 +74,8 @@ async def create_medication(
     notes: str = Form(default=""),
     kit_id: str = Form(default=""),
     stock_quantity: str = Form(default=""),
+    components: str = Form(default=""),
+    allow_ul_override: bool = Form(default=False),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -93,6 +96,8 @@ async def create_medication(
             notes=notes,
             kit_id=kit_id,
             stock_quantity=stock_quantity,
+            components=components,
+            allow_ul_override=allow_ul_override,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -115,6 +120,8 @@ async def update_medication(
     instructions: str = Form(default=""),
     notes: str = Form(default=""),
     is_active: str = Form(default=""),
+    components: str = Form(default=""),
+    allow_ul_override: bool = Form(default=False),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -135,6 +142,8 @@ async def update_medication(
             instructions=instructions,
             notes=notes,
             is_active=is_active,
+            components=components,
+            allow_ul_override=allow_ul_override,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -162,7 +171,11 @@ async def autofill_medication_info(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    info = await svc.autofill_info(db, user.id, name)
+    locale = detect_locale(request, user.locale)
+    t = get_translations(locale)
+    info = await svc.autofill_info(db, user.id, name, locale=locale)
+    if info is None:
+        return {"status": "not_found", "message": t["med_autofill_not_found"]}
     return {"status": "ok", "data": info}
 
 
@@ -742,6 +755,19 @@ async def json_parse_regimen(
         return svc.parse_regimen_text(body.text)
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
+
+
+@json_router.post("/autofill")
+async def json_autofill(
+    body: svc.AutofillBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """ADR-190 (фаза E, mobile parity): наименование → поля формы + components[]; 404 = не найдено."""
+    info = await svc.autofill_info(db, user.id, body.name, locale=user.locale or "en")
+    if info is None:
+        raise HTTPException(404, "Pharma entry not found")
+    return info
 
 
 @json_router.post("/{medication_id}/intake", status_code=201)

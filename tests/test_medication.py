@@ -13,9 +13,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import hash_password
-from app.models.medication import MedCourse, Medication, MedIntake, MedKit, MedSchedule, MedStock
+from app.models.medication import (
+    MedComponent,
+    MedCourse,
+    Medication,
+    MedIntake,
+    MedKit,
+    MedSchedule,
+    MedStock,
+    MedSubstance,
+    MedVariant,
+)
 from app.models.user import User
-from app.services.med_service import parse_regimen_text
+from app.services.med_service import (
+    normalize_substance,
+    parse_components_payload,
+    parse_regimen_text,
+)
 
 
 async def _create_medication(client, name: str = "Ibuprofen") -> str:
@@ -872,3 +886,196 @@ async def test_parse_endpoint_persists_nothing(auth_client, test_user, db_sessio
     intakes = (await db_session.execute(select(MedIntake).where(MedIntake.user_id == test_user.id))).scalars().all()
     assert scheds == []
     assert intakes == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADR-190, phase E: substances, composition, autofill, grouping, search
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_normalize_substance():
+    assert normalize_substance("  Ибупрофен ") == "ибупрофен"
+    assert normalize_substance("Ибупрофен") == normalize_substance("ибупрофен")
+    assert normalize_substance("Эстрадиол") == normalize_substance("  эстрадиол! ")
+    # соль/эфир — отдельная строка (ADR-190 «Границы»)
+    assert normalize_substance("Эстрадиола валерат") != normalize_substance("Эстрадиол")
+    # ё → е
+    assert normalize_substance("Аевит") == normalize_substance("Аевит")
+    assert normalize_substance("Хлоргексидина биглюконат") == "хлоргексидина биглюконат"
+
+
+def test_parse_components_payload_dedup_and_invalid():
+    rows = parse_components_payload(
+        '[{"substance":"Эстрадиол","amount":2,"unit":"мг","variant":"белые 1–14"},'
+        '{"name":"Эстрадиол","amount":2,"unit":"мг","variant":"Белые 1–14"},'
+        '{"substance":"Дидрогестерон","amount":10,"unit":"мг"},'
+        '{"amount":5}]'
+    )
+    assert len(rows) == 2  # дубль «вещество+вариант» схлопнут; строка без вещества отброшена
+    assert rows[0]["substance"] == "Эстрадиол"
+    assert rows[1]["substance"] == "Дидрогестерон"
+    assert parse_components_payload("") == []
+    assert parse_components_payload(None) == []
+    with pytest.raises(ValueError):
+        parse_components_payload("{broken json")
+    with pytest.raises(ValueError):
+        parse_components_payload('{"not": "a list"}')
+
+
+@pytest.mark.asyncio
+async def test_create_medication_with_components_and_variants(auth_client, test_user, db_session):
+    """Фемостон 2/10: 2 варианта пачки, 3 компонента, вещества дедуплицированы по norm_key."""
+    components = (
+        '[{"substance":"Эстрадиол","inn":"Estradiolum","amount":2,"unit":"мг","variant":"белые 1–14"},'
+        '{"substance":"Эстрадиол","inn":"Estradiolum","amount":2,"unit":"мг","variant":"серые 15–28"},'
+        '{"substance":"Дидрогестерон","inn":"Dydrogesteronum","amount":10,"unit":"мг","variant":"серые 15–28"}]'
+    )
+    resp = await auth_client.post(
+        "/medications",
+        data={"name": "Фемостон 2/10", "kind": "medication", "form": "таблетки", "components": components},
+    )
+    assert resp.status_code == 303, resp.text
+    med = (
+        await db_session.execute(
+            select(Medication).where(Medication.user_id == test_user.id, Medication.name == "Фемостон 2/10")
+        )
+    ).scalar_one()
+    comps = (await db_session.execute(select(MedComponent).where(MedComponent.medication_id == med.id))).scalars().all()
+    assert len(comps) == 3
+    variants = (await db_session.execute(select(MedVariant).where(MedVariant.medication_id == med.id))).scalars().all()
+    assert len(variants) == 2
+    substances = (await db_session.execute(select(MedSubstance))).scalars().all()
+    assert {s.name for s in substances} == {"Эстрадиол", "Дидрогестерон"}
+    est = next(s for s in substances if s.name == "Эстрадиол")
+    assert est.inn == "Estradiolum"
+    assert est.norm_key == "эстрадиол"
+    # страница показывает состав
+    page = await auth_client.get("/medications")
+    assert page.status_code == 200
+    assert "Эстрадиол" in page.text
+    assert "Дидрогестерон" in page.text
+
+
+@pytest.mark.asyncio
+async def test_create_medication_legacy_ingredient_becomes_component(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/medications", data={"name": "Бепантен", "kind": "medication", "active_ingredient": "Декспантенол"}
+    )
+    assert resp.status_code == 303, resp.text
+    med = (
+        await db_session.execute(
+            select(Medication).where(Medication.user_id == test_user.id, Medication.name == "Бепантен")
+        )
+    ).scalar_one()
+    comps = (await db_session.execute(select(MedComponent).where(MedComponent.medication_id == med.id))).scalars().all()
+    assert len(comps) == 1
+    assert comps[0].substance.name == "Декспантенол"
+    assert comps[0].amount is None
+
+
+@pytest.mark.asyncio
+async def test_allow_ul_override_checkbox_persists(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/medications",
+        data={
+            "name": "Витамин D",
+            "kind": "supplement",
+            "allow_ul_override": "1",
+            "components": '[{"substance":"Колекальциферол","unit":"мкг"}]',
+        },
+    )
+    assert resp.status_code == 303, resp.text
+    med = (
+        await db_session.execute(
+            select(Medication).where(Medication.user_id == test_user.id, Medication.name == "Витамин D")
+        )
+    ).scalar_one()
+    assert med.allow_ul_override is True
+    page = await auth_client.get("/medications")
+    assert page.status_code == 200
+    assert "Витамин D" in page.text
+    assert "daily limit" in page.text
+
+
+@pytest.mark.asyncio
+async def test_json_create_with_components(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/api/v2/medications",
+        json={
+            "name": "Компливит",
+            "kind": "supplement",
+            "allow_ul_override": True,
+            "components": [
+                {"name": "Ретинол", "amount": 1.0, "unit": "мг"},
+                {"name": "Аскорбиновая кислота", "amount": 100.0, "unit": "мг"},
+            ],
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    med = (
+        await db_session.execute(
+            select(Medication).where(Medication.user_id == test_user.id, Medication.name == "Компливит")
+        )
+    ).scalar_one()
+    assert med.allow_ul_override is True
+    comps = (await db_session.execute(select(MedComponent).where(MedComponent.medication_id == med.id))).scalars().all()
+    assert len(comps) == 2
+    assert {c.substance.name for c in comps} == {"Ретинол", "Аскорбиновая кислота"}
+
+
+@pytest.mark.asyncio
+async def test_search_and_grouping_by_substance(auth_client, test_user, db_session):
+    resp = await auth_client.post(
+        "/medications", data={"name": "Нурофен", "kind": "medication", "active_ingredient": "Ибупрофен"}
+    )
+    assert resp.status_code == 303, resp.text
+    resp = await auth_client.post(
+        "/medications", data={"name": "Бепантен", "kind": "medication", "active_ingredient": "Декспантенол"}
+    )
+    assert resp.status_code == 303, resp.text
+    # поиск по названию вещества (не входящему в имя препарата)
+    page = await auth_client.get("/medications", params={"q": "декспантенол"})
+    assert page.status_code == 200
+    assert "Бепантен" in page.text
+    assert "Нурофен" not in page.text
+    # группировка «по действующему веществу» присутствует на странице
+    page = await auth_client.get("/medications")
+    assert "Декспантенол" in page.text
+    assert "Ибупрофен" in page.text
+
+
+@pytest.mark.asyncio
+async def test_autofill_seeded_and_mask(auth_client):
+    resp = await auth_client.post("/medications/autofill-info", data={"name": "Бепантен"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    comps = data["data"]["components"]
+    assert comps and comps[0]["name"] == "Декспантенол"
+    assert comps[0]["inn"] == "Dexpanthenol"
+
+    resp = await auth_client.post("/medications/autofill-info", data={"name": "Фемостон 2/10"})
+    data = resp.json()
+    assert data["status"] == "ok"
+    subs = [c["name"] for c in data["data"]["components"]]
+    assert "Эстрадиол" in subs and "Дидрогестерон" in subs
+    variants = {c.get("variant") for c in data["data"]["components"]}
+    assert len(variants) == 2
+
+
+@pytest.mark.asyncio
+async def test_autofill_unknown_is_honest_not_found(auth_client):
+    resp = await auth_client.post("/medications/autofill-info", data={"name": "Zyxwvut 3000"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "not_found"
+    assert data["message"]
+
+
+@pytest.mark.asyncio
+async def test_json_autofill_404_and_ok(auth_client):
+    resp = await auth_client.post("/api/v2/medications/autofill", json={"name": "Zyxwvut 3000"})
+    assert resp.status_code == 404
+    resp = await auth_client.post("/api/v2/medications/autofill", json={"name": "Нурофен"})
+    assert resp.status_code == 200
+    assert resp.json()["components"][0]["name"] == "Ибупрофен"

@@ -70,6 +70,8 @@ class Medication(Base):
         nullable=True,
         index=True,
     )
+    # ADR-190 (фаза E): явное разрешение превышать суточный предел компонентов
+    allow_ul_override: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -77,6 +79,10 @@ class Medication(Base):
     )
 
     user: Mapped[User] = relationship("User", lazy="selectin")
+    components: Mapped[list[MedComponent]] = relationship(
+        "MedComponent", lazy="selectin", order_by="MedComponent.sort_order"
+    )
+    variants: Mapped[list[MedVariant]] = relationship("MedVariant", lazy="selectin", order_by="MedVariant.sort_order")
 
     def __repr__(self) -> str:
         return f"<Medication(id={self.id}, name={self.name!r})>"
@@ -107,6 +113,92 @@ class MedKit(Base):
 
     def __repr__(self) -> str:
         return f"<MedKit(id={self.id}, name={self.name!r})>"
+
+
+class MedSubstance(Base):
+    """Канонический «активный элемент» (ADR-190): ключ группировки/поиска/замены.
+
+    Один препарат = 1..N компонентов (med_components); МНН живёт здесь.
+    norm_key уникален — дедупликация написаний (ибупрофен/Ибупрофен).
+    """
+
+    __tablename__ = "med_substances"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    norm_key: Mapped[str] = mapped_column(String(200), nullable=False, unique=True, index=True)
+    inn: Mapped[str | None] = mapped_column(String(200), nullable=True)  # МНН, справочно
+    synonyms: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # суточный предел (фаза G использует для сверки)
+    daily_max_amt: Mapped[float | None] = mapped_column(Float, nullable=True)
+    daily_max_unit: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    daily_max_note: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    is_custom: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<MedSubstance(id={self.id}, name={self.name!r})>"
+
+
+class MedVariant(Base):
+    """Вариант таблетки/единицы внутри одной пачки (ADR-190, фаза E).
+
+    Фемостон 2/10: «белые 1–14» и «серые 15–28» — у каждого свой состав.
+    Для обычных препаратов вариантов нет: med_components.variant_id = NULL.
+    """
+
+    __tablename__ = "med_variants"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    medication_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("medications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    count_per_pack: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    medication: Mapped[Medication] = relationship("Medication", lazy="selectin", overlaps="variants")
+
+    def __repr__(self) -> str:
+        return f"<MedVariant(id={self.id}, name={self.name!r})>"
+
+
+class MedComponent(Base):
+    """Компонент состава: препарат ↔ вещество + дозировка (ADR-190)."""
+
+    __tablename__ = "med_components"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    medication_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("medications.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    variant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("med_variants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    substance_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("med_substances.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    unit: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    medication: Mapped[Medication] = relationship("Medication", lazy="selectin", overlaps="components")
+    substance: Mapped[MedSubstance] = relationship("MedSubstance", lazy="selectin")
+    variant: Mapped[MedVariant | None] = relationship("MedVariant", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<MedComponent(med={self.medication_id}, sub={self.substance_id})>"
 
 
 class MedStock(Base):
