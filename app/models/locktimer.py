@@ -11,6 +11,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -20,8 +21,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
@@ -187,6 +189,13 @@ class LockSlotRule(Base):
     # Шаг 17b: средства/косметика, которые нужно использовать в этом окне
     # (мягкие ссылки на care_products по ID, DATA_LIFECYCLE.md)
     care_product_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Chaster.app Chastity & Keyholder Suite (Step 21, migration 068)
+    chastity_device_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("inventory_items.id", ondelete="SET NULL"), nullable=True
+    )
+    keyholder_type: Mapped[str] = mapped_column(String(30), server_default="llm_bot", nullable=False)
+    auto_pause_on_health_drop: Mapped[bool] = mapped_column(Boolean, server_default=text("true"), nullable=False)
+    extension_history: Mapped[list | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -50,6 +50,8 @@ class TrainingLogEntry(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_extra: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # True = ad-hoc entry added by user (not from original plan)
+    equipment_item_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Inventory items used for this entry (migration 069)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

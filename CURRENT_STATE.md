@@ -216,7 +216,7 @@
 | Проблема | Статус | Приоритет |
 |---|---|---|
 | Непокрытые иконки в sprite-pack | Закрыто: Jinja/JS icon-pack watchdog проходит, raw SVG и emoji-иконки вне разрешённых content-исключений отсутствуют | — |
-| Проверить schema drift через `alembic check` в локальном окружении | Перечисленные модели v0.8.1 уже покрыты миграцией `082_add_missing_module_tables`; локальная проверка требует корректных PostgreSQL credentials | Medium |
+| Schema drift ORM ↔ миграции (`alembic check`) | Проверен против живой БД (ADR-188): env.py дополнен до полного покрытия моделей (ложные `remove_table` устранены); модели приведены к БД (`LockSlotRule` +4 колонки из 068, `TrainingLogEntry.equipment_item_ids` из 069). Остаточный drift — только переименования индексов (84/88), JSONB↔JSON (76), FK ondelete (8/10), unique (8/2) — зафиксирован как TECH_DEBT S6, reconciliation-миграция отдельной задачей | Medium |
 | Мобильное приложение не реализовано | Запланировано (M4) | Roadmap |
 | `llm_exchange.html` содержит inline-script | Закрыто: логика находится в `app/static/js/pages/llm_exchange.js`, S57 audit подтверждён | — |
 | Часть внешних интеграций (TTS, некоторые AI/media adapters) | Ограничения и статус указаны в соответствующих разделах FUNCTIONAL.md и ROADMAP.md; не считать production-интеграцией без provider-backed проверки | Medium |
@@ -225,7 +225,6 @@
 
 ## Следующие шаги (предлагаемые)
 
-- Запустить `alembic check` локально с корректным `DATABASE_URL` и подтвердить отсутствие schema drift
 - Поддерживать icon-pack watchdog при добавлении новых UI-компонентов
 - Расширить TOTP: recovery-коды и опциональная обязательная проверка при входе; текущая реализация защищает чувствительные операции и сохраняет PIN fallback
 - Написать реальную интеграцию Telegram broadcast/voice TTS с aiogram 3.x и STT-движком

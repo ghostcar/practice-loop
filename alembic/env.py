@@ -13,8 +13,10 @@ from app.models.activity_log import ActivityLog  # noqa: F401
 from app.models.adaptive_training import AdaptiveProgram, AdaptiveProgramStep  # noqa: F401
 from app.models.aftercare import AftercareEntry  # noqa: F401
 from app.models.api_token import ApiToken  # noqa: F401
+from app.models.attachment import Attachment  # noqa: F401
 from app.models.body_cycle import BodyCycleLog  # noqa: F401
 from app.models.body_part import ActivityBodyPartRequirement, BodyPart, TaskBodyTarget  # noqa: F401
+from app.models.calendar import AvailabilityWindow, CalendarOverride, CalendarTemplate  # noqa: F401
 from app.models.care import (  # noqa: F401
     CareCourse,
     CareCourseSession,
@@ -29,9 +31,17 @@ from app.models.category import ActivityCategory  # noqa: F401
 from app.models.chastity import ChastityCheckIn  # noqa: F401
 from app.models.consent import ConsentRecord  # noqa: F401
 from app.models.device import ChastityDeviceEvent  # noqa: F401
+from app.models.diet import (  # noqa: F401
+    Diet,
+    DietConsumption,
+    DietEvaluation,
+    DietItem,
+    DietTrainingReview,
+)
 from app.models.ds_suite import (  # noqa: F401
     AssignedDuty,
     CapabilityGrant,
+    CapabilityGrantClaimAttempt,
     ChastityLockLog,
     ManagedSubmissive,
     WearCheckInLog,
@@ -62,6 +72,7 @@ from app.models.media import MediaAsset, MediaVerificationResult  # noqa: F401
 from app.models.medication import Medication, MedIntake, MedKit, MedSchedule, MedStock  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
+from app.models.points import PenaltyRedemption, PointsProfile, PointsTransaction  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.prompt_library import PromptLibraryItem  # noqa: F401
 from app.models.prompt_template import PromptTemplate  # noqa: F401
@@ -74,6 +85,7 @@ from app.models.task_history import ActivityTaskHistory  # noqa: F401
 from app.models.task_inventory import ActivityInventoryRequirement, TaskInventoryUsage  # noqa: F401
 from app.models.task_location import ActivityLocationRequirement, TaskLocation, TaskLocationUsage  # noqa: F401
 from app.models.training import TrainingDay  # noqa: F401
+from app.models.training_log import TrainingLogEntry  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.platform.social.models import (  # noqa: F401
     ModerationAction,

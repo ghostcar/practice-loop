@@ -12,12 +12,13 @@
 | S3 | JSONB-колонки как скрытые схемы (params_schema, rules, grants) | P2 | 3 `JSON().with_variant(JSONB)` | Нет валидации/миграций контракта |
 | S4 | Миграции не тестируются на чистом PostgreSQL (только SQLite) | P1 | тесты на SQLite в conftest | Риск деплоя (пройдено вручную 083) |
 | S5 | Soft-ID ссылки (activity_catalog_id SET NULL и т.п.) без cleanup-семантики | P2 | `app/models/entity.py:39` | Осиротевшие строки |
+| S6 | Schema drift ORM ↔ миграции (остаточный после ADR-188) | P1 | `alembic check` против живой БД: переименование индексов 84/88, JSONB↔JSON 76 modify, FK ondelete 8/10, unique 8/2; `remove_table`-ложные срабатывания устранены (env.py полное покрытие, ADR-188) | `alembic check` красный как pre-deploy gate; reconciliation-миграция отдельной задачей (JSON→JSONB, имена индексов/констрейнтов, ondelete) |
 
 ## 2. Stubs / неполная реализация
 
 | # | Долг | Приоритет | Evidence |
 |---|---|---|---|
-| I1 | TimerSocialAdapter: write-action execution не реализован | P1 | `app/platform/social/adapters.py`: ownership/read projection/verify реализованы, `execute_authorized_action` возвращает `not_implemented` |
+| I1 | TimerSocialAdapter: write-action execution не реализован | P1 | `app/platform/social/adapters.py`: ownership/read projection/verify реализованы, `execute_authorized_action` возвращает `not_implemented`. **Осознанная граница (ADT-контракт S6):** write-actions требуют action-контракта grants/keyholder (контур S8, v1.1), вызовов из роутов нет — см. `app/platform/social/__init__.py`, IMPLEMENTATION_RECONCILIATION | Закрывается только вместе с S8 (keyholder-контур v1.1), не отдельным quick-fix |
 | I2 | 2FA PIN Shield — минимальный, полный TOTP в roadmap | P2 | `app/api/security_2fa.py` |
 | I3 | TTS — payload/logging stub | P2 | `app/telegram/voice_tts.py` |
 | I4 | STT — эвристика, LLM-fallback зарезервирован | P2 | `app/agent/voice_hydration.py` |
