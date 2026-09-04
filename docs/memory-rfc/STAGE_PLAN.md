@@ -19,14 +19,15 @@
 | 1 | **Gate A остаток — безопасность (малые)** | P1-1 innerHTML→textContent + XSS-regression тест; P2-3 readiness без текста исключения; P1-6 базовые security headers (HSTS/nosniff/Referrer/X-Frame-Options) + CSP report-only | `pytest tests/` зелёный; XSS-тест с HTML payload; headers в ответах |
 | 2 | **LLM/media границы (средние)** | P1-2 weekly planner: exact dates + uniqueness + completeness + атомарный save; P1-3 media finalize: owner-target check через registry; P1-7 version из одного источника | даты из target_dates, атомарность, cross-user bind отклонён |
 | 3 | **Память — завершение Этапа 3** | M5 freeze legacy `memory/*` (период наблюдения 118 сессий пройден); required CI `memory-lint`; impact-recall метрика в benchmark (задел под graph-пилот) | `memoryctl lint` 0/0 в CI required; freeze-политика задокументирована |
-| 4 | **Полировка личного контура таймера** | Q14: penalty в HTTP (skip/late-close через `rule.penalty_policy`, поле в форме) — UI перестаёт врать; внедрение OMNIROUTE_HOST/KEY в портал (Settings + LLM-конфиги) | skip накладывает penalty по политике; Omniroute-пресет активен |
+| 4 | **Полировка личного контура таймера** ✅ | Q14 закрыт по ADR-072: penalty в HTTP (skip/late-close через `rule.penalty_policy`/`late_close_policy`); внедрение OMNIROUTE_HOST/KEY в портал (Settings + LLM-конфиги) | skip/late-close применяют явную политику и возвращают фактический penalty; Omniroute-пресет активен |
 | 5 | **Gate B остаток — стабилизация поведения** | P1-5 transaction ownership (единый owner — сервис коммитит); P2-2 async media (streaming/thread-pool, decompression bomb guard); P1-4 browser smoke (Playwright RU/EN × light/dark × 360/768/1280: login/dashboard/task/timer) | P1-5+P2-2+P1-4 покрыты тестами; browser matrix зелёный |
 
 | 6 | **LLM harness личного контура (ADR-070)** | Omniroute — первый источник моделей: пресет в LLM-конфигах активен, подбор бесплатных/дешёвых моделей; **библиотека типовых промптов** по функциональным блокам; **промпт-шаблоны** (параметрическая генерация: пользователь создаёт шаблон с параметрами → LLM генерирует по нему); **приватная база знаний** для промптов (векторный индекс + Omniroute-эмбеддинги, выбранные заметки в контекст) | шаблоны CRUD + validate, KB в промпте, Omniroute-пресет активен; тесты |
-| 7 | **LLM-верификация медиа (истина в последней инстанции)** | Соло-игры: подтверждение кодов и закрытия пояса верности через LLM-анализ фото (Q13 — без OCR); media → verification → LLM-оценка (match/mismatch + reasoning) → статус; UI результата | match/mismatch по фото, код не раскрывается до LLM; тесты |
+| 7 | **LLM/OCR-верификация медиа (истина в последней инстанции)** | Соло-игры: OCR-first подтверждение кодов и LLM-vision для fallback/оценки закрытия пояса; media → verification → OCR/LLM-оценка → статус; UI результата | match/mismatch по фото, код не хранится plaintext, HMAC остаётся источником истины; ADR-181 и тесты |
 
 **После шага 7** (вторая очередь, по отдельному решению): Social/public, Gate C (frontend
-унификация + enforcing CSP), Gate D (публичная эксплуатация), M6 (MCP), Q5/Q6 (оплата/лимиты).
+унификация + enforcing CSP), Gate D (публичная эксплуатация), M6 (MCP), Q5/Q6 (оплата/лимиты),
+а также medication-specific OCR.
 
 ---
 
@@ -102,5 +103,5 @@ Gate: `memoryctl sentinel` блокирует code-commit без preflight; laun
 
 ## Вне этого плана (не смешивать)
 
-- Social/public (вторая очередь — после личного контура), Q5/Q6 (оплата/лимиты), Q13 (OCR),
-  Gate C/D, M6 (MCP), `.agents/practice-loop.ts` (Freebuff SDK не верифицирован).
+- Social/public (вторая очередь — после личного контура), Q5/Q6 (оплата/лимиты),
+  medication-specific OCR, Gate C/D, M6 (MCP), `.agents/practice-loop.ts` (Freebuff SDK не верифицирован).

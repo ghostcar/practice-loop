@@ -69,7 +69,7 @@ FUNCTIONAL.md §6.1 декларировал 17+ таблиц как «models de
 ### BETA (нужно хардненить)
 | Модуль | Статус | Замечание |
 |---|---|---|
-| social (36 роутов) | ⚠️ | Adapter tracker реализован; **TimerSocialAdapter — скелет** |
+| social (36 роутов) | ⚠️ | Tracker adapter реализован; TimerSocialAdapter поддерживает ownership/read projection/verify, write actions остаются вне scope |
 | D/s делегирование | ⚠️ | CapabilityGrant ✅, scope_medication слишком грубый |
 | зашифрованные медиа | ⚠️ | media_vault_v2, one_time_tokens |
 | адаптивные программы | ⚠️ | adaptive_programs, LLM-адаптация |
@@ -93,17 +93,17 @@ FUNCTIONAL.md §6.1 декларировал 17+ таблиц как «models de
 
 | Пропуск | Проверено | Действие |
 |---|---|---|
-| TimerSocialAdapter — скелет | ✅ `app/platform/social/adapters.py:173` возвращает `{}`/`False`/`not_implemented` | R8: реализовать через Capability |
+| TimerSocialAdapter write actions | ⚠️ `app/platform/social/adapters.py` реализует ownership, redacted projection и verify-capabilities; `execute_authorized_action` пока возвращает `not_implemented` | Отдельное решение и action-контракт для Social write operations |
 | 2FA PIN Shield — минимальный stub | ✅ `app/api/security_2fa.py` | keep roadmap |
 | TTS — payload/logging stub | ✅ `app/telegram/voice_tts.py` | keep roadmap / флаг |
 | STT — эвристика | ✅ | keep roadmap |
 | LockSession `validating`/`cancelled_by_system` зарезервированы | ✅ | не трогать |
-| OCR/LLM верификация кодов лекарств отложена | ✅ | roadmap |
+| OCR/LLM-верификация seal/media реализована; OCR кодов лекарств не входит в текущий контур | ✅ | ADR-181 + P11 |
 | Password recovery не реализовано | ✅ нет роута | roadmap |
 | Verified email change не реализовано | ✅ | roadmap |
 | Invitations не реализованы | ✅ | roadmap |
 | Admin audit trail отдельный — нет | ✅ | P1 |
-| Starter catalog: entities=194 (не 0!) | ✅ | FUNCTIONAL.md **устарел**: «legacy seed removed, entities=0» — по факту 194 system-entity `one_time` |
+| Starter catalog: legacy reset был `entities=0`, затем каталог импортирован заново | ✅ | PLAN.md S8a/P1: 41 approved entity в актуальном production-состоянии |
 | Billing/community/automation e2e | ⚠️ | community ✅; billing showcase; automation мёртвое |
 
 ## 4. Подтверждённые противоречия документ ↔ код

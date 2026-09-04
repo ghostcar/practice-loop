@@ -7,8 +7,9 @@ Revises: 091
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision: str = "092_llm_catalog"
 down_revision: str | None = "091_add_totp_2fa"
@@ -30,7 +31,12 @@ def upgrade() -> None:
     op.create_table(
         "llm_global_models",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("provider_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("llm_global_providers.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "provider_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("llm_global_providers.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("model_name", sa.String(200), nullable=False),
         sa.Column("supports_text", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("supports_vision", sa.Boolean(), nullable=False, server_default=sa.false()),
@@ -41,10 +47,22 @@ def upgrade() -> None:
     op.create_table(
         "llm_user_selections",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("capability", sa.String(20), nullable=False),
-        sa.Column("user_config_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("llm_provider_configs.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("global_provider_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("llm_global_providers.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "user_config_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("llm_provider_configs.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
+        sa.Column(
+            "global_provider_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("llm_global_providers.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         sa.Column("model_name", sa.String(200), nullable=False),
         sa.UniqueConstraint("user_id", "capability", name="uq_llm_user_selection_capability"),
     )

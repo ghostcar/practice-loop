@@ -116,8 +116,8 @@ sidebar (иконки + подписи).
   `owner_id`, `author_id`, `parent_id` (иерархия).
 - **Наполнение**: админ-сид (30+ задач) + пользовательские; публикация с авторством.
 - **Текущее production-состояние (S8a)**: legacy admin seed из 30 бытовых/романтических действий
-  удалён после backup; `entities=0`. Новый starter set проектируется как отдельный вручную
-  модерируемый каталог строго для взрослых; до его принятия legacy seed повторно не запускать.
+  удалён после backup; после очистки каталог был заново наполнен модерируемым starter set (41 approved entity).
+  Legacy seed повторно не запускать.
 - **Опт-ин** (`user_entity_opt_in`): пользователь осознанно отмечает допустимые задачи
   (да/нет + рейтинг + шкала желания).
 - **Одобрение (ADR-106)**: опт-ин пользователя — граница автоматизации по умолчанию;
@@ -530,7 +530,7 @@ sidebar (иконки + подписи).
   / Entity.owner_id), build_redacted_projection (strips raw_llm_response, penalty_details,
   user_id), list_shareable_capabilities (view_summary/view_details/verify),
   validate_grant_constraints.
-- **TimerSocialAdapter**: skeleton (все методы реализованы, возвращают empty/not_implemented).
+- **TimerSocialAdapter**: частичная реализация — ownership check, redacted read projection и capability validation работают; выполнение write-действий намеренно остаётся вне текущего scope и возвращает `not_implemented`.
 - Adapters регистрируются при старте через composition flags.
 
 ### S7 — Hardening & Limited Rollout
@@ -654,7 +654,7 @@ Shared Artifact. Feature flag `medication_enabled` (default true).
   `Content-Disposition: attachment`.
 - **Границы дня**: «сегодня» и подсчёт принятого — через `timeutils.local_date()`
   (client-tz), а не жёсткий UTC.
-- **OCR/LLM верификация кодов** (Q13 в OPEN_QUESTIONS.md): отложено.
+- **OCR/LLM-верификация кодов**: OCR-first поток для seal/media реализован по ADR-181 (`pytesseract` → LLM-vision fallback); HMAC остаётся источником истины. OCR именно кодов лекарств пока не входит в текущий API-контур.
 
 ---
 

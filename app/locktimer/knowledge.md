@@ -39,12 +39,12 @@ LockTimer — bounded context внутри Practice Loop (не второе пр
 ## Границы
 
 - Timer не импортирует Tracker models/services; platform-owned контракты в `app/platform/`.
-- OCR/LLM-распознавание кодов по фото — отложено (Q13).
+- OCR для seal/media-потока реализован по ADR-181; HMAC остаётся источником истины. OCR именно кодов лекарств не входит в LockTimer-контракт.
 
 ## Failure modes
 
 - Открыть слот в реальном времени при `allow_late_open=false` (нулевое окно) — учитывать grace.
-- Penalty не проброшен в HTTP (Q14): `apply_penalty` реализован, но не вызывается HTTP-путём.
+- Penalty wiring в HTTP реализован по ADR-072: `skip_task` и позднее закрытие слота применяют явно заданную политику правила, а action API возвращает фактический результат penalty. Ошибочная или отсутствующая политика не должна превращаться в скрытый штраф.
 
 ## Проверка
 

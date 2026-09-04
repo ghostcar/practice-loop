@@ -63,8 +63,9 @@
 ## 10. Отличить roadmap item от реализованного факта
 
 - Запрос: «Реализован ли OCR/LLM верификация кодов по фото?».
-- Expected: `app/models/media.py` / `app/services/media.py` / `app/api/verification.py` (OCR support deferred),
-  `memory/OPEN_QUESTIONS.md` (Q13), `CURRENT_STATE.md`. Запрещено: утверждать реализацию по ROADMAP.
+- Expected: `app/media/ocr_seals.py` / `app/api/media_verify.py` / `app/api/verification.py`,
+  `docs/adr/ADR-181.md`, `docs/questions/EQ-0013.md`, `CURRENT_STATE.md`. Проверять реализацию
+  по коду и ADR-181, а не только по ROADMAP; HMAC должен оставаться источником истины.
 
 ## 11. Воспроизвести старую ошибку из Git
 

@@ -4,7 +4,8 @@ POST   /api/v2/verification/challenges            — create a challenge
 POST   /api/v2/verification/challenges/{id}/verify — verify a code
 GET    /api/v2/verification/challenges/{id}         — status (code never returned)
 
-OCR support deferred for future iteration.
+OCR is handled by the ADR-181 media/seal verification endpoints;
+this challenge API remains the authoritative HMAC verification path.
 """
 
 from __future__ import annotations

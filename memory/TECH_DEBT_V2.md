@@ -17,13 +17,13 @@
 
 | # | Долг | Приоритет | Evidence |
 |---|---|---|---|
-| I1 | TimerSocialAdapter — скелет (`{}`/`False`/`not_implemented`) | P1 | `app/platform/social/adapters.py:173` |
+| I1 | TimerSocialAdapter: write-action execution не реализован | P1 | `app/platform/social/adapters.py`: ownership/read projection/verify реализованы, `execute_authorized_action` возвращает `not_implemented` |
 | I2 | 2FA PIN Shield — минимальный, полный TOTP в roadmap | P2 | `app/api/security_2fa.py` |
 | I3 | TTS — payload/logging stub | P2 | `app/telegram/voice_tts.py` |
 | I4 | STT — эвристика, LLM-fallback зарезервирован | P2 | `app/agent/voice_hydration.py` |
 | I5 | Telegram Broadcast — payload/logging stub | P2 | bot.py |
 | I6 | Password recovery / verified email change / invitations / admin audit — отсутствуют | P1 | нет роутов |
-| I7 | OCR-верификация кодов лекарств — deferred | P3 | roadmap |
+| I7 | OCR-верификация кодов лекарств — отдельная интеграция не реализована | P3 | ADR-181 покрывает seal/media OCR; medication-specific OCR route отсутствует |
 | I8 | Billing — showcase (monetization_enabled=False, нет реальных платежей) | P2 | `app/api/billing.py` |
 
 ## 3. Дублированные концепты
@@ -65,6 +65,6 @@
 
 | # | Долг | Приоритет | Evidence |
 |---|---|---|---|
-| V1 | FUNCTIONAL.md «entities=0» — по факту 194 | P1 | prod SELECT count(entities) |
-| V2 | 7 некоммиченных док-файлов (CURRENT_STATE/FUNCTIONAL/PRODUCT/README/ROADMAP…) | P1 | git status |
-| V3 | Medication relief-only утверждения в health/journal против /med | P1 | см. D3 |
+| V1 | Закрыт: FUNCTIONAL.md больше не утверждает `entities=0` как текущее состояние | — | PLAN.md фиксирует исторический reset и последующий импорт 41 approved entity |
+| V2 | Закрыт: документационные изменения проходят отдельными memory-коммитами | — | git status и memoryctl facts |
+| V3 | Закрыт ADR-137: medication/health/journal границы и положительное adherence-XP разделены явно | — | `app/gamification/medication.py`, ADR-137 |

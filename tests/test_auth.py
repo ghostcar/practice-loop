@@ -87,9 +87,7 @@ async def test_logout(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_logout_revokes_web_refresh_token(
-    async_client: AsyncClient, test_user: User, db_session: AsyncSession
-):
+async def test_logout_revokes_web_refresh_token(async_client: AsyncClient, test_user: User, db_session: AsyncSession):
     """Regression (K-FUNCTIONAL-READINESS-2026-09-03): logout must revoke the
     browser refresh token. Previously only the cookies were cleared, so a
     refresh cookie captured before logout kept minting fresh token pairs via
@@ -115,9 +113,7 @@ async def test_logout_revokes_web_refresh_token(
     assert raw_refresh, "login must set the refresh_token cookie"
 
     stored = (
-        await db_session.execute(
-            select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh))
-        )
+        await db_session.execute(select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh)))
     ).scalar_one_or_none()
     assert stored is not None and stored.revoked_at is None, "token must be active before logout"
 
@@ -134,16 +130,12 @@ async def test_logout_revokes_web_refresh_token(
     # savepoint; expire the cached object to see the committed row state).
     db_session.expire_all()
     stored = (
-        await db_session.execute(
-            select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh))
-        )
+        await db_session.execute(select(ApiToken).where(ApiToken.token_hash == hash_refresh_token(raw_refresh)))
     ).scalar_one_or_none()
     assert stored is not None and stored.revoked_at is not None, "refresh token must be revoked after logout"
 
     # The captured cookie no longer mints a new session via /api/v2/auth/refresh.
-    resp = await async_client.post(
-        "/api/v2/auth/refresh", json={"refresh_token": raw_refresh}
-    )
+    resp = await async_client.post("/api/v2/auth/refresh", json={"refresh_token": raw_refresh})
     assert resp.status_code in (401, 403), "revoked token must not refresh"
 
 

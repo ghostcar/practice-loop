@@ -1,6 +1,7 @@
 """Platform Social — domain adapters (S6).
 
-Tracker adapter (actual implementation) + Timer adapter (skeleton).
+Tracker adapter and Timer adapter with read/verify projections.
+Write-action execution remains intentionally unimplemented.
 Registered at startup in main.py when composition flags are enabled.
 """
 
@@ -148,11 +149,11 @@ class TrackerSocialAdapter:
         actor_id: str,
         grant_snapshot: dict[str, Any],
     ) -> dict[str, Any]:
-        """Execute a domain action. Currently a stub — actions are self-contained in S4."""
+        """Execute a domain action; write-action execution is not enabled yet."""
         return {"status": "not_implemented", "action_id": action_id}
 
     async def on_revoke_or_block(self, db: Any, subject_id: str, actor_id: str) -> None:
-        """Cleanup on revoke/block — no tracker-side side effects needed."""
+        """Cleanup on revoke/block; these adapters have no write-side effects."""
         pass
 
     async def export_data(self, db: Any, subject_id: str) -> dict[str, Any]:
@@ -166,7 +167,7 @@ class TrackerSocialAdapter:
 
 
 # ---------------------------------------------------------------------------
-# Timer adapter (skeleton — S6 future)
+# Timer adapter (read/verify implementation; write actions remain out of scope)
 # ---------------------------------------------------------------------------
 
 
@@ -282,7 +283,7 @@ class TimerSocialAdapter:
         actor_id: str,
         grant_snapshot: dict[str, Any],
     ) -> dict[str, Any]:
-        """Execute a domain action. Currently a stub — actions are self-contained in S4."""
+        """Execute a domain action; write-action execution is not enabled yet."""
         return {"status": "not_implemented", "action_id": action_id}
 
     async def on_revoke_or_block(self, db: Any, subject_id: str, actor_id: str) -> None:

@@ -131,9 +131,9 @@ def test_template_dynamic_prefixes_covered():
         prefixes |= set(DYNAMIC_PREFIX.findall(f.read_text(encoding="utf-8")))
     for prefix in prefixes:
         for locale in LOCALES:
-            assert any(
-                k.startswith(f"{prefix}_") for k in DICTS[locale]
-            ), f"{locale}: no keys for dynamic prefix {prefix}_"
+            assert any(k.startswith(f"{prefix}_") for k in DICTS[locale]), (
+                f"{locale}: no keys for dynamic prefix {prefix}_"
+            )
 
 
 # ---------------------------------------------------------------------------

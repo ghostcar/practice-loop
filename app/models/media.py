@@ -82,8 +82,9 @@ class VerificationChallenge(Base):
     lock_task_occurrence, or future social verification). The plaintext code is
     returned only once at creation; subsequent access returns status only.
 
-    OCR support is deferred — for now the code serves as a manual verification
-    mechanism (user types the code they see).
+    OCR is available for seal/media flows through ADR-181, but this challenge
+    endpoint remains the authoritative manual HMAC verification mechanism;
+    OCR output must not replace constant-time code verification.
     """
 
     __tablename__ = "verification_challenges"

@@ -16,7 +16,7 @@
 | E2E Playwright portal.spec.ts | ✅ smoke/usability + `@a11y` shell (47 routes × dark/light) + admin (7 routes × dark/light) |
 | @a11y axe (47 user routes + 7 admin routes × dark/light) | ✅ 0 serious/critical нарушений |
 | Локализация (`tests/test_localization.py`) | ✅ 15 тестов: parity EN/RU, плейсхолдеры, ключи шаблонов, page-i18n JSON, JS-ключи |
-| ruff check | ✅ 0 errors (`ruff==0.5.7`) |
+| ruff check | ✅ 0 errors (`ruff==0.5.7`, весь репозиторий) |
 | ruff format | ✅ чисто (`ruff==0.5.7`, единая версия с CI) |
 | memoryctl lint + facts | ✅ 0 issues; facts generated from current checkout |
 | Watchdog: icon-pack sprite | ✅ все иконки покрыты |

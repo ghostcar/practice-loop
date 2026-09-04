@@ -511,7 +511,7 @@ def risks(classification: dict) -> list[str]:
     if "locktimer/core" in scopes:
         out += [
             "safety stop always available (PD-006)",
-            "penalty not wired to HTTP — EQ-0014",
+            "penalty behavior is policy-driven; verify rule.penalty_policy and late_close_policy (ADR-072)",
             "slot open window needs max_late_seconds",
         ]
     if "social" in scopes:

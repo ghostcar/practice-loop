@@ -7,7 +7,8 @@ CPU/disk work (Pillow decode, thumbnails, file writes) runs in a thread pool
 so the event loop is never blocked (audit P2-2). Pillow's decompression-bomb
 guard is enabled so huge images fail closed instead of exhausting memory.
 
-OCR support deferred — verification remains HMAC-based only for now.
+OCR for seal/media verification is implemented in `app.media.ocr_seals`
+(ADR-181); HMAC remains the authoritative verification mechanism.
 """
 
 from __future__ import annotations
