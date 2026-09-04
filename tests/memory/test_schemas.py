@@ -198,8 +198,11 @@ def test_is_tracked_secret_narrower_than_denylist():
     assert is_tracked_secret(".env.prod")
     assert is_tracked_secret("uploads/photo.jpg")
     assert is_tracked_secret("backup.sql.dump")
-    # allowlisted sanitized template
+    # allowlisted sanitized template and backup automation
     assert not is_tracked_secret(".env.example")
+    assert not is_tracked_secret("scripts/backup_prod.sh")
+    # similar backup/dump paths remain suspicious
+    assert is_tracked_secret("scripts/backup_prod.bak")
     # vendored assets are index-denied but NOT secrets
     assert not is_tracked_secret("app/static/fonts/Inter.woff2")
     assert not is_tracked_secret("app/static/htmx.min.js")

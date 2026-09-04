@@ -121,6 +121,10 @@ ALLOWLIST_GLOBS = (
         ".env.example",
         "sanitized template, no real secrets (pre_deploy_check scans for real ones)",
     ),
+    (
+        "scripts/backup_prod.sh",
+        "backup automation documented by ADR-186; credentials are read from the runtime environment",
+    ),
 )
 
 
