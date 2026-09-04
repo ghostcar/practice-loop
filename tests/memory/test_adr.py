@@ -128,7 +128,7 @@ def test_html_comments_are_skipped():
 <!--
 | ADR-998 | 2026-01-01 | retired row | x | отклонено |
 -->
-<!-- ADR-179: номер не использован. -->
+<!-- ADR-999: номер не использован. -->
 """
     adrs = parse_legacy(text)
     assert set(adrs) == {1}
@@ -189,3 +189,15 @@ def test_status_compound_first_token():
     assert _status(1, "принят, реализован") == "accepted"
     assert _status(1, "Accepted") == "accepted"
     assert _status(1, "принято.") == "accepted"
+
+
+def test_section_body_stops_at_interleaved_registry_row():
+    text = """| ADR-001 | 2026-08-06 | first | decision | принято |
+
+### ADR-001 — Detailed decision
+Body only.
+| ADR-002 | 2026-08-07 | second | decision | принято |
+"""
+    adrs = parse_legacy(text)
+    assert adrs[1].body == "Body only."
+    assert 2 in adrs

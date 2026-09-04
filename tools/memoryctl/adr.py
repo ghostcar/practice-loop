@@ -241,7 +241,10 @@ def _extract_section_body(text: str, num: int) -> str | None:
         return None
     body: list[str] = []
     for line in lines[start + 1 :]:
-        if SECTION_RE.match(line) or line.strip() == "---":
+        # A registry row after a section belongs to the table, not to the
+        # preceding ADR body. This matters when detailed sections and rows are
+        # interleaved in the legacy DECISIONS.md file.
+        if ROW_PREFIX_RE.match(line) or SECTION_RE.match(line) or line.strip() == "---":
             break
         body.append(line)
     # strip leading/trailing blank lines

@@ -123,10 +123,16 @@
 | [ADR-117](ADR-117.md) | 2026-08-19 | Шаги 25-26: Интерактивный Визуальный Конструктор Схем и Единый Кросс-Модульный ИИ-Агент | accepted |
 | [ADR-118](ADR-118.md) | 2026-08-19 | Расширение Telegram-бота v3 (Chastity Keyholder, Aftercare Protocol & Medical Report) | accepted |
 | [ADR-119](ADR-119.md) | 2026-08-19 | P1g: полный каталог 18+ (принудительное продвижение всех 163 записей) | accepted |
+| [ADR-120](ADR-120.md) | 2026-08-19 | Quests & Weekly Challenges | accepted |
 | [ADR-122](ADR-122.md) | 2026-08-19 | Отложенный Бэклог Социальных и Межпользовательских Фич (Deferred Social Scope) | accepted |
 | [ADR-123](ADR-123.md) | 2026-08-19 | Стратегическое Видение: Специализированный ИИ-Ассистент PracticeLoop (Autonomous Practice Agent) | accepted |
 | [ADR-124](ADR-124.md) | 2026-08-20 | Двухуровневая Библиотека Промптов (System & User Prompts) и Админ-Хаб (/admin/prompts) | accepted |
 | [ADR-125](ADR-125.md) | 2026-08-20 | Dynamic Adaptive Training Program Engine & Interactive Hub (/training/adaptive) | accepted |
+| [ADR-126](ADR-126.md) | 2026-08-20 | Body State & Cycle Tracker Hub | accepted |
+| [ADR-127](ADR-127.md) | 2026-08-20 | Equipment & Device Maintenance Log | accepted |
+| [ADR-128](ADR-128.md) | 2026-08-20 | D/s Suite & Submissive Management Hub | accepted |
+| [ADR-129](ADR-129.md) | 2026-08-20 | Voluntary Delegation & Capability Grants | accepted |
+| [ADR-130](ADR-130.md) | 2026-08-20 | Unregistered Submissive Telegram Linking | accepted |
 | [ADR-135](ADR-135.md) | 2026-08-21 | Передача владения сообществом и со-модераторы (CommunityMemberRole) | accepted |
 | [ADR-136](ADR-136.md) | 2026-08-21 | Рекомпозиция продукта: R0-аудит и 5 документов примирения (Master Brief) | accepted |
 | [ADR-137](ADR-137.md) | 2026-08-21 | Лекарства: настраиваемая positive-only геймификация (смягчение PD-013, ADR-085) | accepted |
@@ -137,6 +143,7 @@
 | [ADR-142](ADR-142.md) | 2026-08-21 | R2.5 (Flash №8) — модальное окно персонализации карточки каталога | accepted |
 | [ADR-143](ADR-143.md) | 2026-08-21 | R9.3 (Flash №9) — удаление мёртвого Python-кода и неиспользуемых импортов | accepted |
 | [ADR-144](ADR-144.md) | 2026-08-21 | R10.1 (Flash №10) — скрытие выключенных модулей в навигации по feature-флагам | accepted |
+| [ADR-145](ADR-145.md) | 2026-08-21 | Agency, Capability, Dynamic and Protocol engines | accepted |
 | [ADR-146](ADR-146.md) | 2026-08-21 | R10.5 (Flash №11) — полный pytest-прогон, ruff-чистка, memoryctl, документация | accepted |
 | [ADR-147](ADR-147.md) | 2026-08-21 | RC v1.0.0-rc1 — сводный аудит (Release Candidate Exit) | accepted |
 | [ADR-148](ADR-148.md) | 2026-08-23 | Редирект авторизованных с /register и /login на /dashboard | accepted |
@@ -169,6 +176,7 @@
 | [ADR-176](ADR-176.md) | 2026-08-25 | Service layer extraction: protocols.py → protocols_service.py (404→230 thin routes, 360 service) | accepted |
 | [ADR-177](ADR-177.md) | 2026-08-25 | Initial onboarding wizard — 3-step flow (superseded by ADR-184) | accepted |
 | [ADR-178](ADR-178.md) | 2026-08-25 | Service layer extraction: communities/admin/catalog/community_agent/aftercare (5 files, ~1713 lines total) | accepted |
+| [ADR-179](ADR-179.md) | 2026-08-25 | New-user bootstrap: catalog opt-in and LLM presets | accepted |
 | [ADR-180](ADR-180.md) | 2026-08-25 | Roadmap v0.9.1 → v1.1 (OCR→Social→Multi+D/s) | accepted |
 | [ADR-181](ADR-181.md) | 2026-08-25 | OCR-first verification pipeline — local pytesseract + LLM-vision fallback (v0.9.1) | accepted |
 | [ADR-182](ADR-182.md) | 2026-08-25 | Platform Social enablement — default ON for v1.0 rollout | accepted |
