@@ -3,7 +3,7 @@
     "checked_at": "2026-09-04T04:24:57Z",
     "command": "alembic heads",
     "heads": [
-      "093_portal_selection"
+      "094_drop_dead_experimental"
     ]
   },
   "artifacts": [],
@@ -12,8 +12,8 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
-    "dirty": false,
+    "diff_hash": "sha256:e58368ca029c8c7ebb5b7a7f76d7c2fb56da6a9c32f8ab21151eaf2645fa947f",
+    "dirty": true,
     "head": "34f6d647be95371de388795ceca3ec3dcd4050b0"
   },
   "kind": "fact_manifest",

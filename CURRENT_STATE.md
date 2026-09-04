@@ -165,13 +165,9 @@
 - Адаптивный генератор тренировочных программ (app/agent/training_generator.py)
 - Аудитор безопасности и выгорания (app/agent/safety_auditor.py): индекс 0..100%, защитная заморозка при >70%
 - ИИ-персона конструктор (`/agent/persona-builder`): 4 архетипа, строгость 1..5, Tone of Voice
-- Лиги сообщества (app/agent/community_leagues.py): Бронза→Серебро→Золото→Мастер
-- Еженедельные 1-на-1 Дуэли (app/agent/weekly_duels.py)
 - Контроль обслуживания инвентаря (app/agent/equipment_maintenance.py)
 - Тест готовности к сессии (app/agent/stress_test.py): 5 вопросов, 0..100%, автоснижение нагрузки при <30%
 - Ежемесячные визуальные отчёты прогресса (app/agent/pdf_reports.py)
-- Automation Triggers (app/agent/automation_triggers.py): AI-анализ 14-дневной истории →
-  авто-триггеры (штрафы за пропуски, экстренные сеансы ухода)
 - Weekly AI Digest (app/agent/weekly_digest.py): недельная сводка + предиктивный прогноз
 - LLM Exchange Hub (`/llm/exchange`): экспорт кросс-доменного промпта, парсинг ответа внешней
   ИИ, гидрирование плана в сессию (комплаенс: без откровенного контента)

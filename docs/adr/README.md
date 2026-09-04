@@ -184,3 +184,4 @@
 | [ADR-184](ADR-184.md) | 2026-08-31 | Онбординг: режим участия AI → модули → LLM → готово | accepted |
 | [ADR-185](ADR-185.md) | 2026-09-01 | Tasks page tolerates missing LLM usage cost | accepted |
 | [ADR-186](ADR-186.md) | 2026-09-03 | Web session hardening: browser refresh-token rotation + logout revocation | accepted |
+| [ADR-187](ADR-187.md) | 2026-09-04 | Удаление мёртвых экспериментальных таблиц (automation_triggers / user_league_tiers / user_duels) | accepted |

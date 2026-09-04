@@ -1,35 +1,11 @@
-"""Integration tests for Automation Trigger Engine, Media Vault Security v2, and Voice TTS."""
+"""Integration tests for Media Vault Security v2 and Voice TTS."""
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.automation_triggers import evaluate_user_triggers, generate_agent_automation_triggers
-from app.models.activity_log import ActivityLog
-from app.models.care import CareEntry
 from app.models.user import User
 from app.telegram.voice_tts import synthesize_persona_voice_response
-
-
-@pytest.mark.asyncio
-async def test_agent_history_analysis_creates_automation_triggers(db_session: AsyncSession, test_user: User):
-    """Verify AI Agent analyzes history logs and auto-creates automation triggers."""
-    log = ActivityLog(user_id=test_user.id, status="interrupted")
-    db_session.add(log)
-
-    care = CareEntry(user_id=test_user.id, entry_date=pytest.importorskip("datetime").date.today(), skin_reaction=2)
-    db_session.add(care)
-    await db_session.flush()
-
-    res = await generate_agent_automation_triggers(db_session, test_user)
-    assert res["status"] == "success"
-    assert res["triggers_created_count"] >= 1
-
-    actions = await evaluate_user_triggers(
-        db_session, test_user, condition_type="missed_tasks_count", current_value=3.0
-    )
-    assert len(actions) >= 1
-    assert actions[0]["action_type"] == "apply_penalty"
 
 
 @pytest.mark.asyncio

@@ -382,15 +382,13 @@ sidebar (иконки + подписи).
 - **Community (§46)**: `communities`, `community_posts`, `community_top_agents`,
   `community_member_delegations`, `community_tournaments`, `community_tournament_entries`,
   `community_member_roles` (миграции 082–083 и последующие изменения).
-- **Automation (§46)**: `automation_triggers` (миграция 082).
 - **Media Vault v2 (§51)**: `one_time_media_tokens` (миграция 082).
 - **Адаптивные программы (§38.1)**: `adaptive_programs`, `adaptive_program_steps` (миграция 074).
 - **Обслуживание инвентаря (§38.4)**: `equipment_maintenance_logs` (миграция 076).
 - **D/s-делегирование (§49)**: `managed_submissives`, `assigned_duties`, `chastity_lock_logs`,
   `capability_grants`, `capability_grant_claim_attempts`, `wear_check_in_logs`
   (миграции 077–081).
-- **AI-персоны (§40)**: `user_agent_personas` (миграция 082); **Лиги/Дуэли (§39)**:
-  `user_league_tiers`, `user_duels` (миграция 082).
+- **AI-персоны (§40)**: `user_agent_personas` (миграция 082).
 
 ---
 
@@ -1076,24 +1074,10 @@ Timer. Модуль доступен через `/aftercare` и `/api/v2/afterca
 
 ## 39. Геймификация: Лиги и Дуэли
 
-> Добавлено в v0.8.1-actual (2026-08-20).
-
-### 39.1. Лиги сообщества
-
-`app/agent/community_leagues.py` + `app/models/community_leagues.py`:
-- Тиры: **Бронза → Серебро → Золото → Мастер**
-- Модель `UserLeagueTier`: `user_id`, `tier` (bronze/silver/gold/master), `points_this_period`,
-  `promoted_at`
-- Автоматическое повышение при достижении порога очков за период
-- Понижение при падении ниже нижнего порога
-
-### 39.2. Еженедельные 1-на-1 Дуэли
-
-`app/agent/weekly_duels.py` + `app/models/duels.py`:
-- Модель `UserDuel`: `challenger_id`, `opponent_id`, `challenger_score`, `opponent_score`,
-  `status` (pending/active/completed), `winner_id`, `week_start`
-- Функция `evaluate_duel_result(db, duel_id)`: определяет победителя по счёту, завершает дуэль,
-  начисляет бонусные очки победителю
+> **Удалено (ADR-186, 2026-09-04).** Модели `user_league_tiers` / `user_duels` и agent-движки
+> `community_leagues.py` / `weekly_duels.py` были мёртвыми: без роутов, UI и подключения к рантайму,
+> логика прототипного уровня (в т.ч. хардкод-счёт 100/150 в дуэлях). Таблицы пусты в production
+> и удалены миграцией 094. Код восстановим из git-истории при отдельном решении владельца.
 
 ---
 
@@ -1260,14 +1244,10 @@ Timer. Модуль доступен через `/aftercare` и `/api/v2/afterca
 
 ### 46.4. Automation Triggers (AI-автогенерация триггеров)
 
-`app/agent/automation_triggers.py` + `app/models/automation.py`:
-- `AutomationTrigger`: `condition_type`, `threshold_value`, `action_type`, `action_params`,
-  `is_active`, `is_agent_generated`, `reasoning_notes`
-- `generate_agent_automation_triggers`: анализ истории за 14 дней →
-  - пропущенные задачи → триггер `missed_tasks_count → apply_penalty` (штраф XP);
-  - записи ухода → триггер `high_stress_score → generate_emergency_quest` (экстренный сеанс
-    восстановления);
-- `evaluate_user_triggers`: проверка активных триггеров по текущей метрике и выполнение действий
+> **Удалено (ADR-186, 2026-09-04).** Модель `automation_triggers` и движок
+> `app/agent/automation_triggers.py` были мёртвыми (без роутов/UI) и конфликтовали с инвариантом
+> «без авто-эскалации» (ADR-106): автоприменение штрафов по триггеру `apply_penalty` недопустимо
+> без отдельного решения владельца. Таблица пуста в production и удалена миграцией 094.
 
 ---
 

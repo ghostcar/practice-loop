@@ -7,7 +7,7 @@
 
 | # | Долг | Приоритет | Evidence | Влияние |
 |---|---|---|---|---|
-| S1 | 3 модели без API (automation_triggers, user_league_tiers, user_duels) — таблицы созданы 082 | P0 | `app/models/automation.py`, `community_leagues.py`, `duels.py`; нет роутов/UI/тестов | Мёртвые таблицы в схеме; риск «выглядит включённым» |
+| S1 | 3 модели без API (automation_triggers, user_league_tiers, user_duels) — таблицы созданы 082 | ~~P0~~ ✅ | **Закрыто (ADR-186, 2026-09-04): удалены** миграцией 094 (таблицы пусты в production), модели/agent-движки и их тесты удалены; agent-логика была прототипной, automation-штрафы конфликтовали с «без авто-эскалации» (ADR-106). Восстановление — из git-истории |
 | S2 | 2 failed теста — тест-инфраструктура (.env перекрывает tmp_path) | P1 | `tests/memory/test_vectors.py:95` | Слепое пятно в CI |
 | S3 | JSONB-колонки как скрытые схемы (params_schema, rules, grants) | P2 | 3 `JSON().with_variant(JSONB)` | Нет валидации/миграций контракта |
 | S4 | Миграции не тестируются на чистом PostgreSQL (только SQLite) | P1 | тесты на SQLite в conftest | Риск деплоя (пройдено вручную 083) |

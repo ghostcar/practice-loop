@@ -19,8 +19,11 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 # Topological order (parents before children) for create_all.
+# NOTE: automation_triggers / user_duels / user_league_tiers were removed in
+# 094_drop_dead_experimental (ADR-187) — their models no longer exist, so they
+# are omitted here to avoid KeyError on fresh bootstrap. Their downgrade drops
+# stay below so a full downgrade still removes them.
 MISSING_TABLES = [
-    "automation_triggers",
     "communities",
     "community_member_delegations",
     "community_member_roles",
@@ -35,8 +38,6 @@ MISSING_TABLES = [
     "temporary_feature_promotions",
     "tier_feature_grants",
     "user_agent_personas",
-    "user_duels",
-    "user_league_tiers",
 ]
 
 

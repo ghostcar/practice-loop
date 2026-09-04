@@ -1,14 +1,12 @@
-"""Integration tests for Analytics Graph, AI Training Generator, Leagues, and Safety Auditor."""
+"""Integration tests for Analytics Graph, AI Training Generator, and Safety Auditor."""
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.community_leagues import get_or_create_user_league_tier, promote_user_league_tier
 from app.agent.safety_auditor import audit_user_safety_and_burnout
 from app.agent.training_generator import generate_adaptive_weekly_training_program
 from app.models.activity_log import ActivityLog
-from app.models.community_agent import Community
 from app.models.user import User
 
 
@@ -27,21 +25,6 @@ async def test_generate_adaptive_weekly_training_program(db_session: AsyncSessio
     assert res["status"] == "success"
     assert res["steps_count"] == 7
     assert "7-Дневная Адаптивная Программа ИИ" in res["title"]
-
-
-@pytest.mark.asyncio
-async def test_community_league_promotions(db_session: AsyncSession, test_user: User):
-    """Verify promoting user through community league tiers."""
-    community = Community(name="League Comm", slug="league-comm", owner_id=test_user.id)
-    db_session.add(community)
-    await db_session.flush()
-
-    tier_entry = await get_or_create_user_league_tier(db_session, community.id, test_user.id)
-    assert tier_entry.league_tier == "bronze"
-
-    promo = await promote_user_league_tier(db_session, community.id, test_user.id)
-    assert promo["status"] == "promoted"
-    assert promo["new_tier"] == "silver"
 
 
 @pytest.mark.asyncio

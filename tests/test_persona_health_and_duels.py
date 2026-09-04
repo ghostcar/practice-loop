@@ -1,4 +1,4 @@
-"""Integration tests for AI Persona Builder, Health Dashboard, Equipment Maintenance, and Weekly Duels."""
+"""Integration tests for AI Persona Builder, Health Dashboard, and Equipment Maintenance."""
 
 import pytest
 from httpx import AsyncClient
@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.equipment_maintenance import schedule_equipment_maintenance_reminders
 from app.agent.persona_builder import get_or_create_user_persona, update_user_persona_config
-from app.agent.weekly_duels import create_weekly_user_duel, process_duel_scores_and_determine_winner
 from app.models.user import User
 
 
@@ -51,14 +50,3 @@ async def test_schedule_equipment_maintenance_reminders(db_session: AsyncSession
     maint_res = await schedule_equipment_maintenance_reminders(db_session, test_user)
     assert maint_res["status"] == "success"
     assert len(maint_res["reminders"]) >= 1
-
-
-@pytest.mark.asyncio
-async def test_create_and_process_weekly_user_duel(db_session: AsyncSession, test_user: User):
-    """Verify creating weekly 1-on-1 duel and evaluating winner."""
-    duel = await create_weekly_user_duel(db_session, challenger_id=test_user.id, opponent_id=test_user.id)
-    assert duel.status == "active"
-
-    winner_res = await process_duel_scores_and_determine_winner(db_session, duel.id)
-    assert winner_res["status"] == "completed"
-    assert winner_res["winner_id"] == str(test_user.id)

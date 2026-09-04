@@ -115,3 +115,16 @@ def test_no_emoji_icons_in_js() -> None:
     assert set(offenders) == LEGACY_EMOJI_JS_FILES, (
         f"emoji JS allowlist drift: actual={offenders}, expected={sorted(LEGACY_EMOJI_JS_FILES)}"
     )
+
+
+def test_no_emoji_icons_in_i18n() -> None:
+    """i18n UI strings must not carry emoji glyphs (icon-pack obligation).
+
+    Labels that need a glyph must use the icon() macro / plIcon in the
+    template or JS, not an emoji character inside a translation value.
+    """
+    offenders = []
+    for path in (TEMPLATES_DIR.parent / "i18n").glob("*.py"):
+        if EMOJI_RE.search(path.read_text(encoding="utf-8")):
+            offenders.append(str(path))
+    assert not offenders, f"emoji in i18n UI strings (use icon-pack instead): {offenders}"
