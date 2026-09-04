@@ -18,20 +18,24 @@ Public API:
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import io
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.medication import (
+    COURSE_STATUSES,
+    FOOD_RELATIONS,
     FREQUENCY_TYPES,
     INTAKE_STATUSES,
     MED_KINDS,
+    MedCourse,
     Medication,
     MedIntake,
     MedKit,
@@ -44,6 +48,119 @@ from app.timeutils import local_date, local_now, local_today
 logger = logging.getLogger(__name__)
 
 EXPIRING_SOON_DAYS = 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Regimen (ADR-189): meal grid + offsets + presets
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Дефолтная сетка приёмов пищи (переопределяется через schedule.meal_timing)
+MEAL_TIMES: dict[str, str] = {"breakfast": "08:00", "lunch": "13:00", "dinner": "19:00"}
+# Дефолтные сдвиги приёма относительно еды (минуты; переопределяются meal_offset_min)
+MEAL_OFFSETS: dict[str, int] = {
+    "before_meal": -30,
+    "after_meal": 15,
+    "during_meal": 0,
+    "empty_stomach": -30,
+    "independent": 0,
+}
+
+# Предопределённые варианты режима (шаблоны параметров; недостающее заполняет пользователь)
+REGIMEN_PRESETS: list[dict] = [
+    {
+        "key": "once_morning",
+        "i18n": "med_preset_once_morning",
+        "params": {"frequency_type": "daily", "times_per_day": 1, "food_relation": "independent"},
+    },
+    {
+        "key": "once_empty_stomach",
+        "i18n": "med_preset_once_empty_stomach",
+        "params": {"frequency_type": "daily", "times_per_day": 1, "food_relation": "empty_stomach"},
+    },
+    {
+        "key": "twice_before_meal",
+        "i18n": "med_preset_twice_before_meal",
+        "params": {"frequency_type": "daily", "times_per_day": 2, "food_relation": "before_meal"},
+    },
+    {
+        "key": "three_before_meal",
+        "i18n": "med_preset_three_before_meal",
+        "params": {"frequency_type": "daily", "times_per_day": 3, "food_relation": "before_meal"},
+    },
+    {
+        "key": "three_after_meal",
+        "i18n": "med_preset_three_after_meal",
+        "params": {"frequency_type": "daily", "times_per_day": 3, "food_relation": "after_meal"},
+    },
+    {"key": "interval_hours", "i18n": "med_preset_interval_hours", "params": {"frequency_type": "interval"}},
+    {
+        "key": "weekly_days",
+        "i18n": "med_preset_weekly_days",
+        "params": {"frequency_type": "weekly", "times_per_day": 1},
+    },
+]
+
+
+def _shift_time(hhmm: str, offset_min: int) -> str:
+    """Сдвинуть время '08:00' на offset минут (с обёрткой через сутки)."""
+    h, m = map(int, hhmm.split(":"))
+    total = (h * 60 + m + offset_min) % (24 * 60)
+    return f"{total // 60:02d}:{total % 60:02d}"
+
+
+def schedule_times(s: MedSchedule) -> list[str]:
+    """Конкретные времена приёма для daily-расписания.
+
+    Приоритет: явные times_of_day → сетка еды (food_relation, ≤3 приёма) →
+    равномерно по бодрствованию (08:00–22:00). Для interval/weekly — [].
+    """
+    if s.times_of_day:
+        return list(s.times_of_day)
+    if s.frequency_type != "daily":
+        return []
+    n = s.times_per_day or 1
+    if n <= 0:
+        return []
+    relation = s.food_relation
+    if relation and relation != "independent" and n <= 3:
+        meal_names = ["breakfast", "lunch", "dinner"]
+        meal_times = {**MEAL_TIMES, **(s.meal_timing or {})}
+        offset = s.meal_offset_min
+        if offset is None:
+            offset = MEAL_OFFSETS.get(relation, 0)
+        return [_shift_time(meal_times[meal_names[i]], offset) for i in range(n)]
+    # равномерно по бодрствованию 08:00–22:00
+    span = 14 * 60
+    if n == 1:
+        return ["08:00"]
+    step = span // (n - 1)
+    return [f"{8 * 60 + i * step // 60:02d}:{i * step % 60:02d}" for i in range(n)]
+
+
+def regimen_to_text(s: MedSchedule, t: dict) -> str:
+    """Человекочитаемый режим: '3 раза в день до еды · 20 дней · с 15.09'."""
+    parts: list[str] = []
+    dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
+    if dose:
+        parts.append(dose)
+    if s.frequency_type == "daily":
+        n = s.times_per_day or (len(s.times_of_day) if s.times_of_day else 1)
+        parts.append(t.get("med_freq_daily_x", "{n} time(s) a day").replace("{n}", str(n)))
+        if s.food_relation and s.food_relation != "independent":
+            parts.append(t.get(f"med_food_{s.food_relation}", s.food_relation))
+        if s.times_of_day:
+            parts.append(", ".join(s.times_of_day))
+    elif s.frequency_type == "interval":
+        h = s.interval_hours or 0
+        parts.append(t.get("med_freq_interval_x", "every {h} h").replace("{h}", f"{h:g}"))
+    elif s.frequency_type == "weekly":
+        parts.append(t.get("med_frequency_weekly", "weekly"))
+        if s.days_of_week:
+            parts.append(", ".join(str(d + 1) for d in s.days_of_week))
+    if s.duration_days:
+        parts.append(f"{s.duration_days} {t.get('med_days', 'days')}")
+    if s.start_date:
+        parts.append(f"{t.get('med_from', 'from')} {s.start_date.strftime('%d.%m')}")
+    return " · ".join(parts)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +202,10 @@ class ScheduleBody(BaseModel):
     days_of_week: list[int] | None = None
     start_date: date | None = None
     end_date: date | None = None
+    food_relation: str | None = None
+    duration_days: int | None = None
+    meal_timing: dict | None = None
+    meal_offset_min: int | None = None
     instructions: str | None = None
     is_active: bool = True
 
@@ -92,6 +213,7 @@ class ScheduleBody(BaseModel):
 class KitBody(BaseModel):
     name: str
     location: str | None = None
+    location_id: uuid.UUID | None = None
     notes: str | None = None
 
 
@@ -101,6 +223,31 @@ class IntakeBody(BaseModel):
     taken_at: str | None = None
     quantity_taken: float | None = None
     notes: str | None = None
+
+
+class CourseItemBody(BaseModel):
+    medication_id: uuid.UUID
+    dose_quantity: float = 1.0
+    dose_unit: str | None = None
+    frequency_type: str = "daily"
+    times_per_day: int | None = None
+    times_of_day: list[str] | None = None
+    interval_hours: float | None = None
+    days_of_week: list[int] | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    food_relation: str | None = None
+    duration_days: int | None = None
+    meal_timing: dict | None = None
+    meal_offset_min: int | None = None
+    instructions: str | None = None
+
+
+class CourseBody(BaseModel):
+    name: str
+    notes: str | None = None
+    start_date: date | None = None
+    items: list[CourseItemBody] = []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -156,6 +303,10 @@ def schedule_dict(s: MedSchedule) -> dict:
         "days_of_week": s.days_of_week,
         "start_date": s.start_date.isoformat() if s.start_date else None,
         "end_date": s.end_date.isoformat() if s.end_date else None,
+        "food_relation": s.food_relation,
+        "duration_days": s.duration_days,
+        "meal_timing": s.meal_timing,
+        "meal_offset_min": s.meal_offset_min,
         "instructions": s.instructions,
         "is_active": s.is_active,
     }
@@ -230,6 +381,315 @@ async def get_stock(db: AsyncSession, user_id: uuid.UUID, stock_id: uuid.UUID) -
     return st
 
 
+def intake_slots_for_schedule(s: MedSchedule, day: date) -> list[str]:
+    """Времена приёма расписания в конкретный день (для плана/группировки)."""
+    if not s.is_active:
+        return []
+    if s.start_date and day < s.start_date:
+        return []
+    if s.end_date and day > s.end_date:
+        return []
+    if s.frequency_type == "daily":
+        return schedule_times(s)
+    if s.frequency_type == "weekly":
+        if s.days_of_week and day.weekday() not in s.days_of_week:
+            return []
+        return s.times_of_day or ["08:00"]
+    # interval — без фиксированного времени суток (маркер "в течение дня")
+    return [""]
+
+
+def course_days(s: MedSchedule) -> int:
+    """Число дней действия расписания (для расчёта потребления)."""
+    if s.duration_days:
+        return s.duration_days
+    if s.start_date and s.end_date:
+        return max(1, (s.end_date - s.start_date).days + 1)
+    return 1
+
+
+def intakes_per_day(s: MedSchedule) -> float:
+    """Ожидаемое число приёмов в день (для расчёта потребления)."""
+    if s.frequency_type == "daily":
+        return float(s.times_per_day or (len(s.times_of_day) if s.times_of_day else 1))
+    if s.frequency_type == "weekly":
+        days = len(s.days_of_week) if s.days_of_week else 5
+        return round((s.times_per_day or 1) * days / 7, 2)
+    if s.interval_hours and s.interval_hours > 0:
+        return round(24 / s.interval_hours, 2)
+    return 1.0
+
+
+def location_path(loc) -> str:
+    """Полный путь локации: 'Квартира / Спальня / Тумбочка'."""
+    parts: list[str] = []
+    cur = loc
+    while cur is not None:
+        parts.append(cur.title_ru or cur.slug)
+        cur = cur.parent
+    return " / ".join(reversed(parts))
+
+
+def kit_location_label(kit) -> str:
+    """Человекочитаемое место аптечки: иерархический путь (TaskLocation)
+    если привязана, иначе legacy свободный текст (med_kits.location)."""
+    if kit is None:
+        return ""
+    if kit.location_id and kit.linked_location is not None:
+        return location_path(kit.linked_location)
+    return kit.location or ""
+
+
+async def _resolve_kit_location(
+    db: AsyncSession, user_id: uuid.UUID, location_id: uuid.UUID | None
+) -> uuid.UUID | None:
+    """Валидация локации аптечки: системная или собственная пользователя."""
+    if location_id is None:
+        return None
+    from app.models.task_location import TaskLocation
+
+    loc = (
+        await db.execute(
+            select(TaskLocation).where(
+                TaskLocation.id == location_id,
+                TaskLocation.is_active.is_(True),
+                or_(TaskLocation.owner_id.is_(None), TaskLocation.owner_id == user_id),
+            )
+        )
+    ).scalar_one_or_none()
+    if loc is None:
+        raise ValueError("Invalid location")
+    return location_id
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Courses (ADR-189, phase C)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def get_course(db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UUID) -> MedCourse:
+    c = (
+        await db.execute(select(MedCourse).where(MedCourse.id == course_id, MedCourse.user_id == user_id))
+    ).scalar_one_or_none()
+    if c is None:
+        raise NotFoundError("Course not found")
+    return c
+
+
+async def create_course(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    name: str,
+    notes: str = "",
+    start_date: str = "",
+) -> MedCourse:
+    name = name.strip()[:200]
+    if not name:
+        raise ValueError("Name is required")
+    sd = date.fromisoformat(start_date.strip()) if start_date.strip() else None
+    c = MedCourse(user_id=user_id, name=name, notes=(notes or "").strip() or None, start_date=sd)
+    db.add(c)
+    await db.flush()
+    return c
+
+
+async def delete_course(db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UUID) -> None:
+    c = await get_course(db, user_id, course_id)
+    await db.delete(c)  # schedules.course_id → NULL (FK SET NULL)
+    await db.flush()
+
+
+async def set_course_status(db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UUID, status: str) -> MedCourse:
+    c = await get_course(db, user_id, course_id)
+    if status not in COURSE_STATUSES:
+        raise ValueError("Invalid course status")
+    c.status = status
+    c.is_active = status in ("active", "planned")
+    await db.flush()
+    return c
+
+
+async def _course_schedules(db: AsyncSession, course_id: uuid.UUID) -> list[MedSchedule]:
+    return (
+        (await db.execute(select(MedSchedule).where(MedSchedule.course_id == course_id))).scalars().all()
+    )
+
+
+async def course_summary(db: AsyncSession, course: MedCourse) -> dict:
+    """План + потребление + покрытие аптечками для курса."""
+    schedules = await _course_schedules(db, course.id)
+    items = []
+    for s in schedules:
+        items.append(
+            {
+                "id": str(s.id),
+                "medication_id": str(s.medication_id),
+                "medication_name": s.medication.name if s.medication else "",
+                "regimen_text": regimen_to_text(s, {}),
+                "dose": f"{s.dose_quantity:g} {s.dose_unit or ''}".strip(),
+            }
+        )
+
+    # расчёт потребления на курс
+    stocks = (
+        (
+            await db.execute(
+                select(MedStock).where(
+                    MedStock.user_id == course.user_id,
+                    MedStock.medication_id.in_([s.medication_id for s in schedules]),
+                )
+            )
+        )
+        .scalars()
+        .all()
+        if schedules
+        else []
+    )
+    stocks_by_med: dict[str, list] = {}
+    for st in stocks:
+        stocks_by_med.setdefault(str(st.medication_id), []).append(st)
+
+    consumption = []
+    for s in schedules:
+        needed = round(course_days(s) * intakes_per_day(s) * s.dose_quantity, 1)
+        available = sum(st.quantity for st in stocks_by_med.get(str(s.medication_id), []))
+        breakdown = []
+        for st in stocks_by_med.get(str(s.medication_id), []):
+            breakdown.append(
+                {
+                    "kit_name": st.kit.name if st.kit else None,
+                    "location": kit_location_label(st.kit),
+                    "quantity": st.quantity,
+                    "expiry_date": st.expiry_date.isoformat() if st.expiry_date else None,
+                }
+            )
+        consumption.append(
+            {
+                "medication_id": str(s.medication_id),
+                "medication_name": s.medication.name if s.medication else "",
+                "needed": needed,
+                "available": available,
+                "deficit": round(max(0.0, needed - available), 1),
+                "unit": s.dose_unit or "",
+                "stocks": breakdown,
+            }
+        )
+
+    # план (превью до N дней)
+    start = course.start_date or local_today()
+    end = course.end_date
+    if end is None and schedules:
+        ends = [s.end_date for s in schedules if s.end_date]
+        end = max(ends) if ends else start
+    if end is None or end < start:
+        end = start
+    preview_days = min((end - start).days + 1, 14)
+    days = []
+    for i in range(preview_days):
+        day = start + timedelta(days=i)
+        slots: dict[str, list] = {}
+        for s in schedules:
+            for tm in intake_slots_for_schedule(s, day):
+                slots.setdefault(tm or "any", []).append(
+                    {
+                        "medication_name": s.medication.name if s.medication else "",
+                        "dose": f"{s.dose_quantity:g} {s.dose_unit or ''}".strip(),
+                    }
+                )
+        days.append({"date": day.isoformat(), "slots": [{"time": k, "meds": v} for k, v in sorted(slots.items())]})
+
+    total_days = (end - start).days + 1 if end >= start else 1
+    return {
+        "id": str(course.id),
+        "name": course.name,
+        "notes": course.notes,
+        "status": course.status,
+        "is_active": course.is_active,
+        "start_date": course.start_date.isoformat() if course.start_date else None,
+        "end_date": course.end_date.isoformat() if course.end_date else None,
+        "total_days": total_days,
+        "items": items,
+        "consumption": consumption,
+        "plan": days,
+    }
+
+
+async def add_course_item(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    course_id: uuid.UUID,
+    medication_id: uuid.UUID,
+    dose_quantity: str = "1",
+    dose_unit: str = "",
+    frequency_type: str = "daily",
+    times_per_day: str = "",
+    times_of_day: str = "",
+    interval_hours: str = "",
+    days_of_week: str = "",
+    food_relation: str = "",
+    duration_days: str = "",
+    meal_offset_min: str = "",
+) -> MedSchedule:
+    c = await get_course(db, user_id, course_id)
+    return await create_schedule(
+        db,
+        user_id=user_id,
+        medication_id=medication_id,
+        dose_quantity=dose_quantity,
+        dose_unit=dose_unit,
+        frequency_type=frequency_type,
+        times_per_day=times_per_day,
+        times_of_day=times_of_day,
+        interval_hours=interval_hours,
+        days_of_week=days_of_week,
+        start_date=c.start_date.isoformat() if c.start_date else "",
+        end_date="",
+        instructions="",
+        food_relation=food_relation,
+        duration_days=duration_days,
+        meal_offset_min=meal_offset_min,
+        course_id=str(c.id),
+    )
+
+
+async def json_create_course(db: AsyncSession, user_id: uuid.UUID, body) -> MedCourse:
+    """JSON-создание курса с элементами (mobile parity)."""
+    course = await create_course(
+        db,
+        user_id=user_id,
+        name=body.name,
+        notes=body.notes or "",
+        start_date=body.start_date.isoformat() if body.start_date else "",
+    )
+    for item in body.items or []:
+        await json_create_schedule(
+            db,
+            user_id,
+            ScheduleBody(
+                medication_id=item.medication_id,
+                dose_quantity=item.dose_quantity,
+                dose_unit=item.dose_unit,
+                frequency_type=item.frequency_type,
+                times_per_day=item.times_per_day,
+                times_of_day=item.times_of_day,
+                interval_hours=item.interval_hours,
+                days_of_week=item.days_of_week,
+                start_date=item.start_date or course.start_date,
+                end_date=item.end_date,
+                food_relation=item.food_relation,
+                duration_days=item.duration_days,
+                meal_timing=item.meal_timing,
+                meal_offset_min=item.meal_offset_min,
+                instructions=item.instructions,
+            ),
+            course_id=course.id,
+        )
+    await db.flush()
+    return course
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Today's schedule summary
 # ─────────────────────────────────────────────────────────────────────────────
@@ -242,31 +702,64 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
     intakes = (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
 
     taken_today: dict[str, int] = {}
+    taken_by_hour: dict[tuple[str, int], bool] = {}
     for it in intakes:
         if it.status != "taken" or it.schedule_id is None:
             continue
         taken_dt = it.taken_at or it.created_at
         if taken_dt is not None and local_date(taken_dt) == today:
             taken_today[str(it.schedule_id)] = taken_today.get(str(it.schedule_id), 0) + 1
+            taken_by_hour[(str(it.schedule_id), taken_dt.hour)] = True
 
     due = []
+    slots: dict[str, list] = {}
     for s in schedules:
         expected = doses_today(s, today)
         if expected <= 0:
             continue
         done = taken_today.get(str(s.id), 0)
         pending = max(0, expected - done)
+        dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
         if pending > 0:
             due.append(
                 {
                     "id": str(s.id),
                     "medication_id": str(s.medication_id),
                     "medication_name": s.medication.name if s.medication else "",
-                    "dose": f"{s.dose_quantity:g} {s.dose_unit or ''}".strip(),
+                    "dose": dose,
                     "pending": pending,
-                    "times_of_day": s.times_of_day,
+                    "times_of_day": schedule_times(s) or s.times_of_day,
                 }
             )
+        # группировка приёмов по временным слотам (ADR-189: одна сводная задача на приём)
+        times = intake_slots_for_schedule(s, today) or [""]
+        if times == [""]:
+            times = ["any"]
+        for tm in times:
+            hour = int(tm.split(":")[0]) if ":" in tm else None
+            if hour is not None:
+                taken = taken_by_hour.get((str(s.id), hour), False)
+            else:
+                # «any»: доза без фиксированного времени — принята, если сегодня что-то отмечено
+                taken = taken_today.get(str(s.id), 0) > 0
+            slots.setdefault(tm, []).append(
+                {
+                    "schedule_id": str(s.id),
+                    "medication_id": str(s.medication_id),
+                    "medication_name": s.medication.name if s.medication else "",
+                    "dose": dose,
+                    "taken": taken,
+                }
+            )
+    slot_list = [
+        {
+            "time": k,
+            "meds": v,
+            "all_taken": all(m["taken"] for m in v),
+            "pending": any(not m["taken"] for m in v),
+        }
+        for k, v in sorted(slots.items(), key=lambda kv: (kv[0] == "any", kv[0]))
+    ]
 
     stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
     expiring = []
@@ -293,7 +786,7 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
                 }
             )
 
-    return {"due": due, "expiring": expiring, "low_stock": low, "today": today.isoformat()}
+    return {"due": due, "slots": slot_list, "expiring": expiring, "low_stock": low, "today": today.isoformat()}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -307,6 +800,7 @@ async def get_med_page_context(
     *,
     migrated: int = 0,
     skipped: int = 0,
+    t: dict | None = None,
 ) -> dict:
     """Build full template context for GET /medications page."""
     meds = (
@@ -319,7 +813,9 @@ async def get_med_page_context(
     schedules = (await db.execute(select(MedSchedule).where(MedSchedule.user_id == user.id))).scalars().all()
     summary = await schedule_summary(db, user.id)
 
+    t = t or {}
     stocks_by_med: dict[str, list] = {}
+    stocks_by_kit: dict[str, list] = {}
     for st in stocks:
         stocks_by_med.setdefault(str(st.medication_id), []).append(
             {
@@ -333,6 +829,10 @@ async def get_med_page_context(
                 "is_expired": st.expiry_date is not None and st.expiry_date < local_today(),
             }
         )
+        if st.kit_id:
+            stocks_by_kit.setdefault(str(st.kit_id), []).append(
+                {"medication_name": st.medication.name if st.medication else "", "expiry_date": st.expiry_date}
+            )
     schedules_by_med: dict[str, list] = {}
     for s in schedules:
         schedules_by_med.setdefault(str(s.medication_id), []).append(
@@ -342,8 +842,15 @@ async def get_med_page_context(
                 "frequency_type": s.frequency_type,
                 "times_per_day": s.times_per_day,
                 "times_of_day": s.times_of_day,
+                "times": schedule_times(s),
                 "interval_hours": s.interval_hours,
                 "days_of_week": s.days_of_week,
+                "start_date": s.start_date.isoformat() if s.start_date else None,
+                "end_date": s.end_date.isoformat() if s.end_date else None,
+                "food_relation": s.food_relation,
+                "duration_days": s.duration_days,
+                "meal_offset_min": s.meal_offset_min,
+                "regimen_text": regimen_to_text(s, t),
                 "is_active": s.is_active,
             }
         )
@@ -364,13 +871,63 @@ async def get_med_page_context(
     )
     migrated_count = migrated_count_result.scalar() or 0
 
+    today = local_today()
+    kits_data = []
+    for k in kits:
+        kit_stocks = stocks_by_kit.get(str(k.id), [])
+        expiries = [x["expiry_date"] for x in kit_stocks if x["expiry_date"] is not None]
+        kits_data.append(
+            {
+                "id": str(k.id),
+                "name": k.name,
+                "location": kit_location_label(k),
+                "location_id": str(k.location_id) if k.location_id else None,
+                "location_path": kit_location_label(k),
+                "notes": k.notes,
+                "med_count": len(kit_stocks),
+                "meds": sorted({x["medication_name"] for x in kit_stocks if x["medication_name"]}),
+                "nearest_expiry": min(expiries).isoformat() if expiries else None,
+                "is_expired": bool(expiries) and min(expiries) < today,
+            }
+        )
+
+    # Курсы (ADR-189, фаза C)
+    courses = (
+        (await db.execute(select(MedCourse).where(MedCourse.user_id == user.id).order_by(MedCourse.created_at.desc())))
+        .scalars()
+        .all()
+    )
+    courses_data = [await course_summary(db, c) for c in courses]
+
+    # Дерево локаций для select "аптечка → локация" (плоский список с путями)
+    from app.models.task_location import TaskLocation
+
+    locs = (
+        (
+            await db.execute(
+                select(TaskLocation).where(
+                    TaskLocation.is_active.is_(True),
+                    or_(TaskLocation.owner_id.is_(None), TaskLocation.owner_id == user.id),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    locs_data = [{"id": str(loc.id), "path": location_path(loc), "is_custom": loc.is_custom} for loc in locs]
+
     return {
         "meds": meds_data,
-        "kits": [{"id": str(k.id), "name": k.name, "location": k.location} for k in kits],
+        "kits": kits_data,
+        "courses": courses_data,
+        "locations": locs_data,
         "summary": summary,
         "kinds": list(MED_KINDS),
         "intake_statuses": list(INTAKE_STATUSES),
         "frequency_types": list(FREQUENCY_TYPES),
+        "food_relations": list(FOOD_RELATIONS),
+        "course_statuses": list(COURSE_STATUSES),
+        "regimen_presets": REGIMEN_PRESETS,
         "migrated": migrated,
         "skipped": skipped,
         "migrated_count": migrated_count,
@@ -397,6 +954,8 @@ async def create_medication(
     unit: str,
     instructions: str,
     notes: str,
+    kit_id: str = "",
+    stock_quantity: str = "",
 ) -> Medication:
     name = name.strip()[:200]
     if not name:
@@ -418,6 +977,23 @@ async def create_medication(
     )
     db.add(m)
     await db.flush()
+    # ADR-189 (фаза A): если выбрана аптечка — сразу создаём партию в ней
+    if kit_id and kit_id not in ("", "__none__"):
+        kit = await get_kit(db, user_id, uuid.UUID(kit_id))
+        try:
+            qty = float(stock_quantity or 0)
+        except ValueError:
+            qty = 0.0
+        db.add(
+            MedStock(
+                user_id=user_id,
+                medication_id=m.id,
+                kit_id=kit.id,
+                quantity=qty,
+                unit=(unit or "").strip()[:20] or None,
+            )
+        )
+        await db.flush()
     return m
 
 
@@ -544,6 +1120,10 @@ async def create_schedule(
     start_date: str,
     end_date: str,
     instructions: str,
+    food_relation: str = "",
+    duration_days: str = "",
+    meal_offset_min: str = "",
+    course_id: str = "",
 ) -> MedSchedule:
     m = await get_med(db, user_id, medication_id)
     try:
@@ -563,6 +1143,15 @@ async def create_schedule(
         sd = date.fromisoformat(start_date.strip())
     if end_date.strip():
         ed = date.fromisoformat(end_date.strip())
+    # Режим приёма (ADR-189): food_relation / duration_days / meal_offset_min
+    relation = food_relation.strip() if food_relation.strip() in FOOD_RELATIONS else None
+    duration = int(duration_days) if duration_days.strip().isdigit() else None
+    offset = int(meal_offset_min) if meal_offset_min.strip().lstrip("-").isdigit() else None
+    if not ed and duration and sd:
+        ed = sd + timedelta(days=duration - 1)
+    cid = None
+    if course_id and course_id not in ("", "__none__"):
+        cid = uuid.UUID(course_id)
     s = MedSchedule(
         user_id=user_id,
         medication_id=m.id,
@@ -575,6 +1164,10 @@ async def create_schedule(
         days_of_week=dow,
         start_date=sd,
         end_date=ed,
+        food_relation=relation,
+        duration_days=duration,
+        meal_offset_min=offset,
+        course_id=cid,
         instructions=(instructions or "").strip() or None,
     )
     db.add(s)
@@ -600,14 +1193,17 @@ async def create_kit(
     name: str,
     location: str,
     notes: str,
+    location_id: uuid.UUID | None = None,
 ) -> MedKit:
     name = name.strip()[:200]
     if not name:
         raise ValueError("Name is required")
+    loc_id = await _resolve_kit_location(db, user_id, location_id)
     k = MedKit(
         user_id=user_id,
         name=name,
         location=(location or "").strip()[:200] or None,
+        location_id=loc_id,
         notes=(notes or "").strip() or None,
     )
     db.add(k)
@@ -671,6 +1267,36 @@ async def record_intake(
 
         await on_medication_taken(db, user_id, m.name, on_time=True)
     return it
+
+
+async def record_batch_intake(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    schedule_ids: list[uuid.UUID],
+    slot_time: str = "",
+) -> int:
+    """Отметить принятым целый временной слот (ADR-189: сводная задача на приём)."""
+    created = 0
+    for sid in schedule_ids:
+        sched = await get_schedule(db, user_id, sid)
+        taken_dt = local_now()
+        if slot_time and ":" in slot_time:
+            with contextlib.suppress(ValueError):
+                taken_dt = datetime.combine(local_today(), datetime.strptime(slot_time, "%H:%M").time())
+        await record_intake(
+            db,
+            user_id=user_id,
+            medication_id=sched.medication_id,
+            schedule_id=sched.id,
+            status="taken",
+            taken_at=taken_dt.isoformat(),
+            quantity_taken=None,
+            notes="",
+            gamification=True,
+        )
+        created += 1
+    return created
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -957,7 +1583,16 @@ async def json_list_schedules(db: AsyncSession, user_id: uuid.UUID) -> list[dict
 
 async def json_list_kits(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
     kits = (await db.execute(select(MedKit).where(MedKit.user_id == user_id).order_by(MedKit.name))).scalars().all()
-    return [{"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes} for k in kits]
+    return [
+        {
+            "id": str(k.id),
+            "name": k.name,
+            "location": kit_location_label(k),
+            "location_id": str(k.location_id) if k.location_id else None,
+            "notes": k.notes,
+        }
+        for k in kits
+    ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1031,9 +1666,15 @@ async def json_create_stock(db: AsyncSession, user_id: uuid.UUID, body: StockBod
     return st
 
 
-async def json_create_schedule(db: AsyncSession, user_id: uuid.UUID, body: ScheduleBody) -> MedSchedule:
+async def json_create_schedule(
+    db: AsyncSession, user_id: uuid.UUID, body: ScheduleBody, course_id: uuid.UUID | None = None
+) -> MedSchedule:
     m = await get_med(db, user_id, body.medication_id)
     freq = body.frequency_type if body.frequency_type in FREQUENCY_TYPES else "daily"
+    ed = body.end_date
+    if not ed and body.duration_days and body.start_date:
+        ed = body.start_date + timedelta(days=body.duration_days - 1)
+    relation = body.food_relation if body.food_relation in FOOD_RELATIONS else None
     s = MedSchedule(
         user_id=user_id,
         medication_id=m.id,
@@ -1045,7 +1686,12 @@ async def json_create_schedule(db: AsyncSession, user_id: uuid.UUID, body: Sched
         interval_hours=body.interval_hours,
         days_of_week=body.days_of_week,
         start_date=body.start_date,
-        end_date=body.end_date,
+        end_date=ed,
+        food_relation=relation,
+        duration_days=body.duration_days,
+        meal_timing=body.meal_timing,
+        meal_offset_min=body.meal_offset_min,
+        course_id=course_id,
         instructions=(body.instructions or "").strip() or None,
         is_active=body.is_active,
     )
@@ -1057,10 +1703,12 @@ async def json_create_schedule(db: AsyncSession, user_id: uuid.UUID, body: Sched
 
 async def json_create_kit(db: AsyncSession, user_id: uuid.UUID, body: KitBody) -> MedKit:
     name = _validate_name(body.name)
+    loc_id = await _resolve_kit_location(db, user_id, body.location_id)
     k = MedKit(
         user_id=user_id,
         name=name,
         location=(body.location or "").strip()[:200] or None,
+        location_id=loc_id,
         notes=(body.notes or "").strip() or None,
     )
     db.add(k)

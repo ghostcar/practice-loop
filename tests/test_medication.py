@@ -5,6 +5,7 @@ Relief-only: Health-модуль без игровой интеграции (PD-
 
 from __future__ import annotations
 
+import uuid
 from datetime import date, timedelta
 
 import pytest
@@ -12,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import hash_password
-from app.models.medication import Medication, MedIntake, MedKit, MedSchedule
+from app.models.medication import MedCourse, Medication, MedIntake, MedKit, MedSchedule, MedStock
 from app.models.user import User
 
 
@@ -350,6 +351,148 @@ async def test_cross_user_isolation(auth_client, test_user, db_session):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ADR-189 phase A: kit in create form → auto stock; kits section on page
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_create_medication_with_kit_creates_auto_stock(auth_client, test_user, db_session):
+    """POST /medications with kit_id + stock_quantity auto-creates a MedStock in the kit."""
+    await auth_client.post("/med-kits", data={"name": "Home kit"})
+    kit = (await db_session.execute(select(MedKit).where(MedKit.user_id == test_user.id))).scalar_one()
+
+    resp = await auth_client.post(
+        "/medications",
+        data={"name": "Ibuprofen", "kind": "medication", "kit_id": str(kit.id), "stock_quantity": "20"},
+    )
+    assert resp.status_code == 303
+
+    stocks = (await db_session.execute(select(MedStock).where(MedStock.user_id == test_user.id))).scalars().all()
+    assert len(stocks) == 1
+    assert stocks[0].kit_id == kit.id
+    assert stocks[0].quantity == 20.0
+
+
+@pytest.mark.asyncio
+async def test_create_medication_kit_none_no_stock(auth_client, test_user, db_session):
+    """POST /medications without kit → no auto stock created."""
+    resp = await auth_client.post(
+        "/medications", data={"name": "Ibuprofen", "kind": "medication", "kit_id": "__none__"}
+    )
+    assert resp.status_code == 303
+    stocks = (await db_session.execute(select(MedStock).where(MedStock.user_id == test_user.id))).scalars().all()
+    assert stocks == []
+
+
+@pytest.mark.asyncio
+async def test_kits_section_renders_kit_card_with_meds(auth_client, test_user, db_session):
+    """Page renders an always-visible kits section with kit card contents (ADR-189)."""
+    await auth_client.post("/med-kits", data={"name": "Home kit", "location": "Bathroom"})
+    kit = (await db_session.execute(select(MedKit).where(MedKit.user_id == test_user.id))).scalar_one()
+    await auth_client.post(
+        "/medications",
+        data={"name": "Ibuprofen", "kind": "medication", "kit_id": str(kit.id), "stock_quantity": "20"},
+    )
+
+    resp = await auth_client.get("/medications")
+    assert resp.status_code == 200
+    html = resp.text
+    # kits section heading + card with med name inside
+    assert "Home kit" in html
+    assert "Bathroom" in html
+    assert "Ibuprofen" in html
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ADR-189 phase B: regimen fields (food_relation, duration_days) + presets
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_schedule_with_regimen_fields_computes_end_date(auth_client, test_user, db_session):
+    """food_relation + duration_days → end_date = start_date + duration − 1."""
+    await _create_medication(auth_client, "Amoxicillin")
+    med_id = await _get_med_id(db_session, test_user.id, "Amoxicillin")
+    start = date(2026, 9, 15)
+    resp = await auth_client.post(
+        f"/medications/{med_id}/schedule",
+        data={
+            "dose_quantity": "1",
+            "frequency_type": "daily",
+            "times_per_day": "3",
+            "food_relation": "before_meal",
+            "duration_days": "20",
+            "start_date": start.isoformat(),
+        },
+    )
+    assert resp.status_code == 303
+
+    sched = (await db_session.execute(select(MedSchedule).where(MedSchedule.medication_id == med_id))).scalar_one()
+    assert sched.food_relation == "before_meal"
+    assert sched.duration_days == 20
+    assert sched.end_date == start + timedelta(days=19)
+
+
+@pytest.mark.asyncio
+async def test_schedule_invalid_food_relation_ignored(auth_client, test_user, db_session):
+    """Unknown food_relation is dropped (validated against FOOD_RELATIONS)."""
+    await _create_medication(auth_client, "Vitamin D")
+    med_id = await _get_med_id(db_session, test_user.id, "Vitamin D")
+    resp = await auth_client.post(
+        f"/medications/{med_id}/schedule",
+        data={"dose_quantity": "1", "frequency_type": "daily", "food_relation": "with_tea"},
+    )
+    assert resp.status_code == 303
+    sched = (await db_session.execute(select(MedSchedule).where(MedSchedule.medication_id == med_id))).scalar_one()
+    assert sched.food_relation is None
+
+
+@pytest.mark.asyncio
+async def test_regimen_text_and_meal_times(auth_client, test_user, db_session):
+    """schedule_times maps food_relation to the meal grid; page shows regimen_text."""
+    from app.services.med_service import schedule_times
+
+    await _create_medication(auth_client, "Ibuprofen")
+    med_id = await _get_med_id(db_session, test_user.id, "Ibuprofen")
+    await auth_client.post(
+        f"/medications/{med_id}/schedule",
+        data={"dose_quantity": "1", "frequency_type": "daily", "times_per_day": "2", "food_relation": "before_meal"},
+    )
+    sched = (await db_session.execute(select(MedSchedule).where(MedSchedule.medication_id == med_id))).scalar_one()
+    # before meal = breakfast−30 (07:30) and lunch−30 (12:30)
+    assert schedule_times(sched) == ["07:30", "12:30"]
+
+    resp = await auth_client.get("/medications")
+    assert resp.status_code == 200
+    # regimen text rendered in the schedule list (ru locale default for test user? en is fallback)
+    assert "Ibuprofen" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_json_schedule_accepts_regimen_fields(auth_client, test_user, db_session):
+    """JSON POST /schedules with food_relation/duration_days persists and returns them."""
+    med = (await auth_client.post("/api/v2/medications", json={"name": "Ibuprofen"})).json()
+    start = date(2026, 10, 1)
+    resp = await auth_client.post(
+        "/api/v2/medications/schedules",
+        json={
+            "medication_id": med["id"],
+            "dose_quantity": 1,
+            "frequency_type": "daily",
+            "times_per_day": 3,
+            "food_relation": "after_meal",
+            "duration_days": 10,
+            "start_date": start.isoformat(),
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["food_relation"] == "after_meal"
+    assert body["duration_days"] == 10
+    assert body["end_date"] == (start + timedelta(days=9)).isoformat()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ADR-085: positive-only gamification (softened PD-013)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -423,3 +566,183 @@ async def test_json_delete_medication_foreign_rejected(auth_client, test_user, d
 
     resp = await auth_client.delete(f"/api/v2/medications/{other_med.id}")
     assert resp.status_code == 404
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Phase C (ADR-189): курсы, сводные приёмы по слотам, аптечка → локация
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def _create_course(auth_client, name: str = "Antibiotic course", start: str = "2026-09-10") -> str:
+    resp = await auth_client.post("/med-courses", data={"name": name, "start_date": start})
+    assert resp.status_code == 303, resp.text
+    return name
+
+
+async def _course_id(db: AsyncSession, user_id, name: str) -> str:
+    c = (await db_session_exec(db, MedCourse, user_id, name)).id
+    return str(c)
+
+
+async def db_session_exec(db: AsyncSession, model, user_id, name: str):
+    return (
+        await db.execute(select(model).where(model.user_id == user_id, model.name == name))
+    ).scalar_one()
+
+
+@pytest.mark.asyncio
+async def test_course_create_and_add_item(auth_client, test_user, db_session):
+    """Курс: создание + элемент с режимом приёма; end_date = start + duration − 1; course_id на расписании."""
+    await _create_medication(auth_client, "Amoxicillin")
+    med_id = await _get_med_id(db_session, test_user.id, "Amoxicillin")
+    await _create_course(auth_client, "AB course", "2026-09-10")
+    cid = await _course_id(db_session, test_user.id, "AB course")
+
+    resp = await auth_client.post(
+        f"/med-courses/{cid}/items",
+        data={
+            "medication_id": str(med_id),
+            "dose_quantity": "1",
+            "dose_unit": "tablet",
+            "frequency_type": "daily",
+            "times_per_day": "3",
+            "food_relation": "before_meal",
+            "duration_days": "10",
+        },
+    )
+    assert resp.status_code == 303, resp.text
+
+    s = (
+        await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == uuid.UUID(cid)))
+    ).scalar_one()
+    assert s.food_relation == "before_meal"
+    assert s.end_date == date(2026, 9, 19)  # 10 дней с 10.09
+    assert s.times_per_day == 3
+
+    page = await auth_client.get("/medications")
+    assert page.status_code == 200
+    assert "AB course" in page.text
+    assert "Amoxicillin" in page.text
+
+
+@pytest.mark.asyncio
+async def test_course_status_flow(auth_client, test_user, db_session):
+    """Статусы курса: planned → active → paused; is_active следует за статусом."""
+    await _create_course(auth_client, "Vitamins", "")
+    cid = await _course_id(db_session, test_user.id, "Vitamins")
+
+    for status, active in (("active", True), ("paused", False), ("completed", False), ("planned", True)):
+        resp = await auth_client.post(f"/med-courses/{cid}/status", data={"status": status})
+        assert resp.status_code == 303, resp.text
+        c = await db_session_exec(db_session, MedCourse, test_user.id, "Vitamins")
+        assert c.status == status
+        assert c.is_active is active
+
+
+@pytest.mark.asyncio
+async def test_batch_intake_records_all_slot_schedules(auth_client, test_user, db_session):
+    """Сводный приём (ADR-189): одна отметка на слот закрывает все препараты слота."""
+    for name in ("Drug A", "Drug B"):
+        await _create_medication(auth_client, name)
+        mid = await _get_med_id(db_session, test_user.id, name)
+        resp = await auth_client.post(
+            f"/medications/{mid}/schedule",
+            data={"dose_quantity": "1", "frequency_type": "daily", "times_of_day": "09:00"},
+        )
+        assert resp.status_code == 303, resp.text
+
+    scheds = (await db_session.execute(select(MedSchedule))).scalars().all()
+    assert len(scheds) == 2
+    ids = ",".join(str(s.id) for s in scheds)
+    resp = await auth_client.post("/med-intakes/batch", data={"schedule_ids": ids, "slot_time": "09:00"})
+    assert resp.status_code == 303, resp.text
+
+    intakes = (await db_session.execute(select(MedIntake))).scalars().all()
+    assert len(intakes) == 2
+    assert all(i.status == "taken" for i in intakes)
+    assert {i.schedule_id for i in intakes} == {s.id for s in scheds}
+
+
+@pytest.mark.asyncio
+async def test_schedule_summary_groups_slots(auth_client, test_user, db_session):
+    """schedule_summary возвращает слоты; отметка приёма закрывает слот (all_taken)."""
+    await _create_medication(auth_client, "Metformin")
+    mid = await _get_med_id(db_session, test_user.id, "Metformin")
+    resp = await auth_client.post(
+        f"/medications/{mid}/schedule",
+        data={"dose_quantity": "1", "frequency_type": "daily", "times_of_day": "08:00, 13:00, 19:00"},
+    )
+    assert resp.status_code == 303, resp.text
+
+    data = (await auth_client.get("/api/v2/medications/today")).json()
+    assert data.get("slots"), "ожидались слоты"
+    times = [s["time"] for s in data["slots"]]
+    assert "08:00" in times and "13:00" in times and "19:00" in times
+    assert all(not s["all_taken"] for s in data["slots"])
+    assert any(m["medication_name"] == "Metformin" for s in data["slots"] for m in s["meds"])
+
+    sched = (await db_session.execute(select(MedSchedule))).scalar_one()
+    resp = await auth_client.post(
+        "/med-intakes/batch", data={"schedule_ids": str(sched.id), "slot_time": "08:00"}
+    )
+    assert resp.status_code == 303, resp.text
+    data = (await auth_client.get("/api/v2/medications/today")).json()
+    slot_08 = next(s for s in data["slots"] if s["time"] == "08:00")
+    assert slot_08["all_taken"] is True
+    assert any(not s["all_taken"] for s in data["slots"] if s["time"] != "08:00")
+
+
+@pytest.mark.asyncio
+async def test_kit_linked_to_location(auth_client, test_user, db_session):
+    """Аптечка привязывается к иерархической локации (location_id) и показывает путь."""
+    from app.models.task_location import TaskLocation
+
+    loc = TaskLocation(slug="test-home-shelf", title_ru="Квартира / Полка", owner_id=test_user.id)
+    db_session.add(loc)
+    await db_session.flush()
+
+    resp = await auth_client.post(
+        "/med-kits", data={"name": "Shelf kit", "location_id": str(loc.id), "location": ""}
+    )
+    assert resp.status_code == 303, resp.text
+    kit = (await db_session.execute(select(MedKit).where(MedKit.user_id == test_user.id))).scalar_one()
+    assert kit.location_id == loc.id
+    assert kit.linked_location is not None
+
+    # чужую локацию привязать нельзя
+    other = User(email="loc-other@example.com", password_hash=hash_password("x"), locale="en", theme="dark")
+    db_session.add(other)
+    await db_session.flush()
+    foreign_loc = TaskLocation(slug="test-foreign-shelf", title_ru="Чужое", owner_id=other.id)
+    db_session.add(foreign_loc)
+    await db_session.flush()
+    resp = await auth_client.post(
+        "/med-kits", data={"name": "Bad kit", "location_id": str(foreign_loc.id), "location": ""}
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_dashboard_merge_med_group(auth_client, test_user, db_session):
+    """Today-сводка: med_group появляется как одна задача на слот со списком schedule_id."""
+    from app.services.dashboard_service import _merge_today_items
+
+    merged = _merge_today_items(
+        [],
+        {
+            "slots": [
+                {
+                    "time": "07:30",
+                    "all_taken": False,
+                    "meds": [
+                        {"schedule_id": "s1", "medication_name": "Drug A", "dose": "1 tablet"},
+                        {"schedule_id": "s2", "medication_name": "Drug B", "dose": "1 capsule"},
+                    ],
+                }
+            ]
+        },
+    )
+    groups = [i for i in merged if i["kind"] == "med_group"]
+    assert len(groups) == 1
+    assert groups[0]["slot_time"] == "07:30"
+    assert {m["schedule_id"] for m in groups[0]["meds"]} == {"s1", "s2"}

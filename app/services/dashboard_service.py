@@ -23,7 +23,7 @@ from app.models.notification import Notification
 from app.models.session import ActivitySession
 from app.models.training import TrainingDay
 from app.models.user import User
-from app.timeutils import local_today
+from app.timeutils import local_date, local_today
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Locale-aware date label for the dashboard header (DESIGN v2 §9).
@@ -331,7 +331,31 @@ def _merge_today_items(today_tasks: list, med_summary: dict | None) -> list[dict
         }
         for t in today_tasks
     ]
-    if med_summary and med_summary.get("due"):
+    if med_summary and med_summary.get("slots"):
+        # ADR-189: одна сводная задача на временной слот (все препараты курсов и расписаний)
+        for slot in med_summary["slots"]:
+            if slot.get("all_taken"):
+                continue
+            slot_time = slot.get("time") or ""
+            at = None
+            if slot_time and ":" in slot_time:
+                try:
+                    at = datetime.combine(local_date(datetime.now(UTC)), datetime.strptime(slot_time, "%H:%M").time())
+                except ValueError:
+                    at = None
+            items.append(
+                {
+                    "kind": "med_group",
+                    "id": "med-slot:" + (slot_time or "any"),
+                    "title": ", ".join(m["medication_name"] for m in slot["meds"]),
+                    "status": "med",
+                    "at": at,
+                    "slot_time": slot_time,
+                    "meds": slot["meds"],
+                    "pending": slot.get("pending", 1),
+                }
+            )
+    elif med_summary and med_summary.get("due"):
         for d in med_summary["due"]:
             items.append(
                 {

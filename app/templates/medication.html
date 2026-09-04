@@ -111,80 +111,263 @@
         {% endif %}
     </section>
 
-    <!-- Add medication + add kit -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <details class="pl-surface border border-[color:var(--border)] rounded-xl p-4 group">
-            <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add }}</summary>
-            <form id="med-create-form" action="/medications" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                <div class="sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
-                    <label class="text-xs pl-text-secondary flex-1">* {{ t.med_name }}
-                        <input type="text" id="med-name-input" name="name" required placeholder="напр. Бепантен, Прогинова, Хлоргексидин…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                    </label>
-                    <button type="button" id="btn-autofill-pharma" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center justify-center gap-1.5 min-h-[44px]">
-                        {{ icon('search', 'w-4 h-4') }} Автозаполнить
-                    </button>
-                </div>
-                <label class="text-xs pl-text-secondary">{{ t.med_kind }}
-                    <select id="med-kind-select" name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                        {% for k in kinds %}<option value="{{ k }}">{{ t['med_kind_' + k] }}</option>{% endfor %}
-                    </select>
-                </label>
-                <label class="text-xs pl-text-secondary">МНН / Действующее вещество
-                    <input type="text" id="med-active-ing" name="active_ingredient" placeholder="напр. Декспантенол" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary">{{ t.med_form }}
-                    <input type="text" id="med-form-input" name="form" placeholder="мазь, таблетки, гель…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary">{{ t.med_strength }}
-                    <input type="text" id="med-strength-input" name="strength" placeholder="500 мг, 5%…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary">Производитель / Бренд
-                    <input type="text" id="med-manufacturer-input" name="manufacturer" placeholder="Bayer, Фармстандарт…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary">Условия хранения
-                    <input type="text" id="med-storage-input" name="storage_conditions" placeholder="+2..+8°C, в сухом месте…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
-                    <input type="checkbox" id="med-prescription-cb" name="prescription_required" value="1" class="w-4 h-4">
-                    По рецепту (Rx)
-                </label>
-                <label class="text-xs pl-text-secondary">{{ t.med_unit }}
-                    <input type="text" id="med-unit-input" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_instructions }}
-                    <input type="text" id="med-instructions-input" name="instructions" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <button type="submit" class="sm:col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
-            </form>
-        </details>
-        <details class="pl-surface border border-[color:var(--border)] rounded-xl p-4 group">
-            <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add_kit }}</summary>
-            <form action="/med-kits" method="post" class="mt-3 grid grid-cols-1 gap-3">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                <label class="text-xs pl-text-secondary">* {{ t.med_kit_name }}
-                    <input type="text" name="name" required class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <label class="text-xs pl-text-secondary">{{ t.med_kit_location }}
-                    <input type="text" name="location" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
-                </label>
-                <button type="submit" class="pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
-            </form>
-            {% if kits %}
-            <ul class="mt-3 divide-y divide-[color:var(--border)]">
-                {% for k in kits %}
-                <li class="py-2 flex items-center justify-between gap-2">
-                    <span class="text-sm text-[color:var(--text)]">{{ k.name }}{% if k.location %} <span class="pl-text-muted text-xs">· {{ k.location }}</span>{% endif %}</span>
-                    <form action="/med-kits/{{ k.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
+    <!-- Kits section (ADR-189, phase A) -->
+    <section class="space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('inventory', 'w-4 h-4') }}{{ t.med_kits }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {% for k in kits %}
+            <article class="pl-surface border border-[color:var(--border)] rounded-xl p-3 space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                        <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('medication', 'w-4 h-4') }}{{ k.name }}</h3>
+                        {% if k.location %}<p class="text-xs pl-text-muted">{{ icon('location', 'w-3 h-3') }}{{ k.location }}</p>{% endif %}
+                    </div>
+                    <form action="/med-kits/{{ k.id }}/delete" method="post" class="inline flex-shrink-0" data-confirm="{{ t.med_delete }}?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
                     </form>
-                </li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        </details>
+                </div>
+                {% if k.notes %}<p class="text-xs pl-text-secondary">{{ k.notes }}</p>{% endif %}
+                <div class="text-xs">
+                    {% if k.meds %}
+                    <p class="pl-text-secondary mb-1">{{ t.med_kit_meds }} <span class="text-[color:var(--text)]">{{ k.meds | join(', ') }}</span></p>
+                    {% else %}
+                    <p class="pl-text-muted">{{ t.med_kit_empty }}</p>
+                    {% endif %}
+                    {% if k.nearest_expiry %}
+                    <p class="{% if k.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ t.med_kit_expiry }} {{ k.nearest_expiry }}</p>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+            <details class="pl-surface border border-dashed border-[color:var(--border)] rounded-xl p-3 group">
+                <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add_kit }}</summary>
+                <form action="/med-kits" method="post" class="mt-3 grid grid-cols-1 gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <label class="text-xs pl-text-secondary">* {{ t.med_kit_name }}
+                        <input type="text" name="name" required class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    </label>
+                    <label class="text-xs pl-text-secondary">{{ t.med_kit_location_tree }}
+                        <select name="location_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                            <option value="">—</option>
+                            {% for loc in locations %}<option value="{{ loc.id }}">{{ loc.path }}</option>{% endfor %}
+                        </select>
+                    </label>
+                    <label class="text-xs pl-text-secondary">{{ t.med_kit_location }}
+                        <input type="text" name="location" placeholder="{{ t.med_kit_location_hint }}" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    </label>
+                    <button type="submit" class="pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
+                </form>
+            </details>
+        </div>
     </section>
+
+    <!-- Courses (ADR-189, phase C) -->
+    <section class="space-y-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wide pl-text-muted inline-flex items-center gap-1.5">{{ icon('routine', 'w-4 h-4') }}{{ t.med_courses_title }}</h2>
+        <div class="grid grid-cols-1 gap-4">
+            {% for c in courses %}
+            <article class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div class="min-w-0">
+                        <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-2">{{ icon('prescription', 'w-4 h-4') }}{{ c.name }}
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold border
+                                {% if c.status == 'active' %}bg-emerald-500/10 text-emerald-700 border-emerald-500/20
+                                {% elif c.status == 'planned' %}bg-sky-500/10 text-sky-700 border-sky-500/20
+                                {% elif c.status == 'completed' %}bg-slate-500/10 text-slate-600 border-slate-500/20
+                                {% else %}bg-amber-500/10 text-amber-700 border-amber-500/20{% endif %}">{{ t['med_course_status_' + c.status] if t.get('med_course_status_' + c.status) else c.status }}</span>
+                        </h3>
+                        <p class="text-xs pl-text-muted">{% if c.start_date %}{{ t.med_from }} {{ c.start_date }}{% endif %}{% if c.end_date %} · {{ t.med_to }} {{ c.end_date }}{% endif %} · {{ c.total_days }} {{ t.med_days }}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <form action="/med-courses/{{ c.id }}/status" method="post" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <select name="status" onchange="this.form.submit()" class="px-2 py-1 rounded-lg text-xs bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[36px]">
+                                {% for st in course_statuses %}<option value="{{ st }}" {% if st == c.status %}selected{% endif %}>{{ t['med_course_status_' + st] if t.get('med_course_status_' + st) else st }}</option>{% endfor %}
+                            </select>
+                        </form>
+                        <form action="/med-courses/{{ c.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <button type="submit" class="text-xs pl-text-muted inline-flex items-center gap-1 min-h-[36px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3.5 h-3.5') }}</button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if c.notes %}<p class="text-sm pl-text-secondary">{{ c.notes }}</p>{% endif %}
+
+                <!-- Элементы курса -->
+                {% if c['items'] %}
+                <ul class="divide-y divide-[color:var(--border)] text-sm">
+                    {% for it in c['items'] %}
+                    <li class="py-1.5 flex items-center justify-between gap-2">
+                        <span class="text-[color:var(--text)]">{{ it.medication_name }}</span>
+                        <span class="pl-text-muted text-xs">{{ it.regimen_text }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Расчёт потребления + покрытие аптечками -->
+                {% if c.consumption %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {% for cc in c.consumption %}
+                    <div class="p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-medium text-[color:var(--text)]">{{ cc.medication_name }}</span>
+                            <span class="text-xs {% if cc.deficit > 0 %}text-[color:var(--danger)] font-semibold{% else %}text-[color:var(--success)]{% endif %}">{{ cc.available }} / {{ cc.needed }} {{ cc.unit }}{% if cc.deficit > 0 %} · −{{ cc.deficit }}{% endif %}</span>
+                        </div>
+                        {% if cc.stocks %}
+                        <ul class="text-xs pl-text-muted space-y-0.5">
+                            {% for st in cc.stocks %}
+                            <li>{{ icon('inventory', 'w-3 h-3') }}{{ st.kit_name or '—' }}{% if st.location %} · {{ st.location }}{% endif %} · {{ st.quantity }}{% if st.expiry_date %} (до {{ st.expiry_date }}){% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-xs pl-text-muted">{{ t.med_course_no_stock }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Превью плана -->
+                {% if c.plan %}
+                <details class="text-sm">
+                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('calendar', 'w-3.5 h-3.5') }}{{ t.med_course_plan_preview }} ({{ c.plan | length }} {{ t.med_days }})</summary>
+                    <div class="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                        {% for d in c.plan %}
+                        <div class="p-2 rounded-lg bg-[color:var(--surface-soft)]">
+                            <p class="text-xs font-medium text-[color:var(--text)]">{{ d.date }}</p>
+                            {% if d.slots %}
+                            <ul class="text-xs pl-text-secondary mt-1 space-y-0.5">
+                                {% for s in d.slots %}
+                                <li>{% if s.time != 'any' %}<span class="font-medium">{{ s.time }}</span> — {% endif %}{% for m in s.meds %}{{ m.medication_name }}{% if m.dose %} {{ m.dose }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-xs pl-text-muted">—</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
+
+                <!-- Добавить препарат в курс -->
+                <details class="text-sm">
+                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('plus', 'w-3.5 h-3.5') }}{{ t.med_course_add_item }}</summary>
+                    <form action="/med-courses/{{ c.id }}/items" method="post" class="mt-2 grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <label class="text-xs pl-text-secondary col-span-2">* {{ t.med_name }}
+                            <select name="medication_id" required class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                {% for m in meds %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_dose }}
+                            <input type="number" step="any" name="dose_quantity" value="1" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_unit }}
+                            <input type="text" name="dose_unit" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_times_per_day }}
+                            <input type="number" name="times_per_day" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_times_of_day }}
+                            <input type="text" name="times_of_day" placeholder="08:00, 20:00" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary col-span-2">{{ t.med_food_relation }}
+                            <select name="food_relation" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                <option value="">—</option>
+                                {% for f in food_relations %}<option value="{{ f }}">{{ t['med_food_' + f] }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_duration_days }}
+                            <input type="number" min="1" name="duration_days" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_frequency }}
+                            <select name="frequency_type" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                {% for f in frequency_types %}<option value="{{ f }}">{{ t['med_frequency_' + f] }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <button type="submit" class="col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.med_course_add_item }}</button>
+                    </form>
+                </details>
+            </article>
+            {% endfor %}
+            <details class="pl-surface border border-dashed border-[color:var(--border)] rounded-xl p-4 group">
+                <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_course_new }}</summary>
+                <form action="/med-courses" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <label class="text-xs pl-text-secondary sm:col-span-2">* {{ t.med_course_name }}
+                        <input type="text" name="name" required placeholder="напр. Курс витаминов, Антибиотик + пробиотик…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    </label>
+                    <label class="text-xs pl-text-secondary">{{ t.med_start_date }}
+                        <input type="date" name="start_date" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    </label>
+                    <label class="text-xs pl-text-secondary sm:col-span-3">{{ t.med_notes }}
+                        <input type="text" name="notes" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    </label>
+                    <button type="submit" class="sm:col-span-3 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
+                </form>
+            </details>
+        </div>
+    </section>
+
+    <!-- Add medication (ADR-189, phase A: kit select + auto stock) -->
+    <details class="pl-surface border border-[color:var(--border)] rounded-xl p-4 group">
+        <summary class="cursor-pointer font-medium text-[color:var(--text)] inline-flex items-center gap-1.5 list-none">{{ icon('plus', 'w-4 h-4') }}{{ t.med_add }}</summary>
+        <form id="med-create-form" action="/medications" method="post" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div class="sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
+                <label class="text-xs pl-text-secondary flex-1">* {{ t.med_name }}
+                    <input type="text" id="med-name-input" name="name" required placeholder="напр. Бепантен, Прогинова, Хлоргексидин…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                </label>
+                <button type="button" id="btn-autofill-pharma" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center justify-center gap-1.5 min-h-[44px]">
+                    {{ icon('search', 'w-4 h-4') }} Автозаполнить
+                </button>
+            </div>
+            <label class="text-xs pl-text-secondary">{{ t.med_kind }}
+                <select id="med-kind-select" name="kind" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    {% for k in kinds %}<option value="{{ k }}">{{ t['med_kind_' + k] }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="text-xs pl-text-secondary">МНН / Действующее вещество
+                <input type="text" id="med-active-ing" name="active_ingredient" placeholder="напр. Декспантенол" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.med_form }}
+                <input type="text" id="med-form-input" name="form" placeholder="мазь, таблетки, гель…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.med_strength }}
+                <input type="text" id="med-strength-input" name="strength" placeholder="500 мг, 5%…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">Производитель / Бренд
+                <input type="text" id="med-manufacturer-input" name="manufacturer" placeholder="Bayer, Фармстандарт…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">Условия хранения
+                <input type="text" id="med-storage-input" name="storage_conditions" placeholder="+2..+8°C, в сухом месте…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
+                <input type="checkbox" id="med-prescription-cb" name="prescription_required" value="1" class="w-4 h-4">
+                По рецепту (Rx)
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.med_unit }}
+                <input type="text" id="med-unit-input" name="unit" placeholder="mg / ml / tablet" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.med_add_to_kit }}
+                <select name="kit_id" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                    <option value="__none__">—</option>
+                    {% for k in kits %}<option value="{{ k.id }}">{{ k.name }}{% if k.location %} · {{ k.location }}{% endif %}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="text-xs pl-text-secondary">{{ t.med_stock_qty_label }}
+                <input type="number" step="any" name="stock_quantity" placeholder="0" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_instructions }}
+                <input type="text" id="med-instructions-input" name="instructions" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <button type="submit" class="sm:col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
+        </form>
+    </details>
 
     <!-- Medications list -->
     <section class="space-y-4">
@@ -269,14 +452,7 @@
                 <ul class="text-sm space-y-1">
                     {% for s in m.schedules %}
                     <li class="flex items-center justify-between gap-2 pl-text-secondary">
-                        <span>
-                            {{ s.dose }}
-                            {% if s.frequency_type == 'daily' %}{% if s.times_per_day %} · ×{{ s.times_per_day }}{% elif s.times_of_day %} · {{ s.times_of_day | join(', ') }}{% endif %}
-                            {% elif s.frequency_type == 'interval' %} · {{ s.interval_hours }}h
-                            {% elif s.frequency_type == 'weekly' %} · {{ t.med_frequency_weekly }}
-                            {% endif %}
-                            {% if not s.is_active %}<span class="text-xs pl-text-muted">(inactive)</span>{% endif %}
-                        </span>
+                        <span>{{ s.regimen_text }}{% if not s.is_active %} <span class="text-xs pl-text-muted">(inactive)</span>{% endif %}</span>
                         <form action="/med-schedules/{{ s.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                             <button type="submit" class="text-xs pl-text-muted inline-flex items-center min-h-[44px]" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
@@ -301,7 +477,7 @@
                             <label class="text-xs pl-text-secondary">{{ t.med_kit_name }}
                                 <select name="kit_id" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                                     <option value="__none__">—</option>
-                                    {% for k in kits %}<option value="{{ k.id }}">{{ k.name }}</option>{% endfor %}
+                                    {% for k in kits %}<option value="{{ k.id }}">{{ k.name }}{% if k.location %} · {{ k.location }}{% endif %}</option>{% endfor %}
                                 </select>
                             </label>
                             <label class="text-xs pl-text-secondary">{{ t.med_low_stock_threshold }}
@@ -309,8 +485,14 @@
                             </label>
                             <button type="submit" class="col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.med_add_stock }}</button>
                         </form>
-                        <form action="/medications/{{ m.id }}/schedule" method="post" class="grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                        <form action="/medications/{{ m.id }}/schedule" method="post" class="grid grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]" data-schedule-form>
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                            <div class="col-span-2 flex flex-wrap gap-1.5">
+                                <span class="text-xs pl-text-secondary w-full">{{ t.med_preset_choose }}</span>
+                                {% for p in regimen_presets %}
+                                <button type="button" data-preset="{{ p.params | tojson }}" class="px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--accent-text)] min-h-[36px]">{{ t[p.i18n] }}</button>
+                                {% endfor %}
+                            </div>
                             <label class="text-xs pl-text-secondary">{{ t.med_dose }}
                                 <input type="number" step="any" name="dose_quantity" value="1" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                             </label>
@@ -328,12 +510,28 @@
                             <label class="text-xs pl-text-secondary">{{ t.med_times_of_day }}
                                 <input type="text" name="times_of_day" placeholder="08:00, 20:00" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                             </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_interval_hours }}
+                                <input type="number" step="any" name="interval_hours" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_days_of_week }}
+                                <input type="text" name="days_of_week" placeholder="0,2,4" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary col-span-2">{{ t.med_food_relation }}
+                                <select name="food_relation" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                    <option value="">—</option>
+                                    {% for f in food_relations %}<option value="{{ f }}">{{ t['med_food_' + f] }}</option>{% endfor %}
+                                </select>
+                            </label>
                             <label class="text-xs pl-text-secondary">{{ t.med_start_date }}
                                 <input type="date" name="start_date" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                            </label>
+                            <label class="text-xs pl-text-secondary">{{ t.med_duration_days }}
+                                <input type="number" min="1" name="duration_days" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                             </label>
                             <label class="text-xs pl-text-secondary">{{ t.med_end_date }}
                                 <input type="date" name="end_date" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                             </label>
+                            <p id="med-regimen-preview-{{ m.id }}" class="col-span-2 text-xs pl-text-secondary inline-flex items-center gap-1">{{ icon('check-circle', 'w-3 h-3') }}<span class="font-medium text-[color:var(--text)]">{{ t.med_regimen_preview }}</span> <span class="med-regimen-preview-text"></span></p>
                             <button type="submit" class="col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.med_add_schedule }}</button>
                         </form>
                     </div>
@@ -402,6 +600,71 @@ document.addEventListener('DOMContentLoaded', function() {
             autofillBtn.disabled = false;
             autofillBtn.innerHTML = originalText;
         }
+    });
+
+    // ADR-189: пресеты режима + живой предпросмотр текста
+    const R_LABELS = {
+        daily: "{{ t.med_freq_daily_x }}",
+        interval: "{{ t.med_freq_interval_x }}",
+        weekly: "{{ t.med_frequency_weekly }}",
+        days: "{{ t.med_days }}",
+        from: "{{ t.med_from }}",
+        foods: {
+            before_meal: "{{ t.med_food_before_meal }}",
+            after_meal: "{{ t.med_food_after_meal }}",
+            during_meal: "{{ t.med_food_during_meal }}",
+            empty_stomach: "{{ t.med_food_empty_stomach }}",
+            independent: "{{ t.med_food_independent }}"
+        }
+    };
+
+    document.querySelectorAll('form[data-schedule-form]').forEach(function(form) {
+        const previewEl = form.querySelector('.med-regimen-preview-text');
+        if (!previewEl) return;
+        function fieldVal(name) {
+            const el = form.querySelector('[name="' + name + '"]');
+            return el ? el.value.trim() : '';
+        }
+        function updatePreview() {
+            const parts = [];
+            const dose = fieldVal('dose_quantity');
+            const unit = fieldVal('dose_unit');
+            if (dose) parts.push(dose + (unit ? ' ' + unit : ''));
+            const freq = fieldVal('frequency_type');
+            if (freq === 'daily') {
+                parts.push(R_LABELS.daily.replace('{n}', fieldVal('times_per_day') || '1'));
+                const fr = fieldVal('food_relation');
+                if (fr && R_LABELS.foods[fr]) parts.push(R_LABELS.foods[fr]);
+                const tod = fieldVal('times_of_day');
+                if (tod) parts.push(tod);
+            } else if (freq === 'interval') {
+                parts.push(R_LABELS.interval.replace('{h}', fieldVal('interval_hours') || '?'));
+            } else if (freq === 'weekly') {
+                parts.push(R_LABELS.weekly);
+            }
+            const dur = fieldVal('duration_days');
+            if (dur) parts.push(dur + ' ' + R_LABELS.days);
+            const sd = fieldVal('start_date');
+            if (sd) parts.push(R_LABELS.from + ' ' + sd.slice(8, 10) + '.' + sd.slice(5, 7));
+            previewEl.textContent = parts.join(' · ');
+        }
+        form.querySelectorAll('button[data-preset]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                let params = {};
+                try {
+                    params = JSON.parse(btn.getAttribute('data-preset'));
+                } catch (e) {
+                    return;
+                }
+                Object.keys(params).forEach(function(k) {
+                    const el = form.querySelector('[name="' + k + '"]');
+                    if (el) el.value = params[k];
+                });
+                updatePreview();
+            });
+        });
+        form.addEventListener('input', updatePreview);
+        updatePreview();
     });
 });
 </script>

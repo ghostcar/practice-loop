@@ -6,16 +6,19 @@ This file contains only HTTP parsing, response building, and dependency injectio
 
 from __future__ import annotations
 
+import contextlib
 import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
 from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
+from app.models.medication import MedCourse
 from app.models.user import User
 from app.services import med_service as svc
 from app.services.errors import NotFoundError
@@ -41,7 +44,7 @@ async def medications_page(
     locale = detect_locale(request, user.locale)
     theme = detect_theme(user.theme)
     t = get_translations(locale)
-    ctx = await svc.get_med_page_context(db, user, migrated=migrated, skipped=skipped)
+    ctx = await svc.get_med_page_context(db, user, migrated=migrated, skipped=skipped, t=t)
     return templates.TemplateResponse(
         request=request,
         name="medication.html",
@@ -68,6 +71,8 @@ async def create_medication(
     unit: str = Form(default=""),
     instructions: str = Form(default=""),
     notes: str = Form(default=""),
+    kit_id: str = Form(default=""),
+    stock_quantity: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -86,6 +91,8 @@ async def create_medication(
             unit=unit,
             instructions=instructions,
             notes=notes,
+            kit_id=kit_id,
+            stock_quantity=stock_quantity,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -219,6 +226,9 @@ async def add_schedule(
     start_date: str = Form(default=""),
     end_date: str = Form(default=""),
     instructions: str = Form(default=""),
+    food_relation: str = Form(default=""),
+    duration_days: str = Form(default=""),
+    meal_offset_min: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -237,6 +247,9 @@ async def add_schedule(
             start_date=start_date,
             end_date=end_date,
             instructions=instructions,
+            food_relation=food_relation,
+            duration_days=duration_days,
+            meal_offset_min=meal_offset_min,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
@@ -266,6 +279,106 @@ async def delete_schedule(
 ):
     try:
         await svc.delete_schedule(db, user.id, schedule_id)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-intakes/batch")
+async def record_intake_batch(
+    request: Request,
+    schedule_ids: str = Form(default=""),
+    slot_time: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Одна сводная задача на приём (ADR-189): отметить принятым весь временной слот."""
+    ids = [uuid.UUID(sid) for sid in schedule_ids.split(",") if sid.strip()]
+    with contextlib.suppress(NotFoundError, ValueError):
+        await svc.record_batch_intake(db, user_id=user.id, schedule_ids=ids, slot_time=slot_time)
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-courses")
+async def create_course_form(
+    request: Request,
+    name: str = Form(...),
+    notes: str = Form(default=""),
+    start_date: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.create_course(db, user_id=user.id, name=name, notes=notes, start_date=start_date)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-courses/{course_id}/items")
+async def add_course_item_form(
+    request: Request,
+    course_id: uuid.UUID,
+    medication_id: uuid.UUID = Form(...),
+    dose_quantity: str = Form(default="1"),
+    dose_unit: str = Form(default=""),
+    frequency_type: str = Form(default="daily"),
+    times_per_day: str = Form(default=""),
+    times_of_day: str = Form(default=""),
+    interval_hours: str = Form(default=""),
+    days_of_week: str = Form(default=""),
+    food_relation: str = Form(default=""),
+    duration_days: str = Form(default=""),
+    meal_offset_min: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.add_course_item(
+            db,
+            user_id=user.id,
+            course_id=course_id,
+            medication_id=medication_id,
+            dose_quantity=dose_quantity,
+            dose_unit=dose_unit,
+            frequency_type=frequency_type,
+            times_per_day=times_per_day,
+            times_of_day=times_of_day,
+            interval_hours=interval_hours,
+            days_of_week=days_of_week,
+            food_relation=food_relation,
+            duration_days=duration_days,
+            meal_offset_min=meal_offset_min,
+        )
+    except (NotFoundError, ValueError) as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-courses/{course_id}/status")
+async def set_course_status_form(
+    request: Request,
+    course_id: uuid.UUID,
+    status: str = Form(default="planned"),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.set_course_status(db, user.id, course_id, status)
+    except (NotFoundError, ValueError) as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-courses/{course_id}/delete")
+async def delete_course_form(
+    request: Request,
+    course_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.delete_course(db, user.id, course_id)
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/medications", status_code=303)
@@ -314,12 +427,21 @@ async def create_kit(
     request: Request,
     name: str = Form(...),
     location: str = Form(default=""),
+    location_id: str = Form(default=""),
     notes: str = Form(default=""),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    loc_uuid = None
+    if location_id.strip():
+        try:
+            loc_uuid = uuid.UUID(location_id.strip())
+        except ValueError:
+            raise HTTPException(400, "Invalid location") from None
     try:
-        await svc.create_kit(db, user_id=user.id, name=name, location=location, notes=notes)
+        await svc.create_kit(
+            db, user_id=user.id, name=name, location=location, notes=notes, location_id=loc_uuid
+        )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
     return RedirectResponse(url="/medications", status_code=303)
@@ -480,7 +602,13 @@ async def json_create_kit(
         k = await svc.json_create_kit(db, user.id, body)
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
-    return {"id": str(k.id), "name": k.name, "location": k.location, "notes": k.notes}
+    return {
+        "id": str(k.id),
+        "name": k.name,
+        "location": k.location,
+        "location_id": str(k.location_id) if k.location_id else None,
+        "notes": k.notes,
+    }
 
 
 @json_router.delete("/stocks/{stock_id}", status_code=204)
@@ -530,6 +658,58 @@ async def json_delete_medication(
 ):
     try:
         await svc.json_delete_medication(db, user.id, medication_id)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    return None
+
+
+@json_router.get("/courses")
+async def json_list_courses(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    courses = (
+        (await db.execute(select(MedCourse).where(MedCourse.user_id == user.id).order_by(MedCourse.created_at.desc())))
+        .scalars()
+        .all()
+    )
+    return [await svc.course_summary(db, c) for c in courses]
+
+
+@json_router.post("/courses", status_code=201)
+async def json_create_course(
+    body: svc.CourseBody,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        c = await svc.json_create_course(db, user.id, body)
+    except (NotFoundError, ValueError) as e:
+        raise HTTPException(400, str(e)) from None
+    return await svc.course_summary(db, c)
+
+
+@json_router.get("/courses/{course_id}/plan")
+async def json_course_plan(
+    course_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        c = await svc.get_course(db, user.id, course_id)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    return await svc.course_summary(db, c)
+
+
+@json_router.delete("/courses/{course_id}", status_code=204)
+async def json_delete_course(
+    course_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    try:
+        await svc.delete_course(db, user.id, course_id)
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return None
