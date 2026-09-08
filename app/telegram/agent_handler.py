@@ -83,9 +83,23 @@ async def handle_agent_text_message(message: types.Message) -> None:
 
 @agent_tg_router.message(F.photo)
 async def handle_agent_photo_verification(message: types.Message) -> None:
-    """Passes photo submissions to PracticeLoop Agent Vision Verification Engine."""
+    """Processes photos: scans for DataMatrix/barcode first; if none, runs Agent Vision Verification."""
     user = await _get_linked_user(message.chat.id)
     if not user:
+        return
+
+    photo = message.photo[-1]
+    file_info = await message.bot.get_file(photo.file_id)
+    file_bytes = await message.bot.download_file(file_info.file_path)
+    img_data = file_bytes.read() if hasattr(file_bytes, "read") else file_bytes
+
+    from app.services.datamatrix_service import decode_datamatrix_from_image
+
+    results = decode_datamatrix_from_image(img_data)
+    if results:
+        from app.telegram.bot import process_datamatrix_scan
+
+        await process_datamatrix_scan(message, user, results)
         return
 
     caption = message.caption or "Физическое задание / Чек-ин замка"

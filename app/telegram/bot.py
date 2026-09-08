@@ -39,12 +39,84 @@ bot: Bot | None = None
 dp: Dispatcher | None = None
 tg_router = APIRouter(prefix="/tg", tags=["telegram"])
 main_router = Router()
+_SCAN_CACHE: dict[str, dict[str, Any]] = {}
+
+
+async def process_datamatrix_scan(message: types.Message, user: User, results: list) -> None:
+    """Processes decoded DataMatrix results, looks up medicine, and presents kit selection."""
+    from app.models.medication import MedKit
+    from app.services import med_service as med_svc
+    from app.services.pharma_online import online_drug_lookup
+
+    first = results[0]
+    gtin = first.gtin or ""
+    ean13 = first.ean13 or ""
+    lot = first.lot_number or ""
+    expiry = first.expiry_date or ""
+    serial = first.serial or ""
+
+    async with async_session_factory() as db:
+        med = await med_svc.find_medication_by_barcode(db, user.id, gtin=gtin, ean13=ean13)
+        med_name = med.name if med else None
+
+        if not med_name and (gtin or ean13):
+            online_info = await online_drug_lookup(ean13 or gtin)
+            if online_info and online_info.get("name"):
+                med_name = online_info["name"]
+
+        if not med_name:
+            med_name = f"Препарат (GTIN: {gtin or ean13 or 'DataMatrix'})"
+
+        stmt = select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name)
+        kits = (await db.execute(stmt)).scalars().all()
+
+    scan_id = uuid.uuid4().hex[:12]
+    _SCAN_CACHE[scan_id] = {
+        "user_id": str(user.id),
+        "med_id": str(med.id) if med else None,
+        "med_name": med_name,
+        "lot": lot,
+        "expiry": expiry,
+        "gtin": gtin,
+    }
+
+    lines = [
+        "📦 *Распознана маркировка (Честный Знак):*",
+        f"💊 *Препарат:* {med_name}",
+    ]
+    if gtin:
+        lines.append(f"🏷️ *GTIN:* `{gtin}`")
+    if lot:
+        lines.append(f"🔢 *Серия:* `{lot}`")
+    if expiry:
+        lines.append(f"📅 *Годен до:* `{expiry}`")
+    if serial:
+        lines.append(f"🔑 *SN:* `{serial[:12]}...`")
+
+    lines.append("\nВыберите аптечку, куда добавить этот препарат:")
+
+    kb_rows = []
+    for k in kits[:6]:
+        kb_rows.append([
+            InlineKeyboardButton(
+                text=f"📥 В аптечку: {k.name[:25]}",
+                callback_data=f"dm_kit:{scan_id}:{k.id}",
+            )
+        ])
+    if not kits:
+        lines.append("_(У вас пока нет созданных аптечек. Создайте аптечку на сайте в разделе медикаментов)_")
+
+    kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
+    await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
 
 if TG_BOT_TOKEN:
     bot = Bot(token=TG_BOT_TOKEN)
     dp = Dispatcher()
     from app.telegram.agent_handler import agent_tg_router  # noqa: E402
+    from app.telegram.personal_contour import personal_router  # noqa: E402
 
+    dp.include_router(personal_router)
     dp.include_router(agent_tg_router)
     dp.include_router(main_router)
 
@@ -131,8 +203,13 @@ if TG_BOT_TOKEN:
                 db.add(user)
                 await db.commit()
 
-                msg = f"✅ Linked! Welcome, {user.email}!\n\nUse /next to get your first task."
-                await message.answer(msg)
+                from app.telegram.keyboards import get_main_reply_keyboard
+
+                msg = (
+                    f"✅ Аккаунт привязан! Добро пожаловать, {user.email}!\n\n"
+                    "Используйте постоянное меню снизу для быстрого доступа к практикам и задачам."
+                )
+                await message.answer(msg, reply_markup=get_main_reply_keyboard())
                 return
 
             # Check ManagedSubmissive profile
@@ -1217,8 +1294,6 @@ if TG_BOT_TOKEN:
         await callback.message.edit_text(text, parse_mode="Markdown")
         await callback.answer("Taken! 💊")
 
-    _SCAN_CACHE: dict[str, dict[str, Any]] = {}
-
     @main_router.message(Command("scan"))
     async def cmd_scan(message: types.Message):
         """Инструкция по сканированию DataMatrix маркировки Честный Знак."""
@@ -1236,10 +1311,7 @@ if TG_BOT_TOKEN:
         if user is None:
             return
 
-        from app.models.medication import MedKit
-        from app.services import med_service as med_svc
         from app.services.datamatrix_service import decode_datamatrix_from_image
-        from app.services.pharma_online import online_drug_lookup
 
         photo = message.photo[-1]
         file_info = await message.bot.get_file(photo.file_id)
@@ -1256,66 +1328,7 @@ if TG_BOT_TOKEN:
                 )
             return
 
-        first = results[0]
-        gtin = first.gtin or ""
-        ean13 = first.ean13 or ""
-        lot = first.lot_number or ""
-        expiry = first.expiry_date or ""
-        serial = first.serial or ""
-
-        async with async_session_factory() as db:
-            med = await med_svc.find_medication_by_barcode(db, user.id, gtin=gtin, ean13=ean13)
-            med_name = med.name if med else None
-
-            if not med_name and (gtin or ean13):
-                online_info = await online_drug_lookup(ean13 or gtin)
-                if online_info and online_info.get("name"):
-                    med_name = online_info["name"]
-
-            if not med_name:
-                med_name = f"Препарат (GTIN: {gtin or ean13 or 'DataMatrix'})"
-
-            stmt = select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name)
-            kits = (await db.execute(stmt)).scalars().all()
-
-        scan_id = uuid.uuid4().hex[:12]
-        _SCAN_CACHE[scan_id] = {
-            "user_id": str(user.id),
-            "med_id": str(med.id) if med else None,
-            "med_name": med_name,
-            "lot": lot,
-            "expiry": expiry,
-            "gtin": gtin,
-        }
-
-        lines = [
-            "📦 *Распознана маркировка (Честный Знак):*",
-            f"💊 *Препарат:* {med_name}",
-        ]
-        if gtin:
-            lines.append(f"🏷️ *GTIN:* `{gtin}`")
-        if lot:
-            lines.append(f"🔢 *Серия:* `{lot}`")
-        if expiry:
-            lines.append(f"📅 *Годен до:* `{expiry}`")
-        if serial:
-            lines.append(f"🔑 *SN:* `{serial[:12]}...`")
-
-        lines.append("\nВыберите аптечку, куда добавить этот препарат:")
-
-        kb_rows = []
-        for k in kits[:6]:
-            kb_rows.append([
-                InlineKeyboardButton(
-                    text=f"📥 В аптечку: {k.name[:25]}",
-                    callback_data=f"dm_kit:{scan_id}:{k.id}",
-                )
-            ])
-        if not kits:
-            lines.append("_(У вас пока нет созданных аптечек. Создайте аптечку на сайте в разделе медикаментов)_")
-
-        kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
-        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+        await process_datamatrix_scan(message, user, results)
 
     @main_router.callback_query(F.data.startswith("dm_kit:"))
     async def inline_datamatrix_add_to_kit(callback: types.CallbackQuery):
