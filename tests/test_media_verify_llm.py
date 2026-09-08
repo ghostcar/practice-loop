@@ -91,7 +91,9 @@ def _make_llm_config(db: AsyncSession, user: User) -> LLMProviderConfig:
 
 
 def _fake_call_llm(content: str, usage_tokens: int = 15) -> object:
-    async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+    async def fake_call_llm(
+        config, system_prompt, user_message, tools=None, json_mode=True, images=None, db=None, user_id=None
+    ):
         assert images, "vision path must pass image parts"
         return {
             "content": content,

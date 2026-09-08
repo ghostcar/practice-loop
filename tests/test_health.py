@@ -370,7 +370,9 @@ async def test_settings_save_llm_mode(auth_client, test_user, db_session):
 def _fake_llm(payload: dict):
     import json as _json
 
-    async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+    async def fake_call_llm(
+        config, system_prompt, user_message, tools=None, json_mode=True, images=None, db=None, user_id=None
+    ):
         return {
             "content": _json.dumps(payload),
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cost": 0.001},

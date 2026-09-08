@@ -47,7 +47,10 @@ async def verify_task_photo(
             {"role": "user", "content": user_prompt},
         ]
 
-        res = await call_llm(config=llm_config, messages=messages)
+        from app.llm.client import set_call_meta
+
+        set_call_meta(section="agent", purpose="photo_verify")
+        res = await call_llm(config=llm_config, messages=messages, db=db, user_id=user_id)
         content = res.get("content", "{}")
 
         return {

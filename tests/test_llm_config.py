@@ -146,3 +146,135 @@ async def test_delete_nonexistent_config(auth_client: AsyncClient):
         follow_redirects=False,
     )
     assert response.status_code == 404
+
+
+# ──── ADR-191: LLM call logs + stale portal id tolerance ────
+
+
+@pytest.mark.asyncio
+async def test_call_llm_writes_log_on_success(auth_client, test_user, db_session, monkeypatch):
+    import app.llm.client as llm_client
+    from app.models.llm_config import LLMCallLog, LLMProviderConfig
+
+    cfg = LLMProviderConfig(user_id=test_user.id, provider_name="TestLLM", api_base_url="http://x/v1", model_name="m1")
+    db_session.add(cfg)
+    await db_session.flush()
+
+    class FakeMsg:
+        content = '{"ok": true}'
+        tool_calls = None
+
+    class FakeResp:
+        choices = [type("C", (), {"message": FakeMsg()})()]
+        usage = type("U", (), {"prompt_tokens": 5, "completion_tokens": 7, "total_tokens": 12})()
+
+    class FakeCompletions:
+        async def create(self, **kwargs):
+            return FakeResp()
+
+    class FakeClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(llm_client, "AsyncOpenAI", FakeClient)
+
+    llm_client.set_call_meta(section="tests", purpose="unit")
+    result = await llm_client.call_llm(cfg, "sys", "user", db=db_session, user_id=test_user.id)
+    assert result["content"] == '{"ok": true}'
+
+    logs = (await db_session.execute(select(LLMCallLog).where(LLMCallLog.user_id == test_user.id))).scalars().all()
+    assert len(logs) == 1
+    log = logs[0]
+    assert log.status == "ok"
+    assert log.total_tokens == 12
+    assert log.section == "tests"
+    assert log.purpose == "unit"
+    assert log.provider_name == "TestLLM"
+
+
+@pytest.mark.asyncio
+async def test_call_llm_writes_log_on_error(auth_client, test_user, db_session, monkeypatch):
+    import app.llm.client as llm_client
+    from app.models.llm_config import LLMCallLog, LLMProviderConfig
+
+    cfg = LLMProviderConfig(user_id=test_user.id, provider_name="BadLLM", api_base_url="http://x/v1", model_name="m1")
+    db_session.add(cfg)
+    await db_session.flush()
+
+    class FakeCompletions:
+        async def create(self, **kwargs):
+            raise RuntimeError("connection refused")
+
+    class FakeClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(llm_client, "AsyncOpenAI", FakeClient)
+
+    with pytest.raises(RuntimeError):
+        await llm_client.call_llm(cfg, "sys", "user", db=db_session, user_id=test_user.id)
+
+    logs = (await db_session.execute(select(LLMCallLog).where(LLMCallLog.user_id == test_user.id))).scalars().all()
+    assert len(logs) == 1
+    log = logs[0]
+    assert log.status == "error"
+    assert "connection refused" in (log.error_message or "")
+
+
+@pytest.mark.asyncio
+async def test_llm_logs_page_and_json(auth_client, test_user, db_session):
+    from app.models.llm_config import LLMCallLog
+
+    db_session.add(
+        LLMCallLog(
+            user_id=test_user.id,
+            provider_name="P",
+            model_name="m",
+            status="error",
+            error_message="boom",
+            section="tasks",
+            purpose="task_generation",
+            total_tokens=0,
+        )
+    )
+    await db_session.flush()
+
+    page = await auth_client.get("/llm-configs/logs")
+    assert page.status_code == 200
+    assert "Журнал вызовов LLM" in page.text or "LLM Call Logs" in page.text
+    assert "boom" in page.text
+
+    js = await auth_client.get("/llm-configs/logs/json?status_filter=error")
+    assert js.status_code == 200
+    data = js.json()
+    assert data["status"] == "ok"
+    assert any(entry["error_message"] == "boom" for entry in data["logs"])
+
+    js_all = await auth_client.get("/llm-configs/logs/json?status_filter=ok")
+    assert all(entry["status"] == "ok" for entry in js_all.json()["logs"])
+
+    # JSON parity under /api/v2
+    js_v2 = await auth_client.get("/api/v2/llm/logs?status_filter=error")
+    assert js_v2.status_code == 200
+    assert js_v2.json()["status"] == "ok"
+    assert any(entry["error_message"] == "boom" for entry in js_v2.json()["logs"])
+
+
+def test_portal_config_stale_id_fallback():
+    from app.llm.portal import get_portal_providers
+    from app.llm.resolver import _portal_config_from_env
+
+    providers = get_portal_providers()
+    if not providers:
+        pytest.skip("No portal providers configured in test env")
+    first = providers[0]
+    stale_id = f"{first.id} (local)"
+    cfg = _portal_config_from_env(stale_id, first.models[0].name if first.models else "m")
+    assert cfg is not None
+    assert cfg.provider_name == first.name

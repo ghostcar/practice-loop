@@ -1,11 +1,29 @@
 """OpenAI-compatible LLM client — configured from LLMProviderConfig (BYOK)."""
 
+import logging
+import time
+import uuid
 from typing import Any
 
 from openai import AsyncOpenAI
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.encryption import decrypt_api_key
 from app.models.llm_config import LLMProviderConfig
+
+logger = logging.getLogger(__name__)
+
+# Section/purpose of the current call, set by pipeline wrappers so the call
+# log knows who asked. Kept as module state because call_llm's signature is
+# frozen across many call-sites; wrappers always set it right before calling.
+_last_call_meta: dict[str, str | None] = {"section": None, "purpose": None}
+
+
+def set_call_meta(section: str | None = None, purpose: str | None = None) -> None:
+    """Attach section/purpose metadata to the next call_llm invocation."""
+    _last_call_meta["section"] = (section or "")[:50] or None
+    _last_call_meta["purpose"] = (purpose or "")[:60] or None
+
 
 # Vision (image parts) support — Step 7, ADR-075.
 # Omniroute routes image_url parts to vision-capable models (verified with
@@ -67,12 +85,23 @@ async def call_llm(
     tools: list[dict] | None = None,
     json_mode: bool = True,
     images: list[str] | None = None,
+    db: AsyncSession | None = None,
+    user_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     """Call the LLM via OpenAI-compatible API. Returns {'content': ..., 'usage': ...}.
 
     ``images`` — data URLs (data:image/...;base64,...) appended to the user
     message as image parts (vision, ADR-075). Max MAX_IMAGE_PARTS images.
+
+    When ``db`` + ``user_id`` are provided, the call is recorded into
+    ``llm_call_logs`` (ADR-191) — success or failure, with latency and a
+    truncated error message. Errors still propagate to the caller.
     """
+    started = time.monotonic()
+    section = _last_call_meta.get("section")
+    purpose = _last_call_meta.get("purpose")
+    _last_call_meta["section"] = None
+    _last_call_meta["purpose"] = None
 
     api_key = decrypt_api_key(config.api_key_encrypted) if config.api_key_encrypted else "not-needed"
 
@@ -106,7 +135,24 @@ async def call_llm(
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
 
-    response = await client.chat.completions.create(**kwargs)
+    try:
+        response = await client.chat.completions.create(**kwargs)
+    except Exception as exc:
+        duration_ms = int((time.monotonic() - started) * 1000)
+        if db is not None and user_id is not None:
+            await _log_call(
+                db,
+                user_id=user_id,
+                config=config,
+                capability="vision" if images else "text",
+                section=section,
+                purpose=purpose,
+                status="error",
+                error_message=str(exc)[:1000],
+                usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "cost": 0.0},
+                duration_ms=duration_ms,
+            )
+        raise
 
     message = response.choices[0].message
     content = message.content or ""
@@ -125,6 +171,21 @@ async def call_llm(
     )
     usage["cost"] = cost
 
+    duration_ms = int((time.monotonic() - started) * 1000)
+    if db is not None and user_id is not None:
+        await _log_call(
+            db,
+            user_id=user_id,
+            config=config,
+            capability="vision" if images else "text",
+            section=section,
+            purpose=purpose,
+            status="ok",
+            error_message=None,
+            usage=usage,
+            duration_ms=duration_ms,
+        )
+
     return {
         "content": content,
         "usage": usage,
@@ -136,3 +197,46 @@ async def call_llm(
             for tc in (message.tool_calls or [])
         ],
     }
+
+
+async def _log_call(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    config: LLMProviderConfig,
+    capability: str,
+    section: str | None,
+    purpose: str | None,
+    status: str,
+    error_message: str | None,
+    usage: dict[str, Any],
+    duration_ms: int,
+) -> None:
+    """Persist one LLM invocation into llm_call_logs (best-effort, ADR-191)."""
+    from decimal import Decimal
+
+    from app.models.llm_config import LLMCallLog
+
+    try:
+        cost = usage.get("cost") or 0.0
+        db.add(
+            LLMCallLog(
+                user_id=user_id,
+                config_id=getattr(config, "id", None),
+                provider_name=config.provider_name,
+                model_name=config.model_name,
+                capability=capability,
+                section=section,
+                purpose=purpose,
+                status=status,
+                error_message=error_message,
+                prompt_tokens=int(usage.get("prompt_tokens") or 0),
+                completion_tokens=int(usage.get("completion_tokens") or 0),
+                total_tokens=int(usage.get("total_tokens") or 0),
+                cost=Decimal(str(cost)),
+                duration_ms=duration_ms,
+            )
+        )
+        await db.flush()
+    except Exception:  # noqa: BLE001 — лог не должен ломать основной вызов
+        logger.warning("Failed to write llm_call_log", exc_info=True)

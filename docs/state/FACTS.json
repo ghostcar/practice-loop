@@ -3,7 +3,7 @@
     "checked_at": "2026-09-08T02:21:34Z",
     "command": "alembic heads",
     "heads": [
-      "098_substitution_daily_limit"
+      "099_llm_call_logs"
     ]
   },
   "artifacts": [],
@@ -12,7 +12,7 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
+    "diff_hash": "sha256:9c84863a12bd5b2f7a0eb43c07f6bcea8bddf48ffaa138a4c7d7cb7c658178ae",
     "dirty": true,
     "head": "553ccb91870392260873afe891de35d573c27737"
   },

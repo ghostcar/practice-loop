@@ -269,6 +269,7 @@ app.include_router(verification_router)
 
 from app.api.account import router as account_router  # noqa: E402
 from app.api.auth import router as auth_router  # noqa: E402
+from app.api.llm_configs import json_router as llm_configs_json_router  # noqa: E402
 from app.api.llm_configs import router as llm_configs_router  # noqa: E402
 from app.api.onboarding import router as onboarding_router  # noqa: E402
 from app.api.profile import router as profile_router  # noqa: E402
@@ -286,6 +287,7 @@ app.include_router(tokens_router)
 # User-owned LLM provider settings are a platform capability and must remain
 # available in every product variant, independently of Tracker routes.
 app.include_router(llm_configs_router)
+app.include_router(llm_configs_json_router)
 
 from app.api.admin_tiers import router as admin_tiers_router  # noqa: E402
 from app.api.billing import router as billing_router  # noqa: E402

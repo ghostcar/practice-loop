@@ -22,7 +22,9 @@ TODAY = date.today()
 
 
 def _fake_llm(payload: dict):
-    async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+    async def fake_call_llm(
+        config, system_prompt, user_message, tools=None, json_mode=True, images=None, db=None, user_id=None
+    ):
         return {
             "content": _json.dumps(payload),
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cost": 0.001},
@@ -156,7 +158,9 @@ async def test_run_analysis_no_llm_config(auth_client, test_user, db_session):
 async def test_run_analysis_llm_failure_marks_failed(auth_client, test_user, db_session, monkeypatch):
     from app.llm import client
 
-    async def failing_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+    async def failing_llm(
+        config, system_prompt, user_message, tools=None, json_mode=True, images=None, db=None, user_id=None
+    ):
         raise ValueError("boom")
 
     monkeypatch.setattr(client, "call_llm", failing_llm)

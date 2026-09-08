@@ -107,7 +107,10 @@ async def create_proposal(
 
     # Call LLM
     try:
-        result = await call_llm(config, SYSTEM_PROMPT, user_prompt, json_mode=True)
+        from app.llm.client import set_call_meta
+
+        set_call_meta(section="timer", purpose="locktimer_proposal")
+        result = await call_llm(config, SYSTEM_PROMPT, user_prompt, json_mode=True, db=db, user_id=current_user.id)
     except Exception as exc:
         logger.warning("LLM proposal generation failed: %s", exc)
         raise HTTPException(503, f"LLM provider unavailable: {exc}") from exc

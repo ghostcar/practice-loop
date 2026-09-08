@@ -113,11 +113,14 @@ async def generate_daily_plan(
         f"Generate a daily training plan for {target_date}."
     )
 
+    client.set_call_meta(section="training", purpose="daily_plan")
     result = await client.call_llm(
         config=llm_config,
         system_prompt=system_prompt,
         user_message=user_message,
         json_mode=True,
+        db=db,
+        user_id=user_id,
     )
     raw_response = result["content"]
     usage = result["usage"]
@@ -261,11 +264,14 @@ async def analyze_training_day(
     system_prompt = ANALYZE_DAY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = f"Day results:\n{day_text}\n\nProvide analysis."
 
+    client.set_call_meta(section="training", purpose="day_analysis")
     analysis_result = await client.call_llm(
         config=llm_config,
         system_prompt=system_prompt,
         user_message=user_message,
         json_mode=True,
+        db=db,
+        user_id=training_day.user_id,
     )
     analysis_parsed = parse_llm_json(analysis_result["content"], is_last_attempt=True)
     analysis_summary = analysis_parsed.get("analysis", "Day completed.")
@@ -275,11 +281,14 @@ async def analyze_training_day(
     next_system = SUGGEST_NEXT_DAY_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     next_message = f"Today's results:\n{day_text}\n\nAnalysis: {analysis_summary}\n\nSuggest tomorrow's plan."
 
+    client.set_call_meta(section="training", purpose="next_day_suggestion")
     next_result = await client.call_llm(
         config=llm_config,
         system_prompt=next_system,
         user_message=next_message,
         json_mode=True,
+        db=db,
+        user_id=training_day.user_id,
     )
     next_parsed = parse_llm_json(next_result["content"], is_last_attempt=True)
     usage_n = next_result["usage"]

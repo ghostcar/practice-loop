@@ -145,12 +145,15 @@ async def generate_task(
     for attempt in range(MAX_RETRIES):
         is_last = attempt == MAX_RETRIES - 1
         try:
+            client.set_call_meta(section="tasks", purpose="task_generation")
             result = await client.call_llm(
                 config=llm_config,
                 system_prompt=system_prompt,
                 user_message=user_message,
                 tools=TOOLS,
                 json_mode=True,
+                db=db,
+                user_id=user_id,
             )
             raw_response = result["content"]
             usage = result["usage"]
@@ -304,8 +307,14 @@ async def generate_weekly_tasks(
         f"Generate exactly ONE task per day ({days} tasks total)."
     )
 
+    client.set_call_meta(section="tasks", purpose="weekly_tasks")
     result = await client.call_llm(
-        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+        config=llm_config,
+        system_prompt=system_prompt,
+        user_message=user_message,
+        json_mode=True,
+        db=db,
+        user_id=user_id,
     )
     raw_response = result["content"]
     usage = result["usage"]

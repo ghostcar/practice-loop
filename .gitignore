@@ -73,6 +73,7 @@ node_modules/
 
 # Database backups (production dumps)
 backups/
+*.dump
 
 # Local secrets backups (never commit)
 .env.bak*

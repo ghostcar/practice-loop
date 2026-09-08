@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
@@ -12,7 +12,7 @@ from app.i18n import get_translations
 from app.i18n.helpers import detect_locale, detect_theme
 from app.llm.client import check_llm_connection
 from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider, LLMUserSelection
-from app.models.llm_config import LLMProviderConfig
+from app.models.llm_config import LLMCallLog, LLMProviderConfig
 from app.models.user import User
 from app.templates_setup import templates
 
@@ -458,3 +458,133 @@ async def delete_llm_config(
     await db.flush()
 
     return RedirectResponse(url="/llm-configs/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# --- LLM call logs (ADR-191) ---
+
+
+@router.get("/logs", response_class=HTMLResponse)
+async def llm_logs_page(
+    request: Request,
+    status_filter: str = "",
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """LLM call journal: every invocation with status, tokens, latency, errors."""
+    locale = detect_locale(request, user.locale)
+    theme = detect_theme(user.theme)
+    t = get_translations(locale)
+
+    query = select(LLMCallLog).where(LLMCallLog.user_id == user.id).order_by(LLMCallLog.created_at.desc()).limit(200)
+    if status_filter in ("ok", "error"):
+        query = query.where(LLMCallLog.status == status_filter)
+    rows = (await db.execute(query)).scalars().all()
+
+    stats = {"ok": 0, "error": 0, "tokens": 0, "cost": 0.0}
+    stats_result = await db.execute(
+        select(
+            LLMCallLog.status,
+            func.count(LLMCallLog.id),
+            func.coalesce(func.sum(LLMCallLog.total_tokens), 0),
+            func.coalesce(func.sum(LLMCallLog.cost), 0),
+        )
+        .where(LLMCallLog.user_id == user.id)
+        .group_by(LLMCallLog.status)
+    )
+    for row_status, cnt, tokens, cost in stats_result.all():
+        stats[row_status] = cnt
+        stats["tokens"] += int(tokens or 0)
+        stats["cost"] += float(cost or 0)
+
+    logs = [
+        {
+            "id": str(row.id),
+            "created_at": row.created_at,
+            "provider_name": row.provider_name,
+            "model_name": row.model_name,
+            "capability": row.capability,
+            "section": row.section,
+            "purpose": row.purpose,
+            "status": row.status,
+            "error_message": row.error_message,
+            "total_tokens": row.total_tokens,
+            "cost": float(row.cost or 0),
+            "duration_ms": row.duration_ms,
+        }
+        for row in rows
+    ]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="llm_logs.html",
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "logs": logs,
+            "stats": stats,
+            "status_filter": status_filter,
+        },
+    )
+
+
+@router.get("/logs/json")
+async def llm_logs_json(
+    status_filter: str = "",
+    limit: int = 100,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """JSON parity for the LLM call journal (mobile/API)."""
+    return await _fetch_llm_logs_json(db, user.id, status_filter, limit)
+
+
+# --- JSON parity (mobile/API) ---
+
+json_router = APIRouter(prefix="/api/v2/llm", tags=["llm-configs"])
+
+
+@json_router.get("/logs")
+async def llm_logs_json_v2(
+    status_filter: str = "",
+    limit: int = 100,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """JSON parity: LLM call journal under /api/v2."""
+    return await _fetch_llm_logs_json(db, user.id, status_filter, limit)
+
+
+async def _fetch_llm_logs_json(db: AsyncSession, user_id: uuid.UUID, status_filter: str, limit: int):
+    limit = max(1, min(limit, 500))
+    query = (
+        select(LLMCallLog)
+        .where(LLMCallLog.user_id == user_id)
+        .order_by(LLMCallLog.created_at.desc())
+        .limit(limit)
+    )
+    if status_filter in ("ok", "error"):
+        query = query.where(LLMCallLog.status == status_filter)
+    rows = (await db.execute(query)).scalars().all()
+    return {
+        "status": "ok",
+        "logs": [
+            {
+                "id": str(row.id),
+                "created_at": row.created_at.isoformat(),
+                "provider_name": row.provider_name,
+                "model_name": row.model_name,
+                "capability": row.capability,
+                "section": row.section,
+                "purpose": row.purpose,
+                "status": row.status,
+                "error_message": row.error_message,
+                "total_tokens": row.total_tokens,
+                "cost": float(row.cost or 0),
+                "duration_ms": row.duration_ms,
+            }
+            for row in rows
+        ],
+    }

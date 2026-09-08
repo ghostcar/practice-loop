@@ -51,8 +51,14 @@ async def generate_diet(
     system_prompt = DIET_GENERATE_SYSTEM.format(locale=locale) + llm_mode_hint(llm_mode)
     user_message = f"Direction/goal: {user_goal}\n\nCreate a daily diet plan."
 
+    client.set_call_meta(section="diet", purpose="diet_generate")
     result = await client.call_llm(
-        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+        config=llm_config,
+        system_prompt=system_prompt,
+        user_message=user_message,
+        json_mode=True,
+        db=db,
+        user_id=user_id,
     )
     raw_response = result["content"]
     usage = result["usage"]
@@ -154,8 +160,14 @@ async def evaluate_diet(
         "Evaluate adherence and suggest plan adjustments."
     )
 
+    client.set_call_meta(section="diet", purpose="diet_evaluate")
     result = await client.call_llm(
-        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+        config=llm_config,
+        system_prompt=system_prompt,
+        user_message=user_message,
+        json_mode=True,
+        db=db,
+        user_id=diet.user_id,
     )
     raw_response = result["content"]
     usage = result["usage"]
@@ -335,8 +347,14 @@ async def analyze_diet_training_synergy(
         "Analyze the mutual influence between nutrition and training."
     )
 
+    client.set_call_meta(section="diet", purpose="diet_synergy")
     result = await client.call_llm(
-        config=llm_config, system_prompt=system_prompt, user_message=user_message, json_mode=True
+        config=llm_config,
+        system_prompt=system_prompt,
+        user_message=user_message,
+        json_mode=True,
+        db=db,
+        user_id=user_id,
     )
     usage = result["usage"]
     parsed = parse_llm_json(result["content"], is_last_attempt=True)

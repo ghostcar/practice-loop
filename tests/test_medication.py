@@ -1383,7 +1383,9 @@ async def test_find_analogs_llm_saves_and_sanitizes(auth_client, test_user, db_s
     await _make_llm_config(db_session, test_user)
     from app.llm import client as llm_client
 
-    async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+    async def fake_call_llm(
+        config, system_prompt, user_message, tools=None, json_mode=True, images=None, db=None, user_id=None
+    ):
         assert "Парацетамол" in user_message
         return {"content": _analogs_llm_payload(), "usage": {"total_tokens": 42}}
 
@@ -1450,7 +1452,9 @@ async def test_find_analogs_garbage_llm_yields_empty(auth_client, test_user, db_
     await _make_llm_config(db_session, test_user)
     from app.llm import client as llm_client
 
-    async def garbage_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+    async def garbage_call_llm(
+        config, system_prompt, user_message, tools=None, json_mode=True, images=None, db=None, user_id=None
+    ):
         return {"content": "не JSON вообще", "usage": {"total_tokens": 3}}
 
     monkeypatch.setattr(llm_client, "call_llm", garbage_call_llm)
@@ -1521,3 +1525,59 @@ async def test_create_med_with_daily_max_seeds_substance(auth_client, test_user,
     assert float(sub.daily_max_amt) == 4
     assert sub.daily_max_unit == "г"
     assert sub.daily_max_note == "Максимум 4 г/сут"
+
+
+# ──── ADR-191: medication card edit form (view/edit) ────
+
+
+@pytest.mark.asyncio
+async def test_med_card_edit_form_renders(auth_client, test_user, db_session):
+    """The medications page shows a per-card edit form pre-filled with med data."""
+    resp = await auth_client.post(
+        "/medications",
+        data={
+            "name": "Редактируемый",
+            "kind": "medication",
+            "form": "таблетки",
+            "strength": "500 мг",
+            "components": '[{"substance":"Парацетамол","amount":500,"unit":"мг"}]',
+        },
+    )
+    assert resp.status_code == 303
+    page = await auth_client.get("/medications")
+    html = page.text
+    assert "med-edit-form" in html
+    assert 'value="Редактируемый"' in html
+    assert "med-edit-comp-row" in html
+    assert "/update" in html
+
+
+@pytest.mark.asyncio
+async def test_med_card_edit_submits(auth_client, test_user, db_session):
+    """POST /medications/{id}/update applies the edit-form fields incl. composition."""
+    resp = await auth_client.post(
+        "/medications",
+        data={"name": "Было", "kind": "medication"},
+    )
+    assert resp.status_code == 303
+    meds = (await db_session.execute(select(Medication).where(Medication.name == "Было"))).scalars().all()
+    med = meds[0]
+
+    resp2 = await auth_client.post(
+        f"/medications/{med.id}/update",
+        data={
+            "name": "Стало",
+            "kind": "medication",
+            "form": "капсулы",
+            "strength": "250 мг",
+            "is_active": "1",
+            "components": '[{"substance":"Ибупрофен","amount":250,"unit":"мг"}]',
+        },
+    )
+    assert resp2.status_code == 303
+    await db_session.refresh(med)
+    assert med.name == "Стало"
+    assert med.form == "капсулы"
+    comps = (await db_session.execute(select(MedComponent).where(MedComponent.medication_id == med.id))).scalars().all()
+    assert len(comps) == 1
+    assert comps[0].substance.name == "Ибупрофен"

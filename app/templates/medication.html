@@ -633,6 +633,75 @@
                 </ul>
                 {% endif %}
 
+                <!-- Edit medication (ADR-191: view/edit card) -->
+                <details class="text-sm" data-med-edit>
+                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('settings', 'w-3.5 h-3.5') }}{{ t.med_edit_card }}</summary>
+                    <form action="/medications/{{ m.id }}/update" method="post" class="med-edit-form mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <label class="text-xs pl-text-secondary">* {{ t.med_name }}
+                            <input type="text" name="name" required value="{{ m.name }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_kind }}
+                            <select name="kind" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                                {% for k in kinds %}<option value="{{ k }}" {% if k == m.kind %}selected{% endif %}>{{ t['med_kind_' + k] if t.get('med_kind_' + k) else k }}</option>{% endfor %}
+                            </select>
+                        </label>
+                        <div class="sm:col-span-2 space-y-1.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs pl-text-secondary">{{ t.med_composition }}</span>
+                                <button type="button" class="med-edit-add-comp px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('plus', 'w-3 h-3') }}{{ t.med_comp_add }}</button>
+                            </div>
+                            <div class="med-edit-comp-rows space-y-1.5">
+                                {% for c in m.components %}
+                                <div class="med-edit-comp-row grid grid-cols-12 gap-1.5 items-center">
+                                    <input type="text" list="med-substance-list" value="{{ c.substance }}" placeholder="{{ t.med_comp_substance_ph }}" class="med-edit-comp-substance col-span-5 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                                    <input type="number" step="any" value="{{ c.amount if c.amount is not none else '' }}" placeholder="{{ t.med_comp_dose_ph }}" class="med-edit-comp-amount col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                                    <input type="text" value="{{ c.unit or '' }}" placeholder="{{ t.med_comp_unit_ph }}" class="med-edit-comp-unit col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                                    <input type="text" value="{{ c.variant or '' }}" placeholder="{{ t.med_comp_variant_ph }}" class="med-edit-comp-variant col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                                    <button type="button" aria-label="{{ t.med_comp_remove }}" class="med-edit-comp-del col-span-1 inline-flex items-center justify-center text-[color:var(--text-muted)] min-h-[36px]">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="components" value="[]" class="med-edit-components-json">
+                            <p class="text-[11px] pl-text-muted">{{ t.med_comp_hint }}</p>
+                        </div>
+                        <label class="text-xs pl-text-secondary">{{ t.med_form }}
+                            <input type="text" name="form" value="{{ m.form or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_strength }}
+                            <input type="text" name="strength" value="{{ m.strength or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">Производитель / Бренд
+                            <input type="text" name="manufacturer" value="{{ m.manufacturer or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">Условия хранения
+                            <input type="text" name="storage_conditions" value="{{ m.storage_conditions or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary">{{ t.med_unit }}
+                            <input type="text" name="unit" value="{{ m.unit or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
+                            <input type="checkbox" name="prescription_required" value="1" {% if m.prescription_required %}checked{% endif %} class="w-4 h-4">
+                            По рецепту (Rx)
+                        </label>
+                        <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4" title="{{ t.med_ul_override_hint }}">
+                            <input type="checkbox" name="allow_ul_override" value="1" {% if m.allow_ul_override %}checked{% endif %} class="w-4 h-4">
+                            {{ t.med_ul_override }}
+                        </label>
+                        <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
+                            <input type="checkbox" name="is_active" value="1" {% if m.is_active %}checked{% endif %} class="w-4 h-4">
+                            {{ t.med_is_active if t.get('med_is_active') else 'Активен' }}
+                        </label>
+                        <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_instructions }}
+                            <input type="text" name="instructions" value="{{ m.instructions or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_notes }}
+                            <input type="text" name="notes" value="{{ m.notes or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
+                        </label>
+                        <button type="submit" class="sm:col-span-2 pl-accent-bg px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1 min-h-[40px]">{{ icon('save', 'w-3.5 h-3.5') }}{{ t.med_save }}</button>
+                    </form>
+                </details>
+
                 <!-- Add stock + schedule (collapsible) -->
                 <details class="text-sm">
                     <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('plus', 'w-3.5 h-3.5') }}{{ t.med_add_stock }} / {{ t.med_add_schedule }}</summary>
@@ -735,7 +804,8 @@ document.addEventListener('DOMContentLoaded', function() {
         dosePh: "{{ t.med_comp_dose_ph }}",
         unitPh: "{{ t.med_comp_unit_ph }}",
         variantPh: "{{ t.med_comp_variant_ph }}",
-        remove: "{{ t.med_comp_remove }}"
+        remove: "{{ t.med_comp_remove }}",
+        active: "{{ t.med_is_active if t.get('med_is_active') else 'Активен' }}"
     };
 
     // ── ADR-190: состав (редактор строк вещество+доза+единица+вариант) ──
@@ -781,6 +851,52 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addCompBtn && rowsEl) {
         addCompBtn.addEventListener('click', function() { medCompAddRow(); });
     }
+
+    // ── ADR-191: редактирование карточки препарата (состав → JSON) ──
+    document.querySelectorAll('details[data-med-edit]').forEach(function(details) {
+        const form = details.querySelector('.med-edit-form');
+        if (!form) return;
+        const rows = form.querySelector('.med-edit-comp-rows');
+        const json = form.querySelector('.med-edit-components-json');
+        function serialize() {
+            const out = [];
+            rows.querySelectorAll('.med-edit-comp-row').forEach(function(tr) {
+                const sub = tr.querySelector('.med-edit-comp-substance').value.trim();
+                if (!sub) return;
+                const raw = tr.querySelector('.med-edit-comp-amount').value.trim();
+                const amount = raw === '' ? null : Number(raw);
+                out.push({
+                    substance: sub,
+                    amount: (amount !== null && !isNaN(amount)) ? amount : null,
+                    unit: tr.querySelector('.med-edit-comp-unit').value.trim() || null,
+                    variant: tr.querySelector('.med-edit-comp-variant').value.trim() || null
+                });
+            });
+            json.value = JSON.stringify(out);
+        }
+        function addRow(data) {
+            data = data || {};
+            const div = document.createElement('div');
+            div.className = 'med-edit-comp-row grid grid-cols-12 gap-1.5 items-center';
+            const esc = function(v) { return String(v == null ? '' : v).replace(/"/g, '&quot;'); };
+            div.innerHTML =
+                '<input type="text" list="med-substance-list" placeholder="' + L.subPh + '" value="' + esc(data.substance) + '" class="med-edit-comp-substance col-span-5 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+                '<input type="number" step="any" value="' + esc(data.amount) + '" placeholder="' + L.dosePh + '" class="med-edit-comp-amount col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+                '<input type="text" value="' + esc(data.unit) + '" placeholder="' + L.unitPh + '" class="med-edit-comp-unit col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+                '<input type="text" value="' + esc(data.variant) + '" placeholder="' + L.variantPh + '" class="med-edit-comp-variant col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+                '<button type="button" aria-label="' + L.remove + '" class="med-edit-comp-del col-span-1 inline-flex items-center justify-center text-[color:var(--text-muted)] min-h-[36px]">×</button>';
+            div.querySelector('.med-edit-comp-del').addEventListener('click', function() { div.remove(); serialize(); });
+            div.querySelectorAll('input').forEach(function(el) { el.addEventListener('input', serialize); });
+            rows.appendChild(div);
+            serialize();
+        }
+        form.querySelector('.med-edit-add-comp').addEventListener('click', function() { addRow(); });
+        rows.querySelectorAll('.med-edit-comp-del').forEach(function(btn) {
+            btn.addEventListener('click', function() { btn.closest('.med-edit-comp-row').remove(); serialize(); });
+        });
+        rows.querySelectorAll('.med-edit-comp-row input').forEach(function(el) { el.addEventListener('input', serialize); });
+        serialize();
+    });
 
     // ── Автопоиск по наименованию → поля формы + состав ──
     const autofillBtn = document.getElementById('btn-autofill-pharma');

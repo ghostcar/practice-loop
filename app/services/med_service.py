@@ -2367,12 +2367,17 @@ async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid
         raise ValueError("no_llm")
 
     user_msg = f"Препарат: {m.name}\nСостав: {composition}\nФорма: {m.form or '—'}\nДозировка: {m.strength or '—'}"
+    from app.llm.client import set_call_meta
+
+    set_call_meta(section="medication", purpose="analogs_search")
     try:
         result = await call_llm(
             config,
             system_prompt=_ANALOGS_SYSTEM.replace("{locale}", locale),
             user_message=user_msg,
             json_mode=True,
+            db=db,
+            user_id=user_id,
         )
     except Exception as exc:  # noqa: BLE001 — сеть/провайдер: честный отказ, без заглушек
         logger.warning("LLM analogs call failed for med %s: %s", medication_id, exc)

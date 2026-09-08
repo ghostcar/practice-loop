@@ -105,10 +105,12 @@ async def generate_from_template(
             db, user_id, llm_config, template, params, locale, session_id, llm_mode
         )
 
-    return await _generate_text_from_template(llm_config, template, params, locale, llm_mode)
+    return await _generate_text_from_template(db, user_id, llm_config, template, params, locale, llm_mode)
 
 
 async def _generate_text_from_template(
+    db: AsyncSession,
+    user_id: uuid.UUID,
     llm_config: LLMProviderConfig,
     template: PromptTemplate,
     params: dict,
@@ -129,11 +131,14 @@ async def _generate_text_from_template(
     for attempt in range(MAX_RETRIES):
         is_last = attempt == MAX_RETRIES - 1
         try:
+            client.set_call_meta(section="templates", purpose="template_text")
             result = await client.call_llm(
                 config=llm_config,
                 system_prompt=system_prompt,
                 user_message=user_message,
                 json_mode=False,
+                db=db,
+                user_id=user_id,
             )
             raw_response = result["content"]
             usage = result["usage"]
@@ -179,12 +184,15 @@ async def _generate_task_from_template(
     for attempt in range(MAX_RETRIES):
         is_last = attempt == MAX_RETRIES - 1
         try:
+            client.set_call_meta(section="templates", purpose="template_task")
             result = await client.call_llm(
                 config=llm_config,
                 system_prompt=system_prompt,
                 user_message=user_message,
                 tools=TOOLS,
                 json_mode=True,
+                db=db,
+                user_id=user_id,
             )
             raw_response = result["content"]
             usage = result["usage"]

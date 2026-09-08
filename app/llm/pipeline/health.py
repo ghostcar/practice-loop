@@ -110,11 +110,14 @@ async def analyze_labs(
             "Restate the facts and list questions for a doctor. No recommendations."
         )
 
+    client.set_call_meta(section="health", purpose="labs_analysis")
     result = await client.call_llm(
         config=llm_config,
         system_prompt=system_prompt,
         user_message=user_message,
         json_mode=True,
+        db=db,
+        user_id=user_id,
     )
     raw_response = result["content"]
     usage = result["usage"]

@@ -7,7 +7,9 @@ import uuid
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.auth import require_admin
 from app.database import get_db
@@ -61,18 +63,36 @@ async def admin_llm_pool(
     user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    providers = (await db.execute(select(LLMGlobalProvider).order_by(LLMGlobalProvider.name))).scalars().all()
+    providers = (
+        (
+            await db.execute(
+                select(LLMGlobalProvider)
+                .options(selectinload(LLMGlobalProvider.models))
+                .order_by(LLMGlobalProvider.name)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    error = request.query_params.get("error", "")
+    t = get_translations(detect_locale(request, user.locale))
+    error_msg = None
+    if error == "duplicate":
+        error_msg = t.get("admin_llm_pool_dup", "A provider with this name already exists.")
+    elif error == "duplicate_model":
+        error_msg = t.get("admin_llm_pool_dup_model", "This model is already registered for the provider.")
     return templates.TemplateResponse(
         request,
         "admin_llm_pool.html",
         {
             "request": request,
-            "t": get_translations(detect_locale(request, user.locale)),
+            "t": t,
             "user": user,
             "locale": detect_locale(request, user.locale),
             "theme": detect_theme(user.theme),
             "active_nav": "admin",
             "providers": providers,
+            "llm_pool_error": error_msg,
         },
     )
 
@@ -86,15 +106,19 @@ async def admin_create_llm_provider(
     user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    db.add(
-        LLMGlobalProvider(
-            name=name.strip(),
-            api_base_url=api_base_url.strip(),
-            supports_text=supports_text,
-            supports_vision=supports_vision,
+    try:
+        db.add(
+            LLMGlobalProvider(
+                name=name.strip(),
+                api_base_url=api_base_url.strip(),
+                supports_text=supports_text,
+                supports_vision=supports_vision,
+            )
         )
-    )
-    await db.flush()
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        return RedirectResponse(url="/admin/llm-pool?error=duplicate", status_code=303)
     return RedirectResponse(url="/admin/llm-pool", status_code=303)
 
 
@@ -110,15 +134,19 @@ async def admin_add_llm_model(
     provider = await db.scalar(select(LLMGlobalProvider).where(LLMGlobalProvider.id == provider_id))
     if provider is None:
         raise HTTPException(status_code=404, detail="Provider not found")
-    db.add(
-        LLMGlobalModel(
-            provider_id=provider.id,
-            model_name=model_name.strip(),
-            supports_text=supports_text,
-            supports_vision=supports_vision,
+    try:
+        db.add(
+            LLMGlobalModel(
+                provider_id=provider.id,
+                model_name=model_name.strip(),
+                supports_text=supports_text,
+                supports_vision=supports_vision,
+            )
         )
-    )
-    await db.flush()
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        return RedirectResponse(url=f"/admin/llm-pool?error=duplicate_model#{provider_id}", status_code=303)
     return RedirectResponse(url="/admin/llm-pool", status_code=303)
 
 

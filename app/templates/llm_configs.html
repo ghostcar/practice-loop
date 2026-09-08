@@ -18,12 +18,18 @@
  <h1 class="text-3xl font-bold text-[color:var(--text)]">{{ t.llm_providers_title }}</h1>
  <p class="text-[color:var(--text-secondary)] mt-1">{{ t.llm_subtitle }}</p>
  </div>
+ <div class="flex items-center gap-2">
  {% if user and user.role == 'admin' %}
  <a href="/admin/llm-pool"
  class="px-4 py-2 rounded-xl border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] text-sm font-medium transition-colors">
  Portal catalog
  </a>
  {% endif %}
+ <a href="/llm-configs/logs"
+ class="px-4 py-2 rounded-xl border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] text-sm font-medium transition-colors inline-flex items-center gap-1.5">
+ {{ icon('list', 'w-4 h-4') }}{{ t.llm_logs_title }}
+ </a>
+ </div>
  </div>
 
  <!-- Existing configs -->

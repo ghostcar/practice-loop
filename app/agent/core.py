@@ -58,11 +58,16 @@ async def run_practice_agent(
 
     try:
         # Call LLM with tools enabled
+        from app.llm.client import set_call_meta
+
+        set_call_meta(section="agent", purpose="agent_turn")
         llm_res = await call_llm(
             config=llm_config,
             messages=messages,
             tools=AGENT_TOOLS_SCHEMA,
             tool_choice="auto",
+            db=db,
+            user_id=user_id,
         )
 
         content = llm_res.get("content", "")
@@ -91,7 +96,8 @@ async def run_practice_agent(
                 messages.append({"role": "tool", "tool_call_id": tc.get("id", "tc_0"), "content": json.dumps(tool_res)})
 
             # Second turn to get final natural language synthesis
-            final_res = await call_llm(config=llm_config, messages=messages)
+            set_call_meta(section="agent", purpose="agent_synthesis")
+            final_res = await call_llm(config=llm_config, messages=messages, db=db, user_id=user_id)
             content = final_res.get("content", "Задание или операция обработана.")
 
         return {

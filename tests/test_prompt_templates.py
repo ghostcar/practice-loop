@@ -89,7 +89,7 @@ class TestTemplateEngine:
         """Text template: mock call_llm, assert content returned."""
         from app.llm import client
 
-        async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True):
+        async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, db=None, user_id=None):
             return {
                 "content": "Generated text answer",
                 "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cost": 0.001},
@@ -195,7 +195,7 @@ class TestTemplateEngine:
                 "locale": locale,
             }
 
-        async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True):
+        async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, db=None, user_id=None):
             payload = {
                 "entity_id": str(entity_id),
                 "entity_name": "Test Activity",

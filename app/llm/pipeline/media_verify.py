@@ -162,12 +162,15 @@ async def verify_media_with_llm(
     if locale:
         user_prompt += f"\nRespond in {locale} language."
 
+    client.set_call_meta(section="media", purpose="media_verify")
     result = await client.call_llm(
         config=llm_config,
         system_prompt=SYSTEM_PROMPT,
         user_message=user_prompt,
         json_mode=True,
         images=[image_url],
+        db=db,
+        user_id=user_id,
     )
     raw = result.get("content", "")
 

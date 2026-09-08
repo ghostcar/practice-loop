@@ -498,11 +498,14 @@ async def analyze_insights(
         "Analyze trends and cross-section connections. Do not claim causation."
     )
 
+    client.set_call_meta(section="insights", purpose="insights_analysis")
     result = await client.call_llm(
         config=llm_config,
         system_prompt=system_prompt,
         user_message=user_message,
         json_mode=True,
+        db=db,
+        user_id=user_id,
     )
     raw_response = result["content"]
     usage = result["usage"]

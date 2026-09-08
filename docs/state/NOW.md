@@ -7,7 +7,7 @@
 - **Dirty**: yes
 - **Generated at (source)**: 2026-09-08T02:21:34Z
 - **Repository**: ghostcar/practice-loop
-- **Alembic heads**: 1 (098_subs)
+- **Alembic heads**: 1 (099_llm_)
 - **Last test run**: not recorded (no real run in this manifest)
 
 > Факт подтверждает только сам manifest и его `head`. Любое использование этого

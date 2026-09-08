@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "components/icon.html" import icon %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-xs text-[color:var(--text-muted)]" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5">
+        <li><a href="/llm/templates" class="hover:text-[color:var(--text)] transition-colors">{{ t.nav_llm }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/llm-configs/" class="hover:text-[color:var(--text)] transition-colors">{{ t.llm_providers_title }}</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-[color:var(--text-secondary)] font-medium">{{ t.llm_logs_title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in space-y-5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+            <h1 class="text-3xl font-bold text-[color:var(--text)]">{{ t.llm_logs_title }}</h1>
+            <p class="text-[color:var(--text-secondary)] mt-1 text-sm">{{ t.llm_logs_subtitle }}</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="/llm-configs/" class="px-4 py-2 rounded-xl border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] text-sm font-medium inline-flex items-center gap-1.5">
+                {{ icon('settings', 'w-4 h-4') }}{{ t.llm_providers_title }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-3">
+            <div class="text-xs pl-text-muted">{{ t.llm_logs_calls_ok }}</div>
+            <div class="text-xl font-semibold text-emerald-600 dark:text-emerald-400">{{ stats.ok }}</div>
+        </div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-3">
+            <div class="text-xs pl-text-muted">{{ t.llm_logs_calls_err }}</div>
+            <div class="text-xl font-semibold {% if stats.error %}text-red-600 dark:text-red-400{% else %}text-[color:var(--text)]{% endif %}">{{ stats.error }}</div>
+        </div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-3">
+            <div class="text-xs pl-text-muted">{{ t.llm_logs_tokens }}</div>
+            <div class="text-xl font-semibold text-[color:var(--text)]">{{ stats.tokens }}</div>
+        </div>
+        <div class="pl-surface rounded-xl border border-[color:var(--border)] p-3">
+            <div class="text-xs pl-text-muted">{{ t.llm_logs_cost }}</div>
+            <div class="text-xl font-semibold text-[color:var(--text)]">${{ "%.4f" % stats.cost }}</div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="flex gap-2 text-xs">
+        <a href="/llm-configs/logs" class="px-3 py-1.5 rounded-lg border border-[color:var(--border)] {% if not status_filter %}pl-accent-bg text-[color:var(--on-accent)] border-transparent{% else %}pl-text-muted hover:bg-[color:var(--surface-soft)]{% endif %}">{{ t.llm_logs_filter_all }}</a>
+        <a href="/llm-configs/logs?status_filter=error" class="px-3 py-1.5 rounded-lg border border-[color:var(--border)] {% if status_filter == 'error' %}bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30{% else %}pl-text-muted hover:bg-[color:var(--surface-soft)]{% endif %}">{{ t.llm_logs_filter_errors }}</a>
+        <a href="/llm-configs/logs?status_filter=ok" class="px-3 py-1.5 rounded-lg border border-[color:var(--border)] {% if status_filter == 'ok' %}pl-accent-bg text-[color:var(--on-accent)] border-transparent{% else %}pl-text-muted hover:bg-[color:var(--surface-soft)]{% endif %}">{{ t.llm_logs_filter_ok }}</a>
+    </div>
+
+    <!-- Log table -->
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] overflow-hidden">
+        {% if logs %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs pl-text-muted border-b border-[color:var(--border)]">
+                        <th class="px-3 py-2 font-medium">{{ t.llm_logs_col_time }}</th>
+                        <th class="px-3 py-2 font-medium">{{ t.llm_logs_col_provider }}</th>
+                        <th class="px-3 py-2 font-medium">{{ t.llm_logs_col_section }}</th>
+                        <th class="px-3 py-2 font-medium">{{ t.llm_logs_col_status }}</th>
+                        <th class="px-3 py-2 font-medium text-right">{{ t.llm_logs_col_tokens }}</th>
+                        <th class="px-3 py-2 font-medium text-right">{{ t.llm_logs_col_ms }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in logs %}
+                    <tr class="border-b border-[color:var(--border)] last:border-0 align-top {% if l.status == 'error' %}bg-red-500/5{% endif %}">
+                        <td class="px-3 py-2 whitespace-nowrap">{{ localtime(l.created_at, '%d.%m %H:%M') }}</td>
+                        <td class="px-3 py-2">
+                            <div class="text-[color:var(--text)]">{{ l.provider_name or '—' }}</div>
+                            <div class="text-[11px] pl-text-muted font-mono">{{ l.model_name or '' }}</div>
+                        </td>
+                        <td class="px-3 py-2">
+                            <div class="text-xs text-[color:var(--text-secondary)]">{{ l.section or '—' }}</div>
+                            <div class="text-[11px] pl-text-muted">{{ l.purpose or '' }}</div>
+                        </td>
+                        <td class="px-3 py-2">
+                            {% if l.status == 'ok' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">OK</span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20">{{ t.llm_logs_status_error }}</span>
+                            {% if l.error_message %}
+                            <details class="mt-1">
+                                <summary class="cursor-pointer text-[11px] pl-text-muted">{{ t.llm_logs_show_error }}</summary>
+                                <pre class="mt-1 text-[10px] pl-text-secondary whitespace-pre-wrap break-all max-w-md">{{ l.error_message }}</pre>
+                            </details>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-right font-mono text-xs">{{ l.total_tokens }}</td>
+                        <td class="px-3 py-2 text-right font-mono text-xs">{{ l.duration_ms if l.duration_ms is not none else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-10 space-y-2">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[color:var(--surface-soft)]">{{ icon('ai', 'w-7 h-7 text-[color:var(--text-muted)]') }}</div>
+            <p class="text-sm text-[color:var(--text-secondary)]">{{ t.llm_logs_empty }}</p>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

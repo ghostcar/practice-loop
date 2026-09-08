@@ -431,11 +431,16 @@ async def _llm_enrich(db: AsyncSession, user_id: uuid.UUID, clean_name: str) -> 
         config = await get_active_llm_config(db, user_id, capability="text")
         if config is None:
             return None
+        from app.llm.client import set_call_meta
+
+        set_call_meta(section="medication", purpose="autofill_llm")
         result = await call_llm(
             config,
             system_prompt=_LLM_SYSTEM,
             user_message=f"Наименование: {clean_name}",
             json_mode=True,
+            db=db,
+            user_id=user_id,
         )
         content = (result.get("content") or "").strip()
         if not content:

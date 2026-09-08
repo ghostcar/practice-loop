@@ -19,8 +19,25 @@ def _portal_config_from_env(portal_id: str, model_name: str) -> LLMProviderConfi
 
     The env key is encrypted into ``api_key_encrypted`` so downstream callers
     that decrypt it (call_llm) work unchanged. The object is not persisted.
+
+    Stale-id tolerance (ADR-191): provider names in PORTAL_LLM_PROVIDERS_JSON
+    may change between deploys (e.g. "Omniroute (local)" → "Omniroute"), which
+    invalidates stored selection ids like ``portal:0:Omniroute (local)``. Fall
+    back to the same-index provider so a rename never silently disables LLM.
     """
-    provider = next((p for p in get_portal_providers() if p.id == portal_id), None)
+    providers = get_portal_providers()
+    provider = next((p for p in providers if p.id == portal_id), None)
+    if provider is None:
+        # Legacy suffix from earlier provider naming.
+        legacy = portal_id.removesuffix(" (local)") if portal_id else portal_id
+        provider = next((p for p in providers if p.id == legacy), None)
+    if provider is None and portal_id and portal_id.startswith("portal:"):
+        try:
+            idx = int(portal_id.split(":")[1])
+        except (IndexError, ValueError):
+            idx = None
+        if idx is not None and 0 <= idx < len(providers):
+            provider = providers[idx]
     if provider is None:
         return None
     cfg = LLMProviderConfig(
