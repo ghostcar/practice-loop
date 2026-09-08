@@ -1468,3 +1468,56 @@ async def test_find_analogs_page_redirect_with_error(auth_client, test_user, db_
     assert resp.status_code == 303
     assert "analogs_error=no_llm" in resp.headers["location"]
     assert f"med-{med_id}" in resp.headers["location"]
+
+
+# ──── ADR-190: autofill carries daily_max_* through components → substance ────
+
+
+@pytest.mark.asyncio
+async def test_components_payload_parses_daily_max(auth_client, test_user, db_session):
+    from app.services.med_service import parse_components_payload
+
+    rows = parse_components_payload(
+        [
+            {
+                "substance": "Парацетамол",
+                "inn": "Paracetamol",
+                "amount": 500,
+                "unit": "мг",
+                "daily_max_amt": 4,
+                "daily_max_unit": "г",
+                "daily_max_note": "Максимум 4 г/сут",
+            }
+        ]
+    )
+    assert rows and rows[0]["daily_max_amt"] == 4
+    assert rows[0]["daily_max_unit"] == "г"
+    assert rows[0]["daily_max_note"] == "Максимум 4 г/сут"
+
+
+@pytest.mark.asyncio
+async def test_create_med_with_daily_max_seeds_substance(auth_client, test_user, db_session):
+    payload = {
+        "name": "Тест-комплекс",
+        "components": [
+            {
+                "substance": "Парацетамол",
+                "inn": "Paracetamol",
+                "amount": 500,
+                "unit": "мг",
+                "daily_max_amt": 4,
+                "daily_max_unit": "г",
+                "daily_max_note": "Максимум 4 г/сут",
+            }
+        ],
+    }
+    resp = await auth_client.post("/api/v2/medications", json=payload)
+    assert resp.status_code == 201, resp.text
+    med_id = resp.json()["id"]
+    m = await db_session.get(Medication, uuid.UUID(med_id))
+    comp = (await db_session.execute(select(MedComponent).where(MedComponent.medication_id == m.id))).scalar_one()
+    sub = await db_session.get(MedSubstance, comp.substance_id)
+    assert sub.name == "Парацетамол"
+    assert float(sub.daily_max_amt) == 4
+    assert sub.daily_max_unit == "г"
+    assert sub.daily_max_note == "Максимум 4 г/сут"

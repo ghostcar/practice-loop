@@ -182,6 +182,9 @@ class ComponentItem(BaseModel):
     amount: float | None = None
     unit: str | None = None
     variant: str | None = None
+    daily_max_amt: float | None = None
+    daily_max_unit: str | None = None
+    daily_max_note: str | None = None
 
     def row(self) -> dict:
         return {
@@ -190,6 +193,9 @@ class ComponentItem(BaseModel):
             "amount": self.amount,
             "unit": (self.unit or "").strip() or None,
             "variant": (self.variant or "").strip() or None,
+            "daily_max_amt": self.daily_max_amt,
+            "daily_max_unit": self.daily_max_unit,
+            "daily_max_note": self.daily_max_note,
         }
 
 
@@ -566,6 +572,9 @@ def parse_components_payload(raw) -> list[dict]:
                 "amount": amount,
                 "unit": (item.get("unit") or "").strip() or None,
                 "variant": variant,
+                "daily_max_amt": item.get("daily_max_amt"),
+                "daily_max_unit": item.get("daily_max_unit"),
+                "daily_max_note": item.get("daily_max_note"),
             }
         )
     return rows
@@ -578,7 +587,14 @@ async def sync_med_components(db: AsyncSession, m: Medication, raw_components) -
     await db.execute(delete(MedVariant).where(MedVariant.medication_id == m.id))
     variant_ids: dict[str, MedVariant] = {}
     for order, row in enumerate(rows):
-        substance = await find_or_create_substance(db, name=row["substance"], inn=row.get("inn"))
+        substance = await find_or_create_substance(
+            db,
+            name=row["substance"],
+            inn=row.get("inn"),
+            daily_max_amt=row.get("daily_max_amt"),
+            daily_max_unit=row.get("daily_max_unit"),
+            daily_max_note=row.get("daily_max_note"),
+        )
         variant: MedVariant | None = None
         if row.get("variant"):
             variant = variant_ids.get(row["variant"])
