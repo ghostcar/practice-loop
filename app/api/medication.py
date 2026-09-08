@@ -156,7 +156,7 @@ async def update_medication(
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
-    return RedirectResponse(url="/medications", status_code=303)
+    return RedirectResponse(url=f"/medications#med-{medication_id}", status_code=303)
 
 
 @router.post("/medications/{medication_id}/find-analogs")

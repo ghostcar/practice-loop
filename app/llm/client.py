@@ -80,8 +80,9 @@ async def check_llm_connection(base_url: str, api_key: str | None, model_name: s
 
 async def call_llm(
     config: LLMProviderConfig,
-    system_prompt: str,
-    user_message: str,
+    system_prompt: str | None = None,
+    user_message: str | None = None,
+    messages: list[dict[str, Any]] | None = None,
     tools: list[dict] | None = None,
     json_mode: bool = True,
     images: list[str] | None = None,
@@ -89,6 +90,11 @@ async def call_llm(
     user_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     """Call the LLM via OpenAI-compatible API. Returns {'content': ..., 'usage': ...}.
+
+    Two ways to describe the conversation:
+    - ``system_prompt`` + ``user_message`` — single-turn call (the common path);
+    - ``messages`` — full OpenAI message list (multi-turn / agent tool history);
+      when provided it takes precedence over ``system_prompt``/``user_message``.
 
     ``images`` — data URLs (data:image/...;base64,...) appended to the user
     message as image parts (vision, ADR-075). Max MAX_IMAGE_PARTS images.
@@ -118,12 +124,19 @@ async def call_llm(
             parts.append({"type": "image_url", "image_url": {"url": url}})
         user_content = parts
 
-    kwargs: dict[str, Any] = {
-        "model": config.model_name,
-        "messages": [
+    if messages is not None:
+        request_messages: list[dict[str, Any]] = messages
+    elif system_prompt is not None and user_content is not None:
+        request_messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
-        ],
+        ]
+    else:
+        raise ValueError("call_llm: pass system_prompt+user_message or messages")
+
+    kwargs: dict[str, Any] = {
+        "model": config.model_name,
+        "messages": request_messages,
         "temperature": 0.7,
         "max_tokens": 2048,
     }

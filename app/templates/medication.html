@@ -671,10 +671,10 @@
                         <label class="text-xs pl-text-secondary">{{ t.med_strength }}
                             <input type="text" name="strength" value="{{ m.strength or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                         </label>
-                        <label class="text-xs pl-text-secondary">Производитель / Бренд
+                        <label class="text-xs pl-text-secondary">{{ t.med_manufacturer }}
                             <input type="text" name="manufacturer" value="{{ m.manufacturer or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                         </label>
-                        <label class="text-xs pl-text-secondary">Условия хранения
+                        <label class="text-xs pl-text-secondary">{{ t.med_storage_conditions }}
                             <input type="text" name="storage_conditions" value="{{ m.storage_conditions or '' }}" class="mt-1 w-full px-2 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[40px]">
                         </label>
                         <label class="text-xs pl-text-secondary">{{ t.med_unit }}
@@ -682,7 +682,7 @@
                         </label>
                         <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4">
                             <input type="checkbox" name="prescription_required" value="1" {% if m.prescription_required %}checked{% endif %} class="w-4 h-4">
-                            По рецепту (Rx)
+                            {{ t.med_rx_label }}
                         </label>
                         <label class="text-xs pl-text-secondary flex items-center gap-2 mt-4" title="{{ t.med_ul_override_hint }}">
                             <input type="checkbox" name="allow_ul_override" value="1" {% if m.allow_ul_override %}checked{% endif %} class="w-4 h-4">
