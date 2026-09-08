@@ -35,6 +35,8 @@ from app.services.med_service import (
 
 
 async def _create_medication(client, name: str = "Ibuprofen") -> str:
+    # Без instructions — авто-расписание из «как принимать» (ADR-191) не создаётся,
+    # чтобы тесты управляли расписаниями явно.
     resp = await client.post(
         "/medications",
         data={
@@ -42,7 +44,6 @@ async def _create_medication(client, name: str = "Ibuprofen") -> str:
             "kind": "medication",
             "strength": "400 mg",
             "unit": "tablet",
-            "instructions": "After meals",
         },
     )
     assert resp.status_code == 303, resp.text
@@ -1581,3 +1582,83 @@ async def test_med_card_edit_submits(auth_client, test_user, db_session):
     comps = (await db_session.execute(select(MedComponent).where(MedComponent.medication_id == med.id))).scalars().all()
     assert len(comps) == 1
     assert comps[0].substance.name == "Ибупрофен"
+
+
+# ──── ADR-191: удаление препарата (NotNullViolation регрессия) + авто-расписание ────
+
+
+@pytest.mark.asyncio
+async def test_med_delete_with_components(auth_client, test_user, db_session):
+    """Удаление препарата с составом/вариантами больше не падает NotNullViolation."""
+    comps_payload = (
+        '[{"substance":"Парацетамол","amount":500,"unit":"мг","variant":"белые 1-14"},'
+        '{"substance":"Кофеин","amount":50,"unit":"мг","variant":"белые 1-14"}]'
+    )
+    resp = await auth_client.post(
+        "/medications",
+        data={"name": "Удаляемый", "kind": "medication", "components": comps_payload},
+    )
+    assert resp.status_code == 303
+    med = (await db_session.execute(select(Medication).where(Medication.name == "Удаляемый"))).scalars().one()
+    comp_q = select(MedComponent).where(MedComponent.medication_id == med.id)
+    comps_before = (await db_session.execute(comp_q)).scalars().all()
+    assert comps_before, "состав должен быть создан"
+
+    resp_del = await auth_client.post(f"/medications/{med.id}/delete")
+    assert resp_del.status_code == 303
+    assert "del_err" not in resp_del.headers.get("location", "")
+
+    gone = (await db_session.execute(select(Medication).where(Medication.id == med.id))).scalars().all()
+    assert gone == []
+    comps_after = (await db_session.execute(comp_q)).scalars().all()
+    assert comps_after == []
+
+
+@pytest.mark.asyncio
+async def test_med_json_delete_204(auth_client, test_user, db_session):
+    resp = await auth_client.post("/medications", data={"name": "JSON удаляемый", "kind": "medication"})
+    assert resp.status_code == 303
+    med = (await db_session.execute(select(Medication).where(Medication.name == "JSON удаляемый"))).scalars().one()
+    r = await auth_client.delete(f"/api/v2/medications/{med.id}")
+    assert r.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_med_instructions_auto_schedule(auth_client, test_user, db_session):
+    """«Как принимать» → автосоздание расписания с разобранным режимом."""
+    resp = await auth_client.post(
+        "/medications",
+        data={"name": "Автограф", "kind": "medication", "instructions": "3 раза в день до еды 20 дней"},
+    )
+    assert resp.status_code == 303
+    assert "sched_auto=1" in resp.headers.get("location", "")
+    med = (await db_session.execute(select(Medication).where(Medication.name == "Автограф"))).scalars().one()
+    sched = (await db_session.execute(select(MedSchedule).where(MedSchedule.medication_id == med.id))).scalar_one()
+    assert sched.times_per_day == 3
+    assert sched.food_relation == "before_meal"
+    assert sched.duration_days == 20
+    assert sched.instructions == "3 раза в день до еды 20 дней"
+
+    # повторное сохранение не плодит расписания (уже есть)
+    resp2 = await auth_client.post(
+        f"/medications/{med.id}/update",
+        data={"name": "Автограф", "kind": "medication", "instructions": "1 раз в день"},
+    )
+    assert resp2.status_code == 303
+    scheds = (await db_session.execute(select(MedSchedule).where(MedSchedule.medication_id == med.id))).scalars().all()
+    assert len(scheds) == 1
+
+
+@pytest.mark.asyncio
+async def test_med_instructions_text_only_no_schedule(auth_client, test_user, db_session):
+    """Неразбираемый текст → просто сохраняется, расписание не создаётся."""
+    resp = await auth_client.post(
+        "/medications",
+        data={"name": "Текст", "kind": "medication", "instructions": "по самочувствию при необходимости"},
+    )
+    assert resp.status_code == 303
+    assert "sched_auto" not in resp.headers.get("location", "")
+    med = (await db_session.execute(select(Medication).where(Medication.name == "Текст"))).scalars().one()
+    scheds = (await db_session.execute(select(MedSchedule).where(MedSchedule.medication_id == med.id))).scalars().all()
+    assert scheds == []
+    assert med.instructions == "по самочувствию при необходимости"

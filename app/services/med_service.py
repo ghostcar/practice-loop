@@ -1630,6 +1630,8 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
                     **extra,
                     "dose": dose,
                     "taken": taken,
+                    "pending": pending,
+                    "times_of_day": schedule_times(s) or s.times_of_day,
                 }
             )
     slot_list = [
@@ -1933,6 +1935,8 @@ async def create_medication(
         await sync_med_components(
             db, m, [{"substance": active_ingredient.strip(), "inn": None, "amount": None, "unit": None}]
         )
+    # ADR-191: «как принимать» → автоматический график, если распознан режим
+    await maybe_schedule_from_instructions(db, user_id, m, instructions)
     # ADR-189 (фаза A): если выбрана аптечка — сразу создаём партию в ней
     if kit_id and kit_id not in ("", "__none__"):
         kit = await get_kit(db, user_id, uuid.UUID(kit_id))
@@ -1993,13 +1997,69 @@ async def update_medication(
     # ADR-190: пересинхронизация состава при сохранении формы
     if components:
         await sync_med_components(db, m, components)
+    # ADR-191: «как принимать» → график (если расписаний ещё нет)
+    await maybe_schedule_from_instructions(db, user_id, m, instructions)
     return m
 
 
 async def delete_medication(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID) -> None:
     m = await get_med(db, user_id, medication_id)
+    # ADR-191: components/variants удаляются БД-каскадом (FK CASCADE,
+    # passive_deletes на relationship) — ORM не пытается обнулить NOT NULL FK.
     await db.delete(m)
     await db.flush()
+
+
+async def maybe_schedule_from_instructions(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    m: Medication,
+    instructions: str,
+) -> bool:
+    """Разбор «как принимать» → автоматическое создание расписания (ADR-191).
+
+    Если в тексте режима распознаны параметры приёма (частота/времена/длительность)
+    и у препарата ещё нет расписаний — создаётся MedSchedule с этими параметрами
+    (human-in-the-loop сохранён: расписание видно и редактируется на карточке).
+    Возвращает True, если расписание создано из текста.
+    """
+    text = (instructions or "").strip()
+    if not text:
+        return False
+    try:
+        p = parse_regimen_text(text)
+    except ValueError:
+        return False
+    freq = p.get("frequency_type")
+    if not freq or freq not in FREQUENCY_TYPES:
+        return False
+    existing = (
+        await db.execute(select(MedSchedule).where(MedSchedule.medication_id == m.id, MedSchedule.user_id == user_id))
+    ).scalars().all()
+    if existing:
+        return False
+    await create_schedule(
+        db,
+        user_id=user_id,
+        medication_id=m.id,
+        dose_quantity=str(p.get("dose_quantity") or 1),
+        dose_unit=p.get("dose_unit") or m.unit or "",
+        frequency_type=freq,
+        times_per_day=str(p.get("times_per_day") or 1),
+        times_of_day=p.get("times_of_day") or "",
+        interval_hours=str(p.get("interval_hours") or ""),
+        days_of_week=p.get("days_of_week") or "",
+        start_date=p.get("start_date") or "",
+        end_date="",
+        instructions=text,
+        food_relation=p.get("food_relation") or "",
+        duration_days=str(p.get("duration_days") or ""),
+        meal_offset_min="",
+        course_id="",
+    )
+    # Флаг для API-роута: показать пользователю баннер «расписание создано из текста»
+    m._auto_schedule_created = True  # type: ignore[attr-defined]
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

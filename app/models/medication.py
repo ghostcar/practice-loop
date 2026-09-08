@@ -80,9 +80,19 @@ class Medication(Base):
 
     user: Mapped[User] = relationship("User", lazy="selectin")
     components: Mapped[list[MedComponent]] = relationship(
-        "MedComponent", lazy="selectin", order_by="MedComponent.sort_order"
+        "MedComponent",
+        lazy="selectin",
+        order_by="MedComponent.sort_order",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
-    variants: Mapped[list[MedVariant]] = relationship("MedVariant", lazy="selectin", order_by="MedVariant.sort_order")
+    variants: Mapped[list[MedVariant]] = relationship(
+        "MedVariant",
+        lazy="selectin",
+        order_by="MedVariant.sort_order",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     def __repr__(self) -> str:
         return f"<Medication(id={self.id}, name={self.name!r})>"

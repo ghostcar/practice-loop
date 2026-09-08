@@ -1450,7 +1450,12 @@ EN = {
     "med_equiv_auto": "auto-substitute",
     "med_equiv_offer": "offer",
     # AI analog search (ADR-109, real LLM pipeline)
+    "med_autofill": "Autofill",
     "med_analogs_search": "AI analog search",
+    "med_delete_error": "Could not delete the medication. It may be referenced by intake records or other data.",
+    "med_schedule_auto_created": "Schedule created automatically from the “How to take” text — check and edit if needed.",
+    "med_take_all": "Take all",
+    "med_slot_any": "Throughout the day",
     "med_edit_card": "View / edit card",
     "med_is_active": "Active (included in schedules)",
     "med_analogs_title": "Analogs & generics",

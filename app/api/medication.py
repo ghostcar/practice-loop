@@ -7,7 +7,9 @@ This file contains only HTTP parsing, response building, and dependency injectio
 from __future__ import annotations
 
 import contextlib
+import logging
 import uuid
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -23,6 +25,8 @@ from app.models.user import User
 from app.services import med_service as svc
 from app.services.errors import NotFoundError
 from app.templates_setup import templates
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["medication"])
 json_router = APIRouter(prefix="/api/v2/medications", tags=["medication"])
@@ -40,6 +44,9 @@ async def medications_page(
     migrated: int = 0,
     skipped: int = 0,
     analogs_error: str = "",
+    del_err: int = 0,
+    del_detail: str = "",
+    sched_auto: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -57,6 +64,9 @@ async def medications_page(
             "locale": locale,
             "theme": theme,
             "analogs_error": (analogs_error or "").strip()[:32],
+            "del_err": int(del_err or 0),
+            "del_detail": (del_detail or "").strip()[:500],
+            "sched_auto": int(sched_auto or 0),
             **ctx,
         },
     )
@@ -89,7 +99,7 @@ async def create_medication(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        await svc.create_medication(
+        m = await svc.create_medication(
             db,
             user_id=user.id,
             name=name,
@@ -110,7 +120,10 @@ async def create_medication(
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
-    return RedirectResponse(url="/medications", status_code=303)
+    sched = 1 if getattr(m, "_auto_schedule_created", False) else 0
+    anchor = f"#med-{m.id}" if sched else ""
+    qs = "?sched_auto=1" if sched else ""
+    return RedirectResponse(url=f"/medications{qs}{anchor}", status_code=303)
 
 
 @router.post("/medications/{medication_id}/update")
@@ -135,7 +148,7 @@ async def update_medication(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        await svc.update_medication(
+        m = await svc.update_medication(
             db,
             user_id=user.id,
             medication_id=medication_id,
@@ -156,7 +169,9 @@ async def update_medication(
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
-    return RedirectResponse(url=f"/medications#med-{medication_id}", status_code=303)
+    sched = 1 if getattr(m, "_auto_schedule_created", False) else 0
+    qs = "?sched_auto=1" if sched else ""
+    return RedirectResponse(url=f"/medications{qs}#med-{medication_id}", status_code=303)
 
 
 @router.post("/medications/{medication_id}/find-analogs")
@@ -256,6 +271,13 @@ async def delete_medication(
         await svc.delete_medication(db, user.id, medication_id)
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
+    except Exception as e:  # noqa: BLE001 — не терять текст ошибки удаления (ADR-191)
+        logger.warning("Medication delete failed %s: %s", medication_id, e)
+        detail = str(e)[:400]
+        return RedirectResponse(
+            url=f"/medications?del_err=1&del_detail={quote(detail)}",
+            status_code=303,
+        )
     return RedirectResponse(url="/medications", status_code=303)
 
 
@@ -739,6 +761,9 @@ async def json_delete_medication(
         await svc.json_delete_medication(db, user.id, medication_id)
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
+    except Exception as e:  # noqa: BLE001 — JSON-клиентам нужен текст ошибки
+        logger.warning("JSON medication delete failed %s: %s", medication_id, e)
+        raise HTTPException(500, str(e)[:400]) from None
     return None
 
 
