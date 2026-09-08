@@ -1328,3 +1328,143 @@ async def test_equivalents_endpoint_page_and_json(auth_client, test_user, db_ses
     page = await auth_client.get(f"/medications/{med_id}/equivalents")
     assert page.status_code == 200
     assert page.json()["candidates"][0]["name"] == "Декспантенол дженерик"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI analog search (ADR-109) — real LLM pipeline, no fabricated data
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _analogs_llm_payload() -> str:
+    return (
+        '{"summary": "Состав распространён", "analogs": ['
+        '{"name": "Панадол", "manufacturer": "GSK", "form": "таблетки", "strength": "500 мг", '
+        '"same_composition": true, "notes": "Распространённый дженерик"}, '
+        '{"name": "Эффералган", "manufacturer": null, "form": "таблетки", "strength": "500 мг", '
+        '"same_composition": true, "notes": null}, '
+        '{"name": "", "manufacturer": null}, '
+        '{"name": "Ибупрофен", "manufacturer": "X", "same_composition": false}]}'
+    )
+
+
+async def _make_llm_config(db_session, test_user) -> None:
+    from app.models.llm_config import LLMProviderConfig
+
+    db_session.add(
+        LLMProviderConfig(
+            user_id=test_user.id,
+            provider_name="test",
+            api_base_url="http://localhost/v1",
+            model_name="test-model",
+            is_active=True,
+        )
+    )
+    await db_session.flush()
+
+
+async def _make_med_with_composition(client, name: str = "Панадол 500") -> str:
+    resp = await client.post(
+        "/api/v2/medications",
+        json={
+            "name": name,
+            "kind": "medication",
+            "form": "таблетки",
+            "components": [{"name": "Парацетамол", "amount": 500, "unit": "мг"}],
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_find_analogs_llm_saves_and_sanitizes(auth_client, test_user, db_session, monkeypatch):
+    """Реальный LLM-вызов: результат сохраняется, мусор отфильтрован, no fabrication."""
+    med_id = await _make_med_with_composition(auth_client)
+    await _make_llm_config(db_session, test_user)
+    from app.llm import client as llm_client
+
+    async def fake_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+        assert "Парацетамол" in user_message
+        return {"content": _analogs_llm_payload(), "usage": {"total_tokens": 42}}
+
+    monkeypatch.setattr(llm_client, "call_llm", fake_call_llm)
+    resp = await auth_client.post(f"/api/v2/medications/{med_id}/analogs")
+    assert resp.status_code == 200, resp.text
+    data = resp.json()["analogues"]
+    names = [a["name"] for a in data["analogs"]]
+    assert names == ["Панадол", "Эффералган", "Ибупрофен"]  # пустое имя отфильтровано
+    assert data["source"] == "llm"
+    assert data["disclaimer"]
+    # сохранено на препарате
+    m = (await db_session.execute(select(Medication).where(Medication.id == uuid.UUID(med_id)))).scalar_one()
+    assert m.analogues["source"] == "llm"
+    # страница рендерит блок
+    page = await auth_client.get("/medications")
+    assert page.status_code == 200
+    assert "Эффералган" in page.text
+
+
+@pytest.mark.asyncio
+async def test_find_analogs_no_llm_422(auth_client, test_user, db_session):
+    """Нет активного провайдера → 422 no_llm (не выдуманные «Стандарт Фарм»)."""
+    med_id = await _make_med_with_composition(auth_client)
+    resp = await auth_client.post(f"/api/v2/medications/{med_id}/analogs")
+    assert resp.status_code == 422
+    assert "no_llm" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_find_analogs_no_composition_422(auth_client, test_user, db_session):
+    """Без состава поиск не запускается → 422 no_composition."""
+    resp = await auth_client.post("/api/v2/medications", json={"name": "Пустышка", "kind": "medication"})
+    assert resp.status_code == 201
+    med_id = resp.json()["id"]
+    await _make_llm_config(db_session, test_user)
+    resp = await auth_client.post(f"/api/v2/medications/{med_id}/analogs")
+    assert resp.status_code == 422
+    assert "no_composition" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_find_analogs_llm_error_502(auth_client, test_user, db_session, monkeypatch):
+    """Сбой провайдера/парсинга → 502 llm_error, заглушка не подставляется."""
+    med_id = await _make_med_with_composition(auth_client)
+    await _make_llm_config(db_session, test_user)
+    from app.llm import client as llm_client
+
+    async def failing_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+        raise RuntimeError("provider down")
+
+    monkeypatch.setattr(llm_client, "call_llm", failing_call_llm)
+    resp = await auth_client.post(f"/api/v2/medications/{med_id}/analogs")
+    assert resp.status_code == 502
+    assert "llm_error" in resp.text
+    m = (await db_session.execute(select(Medication).where(Medication.id == uuid.UUID(med_id)))).scalar_one()
+    assert m.analogues is None  # ничего не сохранено
+
+
+@pytest.mark.asyncio
+async def test_find_analogs_garbage_llm_yields_empty(auth_client, test_user, db_session, monkeypatch):
+    """Мусорный/пустой ответ LLM → честный пустой результат, не выдумка."""
+    med_id = await _make_med_with_composition(auth_client)
+    await _make_llm_config(db_session, test_user)
+    from app.llm import client as llm_client
+
+    async def garbage_call_llm(config, system_prompt, user_message, tools=None, json_mode=True, images=None):
+        return {"content": "не JSON вообще", "usage": {"total_tokens": 3}}
+
+    monkeypatch.setattr(llm_client, "call_llm", garbage_call_llm)
+    resp = await auth_client.post(f"/api/v2/medications/{med_id}/analogs")
+    assert resp.status_code == 200
+    data = resp.json()["analogues"]
+    assert data["analogs"] == []
+
+
+@pytest.mark.asyncio
+async def test_find_analogs_page_redirect_with_error(auth_client, test_user, db_session):
+    """Страница: редирект на карточку с якорем и кодом ошибки."""
+    med_id = await _make_med_with_composition(auth_client)
+    resp = await auth_client.post(f"/medications/{med_id}/find-analogs", follow_redirects=False)
+    assert resp.status_code == 303
+    assert "analogs_error=no_llm" in resp.headers["location"]
+    assert f"med-{med_id}" in resp.headers["location"]

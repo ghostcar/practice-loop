@@ -39,6 +39,7 @@ async def medications_page(
     q: str = "",
     migrated: int = 0,
     skipped: int = 0,
+    analogs_error: str = "",
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -49,7 +50,15 @@ async def medications_page(
     return templates.TemplateResponse(
         request=request,
         name="medication.html",
-        context={"request": request, "t": t, "user": user, "locale": locale, "theme": theme, **ctx},
+        context={
+            "request": request,
+            "t": t,
+            "user": user,
+            "locale": locale,
+            "theme": theme,
+            "analogs_error": (analogs_error or "").strip()[:32],
+            **ctx,
+        },
     )
 
 
@@ -157,11 +166,34 @@ async def find_medication_analogs(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """ADR-109: LLM-поиск аналогов; результат — блок на карточке препарата."""
+    locale = detect_locale(request, user.locale)
     try:
-        analogs_data = await svc.find_analogs(db, user.id, medication_id)
-    except (NotFoundError, ValueError) as e:
-        raise HTTPException(400, str(e)) from None
-    return {"status": "ok", "analogues": analogs_data}
+        await svc.find_analogs(db, user.id, medication_id, locale=locale)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    except ValueError as e:
+        code = str(e)
+        return RedirectResponse(url=f"/medications?analogs_error={code}#med-{medication_id}", status_code=303)
+    return RedirectResponse(url=f"/medications?analogs_done=1#med-{medication_id}", status_code=303)
+
+
+@json_router.post("/{medication_id}/analogs")
+async def json_find_analogs(
+    medication_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """JSON parity: LLM-поиск аналогов (422 no_composition/no_llm, 502 llm_error)."""
+    try:
+        data = await svc.find_analogs(db, user.id, medication_id, locale="ru")
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    except ValueError as e:
+        code = str(e)
+        status = 502 if code == "llm_error" else 422
+        raise HTTPException(status, code) from None
+    return {"status": "ok", "analogues": data}
 
 
 @router.post("/medications/autofill-info")

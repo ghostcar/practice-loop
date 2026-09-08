@@ -41,6 +41,12 @@
         {{ icon('info', 'w-4 h-4') }}{{ t.med_migrate_none }}: {{ skipped }} {{ t.med_migrate_skipped }}
     </div>
     {% endif %}
+    {% if analogs_error %}
+    {% set analogs_err_msg = t['med_analogs_err_' + analogs_error] if t.get('med_analogs_err_' + analogs_error) else t.med_analogs_err_llm_error %}
+    <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-200 inline-flex items-center gap-2">
+        {{ icon('ai', 'w-4 h-4') }}{{ analogs_err_msg }}
+    </div>
+    {% endif %}
 
     <!-- Due today -->
     <section class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
@@ -494,7 +500,7 @@
         {% if meds %}
         <div class="grid grid-cols-1 gap-4">
             {% for m in meds %}
-            <article class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
+            <article id="med-{{ m.id }}" class="pl-surface border border-[color:var(--border)] rounded-xl p-4 space-y-3">
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                         <h3 class="font-medium text-[color:var(--text)] inline-flex items-center gap-2">
@@ -525,29 +531,39 @@
                         {% endif %}
                         {% if m.instructions %}<p class="text-sm pl-text-secondary mt-1">{{ m.instructions }}</p>{% endif %}
 
-                        <!-- Analogues section -->
+                        <!-- Analogues (ADR-109, LLM) -->
                         <div class="mt-2">
                             <form action="/medications/{{ m.id }}/find-analogs" method="post" class="inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                                 <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[44px]">
-                                    {{ icon('ai', 'w-3.5 h-3.5') }} Поиск аналогов ИИ
+                                    {{ icon('ai', 'w-3.5 h-3.5') }}{{ t.med_analogs_search }}
                                 </button>
                             </form>
                             {% if m.analogues and m.analogues.analogs %}
                             <div class="mt-2 p-3 rounded-lg bg-[color:var(--surface-soft)] text-xs space-y-1.5 border border-[color:var(--border)]">
                                 <div class="font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
-                                    {{ icon('ai', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }} Аптечные аналоги по МНН ({{ m.analogues.active_ingredient }}):
+                                    {{ icon('ai', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }}{{ t.med_analogs_title }} ({{ m.analogues.active_ingredient }}):
                                 </div>
+                                {% if m.analogues.summary %}<p class="pl-text-secondary">{{ m.analogues.summary }}</p>{% endif %}
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                     {% for a in m.analogues.analogs %}
                                     <div class="p-1.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
-                                        <div class="font-medium text-[color:var(--text)]">{{ a.name }}</div>
-                                        <div class="pl-text-muted text-[11px]">{{ a.manufacturer }} · {{ a.form }}</div>
+                                        <div class="font-medium text-[color:var(--text)]">
+                                            {{ a.name }}
+                                            {% if a.same_composition %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">{{ t.med_analogs_same }}</span>{% endif %}
+                                            {% if a.owned %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 border border-sky-500/20">{{ t.med_analogs_owned }}</span>{% endif %}
+                                        </div>
+                                        <div class="pl-text-muted text-[11px]">
+                                            {{ a.manufacturer or '' }}{% if a.manufacturer and (a.form or a.strength) %} · {% endif %}{{ a.form or '' }}{% if a.form and a.strength %} · {% endif %}{{ a.strength or '' }}
+                                        </div>
+                                        {% if a.notes %}<div class="pl-text-muted text-[11px]">{{ a.notes }}</div>{% endif %}
                                     </div>
                                     {% endfor %}
                                 </div>
                                 {% if m.analogues.disclaimer %}<p class="pl-text-muted text-[10px] italic mt-1">{{ m.analogues.disclaimer }}</p>{% endif %}
                             </div>
+                            {% elif m.analogues and m.analogues.analogs is defined and m.analogues.analogs|length == 0 %}
+                            <p class="mt-2 text-xs pl-text-muted">{{ t.med_analogs_empty }}</p>
                             {% endif %}
                         </div>
                     </div>

@@ -32,6 +32,7 @@ from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.i18n import get_translations
 from app.models.medication import (
     COURSE_STATUSES,
     FOOD_RELATIONS,
@@ -2268,43 +2269,129 @@ async def record_batch_intake(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Analogues (LLM-assisted)
+# Analogues (LLM-assisted, ADR-109): реальный поиск по составу через BYOK-LLM.
+# Принципы ADR-190: ничего не выдумывается — неизвестные поля → null, пустой
+# список = честное «не найдено». Результат сохраняется в medications.analogues.
 # ─────────────────────────────────────────────────────────────────────────────
 
+_ANALOGS_MAX = 8
 
-async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID) -> dict:
+_ANALOGS_SYSTEM = (
+    "Ты — фармацевтический справочник. Дано торговое название препарата, его действующие "
+    "вещества (с дозировками) и форма. Найди известные тебе РЕАЛЬНЫЕ торговые наименования "
+    "препаратов с теми же действующими веществами (дженерики и аналоги). Верни только JSON: "
+    '{"summary": "краткая справка", "analogs": [{"name": str, "manufacturer": str|null, '
+    '"form": str|null, "strength": str|null, "same_composition": bool, "notes": str|null}]}. '
+    "Правила: 1) включай только реально существующие препараты; не уверен — не включай, "
+    "пустой список лучше выдумки. 2) same_composition=true — только если совпадают ВСЕ "
+    "действующие вещества. 3) notes — короткая справка на языке {locale}, без медицинских "
+    "назначений и рекомендаций доз. 4) не более 8 аналогов. 5) ответ — строго валидный "
+    "JSON-объект."
+)
+
+
+def _san_str(v: object) -> str | None:
+    s = str(v or "").strip()[:200]
+    return s or None
+
+
+def _sanitize_analogs_payload(parsed: object, source_name: str) -> tuple[list[dict], str | None]:
+    """Строгая санитизация ответа LLM: только заполненные имена, дедуп, без выдумок."""
+    if isinstance(parsed, list):
+        parsed = {"analogs": parsed}
+    if not isinstance(parsed, dict):
+        return [], None
+    raw = parsed.get("analogs")
+    if not isinstance(raw, list):
+        raw = []
+    out: list[dict] = []
+    seen: set[str] = set()
+    src_norm = normalize_substance(source_name)
+    for item in raw:
+        if not isinstance(item, dict) or len(out) >= _ANALOGS_MAX:
+            break
+        name = str(item.get("name") or "").strip()[:200]
+        if not name:
+            continue
+        nk = normalize_substance(name)
+        if not nk or nk == src_norm or nk in seen:
+            continue
+        seen.add(nk)
+        out.append(
+            {
+                "name": name,
+                "manufacturer": _san_str(item.get("manufacturer")),
+                "form": _san_str(item.get("form")),
+                "strength": _san_str(item.get("strength")),
+                "same_composition": bool(item.get("same_composition")),
+                "notes": _san_str(item.get("notes")),
+            }
+        )
+    summary = _san_str(parsed.get("summary"))
+    return out, summary
+
+
+async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID, locale: str = "ru") -> dict:
+    """ADR-109: поиск аналогов/дженериков по составу препарата через BYOK-LLM.
+
+    Ошибки — ValueError с кодом: ``no_composition`` (состав не заполнен),
+    ``no_llm`` (нет активного провайдера), ``llm_error`` (сеть/парсинг).
+    """
     m = await get_med(db, user_id, medication_id)
-    from app.llm.pipeline import get_active_llm_config
+    composition = composition_label(m) or (m.active_ingredient or "").strip()
+    if not composition:
+        raise ValueError("no_composition")
 
-    config = await get_active_llm_config(db, user_id)
-    if not config:
-        raise NotFoundError("No active LLM provider configured")
-    active_ing = m.active_ingredient or m.name
-    analogs_data = {
-        "active_ingredient": active_ing,
-        "analogs": [
-            {
-                "name": f"Дженерик {active_ing}",
-                "manufacturer": "Стандарт Фарм",
-                "form": m.form or "таблетки/мазь",
-                "notes": "Прямой аналог по МНН",
-            },
-            {
-                "name": f"Аналог {m.name}",
-                "manufacturer": "ФармаЛайн",
-                "form": m.form or "крем/гель",
-                "notes": "Взаимозаменяемый препарат",
-            },
-        ],
-        "disclaimer": (
-            "Справочные ИИ-материалы. Не является медицинским назначением. "
-            "Перед приемом проконсультируйтесь со специалистом."
-        ),
+    from app.llm.client import call_llm
+    from app.llm.pipeline import get_active_llm_config
+    from app.llm.repair import parse_llm_json
+
+    config = await get_active_llm_config(db, user_id, capability="text")
+    if config is None:
+        raise ValueError("no_llm")
+
+    user_msg = f"Препарат: {m.name}\nСостав: {composition}\nФорма: {m.form or '—'}\nДозировка: {m.strength or '—'}"
+    try:
+        result = await call_llm(
+            config,
+            system_prompt=_ANALOGS_SYSTEM.replace("{locale}", locale),
+            user_message=user_msg,
+            json_mode=True,
+        )
+    except Exception as exc:  # noqa: BLE001 — сеть/провайдер: честный отказ, без заглушек
+        logger.warning("LLM analogs call failed for med %s: %s", medication_id, exc)
+        raise ValueError("llm_error") from None
+    content = (result.get("content") or "").strip()
+    try:
+        parsed = parse_llm_json(content, is_last_attempt=True) if content else None
+    except Exception as exc:  # noqa: BLE001 — нераспарсимый ответ = пустой результат, не сбой провайдера
+        logger.warning("LLM analogs parse failed for med %s: %s", medication_id, exc)
+        parsed = None
+
+    analogs, summary = _sanitize_analogs_payload(parsed, m.name)
+
+    # Разметка «уже в аптечке пользователя» (по нормализованному названию).
+    meds = await load_meds_graph(db, user_id)
+    owned_by_norm = {normalize_substance(x.name): x for x in meds if x.name}
+    for row in analogs:
+        owned = owned_by_norm.get(normalize_substance(row["name"]))
+        row["owned"] = owned is not None
+        row["owned_medication_id"] = str(owned.id) if owned else None
+
+    t = get_translations(locale)
+    data = {
+        "active_ingredient": composition,
+        "composition": composition_label(m),
+        "source": "llm",
+        "generated_at": local_now().isoformat(),
+        "summary": summary,
+        "analogs": analogs,
+        "disclaimer": t["med_analogs_disclaimer"],
     }
-    m.analogues = analogs_data
+    m.analogues = data
     db.add(m)
     await db.flush()
-    return analogs_data
+    return data
 
 
 async def autofill_info(db: AsyncSession, user_id: uuid.UUID, name: str, locale: str = "ru") -> dict | None:

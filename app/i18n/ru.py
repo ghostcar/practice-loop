@@ -1430,6 +1430,16 @@ RU = {
     "med_equivalents": "Эквиваленты",
     "med_equiv_auto": "авто-замена",
     "med_equiv_offer": "предложение",
+    # AI analog search (ADR-109, real LLM pipeline)
+    "med_analogs_search": "Поиск аналогов ИИ",
+    "med_analogs_title": "Аналоги и дженерики",
+    "med_analogs_same": "тот же состав",
+    "med_analogs_owned": "уже в аптечке",
+    "med_analogs_empty": "ИИ не нашёл известных аналогов по этому составу.",
+    "med_analogs_disclaimer": "Справочные ИИ-материалы. Не является медицинским назначением. Перед приёмом проконсультируйтесь со специалистом.",
+    "med_analogs_err_no_composition": "Сначала заполните состав препарата (действующие вещества) — по нему ИИ ищет аналоги.",
+    "med_analogs_err_no_llm": "Нет активного ИИ-провайдера. Настройте LLM-конфиг в разделе «Ещё».",
+    "med_analogs_err_llm_error": "ИИ-провайдер не ответил. Проверьте конфигурацию и попробуйте ещё раз.",
     # Курсы приёма (ADR-189, фаза C)
     "med_courses_title": "Курсы приёма",
     "med_course_new": "Новый курс",
