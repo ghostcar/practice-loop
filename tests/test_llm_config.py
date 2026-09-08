@@ -278,3 +278,60 @@ def test_portal_config_stale_id_fallback():
     cfg = _portal_config_from_env(stale_id, first.models[0].name if first.models else "m")
     assert cfg is not None
     assert cfg.provider_name == first.name
+
+
+# ──── Admin LLM pool page (ADR-191 regression) ────
+
+
+async def _seed_global_provider(db_session) -> None:
+    from app.models.llm_catalog import LLMGlobalModel, LLMGlobalProvider
+
+    provider = LLMGlobalProvider(name="Test Portal AI", api_base_url="http://portal.local/v1")
+    db_session.add(provider)
+    await db_session.flush()
+    db_session.add(LLMGlobalModel(provider_id=provider.id, model_name="auto", supports_text=True))
+    await db_session.flush()
+
+
+@pytest.mark.asyncio
+async def test_admin_llm_pool_page_renders(auth_client, test_user, db_session):
+    """/admin/llm-pool рендерит провайдеров и модели (MissingGreenlet регрессия)."""
+    test_user.role = "admin"
+    db_session.add(test_user)
+    await db_session.flush()
+    await _seed_global_provider(db_session)
+
+    resp = await auth_client.get("/admin/llm-pool")
+    assert resp.status_code == 200, resp.text[:300]
+    assert "Test Portal AI" in resp.text
+    assert "auto" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_admin_llm_pool_forbidden_for_regular_user(auth_client, test_user, db_session):
+    """Обычный пользователь не видит админский LLM-пул (403)."""
+    resp = await auth_client.get("/admin/llm-pool")
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_admin_llm_pool_duplicate_provider_message(auth_client, test_user, db_session):
+    """Ошибка дубликата имени провайдера показывается на странице."""
+    test_user.role = "admin"
+    db_session.add(test_user)
+    await db_session.flush()
+    await _seed_global_provider(db_session)
+
+    # Сообщение об ошибке рендерится из query-параметра
+    page = await auth_client.get("/admin/llm-pool?error=duplicate")
+    assert page.status_code == 200
+    assert "уже существует" in page.text or "already exists" in page.text
+
+    # POST дубликата → 303 + error-параметр (последним: rollback в обработчике
+    # откатывает общую тестовую транзакцию)
+    resp = await auth_client.post(
+        "/admin/llm-pool/providers",
+        data={"name": "Test Portal AI", "api_base_url": "http://other.local/v1"},
+    )
+    assert resp.status_code == 303
+    assert resp.headers.get("location") == "/admin/llm-pool?error=duplicate"
