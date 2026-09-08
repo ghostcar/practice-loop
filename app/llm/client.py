@@ -1,5 +1,6 @@
 """OpenAI-compatible LLM client — configured from LLMProviderConfig (BYOK)."""
 
+import contextvars
 import logging
 import time
 import uuid
@@ -14,15 +15,18 @@ from app.models.llm_config import LLMProviderConfig
 logger = logging.getLogger(__name__)
 
 # Section/purpose of the current call, set by pipeline wrappers so the call
-# log knows who asked. Kept as module state because call_llm's signature is
-# frozen across many call-sites; wrappers always set it right before calling.
-_last_call_meta: dict[str, str | None] = {"section": None, "purpose": None}
+# log knows who asked. Stored in a ContextVar for safe async concurrent execution.
+_call_meta_var: contextvars.ContextVar[dict[str, str | None] | None] = contextvars.ContextVar(
+    "call_meta", default=None
+)
 
 
 def set_call_meta(section: str | None = None, purpose: str | None = None) -> None:
     """Attach section/purpose metadata to the next call_llm invocation."""
-    _last_call_meta["section"] = (section or "")[:50] or None
-    _last_call_meta["purpose"] = (purpose or "")[:60] or None
+    _call_meta_var.set({
+        "section": (section or "")[:50] or None,
+        "purpose": (purpose or "")[:60] or None,
+    })
 
 
 # Vision (image parts) support — Step 7, ADR-075.
@@ -104,10 +108,10 @@ async def call_llm(
     truncated error message. Errors still propagate to the caller.
     """
     started = time.monotonic()
-    section = _last_call_meta.get("section")
-    purpose = _last_call_meta.get("purpose")
-    _last_call_meta["section"] = None
-    _last_call_meta["purpose"] = None
+    call_meta = _call_meta_var.get() or {}
+    section = call_meta.get("section")
+    purpose = call_meta.get("purpose")
+    _call_meta_var.set(None)
 
     api_key = decrypt_api_key(config.api_key_encrypted) if config.api_key_encrypted else "not-needed"
 

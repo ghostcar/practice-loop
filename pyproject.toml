@@ -37,6 +37,7 @@ dependencies = [
     "tzdata>=2024.1",
     "pillow>=10.3,<11",
     "pytesseract>=0.3,<0.4",
+    "zxing-cpp>=3.0",
 ]
 
 [project.optional-dependencies]

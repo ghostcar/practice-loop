@@ -11,8 +11,8 @@ import logging
 import uuid
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -184,7 +184,7 @@ async def find_medication_analogs(
     """ADR-109: LLM-поиск аналогов; результат — блок на карточке препарата."""
     locale = detect_locale(request, user.locale)
     try:
-        await svc.find_analogs(db, user.id, medication_id, locale=locale)
+        await svc.find_analogs(db, user.id, medication_id, locale=locale, allow_directory_fallback=True)
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     except ValueError as e:
@@ -471,6 +471,49 @@ async def set_course_status_form(
     return RedirectResponse(url="/medications", status_code=303)
 
 
+@router.post("/med-courses/{course_id}/update")
+async def update_course_form(
+    request: Request,
+    course_id: uuid.UUID,
+    name: str = Form(...),
+    start_date: str = Form(default=""),
+    end_date: str = Form(default=""),
+    status: str = Form(default="active"),
+    notes: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.update_course(
+            db,
+            user_id=user.id,
+            course_id=course_id,
+            name=name,
+            start_date=start_date,
+            end_date=end_date,
+            status=status,
+            notes=notes,
+        )
+    except (ValueError, NotFoundError) as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-courses/{course_id}/items/{item_id}/delete")
+async def delete_course_item_form(
+    request: Request,
+    course_id: uuid.UUID,
+    item_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.delete_course_item(db, user.id, course_id, item_id)
+    except NotFoundError as e:
+        raise HTTPException(404, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
 @router.post("/med-courses/{course_id}/delete")
 async def delete_course_form(
     request: Request,
@@ -560,6 +603,108 @@ async def delete_kit(
     except NotFoundError as e:
         raise HTTPException(404, str(e)) from None
     return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-kits/{kit_id}/update")
+async def update_kit_form(
+    request: Request,
+    kit_id: uuid.UUID,
+    name: str = Form(...),
+    location: str = Form(default=""),
+    location_id: str = Form(default=""),
+    notes: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    loc_uuid = None
+    if location_id.strip():
+        try:
+            loc_uuid = uuid.UUID(location_id.strip())
+        except ValueError:
+            raise HTTPException(400, "Invalid location") from None
+    try:
+        await svc.update_kit(
+            db,
+            user_id=user.id,
+            kit_id=kit_id,
+            name=name,
+            location=location,
+            location_id=loc_uuid,
+            notes=notes,
+        )
+    except (ValueError, NotFoundError) as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/med-kits/{kit_id}/add-stock")
+async def add_stock_to_kit_form(
+    request: Request,
+    kit_id: uuid.UUID,
+    medication_id: uuid.UUID = Form(...),
+    quantity: float = Form(default=1.0),
+    unit: str = Form(default=""),
+    expiry_date: str = Form(default=""),
+    lot_number: str = Form(default=""),
+    notes: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.add_stock_to_kit(
+            db,
+            user_id=user.id,
+            kit_id=kit_id,
+            medication_id=medication_id,
+            quantity=quantity,
+            unit=unit,
+            expiry_date=expiry_date,
+            lot_number=lot_number,
+            notes=notes,
+        )
+    except (ValueError, NotFoundError) as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
+@router.post("/medications/scan-barcode")
+async def scan_barcode_endpoint(
+    request: Request,
+    raw_code: str = Form(default=""),
+    file: UploadFile | None = File(default=None),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Scan and parse GS1 DataMatrix (Честный Знак) or barcode from image or stream."""
+    from app.services.datamatrix_service import decode_datamatrix_from_image, parse_gs1_datamatrix
+
+    parsed_items = []
+    if file and file.filename:
+        try:
+            image_bytes = await file.read()
+            results = decode_datamatrix_from_image(image_bytes)
+            parsed_items = [r.to_dict() for r in results]
+        except Exception as e:
+            logger.warning("Barcode image scan failed: %s", e)
+    elif raw_code.strip():
+        res = parse_gs1_datamatrix(raw_code.strip())
+        parsed_items = [res.to_dict()]
+
+    if not parsed_items:
+        return JSONResponse({"status": "not_found", "message": "Штрихкод / DataMatrix не обнаружен"}, status_code=404)
+
+    first = parsed_items[0]
+    matched = await svc.find_medication_by_barcode(db, user.id, gtin=first.get("gtin"), ean13=first.get("ean13"))
+    matched_data = None
+    if matched:
+        matched_data = {"id": str(matched.id), "name": matched.name, "form": matched.form, "strength": matched.strength}
+
+    return JSONResponse({
+        "status": "ok",
+        "parsed": first,
+        "all_barcodes": parsed_items,
+        "matched_medication": matched_data,
+    })
 
 
 @router.get("/medications/export")

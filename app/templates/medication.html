@@ -306,6 +306,19 @@
                     <p class="{% if k.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ t.med_kit_expiry }} {{ k.nearest_expiry }}</p>
                     {% endif %}
                 </div>
+                <div class="pt-2 border-t border-[color:var(--border)] flex items-center justify-between gap-1.5">
+                    <button type="button"
+                            class="btn-open-kit-stock px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
+                            data-kit-id="{{ k.id }}"
+                            data-kit-name="{{ k.name }}">
+                        {{ icon('plus', 'w-3 h-3') }} Пополнить
+                    </button>
+                    <button type="button"
+                            class="btn-open-kit-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
+                            data-kit='{{ k | tojson | forceescape }}'>
+                        {{ icon('settings', 'w-3 h-3') }} Настроить
+                    </button>
+                </div>
             </article>
             {% endfor %}
             <details class="pl-surface border border-dashed border-[color:var(--border)] rounded-xl p-3 group">
@@ -348,6 +361,17 @@
                         <p class="text-xs pl-text-muted">{% if c.start_date %}{{ t.med_from }} {{ c.start_date }}{% endif %}{% if c.end_date %} · {{ t.med_to }} {{ c.end_date }}{% endif %} · {{ c.total_days }} {{ t.med_days }}</p>
                     </div>
                     <div class="flex items-center gap-1.5 flex-wrap">
+                        <button type="button"
+                                class="btn-open-course-item px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]"
+                                data-course-id="{{ c.id }}"
+                                data-course-name="{{ c.name }}">
+                            {{ icon('plus', 'w-3.5 h-3.5') }} Добавить препарат
+                        </button>
+                        <button type="button"
+                                class="btn-open-course-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]"
+                                data-course='{{ c | tojson | forceescape }}'>
+                            {{ icon('settings', 'w-3.5 h-3.5') }} Настроить
+                        </button>
                         <form action="/med-courses/{{ c.id }}/status" method="post" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                             <select name="status" onchange="this.form.submit()" class="px-2 py-1 rounded-lg text-xs bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[36px]">
@@ -368,8 +392,14 @@
                 <ul class="divide-y divide-[color:var(--border)] text-sm">
                     {% for it in c['items'] %}
                     <li class="py-1.5 flex items-center justify-between gap-2">
-                        <span class="text-[color:var(--text)]">{{ it.medication_name }}</span>
-                        <span class="pl-text-muted text-xs">{{ it.regimen_text }}</span>
+                        <span class="text-[color:var(--text)] font-medium">{{ it.medication_name }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="pl-text-muted text-xs">{{ it.regimen_text }}</span>
+                            <form action="/med-courses/{{ c.id }}/items/{{ it.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                <button type="submit" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--danger)] inline-flex items-center justify-center p-1 rounded min-h-[32px] min-w-[32px]" title="{{ t.med_delete }}" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
+                            </form>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
@@ -733,9 +763,20 @@
                 </ul>
                 {% endif %}
 
-                <!-- Edit medication (ADR-191: view/edit card) -->
+                <!-- Edit medication: Modal & Inline (ADR-191) -->
+                <div class="pt-2 border-t border-[color:var(--border)] flex flex-wrap items-center justify-between gap-2">
+                    <button type="button"
+                            class="btn-open-med-modal px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] hover:text-[color:var(--accent-text)] inline-flex items-center gap-1.5 min-h-[36px] transition-colors"
+                            data-med='{{ m | tojson | forceescape }}'
+                            title="{{ t.med_edit_card }}">
+                        {{ icon('settings', 'w-3.5 h-3.5') }}
+                        <span>{{ t.med_edit_card }} (в окне)</span>
+                    </button>
+                </div>
+
+                <!-- Inline edit medication form (ADR-191: view/edit card) -->
                 <details class="text-sm" data-med-edit>
-                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('settings', 'w-3.5 h-3.5') }}{{ t.med_edit_card }}</summary>
+                    <summary class="cursor-pointer pl-text-muted inline-flex items-center gap-1 list-none">{{ icon('edit', 'w-3.5 h-3.5') }}{{ t.med_edit_card }}</summary>
                     <form action="/medications/{{ m.id }}/update" method="post" class="med-edit-form mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)]">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <label class="text-xs pl-text-secondary">* {{ t.med_name }}
@@ -893,6 +934,408 @@
     </section>
 </div>
 
+<!-- Модальное окно редактирования препарата (ADR-191) -->
+<dialog id="med-edit-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-2xl w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="med-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <!-- Modal Header -->
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('settings', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="med-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">{{ t.med_edit_card }}</h3>
+                    <p id="med-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="med-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+
+        <!-- Modal Form Body (Scrollable) -->
+        <form id="med-modal-form" method="post" action="" class="med-edit-form overflow-y-auto px-5 py-4 space-y-4 text-sm flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="sm:col-span-2">
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_name }}</label>
+                    <div class="flex gap-1.5">
+                        <input type="text" id="modal-med-name" name="name" required class="flex-1 px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        <button type="button" id="modal-btn-autofill" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[40px]" title="Автозаполнить из справочника">
+                            {{ icon('sparkles', 'w-3.5 h-3.5') }} {{ t.med_autofill if t.get('med_autofill') else 'Справочник' }}
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_kind }}</label>
+                    <select id="modal-med-kind" name="kind" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        {% for k in kinds %}<option value="{{ k }}">{{ t['med_kind_' + k] if t.get('med_kind_' + k) else k }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_form }}</label>
+                    <input type="text" id="modal-med-form" name="form" placeholder="таблетки, мазь, раствор…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_strength }}</label>
+                    <input type="text" id="modal-med-strength" name="strength" placeholder="40 мг, 5%…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_manufacturer }}</label>
+                    <input type="text" id="modal-med-manufacturer" name="manufacturer" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_unit }}</label>
+                    <input type="text" id="modal-med-unit" name="unit" placeholder="мг, мл, таб" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_storage_conditions }}</label>
+                    <input type="text" id="modal-med-storage" name="storage_conditions" placeholder="до 25°C" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+            </div>
+
+            <!-- Checkboxes row -->
+            <div class="flex flex-wrap gap-4 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+                <label class="text-xs pl-text-secondary flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="modal-med-rx" name="prescription_required" value="1" class="w-4 h-4 rounded border-[color:var(--border)]">
+                    <span>{{ t.med_rx_label }}</span>
+                </label>
+                <label class="text-xs pl-text-secondary flex items-center gap-2 cursor-pointer" title="{{ t.med_ul_override_hint }}">
+                    <input type="checkbox" id="modal-med-ul" name="allow_ul_override" value="1" class="w-4 h-4 rounded border-[color:var(--border)]">
+                    <span>{{ t.med_ul_override }}</span>
+                </label>
+                <label class="text-xs pl-text-secondary flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="modal-med-active" name="is_active" value="1" class="w-4 h-4 rounded border-[color:var(--border)]">
+                    <span>{{ t.med_is_active if t.get('med_is_active') else 'Активен' }}</span>
+                </label>
+            </div>
+
+            <!-- Components (Active substances) -->
+            <div class="space-y-2 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold pl-text-secondary inline-flex items-center gap-1.5">{{ icon('sparkles', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }}{{ t.med_composition }}</span>
+                    <button type="button" id="modal-add-comp" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[32px]">
+                        {{ icon('plus', 'w-3 h-3') }}{{ t.med_comp_add }}
+                    </button>
+                </div>
+                <div id="modal-comp-rows" class="space-y-1.5"></div>
+                <input type="hidden" id="modal-components-json" name="components" value="[]">
+                <p class="text-[11px] pl-text-muted">{{ t.med_comp_hint }}</p>
+            </div>
+
+            <!-- Instructions & Notes -->
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_instructions }}</label>
+                    <input type="text" id="modal-med-instructions" name="instructions" placeholder="1 таб 2 раза в день после еды…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_notes }}</label>
+                    <textarea id="modal-med-notes" name="notes" rows="2" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="modal-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }}{{ t.med_save }}
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно редактирования аптечки -->
+<dialog id="kit-edit-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-lg w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="kit-edit-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('inventory', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <h3 id="kit-edit-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">Настройка аптечки</h3>
+            </div>
+            <button type="button" id="kit-edit-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <form id="kit-edit-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_kit_name }}</label>
+                <input type="text" id="kit-edit-name" name="name" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_kit_location_tree }}</label>
+                <select id="kit-edit-location-id" name="location_id" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    <option value="">—</option>
+                    {% for loc in locations %}<option value="{{ loc.id }}">{{ loc.path }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_kit_location }}</label>
+                <input type="text" id="kit-edit-location" name="location" placeholder="{{ t.med_kit_location_hint }}" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_notes }}</label>
+                <textarea id="kit-edit-notes" name="notes" rows="2" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm"></textarea>
+            </div>
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="kit-edit-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }}{{ t.med_save }}
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно пополнения аптечки препаратами (с поддержкой DataMatrix Честный Знак) -->
+<dialog id="kit-stock-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-xl w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="kit-stock-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('plus', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div>
+                    <h3 id="kit-stock-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">Пополнение аптечки</h3>
+                    <p id="kit-stock-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="kit-stock-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <form id="kit-stock-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+            <!-- Сканирование DataMatrix маркировки -->
+            <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
+                        {{ icon('qr', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }}
+                        DataMatrix (Честный Знак РФ)
+                    </span>
+                    <label class="cursor-pointer px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px] hover:opacity-90">
+                        {{ icon('camera', 'w-3.5 h-3.5') }} Фото пачки
+                        <input type="file" id="kit-stock-dm-file" accept="image/*" class="hidden">
+                    </label>
+                </div>
+                <div class="flex gap-1.5">
+                    <input type="text" id="kit-stock-dm-text" placeholder="Или вставьте код сканером / буфером..." class="flex-1 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                    <button type="button" id="kit-stock-dm-parse-btn" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[36px]">
+                        Распознать
+                    </button>
+                </div>
+                <p id="kit-stock-dm-status" class="text-[11px] pl-text-muted hidden"></p>
+            </div>
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">* Выберите препарат</label>
+                <select id="kit-stock-med-id" name="medication_id" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    <option value="">— Выберите из каталога —</option>
+                    {% for m in meds %}<option value="{{ m.id }}">{{ m.name }}{% if m.strength %} · {{ m.strength }}{% endif %}{% if m.form %} ({{ m.form }}){% endif %}</option>{% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_quantity }}</label>
+                    <input type="number" step="any" id="kit-stock-qty" name="quantity" value="1" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_unit }}</label>
+                    <input type="text" id="kit-stock-unit" name="unit" placeholder="упак / шт / таб" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_expiry_date }}</label>
+                    <input type="date" id="kit-stock-expiry" name="expiry_date" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_lot_number }}</label>
+                    <input type="text" id="kit-stock-lot" name="lot_number" placeholder="Серия партии" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_notes }}</label>
+                <input type="text" id="kit-stock-notes" name="notes" placeholder="Примечание к запасу…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="kit-stock-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }} Положить в аптечку
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно редактирования курса -->
+<dialog id="course-edit-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-lg w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="course-edit-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('prescription', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <h3 id="course-edit-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">Настройка курса</h3>
+            </div>
+            <button type="button" id="course-edit-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <form id="course-edit-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_course_name }}</label>
+                <input type="text" id="course-edit-name" name="name" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_start_date }}</label>
+                    <input type="date" id="course-edit-start" name="start_date" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_end_date }}</label>
+                    <input type="date" id="course-edit-end" name="end_date" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">Статус курса</label>
+                <select id="course-edit-status" name="status" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    {% for st in course_statuses %}<option value="{{ st }}">{{ t['med_course_status_' + st] if t.get('med_course_status_' + st) else st }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_notes }}</label>
+                <textarea id="course-edit-notes" name="notes" rows="2" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm"></textarea>
+            </div>
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="course-edit-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }}{{ t.med_save }}
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно добавления препарата в курс -->
+<dialog id="course-item-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-xl w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="course-item-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('plus', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div>
+                    <h3 id="course-item-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">Добавление препарата в курс</h3>
+                    <p id="course-item-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="course-item-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <form id="course-item-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+            <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">
+                <span class="text-xs font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
+                    {{ icon('sparkles', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }} Умное распознавание режима
+                </span>
+                <div class="flex flex-col sm:flex-row gap-1.5">
+                    <input type="text" id="course-item-smart-text" placeholder="например: 2 таблетки 3 раза в день после еды 14 дней" class="flex-1 px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                    <button type="button" id="course-item-smart-btn" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center justify-center gap-1 min-h-[36px]">
+                        {{ icon('sparkles', 'w-3.5 h-3.5') }} Распознать
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">* Выберите препарат</label>
+                <select id="course-item-med-id" name="medication_id" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    {% for m in meds %}<option value="{{ m.id }}">{{ m.name }}{% if m.strength %} · {{ m.strength }}{% endif %}{% if m.form %} ({{ m.form }}){% endif %}</option>{% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_dose }}</label>
+                    <input type="number" step="any" id="course-item-dose" name="dose_quantity" value="1" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_unit }}</label>
+                    <input type="text" id="course-item-unit" name="dose_unit" placeholder="таб / капс / мл" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_times_per_day }}</label>
+                    <input type="number" id="course-item-times" name="times_per_day" placeholder="2" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_times_of_day }}</label>
+                    <input type="text" id="course-item-times-of-day" name="times_of_day" placeholder="08:00, 20:00" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_duration_days }}</label>
+                    <input type="number" min="1" id="course-item-duration" name="duration_days" placeholder="дней" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_food_relation }}</label>
+                    <select id="course-item-food" name="food_relation" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        <option value="">— Не имеет значения —</option>
+                        {% for f in food_relations %}<option value="{{ f }}">{{ t['med_food_' + f] }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_frequency }}</label>
+                    <select id="course-item-freq" name="frequency_type" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        {% for f in frequency_types %}<option value="{{ f }}">{{ t['med_frequency_' + f] }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="course-item-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }} Добавить в курс
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
 <script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const L = {
@@ -959,17 +1402,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const rows = form.querySelector('.med-edit-comp-rows');
         const json = form.querySelector('.med-edit-components-json');
         function serialize() {
+            if (!rows || !json) return;
             const out = [];
             rows.querySelectorAll('.med-edit-comp-row').forEach(function(tr) {
-                const sub = tr.querySelector('.med-edit-comp-substance').value.trim();
+                const sub = (tr.querySelector('.med-edit-comp-substance').value || '').trim();
                 if (!sub) return;
-                const raw = tr.querySelector('.med-edit-comp-amount').value.trim();
+                const raw = (tr.querySelector('.med-edit-comp-amount').value || '').trim();
                 const amount = raw === '' ? null : Number(raw);
                 out.push({
                     substance: sub,
                     amount: (amount !== null && !isNaN(amount)) ? amount : null,
-                    unit: tr.querySelector('.med-edit-comp-unit').value.trim() || null,
-                    variant: tr.querySelector('.med-edit-comp-variant').value.trim() || null
+                    unit: (tr.querySelector('.med-edit-comp-unit').value || '').trim() || null,
+                    variant: (tr.querySelector('.med-edit-comp-variant').value || '').trim() || null
                 });
             });
             json.value = JSON.stringify(out);
@@ -990,13 +1434,192 @@ document.addEventListener('DOMContentLoaded', function() {
             rows.appendChild(div);
             serialize();
         }
-        form.querySelector('.med-edit-add-comp').addEventListener('click', function() { addRow(); });
+        const addBtn = form.querySelector('.med-edit-add-comp');
+        if (addBtn) addBtn.addEventListener('click', function() { addRow(); });
         rows.querySelectorAll('.med-edit-comp-del').forEach(function(btn) {
             btn.addEventListener('click', function() { btn.closest('.med-edit-comp-row').remove(); serialize(); });
         });
         rows.querySelectorAll('.med-edit-comp-row input').forEach(function(el) { el.addEventListener('input', serialize); });
+        form.addEventListener('submit', serialize);
         serialize();
     });
+
+    // ── ADR-191: модальное окно редактирования препарата ──
+    const modal = document.getElementById('med-edit-modal');
+    const modalForm = document.getElementById('med-modal-form');
+    const modalCompRows = document.getElementById('modal-comp-rows');
+    const modalCompJson = document.getElementById('modal-components-json');
+    const modalTitle = document.getElementById('med-modal-title');
+    const modalSubtitle = document.getElementById('med-modal-subtitle');
+    const modalCloseBtn = document.getElementById('med-modal-close');
+    const modalCancelBtn = document.getElementById('modal-btn-cancel');
+    const modalAddCompBtn = document.getElementById('modal-add-comp');
+    const modalAutofillBtn = document.getElementById('modal-btn-autofill');
+
+    function modalSerializeComps() {
+        if (!modalCompRows || !modalCompJson) return;
+        const out = [];
+        modalCompRows.querySelectorAll('.modal-comp-row').forEach(function(row) {
+            const sub = (row.querySelector('.modal-comp-substance').value || '').trim();
+            if (!sub) return;
+            const raw = (row.querySelector('.modal-comp-amount').value || '').trim();
+            const amount = raw === '' ? null : Number(raw);
+            out.push({
+                substance: sub,
+                amount: (amount !== null && !isNaN(amount)) ? amount : null,
+                unit: (row.querySelector('.modal-comp-unit').value || '').trim() || null,
+                variant: (row.querySelector('.modal-comp-variant').value || '').trim() || null
+            });
+        });
+        modalCompJson.value = JSON.stringify(out);
+    }
+
+    function modalAddCompRow(c) {
+        c = c || {};
+        const div = document.createElement('div');
+        div.className = 'modal-comp-row grid grid-cols-12 gap-1.5 items-center';
+        const esc = function(v) { return String(v == null ? '' : v).replace(/"/g, '&quot;'); };
+        div.innerHTML =
+            '<input type="text" list="med-substance-list" placeholder="' + L.subPh + '" value="' + esc(c.substance || c.name) + '" class="modal-comp-substance col-span-5 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="number" step="any" value="' + esc(c.amount) + '" placeholder="' + L.dosePh + '" class="modal-comp-amount col-span-2 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" value="' + esc(c.unit) + '" placeholder="' + L.unitPh + '" class="modal-comp-unit col-span-2 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" value="' + esc(c.variant) + '" placeholder="' + L.variantPh + '" class="modal-comp-variant col-span-2 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<button type="button" aria-label="' + L.remove + '" class="modal-comp-del col-span-1 inline-flex items-center justify-center text-[color:var(--text-muted)] hover:text-[color:var(--danger)] min-h-[36px] font-bold text-base">×</button>';
+        div.querySelector('.modal-comp-del').addEventListener('click', function() { div.remove(); modalSerializeComps(); });
+        div.querySelectorAll('input').forEach(function(el) { el.addEventListener('input', modalSerializeComps); });
+        modalCompRows.appendChild(div);
+        modalSerializeComps();
+    }
+
+    if (modalAddCompBtn) {
+        modalAddCompBtn.addEventListener('click', function() { modalAddCompRow(); });
+    }
+
+    if (modalForm) {
+        modalForm.addEventListener('submit', function() {
+            modalSerializeComps();
+        });
+    }
+
+    function openMedModal(med) {
+        if (!modal || !modalForm) return;
+        modalForm.action = '/medications/' + med.id + '/update';
+        if (modalTitle) modalTitle.textContent = (med.name || 'Препарат');
+        if (modalSubtitle) modalSubtitle.textContent = med.form || med.strength || '';
+
+        const setVal = function(id, v) {
+            const el = document.getElementById(id);
+            if (el) el.value = (v == null ? '' : v);
+        };
+        const setCheck = function(id, v) {
+            const el = document.getElementById(id);
+            if (el) el.checked = Boolean(v);
+        };
+
+        setVal('modal-med-name', med.name);
+        setVal('modal-med-kind', med.kind || 'medication');
+        setVal('modal-med-form', med.form);
+        setVal('modal-med-strength', med.strength);
+        setVal('modal-med-manufacturer', med.manufacturer);
+        setVal('modal-med-storage', med.storage_conditions);
+        setVal('modal-med-unit', med.unit);
+        setVal('modal-med-instructions', med.instructions);
+        setVal('modal-med-notes', med.notes);
+
+        setCheck('modal-med-rx', med.prescription_required);
+        setCheck('modal-med-ul', med.allow_ul_override);
+        setCheck('modal-med-active', med.is_active !== false);
+
+        if (modalCompRows) {
+            modalCompRows.innerHTML = '';
+            const comps = Array.isArray(med.components) ? med.components : [];
+            comps.forEach(function(c) {
+                modalAddCompRow({ substance: c.substance || c.name, amount: c.amount, unit: c.unit, variant: c.variant });
+            });
+        }
+        modalSerializeComps();
+
+        if (typeof modal.showModal === 'function') {
+            modal.showModal();
+        } else {
+            modal.setAttribute('open', '');
+        }
+    }
+
+    document.querySelectorAll('.btn-open-med-modal').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            try {
+                const raw = btn.getAttribute('data-med');
+                const med = JSON.parse(raw);
+                openMedModal(med);
+            } catch (err) {
+                console.error('Error opening med modal:', err);
+            }
+        });
+    });
+
+    const closeModal = function() {
+        if (!modal) return;
+        if (typeof modal.close === 'function') modal.close();
+        else modal.removeAttribute('open');
+    };
+
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+    if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+    }
+
+    if (modalAutofillBtn) {
+        modalAutofillBtn.addEventListener('click', async function() {
+            const nameInput = document.getElementById('modal-med-name');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) {
+                alert(L.enterName);
+                return;
+            }
+            const origHtml = modalAutofillBtn.innerHTML;
+            modalAutofillBtn.disabled = true;
+            modalAutofillBtn.innerText = L.searching;
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                const csrfInput = modalForm.querySelector('input[name="csrf_token"]');
+                if (csrfInput) formData.append('csrf_token', csrfInput.value);
+                const res = await fetch('/medications/autofill-info', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.status === 'ok' && data.data) {
+                    const info = data.data;
+                    if (info.form) document.getElementById('modal-med-form').value = info.form;
+                    if (info.strength) document.getElementById('modal-med-strength').value = info.strength;
+                    if (info.manufacturer) document.getElementById('modal-med-manufacturer').value = info.manufacturer;
+                    if (info.storage_conditions) document.getElementById('modal-med-storage').value = info.storage_conditions;
+                    if (info.instructions) document.getElementById('modal-med-instructions').value = info.instructions;
+                    if (info.prescription_required) document.getElementById('modal-med-rx').checked = true;
+                    if (info.kind) document.getElementById('modal-med-kind').value = info.kind;
+                    if (modalCompRows) {
+                        modalCompRows.innerHTML = '';
+                        const comps = Array.isArray(info.components) && info.components.length
+                            ? info.components
+                            : (info.active_ingredient ? [{ substance: info.active_ingredient }] : []);
+                        comps.forEach(function(c) {
+                            modalAddCompRow({ substance: c.substance || c.name, amount: c.amount, unit: c.unit, variant: c.variant });
+                        });
+                    }
+                } else {
+                    alert(data.message || L.notFound);
+                }
+            } catch (err) {
+                console.error('Modal autofill error:', err);
+                alert(L.notFound);
+            } finally {
+                modalAutofillBtn.disabled = false;
+                modalAutofillBtn.innerHTML = origHtml;
+            }
+        });
+    }
 
     // ── Автопоиск по наименованию → поля формы + состав ──
     const autofillBtn = document.getElementById('btn-autofill-pharma');
@@ -1163,6 +1786,205 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // ── Модальные диалоги: Аптечки и Курсы (Kits & Courses) ──
+    const setupModal = function(dialogId, closeId, cancelId) {
+        const dlg = document.getElementById(dialogId);
+        if (!dlg) return null;
+        const close = function() {
+            if (typeof dlg.close === 'function') dlg.close();
+            else dlg.removeAttribute('open');
+        };
+        const open = function() {
+            if (typeof dlg.showModal === 'function') dlg.showModal();
+            else dlg.setAttribute('open', '');
+        };
+        const closeBtn = document.getElementById(closeId);
+        const cancelBtn = document.getElementById(cancelId);
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        if (cancelBtn) cancelBtn.addEventListener('click', close);
+        dlg.addEventListener('click', function(e) { if (e.target === dlg) close(); });
+        return { dlg: dlg, open: open, close: close };
+    };
+
+    const kitEditM = setupModal('kit-edit-modal', 'kit-edit-modal-close', 'kit-edit-btn-cancel');
+    const kitStockM = setupModal('kit-stock-modal', 'kit-stock-modal-close', 'kit-stock-btn-cancel');
+    const courseEditM = setupModal('course-edit-modal', 'course-edit-modal-close', 'course-edit-btn-cancel');
+    const courseItemM = setupModal('course-item-modal', 'course-item-modal-close', 'course-item-btn-cancel');
+
+    // 1. Настройка аптечки
+    document.querySelectorAll('.btn-open-kit-edit').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            try {
+                const k = JSON.parse(btn.getAttribute('data-kit'));
+                const form = document.getElementById('kit-edit-form');
+                if (!form || !kitEditM) return;
+                form.action = '/med-kits/' + k.id + '/update';
+                const setVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+                setVal('kit-edit-name', k.name);
+                setVal('kit-edit-location-id', k.location_id);
+                setVal('kit-edit-location', k.location);
+                setVal('kit-edit-notes', k.notes);
+                kitEditM.open();
+            } catch (err) {
+                console.error('Error opening kit edit modal:', err);
+            }
+        });
+    });
+
+    // 2. Пополнение аптечки (наполнение препаратами + DataMatrix Честный Знак)
+    document.querySelectorAll('.btn-open-kit-stock').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const kitId = btn.getAttribute('data-kit-id');
+            const kitName = btn.getAttribute('data-kit-name') || '';
+            const form = document.getElementById('kit-stock-form');
+            if (!form || !kitStockM) return;
+            form.action = '/med-kits/' + kitId + '/add-stock';
+            const sub = document.getElementById('kit-stock-modal-subtitle');
+            if (sub) sub.textContent = kitName;
+            const statusEl = document.getElementById('kit-stock-dm-status');
+            if (statusEl) { statusEl.className = 'text-[11px] pl-text-muted hidden'; statusEl.textContent = ''; }
+            kitStockM.open();
+        });
+    });
+
+    // Обработка DataMatrix сканирования в модалке аптечки
+    const handleDmScanResult = function(data) {
+        const statusEl = document.getElementById('kit-stock-dm-status');
+        if (!statusEl) return;
+        statusEl.classList.remove('hidden');
+        if (data.status === 'ok' && data.parsed) {
+            const p = data.parsed;
+            statusEl.className = 'text-[11px] text-emerald-600 font-medium';
+            let msg = '✓ DataMatrix распознан: ';
+            if (p.gtin) msg += 'GTIN ' + p.gtin + ' ';
+            if (p.lot_number) msg += 'Серия ' + p.lot_number + ' ';
+            if (p.expiry_date) msg += 'Годен до ' + p.expiry_date;
+            statusEl.textContent = msg;
+
+            if (p.lot_number) document.getElementById('kit-stock-lot').value = p.lot_number;
+            if (p.expiry_date) document.getElementById('kit-stock-expiry').value = p.expiry_date;
+            if (data.matched_medication && data.matched_medication.id) {
+                const medSelect = document.getElementById('kit-stock-med-id');
+                if (medSelect) {
+                    medSelect.value = data.matched_medication.id;
+                    statusEl.textContent += ' · Препарат определен: ' + data.matched_medication.name;
+                }
+            }
+        } else {
+            statusEl.className = 'text-[11px] text-amber-600';
+            statusEl.textContent = data.message || 'Штрихкод / DataMatrix не обнаружен';
+        }
+    };
+
+    const dmFileInput = document.getElementById('kit-stock-dm-file');
+    if (dmFileInput) {
+        dmFileInput.addEventListener('change', async function() {
+            if (!dmFileInput.files || !dmFileInput.files[0]) return;
+            const statusEl = document.getElementById('kit-stock-dm-status');
+            if (statusEl) { statusEl.className = 'text-[11px] text-sky-600'; statusEl.textContent = 'Обработка изображения...'; statusEl.classList.remove('hidden'); }
+            const fd = new FormData();
+            fd.append('file', dmFileInput.files[0]);
+            const csrfInput = document.querySelector('input[name="csrf_token"]');
+            if (csrfInput) fd.append('csrf_token', csrfInput.value);
+            try {
+                const res = await fetch('/medications/scan-barcode', { method: 'POST', body: fd });
+                const data = await res.json();
+                handleDmScanResult(data);
+            } catch (err) {
+                console.error('Barcode scan error:', err);
+                if (statusEl) { statusEl.className = 'text-[11px] text-amber-600'; statusEl.textContent = 'Ошибка обработки фото'; }
+            }
+        });
+    }
+
+    const dmParseBtn = document.getElementById('kit-stock-dm-parse-btn');
+    if (dmParseBtn) {
+        dmParseBtn.addEventListener('click', async function() {
+            const txt = (document.getElementById('kit-stock-dm-text').value || '').trim();
+            if (!txt) return;
+            const fd = new FormData();
+            fd.append('raw_code', txt);
+            const csrfInput = document.querySelector('input[name="csrf_token"]');
+            if (csrfInput) fd.append('csrf_token', csrfInput.value);
+            try {
+                const res = await fetch('/medications/scan-barcode', { method: 'POST', body: fd });
+                const data = await res.json();
+                handleDmScanResult(data);
+            } catch (err) {
+                console.error('Barcode text parse error:', err);
+            }
+        });
+    }
+
+    // 3. Редактирование курса
+    document.querySelectorAll('.btn-open-course-edit').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            try {
+                const c = JSON.parse(btn.getAttribute('data-course'));
+                const form = document.getElementById('course-edit-form');
+                if (!form || !courseEditM) return;
+                form.action = '/med-courses/' + c.id + '/update';
+                const setVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+                setVal('course-edit-name', c.name);
+                setVal('course-edit-start', c.start_date);
+                setVal('course-edit-end', c.end_date);
+                setVal('course-edit-status', c.status || 'active');
+                setVal('course-edit-notes', c.notes);
+                courseEditM.open();
+            } catch (err) {
+                console.error('Error opening course edit modal:', err);
+            }
+        });
+    });
+
+    // 4. Добавление препарата в курс
+    document.querySelectorAll('.btn-open-course-item').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const courseId = btn.getAttribute('data-course-id');
+            const courseName = btn.getAttribute('data-course-name') || '';
+            const form = document.getElementById('course-item-form');
+            if (!form || !courseItemM) return;
+            form.action = '/med-courses/' + courseId + '/items';
+            const sub = document.getElementById('course-item-modal-subtitle');
+            if (sub) sub.textContent = courseName;
+            courseItemM.open();
+        });
+    });
+
+    const smartCourseBtn = document.getElementById('course-item-smart-btn');
+    if (smartCourseBtn) {
+        smartCourseBtn.addEventListener('click', async function() {
+            const raw = (document.getElementById('course-item-smart-text').value || '').trim();
+            if (!raw) return;
+            const orig = smartCourseBtn.innerHTML;
+            smartCourseBtn.disabled = true;
+            smartCourseBtn.innerHTML = 'Распознаю...';
+            try {
+                const fd = new FormData();
+                fd.append('text', raw);
+                const csrfInput = document.querySelector('input[name="csrf_token"]');
+                if (csrfInput) fd.append('csrf_token', csrfInput.value);
+                const res = await fetch('/medications/parse-regimen', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.status === 'ok' && data.params) {
+                    const p = data.params;
+                    if (p.dose_quantity) document.getElementById('course-item-dose').value = p.dose_quantity;
+                    if (p.dose_unit) document.getElementById('course-item-unit').value = p.dose_unit;
+                    if (p.times_per_day) document.getElementById('course-item-times').value = p.times_per_day;
+                    if (p.times_of_day) document.getElementById('course-item-times-of-day').value = p.times_of_day;
+                    if (p.duration_days) document.getElementById('course-item-duration').value = p.duration_days;
+                    if (p.food_relation) document.getElementById('course-item-food').value = p.food_relation;
+                    if (p.frequency_type) document.getElementById('course-item-freq').value = p.frequency_type;
+                }
+            } catch (err) {
+                console.error('Smart course parse error:', err);
+            } finally {
+                smartCourseBtn.disabled = false;
+                smartCourseBtn.innerHTML = orig;
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

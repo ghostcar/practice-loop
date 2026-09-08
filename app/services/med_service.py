@@ -1336,6 +1336,55 @@ async def set_course_status(db: AsyncSession, user_id: uuid.UUID, course_id: uui
     return c
 
 
+async def update_course(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    course_id: uuid.UUID,
+    *,
+    name: str,
+    start_date: str = "",
+    end_date: str = "",
+    status: str = "active",
+    notes: str = "",
+) -> MedCourse:
+    c = await get_course(db, user_id, course_id)
+    name = name.strip()[:200]
+    if not name:
+        raise ValueError("Name is required")
+    if status not in COURSE_STATUSES:
+        raise ValueError("Invalid course status")
+    c.name = name
+    c.status = status
+    c.is_active = status in ("active", "planned")
+    c.notes = (notes or "").strip() or None
+    c.start_date = date.fromisoformat(start_date.strip()) if start_date.strip() else None
+    c.end_date = date.fromisoformat(end_date.strip()) if end_date.strip() else None
+    await db.flush()
+    return c
+
+
+async def delete_course_item(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    course_id: uuid.UUID,
+    item_id: uuid.UUID,
+) -> None:
+    await get_course(db, user_id, course_id)
+    sched = (
+        await db.execute(
+            select(MedSchedule).where(
+                MedSchedule.id == item_id,
+                MedSchedule.course_id == course_id,
+                MedSchedule.user_id == user_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if sched is None:
+        raise NotFoundError("Course item not found")
+    await db.delete(sched)
+    await db.flush()
+
+
 async def _course_schedules(db: AsyncSession, course_id: uuid.UUID) -> list[MedSchedule]:
     return (await db.execute(select(MedSchedule).where(MedSchedule.course_id == course_id))).scalars().all()
 
@@ -2239,6 +2288,81 @@ async def delete_kit(db: AsyncSession, user_id: uuid.UUID, kit_id: uuid.UUID) ->
     await db.flush()
 
 
+async def update_kit(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    kit_id: uuid.UUID,
+    *,
+    name: str,
+    location: str = "",
+    location_id: uuid.UUID | None = None,
+    notes: str = "",
+) -> MedKit:
+    k = await get_kit(db, user_id, kit_id)
+    name = name.strip()[:200]
+    if not name:
+        raise ValueError("Name is required")
+    loc_id = await _resolve_kit_location(db, user_id, location_id)
+    k.name = name
+    k.location = (location or "").strip()[:200] or None
+    k.location_id = loc_id
+    k.notes = (notes or "").strip() or None
+    await db.flush()
+    return k
+
+
+async def add_stock_to_kit(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    kit_id: uuid.UUID,
+    *,
+    medication_id: uuid.UUID,
+    quantity: float,
+    unit: str | None = None,
+    expiry_date: str = "",
+    lot_number: str = "",
+    notes: str = "",
+) -> MedStock:
+    await get_kit(db, user_id, kit_id)
+    med = await get_med(db, user_id, medication_id)
+    return await create_stock(
+        db,
+        user_id=user_id,
+        medication_id=med.id,
+        kit_id=str(kit_id),
+        quantity=quantity,
+        unit=unit or med.unit or "",
+        expiry_date=expiry_date,
+        lot_number=lot_number,
+        low_stock_threshold="",
+        notes=notes,
+    )
+
+
+async def find_medication_by_barcode(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    gtin: str | None = None,
+    ean13: str | None = None,
+) -> Medication | None:
+    """Find a medication by matching GTIN/EAN-13 in name or notes."""
+    candidates = [c for c in (gtin, ean13) if c]
+    if not candidates:
+        return None
+    meds = (
+        await db.execute(
+            select(Medication).where(Medication.user_id == user_id, Medication.is_active == True)  # noqa: E712
+        )
+    ).scalars().all()
+    for m in meds:
+        for c in candidates:
+            if m.notes and c in m.notes:
+                return m
+            if c in m.name:
+                return m
+    return None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Intake recording (shared logic for form + JSON)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2407,16 +2531,55 @@ def _sanitize_analogs_payload(parsed: object, source_name: str) -> tuple[list[di
     return out, summary
 
 
-async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid.UUID, locale: str = "ru") -> dict:
-    """ADR-109: поиск аналогов/дженериков по составу препарата через BYOK-LLM.
+async def find_analogs(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    medication_id: uuid.UUID,
+    locale: str = "ru",
+    allow_directory_fallback: bool = False,
+) -> dict:
+    """ADR-109: поиск аналогов/дженериков по составу препарата через BYOK-LLM и онлайн-справочник.
 
-    Ошибки — ValueError с кодом: ``no_composition`` (состав не заполнен),
+    Ошибки — ValueError с кодом: ``no_composition`` (состав не заполнен и не найден),
     ``no_llm`` (нет активного провайдера), ``llm_error`` (сеть/парсинг).
     """
     m = await get_med(db, user_id, medication_id)
     composition = composition_label(m) or (m.active_ingredient or "").strip()
     if not composition:
+        auto = await autofill_info(db, user_id, m.name, locale=locale)
+        if auto:
+            if auto.get("components"):
+                await sync_med_components(db, m, auto["components"])
+            if auto.get("active_ingredient") and not m.active_ingredient:
+                m.active_ingredient = auto["active_ingredient"]
+                db.add(m)
+                await db.flush()
+            m = await get_med(db, user_id, medication_id)
+            composition = composition_label(m) or (m.active_ingredient or "").strip()
+
+    if not composition:
         raise ValueError("no_composition")
+
+    # Поиск аналогов в онлайн-справочнике (Vidal.ru / RxNorm)
+    directory_analogs: list[dict] = []
+    try:
+        from app.services.pharma_online import online_drug_lookup
+
+        online_res = await online_drug_lookup(m.name, max_analogs=_ANALOGS_MAX)
+        if online_res and online_res.get("analogs"):
+            for item in online_res["analogs"]:
+                item_name = str(item.get("name") or "").strip()
+                if item_name and normalize_substance(item_name) != normalize_substance(m.name):
+                    directory_analogs.append({
+                        "name": item_name,
+                        "manufacturer": _san_str(item.get("manufacturer")),
+                        "form": _san_str(item.get("form")),
+                        "strength": _san_str(item.get("strength")),
+                        "same_composition": bool(item.get("same_composition", True)),
+                        "notes": _san_str(item.get("notes")),
+                    })
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("Online directory lookup failed for %s: %s", m.name, exc)
 
     from app.llm.client import call_llm
     from app.llm.pipeline import get_active_llm_config
@@ -2424,32 +2587,51 @@ async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid
 
     config = await get_active_llm_config(db, user_id, capability="text")
     if config is None:
-        raise ValueError("no_llm")
+        if allow_directory_fallback and directory_analogs:
+            analogs = directory_analogs[:_ANALOGS_MAX]
+            summary = "Аналоги и дженерики найдены по фармацевтическому реестру Vidal.ru"
+            source = "vidal.ru"
+        else:
+            raise ValueError("no_llm")
+    else:
+        user_msg = f"Препарат: {m.name}\nСостав: {composition}\nФорма: {m.form or '—'}\nДозировка: {m.strength or '—'}"
+        from app.llm.client import set_call_meta
 
-    user_msg = f"Препарат: {m.name}\nСостав: {composition}\nФорма: {m.form or '—'}\nДозировка: {m.strength or '—'}"
-    from app.llm.client import set_call_meta
+        set_call_meta(section="medication", purpose="analogs_search")
+        try:
+            result = await call_llm(
+                config,
+                system_prompt=_ANALOGS_SYSTEM.replace("{locale}", locale),
+                user_message=user_msg,
+                json_mode=True,
+                db=db,
+                user_id=user_id,
+            )
+            content = (result.get("content") or "").strip()
+            try:
+                parsed = parse_llm_json(content, is_last_attempt=True) if content else None
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("LLM analogs parse failed for med %s: %s", medication_id, exc)
+                parsed = None
 
-    set_call_meta(section="medication", purpose="analogs_search")
-    try:
-        result = await call_llm(
-            config,
-            system_prompt=_ANALOGS_SYSTEM.replace("{locale}", locale),
-            user_message=user_msg,
-            json_mode=True,
-            db=db,
-            user_id=user_id,
-        )
-    except Exception as exc:  # noqa: BLE001 — сеть/провайдер: честный отказ, без заглушек
-        logger.warning("LLM analogs call failed for med %s: %s", medication_id, exc)
-        raise ValueError("llm_error") from None
-    content = (result.get("content") or "").strip()
-    try:
-        parsed = parse_llm_json(content, is_last_attempt=True) if content else None
-    except Exception as exc:  # noqa: BLE001 — нераспарсимый ответ = пустой результат, не сбой провайдера
-        logger.warning("LLM analogs parse failed for med %s: %s", medication_id, exc)
-        parsed = None
+            analogs, summary = _sanitize_analogs_payload(parsed, m.name)
+            source = "llm"
 
-    analogs, summary = _sanitize_analogs_payload(parsed, m.name)
+            # Объединяем с результатами справочника для полноты
+            seen_nk = {normalize_substance(x["name"]) for x in analogs}
+            for da in directory_analogs:
+                nk = normalize_substance(da["name"])
+                if nk and nk not in seen_nk and len(analogs) < _ANALOGS_MAX:
+                    seen_nk.add(nk)
+                    analogs.append(da)
+        except Exception as exc:  # noqa: BLE001
+            if allow_directory_fallback and directory_analogs:
+                analogs = directory_analogs[:_ANALOGS_MAX]
+                summary = "Аналоги и дженерики найдены по справочнику Vidal.ru (LLM недоступен)"
+                source = "vidal.ru"
+            else:
+                logger.warning("LLM analogs call failed for med %s: %s", medication_id, exc)
+                raise ValueError("llm_error") from None
 
     # Разметка «уже в аптечке пользователя» (по нормализованному названию).
     meds = await load_meds_graph(db, user_id)
@@ -2463,7 +2645,7 @@ async def find_analogs(db: AsyncSession, user_id: uuid.UUID, medication_id: uuid
     data = {
         "active_ingredient": composition,
         "composition": composition_label(m),
-        "source": "llm",
+        "source": source,
         "generated_at": local_now().isoformat(),
         "summary": summary,
         "analogs": analogs,

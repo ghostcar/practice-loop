@@ -185,3 +185,8 @@
 | [ADR-185](ADR-185.md) | 2026-09-01 | Tasks page tolerates missing LLM usage cost | accepted |
 | [ADR-186](ADR-186.md) | 2026-09-03 | Web session hardening: browser refresh-token rotation + logout revocation | accepted |
 | [ADR-187](ADR-187.md) | 2026-09-04 | Удаление мёртвых экспериментальных таблиц (automation_triggers / user_league_tiers / user_duels) | accepted |
+| [ADR-188](ADR-188.md) | 2026-09-04 | `alembic check`: полное покрытие моделей + фиксация остаточного schema drift | accepted |
+| [ADR-189](ADR-189.md) | 2026-09-04 | Medication: механизм аптечек, режимов и курсов приёма | accepted |
+| [ADR-190](ADR-190.md) | 2026-09-04 | Medication: «активный элемент», состав, суточные пределы, замена | accepted |
+| [ADR-191](ADR-191.md) | 2026-09-08 | Карточка медикамента, личные LLM в навигации, фикс админ-пула, журнал LLM, слоты приёма | accepted |
+| [ADR-192](ADR-192.md) | 2026-09-08 | Модалки аптечек, курсов и сканер DataMatrix (Честный Знак РФ) | accepted |

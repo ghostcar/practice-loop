@@ -105,10 +105,14 @@ multidict==6.7.1
     #   yarl
 openai==1.59.9
     # via practice-loop (pyproject.toml)
+packaging==26.3
+    # via pytesseract
 passlib[bcrypt]==1.7.4
     # via practice-loop (pyproject.toml)
 pillow==10.4.0
-    # via practice-loop (pyproject.toml)
+    # via
+    #   practice-loop (pyproject.toml)
+    #   pytesseract
 propcache==0.5.2
     # via yarl
 pyasn1==0.6.4
@@ -127,6 +131,10 @@ pydantic==2.7.4
 pydantic-core==2.18.4
     # via pydantic
 pydantic-settings==2.3.4
+    # via practice-loop (pyproject.toml)
+pyotp==2.9.0
+    # via practice-loop (pyproject.toml)
+pytesseract==0.3.13
     # via practice-loop (pyproject.toml)
 python-dotenv==1.0.1
     # via
@@ -185,6 +193,5 @@ websockets==17.0.1
     # via uvicorn
 yarl==1.24.5
     # via aiohttp
-pytesseract==0.3.13
-pyotp==2.9.0
+zxing-cpp==3.1.1
     # via practice-loop (pyproject.toml)

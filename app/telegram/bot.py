@@ -5,6 +5,7 @@ import contextlib
 import logging
 import uuid
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from aiogram import Bot, Dispatcher, F, Router, types
 from aiogram.filters import Command
@@ -87,6 +88,7 @@ if TG_BOT_TOKEN:
             "/stats — XP, streak, points\n"
             "/session — session status\n"
             "/med — today's medication doses\n"
+            "/scan — сканировать DataMatrix (Честный Знак)\n"
             "/health — daily check-in (mood/energy)\n"
             "/cycle — cycle phase & next period\n"
             "/care — due routines & course sessions\n"
@@ -1214,6 +1216,171 @@ if TG_BOT_TOKEN:
             text += f"\n🏆 {result['new_achievements']} new achievement(s)!"
         await callback.message.edit_text(text, parse_mode="Markdown")
         await callback.answer("Taken! 💊")
+
+    _SCAN_CACHE: dict[str, dict[str, Any]] = {}
+
+    @main_router.message(Command("scan"))
+    async def cmd_scan(message: types.Message):
+        """Инструкция по сканированию DataMatrix маркировки Честный Знак."""
+        await message.answer(
+            "📷 *Сканер DataMatrix (Честный Знак)*\n\n"
+            "Пришлите фото пачки препарата с квадратным DataMatrix-кодом.\n"
+            "Бот автоматически распознает серию, срок годности, GTIN и предложит положить препарат в вашу аптечку!",
+            parse_mode="Markdown",
+        )
+
+    @main_router.message(F.photo)
+    async def handle_photo_scan(message: types.Message):
+        """Распознавание DataMatrix кода на присланном фото."""
+        user = await _get_user_by_chat(message.chat.id)
+        if user is None:
+            return
+
+        from app.models.medication import MedKit
+        from app.services import med_service as med_svc
+        from app.services.datamatrix_service import decode_datamatrix_from_image
+        from app.services.pharma_online import online_drug_lookup
+
+        photo = message.photo[-1]
+        file_info = await message.bot.get_file(photo.file_id)
+        file_bytes = await message.bot.download_file(file_info.file_path)
+        img_data = file_bytes.read() if hasattr(file_bytes, "read") else file_bytes
+
+        results = decode_datamatrix_from_image(img_data)
+        if not results:
+            caption = (message.caption or "").lower()
+            if any(w in caption for w in ("скан", "scan", "код", "пачк", "лекарств", "аптек")):
+                await message.answer(
+                    "⚠️ Штрихкод или DataMatrix не удалось распознать на фото. "
+                    "Попробуйте сфотографировать код крупнее и при хорошем свете."
+                )
+            return
+
+        first = results[0]
+        gtin = first.gtin or ""
+        ean13 = first.ean13 or ""
+        lot = first.lot_number or ""
+        expiry = first.expiry_date or ""
+        serial = first.serial or ""
+
+        async with async_session_factory() as db:
+            med = await med_svc.find_medication_by_barcode(db, user.id, gtin=gtin, ean13=ean13)
+            med_name = med.name if med else None
+
+            if not med_name and (gtin or ean13):
+                online_info = await online_drug_lookup(ean13 or gtin)
+                if online_info and online_info.get("name"):
+                    med_name = online_info["name"]
+
+            if not med_name:
+                med_name = f"Препарат (GTIN: {gtin or ean13 or 'DataMatrix'})"
+
+            stmt = select(MedKit).where(MedKit.user_id == user.id).order_by(MedKit.name)
+            kits = (await db.execute(stmt)).scalars().all()
+
+        scan_id = uuid.uuid4().hex[:12]
+        _SCAN_CACHE[scan_id] = {
+            "user_id": str(user.id),
+            "med_id": str(med.id) if med else None,
+            "med_name": med_name,
+            "lot": lot,
+            "expiry": expiry,
+            "gtin": gtin,
+        }
+
+        lines = [
+            "📦 *Распознана маркировка (Честный Знак):*",
+            f"💊 *Препарат:* {med_name}",
+        ]
+        if gtin:
+            lines.append(f"🏷️ *GTIN:* `{gtin}`")
+        if lot:
+            lines.append(f"🔢 *Серия:* `{lot}`")
+        if expiry:
+            lines.append(f"📅 *Годен до:* `{expiry}`")
+        if serial:
+            lines.append(f"🔑 *SN:* `{serial[:12]}...`")
+
+        lines.append("\nВыберите аптечку, куда добавить этот препарат:")
+
+        kb_rows = []
+        for k in kits[:6]:
+            kb_rows.append([
+                InlineKeyboardButton(
+                    text=f"📥 В аптечку: {k.name[:25]}",
+                    callback_data=f"dm_kit:{scan_id}:{k.id}",
+                )
+            ])
+        if not kits:
+            lines.append("_(У вас пока нет созданных аптечек. Создайте аптечку на сайте в разделе медикаментов)_")
+
+        kb = InlineKeyboardMarkup(inline_keyboard=kb_rows) if kb_rows else None
+        await message.answer("\n".join(lines), parse_mode="Markdown", reply_markup=kb)
+
+    @main_router.callback_query(F.data.startswith("dm_kit:"))
+    async def inline_datamatrix_add_to_kit(callback: types.CallbackQuery):
+        parts = callback.data.split(":")
+        if len(parts) < 3:
+            await callback.answer("Ошибка запроса.", show_alert=True)
+            return
+
+        scan_id = parts[1]
+        kit_id = uuid.UUID(parts[2])
+        cached = _SCAN_CACHE.get(scan_id)
+        if not cached:
+            await callback.answer("Срок действия данных сканирования истёк.", show_alert=True)
+            return
+
+        user = await _get_user_by_chat(callback.message.chat.id)
+        if user is None or str(user.id) != cached["user_id"]:
+            await callback.answer("Ошибка доступа.", show_alert=True)
+            return
+
+        from app.models.medication import MedKit
+        from app.services import med_service as med_svc
+
+        async with async_session_factory() as db:
+            stmt = select(MedKit).where(MedKit.id == kit_id, MedKit.user_id == user.id)
+            kit = (await db.execute(stmt)).scalar_one_or_none()
+            if not kit:
+                await callback.answer("Аптечка не найдена.", show_alert=True)
+                return
+
+            med_id_str = cached.get("med_id")
+            if med_id_str:
+                med_id = uuid.UUID(med_id_str)
+            else:
+                notes = f"GTIN: {cached.get('gtin', '')}"
+                new_med = await med_svc.create_medication(
+                    db,
+                    user_id=user.id,
+                    name=cached["med_name"],
+                    kind="medication",
+                    notes=notes,
+                )
+                med_id = new_med.id
+
+            await med_svc.add_stock_to_kit(
+                db,
+                user_id=user.id,
+                kit_id=kit_id,
+                medication_id=med_id,
+                quantity=1.0,
+                expiry_date=cached.get("expiry") or "",
+                lot_number=cached.get("lot") or "",
+                notes="Добавлено через сканер DataMatrix",
+            )
+            await db.commit()
+
+        _SCAN_CACHE.pop(scan_id, None)
+        await callback.message.edit_text(
+            f"✅ Препарат *{cached['med_name']}* успешно добавлен в аптечку *{kit.name}*!\n"
+            f"📦 Партия: `{cached.get('lot') or '—'}`\n"
+            f"📅 Срок годности: `{cached.get('expiry') or '—'}`",
+            parse_mode="Markdown",
+        )
+        await callback.answer("Добавлено в аптечку! 💊")
+
 
     def _health_view(state, cycle: dict) -> tuple[str, InlineKeyboardMarkup]:
         """Build the health check-in text + inline mood/energy keyboard."""

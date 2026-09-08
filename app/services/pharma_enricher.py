@@ -283,6 +283,193 @@ _LOCAL_SEED: dict[str, dict] = {
             {"name": "Цинк", "inn": "Zinc", "unit": "мг"},
         ],
     },
+    "но-шпа": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "40 мг",
+        "manufacturer": "Sanofi / Chinoin",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": False,
+        "instructions": "Внутрь по 1-2 таблетки 2-3 раза в сутки при спастических болях.",
+        "components": [{"name": "Дротаверин", "inn": "Drotaverine", "amount": 40, "unit": "мг"}],
+    },
+    "дротаверин": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "40 мг",
+        "manufacturer": "разные (дженерики)",
+        "storage_conditions": "в сухом защищенном от света месте",
+        "prescription_required": False,
+        "instructions": "Внутрь по 1-2 таблетки 2-3 раза в сутки.",
+        "components": [{"name": "Дротаверин", "inn": "Drotaverine", "amount": 40, "unit": "мг"}],
+    },
+    "цитрамон": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "комбинированный",
+        "manufacturer": "разные (дженерики)",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": False,
+        "instructions": "По 1 таблетке 1-3 раза в день при головной боли после еды.",
+        "components": [
+            {"name": "Ацетилсалициловая кислота", "inn": "Acetylsalicylic acid", "amount": 240, "unit": "мг"},
+            {"name": "Парацетамол", "inn": "Paracetamol", "amount": 180, "unit": "мг"},
+            {"name": "Кофеин", "inn": "Caffeine", "amount": 30, "unit": "мг"},
+        ],
+    },
+    "пенталгин": {
+        "kind": "medication",
+        "form": "таблетки, покрытые оболочкой",
+        "strength": "комбинированный",
+        "manufacturer": "Фармстандарт",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": False,
+        "instructions": "По 1 таблетке 1-3 раза в сутки при болевом синдроме.",
+        "components": [
+            {"name": "Парацетамол", "inn": "Paracetamol", "amount": 325, "unit": "мг"},
+            {"name": "Напроксен", "inn": "Naproxen", "amount": 100, "unit": "мг"},
+            {"name": "Кофеин", "inn": "Caffeine", "amount": 50, "unit": "мг"},
+            {"name": "Дротаверин", "inn": "Drotaverine", "amount": 40, "unit": "мг"},
+            {"name": "Фенирамин", "inn": "Pheniramine", "amount": 10, "unit": "мг"},
+        ],
+    },
+    "кеторол": {
+        "kind": "medication",
+        "form": "таблетки, покрытые оболочкой",
+        "strength": "10 мг",
+        "manufacturer": "Dr. Reddy's",
+        "storage_conditions": "в сухом защищенном от света месте до 25°C",
+        "prescription_required": True,
+        "instructions": "По 10 мг не чаще 4 раз в сутки при сильной боли, не более 5 дней подряд.",
+        "components": [
+            {
+                "name": "Кеторолак",
+                "inn": "Ketorolac",
+                "amount": 10,
+                "unit": "мг",
+                "daily_max_amt": 40,
+                "daily_max_unit": "мг",
+            }
+        ],
+    },
+    "найз": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "100 мг",
+        "manufacturer": "Dr. Reddy's",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": True,
+        "instructions": "По 100 мг 2 раза в сутки после еды.",
+        "components": [
+            {
+                "name": "Нимесулид",
+                "inn": "Nimesulide",
+                "amount": 100,
+                "unit": "мг",
+                "daily_max_amt": 200,
+                "daily_max_unit": "мг",
+            }
+        ],
+    },
+    "нимесил": {
+        "kind": "medication",
+        "form": "гранулы для приготовления суспензии",
+        "strength": "100 мг/пакетик",
+        "manufacturer": "Menarini / Berlin-Chemie",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": True,
+        "instructions": "Растворить содержимое 1 пакетика в стакане воды, принимать после еды 2 раза/сут.",
+        "components": [
+            {
+                "name": "Нимесулид",
+                "inn": "Nimesulide",
+                "amount": 100,
+                "unit": "мг",
+                "daily_max_amt": 200,
+                "daily_max_unit": "мг",
+            }
+        ],
+    },
+    "супрастин": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "25 мг",
+        "manufacturer": "Egis",
+        "storage_conditions": "при температуре 15-25°C",
+        "prescription_required": False,
+        "instructions": "По 1 таблетке 2-3 раза в день во время еды при аллергии.",
+        "components": [{"name": "Хлоропирамин", "inn": "Chloropyramine", "amount": 25, "unit": "мг"}],
+    },
+    "лоратадин": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "10 мг",
+        "manufacturer": "разные (дженерики)",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": False,
+        "instructions": "По 1 таблетке 1 раз в сутки независимо от приема пищи.",
+        "components": [{"name": "Лоратадин", "inn": "Loratadine", "amount": 10, "unit": "мг"}],
+    },
+    "цетиризин": {
+        "kind": "medication",
+        "form": "таблетки, покрытые оболочкой",
+        "strength": "10 мг",
+        "manufacturer": "разные (дженерики)",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": False,
+        "instructions": "По 10 мг 1 раз в сутки вечером.",
+        "components": [{"name": "Цетиризин", "inn": "Cetirizine", "amount": 10, "unit": "мг"}],
+    },
+    "бисопролол": {
+        "kind": "medication",
+        "form": "таблетки, покрытые оболочкой",
+        "strength": "5 мг",
+        "manufacturer": "разные (дженерики)",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": True,
+        "instructions": "Утром натощак или во время завтрака по 1 таблетке, не разжевывая.",
+        "components": [{"name": "Бисопролол", "inn": "Bisoprolol", "amount": 5, "unit": "мг"}],
+    },
+    "капотен": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "25 мг",
+        "manufacturer": "Акрихин",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": True,
+        "instructions": "Под язык или внутрь за 1 час до еды при подъеме АД.",
+        "components": [{"name": "Каптоприл", "inn": "Captopril", "amount": 25, "unit": "мг"}],
+    },
+    "афобазол": {
+        "kind": "medication",
+        "form": "таблетки",
+        "strength": "10 мг",
+        "manufacturer": "Фармстандарт",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": False,
+        "instructions": "По 10 мг 3 раза в сутки после еды курсом 2-4 недели.",
+        "components": [{"name": "Фабомотизол", "inn": "Fabomotizole", "amount": 10, "unit": "мг"}],
+    },
+    "ацц": {
+        "kind": "medication",
+        "form": "шипучие таблетки / порошок",
+        "strength": "200 мг / 600 мг",
+        "manufacturer": "Sandoz",
+        "storage_conditions": "в сухом месте до 25°C",
+        "prescription_required": False,
+        "instructions": "Растворить в стакане воды, принимать после еды при кашле с мокротой.",
+        "components": [{"name": "Ацетилцистеин", "inn": "Acetylcysteine", "unit": "мг"}],
+    },
+    "смекта": {
+        "kind": "medication",
+        "form": "порошок для приготовления суспензии",
+        "strength": "3 г/пакетик",
+        "manufacturer": "Ipsen",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": False,
+        "instructions": "Растворить пакетик в 50 мл воды, принимать между приемами пищи.",
+        "components": [{"name": "Смектит диоктаэдрический", "inn": "Diosmectite", "amount": 3, "unit": "г"}],
+    },
 }
 
 # Фемостон по маске: «Фемостон N/M» / «Femoston N/M».
@@ -479,6 +666,17 @@ async def enrich_medication_info(
     if hit is not None:
         return _payload(hit)
 
+    # 2. Online directory lookup (Vidal.ru / RxNorm)
+    try:
+        from app.services.pharma_online import online_drug_lookup
+
+        online = await online_drug_lookup(clean_name)
+        if online is not None and (online.get("components") or online.get("form")):
+            return _payload(online)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("Online lookup exception for %r: %s", clean_name, exc)
+
+    # 3. LLM fallback
     llm = await _llm_enrich(db, user_id, clean_name)
     if llm is not None:
         return _payload(llm)
