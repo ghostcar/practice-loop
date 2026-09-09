@@ -43,6 +43,11 @@ from app.services import med_service as med_svc
 from app.services import training_service
 from app.services import wear_reactive_service as wear_svc
 from app.services.health_service import get_cycle_context
+from app.services.identity_registry import PRIMARY_ROLES
+from app.services.identity_service import (
+    get_active_tags,
+    get_effective_display_name,
+)
 from app.telegram.keyboards import (
     get_ai_generator_keyboard,
     get_health_keyboard,
@@ -1361,14 +1366,34 @@ async def handle_stats_tab(message: types.Message, state: FSMContext):
         return
 
     has_penalties = len(penalties) > 0
+
+    is_discretion = prefs_from_dict(user.prefs).discretion_active_at()
+    eff_name = get_effective_display_name(user, discretion_active=is_discretion)
+
     lines = [
-        "🏆 *Ваш профиль и достижения*",
-        f"⭐ Уровень: *{progress.level}* ({progress.xp} XP)",
+        f"🏆 *Профиль:* {eff_name}",
+    ]
+
+    if not is_discretion:
+        role_meta = PRIMARY_ROLES.get(user.primary_role or "submissive", {})
+        role_title = role_meta.get("title_ru", user.primary_role or "Ведомый")
+        lines.append(f"🎭 Роль: *{role_title}*")
+
+        active_tags = get_active_tags(user)
+        if active_tags:
+            tags_str = " ".join(f"`{t}`" for t in active_tags)
+            lines.append(f"🏷 Статус-теги: {tags_str}")
+
+        if user.ai_identity_locked:
+            lines.append("🔒 _Идентичность зафиксирована алгоритмом ИИ_")
+
+    lines.extend([
+        f"\n⭐ Уровень: *{progress.level}* ({progress.xp} XP)",
         f"🔥 Серия дней подряд: *{progress.current_streak}* (рекорд: {progress.longest_streak})",
         f"💰 Баланс баллов: *{progress.points_balance}*",
         f"✅ Всего завершено практик: *{progress.total_completed}*",
         f"⏹ Прервано: *{progress.total_interrupted}*",
-    ]
+    ])
 
     if has_penalties:
         lines.append(f"\n⚠️ *Активные штрафы к отработке:* {len(penalties)} шт.")

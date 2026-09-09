@@ -24,6 +24,18 @@ from app.models.session import ActivitySession
 from app.models.user import User
 from app.security import ensure_csrf_cookie
 from app.services import telegram_link_service as tg_link_svc
+from app.services.identity_registry import (
+    DEFAULT_STATUS_TAGS,
+    PHYSIOLOGY_TYPES,
+    PORTAL_ROLES,
+    PRIMARY_ROLES,
+    ROLE_COMPATIBILITY,
+)
+from app.services.identity_service import (
+    get_addressing_title,
+    get_effective_display_name,
+    update_user_identity,
+)
 from app.templates_setup import templates
 
 router = APIRouter(tags=["profile"])
@@ -157,6 +169,24 @@ async def profile_page(
             "timezone_presets": _TIMEZONE_PRESETS,
             "locale_labels": _LOCALE_LABELS,
             "tier_label": _TIER_LABELS.get(user.subscription_tier, user.subscription_tier),
+            # ADR-196 Identity taxonomy and status tags
+            "primary_roles": PRIMARY_ROLES,
+            "portal_roles_all": PORTAL_ROLES,
+            "role_compatibility": {k: list(v) for k, v in ROLE_COMPATIBILITY.items()},
+            "default_status_tags": DEFAULT_STATUS_TAGS,
+            "physiology_types": PHYSIOLOGY_TYPES,
+            "effective_display_name": get_effective_display_name(user),
+            "addressing_formal": get_addressing_title(user, form="formal"),
+            "addressing_affectionate": get_addressing_title(user, form="affectionate"),
+            "addressing_directive": get_addressing_title(user, form="directive"),
+            "user_primary_role": user.primary_role or "submissive",
+            "user_portal_roles": user.portal_roles or [],
+            "user_status_tags": user.status_tags or {"permanent": [], "standing": [], "dynamic": []},
+            "user_physiology": user.physiology or "male",
+            "user_portal_name": user.portal_name or "",
+            "user_ai_designation": user.ai_designation or "",
+            "ai_identity_locked": user.ai_identity_locked,
+            "ai_status_reason": user.ai_status_reason or "",
         },
     )
     ensure_csrf_cookie(request, response)
@@ -236,19 +266,43 @@ async def update_profile(
     display_name: str = Form(default=""),
     locale: str = Form(default="en"),
     timezone: str = Form(default="UTC"),
+    portal_name: str = Form(default=""),
+    ai_designation: str = Form(default=""),
+    primary_role: str = Form(default="submissive"),
+    portal_roles: list[str] = Form(default=[]),
+    physiology: str = Form(default="male"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update profile fields (display_name, locale, timezone)."""
+    """Update profile fields and identity taxonomy (ADR-196)."""
+    from urllib.parse import quote
+
     # Validate locale
     if locale not in ("en", "ru"):
         locale = "en"
 
-    # Validate timezone (accept freeform but warn if not in presets)
     user.display_name = display_name.strip()[:100] or None
     user.locale = locale
     user.timezone = timezone.strip()[:64] or "UTC"
+
+    try:
+        update_user_identity(
+            user,
+            portal_name=portal_name,
+            ai_designation=ai_designation,
+            primary_role=primary_role,
+            portal_roles=portal_roles,
+            physiology=physiology,
+            is_ai_action=False,
+        )
+    except ValueError as e:
+        return RedirectResponse(
+            url=f"/profile?status=error&error_msg={quote(str(e))}",
+            status_code=303,
+        )
+
     db.add(user)
     await db.flush()
 
     return RedirectResponse(url="/profile?status=updated", status_code=303)
+

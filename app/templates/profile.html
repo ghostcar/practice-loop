@@ -46,13 +46,30 @@
                 {{ (user.display_name or user.email)[0] | upper }}
             </div>
             <div class="flex-1 min-w-0">
-                <h1 class="pl-display text-2xl font-semibold text-[color:var(--text)]">
-                    {{ user.display_name or user.email.split('@')[0] }}
+                <h1 class="pl-display text-2xl font-semibold text-[color:var(--text)] flex items-center gap-2">
+                    {{ user.portal_name or user.display_name or user.email.split('@')[0] }}
+                    {% if user.ai_designation %}
+                    <span class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        {{ user.ai_designation }}
+                    </span>
+                    {% endif %}
                 </h1>
-                <p class="text-sm text-[color:var(--text-muted)] mt-0.5">{{ user.email }}</p>
+                <p class="text-sm text-[color:var(--text-muted)] mt-0.5">
+                    {{ user.email }}
+                    {% if user.display_name and user.portal_name and user.display_name != user.portal_name %}
+                    · <span class="text-xs text-[color:var(--text-secondary)]">Системное: {{ user.display_name }}</span>
+                    {% endif %}
+                </p>
                 <div class="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                    {# Primary role badge #}
+                    {% set role_meta = primary_roles.get(user_primary_role, {}) %}
+                    <span class="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-medium">
+                        {{ icon('profile', 'w-3.5 h-3.5 inline') }} {{ role_meta.get('title_ru', user_primary_role) }}
+                    </span>
+                    {# Physiology badge #}
+                    {% set phys_meta = physiology_types.get(user_physiology, {}) %}
                     <span class="px-2 py-0.5 rounded-full bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)]">
-                        {{ icon('profile', 'w-3.5 h-3.5 inline') }} {{ t['account_role_' + user.role] }}
+                        {{ phys_meta.get('title_ru', user_physiology) }}
                     </span>
                     <span class="px-2 py-0.5 rounded-full bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] border border-[color:var(--border)]">
                         {{ icon('points', 'w-3.5 h-3.5 inline') }} {{ tier_label }}
@@ -67,7 +84,33 @@
                         {{ icon('shield', 'w-3.5 h-3.5 inline') }} PIN
                     </span>
                     {% endif %}
+                    {% if ai_identity_locked %}
+                    <span class="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[11px]" title="{{ ai_status_reason }}">
+                        {{ icon('lock', 'w-3 h-3 inline') }} Идентичность ИИ
+                    </span>
+                    {% endif %}
                 </div>
+
+                {# Status Tags Chips #}
+                {% if user_status_tags.get('permanent') or user_status_tags.get('standing') or user_status_tags.get('dynamic') %}
+                <div class="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-[color:var(--border)]/40 text-[11px] font-mono">
+                    {% for tag in user_status_tags.get('permanent', []) %}
+                    <span class="px-2 py-0.5 rounded bg-[color:var(--surface-soft)] text-emerald-400 border border-emerald-500/20">
+                        #{{ tag }}
+                    </span>
+                    {% endfor %}
+                    {% for tag in user_status_tags.get('standing', []) %}
+                    <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                        #{{ tag }}
+                    </span>
+                    {% endfor %}
+                    {% for tag in user_status_tags.get('dynamic', []) %}
+                    <span class="px-2 py-0.5 rounded {% if tag in ['punished', 'breached'] %}bg-rose-500/15 text-rose-300 border border-rose-500/30{% elif tag in ['good_pet', 'rewarded'] %}bg-emerald-500/15 text-emerald-300 border border-emerald-500/30{% else %}bg-amber-500/15 text-amber-300 border border-amber-500/30{% endif %}">
+                        #{{ tag }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -146,7 +189,90 @@
                 </select>
             </label>
 
-            <div class="flex justify-end">
+            {# ── ADR-196: Ролевой профиль и портальный статус ── #}
+            <div class="pt-4 border-t border-[color:var(--border)] space-y-4">
+                <h3 class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-2">
+                    {{ icon('profile', 'w-4 h-4 text-indigo-400') }} Ролевой профиль и статус (ADR-196)
+                </h3>
+
+                {# Portal Name & AI Designation #}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-[color:var(--text-secondary)]">
+                            Имя на портале
+                            {% if ai_identity_locked %}
+                            <span class="text-xs text-purple-400 font-normal">({{ icon('lock', 'w-3 h-3 inline') }} зафиксировано ИИ)</span>
+                            {% endif %}
+                            <input type="text" name="portal_name" maxlength="100"
+                                   value="{{ user_portal_name }}"
+                                   {% if ai_identity_locked %}readonly class="mt-1 w-full pl-surface-soft/60 opacity-80 cursor-not-allowed rounded-lg border border-purple-500/40 px-3 py-2 text-[color:var(--text)]"{% else %}placeholder="Псевдоним в игровом контуре" class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]"{% endif %}>
+                        </label>
+                        <p class="text-xs text-[color:var(--text-muted)] mt-1">Отображается в сессиях, задачах и обращениях бота.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-[color:var(--text-secondary)]">
+                            Реестровый номер ИИ
+                            {% if ai_identity_locked %}
+                            <span class="text-xs text-purple-400 font-normal">({{ icon('lock', 'w-3 h-3 inline') }} зафиксировано ИИ)</span>
+                            {% endif %}
+                            <input type="text" name="ai_designation" maxlength="100"
+                                   value="{{ user_ai_designation }}"
+                                   {% if ai_identity_locked %}readonly class="mt-1 w-full pl-surface-soft/60 opacity-80 cursor-not-allowed rounded-lg border border-purple-500/40 px-3 py-2 text-[color:var(--text)] font-mono"{% else %}placeholder="напр. Sub #042 или Agent #7" class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)] font-mono"{% endif %}>
+                        </label>
+                        <p class="text-xs text-[color:var(--text-muted)] mt-1">Системный идентификатор для директивных обращений ИИ.</p>
+                    </div>
+                </div>
+
+                {# Primary Role #}
+                <div>
+                    <label class="block text-sm text-[color:var(--text-secondary)]">
+                        Первичный ролевой архетип
+                        <select name="primary_role" class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+                            {% for role_key, role_data in primary_roles.items() %}
+                            <option value="{{ role_key }}" {{ 'selected' if user_primary_role == role_key else '' }}>
+                                {{ role_data.title_ru }} ({{ role_data.title_en }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <p class="text-xs text-[color:var(--text-muted)] mt-1">Определяет глобальный вектор генерации заданий и правил коммуникации.</p>
+                </div>
+
+                {# Contextual Roles #}
+                <div>
+                    <label class="block text-sm text-[color:var(--text-secondary)] mb-1.5">
+                        Контекстные роли на портале (амплуа)
+                    </label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-xs">
+                        {% for r_key, r_data in portal_roles_all.items() %}
+                        <label class="flex items-center gap-2 cursor-pointer hover:text-[color:var(--text)]">
+                            <input type="checkbox" name="portal_roles" value="{{ r_key }}"
+                                   {{ 'checked' if r_key in user_portal_roles else '' }}
+                                   class="rounded border-[color:var(--border)] text-[color:var(--accent)] focus:ring-[color:var(--focus)]">
+                            <span>{{ r_data.title_ru }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# Physiology #}
+                <div>
+                    <label class="block text-sm text-[color:var(--text-secondary)]">
+                        Физиологический классификатор
+                        <select name="physiology" class="mt-1 w-full pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)]">
+                            {% for phys_key, phys_data in physiology_types.items() %}
+                            <option value="{{ phys_key }}" {{ 'selected' if user_physiology == phys_key else '' }}>
+                                {{ phys_data.title_ru }} — {{ phys_data.description_ru }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <p class="text-xs text-[color:var(--text-muted)] mt-1">Изолирован от ролей. Используется только для расчета калорий, тренировок и анатомии девайсов.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
                 <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
                     {{ t.settings_save }}
                 </button>

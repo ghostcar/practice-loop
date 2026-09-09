@@ -20,7 +20,9 @@ from app.models.journal import JournalEntry
 from app.models.life import InventoryItem
 from app.models.locktimer import LockSession, LockSlotOccurrence
 from app.models.points import PointsTransaction
+from app.models.user import User
 from app.models.wear_events import WearEventDefinition, WearEventLog
+from app.services import identity_service
 from app.timeutils import as_utc
 
 logger = logging.getLogger(__name__)
@@ -435,6 +437,10 @@ async def record_unlock_event(
         reactions["sport_triggered"] = True
         reactions["sport_message"] = "Интенсивная тренировка зафиксирована."
 
+    user = await db.get(User, user_id)
+    if user:
+        identity_service.on_wear_status_change(user, is_locked=False)
+
     open_log.reactions_applied = reactions
     await db.commit()
     await db.refresh(open_log)
@@ -516,6 +522,14 @@ async def record_relock_event(
         session.last_comfort_score = comfort_score
     session.last_wear_checkin_at = now
     session.updated_at = now
+
+    user = await db.get(User, user_id)
+    if user:
+        if "delay_penalty" in reactions:
+            identity_service.on_wear_breached(user)
+        else:
+            identity_service.on_wear_checkin_success(user)
+        identity_service.on_wear_status_change(user, is_locked=True)
 
     await db.commit()
     await db.refresh(relock_log)
