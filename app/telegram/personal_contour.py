@@ -53,6 +53,7 @@ from app.telegram.keyboards import (
     get_training_keyboard,
     get_wear_card_keyboard,
     get_wear_comfort_keyboard,
+    get_wear_device_selection_keyboard,
     get_wear_reasons_keyboard,
 )
 from app.timeutils import as_utc, local_today
@@ -1522,12 +1523,13 @@ def _render_wear_card(status: dict, is_agent_mode: bool = False) -> tuple[str, I
     """Renders the real-time wear status card with exact second timer and actions."""
     is_active = status.get("is_active", False)
     is_locked = status.get("is_locked", False)
+    supports_tag = status.get("supports_tag", True)
     lines = ["🔒 **Пояс верности: Свободный режим**\n"]
 
     if not is_active:
         lines.append("⚪️ **Текущее состояние: НЕ НАДЕТ (Свободен)**")
         lines.append("Активная сессия ношения пояса отсутствует.")
-        lines.append("\n_Вы можете запереть пояс, зафиксировав пломбу, чтобы начать период ношения._")
+        lines.append("\n_Вы можете запереть пояс, выбрав устройство из инвентаря._")
     elif is_locked:
         lines.append("🟢 **Текущее состояние: ЗАПЕРТ**")
         lines.append(f"⏱ **{status['time_text']}**")
@@ -1549,8 +1551,15 @@ def _render_wear_card(status: dict, is_agent_mode: bool = False) -> tuple[str, I
 
     if is_active:
         lines.append("")
-        tag = status.get("current_tag")
-        lines.append(f"🏷 **Пломба / Бирка:** `#{tag}`" if tag else "🏷 **Пломба / Бирка:** _нет_")
+        device = status.get("device")
+        if device:
+            lines.append(f"🛡 **Устройство:** {device.name}")
+
+        if supports_tag:
+            tag = status.get("current_tag")
+            lines.append(f"🏷 **Пломба / Бирка:** `#{tag}`" if tag else "🏷 **Пломба / Бирка:** _нет_")
+        else:
+            lines.append("🏷 **Пломба / Бирка:** _не предусмотрена конструкцией_")
 
         comfort = status.get("last_comfort")
         lines.append(f"⭐ **Комфорт:** {comfort}/5" if comfort else "⭐ **Комфорт:** _не оценён_")
@@ -1567,6 +1576,7 @@ def _render_wear_card(status: dict, is_agent_mode: bool = False) -> tuple[str, I
         is_active=is_active,
         is_locked=is_locked,
         is_agent_mode=is_agent_mode,
+        supports_tag=supports_tag,
     )
     return "\n".join(lines), keyboard
 
@@ -1632,9 +1642,99 @@ async def cb_wear_toggle_agent(callback: types.CallbackQuery, state: FSMContext)
 
 @personal_router.callback_query(F.data == "wear_start_init")
 async def cb_wear_start_init(callback: types.CallbackQuery, state: FSMContext):
+    user = await _get_user_by_chat(callback.message.chat.id)
+    if user is None:
+        return
+
+    async with async_session_factory() as db:
+        devices = await wear_svc.get_user_chastity_devices(db, user.id)
+
+    if devices:
+        kb = get_wear_device_selection_keyboard(devices)
+        await callback.message.edit_text(
+            "🔒 **Выбор пояса верности**\n\n"
+            "Выберите пояс / устройство из вашего инвентаря для надевания:",
+            parse_mode="Markdown",
+            reply_markup=kb,
+        )
+        await callback.answer()
+        return
+
+    # No devices in inventory: directly prompt for tag (or no tag)
+    await state.update_data(chosen_device_id=None)
     await state.set_state(PersonalStates.waiting_for_wear_start_tag)
     await callback.message.answer(
         "🔒 **Начало ношения пояса верности**\n\n"
+        "Введите номер пломбы / бирки (или отправьте `-` если закрываете без номерной бирки):\n\n"
+        "_Для отмены отправьте /cancel_",
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
+
+@personal_router.callback_query(F.data.startswith("wear_dev:"))
+async def cb_wear_select_device(callback: types.CallbackQuery, state: FSMContext):
+    user = await _get_user_by_chat(callback.message.chat.id)
+    if user is None:
+        return
+
+    dev_code = callback.data.split(":", 1)[1]
+    if dev_code == "none":
+        await state.update_data(chosen_device_id=None)
+        await state.set_state(PersonalStates.waiting_for_wear_start_tag)
+        await callback.message.edit_text(
+            "🔒 **Фиксация пломбы (без устройства из инвентаря)**\n\n"
+            "Введите номер пломбы / бирки (или отправьте `-` если закрываете без номерной бирки):\n\n"
+            "_Для отмены отправьте /cancel_",
+            parse_mode="Markdown",
+        )
+        await callback.answer()
+        return
+
+    try:
+        dev_uuid = uuid.UUID(dev_code)
+    except Exception:
+        await callback.answer("Некорректный идентификатор устройства", show_alert=True)
+        return
+
+    async with async_session_factory() as db:
+        device = await wear_svc.get_device_by_id(db, dev_uuid, user.id)
+        if not device:
+            await callback.answer("Устройство не найдено в инвентаре", show_alert=True)
+            return
+
+        supports_tag = wear_svc.device_supports_tag(device)
+
+        if not supports_tag:
+            # Device doesn't support tags: lock immediately without tag prompt
+            session, initial_log = await wear_svc.start_open_ended_session(
+                db,
+                user.id,
+                tag_number=None,
+                device_id=device.id,
+            )
+            status = await wear_svc.get_wear_status(db, user.id)
+
+            await state.set_state(None)
+            await callback.message.edit_text(
+                f"🔒 **Пояс надет и заперт!**\n\n"
+                f"🛡 **Устройство:** {device.name}\n"
+                f"🏷 **Пломба:** не требуется (конструкция без пломбирования)\n"
+                f"⏱ Период ношения начался, таймер запущен.",
+                parse_mode="Markdown",
+            )
+            data = await state.get_data()
+            is_agent_mode = data.get("wear_agent_mode", False)
+            text, kb = _render_wear_card(status, is_agent_mode=is_agent_mode)
+            await callback.message.answer(text, parse_mode="Markdown", reply_markup=kb)
+            await callback.answer()
+            return
+
+    # Device supports tags: ask for tag number
+    await state.update_data(chosen_device_id=str(device.id))
+    await state.set_state(PersonalStates.waiting_for_wear_start_tag)
+    await callback.message.edit_text(
+        f"🔒 **Фиксация пломбы для «{device.name}»**\n\n"
         "Введите номер пломбы / бирки (или отправьте `-` если закрываете без номерной бирки):\n\n"
         "_Для отмены отправьте /cancel_",
         parse_mode="Markdown",
@@ -1657,23 +1757,29 @@ async def msg_wear_start_tag(message: types.Message, state: FSMContext):
     raw = (message.text or "").strip()
     tag_number = None if raw in ("-", "—", "") else raw
 
+    data = await state.get_data()
+    chosen_dev_str = data.get("chosen_device_id")
+    device_id = uuid.UUID(chosen_dev_str) if chosen_dev_str else None
+
     async with async_session_factory() as db:
         session, initial_log = await wear_svc.start_open_ended_session(
             db,
             user.id,
             tag_number=tag_number,
+            device_id=device_id,
         )
         status = await wear_svc.get_wear_status(db, user.id)
 
     await state.set_state(None)
 
     lines = ["🔒 **Пояс надет и заперт!**", "Период ношения начался, таймер запущен."]
+    if status.get("device"):
+        lines.append(f"🛡 **Устройство:** {status['device'].name}")
     if tag_number:
         lines.append(f"🏷 Зафиксирована пломба: `#{tag_number}`")
 
     await message.answer("\n".join(lines), parse_mode="Markdown")
 
-    data = await state.get_data()
     is_agent_mode = data.get("wear_agent_mode", False)
     text, kb = _render_wear_card(status, is_agent_mode=is_agent_mode)
     await message.answer(text, parse_mode="Markdown", reply_markup=kb)
@@ -1810,6 +1916,43 @@ async def msg_wear_agent_reason(message: types.Message, state: FSMContext):
 
 @personal_router.callback_query(F.data == "wear_relock_init")
 async def cb_wear_relock_init(callback: types.CallbackQuery, state: FSMContext):
+    user = await _get_user_by_chat(callback.message.chat.id)
+    if user is None:
+        return
+
+    async with async_session_factory() as db:
+        status = await wear_svc.get_wear_status(db, user.id)
+
+    # If device does not support tags, relock immediately without asking for tag
+    if not status.get("supports_tag", True):
+        async with async_session_factory() as db:
+            relock_log, reactions = await wear_svc.record_relock_event(
+                db,
+                user.id,
+                tag_number=None,
+            )
+            status = await wear_svc.get_wear_status(db, user.id)
+
+        lines = ["🔒 **Пояс успешно заперт!**"]
+        lines.append("🏷 Устройство заперто без пломбы (не предусмотрено).")
+        if reactions.get("delay_penalty"):
+            dp = reactions["delay_penalty"]
+            lines.append(
+                f"\n⚠️ **ВНИМАНИЕ: Зафиксировано опоздание на {dp['formatted_overdue']}!**\n"
+                f"Начислен штраф: **{dp['amount']} баллов**."
+            )
+        else:
+            lines.append("✅ Возврат выполнен вовремя без опоздания.")
+
+        await callback.message.answer("\n".join(lines), parse_mode="Markdown")
+
+        data = await state.get_data()
+        is_agent_mode = data.get("wear_agent_mode", False)
+        text, kb = _render_wear_card(status, is_agent_mode=is_agent_mode)
+        await callback.message.answer(text, parse_mode="Markdown", reply_markup=kb)
+        await callback.answer()
+        return
+
     await state.set_state(PersonalStates.waiting_for_wear_relock_tag)
     await callback.message.answer(
         "🔒 **Закрытие пояса**\n\n"
@@ -1862,6 +2005,17 @@ async def msg_wear_relock_tag(message: types.Message, state: FSMContext):
 
 @personal_router.callback_query(F.data == "wear_inspect_init")
 async def cb_wear_inspect_init(callback: types.CallbackQuery, state: FSMContext):
+    user = await _get_user_by_chat(callback.message.chat.id)
+    if user is None:
+        return
+
+    async with async_session_factory() as db:
+        status = await wear_svc.get_wear_status(db, user.id)
+
+    if not status.get("supports_tag", True):
+        await callback.answer("Устройство используется без номерной бирки/пломбы", show_alert=True)
+        return
+
     await state.set_state(PersonalStates.waiting_for_wear_inspection_tag)
     await callback.message.answer(
         "🔍 **Проверка пломбы / бирки (без снятия)**\n\n"

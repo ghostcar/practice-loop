@@ -219,3 +219,110 @@ async def test_no_active_session_initially(db_session: AsyncSession, test_user: 
     status_finished = await wear_svc.get_wear_status(db_session, test_user.id)
     assert status_finished["is_active"] is False
 
+
+@pytest.mark.asyncio
+async def test_device_supports_tag_logic():
+    """Verifies recognition of tag/seal capability from extra_properties."""
+    from app.models.life import InventoryItem
+
+    # None item defaults to True
+    assert wear_svc.device_supports_tag(None) is True
+
+    # Empty extra_properties defaults to True
+    item1 = InventoryItem(name="Cage 1", category="wearable", extra_properties={})
+    assert wear_svc.device_supports_tag(item1) is True
+
+    # Explicit False
+    item2 = InventoryItem(name="Cage 2", category="wearable", extra_properties={"supports_tag": False})
+    assert wear_svc.device_supports_tag(item2) is False
+
+    # String "false"
+    item3 = InventoryItem(name="Cage 3", category="wearable", extra_properties={"can_seal": "false"})
+    assert wear_svc.device_supports_tag(item3) is False
+
+    # Supports seal True
+    item4 = InventoryItem(name="Cage 4", category="wearable", extra_properties={"supports_seal": True})
+    assert wear_svc.device_supports_tag(item4) is True
+
+
+@pytest.mark.asyncio
+async def test_device_selection_and_inventory_status_cycle(db_session: AsyncSession, test_user: User):
+    """Verifies that selecting an inventory item transitions status to in_use and back to available."""
+    from app.models.life import InventoryItem
+
+    # Create inventory device
+    device = InventoryItem(
+        user_id=test_user.id,
+        category="wearable",
+        group_type="equipment",
+        name="Steel Chastity Cage X",
+        inventory_status="available",
+        extra_properties={"supports_tag": True},
+    )
+    db_session.add(device)
+    await db_session.commit()
+    await db_session.refresh(device)
+
+    # 1. User devices search
+    devices = await wear_svc.get_user_chastity_devices(db_session, test_user.id)
+    assert any(d.id == device.id for d in devices)
+
+    # 2. Start wear session bound to this device
+    session, log = await wear_svc.start_open_ended_session(
+        db_session,
+        test_user.id,
+        tag_number="DEV-9999",
+        device_id=device.id,
+    )
+    assert session.device_id == device.id
+    assert session.chastity_device_id == device.id
+
+    # Check device transitioned to 'in_use'
+    await db_session.refresh(device)
+    assert device.inventory_status == "in_use"
+
+    # Status contains device info and supports_tag
+    status = await wear_svc.get_wear_status(db_session, test_user.id)
+    assert status["is_active"] is True
+    assert status["device"] is not None
+    assert status["device"].id == device.id
+    assert status["supports_tag"] is True
+
+    # 3. Finish wear session -> device transitions back to 'available'
+    await wear_svc.finish_open_ended_session(db_session, test_user.id)
+    await db_session.refresh(device)
+    assert device.inventory_status == "available"
+
+
+@pytest.mark.asyncio
+async def test_device_without_tag_wear_cycle(db_session: AsyncSession, test_user: User):
+    """Verifies wear session with a device that does not support tag seals."""
+    from app.models.life import InventoryItem
+
+    device = InventoryItem(
+        user_id=test_user.id,
+        category="wearable",
+        group_type="equipment",
+        name="Keyless Lock Belt",
+        inventory_status="available",
+        extra_properties={"supports_tag": False},
+    )
+    db_session.add(device)
+    await db_session.commit()
+
+    # Start session with device_id and tag_number=None
+    session, log = await wear_svc.start_open_ended_session(
+        db_session,
+        test_user.id,
+        tag_number=None,
+        device_id=device.id,
+    )
+    assert session.device_id == device.id
+
+    status = await wear_svc.get_wear_status(db_session, test_user.id)
+    assert status["device"].name == "Keyless Lock Belt"
+    assert status["supports_tag"] is False
+
+    await wear_svc.finish_open_ended_session(db_session, test_user.id)
+
+

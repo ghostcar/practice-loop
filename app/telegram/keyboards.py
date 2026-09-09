@@ -194,6 +194,7 @@ def get_wear_card_keyboard(
     is_active: bool = True,
     is_locked: bool = False,
     is_agent_mode: bool = False,
+    supports_tag: bool = True,
 ) -> InlineKeyboardMarkup:
     """Action keyboard for Open-Ended Wear card."""
     rows: list[list[InlineKeyboardButton]] = []
@@ -206,10 +207,11 @@ def get_wear_card_keyboard(
         rows.append([
             InlineKeyboardButton(text="🔓 Снять пояс", callback_data="wear_unlock_init"),
         ])
-        rows.append([
-            InlineKeyboardButton(text="🔍 Проверка пломбы", callback_data="wear_inspect_init"),
-            InlineKeyboardButton(text="⭐ Комфорт", callback_data="wear_comfort_init"),
-        ])
+        sub_row = []
+        if supports_tag:
+            sub_row.append(InlineKeyboardButton(text="🔍 Проверка пломбы", callback_data="wear_inspect_init"))
+        sub_row.append(InlineKeyboardButton(text="⭐ Комфорт", callback_data="wear_comfort_init"))
+        rows.append(sub_row)
     else:
         rows.append([
             InlineKeyboardButton(text="🔒 Запереть пояс", callback_data="wear_relock_init"),
@@ -230,6 +232,34 @@ def get_wear_card_keyboard(
         InlineKeyboardButton(text="🔄 Обновить", callback_data="wear_refresh"),
     ])
 
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def get_wear_device_selection_keyboard(devices: list[Any]) -> InlineKeyboardMarkup:
+    """Keyboard for selecting a chastity device / belt from inventory."""
+    rows: list[list[InlineKeyboardButton]] = []
+    for d in devices:
+        props = getattr(d, "extra_properties", None) or {}
+        has_tag = True
+        if isinstance(props, dict):
+            for k in ("supports_tag", "supports_seal", "can_seal", "tag_support", "has_seal", "has_tag"):
+                if k in props:
+                    val = props[k]
+                    if val in (False, "false", 0, "0") or str(val).lower() in ("false", "no", "0"):
+                        has_tag = False
+                        break
+        tag_badge = "🏷 пломба" if has_tag else "🚫 без пломбы"
+        status_suffix = " (в работе)" if getattr(d, "inventory_status", None) == "in_use" else ""
+        name = d.name[:25]
+        btn_text = f"🔒 {name} [{tag_badge}]{status_suffix}"
+        rows.append([InlineKeyboardButton(text=btn_text, callback_data=f"wear_dev:{d.id}")])
+
+    rows.append([
+        InlineKeyboardButton(text="🔒 Без привязки к инвентарю", callback_data="wear_dev:none"),
+    ])
+    rows.append([
+        InlineKeyboardButton(text="🔙 Отмена", callback_data="wear_refresh"),
+    ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 

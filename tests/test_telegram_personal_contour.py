@@ -266,6 +266,52 @@ async def test_penalty_redemption_flow(db_session: AsyncSession, test_user: User
     assert updated_redemp.status == "completed"
 
 
+def test_wear_device_selection_keyboard():
+    """Verify that inventory items generate proper device selection buttons with tag badge."""
+    from app.models.life import InventoryItem
+    from app.telegram.keyboards import get_wear_device_selection_keyboard
+
+    dev_with_tag = InventoryItem(
+        id=uuid.uuid4(),
+        name="Steel Cage Pro",
+        inventory_status="available",
+        extra_properties={"supports_tag": True},
+    )
+    dev_without_tag = InventoryItem(
+        id=uuid.uuid4(),
+        name="Keyless Belt",
+        inventory_status="in_use",
+        extra_properties={"supports_tag": False},
+    )
+
+    kb = get_wear_device_selection_keyboard([dev_with_tag, dev_without_tag])
+    btn_texts = [btn.text for row in kb.inline_keyboard for btn in row]
+    btn_callbacks = [btn.callback_data for row in kb.inline_keyboard for btn in row]
+
+    assert any("Steel Cage Pro" in t and "[🏷 пломба]" in t for t in btn_texts)
+    assert any("Keyless Belt" in t and "[🚫 без пломбы]" in t and "(в работе)" in t for t in btn_texts)
+    assert any("Без привязки к инвентарю" in t for t in btn_texts)
+    assert f"wear_dev:{dev_with_tag.id}" in btn_callbacks
+    assert f"wear_dev:{dev_without_tag.id}" in btn_callbacks
+    assert "wear_dev:none" in btn_callbacks
+
+
+def test_wear_card_keyboard_tag_toggle():
+    """Verify that tag inspection button appears only when device supports tags."""
+    from app.telegram.keyboards import get_wear_card_keyboard
+
+    # When supports_tag is True: inspect tag button is present
+    kb_with = get_wear_card_keyboard(is_active=True, is_locked=True, supports_tag=True)
+    callbacks_with = [btn.callback_data for row in kb_with.inline_keyboard for btn in row]
+    assert "wear_inspect_init" in callbacks_with
+
+    # When supports_tag is False: inspect tag button is omitted
+    kb_without = get_wear_card_keyboard(is_active=True, is_locked=True, supports_tag=False)
+    callbacks_without = [btn.callback_data for row in kb_without.inline_keyboard for btn in row]
+    assert "wear_inspect_init" not in callbacks_without
+
+
+
 @pytest.mark.asyncio
 async def test_photo_handler_datamatrix_dispatch(monkeypatch):
     """Verify that a photo with DataMatrix is dispatched to med scan, not to agent vision."""

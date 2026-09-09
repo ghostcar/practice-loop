@@ -182,10 +182,16 @@
       </div>
 
       <div class="flex items-center justify-between pt-2">
-        <label class="flex items-center gap-2 text-xs font-medium text-[color:var(--text)] cursor-pointer">
-          <input type="checkbox" id="inv-shop" class="rounded text-[color:var(--accent)]">
-          {{ icon('archive', 'w-3.5 h-3.5') }} Поместить в список закупок (Shopping list)
-        </label>
+        <div class="flex items-center gap-4 flex-wrap">
+          <label class="flex items-center gap-2 text-xs font-medium text-[color:var(--text)] cursor-pointer">
+            <input type="checkbox" id="inv-shop" class="rounded text-[color:var(--accent)]">
+            {{ icon('archive', 'w-3.5 h-3.5') }} Поместить в список закупок (Shopping list)
+          </label>
+          <label class="flex items-center gap-2 text-xs font-medium text-[color:var(--text)] cursor-pointer">
+            <input type="checkbox" id="inv-supports-tag" checked class="rounded text-[color:var(--accent)]">
+            {{ icon('lock', 'w-3.5 h-3.5') }} Возможность бирки / пломбы (Seal tag)
+          </label>
+        </div>
 
         <div class="flex items-center gap-2">
           <button type="button" data-action="hideForm" class="px-4 py-2 rounded-xl border border-[color:var(--border)] text-xs font-medium text-[color:var(--text-secondary)]">Отмена</button>

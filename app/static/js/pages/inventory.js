@@ -158,6 +158,11 @@
                 <span class="text-xs px-2.5 py-0.5 rounded-full font-medium ${invStatusBadge(i.inventory_status)}">
                   ${escapeHtml(statusTitle)}
                 </span>
+                ${(() => {
+                  const p = i.extra_properties || {};
+                  const st = p.supports_tag !== false && p.supports_seal !== false && p.can_seal !== false;
+                  return st ? '<span class="text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">🏷 Пломба</span>' : '<span class="text-xs bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 px-2 py-0.5 rounded-full font-medium">Без пломбы</span>';
+                })()}
                 ${i.is_shopping_list ? `<span class="text-xs bg-[color:var(--warning-soft)] text-[color:var(--warning)] px-2.5 py-0.5 rounded-full font-medium">Корзина закупок</span>` : ''}
               </div>
 
@@ -269,6 +274,9 @@
         maintenance_interval_days: parseInt(document.getElementById('inv-maint-interval').value, 10) || null,
         priority: parseInt(document.getElementById('inv-prio').value, 10) || 0,
         is_shopping_list: document.getElementById('inv-shop').checked,
+        extra_properties: {
+          supports_tag: document.getElementById('inv-supports-tag') ? document.getElementById('inv-supports-tag').checked : true,
+        },
       };
       await fetch('/api/v2/inventory', {
         method: 'POST',

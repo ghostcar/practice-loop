@@ -12,10 +12,12 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.locktimer.services.device import set_device_status
 from app.models.journal import JournalEntry
+from app.models.life import InventoryItem
 from app.models.locktimer import LockSession, LockSlotOccurrence
 from app.models.points import PointsTransaction
 from app.models.wear_events import WearEventDefinition, WearEventLog
@@ -41,6 +43,77 @@ def format_duration_hms(total_seconds: int) -> str:
         parts.append(f"{minutes} мин.")
     parts.append(f"{seconds} сек.")
     return " ".join(parts)
+
+
+def device_supports_tag(item: InventoryItem | None) -> bool:
+    """Checks whether an inventory item / chastity device supports tag seals.
+
+    Defaults to True for chastity/wearable devices unless explicitly disabled in extra_properties
+    (e.g., {'supports_tag': False} or {'supports_seal': False} or {'can_seal': False}).
+    """
+    if not item:
+        return True
+    props = item.extra_properties or {}
+    if not isinstance(props, dict):
+        return True
+    for key in ("supports_tag", "supports_seal", "can_seal", "tag_support", "has_seal", "has_tag"):
+        if key in props:
+            val = props[key]
+            if val is False or val == "false" or val == 0 or val == "0" or str(val).lower() in ("false", "no", "0"):
+                return False
+            if val is True or val == "true" or val == 1 or val == "1" or str(val).lower() in ("true", "yes", "1"):
+                return True
+    return True
+
+
+async def get_user_chastity_devices(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[InventoryItem]:
+    """Returns candidate chastity devices / wearables from user inventory."""
+    stmt = (
+        select(InventoryItem)
+        .where(
+            InventoryItem.user_id == user_id,
+            InventoryItem.inventory_status != "archived",
+            InventoryItem.migrated_to_medication.is_(False),
+            or_(
+                InventoryItem.category.in_(["wearable", "chastity", "device", "restraint", "body_device"]),
+                InventoryItem.group_type.in_(["equipment", "wear", "electronics"]),
+            ),
+        )
+        .order_by(InventoryItem.priority.desc(), InventoryItem.name.asc())
+    )
+    res = await db.execute(stmt)
+    items = list(res.scalars().all())
+    if not items:
+        fallback_stmt = (
+            select(InventoryItem)
+            .where(
+                InventoryItem.user_id == user_id,
+                InventoryItem.inventory_status != "archived",
+                InventoryItem.migrated_to_medication.is_(False),
+            )
+            .order_by(InventoryItem.name.asc())
+        )
+        res_fb = await db.execute(fallback_stmt)
+        items = list(res_fb.scalars().all())
+    return items
+
+
+async def get_device_by_id(
+    db: AsyncSession,
+    device_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> InventoryItem | None:
+    """Loads a specific device owned by user."""
+    stmt = select(InventoryItem).where(
+        InventoryItem.id == device_id,
+        InventoryItem.user_id == user_id,
+        InventoryItem.inventory_status != "archived",
+    )
+    res = await db.execute(stmt)
+    return res.scalar_one_or_none()
 
 
 async def get_active_wear_session(
@@ -71,6 +144,7 @@ async def start_open_ended_session(
     session = LockSession(
         owner_id=user_id,
         device_id=device_id,
+        chastity_device_id=device_id,
         mode="open_ended",
         state="active",
         is_currently_locked=True,
@@ -84,6 +158,9 @@ async def start_open_ended_session(
     )
     db.add(session)
     await db.flush()
+
+    if device_id:
+        await set_device_status(db, device_id, user_id, "in_use")
 
     initial_log = WearEventLog(
         user_id=user_id,
@@ -118,9 +195,13 @@ async def finish_open_ended_session(
     session.completed_at = now
     session.is_currently_locked = False
 
+    dev_id = session.chastity_device_id or session.device_id
+    if dev_id:
+        await set_device_status(db, dev_id, user_id, "available")
+
     finish_log = WearEventLog(
         user_id=user_id,
-        device_id=session.chastity_device_id or session.device_id,
+        device_id=dev_id,
         session_id=session.id,
         event_code="session_completed",
         state_before="locked" if was_locked else "unlocked",
@@ -156,6 +237,8 @@ async def get_wear_status(
     if not session:
         return {
             "session": None,
+            "device": None,
+            "supports_tag": True,
             "is_active": False,
             "is_locked": False,
             "current_tag": None,
@@ -167,6 +250,14 @@ async def get_wear_status(
             "pending_open": None,
             "upcoming_slots": [],
         }
+
+    device: InventoryItem | None = None
+    dev_id = session.chastity_device_id or session.device_id
+    if dev_id:
+        dev_res = await db.execute(select(InventoryItem).where(InventoryItem.id == dev_id))
+        device = dev_res.scalars().first()
+
+    supports_tag = device_supports_tag(device) if device else True
 
     pending_open: WearEventLog | None = None
     if session.pending_open_event_id:
@@ -238,6 +329,8 @@ async def get_wear_status(
 
     return {
         "session": session,
+        "device": device,
+        "supports_tag": supports_tag,
         "is_active": True,
         "is_locked": session.is_currently_locked,
         "current_tag": session.current_tag_number,
