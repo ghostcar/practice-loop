@@ -146,6 +146,17 @@ if TG_BOT_TOKEN:
 
     @main_router.message(Command("start"))
     async def cmd_start(message: types.Message):
+        parts = message.text.split(maxsplit=1)
+        if len(parts) > 1:
+            code = parts[1].strip()
+            if code.lower().startswith("link_"):
+                code = code[5:]
+            if code:
+                # Forward to link logic
+                message.text = f"/link {code}"
+                await cmd_link(message)
+                return
+
         await message.answer(
             "👋 Welcome to **Practice Loop** Bot!\n\n"
             "🔗 *First time?* Link your account:\n"

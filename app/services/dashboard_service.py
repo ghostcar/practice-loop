@@ -5,7 +5,6 @@ Extracted from app/api/dashboard.py (ADR-167).  HTTP layer stays thin.
 
 from __future__ import annotations
 
-import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -562,18 +561,25 @@ async def mark_notification_read(db: AsyncSession, n_id: uuid.UUID, user_id: uui
 
 
 async def generate_tg_link_code(db: AsyncSession, user: User) -> dict:
-    """Generate a 6-char code for Telegram linking (expires in 30 min)."""
-    code = secrets.token_hex(3).upper()
-    user.telegram_link_code = code
-    user.telegram_link_code_expires = datetime.now(UTC) + timedelta(minutes=30)
-    db.add(user)
-    await db.flush()
-    return {"code": code, "expires_in_minutes": 30}
+    """Generate code and deep link for Telegram linking (expires in 30 min)."""
+    from app.services import telegram_link_service as tg_link_svc
+
+    return await tg_link_svc.generate_user_telegram_link_code(db, user)
 
 
 def get_tg_link_status(user: User) -> dict:
     """Check if Telegram is linked."""
+    from app.config import settings
+
+    bot_user = settings.tg_bot_username.lstrip("@")
+    deep_link = (
+        f"https://t.me/{bot_user}?start=link_{user.telegram_link_code}"
+        if user.telegram_link_code and not user.telegram_chat_id
+        else None
+    )
     return {
         "linked": user.telegram_chat_id is not None,
         "code": user.telegram_link_code if not user.telegram_chat_id else None,
+        "deep_link_url": deep_link,
+        "bot_username": bot_user,
     }

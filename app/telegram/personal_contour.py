@@ -21,12 +21,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory
 from app.gamification.handler import on_task_completed, on_task_interrupted
 from app.gamification.medication import on_medication_taken
-from app.llm.client import JsonRepairError, get_active_llm_config
-from app.llm.pipeline.task_generator import generate_task
+from app.llm.pipeline import generate_task, get_active_llm_config
+from app.llm.repair import JsonRepairError
 from app.models.activity_log import ActivityLog
 from app.models.health import HealthState
 from app.models.life import BodyMeasurement
@@ -36,10 +37,10 @@ from app.models.progress import UserProgress
 from app.models.quest import UserQuest
 from app.models.training import TrainingDay
 from app.models.user import User
+from app.prefs import prefs_from_dict
 from app.services import med_service as med_svc
 from app.services import training_service
 from app.services.health_service import get_cycle_context
-from app.services.preferences import prefs_from_dict
 from app.telegram.keyboards import (
     get_ai_generator_keyboard,
     get_health_keyboard,
@@ -49,7 +50,7 @@ from app.telegram.keyboards import (
     get_task_card_keyboard,
     get_training_keyboard,
 )
-from app.timeutils import local_today
+from app.timeutils import as_utc, local_today
 
 logger = logging.getLogger(__name__)
 
@@ -70,14 +71,82 @@ async def _get_user_by_chat(chat_id: int) -> User | None:
         return res.scalar_one_or_none()
 
 
+async def _try_link_by_code(message: types.Message, raw_code: str, db: AsyncSession | None = None) -> bool:
+    code = raw_code.strip()
+    if code.lower().startswith("link_"):
+        code = code[5:]
+    if not code:
+        return False
+
+    clean_code = code.upper()
+
+    async def _do_linking(session: AsyncSession) -> bool:
+        from app.models.ds_suite import ManagedSubmissive
+
+        # 1. Check User by telegram_link_code
+        res = await session.execute(select(User).where(User.telegram_link_code == clean_code))
+        user = res.scalar_one_or_none()
+        if user:
+            if user.telegram_link_code_expires and as_utc(user.telegram_link_code_expires) < datetime.now(UTC):
+                await message.answer("⏰ Срок действия кода привязки истёк. Сгенерируйте новый код в профиле на сайте.")
+                return True
+
+            user.telegram_chat_id = message.chat.id
+            user.telegram_link_code = None
+            user.telegram_link_code_expires = None
+            session.add(user)
+            await session.commit()
+
+            name = user.display_name or user.email.split("@")[0]
+            await message.answer(
+                f"🎉 **Аккаунт успешно привязан!**\n\n"
+                f"Добро пожаловать, **{name}**!\n"
+                "Персональный контур и главное меню активированы.",
+                parse_mode="Markdown",
+                reply_markup=get_main_reply_keyboard(),
+            )
+            return True
+
+        # 2. Check ManagedSubmissive (D/s suite)
+        sub_stmt = select(ManagedSubmissive).where(ManagedSubmissive.telegram_link_code == clean_code)
+        sub_profile = (await session.execute(sub_stmt)).scalar_one_or_none()
+        if sub_profile:
+            exp = sub_profile.telegram_link_code_expires
+            if exp and as_utc(exp) < datetime.now(UTC):
+                await message.answer("⏰ Срок действия кода истёк. Запросите новый код у Ключника.")
+                return True
+
+            sub_profile.telegram_chat_id = str(message.chat.id)
+            sub_profile.telegram_link_code = None
+            sub_profile.telegram_link_code_expires = None
+            session.add(sub_profile)
+            await session.commit()
+
+            await message.answer(
+                f"👑 **D/s профиль привязан!** Добро пожаловать, **{sub_profile.name}**!\n\n"
+                "Уведомления и задачи от Ключника подключены.",
+                parse_mode="Markdown",
+            )
+            return True
+
+        return False
+
+    if db is not None:
+        return await _do_linking(db)
+
+    async with async_session_factory() as session:
+        return await _do_linking(session)
+
+
 async def _require_user(message: types.Message) -> User | None:
     user = await _get_user_by_chat(message.chat.id)
     if user is None:
         await message.answer(
-            "👋 Ваш Telegram ещё не привязан к аккаунту PracticeLoop.\n\n"
-            "1. Зайдите в ваш профиль на сайте\n"
-            "2. Нажмите «Привязать Telegram» и скопируйте 6-значный код\n"
-            "3. Отправьте сюда: `/link ВАШ_КОД`",
+            "👋 **Ваш Telegram ещё не привязан к аккаунту PracticeLoop.**\n\n"
+            "Выберите удобный способ привязки:\n"
+            "1. **В 1 клик:** нажмите кнопку «Подключить Telegram» в вашем профиле на сайте.\n"
+            "2. **Код из бота:** отправьте команду `/connect` — бот выдаст 6-значный OTP для ввода на сайте.\n"
+            "3. **Код с сайта:** отправьте сюда команду `/link ВАШ_КОД`.",
             parse_mode="Markdown",
         )
         return None
@@ -94,19 +163,13 @@ def _progress_bar(current: int, total: int, length: int = 8) -> str:
 # ── Navigation & Root Menu ───────────────────────────────────────────────────
 
 
-@personal_router.message(Command("menu"))
-@personal_router.message(Command("start"))
-async def cmd_personal_menu(message: types.Message, state: FSMContext):
-    await state.clear()
-    user = await _require_user(message)
-    if user is None:
-        return
-
+async def _send_welcome_menu(message: types.Message, user: User) -> None:
+    name = user.display_name or user.email.split("@")[0]
     text = (
-        f"👋 Рады видеть вас, **{user.email.split('@')[0]}**!\n\n"
+        f"👋 Рады видеть вас, **{name}**!\n\n"
         "📱 **Персональный контур PracticeLoop активен.**\n"
         "Используйте постоянное меню снизу для быстрого доступа:\n\n"
-        "• 📋 **План дня** — задачи на сегодня и отметка выполнения\n"
+        "• 📋 **План дня** — задачи на сегодня и отметка выполнения в 1 клик\n"
         "• 💊 **Лекарства** — приём по слотам и сканер пачек\n"
         "• 🤖 **AI-генератор** — умный подбор практик через ИИ\n"
         "• 🏋️ **Тренировка** — программа на день и упражнения\n"
@@ -115,6 +178,99 @@ async def cmd_personal_menu(message: types.Message, state: FSMContext):
         "💬 _Вы также можете просто написать мне любой вопрос или пожелание к практике текстом или голосом._"
     )
     await message.answer(text, parse_mode="Markdown", reply_markup=get_main_reply_keyboard())
+
+
+@personal_router.message(Command("start"))
+async def cmd_start_handler(message: types.Message, state: FSMContext):
+    await state.clear()
+    parts = message.text.split(maxsplit=1)
+    if len(parts) > 1:
+        linked = await _try_link_by_code(message, parts[1])
+        if linked:
+            return
+
+    user = await _get_user_by_chat(message.chat.id)
+    if user is None:
+        await _require_user(message)
+        return
+
+    await _send_welcome_menu(message, user)
+
+
+@personal_router.message(Command("menu"))
+async def cmd_personal_menu(message: types.Message, state: FSMContext):
+    await state.clear()
+    user = await _require_user(message)
+    if user is None:
+        return
+    await _send_welcome_menu(message, user)
+
+
+@personal_router.message(Command("link"))
+async def cmd_link_handler(message: types.Message):
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer(
+            "Формат: `/link ВАШ_КОД`\n"
+            "Код привязки можно скопировать в вашем профиле на портале.",
+            parse_mode="Markdown",
+        )
+        return
+    linked = await _try_link_by_code(message, parts[1])
+    if not linked:
+        await message.answer(
+            "❌ Неверный или устаревший код привязки.\n"
+            "Сгенерируйте свежий код в веб-профиле или отправьте команду `/connect` для получения OTP-кода."
+        )
+
+
+@personal_router.message(Command("connect"))
+@personal_router.message(Command("otp"))
+async def cmd_connect_otp_handler(message: types.Message):
+    user = await _get_user_by_chat(message.chat.id)
+    if user is not None:
+        await message.answer(
+            f"ℹ️ Ваш Telegram уже привязан к аккаунту **{user.email}**.\n"
+            "Чтобы отвязать его, отправьте команду `/unlink`.",
+            parse_mode="Markdown",
+        )
+        return
+
+    from app.services.telegram_link_service import create_bot_connect_code
+
+    otp = create_bot_connect_code(
+        chat_id=message.chat.id,
+        username=message.from_user.username if message.from_user else None,
+        first_name=message.from_user.first_name if message.from_user else None,
+        ttl_minutes=10,
+    )
+    text = (
+        "🔑 **Ваш одноразовый код (OTP) для портала:**\n\n"
+        f"`{otp}`\n"
+        "_(нажмите на код выше, чтобы скопировать)_\n\n"
+        "⏱ Код действует 10 минут.\n"
+        "Откройте на сайте **Профиль → Telegram**, введите эти 6 цифр в поле ввода и нажмите **«Привязать»**."
+    )
+    await message.answer(text, parse_mode="Markdown")
+
+
+@personal_router.message(Command("unlink"))
+async def cmd_unlink_handler(message: types.Message):
+    user = await _get_user_by_chat(message.chat.id)
+    if user is None:
+        await message.answer("Ваш Telegram-аккаунт не привязан ни к одному профилю.")
+        return
+
+    from app.services.telegram_link_service import unlink_user_telegram
+
+    async with async_session_factory() as db:
+        await unlink_user_telegram(db, user)
+        await db.commit()
+
+    await message.answer(
+        "ℹ️ Ваш Telegram-аккаунт успешно отвязан от портала PracticeLoop.",
+        reply_markup=types.ReplyKeyboardRemove(),
+    )
 
 
 # ── 1. 📋 План дня (Today's Tasks) ──────────────────────────────────────────

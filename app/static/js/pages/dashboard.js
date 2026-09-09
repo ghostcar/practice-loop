@@ -57,19 +57,26 @@
       try {
         const res = await fetch('/profile/telegram-link-code', { method: 'POST' });
         const data = await res.json();
-        showCode(data.code);
+        showCode(data.code, data.deep_link_url);
         statusEl.textContent = T.dashboard_telegram_code_ready || '';
+        if (data.deep_link_url) {
+          window.open(data.deep_link_url, '_blank');
+        }
       } catch (e) {
         console.warn('TG code:', e);
       }
     }
 
-    function showCode(code) {
+    function showCode(code, deepUrl) {
       const codeEl = document.getElementById('tg-code');
       const display = document.getElementById('tg-code-display');
       if (!codeEl || !display) return;
       codeEl.textContent = code;
       display.classList.remove('hidden');
+      const deepBtn = document.getElementById('tg-deep-btn');
+      if (deepBtn && (deepUrl || tgBotUser)) {
+        deepBtn.href = deepUrl || ('https://t.me/' + tgBotUser + '?start=link_' + code);
+      }
       if (btnEl) btnEl.textContent = T.dashboard_new_code || '';
     }
 

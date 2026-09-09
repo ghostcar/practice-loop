@@ -152,10 +152,12 @@ async def test_webhook_unauthorized_without_secret(async_client: AsyncClient) ->
 @pytest.mark.asyncio
 async def test_webhook_with_secret(async_client: AsyncClient) -> None:
     """Webhook with correct secret accepts the update (may be 'bot not configured' but not 401)."""
+    from app.telegram.bot import TG_WEBHOOK_SECRET
+
     response = await async_client.post(
         "/tg/webhook",
         json={"update_id": 1},
-        headers={"X-Telegram-Bot-Api-Secret-Token": "change-me"},
+        headers={"X-Telegram-Bot-Api-Secret-Token": TG_WEBHOOK_SECRET},
     )
     assert response.status_code == 200
     data = response.json()

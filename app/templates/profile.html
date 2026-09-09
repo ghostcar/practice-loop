@@ -15,9 +15,26 @@
 <div class="max-w-3xl space-y-5">
     {# Status message #}
     {% set profile_status = request.query_params.get('status') %}
+    {% set error_msg = request.query_params.get('error_msg') %}
     {% if profile_status == 'updated' %}
     <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-2">
         {{ icon('check', 'w-4 h-4') }} {{ t.profile_saved or 'Профиль обновлён' }}
+    </div>
+    {% elif profile_status == 'tg_linked' %}
+    <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm flex items-center gap-3">
+        {{ icon('check', 'w-5 h-5 text-emerald-400 flex-shrink-0') }}
+        <div>
+            <strong>Telegram успешно привязан!</strong> Бот активирован, персональный контур и главное меню подключены.
+        </div>
+    </div>
+    {% elif profile_status == 'tg_unlinked' %}
+    <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm flex items-center gap-2">
+        {{ icon('info', 'w-4 h-4 flex-shrink-0') }} Telegram-аккаунт успешно отвязан от профиля.
+    </div>
+    {% elif profile_status == 'tg_otp_error' %}
+    <div class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm flex items-center gap-3">
+        {{ icon('warning', 'w-5 h-5 text-rose-400 flex-shrink-0') }}
+        <div>{{ error_msg or 'Неверный или устаревший код подтверждения.' }}</div>
     </div>
     {% endif %}
 
@@ -136,6 +153,107 @@
             </div>
         </section>
     </form>
+
+    {# ── Telegram Integration Card (ADR-194) ── #}
+    <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="tg-h">
+        <div class="flex items-center justify-between gap-3">
+            <h2 id="tg-h" class="text-base font-semibold text-[color:var(--text)] flex items-center gap-2">
+                {{ icon('telegram', 'w-5 h-5 text-sky-400') }} {{ t.profile_tg_title or 'Telegram & Мобильный бот' }}
+            </h2>
+            {% if tg_linked %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Подключен
+            </span>
+            {% else %}
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Не подключен
+            </span>
+            {% endif %}
+        </div>
+
+        {% if tg_linked %}
+        <div class="space-y-4">
+            <p class="text-sm text-[color:var(--text-secondary)]">
+                Ваш аккаунт привязан к Telegram (Chat ID: <code class="text-xs px-1.5 py-0.5 rounded bg-[color:var(--surface-soft)] text-[color:var(--text)]">{{ user.telegram_chat_id }}</code>). Вы можете выполнять задачи в 1 клик, принимать лекарства по слотам, получать напоминания и тренироваться прямо в мессенджере.
+            </p>
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+                <a href="https://t.me/{{ tg_bot_username }}" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors shadow-sm">
+                    {{ icon('telegram', 'w-4 h-4') }} Открыть Telegram-бота
+                </a>
+                <form action="/profile/telegram-unlink" method="POST" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <button type="submit" onclick="return confirm('Вы уверены, что хотите отвязать Telegram-аккаунт?')"
+                            class="px-4 py-2 rounded-lg bg-[color:var(--surface-soft)] text-[color:var(--danger)] border border-[color:var(--border)] text-sm font-medium hover:border-[color:var(--danger)] transition-colors">
+                        Отвязать Telegram
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="space-y-4">
+            <p class="text-sm text-[color:var(--text-secondary)]">
+                Подключите Telegram, чтобы мгновенно отмечать задачи дня, принимать лекарства по слотам, вести дневник самочувствия и использовать персонального AI-ассистента.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {# Метод 1: 1-Click Deep Link + QR-код #}
+                <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-sky-400 mb-1">Способ 1: Быстрое подключение</div>
+                        <h3 class="text-sm font-semibold text-[color:var(--text)]">В 1 клик или через QR-код</h3>
+                        <p class="text-xs text-[color:var(--text-muted)] mt-1">
+                            Нажмите кнопку на смартфоне или отсканируйте QR-код камерой телефона. Бот откроется и привяжет аккаунт автоматически при нажатии <strong>Start</strong>.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center gap-4 pt-2">
+                        <div class="flex-shrink-0 p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
+                            <img src="/profile/telegram-qr" alt="Telegram QR" class="w-28 h-28 object-contain">
+                        </div>
+                        <div class="space-y-2 text-center sm:text-left">
+                            <a href="{{ tg_deep_link }}" target="_blank" rel="noopener noreferrer"
+                               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors shadow-sm">
+                                {{ icon('telegram', 'w-4 h-4') }} Подключить в 1 клик
+                            </a>
+                            <div class="text-[11px] text-[color:var(--text-muted)]">
+                                Код привязки: <code class="font-mono text-xs font-bold pl-accent-text">{{ tg_link_code }}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Метод 2: Одноразовый пароль (OTP из бота) #}
+                <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1">Способ 2: Одноразовый пароль (OTP)</div>
+                        <h3 class="text-sm font-semibold text-[color:var(--text)]">Код из Telegram-бота</h3>
+                        <p class="text-xs text-[color:var(--text-muted)] mt-1">
+                            Напишите команду <code class="font-mono text-amber-300">/connect</code> в боте <strong>@{{ tg_bot_username }}</strong> — бот выдаст 6-значный цифровой код. Введите его ниже:
+                        </p>
+                    </div>
+
+                    <form action="/profile/telegram-link-by-otp" method="POST" class="space-y-2 pt-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <div class="flex items-center gap-2">
+                            <input type="text" name="otp_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                                   placeholder="123456" autocomplete="one-time-code"
+                                   class="w-36 text-center font-mono text-lg font-bold tracking-widest pl-surface rounded-lg border border-[color:var(--border)] px-3 py-2 text-[color:var(--text)] focus:border-[color:var(--accent)]">
+                            <button type="submit"
+                                    class="px-4 py-2.5 rounded-lg pl-accent-bg text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
+                                Привязать
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-[color:var(--text-muted)]">
+                            Или введите <code class="font-mono text-xs">/link {{ tg_link_code }}</code> напрямую в чате бота.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </section>
 
     {# ── Account Info (read-only) ── #}
     <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-3" aria-labelledby="info-h">
