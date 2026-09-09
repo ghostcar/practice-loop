@@ -459,7 +459,7 @@ async def cb_task_skip(callback: types.CallbackQuery):
         inline_keyboard=[[InlineKeyboardButton(text="📋 К плану дня", callback_data="nav_tasks")]]
     )
     await callback.message.edit_text(
-        f"⏭ Задача **{task_name}** пропущена (без штрафов и наград согласно ADR-038).",
+        f"⏭ Задача **{task_name}** пропущена (без штрафов и наград).",
         parse_mode="Markdown",
         reply_markup=kb,
     )
@@ -479,7 +479,7 @@ async def cb_task_interrupt_prompt(callback: types.CallbackQuery):
     )
     await callback.message.edit_text(
         "⚠️ **Подтверждение прерывания**\n\n"
-        "Прерывание начатой задачи начисляет штраф в соответствии с правилами геймификации (ADR-029).\n"
+        "Прерывание начатой задачи начисляет штраф в соответствии с правилами геймификации.\n"
         "Вы действительно хотите прервать выполнение?",
         parse_mode="Markdown",
         reply_markup=kb,

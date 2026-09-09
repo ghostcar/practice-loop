@@ -1351,28 +1351,29 @@ document.addEventListener('DOMContentLoaded', function() {
         active: "{{ t.med_is_active if t.get('med_is_active') else 'Активен' }}"
     };
 
-    // ── ADR-190: состав (редактор строк вещество+доза+единица+вариант) ──
+    // Состав (редактор строк вещество+доза+единица+вариант)
     const rowsEl = document.getElementById('med-components-rows');
     const jsonEl = document.getElementById('med-components-json');
     const addCompBtn = document.getElementById('btn-add-component');
 
     function medCompSerialize() {
         if (!rowsEl || !jsonEl) return;
-        const rows = [];
+        const out = [];
         rowsEl.querySelectorAll('.med-comp-row').forEach(function(tr) {
-            const sub = tr.querySelector('.med-comp-substance').value.trim();
+            const sub = (tr.querySelector('.med-comp-substance').value || '').trim();
             if (!sub) return;
-            const amountRaw = tr.querySelector('.med-comp-amount').value.trim();
-            const amount = amountRaw === '' ? null : Number(amountRaw);
-            rows.push({
+            const raw = (tr.querySelector('.med-comp-amount').value || '').trim();
+            const amount = raw === '' ? null : Number(raw);
+            out.push({
                 substance: sub,
                 amount: (amount !== null && !isNaN(amount)) ? amount : null,
-                unit: tr.querySelector('.med-comp-unit').value.trim() || null,
-                variant: tr.querySelector('.med-comp-variant').value.trim() || null
+                unit: (tr.querySelector('.med-comp-unit').value || '').trim() || null,
+                variant: (tr.querySelector('.med-comp-variant').value || '').trim() || null
             });
         });
-        jsonEl.value = JSON.stringify(rows);
+        jsonEl.value = JSON.stringify(out);
     }
+
     function medCompAddRow(data) {
         if (!rowsEl) return;
         data = data || {};
@@ -1380,22 +1381,27 @@ document.addEventListener('DOMContentLoaded', function() {
         div.className = 'med-comp-row grid grid-cols-12 gap-1.5 items-center';
         const esc = function(v) { return String(v == null ? '' : v).replace(/"/g, '&quot;'); };
         div.innerHTML =
-            '<input type="text" list="med-substance-list" placeholder="' + L.subPh + '" value="' + esc(data.substance) + '" class="med-comp-substance col-span-5 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
-            '<input type="number" step="any" value="' + esc(data.amount) + '" placeholder="' + L.dosePh + '" class="med-comp-amount col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
-            '<input type="text" value="' + esc(data.unit) + '" placeholder="' + L.unitPh + '" class="med-comp-unit col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
-            '<input type="text" value="' + esc(data.variant) + '" placeholder="' + L.variantPh + '" class="med-comp-variant col-span-2 px-2 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" list="med-substance-list" placeholder="' + L.subPh + '" value="' + esc(data.substance) + '" class="med-comp-substance col-span-5 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="number" step="any" value="' + esc(data.amount) + '" placeholder="' + L.dosePh + '" class="med-comp-amount col-span-2 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" value="' + esc(data.unit) + '" placeholder="' + L.unitPh + '" class="med-comp-unit col-span-2 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
+            '<input type="text" value="' + esc(data.variant) + '" placeholder="' + L.variantPh + '" class="med-comp-variant col-span-2 px-2.5 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">' +
             '<button type="button" aria-label="' + L.remove + '" class="med-comp-del col-span-1 inline-flex items-center justify-center text-[color:var(--text-muted)] min-h-[36px]">×</button>';
-        div.querySelector('.med-comp-del').addEventListener('click', function() { div.remove(); medCompSerialize(); });
-        div.querySelectorAll('.med-comp-substance, .med-comp-amount, .med-comp-unit, .med-comp-variant')
-            .forEach(function(el) { el.addEventListener('input', medCompSerialize); });
+        div.querySelector('.med-comp-del').addEventListener('click', function() {
+            div.remove();
+            medCompSerialize();
+        });
+        div.querySelectorAll('input').forEach(function(el) {
+            el.addEventListener('input', medCompSerialize);
+        });
         rowsEl.appendChild(div);
         medCompSerialize();
     }
-    if (addCompBtn && rowsEl) {
+
+    if (addCompBtn) {
         addCompBtn.addEventListener('click', function() { medCompAddRow(); });
     }
 
-    // ── ADR-191: редактирование карточки препарата (состав → JSON) ──
+    // Редактирование карточки препарата (состав → JSON)
     document.querySelectorAll('details[data-med-edit]').forEach(function(details) {
         const form = details.querySelector('.med-edit-form');
         if (!form) return;
@@ -1444,7 +1450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         serialize();
     });
 
-    // ── ADR-191: модальное окно редактирования препарата ──
+    // Модальное окно редактирования препарата
     const modal = document.getElementById('med-edit-modal');
     const modalForm = document.getElementById('med-modal-form');
     const modalCompRows = document.getElementById('modal-comp-rows');
@@ -1681,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ADR-189: пресеты режима + живой предпросмотр текста
+    // Пресеты режима + живой предпросмотр текста
     const R_LABELS = {
         daily: "{{ t.med_freq_daily_x }}",
         interval: "{{ t.med_freq_interval_x }}",
@@ -1746,7 +1752,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePreview();
     });
 
-    // ADR-189 (фаза D): умный ввод — свободный текст → предзаполнение формы (подтверждает пользователь)
+    // Умный ввод: свободный текст → предзаполнение формы
     document.querySelectorAll('form').forEach(function(form) {
         const btn = form.querySelector('.btn-regimen-parse');
         if (!btn) return;

@@ -217,7 +217,7 @@ EN = {
     "risk_low": "Low risk",
     "risk_elevated": "Elevated",
     "risk_high": "High risk",
-    "risk_automation_hint": "Risk level is informational — your opt-in is the approval boundary (ADR-106).",
+    "risk_automation_hint": "Risk level is informational — your opt-in defines what is allowed.",
     "catalog_adult_hint": "Adult-only activity — approved by your opt-in",
     "catalog_safety_label": "Safety contract",
     "catalog_safety_content_kind": "Content kind",
@@ -1022,7 +1022,7 @@ EN = {
     "pt_description": "Description",
     "pt_type": "Type",
     "pt_system_prompt": "System prompt",
-    "pt_params_schema": "Params schema (ADR-041 JSON)",
+    "pt_params_schema": "Params schema (JSON)",
     "pt_params_schema_hint": (
         "Optional JSON defining {{var}} types/ranges, e.g. "
         '[{"key": "intensity", "type": "enum", "options": ["1","2","3"], "required": true}]'
@@ -1132,10 +1132,10 @@ EN = {
     "mvt_retention_archived": "Retained in archive",
     "mvt_empty": "No media yet",
     "mvt_empty_hint": "Upload a photo — staged items are bound to records from domain pages.",
-    # Step 9e — Settings (DESIGN_V2 §16)
+    # Settings
     "nav_settings": "Settings",
     "settings_title": "Settings",
-    "settings_subtitle": "Customization and discretion — DESIGN_V2 §16",
+    "settings_subtitle": "Personalization, privacy and discretion mode",
     "settings_save": "Save changes",
     "settings_password_title": "Password",
     "settings_password_hint": (
@@ -1270,12 +1270,12 @@ EN = {
         "Expanded mode: the assistant may give recommendations and advice. It is not a medical professional — "
         "verify anything important with a doctor."
     ),
-    # ADR-137 — Medication gamification (configurable)
+    # Medication gamification (configurable)
     "settings_section_med_gamification": "Medication gamification",
     "settings_med_gamification_hint": (
-        "Policy ADR-137: medication participates in gamification only as positive "
-        "reinforcement — an on-time intake may earn XP and achievements (capped per day). "
-        "A missed dose never subtracts points and is never penalized."
+        "Medication intake participates in gamification only as positive "
+        "reinforcement: timely intake can award XP and achievements (daily capped). "
+        "Missing never deducts points or penalizes."
     ),
     "settings_med_gamification_label": "Award XP and achievements for on-time intake",
     "settings_med_gamification_note": (
@@ -1430,7 +1430,7 @@ EN = {
     "med_comp_remove": "Remove component",
     "med_ul_override": "Daily-limit exceedance allowed",
     "med_ul_override_short": "> daily limit",
-    "med_ul_override_hint": "Explicit permit to exceed the daily limit of this medication's components (ADR-190)",
+    "med_ul_override_hint": "Explicit permit to exceed the daily limit of this medication's components",
     "med_autofill_not_found": "Not found in the registry. Check the name or fill the form manually.",
     "med_autofill_enter": "Enter a medication name to autofill!",
     "med_autofill_search": "Searching…",

@@ -223,11 +223,11 @@
         @custom-variant dark (&:where(.dark, .dark *));
     </style>
     <style>
-        /* Alpine x-cloak — hide elements before hydration (DESIGN v2) */
+        /* Alpine x-cloak — hide elements before hydration */
         [x-cloak] { display: none !important; }
     </style>
     <style>
-        /* === Self-hosted fonts (DESIGN v2 §5 — no font CDN) === */
+        /* === Self-hosted fonts === */
         @font-face {
             font-family: 'Inter';
             src: url('/static/fonts/InterVariable.woff2') format('woff2-variations');
@@ -341,10 +341,10 @@
             unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
         html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; }
-        /* Metrics (DESIGN v2 §5): tabular numbers in charts/stats */
+        /* Metrics: tabular numbers in charts/stats */
         .tabular-nums, .chart-nums { font-variant-numeric: tabular-nums; }
 
-        /* === DESIGN v2 semantic tokens («Тёмный архив», DESIGN_V2.md §4) === */
+        /* === Semantic theme tokens === */
         :root,
         html[data-theme="light"] {
             --canvas: #e9e2da;
@@ -363,7 +363,7 @@
             --on-accent: #fff9f4;
             /* Accent as TEXT (WCAG 4.5:1 on surface — accent itself is too dim) */
             --accent-text: #743a37;
-            /* Domain hues (§4.3) */
+            /* Domain hues */
             --dom-tracker: #8d4945;
             --dom-timer: #a06a3f;
             --dom-care: #8a6c5c;
@@ -408,7 +408,7 @@
             --color-info-soft: var(--info-soft);
             --color-focus: var(--focus);
             --color-overlay: var(--overlay);
-            /* Motion (DESIGN v2 §14) */
+            /* Motion */
             --motion-easing: cubic-bezier(0.22, 0.75, 0.25, 1);
             --motion-fast: 120ms;
             --motion-base: 180ms;
@@ -474,12 +474,13 @@
             --color-info-soft: var(--info-soft);
             --color-focus: var(--focus);
             --color-overlay: var(--overlay);
+            /* Motion */
             --motion-easing: cubic-bezier(0.22, 0.75, 0.25, 1);
             --motion-fast: 120ms;
             --motion-base: 180ms;
             --motion-slow: 240ms;
         }
-        /* Archive variant tokens (DESIGN_V2 «Тёмный архив» §4) — used by community/insights/billing pages.
+        /* Archive variant tokens — used by community/insights/billing pages.
            Maps to standard semantic tokens for dark theme consistency. */
         html[data-theme="dark"] {
             --archive-100: var(--text);
@@ -522,20 +523,20 @@
         .hover\:bg-archive-850:hover { background-color: var(--archive-850); }
         .hover\:bg-archive-700:hover { background-color: var(--archive-700); }
         .hover\:border-archive-700:hover { border-color: var(--archive-700); }
-        /* Approved muted accent sets (DESIGN_V2 §16) — html[data-accent="..."].
+        /* Approved muted accent sets — html[data-accent="..."].
            Contrast-verified: accent vs on-accent >= 4.5:1, accent-text vs surface >= 4.5:1. */
         html[data-theme="dark"][data-accent="sage"] { --accent:#5b7452; --accent-hover:#7a9470; --accent-soft:#26301f; --accent-text:#93ab8e; --focus:#7a9470; }
         html[data-theme="light"][data-accent="sage"] { --accent:#57734f; --accent-hover:#4a6341; --accent-soft:#dde5d8; --accent-text:#46603f; --focus:#4a6341; }
         html[data-theme="dark"][data-accent="slate"] { --accent:#56758a; --accent-hover:#6f8fa3; --accent-soft:#1e2a33; --accent-text:#8fa9b8; --focus:#6f8fa3; }
         html[data-theme="light"][data-accent="slate"] { --accent:#4f6675; --accent-hover:#40545f; --accent-soft:#dbe3e8; --accent-text:#3f5a6a; --focus:#40545f; }
-        /* Discretion (DESIGN_V2 §12): sensitive-image blur levels */
+        /* Discretion: sensitive-image blur levels */
         html[data-discretion="on"] .pl-blur-1 { filter: blur(6px); }
         html[data-discretion="on"] .pl-blur-2 { filter: blur(14px); }
         *, *::before, *::after { box-sizing: border-box; }
         html { transition: background-color 300ms, color 300ms; }
-        /* Reusable transitions honoring DESIGN v2 §14 easing */
+        /* Reusable transitions honoring motion easing */
         .transition-colors, .transition-all { transition-timing-function: var(--motion-easing); transition-duration: var(--motion-base); }
-        /* Focus ring (§17): 2px ring + 2px offset */
+        /* Focus ring: 2px ring + 2px offset */
         *:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
         /* Skip-link: visible on focus, hidden otherwise */
         .skip-link {
@@ -544,13 +545,13 @@
             font-weight: 600; border-radius: 12px; z-index: 100;
         }
         .skip-link:focus { top: 8px; }
-        /* Touch target minimum (§17) */
+        /* Touch target minimum */
         button, [role="button"], a.btn-min-h { min-height: 44px; min-width: 44px; }
         /* Ensure <a> tags styled as buttons also meet 44px minimum */
         a[class*="px-"][class*="py-"] { min-height: 44px; }
         /* Utility: force 44px touch target on any element */
         .pl-touch { min-height: 44px; min-width: 44px; }
-        /* Reduced motion override (§14) */
+        /* Reduced motion override */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
@@ -606,7 +607,7 @@
             text-decoration: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
-        /* === DESIGN v2 shell («Тёмный архив» §7) === */
+        /* === Shell styling === */
         .pl-canvas { background-color: var(--canvas); }
         .pl-surface { background-color: var(--surface); }
         .pl-surface-soft { background-color: var(--surface-soft); }
@@ -655,7 +656,7 @@
             cursor: pointer; flex-shrink: 0;
         }
         .pl-sidebar-toggle:hover { color: var(--text); background: var(--surface); }
-        /* Always-visible expand control (§7: top outer edge next to the sigil);
+        /* Always-visible expand control: top outer edge next to the sigil;
            chevron points outward when collapsed */
         body:not(.pl-sidebar-open) .pl-sidebar-toggle svg { transform: rotate(180deg); }
         .pl-sidebar-nav {
@@ -691,7 +692,7 @@
            icon past the left edge — clipped by overflow:hidden) */
         body:not(.pl-sidebar-open) .pl-nav-label { display: none; }
 
-        /* Utility bar (desktop) + mobile top bar (§7) */
+        /* Utility bar (desktop) + mobile top bar */
         .pl-utility {
             height: 64px; display: flex; align-items: center; justify-content: space-between;
             padding: 0 24px; border-bottom: 1px solid var(--border);
@@ -721,7 +722,7 @@
         .pl-sheet .pl-nav-group-title { opacity: 1; height: auto; }
         .pl-sheet .pl-nav-item { justify-content: flex-start; padding: 0 10px; }
 
-        /* Mobile full-screen navigation sheet (§7) */
+        /* Mobile full-screen navigation sheet */
         .pl-sheet {
             position: fixed; inset: 0; z-index: 60;
             background: var(--canvas); display: flex; flex-direction: column;
