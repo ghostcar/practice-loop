@@ -189,3 +189,33 @@ async def test_wear_reason_classifier_fallback():
     res_hygiene = await classify_wear_unlock_reason("Хочу помыться", llm_config=None)
     assert res_hygiene["event_code"] == "hygiene_quick"
     assert res_hygiene["duration_minutes"] == 10
+
+
+@pytest.mark.asyncio
+async def test_no_active_session_initially(db_session: AsyncSession, test_user: User):
+    """Verifies that user without active session is reported as inactive and can start wear."""
+    status = await wear_svc.get_wear_status(db_session, test_user.id)
+    assert status["is_active"] is False
+    assert status["is_locked"] is False
+    assert status["session"] is None
+
+    # Start wear
+    session, initial_log = await wear_svc.start_open_ended_session(
+        db_session, test_user.id, tag_number="START-1111"
+    )
+    assert session.state == "active"
+    assert session.is_currently_locked is True
+    assert session.current_tag_number == "START-1111"
+
+    status_started = await wear_svc.get_wear_status(db_session, test_user.id)
+    assert status_started["is_active"] is True
+    assert status_started["is_locked"] is True
+    assert status_started["current_tag"] == "START-1111"
+
+    # Finish wear
+    finished_session = await wear_svc.finish_open_ended_session(db_session, test_user.id)
+    assert finished_session.state == "completed"
+
+    status_finished = await wear_svc.get_wear_status(db_session, test_user.id)
+    assert status_finished["is_active"] is False
+

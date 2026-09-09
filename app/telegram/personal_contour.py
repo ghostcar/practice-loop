@@ -65,6 +65,7 @@ personal_router = Router(name="personal_contour")
 class PersonalStates(StatesGroup):
     waiting_for_weight = State()
     waiting_for_custom_duration = State()
+    waiting_for_wear_start_tag = State()
     waiting_for_wear_agent_reason = State()
     waiting_for_wear_relock_tag = State()
     waiting_for_wear_inspection_tag = State()
@@ -1519,21 +1520,26 @@ async def cb_stat_quests(callback: types.CallbackQuery):
 
 def _render_wear_card(status: dict, is_agent_mode: bool = False) -> tuple[str, InlineKeyboardMarkup]:
     """Renders the real-time wear status card with exact second timer and actions."""
-    is_locked = status["is_locked"]
+    is_active = status.get("is_active", False)
+    is_locked = status.get("is_locked", False)
     lines = ["🔒 **Пояс верности: Свободный режим**\n"]
 
-    if is_locked:
+    if not is_active:
+        lines.append("⚪️ **Текущее состояние: НЕ НАДЕТ (Свободен)**")
+        lines.append("Активная сессия ношения пояса отсутствует.")
+        lines.append("\n_Вы можете запереть пояс, зафиксировав пломбу, чтобы начать период ношения._")
+    elif is_locked:
         lines.append("🟢 **Текущее состояние: ЗАПЕРТ**")
+        lines.append(f"⏱ **{status['time_text']}**")
     else:
         lines.append("🔴 **Текущее состояние: СНЯТ**")
+        lines.append(f"⏱ **{status['time_text']}**")
 
-    lines.append(f"⏱ **{status['time_text']}**")
-
-    if not is_locked and status.get("deadline_text"):
+    if is_active and not is_locked and status.get("deadline_text"):
         lines.append(f"\n{status['deadline_text']}")
 
     pending = status.get("pending_open")
-    if not is_locked and pending:
+    if is_active and not is_locked and pending:
         reason_label = pending.definition.title if pending.definition else pending.event_code
         lines.append(f"\n📋 **Причина снятия:** {reason_label}")
         if pending.user_comment:
@@ -1541,12 +1547,13 @@ def _render_wear_card(status: dict, is_agent_mode: bool = False) -> tuple[str, I
         if pending.llm_analysis:
             lines.append(f"🤖 _{pending.llm_analysis}_")
 
-    lines.append("")
-    tag = status.get("current_tag")
-    lines.append(f"🏷 **Пломба / Бирка:** `#{tag}`" if tag else "🏷 **Пломба / Бирка:** _нет_")
+    if is_active:
+        lines.append("")
+        tag = status.get("current_tag")
+        lines.append(f"🏷 **Пломба / Бирка:** `#{tag}`" if tag else "🏷 **Пломба / Бирка:** _нет_")
 
-    comfort = status.get("last_comfort")
-    lines.append(f"⭐ **Комфорт:** {comfort}/5" if comfort else "⭐ **Комфорт:** _не оценён_")
+        comfort = status.get("last_comfort")
+        lines.append(f"⭐ **Комфорт:** {comfort}/5" if comfort else "⭐ **Комфорт:** _не оценён_")
 
     slots = status.get("upcoming_slots")
     if slots:
@@ -1556,7 +1563,11 @@ def _render_wear_card(status: dict, is_agent_mode: bool = False) -> tuple[str, I
             close_t = s["planned_close_at"].strftime("%H:%M") if s.get("planned_close_at") else "..."
             lines.append(f"• {open_t} – {close_t} ({s['state']})")
 
-    keyboard = get_wear_card_keyboard(is_locked=is_locked, is_agent_mode=is_agent_mode)
+    keyboard = get_wear_card_keyboard(
+        is_active=is_active,
+        is_locked=is_locked,
+        is_agent_mode=is_agent_mode,
+    )
     return "\n".join(lines), keyboard
 
 
@@ -1617,6 +1628,77 @@ async def cb_wear_toggle_agent(callback: types.CallbackQuery, state: FSMContext)
         await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=kb)
     status_label = "включен (свободный ввод)" if new_agent else "выключен (кнопки выбора)"
     await callback.answer(f"🤖 Агентский режим {status_label}")
+
+
+@personal_router.callback_query(F.data == "wear_start_init")
+async def cb_wear_start_init(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(PersonalStates.waiting_for_wear_start_tag)
+    await callback.message.answer(
+        "🔒 **Начало ношения пояса верности**\n\n"
+        "Введите номер пломбы / бирки (или отправьте `-` если закрываете без номерной бирки):\n\n"
+        "_Для отмены отправьте /cancel_",
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
+
+@personal_router.message(PersonalStates.waiting_for_wear_start_tag)
+async def msg_wear_start_tag(message: types.Message, state: FSMContext):
+    if message.text and message.text.strip().lower() in ("/cancel", "отмена"):
+        await state.set_state(None)
+        await message.answer("Начало ношения отменено.")
+        return
+
+    user = await _get_user_by_chat(message.chat.id)
+    if user is None:
+        await state.set_state(None)
+        return
+
+    raw = (message.text or "").strip()
+    tag_number = None if raw in ("-", "—", "") else raw
+
+    async with async_session_factory() as db:
+        session, initial_log = await wear_svc.start_open_ended_session(
+            db,
+            user.id,
+            tag_number=tag_number,
+        )
+        status = await wear_svc.get_wear_status(db, user.id)
+
+    await state.set_state(None)
+
+    lines = ["🔒 **Пояс надет и заперт!**", "Период ношения начался, таймер запущен."]
+    if tag_number:
+        lines.append(f"🏷 Зафиксирована пломба: `#{tag_number}`")
+
+    await message.answer("\n".join(lines), parse_mode="Markdown")
+
+    data = await state.get_data()
+    is_agent_mode = data.get("wear_agent_mode", False)
+    text, kb = _render_wear_card(status, is_agent_mode=is_agent_mode)
+    await message.answer(text, parse_mode="Markdown", reply_markup=kb)
+
+
+@personal_router.callback_query(F.data == "wear_finish_init")
+async def cb_wear_finish_init(callback: types.CallbackQuery, state: FSMContext):
+    user = await _get_user_by_chat(callback.message.chat.id)
+    if user is None:
+        return
+
+    async with async_session_factory() as db:
+        await wear_svc.finish_open_ended_session(db, user.id)
+        status = await wear_svc.get_wear_status(db, user.id)
+
+    data = await state.get_data()
+    is_agent_mode = data.get("wear_agent_mode", False)
+
+    await callback.message.answer(
+        "⏹ **Период ношения пояса завершён.** Сессия закрыта.",
+        parse_mode="Markdown",
+    )
+    text, kb = _render_wear_card(status, is_agent_mode=is_agent_mode)
+    await callback.message.answer(text, parse_mode="Markdown", reply_markup=kb)
+    await callback.answer()
 
 
 @personal_router.callback_query(F.data == "wear_unlock_init")

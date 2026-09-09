@@ -191,13 +191,18 @@ def get_stats_keyboard(has_penalties: bool = False) -> InlineKeyboardMarkup:
 
 
 def get_wear_card_keyboard(
-    is_locked: bool,
+    is_active: bool = True,
+    is_locked: bool = False,
     is_agent_mode: bool = False,
 ) -> InlineKeyboardMarkup:
     """Action keyboard for Open-Ended Wear card."""
     rows: list[list[InlineKeyboardButton]] = []
 
-    if is_locked:
+    if not is_active:
+        rows.append([
+            InlineKeyboardButton(text="🔒 Надеть и запереть пояс", callback_data="wear_start_init"),
+        ])
+    elif is_locked:
         rows.append([
             InlineKeyboardButton(text="🔓 Снять пояс", callback_data="wear_unlock_init"),
         ])
@@ -213,6 +218,11 @@ def get_wear_card_keyboard(
     rows.append([
         InlineKeyboardButton(text="💥 Отметить оргазм", callback_data="wear_orgasm_init"),
     ])
+
+    if is_active:
+        rows.append([
+            InlineKeyboardButton(text="⏹ Завершить период ношения", callback_data="wear_finish_init"),
+        ])
 
     mode_label = "🤖 Агент: Вкл" if is_agent_mode else "🔘 Агент: Выкл (Кнопки)"
     rows.append([

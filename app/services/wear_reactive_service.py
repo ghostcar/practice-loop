@@ -43,11 +43,11 @@ def format_duration_hms(total_seconds: int) -> str:
     return " ".join(parts)
 
 
-async def get_or_create_open_ended_session(
+async def get_active_wear_session(
     db: AsyncSession,
     user_id: uuid.UUID,
-) -> LockSession:
-    """Retrieves an active open-ended wear session or creates a new one."""
+) -> LockSession | None:
+    """Retrieves an active wear session for user, if any exists."""
     stmt = (
         select(LockSession)
         .where(
@@ -57,31 +57,91 @@ async def get_or_create_open_ended_session(
         .order_by(desc(LockSession.created_at))
     )
     res = await db.execute(stmt)
-    session = res.scalars().first()
+    return res.scalars().first()
+
+
+async def start_open_ended_session(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    tag_number: str | None = None,
+    device_id: uuid.UUID | None = None,
+) -> tuple[LockSession, WearEventLog]:
+    """Explicitly starts a new open-ended wear session and locks the device."""
+    now = datetime.now(UTC)
+    session = LockSession(
+        owner_id=user_id,
+        device_id=device_id,
+        mode="open_ended",
+        state="active",
+        is_currently_locked=True,
+        current_tag_number=tag_number,
+        last_wear_checkin_at=now,
+        started_at=now,
+        random_seed_encrypted="open_ended",
+        random_seed_commitment="open_ended",
+        duration_type="open_ended",
+        timezone="UTC",
+    )
+    db.add(session)
+    await db.flush()
+
+    initial_log = WearEventLog(
+        user_id=user_id,
+        device_id=device_id,
+        session_id=session.id,
+        event_code="initial_lock",
+        state_before="unlocked",
+        state_after="locked",
+        tag_number=tag_number,
+        user_comment="Начало периода ношения пояса",
+        reactions_applied={"wear_started": True},
+    )
+    db.add(initial_log)
+    await db.commit()
+    await db.refresh(session)
+    return session, initial_log
+
+
+async def finish_open_ended_session(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    reason: str | None = None,
+) -> LockSession | None:
+    """Completes and closes the active wear session (wearing finished)."""
+    session = await get_active_wear_session(db, user_id)
+    if not session:
+        return None
 
     now = datetime.now(UTC)
-    if not session:
-        session = LockSession(
-            owner_id=user_id,
-            mode="open_ended",
-            state="active",
-            is_currently_locked=True,
-            started_at=now,
-            random_seed_encrypted="open_ended",
-            random_seed_commitment="open_ended",
-            duration_type="open_ended",
-            timezone="UTC",
-        )
-        db.add(session)
-        await db.flush()
-    else:
-        # Upgrade or ensure open_ended mode
-        if session.mode != "open_ended":
-            session.mode = "open_ended"
-            if session.is_currently_locked is None:
-                session.is_currently_locked = True
-            await db.flush()
+    was_locked = session.is_currently_locked
+    session.state = "completed"
+    session.completed_at = now
+    session.is_currently_locked = False
 
+    finish_log = WearEventLog(
+        user_id=user_id,
+        device_id=session.chastity_device_id or session.device_id,
+        session_id=session.id,
+        event_code="session_completed",
+        state_before="locked" if was_locked else "unlocked",
+        state_after="unlocked",
+        user_comment=reason or "Завершение периода ношения пояса",
+        reactions_applied={"session_completed": True},
+    )
+    db.add(finish_log)
+    await db.commit()
+    await db.refresh(session)
+    return session
+
+
+async def get_or_create_open_ended_session(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> LockSession:
+    """Retrieves an active open-ended wear session or creates a new one (helper)."""
+    session = await get_active_wear_session(db, user_id)
+    if not session:
+        session, _ = await start_open_ended_session(db, user_id)
     return session
 
 
@@ -90,8 +150,23 @@ async def get_wear_status(
     user_id: uuid.UUID,
 ) -> dict[str, Any]:
     """Computes real-time status of wear, exact second timer, pending opens, and day slots."""
-    session = await get_or_create_open_ended_session(db, user_id)
+    session = await get_active_wear_session(db, user_id)
     now = datetime.now(UTC)
+
+    if not session:
+        return {
+            "session": None,
+            "is_active": False,
+            "is_locked": False,
+            "current_tag": None,
+            "last_comfort": None,
+            "time_text": "Ношение не активно",
+            "deadline_text": "",
+            "is_overdue": False,
+            "duration_sec": 0,
+            "pending_open": None,
+            "upcoming_slots": [],
+        }
 
     pending_open: WearEventLog | None = None
     if session.pending_open_event_id:
@@ -163,6 +238,7 @@ async def get_wear_status(
 
     return {
         "session": session,
+        "is_active": True,
         "is_locked": session.is_currently_locked,
         "current_tag": session.current_tag_number,
         "last_comfort": session.last_comfort_score,
@@ -396,10 +472,10 @@ async def record_orgasm_event(
     notes: str | None = None,
 ) -> tuple[WearEventLog, dict[str, Any]]:
     """Records orgasm/release event into wear log and Sexual Journal."""
-    session = await get_or_create_open_ended_session(db, user_id)
+    session = await get_active_wear_session(db, user_id)
     now = datetime.now(UTC)
 
-    cur_state = "locked" if session.is_currently_locked else "unlocked"
+    cur_state = ("locked" if session.is_currently_locked else "unlocked") if session else "unlocked"
     reactions: dict[str, Any] = {}
 
     try:
@@ -410,7 +486,7 @@ async def record_orgasm_event(
             orgasms=orgasms_count,
             status="completed",
             source="timer_slot",
-            timer_session_id=session.id,
+            timer_session_id=session.id if session else None,
             notes=notes or "Фиксация оргазма через таймер ношения",
         )
         db.add(journal_entry)
@@ -422,8 +498,8 @@ async def record_orgasm_event(
 
     orgasm_log = WearEventLog(
         user_id=user_id,
-        device_id=session.chastity_device_id or session.device_id,
-        session_id=session.id,
+        device_id=(session.chastity_device_id or session.device_id) if session else None,
+        session_id=session.id if session else None,
         event_code="orgasm_release",
         state_before=cur_state,
         state_after=cur_state,
