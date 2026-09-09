@@ -97,14 +97,25 @@ async def vote_pillory_endpoint(
     if publication.owner_id == user.id:
         raise HTTPException(400, "Cannot vote on your own publication")
 
-    # One durable vote per voter/publication. Community votes are advisory and
-    # never mutate private operational lock state directly.
     vote = await create_encouragement(db, user.id, "pillory_publication", publication.id, vote_type)
 
-    # Award Social XP to voter
-    from app.gamification.handler import get_or_create_progress
-
     if vote is not None:
+        # Auto-extend lock session timer if enabled on target session (ADR-197)
+        session_id_str = publication.snapshot.get("session_id") if isinstance(publication.snapshot, dict) else None
+        if session_id_str:
+            try:
+                from app.locktimer.repositories import get_session
+                from app.locktimer.services.discipline_service import apply_pillory_vote_to_session
+
+                target_session = await get_session(db, uuid.UUID(session_id_str), publication.owner_id)
+                if target_session is not None and target_session.pillory_auto_extend:
+                    await apply_pillory_vote_to_session(db, target_session, vote_type)
+            except Exception:
+                pass
+
+        # Award Social XP to voter
+        from app.gamification.handler import get_or_create_progress
+
         prog = await get_or_create_progress(db, user.id)
         prog.xp += 15
 

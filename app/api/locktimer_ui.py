@@ -384,6 +384,17 @@ async def locktimer_session_detail(
     except Exception:
         pass
 
+    # Active Verification Challenge (ADR-197)
+    active_challenge = None
+    try:
+        from app.locktimer.services.discipline_service import get_active_session_challenge
+
+        active_challenge = await get_active_session_challenge(db, session_id, current_user.id)
+    except Exception:
+        pass
+
+    verify_code_query = request.query_params.get("verify_code")
+
     return templates.TemplateResponse(
         request,
         "locktimer/session_detail.html",
@@ -393,6 +404,8 @@ async def locktimer_session_detail(
             "locale": locale,
             "protocol_runs": protocol_runs,
             "session": _serialize_session(session, t),
+            "active_challenge": active_challenge,
+            "verify_code_query": verify_code_query,
             "med_schedules": med_schedules,
             "catalog_items": catalog_items,
             "care_products": care_products,
@@ -661,13 +674,33 @@ def _serialize_session(session, t) -> dict | None:
     if session is None:
         return None
     effective_end = as_utc(session.effective_end_at) if session.effective_end_at else None
+    orig_end = as_utc(session.original_end_at) if getattr(session, "original_end_at", None) else None
+    dur_days = 0
+    dur_hours = 0
+    if orig_end:
+        diff = max(0, int((orig_end - _now()).total_seconds()))
+        dur_days = diff // 86400
+        dur_hours = (diff % 86400) // 3600
+
     return {
         "id": str(session.id),
         "device_id": str(session.device_id) if session.device_id else None,
         "state": session.state,
+        "mode": getattr(session, "mode", "scheduled") or "scheduled",
         "duration_type": session.duration_type,
+        "duration_days": dur_days,
+        "duration_hours": dur_hours,
+        "can_extend_duration": getattr(session, "can_extend_duration", False),
+        "current_tag_number": getattr(session, "current_tag_number", None),
+        "discipline_policy": getattr(session, "discipline_policy", {}) or {},
+        "verification_required": getattr(session, "verification_required", False),
+        "verification_frequency_hours": getattr(session, "verification_frequency_hours", 24),
+        "verification_mode": getattr(session, "verification_mode", "ai_vision"),
+        "pillory_enabled": getattr(session, "pillory_enabled", False),
+        "pillory_auto_extend": getattr(session, "pillory_auto_extend", False),
         "timezone": session.timezone,
         "started_at": session.started_at,
+        "original_end_at": session.original_end_at,
         "effective_end_at": session.effective_end_at,
         "effective_end_ts": effective_end.timestamp() if effective_end else None,
         "max_end_at": session.max_end_at,
@@ -679,6 +712,12 @@ def _serialize_session(session, t) -> dict | None:
             "active": "Active",
             "completed": "Completed",
             "safety_stopped": "Safety Stopped",
+        }.get(session.state, session.state),
+        "state_display": {
+            "draft": "Черновик",
+            "active": "Активна",
+            "completed": "Завершена",
+            "safety_stopped": "Остановлена",
         }.get(session.state, session.state),
         "remaining_seconds": (
             max(0, (effective_end - _now()).total_seconds()) if effective_end and session.state == "active" else None

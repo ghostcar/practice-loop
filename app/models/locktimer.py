@@ -113,6 +113,14 @@ class LockSession(Base):
         UUID(as_uuid=True), ForeignKey("wear_event_logs.id", ondelete="SET NULL"), nullable=True
     )
 
+    # Discipline policy, verification & pillory mode (ADR-197)
+    discipline_policy: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    verification_required: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    verification_frequency_hours: Mapped[int] = mapped_column(Integer, default=24, nullable=False)
+    verification_mode: Mapped[str] = mapped_column(String(30), default="ai_vision", nullable=False)
+    pillory_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    pillory_auto_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

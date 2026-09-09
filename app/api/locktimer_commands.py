@@ -637,30 +637,80 @@ async def api_update_draft(
     session_id: uuid.UUID,
     request: Request,
     duration_type: str | None = Form(default=None),
+    mode: str | None = Form(default=None),
+    duration_days: int | None = Form(default=None),
+    duration_hours: int | None = Form(default=None),
+    can_extend_duration: bool = Form(default=False),
+    current_tag_number: str | None = Form(default=None),
     timezone: str | None = Form(default=None),
     merge_gap_seconds: int | None = Form(default=None),
     device_id: str = Form(default=_UNSET),
+    penalty_points: int | None = Form(default=None),
+    penalty_time_minutes: int | None = Form(default=None),
+    penalty_tasks_enabled: bool = Form(default=False),
+    escalation_multiplier: float | None = Form(default=None),
+    verification_required: bool = Form(default=False),
+    verification_frequency_hours: int | None = Form(default=None),
+    verification_mode: str | None = Form(default=None),
+    pillory_enabled: bool = Form(default=False),
+    pillory_auto_extend: bool = Form(default=False),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update draft session metadata (duration, tz, merge gap, device)."""
+    """Update draft session metadata (duration, tz, discipline, verification, pillory, device)."""
     session = await get_session(db, session_id, current_user.id)
     if session is None:
         raise HTTPException(404, "Session not found")
     if session.state != e.SESSION_DRAFT:
         raise HTTPException(400, "Only draft sessions can be edited")
 
-    print("DBG device_id raw ->", repr(device_id), flush=True)
     fields: dict = {}
+    if mode:
+        fields["mode"] = mode
+        if mode == "open_ended":
+            fields["duration_type"] = "infinite"
     if duration_type:
         fields["duration_type"] = duration_type
+
+    # Duration calculation in days / hours
+    total_sec = (duration_days or 0) * 86400 + (duration_hours or 0) * 3600
+    if total_sec > 0:
+        from datetime import timedelta
+        fields["original_end_at"] = datetime.now(UTC) + timedelta(seconds=total_sec)
+    elif duration_type == "infinite" or mode == "open_ended":
+        fields["original_end_at"] = None
+
+    fields["can_extend_duration"] = bool(can_extend_duration)
+    if current_tag_number is not None:
+        fields["current_tag_number"] = current_tag_number.strip() or None
     if timezone:
         fields["timezone"] = timezone
     if merge_gap_seconds is not None:
         fields["merge_gap_seconds"] = merge_gap_seconds
+
+    # Discipline policy
+    policy = dict(session.discipline_policy or {})
+    if penalty_points is not None:
+        policy["penalty_points"] = penalty_points
+    if penalty_time_minutes is not None:
+        policy["penalty_time_minutes"] = penalty_time_minutes
+    policy["penalty_tasks_enabled"] = bool(penalty_tasks_enabled)
+    if escalation_multiplier is not None:
+        policy["escalation_multiplier"] = escalation_multiplier
+    fields["discipline_policy"] = policy
+
+    # Verification protocol
+    fields["verification_required"] = bool(verification_required)
+    if verification_frequency_hours is not None:
+        fields["verification_frequency_hours"] = verification_frequency_hours
+    if verification_mode:
+        fields["verification_mode"] = verification_mode
+
+    # Pillory integration
+    fields["pillory_enabled"] = bool(pillory_enabled)
+    fields["pillory_auto_extend"] = bool(pillory_auto_extend)
+
     # device_id: absent → no change; "__none__" (UI sentinel) → unbind;
-    # otherwise must be a UUID. NOTE: FastAPI maps empty form values to the
-    # parameter default, so "" never reaches this code.
     if device_id != _UNSET:
         device_id = device_id.strip()
         if device_id == "__none__":
@@ -678,6 +728,68 @@ async def api_update_draft(
     return action_response(
         request,
         json_body={"status": "updated", "session_id": str(session_id)},
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
+
+
+@router.post("/sessions/{session_id}/verification-challenge")
+async def api_create_verification_challenge(
+    session_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create one-time verification challenge for lock session."""
+    session = await get_session(db, session_id, current_user.id)
+    if session is None:
+        raise HTTPException(404, "Session not found")
+
+    from app.locktimer.services.discipline_service import create_session_verification_challenge
+
+    challenge, code = await create_session_verification_challenge(db, session_id, current_user.id)
+    return action_response(
+        request,
+        json_body={
+            "status": "challenge_created",
+            "challenge_id": str(challenge.id),
+            "code": code,
+            "expires_at": challenge.expires_at.isoformat(),
+        },
+        redirect_url=f"/locktimer/sessions/{session_id}?verify_code={code}",
+    )
+
+
+@router.post("/sessions/{session_id}/verify-photo")
+async def api_verify_photo(
+    session_id: uuid.UUID,
+    request: Request,
+    tag_number: str = Form(...),
+    verification_code: str = Form(...),
+    notes: str | None = Form(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Verify photo submission with tag number and verification code."""
+    session = await get_session(db, session_id, current_user.id)
+    if session is None:
+        raise HTTPException(404, "Session not found")
+
+    from app.locktimer.services.discipline_service import verify_session_photo_submission
+
+    result = await verify_session_photo_submission(
+        db,
+        session_id=session_id,
+        owner_id=current_user.id,
+        tag_number=tag_number,
+        verification_code=verification_code,
+        notes=notes,
+    )
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Verification failed"))
+
+    return action_response(
+        request,
+        json_body=result,
         redirect_url=f"/locktimer/sessions/{session_id}",
     )
 

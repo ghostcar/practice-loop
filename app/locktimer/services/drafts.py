@@ -97,6 +97,14 @@ async def update_draft(
         "max_end_at",
         "can_extend_duration",
         "merge_gap_seconds",
+        "mode",
+        "current_tag_number",
+        "discipline_policy",
+        "verification_required",
+        "verification_frequency_hours",
+        "verification_mode",
+        "pillory_enabled",
+        "pillory_auto_extend",
     }
     for key, value in fields.items():
         if key in allowed and value is not None:

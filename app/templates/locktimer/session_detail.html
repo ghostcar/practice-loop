@@ -101,6 +101,73 @@
       </form>
     </div>
   </section>
+
+  <!-- Active: Verification & Photo Inspection Protocol (ADR-197) -->
+  <section class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 space-y-4">
+    <div class="flex items-center justify-between flex-wrap gap-2">
+      <div class="flex items-center gap-2">
+        {{ icon('camera', 'w-5 h-5 text-[color:var(--accent)]') }}
+        <h3 class="text-base font-bold text-[color:var(--text)]">Фотоконтроль и подтверждение пломбы</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        {% if session.current_tag_number %}
+        <span class="px-2.5 py-1 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] font-mono text-xs text-[color:var(--text-secondary)] inline-flex items-center gap-1.5">
+          {{ icon('tag', 'w-3.5 h-3.5') }} Пломба № {{ session.current_tag_number }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if verify_code_query or active_challenge %}
+    <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-amber-500">Активный разовый код проверки:</span>
+        <span class="text-xs text-[color:var(--text-muted)]">Действителен 60 минут</span>
+      </div>
+      <div class="text-3xl md:text-4xl font-mono font-black text-amber-400 tracking-widest text-center py-2 bg-[color:var(--canvas-deep)]/80 rounded-xl border border-amber-500/20">
+        {{ verify_code_query or '******' }}
+      </div>
+      <p class="text-xs text-[color:var(--text-secondary)] text-center">
+        Напишите этот код на листке бумаги и сфотографируйте пояс так, чтобы код и бирка были четко видны.
+      </p>
+
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/verify-photo" method="post" class="mt-4 pt-3 border-t border-amber-500/20 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <input type="hidden" name="verification_code" value="{{ verify_code_query or '' }}">
+        <div>
+          <label class="text-xs text-[color:var(--text-secondary)]">Номер бирки на фото</label>
+          <input name="tag_number" type="text" value="{{ session.current_tag_number or '' }}" required placeholder="Номер бирки" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-3 py-2 font-mono">
+        </div>
+        <div>
+          <label class="text-xs text-[color:var(--text-secondary)]">Комментарий / Заметка</label>
+          <input name="notes" type="text" placeholder="Все в порядке" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-3 py-2">
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition cursor-pointer inline-flex items-center justify-center gap-1.5">
+            {{ icon('check', 'w-4 h-4') }} Подтвердить проверку
+          </button>
+        </div>
+      </form>
+    </div>
+    {% else %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+      <div>
+        <p class="text-xs text-[color:var(--text-secondary)]">
+          Регламент: <strong class="text-[color:var(--text)]">каждые {{ session.verification_frequency_hours }} ч</strong> · Режим: <strong class="text-[color:var(--text)]">{{ session.verification_mode }}</strong>
+        </p>
+        <p class="text-[11px] text-[color:var(--text-muted)] mt-0.5">
+          Сгенерируйте разовый код для фотофиксации целостности пломбы и фиксации в журнале.
+        </p>
+      </div>
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/verification-challenge" method="post" class="flex-shrink-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <button type="submit" class="px-4 py-2 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-xl hover:opacity-90 text-xs font-semibold transition cursor-pointer inline-flex items-center gap-1.5">
+          {{ icon('camera', 'w-4 h-4') }} Пройти фотоконтроль
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </section>
   {% endif %}
 
   {% if session.state == 'draft' %}
@@ -114,38 +181,177 @@
     </form>
   </details>
 
-  <!-- Draft: quick metadata edit -->
-  <form action="/api/v2/locktimer/sessions/{{ session.id }}/update" method="post" class="pl-surface rounded-xl border border-[color:var(--border)] p-4 space-y-3">
-    <h3 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">{{ icon('settings', 'w-4 h-4') }}{{ t.locktimer_settings or "Settings" }}</h3>
+  <!-- Draft: Full Session Configuration (ADR-197) -->
+  <form action="/api/v2/locktimer/sessions/{{ session.id }}/update" method="post" class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 space-y-6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div>
-        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_duration or "Duration" }}</label>
-        <select name="duration_type" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
-          <option value="duration_from_start" {% if session.duration_type == 'duration_from_start' %}selected{% endif %}>Duration from start</option>
-          <option value="infinite" {% if session.duration_type == 'infinite' %}selected{% endif %}>Infinite</option>
-        </select>
+
+    <div class="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
+      <div class="flex items-center gap-2">
+        {{ icon('settings', 'w-5 h-5 text-[color:var(--accent)]') }}
+        <h2 class="text-base font-bold text-[color:var(--text)]">Параметры запуска и регламент сессии</h2>
       </div>
-      <div>
-        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_timezone or "Timezone" }}</label>
-        <input name="timezone" value="{{ session.timezone }}" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
-      </div>
-      <div>
-        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_merge_gap or "Merge gap" }} (s)</label>
-        <input name="merge_gap_seconds" type="number" value="{{ session.merge_gap_seconds }}" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
-      </div>
-      <div>
-        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_device or "Device" }}</label>
-        <select name="device_id" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
-          <option value="__none__" {% if not session.device_id %}selected{% endif %}>— {{ t.locktimer_device_none or "no device" }} —</option>
-          {% for d in devices %}
-          <option value="{{ d.id }}" {% if session.device_id == d.id %}selected{% endif %}>{{ d.name }}{% if d.inventory_status == 'in_use' %} ({{ t.locktimer_device_in_use or 'in use' }}){% endif %}</option>
-          {% endfor %}
-        </select>
-        <p class="text-xs text-[color:var(--text-muted)] mt-1">{{ t.locktimer_device_hint or "Bound device is marked in use while the session is active" }}</p>
+      <span class="text-xs text-[color:var(--text-muted)]">
+        Часовой пояс: <span class="font-mono text-[color:var(--text-secondary)]">{{ session.timezone }}</span>
+      </span>
+    </div>
+
+    <!-- Секция 1: Устройство и бирка -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
+        {{ icon('device', 'w-4 h-4') }} 1. Устройство и пломбирование
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Устройство из инвентаря</label>
+          <select name="device_id" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+            <option value="__none__" {% if not session.device_id %}selected{% endif %}>— Не выбрано (виртуальный замок) —</option>
+            {% for d in devices %}
+            <option value="{{ d.id }}" {% if session.device_id == d.id %}selected{% endif %}>
+              {{ d.name }}{% if d.inventory_status == 'in_use' %} (используется){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <p class="text-[11px] text-[color:var(--text-muted)] mt-1">При старте сессии устройство переходит в статус «Используется».</p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Номер пломбы / бирки</label>
+          <div class="relative mt-1.5">
+            <input name="current_tag_number" type="text" value="{{ session.current_tag_number or '' }}" placeholder="Например, SEAL-9841" class="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5 font-mono">
+          </div>
+          <p class="text-[11px] text-[color:var(--text-muted)] mt-1">Номер опечатывающей бирки будет фиксироваться при каждой фотопроверке.</p>
+        </div>
       </div>
     </div>
-    <button type="submit" class="px-4 py-1.5 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 text-sm transition cursor-pointer inline-flex items-center gap-1.5">{{ icon('save', 'w-4 h-4') }}{{ t.locktimer_save or "Save" }}</button>
+
+    <!-- Секция 2: Режим ношения и срок -->
+    <div class="space-y-3 pt-2 border-t border-[color:var(--border)]">
+      <h3 class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
+        {{ icon('timer', 'w-4 h-4') }} 2. Режим ношения и длительность
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Режим ношения</label>
+          <select name="mode" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+            <option value="scheduled" {% if session.mode == 'scheduled' %}selected{% endif %}>Фиксированный срок</option>
+            <option value="open_ended" {% if session.mode == 'open_ended' %}selected{% endif %}>Свободный режим (Open-Ended / Образ жизни)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Тип длительности</label>
+          <select name="duration_type" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+            <option value="duration_from_start" {% if session.duration_type == 'duration_from_start' %}selected{% endif %}>Заданный интервал</option>
+            <option value="infinite" {% if session.duration_type == 'infinite' %}selected{% endif %}>Бессрочно (до снятия)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Срок (дней и часов)</label>
+          <div class="grid grid-cols-2 gap-2 mt-1.5">
+            <input name="duration_days" type="number" min="0" value="{{ session.duration_days or 3 }}" placeholder="Дней" class="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2 text-center">
+            <input name="duration_hours" type="number" min="0" max="23" value="{{ session.duration_hours or 0 }}" placeholder="Часов" class="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2 text-center">
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-2">
+        <label class="inline-flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+          <input type="checkbox" name="can_extend_duration" value="true" {% if session.can_extend_duration %}checked{% endif %} class="rounded border-[color:var(--border)] text-[color:var(--accent)] focus:ring-0">
+          Разрешить продление срока во время сессии
+        </label>
+      </div>
+    </div>
+
+    <!-- Секция 3: Дисциплинарная политика и штрафы -->
+    <div class="space-y-3 pt-2 border-t border-[color:var(--border)]">
+      <h3 class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
+        {{ icon('shield', 'w-4 h-4') }} 3. Дисциплина, штрафы и наказания
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Штрафное время (+минуты к таймеру)</label>
+          <input name="penalty_time_minutes" type="number" min="0" step="15" value="{{ session.discipline_policy.get('penalty_time_minutes', 60) }}" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+          <p class="text-[11px] text-[color:var(--text-muted)] mt-1">Добавляется к сроку ношения за каждое опоздание возврата.</p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Штрафные баллы (XP)</label>
+          <input name="penalty_points" type="number" min="0" step="10" value="{{ session.discipline_policy.get('penalty_points', 50) }}" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+          <p class="text-[11px] text-[color:var(--text-muted)] mt-1">Списание очков прогресса за срыв или просрочку.</p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Эскалация штрафов</label>
+          <select name="escalation_multiplier" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+            <option value="1.0" {% if session.discipline_policy.get('escalation_multiplier', 1.0) == 1.0 %}selected{% endif %}>Без эскалации (x1.0)</option>
+            <option value="1.5" {% if session.discipline_policy.get('escalation_multiplier') == 1.5 %}selected{% endif %}>Умеренная (x1.5 за повтор)</option>
+            <option value="2.0" {% if session.discipline_policy.get('escalation_multiplier') == 2.0 %}selected{% endif %}>Строгая (x2.0 за каждый срыв)</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-2">
+        <label class="inline-flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+          <input type="checkbox" name="penalty_tasks_enabled" value="true" {% if session.discipline_policy.get('penalty_tasks_enabled') %}checked{% endif %} class="rounded border-[color:var(--border)] text-[color:var(--accent)] focus:ring-0">
+          Автоматически назначать штрафные задания в План дня при нарушениях
+        </label>
+      </div>
+    </div>
+
+    <!-- Секция 4: Протокол фотоконтроля -->
+    <div class="space-y-3 pt-2 border-t border-[color:var(--border)]">
+      <h3 class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
+        {{ icon('camera', 'w-4 h-4') }} 4. Протокол фотоконтроля и верификации
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Фотоконтроль ношения</label>
+          <div class="mt-2">
+            <label class="inline-flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+              <input type="checkbox" name="verification_required" value="true" {% if session.verification_required %}checked{% endif %} class="rounded border-[color:var(--border)] text-[color:var(--accent)] focus:ring-0">
+              Требовать периодическую проверку
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Периодичность проверок</label>
+          <select name="verification_frequency_hours" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+            <option value="12" {% if session.verification_frequency_hours == 12 %}selected{% endif %}>Каждые 12 часов</option>
+            <option value="24" {% if session.verification_frequency_hours == 24 %}selected{% endif %}>Каждые 24 часа (раз в сутки)</option>
+            <option value="48" {% if session.verification_frequency_hours == 48 %}selected{% endif %}>Каждые 48 часов</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-[color:var(--text-secondary)]">Способ верификации</label>
+          <select name="verification_mode" class="w-full mt-1.5 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3.5 py-2.5">
+            <option value="ai_vision" {% if session.verification_mode == 'ai_vision' %}selected{% endif %}>Нейросеть (Vision AI OCR)</option>
+            <option value="community" {% if session.verification_mode == 'community' %}selected{% endif %}>Сообщество (Community Review)</option>
+            <option value="keyholder" {% if session.verification_mode == 'keyholder' %}selected{% endif %}>Ключник / Куратор</option>
+          </select>
+        </div>
+      </div>
+      <p class="text-xs text-[color:var(--text-muted)] bg-[color:var(--canvas-deep)]/60 p-3 rounded-xl border border-[color:var(--border)] font-mono">
+        💡 При наступлении срока проверки выдается разовый защитный код. Вы пишете код на бумаге и фотографируете рядом с биркой. Номер бирки и код фиксируются в защищенном реестре.
+      </p>
+    </div>
+
+    <!-- Секция 5: Позорный столб (Pillory) -->
+    <div class="space-y-3 pt-2 border-t border-[color:var(--border)]">
+      <h3 class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
+        {{ icon('lock', 'w-4 h-4') }} 5. Интеграция с Позорным столбом (Pillory)
+      </h3>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+          <input type="checkbox" name="pillory_enabled" value="true" {% if session.pillory_enabled %}checked{% endif %} class="rounded border-[color:var(--border)] text-rose-600 focus:ring-0">
+          Публиковать на Позорный столб (/social/pillory) при срывах и нарушениях дедлайнов
+        </label>
+        <label class="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+          <input type="checkbox" name="pillory_auto_extend" value="true" {% if session.pillory_auto_extend %}checked{% endif %} class="rounded border-[color:var(--border)] text-rose-600 focus:ring-0">
+          Разрешить сообществу продлевать срок сессии голосами (+15 мин / +1 час) на Позорном столбе
+        </label>
+      </div>
+    </div>
+
+    <!-- Кнопки сохранения -->
+    <div class="pt-4 border-t border-[color:var(--border)] flex items-center justify-between">
+      <button type="submit" class="px-5 py-2.5 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-xl hover:opacity-90 text-sm font-semibold transition cursor-pointer inline-flex items-center gap-2">
+        {{ icon('save', 'w-4 h-4') }} Сохранить параметры запуска
+      </button>
+    </div>
   </form>
 
   <!-- Draft: add slot rule -->
@@ -271,25 +477,6 @@
   </section>
   {% endif %}
 
-  <!-- Draft: add medication relief task (ADR-085 — relief-only, no penalty) -->
-  {% if session.state == 'draft' and med_schedules %}
-  <details class="pl-surface rounded-xl border border-[color:var(--border)] p-4 group">
-    <summary class="text-sm font-semibold text-[color:var(--text)] cursor-pointer inline-flex items-center gap-1.5">{{ icon('medication', 'w-4 h-4') }}{{ t.locktimer_add_med_task or "Add Medication Relief Task" }}</summary>
-    <p class="text-xs text-[color:var(--text-muted)] mt-2">{{ t.locktimer_med_task_hint or "Medication doses appear as relief tasks — skipping them never triggers a penalty." }}</p>
-    <form action="/api/v2/locktimer/sessions/{{ session.id }}/medication-task-rules" method="post" class="mt-3 flex flex-wrap items-end gap-2">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-      <div class="flex-1 min-w-[220px]">
-        <label class="text-xs text-[color:var(--text-secondary)]">{{ t.locktimer_med_schedule or "Medication schedule" }}</label>
-        <select name="med_schedule_id" required class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
-          {% for ms in med_schedules %}
-          <option value="{{ ms.id }}">{{ ms.label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit" class="px-4 py-2 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 text-sm transition cursor-pointer inline-flex items-center gap-1.5">{{ icon('plus', 'w-4 h-4') }}{{ t.locktimer_add or "Add" }}</button>
-    </form>
-  </details>
-  {% endif %}
 
   <!-- Task rules -->
   {% if task_rules %}
@@ -469,6 +656,7 @@
   </section>
   {% endif %}
 
+  {% if session.state == 'active' %}
   <!-- Device care log (B2, §6.2) -->
   <section class="pl-surface rounded-xl border border-[color:var(--border)] p-4 space-y-3">
     <h3 class="text-sm font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
@@ -572,6 +760,7 @@
     <p class="text-xs text-[color:var(--text-muted)]">{{ t.locktimer_checkin_no_entries or "No check-ins yet." }}</p>
     {% endif %}
   </section>
+  {% endif %}
 
   {% if protocol_runs %}
   <section class="mt-6 p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]" aria-labelledby="protocols-h">

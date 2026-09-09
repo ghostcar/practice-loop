@@ -416,7 +416,9 @@ async def record_unlock_event(
 
     # 2. Reactive Trigger: Breach / Relapse -> Immediate Penalty
     elif event_code == "breach_relapse":
-        penalty_amount = -50
+        policy = session.discipline_policy or {}
+        base_points = policy.get("penalty_points", 50)
+        penalty_amount = -abs(int(base_points))
         penalty_tx = PointsTransaction(
             user_id=user_id,
             amount=penalty_amount,
@@ -426,6 +428,34 @@ async def record_unlock_event(
         db.add(penalty_tx)
         reactions["penalty_applied"] = penalty_amount
         reactions["penalty_message"] = f"Начислен штраф {penalty_amount} баллов за срыв."
+
+        if policy.get("penalty_tasks_enabled"):
+            try:
+                from app.models.task import Task
+                now_dt = datetime.now(UTC)
+                penalty_task = Task(
+                    user_id=user_id,
+                    title="[Штраф] Внеплановое дисциплинарное задание за срыв ношения",
+                    category="discipline",
+                    status="pending",
+                    scheduled_date=now_dt.date(),
+                    due_time=now_dt + timedelta(hours=3),
+                    xp_reward=0,
+                )
+                db.add(penalty_task)
+                reactions["penalty_task_assigned"] = True
+            except Exception:
+                pass
+
+        if session.pillory_enabled:
+            try:
+                from app.locktimer.services.discipline_service import send_session_to_pillory
+                await send_session_to_pillory(
+                    db, session, reason="Срыв ношения", details=user_comment or "Несанкционированное снятие пояса"
+                )
+                reactions["pillory_published"] = True
+            except Exception:
+                pass
 
     # 3. Reactive Trigger: Care Grooming -> Note care activity
     elif event_code == "care_grooming":
@@ -481,7 +511,8 @@ async def record_relock_event(
             if now > exp_time:
                 overdue_sec = int((now - exp_time).total_seconds())
                 if overdue_sec > 0:
-                    base_penalty = 10
+                    policy = session.discipline_policy or {}
+                    base_penalty = int(policy.get("penalty_points", 10))
                     minute_penalty = (overdue_sec // 60) * 2
                     total_penalty = -(base_penalty + minute_penalty)
 
@@ -497,6 +528,44 @@ async def record_relock_event(
                         "amount": total_penalty,
                         "formatted_overdue": format_duration_hms(overdue_sec),
                     }
+
+                    # Penalty time addition to session if configured
+                    penalty_time_min = int(policy.get("penalty_time_minutes", 0) or 0)
+                    if penalty_time_min > 0 and session.effective_end_at:
+                        session.effective_end_at += timedelta(minutes=penalty_time_min)
+                        reactions["penalty_time_added_minutes"] = penalty_time_min
+
+                    # Penalty task assignment if configured
+                    if policy.get("penalty_tasks_enabled"):
+                        try:
+                            from app.models.task import Task
+                            penalty_task = Task(
+                                user_id=user_id,
+                                title=f"[Штраф] Отработка опоздания возврата ({overdue_sec // 60} мин)",
+                                category="discipline",
+                                status="pending",
+                                scheduled_date=now.date(),
+                                due_time=now + timedelta(hours=4),
+                                xp_reward=0,
+                            )
+                            db.add(penalty_task)
+                            reactions["penalty_task_assigned"] = True
+                        except Exception:
+                            pass
+
+                    # Publish to Pillory if enabled
+                    if session.pillory_enabled:
+                        try:
+                            from app.locktimer.services.discipline_service import send_session_to_pillory
+                            await send_session_to_pillory(
+                                db,
+                                session,
+                                reason=f"Опоздание возврата пояса на {overdue_sec // 60} мин",
+                                details=f"Нарушен дедлайн возврата пояса на {overdue_sec // 60} мин.",
+                            )
+                            reactions["pillory_published"] = True
+                        except Exception:
+                            pass
 
     relock_log = WearEventLog(
         user_id=user_id,
