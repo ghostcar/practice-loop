@@ -103,6 +103,16 @@ class LockSession(Base):
     keyholder_type: Mapped[str] = mapped_column(String(30), default="llm_bot", nullable=False)
     is_health_paused: Mapped[bool] = mapped_column(default=False, nullable=False)
 
+    # Open-Ended Wear Mode & Events (Step 100 / ADR-195)
+    mode: Mapped[str] = mapped_column(String(20), default="scheduled", nullable=False)  # scheduled | open_ended
+    is_currently_locked: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    current_tag_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    last_wear_checkin_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_comfort_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pending_open_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wear_event_logs.id", ondelete="SET NULL"), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

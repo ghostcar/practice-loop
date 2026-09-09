@@ -49,9 +49,12 @@ from app.models.protocol import (  # noqa: E402
     TimingSpecType,
 )
 from app.models.quest import Quest, UserQuest  # noqa: E402
+from app.models.wear_events import WearEventDefinition, WearEventLog  # noqa: E402
 
 __all__ = [
     "Base",
+    "WearEventDefinition",
+    "WearEventLog",
     "LLMGlobalModel",
     "LLMGlobalProvider",
     "LLMUserSelection",

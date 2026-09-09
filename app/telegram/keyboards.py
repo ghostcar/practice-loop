@@ -25,7 +25,10 @@ def get_main_reply_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="🏋️ Тренировка"),
             ],
             [
+                KeyboardButton(text="🔒 Пояс"),
                 KeyboardButton(text="❤️ Чек-ин / Замеры"),
+            ],
+            [
                 KeyboardButton(text="🏆 Прогресс"),
             ],
         ],
@@ -185,3 +188,86 @@ def get_stats_keyboard(has_penalties: bool = False) -> InlineKeyboardMarkup:
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def get_wear_card_keyboard(
+    is_locked: bool,
+    is_agent_mode: bool = False,
+) -> InlineKeyboardMarkup:
+    """Action keyboard for Open-Ended Wear card."""
+    rows: list[list[InlineKeyboardButton]] = []
+
+    if is_locked:
+        rows.append([
+            InlineKeyboardButton(text="🔓 Снять пояс", callback_data="wear_unlock_init"),
+        ])
+        rows.append([
+            InlineKeyboardButton(text="🔍 Проверка пломбы", callback_data="wear_inspect_init"),
+            InlineKeyboardButton(text="⭐ Комфорт", callback_data="wear_comfort_init"),
+        ])
+    else:
+        rows.append([
+            InlineKeyboardButton(text="🔒 Запереть пояс", callback_data="wear_relock_init"),
+        ])
+
+    rows.append([
+        InlineKeyboardButton(text="💥 Отметить оргазм", callback_data="wear_orgasm_init"),
+    ])
+
+    mode_label = "🤖 Агент: Вкл" if is_agent_mode else "🔘 Агент: Выкл (Кнопки)"
+    rows.append([
+        InlineKeyboardButton(text=mode_label, callback_data="wear_toggle_agent"),
+        InlineKeyboardButton(text="🔄 Обновить", callback_data="wear_refresh"),
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def get_wear_reasons_keyboard() -> InlineKeyboardMarkup:
+    """Selection of wear unlock reasons."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🚿 Санитарная обработка (10 мин)", callback_data="wear_reason:hygiene_quick"
+                ),
+            ],
+            [
+                InlineKeyboardButton(text="🧴 Уход / Депиляция (60 мин)", callback_data="wear_reason:care_grooming"),
+            ],
+            [
+                InlineKeyboardButton(text="🏃 Спорт / Тренировка (90 мин)", callback_data="wear_reason:sport_workout"),
+            ],
+            [
+                InlineKeyboardButton(text="❤️ Секс / Близость (120 мин)", callback_data="wear_reason:sex_activity"),
+            ],
+            [
+                InlineKeyboardButton(text="🚨 Форс-мажор (Боль / Врач)", callback_data="wear_reason:force_majeure"),
+            ],
+            [
+                InlineKeyboardButton(text="⚠️ Срыв / Нарушение", callback_data="wear_reason:breach_relapse"),
+            ],
+            [
+                InlineKeyboardButton(text="🔙 Отмена", callback_data="wear_refresh"),
+            ],
+        ]
+    )
+
+
+def get_wear_comfort_keyboard() -> InlineKeyboardMarkup:
+    """Selection of physical comfort score (1-5)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="1 😖", callback_data="wear_score:1"),
+                InlineKeyboardButton(text="2 😕", callback_data="wear_score:2"),
+                InlineKeyboardButton(text="3 😐", callback_data="wear_score:3"),
+                InlineKeyboardButton(text="4 🙂", callback_data="wear_score:4"),
+                InlineKeyboardButton(text="5 😊", callback_data="wear_score:5"),
+            ],
+            [
+                InlineKeyboardButton(text="🔙 Отмена", callback_data="wear_refresh"),
+            ],
+        ]
+    )
+

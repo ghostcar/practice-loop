@@ -84,6 +84,7 @@ from app.models.task_inventory import ActivityInventoryRequirement, TaskInventor
 from app.models.task_location import ActivityLocationRequirement, TaskLocation, TaskLocationUsage  # noqa: F401
 from app.models.training import TrainingDay  # noqa: F401
 from app.models.user import User
+from app.models.wear_events import WearEventDefinition, WearEventLog  # noqa: F401
 from app.templates_setup import templates
 
 # Disable Jinja2 template caching in tests to avoid unhashable context issues

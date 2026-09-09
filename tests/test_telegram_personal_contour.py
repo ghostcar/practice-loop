@@ -47,10 +47,11 @@ def test_main_reply_keyboard_structure():
     assert kb.is_persistent is True
 
     button_texts = [[btn.text for btn in row] for row in kb.keyboard]
-    assert len(button_texts) == 3
+    assert len(button_texts) == 4
     assert button_texts[0] == ["📋 План дня", "💊 Лекарства"]
     assert button_texts[1] == ["🤖 AI-генератор", "🏋️ Тренировка"]
-    assert button_texts[2] == ["❤️ Чек-ин / Замеры", "🏆 Прогресс"]
+    assert button_texts[2] == ["🔒 Пояс", "❤️ Чек-ин / Замеры"]
+    assert button_texts[3] == ["🏆 Прогресс"]
 
 
 def test_task_card_keyboard():
