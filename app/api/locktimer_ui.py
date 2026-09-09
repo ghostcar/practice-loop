@@ -9,6 +9,7 @@ GET  /locktimer/tag-violations/{id} — tag violation audit
 
 from __future__ import annotations
 
+import contextlib
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -401,10 +402,8 @@ async def locktimer_session_detail(
         get_game_actions_history,
     )
 
-    try:
+    with contextlib.suppress(Exception):
         game_actions = await get_game_actions_history(db, session_id, limit=15)
-    except Exception:
-        pass
 
     verify_code_query = request.query_params.get("verify_code")
 
@@ -715,6 +714,9 @@ def _serialize_session(session, t) -> dict | None:
         "pillory_enabled": getattr(session, "pillory_enabled", False),
         "pillory_auto_extend": getattr(session, "pillory_auto_extend", False),
         "extensions_state": getattr(session, "extensions_state", {}) or {},
+        "is_frozen": getattr(session, "is_frozen", False),
+        "frozen_at": getattr(session, "frozen_at", None),
+        "frozen_remaining_seconds": getattr(session, "frozen_remaining_seconds", None),
         "timezone": session.timezone,
         "started_at": session.started_at,
         "original_end_at": session.original_end_at,

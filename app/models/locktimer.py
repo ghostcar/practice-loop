@@ -124,6 +124,11 @@ class LockSession(Base):
     # Gamification extensions state (ADR-198)
     extensions_state: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
 
+    # Permanent Freeze & Unfreeze State (ADR-199)
+    is_frozen: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    frozen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    frozen_remaining_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

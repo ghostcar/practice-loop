@@ -4,10 +4,10 @@
 
 - **HEAD**: `dbb3b35f95b4` (dbb3b35f95b47f3f44b0cccb2579fdf5cfabc0f8)
 - **Branch**: main
-- **Dirty**: no
+- **Dirty**: yes
 - **Generated at (source)**: 2026-09-09T06:23:59Z
 - **Repository**: ghostcar/practice-loop
-- **Alembic heads**: 1 (103_lock)
+- **Alembic heads**: 1 (104_lock)
 - **Last test run**: not recorded (no real run in this manifest)
 
 > Факт подтверждает только сам manifest и его `head`. Любое использование этого

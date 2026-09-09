@@ -3,7 +3,7 @@
     "checked_at": "2026-09-09T06:23:59Z",
     "command": "alembic heads",
     "heads": [
-      "103_lock_extensions_games"
+      "104_lock_timer_freeze"
     ]
   },
   "artifacts": [],
@@ -12,8 +12,8 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
-    "dirty": false,
+    "diff_hash": "sha256:98df6db6d3689c13409a0fd4d40d2a7df8dcf7e5d06b339f31e8ab9468d65953",
+    "dirty": true,
     "head": "dbb3b35f95b47f3f44b0cccb2579fdf5cfabc0f8"
   },
   "kind": "fact_manifest",

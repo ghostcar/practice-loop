@@ -71,8 +71,13 @@
   </div>
 
   {% if session.state == 'active' %}
-  <!-- Hero: Active Timer (DESIGN v2 §10) -->
-  <section class="pl-surface-raised rounded-2xl border border-[color:var(--border)] p-6 md:p-10 text-center">
+  <!-- Hero: Active Timer (DESIGN v2 §10 / ADR-199 Freeze Support) -->
+  <section class="pl-surface-raised rounded-2xl border {% if session.is_frozen %}border-cyan-500/50 bg-cyan-950/20 shadow-[0_0_30px_rgba(6,182,212,0.15)]{% else %}border-[color:var(--border)]{% endif %} p-6 md:p-10 text-center relative overflow-hidden transition-all duration-300">
+    {% if session.is_frozen %}
+    <div class="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono text-xs md:text-sm font-bold tracking-wide animate-pulse">
+      ❄️ ТАЙМЕР ЗАМОРОЖЕН (Ход времени остановлен)
+    </div>
+    {% endif %}
     <div class="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-sm pl-text-secondary mb-5">
       <span class="inline-flex items-center gap-1.5">{{ icon('timer', 'w-4 h-4') }}{{ mode_label }}</span>
       {% if bound_device %}
@@ -81,22 +86,46 @@
       <span class="pl-text-muted" aria-hidden="true">·</span>
       <span class="pl-text-muted">{{ session.timezone }}</span>
     </div>
+    {% if session.is_frozen %}
+    <div id="countdown-display" class="pl-display text-6xl md:text-7xl font-semibold tabular-nums text-cyan-300" data-is-frozen="true">
+      {{ "%02d"|format((session.frozen_remaining_seconds or 0) // 3600) }}:{{ "%02d"|format(((session.frozen_remaining_seconds or 0) % 3600) // 60) }}:{{ "%02d"|format((session.frozen_remaining_seconds or 0) % 60) }}
+    </div>
+    {% else %}
     <div id="countdown-display" class="pl-display text-6xl md:text-7xl font-semibold tabular-nums" data-end-ts="{{ session.effective_end_ts }}">--:--:--</div>
+    {% endif %}
     <div class="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs pl-mono pl-text-muted">
       {% if session.started_at %}<span>{{ t.locktimer_started or "Started" }} {{ localtime(session.started_at, '%H:%M') }}</span>{% endif %}
       <span aria-hidden="true">→</span>
-      {% if session.effective_end_at %}<span>{{ t.locktimer_ends or "Ends" }} {{ localtime(session.effective_end_at, '%d %b %H:%M') }}</span>{% endif %}
-      {% if session.max_end_at and (session.effective_end_at is none or session.max_end_at != session.effective_end_at) %}
+      {% if session.effective_end_at and not session.is_frozen %}<span>{{ t.locktimer_ends or "Ends" }} {{ localtime(session.effective_end_at, '%d %b %H:%M') }}</span>{% endif %}
+      {% if session.is_frozen %}
+      <span class="text-cyan-400 font-semibold">Окончание сдвинется на длительность паузы после разморозки</span>
+      {% endif %}
+      {% if session.max_end_at and (session.effective_end_at is none or session.max_end_at != session.effective_end_at) and not session.is_frozen %}
       <span>({{ t.locktimer_cap or "cap" }} {{ localtime(session.max_end_at, '%d %b %H:%M') }})</span>
       {% endif %}
       {% if session.merge_gap_seconds %}<span>· merge gap {{ session.merge_gap_seconds }}s</span>{% endif %}
     </div>
-    <div class="mt-6 flex justify-center">
+    <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+      {% if session.is_frozen %}
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/unfreeze" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg transition cursor-pointer">
+          🔥 Разморозить таймер
+        </button>
+      </form>
+      {% else %}
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/freeze" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition cursor-pointer">
+          ❄️ Заморозить таймер
+        </button>
+      </form>
+      {% endif %}
       <form action="/api/v2/locktimer/sessions/{{ session.id }}/safety-stop" method="post" data-confirm="Safety stop? Future occurrences will be cancelled. This cannot be undone.">
         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
         <input type="hidden" name="reason_code" value="user_requested">
-        <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[color:var(--danger)] text-[color:var(--on-accent)] font-semibold transition hover:opacity-90 cursor-pointer">
-          {{ icon('stop', 'w-5 h-5') }}{{ t.locktimer_safety_stop or "Safety Stop" }}
+        <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[color:var(--danger)] text-[color:var(--on-accent)] font-semibold text-xs transition hover:opacity-90 cursor-pointer">
+          {{ icon('stop', 'w-4 h-4') }}{{ t.locktimer_safety_stop or "Safety Stop" }}
         </button>
       </form>
     </div>
@@ -408,13 +437,23 @@
                 {% elif ga.extension_type == 'dice_of_fate' %}🎲 Кубик Судьбы
                 {% elif ga.extension_type == 'obedience_challenge' %}🎭 Испытание
                 {% elif ga.extension_type == 'time_jump' %}⏳ Скачок времени
+                {% elif ga.extension_type == 'timer_freeze' %}❄️ Заморозка таймера
+                {% elif ga.extension_type == 'timer_unfreeze' %}🔥 Разморозка таймера
                 {% else %}{{ ga.action_title }}{% endif %}
               </td>
               <td class="p-2.5 text-[color:var(--text-secondary)]">
                 {{ ga.result_display }}
               </td>
               <td class="p-2.5 text-center whitespace-nowrap">
-                {% if ga.time_modifier_seconds > 0 %}
+                {% if ga.extension_type == 'timer_freeze' %}
+                <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-mono font-bold text-[11px]">
+                  Пауза
+                </span>
+                {% elif ga.extension_type == 'timer_unfreeze' %}
+                <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono font-bold text-[11px]">
+                  Старт
+                </span>
+                {% elif ga.time_modifier_seconds > 0 %}
                 <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono font-bold text-[11px]">
                   +{{ ga.time_modifier_seconds // 60 }} мин
                 </span>
@@ -1078,6 +1117,7 @@
 (function() {
   var el = document.getElementById('countdown-display');
   if (!el) return;
+  if (el.getAttribute('data-is-frozen') === 'true') return;
   var endTs = parseFloat(el.getAttribute('data-end-ts'));
   if (!endTs) return;
   function tick() {

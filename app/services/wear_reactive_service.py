@@ -286,7 +286,10 @@ async def get_wear_status(
     is_overdue = False
     duration_sec = 0
 
-    if session.is_currently_locked:
+    if session.is_frozen:
+        frozen_rem = session.frozen_remaining_seconds or 0
+        time_text = f"❄️ ТАЙМЕР ЗАМОРОЖЕН: {format_duration_hms(frozen_rem)} (ход времени остановлен)"
+    elif session.is_currently_locked:
         # Compute wear streak duration from last relock or started_at
         last_relock = as_utc(session.last_wear_checkin_at or session.started_at or now)
         duration_sec = max(0, int((now - last_relock).total_seconds()))

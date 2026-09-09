@@ -939,6 +939,50 @@ async def api_time_jump(
     )
 
 
+@router.post("/sessions/{session_id}/freeze")
+async def api_freeze_session(
+    session_id: uuid.UUID,
+    request: Request,
+    reason: str = Form(default="manual"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Permanently freeze lock session timer."""
+    from app.locktimer.services.gamification_extensions_service import freeze_session_timer
+
+    result = await freeze_session_timer(db, session_id, current_user.id, reason=reason)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Freeze failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
+
+
+@router.post("/sessions/{session_id}/unfreeze")
+async def api_unfreeze_session(
+    session_id: uuid.UUID,
+    request: Request,
+    reason: str = Form(default="manual"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Unfreeze previously frozen lock session timer."""
+    from app.locktimer.services.gamification_extensions_service import unfreeze_session_timer
+
+    result = await unfreeze_session_timer(db, session_id, current_user.id, reason=reason)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Unfreeze failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Validation + Horizon extension
 # ---------------------------------------------------------------------------

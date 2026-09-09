@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.locktimer.repositories import get_session
 from app.locktimer.services.discipline_service import (
     create_session_verification_challenge,
-    get_active_session_challenge,
     send_session_to_pillory,
     verify_session_photo_submission,
 )
@@ -36,7 +35,11 @@ OBEDIENCE_CHALLENGES = {
         "type": "kneeling_repentance",
         "title": "Покаяние на коленях",
         "badge": "Колени и замок",
-        "description": "Встать на колени перед зеркалом или камерой в надетом поясе. Написать на бумаге разовый проверочный код и номер пломбы. Сделать четкое фото, на котором видны поза покорности, замок и табличка.",
+        "description": (
+            "Встать на колени перед зеркалом или камерой в надетом поясе. "
+            "Написать на бумаге разовый проверочный код и номер пломбы. "
+            "Сделать четкое фото, на котором видны поза покорности, замок и табличка."
+        ),
         "duration_minutes": 45,
         "reward_seconds": -1800,  # -30 min
         "reward_xp": 50,
@@ -48,7 +51,10 @@ OBEDIENCE_CHALLENGES = {
         "type": "body_marking",
         "title": "Клеймо позора на теле",
         "badge": "Маркировка тела",
-        "description": "Косметическим маркером или помадой написать на коже бедра рядом с замком текущую дату, статус 'PROPERTY' и проверочный код. Сделать четкое фото крупным планом с замком.",
+        "description": (
+            "Косметическим маркером или помадой написать на коже бедра рядом с замком "
+            "текущую дату, статус 'PROPERTY' и проверочный код. Сделать четкое фото крупным планом с замком."
+        ),
         "duration_minutes": 45,
         "reward_seconds": -2700,  # -45 min
         "reward_xp": 70,
@@ -60,7 +66,10 @@ OBEDIENCE_CHALLENGES = {
         "type": "sissy_pet_gear",
         "title": "Унизительный наряд / Питомец",
         "badge": "Атрибут питомца",
-        "description": "Надеть ошейник с поводком, ушки питомца или сисси-чулки вместе с поясом верности. Написать табличку с проверочным кодом. Сделать фото в полный рост или у зеркала.",
+        "description": (
+            "Надеть ошейник с поводком, ушки питомца или сисси-чулки вместе с поясом верности. "
+            "Написать табличку с проверочным кодом. Сделать фото в полный рост или у зеркала."
+        ),
         "duration_minutes": 60,
         "reward_seconds": -3600,  # -1 hour
         "reward_xp": 100,
@@ -72,7 +81,10 @@ OBEDIENCE_CHALLENGES = {
         "type": "deep_kowtow",
         "title": "Полный поклон подчинения (Котоу)",
         "badge": "Глубокий поклон",
-        "description": "Поза полного поклона (лоб и ладони на полу, пояс виден со спины, рядом листок с кодом проверки). Сделать фото со спины.",
+        "description": (
+            "Поза полного поклона (лоб и ладони на полу, пояс виден со спины, "
+            "рядом листок с кодом проверки). Сделать фото со спины."
+        ),
         "duration_minutes": 45,
         "reward_seconds": -1800,  # -30 min
         "reward_xp": 40,
@@ -84,7 +96,10 @@ OBEDIENCE_CHALLENGES = {
         "type": "teeth_sign_inspection",
         "title": "Инспекция с табличкой в зубах",
         "badge": "Табличка в зубах",
-        "description": "Табличка с кодом зажата в зубах, обе руки сцеплены за спиной. Сделать селфи/фото у зеркала с четким фокусом на бирке замка.",
+        "description": (
+            "Табличка с кодом зажата в зубах, обе руки сцеплены за спиной. "
+            "Сделать селфи/фото у зеркала с четким фокусом на бирке замка."
+        ),
         "duration_minutes": 45,
         "reward_seconds": -2700,  # -45 min
         "reward_xp": 60,
@@ -96,7 +111,10 @@ OBEDIENCE_CHALLENGES = {
         "type": "public_confession",
         "title": "Публичное раскаяние на Позорном столбе",
         "badge": "Публичное покаяние",
-        "description": "Написать краткий текст раскаяния о покорности Ключнику с указанием номера бирки, прикрепить фото с кодом и опубликовать на Позорный столб.",
+        "description": (
+            "Написать краткий текст раскаяния о покорности Ключнику с указанием номера бирки, "
+            "прикрепить фото с кодом и опубликовать на Позорный столб."
+        ),
         "duration_minutes": 60,
         "reward_seconds": -2700,  # -45 min
         "reward_xp": 80,
@@ -113,13 +131,29 @@ WHEEL_SECTORS = [
     {"code": "+3h", "label": "+3 часа", "time_sec": 10800, "xp": 0, "weight": 12, "type": "time_add"},
     {"code": "+6h", "label": "+6 часов", "time_sec": 21600, "xp": 0, "weight": 8, "type": "time_add"},
     {"code": "+12h", "label": "+12 часов", "time_sec": 43200, "xp": 0, "weight": 5, "type": "time_add"},
-    {"code": "-15m", "label": "🟢 -15 минут (милосердие)", "time_sec": -900, "xp": 15, "weight": 10, "type": "time_sub"},
-    {"code": "-30m", "label": "🟢 -30 минут (милосердие)", "time_sec": -1800, "xp": 30, "weight": 7, "type": "time_sub"},
-    {"code": "freeze_2h", "label": "❄️ Заморозка таймера на 2 часа", "time_sec": 7200, "xp": 0, "weight": 6, "type": "freeze"},
-    {"code": "pillory_2h", "label": "⛓️ Позорный столб на 2 часа", "time_sec": 7200, "xp": -50, "weight": 5, "type": "pillory"},
-    {"code": "challenge", "label": "🎭 Испытание послушания", "time_sec": 0, "xp": 0, "weight": 8, "type": "challenge"},
+    {"code": "-15m", "label": "🟢 -15 мин (милость)", "time_sec": -900, "xp": 15, "weight": 10, "type": "time_sub"},
+    {"code": "-30m", "label": "🟢 -30 мин (милость)", "time_sec": -1800, "xp": 30, "weight": 7, "type": "time_sub"},
+    {"code": "freeze_2h", "label": "❄️ Заморозка на 2 часа", "time_sec": 7200, "xp": 0, "weight": 6, "type": "freeze"},
+    {
+        "code": "freeze_perm",
+        "label": "❄️ Перманентная заморозка таймера!",
+        "time_sec": 0,
+        "xp": -20,
+        "weight": 4,
+        "type": "freeze_perm",
+    },
+    {
+        "code": "unfreeze",
+        "label": "🔥 Разморозка таймера!",
+        "time_sec": 0,
+        "xp": 50,
+        "weight": 6,
+        "type": "unfreeze",
+    },
+    {"code": "pillory_2h", "label": "⛓️ Столб на 2 часа", "time_sec": 7200, "xp": -50, "weight": 5, "type": "pillory"},
+    {"code": "challenge", "label": "🎭 Испытание", "time_sec": 0, "xp": 0, "weight": 8, "type": "challenge"},
     {"code": "jackpot_xp", "label": "💎 Джекпот (+150 XP)", "time_sec": 0, "xp": 150, "weight": 6, "type": "xp_bonus"},
-    {"code": "penalty_xp", "label": "⚠️ Штраф дисциплины (-100 XP)", "time_sec": 0, "xp": -100, "weight": 5, "type": "xp_penalty"},
+    {"code": "penalty_xp", "label": "⚠️ Штраф (-100 XP)", "time_sec": 0, "xp": -100, "weight": 5, "type": "xp_penalty"},
 ]
 
 
@@ -197,6 +231,17 @@ async def spin_wheel_of_fortune(
             details="Судьба распорядилась отправить вас на суд сообщества на 2 часа.",
         )
 
+    freeze_triggered = False
+    unfreeze_triggered = False
+    if chosen["type"] == "freeze_perm":
+        freeze_triggered = True
+        await freeze_session_timer(db, session.id, user_id, reason="Колесо Фортуны: сектор Заморозка")
+
+    if chosen["type"] == "unfreeze":
+        unfreeze_triggered = True
+        if session.is_frozen:
+            await unfreeze_session_timer(db, session.id, user_id, reason="Колесо Фортуны: сектор Разморозка")
+
     challenge_info = None
     if chosen["type"] == "challenge":
         challenge_triggered = True
@@ -219,6 +264,8 @@ async def spin_wheel_of_fortune(
             "pillory_triggered": pillory_triggered,
             "challenge_triggered": challenge_triggered,
             "challenge_info": challenge_info,
+            "freeze_triggered": freeze_triggered,
+            "unfreeze_triggered": unfreeze_triggered,
         },
         created_at=now,
     )
@@ -240,6 +287,8 @@ async def spin_wheel_of_fortune(
         "effective_end_at": session.effective_end_at.isoformat() if session.effective_end_at else None,
         "pillory_triggered": pillory_triggered,
         "challenge_info": challenge_info,
+        "freeze_triggered": freeze_triggered,
+        "unfreeze_triggered": unfreeze_triggered,
     }
 
 
@@ -314,7 +363,7 @@ async def roll_dice_of_fate(
         # Boxcars: Jackpot!
         time_delta = -7200  # -2 hours
         xp_delta = 100
-        result_display = f"🎲 (6+6=12) Двойная шестерка! ДЖЕКПОТ: -2 часа от таймера и +100 XP!"
+        result_display = "🎲 (6+6=12) Двойная шестерка! ДЖЕКПОТ: -2 часа от таймера и +100 XP!"
 
     applied_sec = 0
     if time_delta != 0:
@@ -473,6 +522,10 @@ async def complete_obedience_challenge(
     if not verify_res.get("success"):
         return verify_res
 
+    # If session was frozen, successfully completing challenge unfreezes it!
+    if session.is_frozen:
+        await unfreeze_session_timer(db, session.id, user_id, reason="challenge_completed")
+
     # Apply rewards
     reward_sec = active.get("reward_seconds", -1800)
     reward_xp = active.get("reward_xp", 50)
@@ -485,7 +538,10 @@ async def complete_obedience_challenge(
         extension_type="obedience_challenge",
         action_title=f"Испытание сдано: {active['title']}",
         result_code="challenge_completed",
-        result_display=f"✅ Испытание '{active['title']}' выполнено! Сбавлено {mins_reduced} мин, начислено +{reward_xp} XP.",
+        result_display=(
+            f"✅ Испытание '{active['title']}' выполнено! "
+            f"Сбавлено {mins_reduced} мин, начислено +{reward_xp} XP."
+        ),
         time_modifier_seconds=applied_sec,
         xp_modifier=reward_xp,
         payload={
@@ -551,7 +607,10 @@ async def fail_obedience_challenge(
         extension_type="obedience_challenge",
         action_title=f"Испытание провалено: {active['title']}",
         result_code="challenge_failed",
-        result_display=f"❌ Провал испытания '{active['title']}' ({reason}). Штраф +{mins_added} мин к таймеру, {penalty_xp} XP.",
+        result_display=(
+            f"❌ Провал испытания '{active['title']}' ({reason}). "
+            f"Штраф +{mins_added} мин к таймеру, {penalty_xp} XP."
+        ),
         time_modifier_seconds=applied_sec,
         xp_modifier=penalty_xp,
         payload={"challenge": active, "reason": reason, "pillory_triggered": pillory_triggered},
@@ -636,3 +695,137 @@ async def get_game_actions_history(
     )
     res = await db.execute(stmt)
     return list(res.scalars().all())
+
+
+async def freeze_session_timer(
+    db: AsyncSession,
+    session_id: uuid.UUID,
+    user_id: uuid.UUID,
+    reason: str = "manual",
+) -> dict:
+    """Permanently freezes lock session timer (time stops countdown)."""
+    now = datetime.now(UTC)
+    session = await get_session(db, session_id, user_id)
+    if session is None or session.state != "active":
+        return {"success": False, "error": "Активная сессия не найдена"}
+
+    if session.is_frozen:
+        return {
+            "success": True,
+            "already_frozen": True,
+            "frozen_remaining_seconds": session.frozen_remaining_seconds,
+        }
+
+    eff_end = as_utc(session.effective_end_at) if session.effective_end_at else now + timedelta(hours=24)
+    rem_sec = max(0, int((eff_end - now).total_seconds()))
+
+    session.is_frozen = True
+    session.frozen_at = now
+    session.frozen_remaining_seconds = rem_sec
+
+    # Log game action
+    action = LockGameAction(
+        session_id=session.id,
+        user_id=user_id,
+        extension_type="timer_freeze",
+        action_title="Перманентная заморозка таймера",
+        result_code="frozen",
+        result_display=f"❄️ Таймер заморожен на остатке {rem_sec // 60} мин. Ход времени остановлен ({reason}).",
+        time_modifier_seconds=0,
+        xp_modifier=-20 if reason != "manual" else 0,
+        payload={"remaining_seconds": rem_sec, "reason": reason},
+        created_at=now,
+    )
+    db.add(action)
+
+    # Log wear event
+    from app.models.wear_events import WearEventLog
+
+    w_log = WearEventLog(
+        user_id=user_id,
+        device_id=session.device_id,
+        session_id=session.id,
+        event_code="timer_freeze",
+        state_before="locked" if session.is_currently_locked else "unlocked",
+        state_after="locked" if session.is_currently_locked else "unlocked",
+        user_comment=f"Перманентная заморозка таймера: {reason}",
+        reactions_applied={"frozen_remaining_seconds": rem_sec},
+        created_at=now,
+    )
+    db.add(w_log)
+    await db.flush()
+
+    return {
+        "success": True,
+        "is_frozen": True,
+        "frozen_remaining_seconds": rem_sec,
+        "result_display": action.result_display,
+    }
+
+
+async def unfreeze_session_timer(
+    db: AsyncSession,
+    session_id: uuid.UUID,
+    user_id: uuid.UUID,
+    reason: str = "manual",
+) -> dict:
+    """Unfreezes previously frozen lock session timer (resumes countdown)."""
+    now = datetime.now(UTC)
+    session = await get_session(db, session_id, user_id)
+    if session is None or session.state != "active":
+        return {"success": False, "error": "Активная сессия не найдена"}
+
+    if not session.is_frozen:
+        return {
+            "success": True,
+            "already_unfrozen": True,
+            "effective_end_at": session.effective_end_at.isoformat() if session.effective_end_at else None,
+        }
+
+    rem_sec = session.frozen_remaining_seconds or 3600
+    new_end = now + timedelta(seconds=rem_sec)
+
+    session.is_frozen = False
+    session.frozen_at = None
+    session.frozen_remaining_seconds = None
+    session.effective_end_at = new_end
+
+    action = LockGameAction(
+        session_id=session.id,
+        user_id=user_id,
+        extension_type="timer_unfreeze",
+        action_title="Разморозка таймера",
+        result_code="unfrozen",
+        result_display=(
+            f"🔥 Таймер разморожен! Ход времени возобновлен, "
+            f"новое завершение: {new_end.strftime('%d.%m %H:%M')}."
+        ),
+        time_modifier_seconds=0,
+        xp_modifier=30,
+        payload={"resumed_seconds": rem_sec, "reason": reason},
+        created_at=now,
+    )
+    db.add(action)
+
+    from app.models.wear_events import WearEventLog
+
+    w_log = WearEventLog(
+        user_id=user_id,
+        device_id=session.device_id,
+        session_id=session.id,
+        event_code="timer_unfreeze",
+        state_before="locked" if session.is_currently_locked else "unlocked",
+        state_after="locked" if session.is_currently_locked else "unlocked",
+        user_comment=f"Разморозка таймера: {reason}",
+        reactions_applied={"resumed_remaining_seconds": rem_sec},
+        created_at=now,
+    )
+    db.add(w_log)
+    await db.flush()
+
+    return {
+        "success": True,
+        "is_frozen": False,
+        "effective_end_at": new_end.isoformat(),
+        "result_display": action.result_display,
+    }
