@@ -43,6 +43,28 @@
         {% endif %}
         {% if session.started_at %}<span class="text-xs text-[color:var(--text-muted)]">· started {{ localtime(session.started_at, '%Y-%m-%d %H:%M') }}</span>{% endif %}
       </div>
+
+      <!-- User Status Tags (ADR-196 / ADR-200) -->
+      {% if user_status_tags and (user_status_tags.get('permanent') or user_status_tags.get('standing') or user_status_tags.get('dynamic')) %}
+      <div class="flex items-center gap-1.5 mt-2.5 flex-wrap">
+        <span class="text-[11px] font-semibold text-[color:var(--text-muted)] uppercase tracking-wider mr-1">Статусы:</span>
+        {% for tag in user_status_tags.get('permanent', []) %}
+        <span class="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[11px] font-bold" title="Постоянный статус">
+          #{{ tag }}
+        </span>
+        {% endfor %}
+        {% for tag in user_status_tags.get('standing', []) %}
+        <span class="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[11px] font-medium" title="Сессионный статус">
+          #{{ tag }}
+        </span>
+        {% endfor %}
+        {% for tag in user_status_tags.get('dynamic', []) %}
+        <span class="px-2 py-0.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-mono text-[11px]" title="Динамический статус">
+          #{{ tag }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
     <!-- Actions -->
@@ -212,6 +234,42 @@
         </span>
       </div>
     </div>
+
+    <!-- Bad Luck Streak & Escalation Banner (ADR-200) -->
+    {% set streak = session.extensions_state.get('bad_luck_streak', 0) if session.extensions_state else 0 %}
+    {% if streak > 0 %}
+    <div class="p-4 rounded-xl border {% if streak >= 4 %}bg-rose-950/30 border-rose-500/50 text-rose-300{% elif streak == 3 %}bg-amber-950/30 border-amber-500/50 text-amber-300{% else %}bg-slate-800/40 border-slate-700 text-slate-300{% endif %} flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">{% if streak >= 4 %}💥{% elif streak == 3 %}💀{% else %}⚠️{% endif %}</span>
+        <div>
+          <div class="text-sm font-bold flex items-center gap-2">
+            <span>Полоса неудач фортуны: {{ streak }} подряд</span>
+            {% if streak == 2 %}
+            <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-xs font-mono font-semibold">#unlucky активен</span>
+            {% elif streak == 3 %}
+            <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-mono font-bold">#loser активен</span>
+            {% elif streak >= 4 %}
+            <span class="px-2 py-0.5 rounded bg-rose-500/25 text-rose-300 text-xs font-mono font-black animate-pulse">#pathetic_loser пожизненно!</span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-[color:var(--text-secondary)] mt-0.5">
+            {% if streak == 1 %}
+            Следующая неудача в колесе или кубиках активирует динамический статус <code>#unlucky</code>.
+            {% elif streak == 2 %}
+            Следующая неудача эскалирует статус до сессионного клейма <code>#loser</code> (Неудачник)!
+            {% elif streak == 3 %}
+            Осторожно! Еще одна неудача сделает статус <code>#pathetic_loser</code> (Хронический неудачник) постоянным!
+            {% else %}
+            Максимальная эскалация! Статус #pathetic_loser закреплен. Для реабилитации необходимо особое искупление.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div class="text-xs text-[color:var(--text-muted)] italic">
+        Джекпот или фото-испытание послушания сбрасывают полосу
+      </div>
+    </div>
+    {% endif %}
 
     <!-- Mini-Games Grid: Wheel & Dice -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

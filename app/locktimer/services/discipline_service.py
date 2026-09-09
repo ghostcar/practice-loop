@@ -202,6 +202,12 @@ async def send_session_to_pillory(
             subject_namespace="tracker.pillory",
             source="auto",
         )
+        from app.models.user import User
+        from app.services import identity_service
+
+        user = await db.get(User, session.owner_id)
+        if user:
+            identity_service.on_pillory_status(user, is_pilloried=True)
         await db.flush()
         return True
     except Exception:

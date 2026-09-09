@@ -25,6 +25,8 @@ from app.locktimer.services.discipline_service import (
     verify_session_photo_submission,
 )
 from app.models.locktimer import LockGameAction, LockSession
+from app.models.user import User
+from app.services import identity_service
 from app.timeutils import as_utc
 
 logger = logging.getLogger(__name__)
@@ -249,6 +251,23 @@ async def spin_wheel_of_fortune(
         if challenge_res.get("success"):
             challenge_info = challenge_res
 
+    # Bad luck streak tracking and status escalation (ADR-200)
+    is_bad = chosen["type"] in ("time_add", "pillory", "xp_penalty", "freeze_perm")
+    is_jackpot = chosen["type"] in ("jackpot_xp",)
+
+    user = await db.get(User, user_id)
+    current_streak = state.get("bad_luck_streak", 0)
+    newly_awarded: list[str] = []
+    if user:
+        new_streak, newly_awarded = identity_service.process_game_bad_luck(
+            user, is_bad=is_bad, is_jackpot=is_jackpot, current_streak=current_streak
+        )
+        state["bad_luck_streak"] = new_streak
+
+    display_label = chosen["label"]
+    if newly_awarded:
+        display_label += f" (⚠️ Эскалация: {', '.join(newly_awarded)})"
+
     # Record game action
     action = LockGameAction(
         session_id=session.id,
@@ -256,7 +275,7 @@ async def spin_wheel_of_fortune(
         extension_type="wheel_of_fortune",
         action_title="Вращение Колеса Фортуны",
         result_code=chosen["code"],
-        result_display=chosen["label"],
+        result_display=display_label,
         time_modifier_seconds=time_applied_sec,
         xp_modifier=chosen["xp"],
         payload={
@@ -266,6 +285,8 @@ async def spin_wheel_of_fortune(
             "challenge_info": challenge_info,
             "freeze_triggered": freeze_triggered,
             "unfreeze_triggered": unfreeze_triggered,
+            "bad_luck_streak": state.get("bad_luck_streak", 0),
+            "escalated_tags": newly_awarded,
         },
         created_at=now,
     )
@@ -281,7 +302,7 @@ async def spin_wheel_of_fortune(
     return {
         "success": True,
         "sector": chosen,
-        "result_display": chosen["label"],
+        "result_display": display_label,
         "time_applied_seconds": time_applied_sec,
         "xp_modifier": chosen["xp"],
         "effective_end_at": session.effective_end_at.isoformat() if session.effective_end_at else None,
@@ -289,6 +310,8 @@ async def spin_wheel_of_fortune(
         "challenge_info": challenge_info,
         "freeze_triggered": freeze_triggered,
         "unfreeze_triggered": unfreeze_triggered,
+        "bad_luck_streak": state.get("bad_luck_streak", 0),
+        "escalated_tags": newly_awarded,
     }
 
 
@@ -369,6 +392,22 @@ async def roll_dice_of_fate(
     if time_delta != 0:
         _, applied_sec = _apply_time_modifier_to_session(session, time_delta)
 
+    # Bad luck streak tracking and status escalation (ADR-200)
+    is_bad = (dice_sum <= 5)
+    is_jackpot = (dice_sum == 12)
+
+    user = await db.get(User, user_id)
+    current_streak = state.get("bad_luck_streak", 0)
+    newly_awarded: list[str] = []
+    if user:
+        new_streak, newly_awarded = identity_service.process_game_bad_luck(
+            user, is_bad=is_bad, is_jackpot=is_jackpot, current_streak=current_streak
+        )
+        state["bad_luck_streak"] = new_streak
+
+    if newly_awarded:
+        result_display += f" (⚠️ Эскалация: {', '.join(newly_awarded)})"
+
     action = LockGameAction(
         session_id=session.id,
         user_id=user_id,
@@ -383,6 +422,8 @@ async def roll_dice_of_fate(
             "dice_2": d2,
             "sum": dice_sum,
             "pillory_triggered": pillory_triggered,
+            "bad_luck_streak": state.get("bad_luck_streak", 0),
+            "escalated_tags": newly_awarded,
         },
         created_at=now,
     )
@@ -404,6 +445,8 @@ async def roll_dice_of_fate(
         "xp_modifier": xp_delta,
         "effective_end_at": session.effective_end_at.isoformat() if session.effective_end_at else None,
         "pillory_triggered": pillory_triggered,
+        "bad_luck_streak": state.get("bad_luck_streak", 0),
+        "escalated_tags": newly_awarded,
     }
 
 
@@ -472,6 +515,10 @@ async def start_obedience_challenge(
 
     state["active_challenge"] = challenge_data
     session.extensions_state = state
+
+    user = await db.get(User, user_id)
+    if user:
+        identity_service.on_challenge_started(user)
 
     action = LockGameAction(
         session_id=session.id,
@@ -554,10 +601,16 @@ async def complete_obedience_challenge(
     )
     db.add(action)
 
-    # Clear active challenge
+    # Clear active challenge and redeem bad luck streak
     state["active_challenge"] = None
     state["total_challenges_completed"] = state.get("total_challenges_completed", 0) + 1
+    state["bad_luck_streak"] = 0
     session.extensions_state = state
+
+    user = await db.get(User, user_id)
+    if user:
+        identity_service.on_challenge_outcome(user, success=True)
+
     await db.flush()
 
     return {
@@ -621,6 +674,11 @@ async def fail_obedience_challenge(
     state["active_challenge"] = None
     state["total_challenges_failed"] = state.get("total_challenges_failed", 0) + 1
     session.extensions_state = state
+
+    user = await db.get(User, user_id)
+    if user:
+        identity_service.on_challenge_outcome(user, success=False)
+
     await db.flush()
 
     return {
@@ -753,6 +811,11 @@ async def freeze_session_timer(
         created_at=now,
     )
     db.add(w_log)
+
+    user = await db.get(User, user_id)
+    if user:
+        identity_service.on_timer_frozen(user)
+
     await db.flush()
 
     return {
@@ -821,6 +884,11 @@ async def unfreeze_session_timer(
         created_at=now,
     )
     db.add(w_log)
+
+    user = await db.get(User, user_id)
+    if user:
+        identity_service.on_timer_unfrozen(user)
+
     await db.flush()
 
     return {

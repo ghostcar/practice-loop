@@ -182,5 +182,98 @@ def on_wear_status_change(user: User, is_locked: bool) -> None:
     """Reactive trigger: device wear lock state change."""
     if is_locked:
         add_status_tag(user, "chastity_locked", "standing")
+        add_status_tag(user, "in_lock_cycle", "standing")
     else:
         remove_status_tag(user, "chastity_locked", "standing")
+        remove_status_tag(user, "in_lock_cycle", "standing")
+
+
+def on_timer_frozen(user: User) -> None:
+    """Reactive trigger: lock timer permanently frozen (time halted)."""
+    add_status_tag(user, "frozen_timer", "standing")
+    remove_status_tag(user, "thawed", "dynamic")
+
+
+def on_timer_unfrozen(user: User) -> None:
+    """Reactive trigger: lock timer unfreezed (time resumed)."""
+    remove_status_tag(user, "frozen_timer", "standing")
+    add_status_tag(user, "thawed", "dynamic")
+
+
+def on_pillory_status(user: User, is_pilloried: bool) -> None:
+    """Reactive trigger: pillory status change."""
+    if is_pilloried:
+        add_status_tag(user, "pilloried", "standing")
+    else:
+        remove_status_tag(user, "pilloried", "standing")
+
+
+def on_challenge_outcome(user: User, success: bool) -> None:
+    """Reactive trigger: obedience challenge result."""
+    remove_status_tag(user, "under_trial", "dynamic")
+    if success:
+        add_status_tag(user, "obedient", "dynamic")
+        remove_status_tag(user, "disobedient", "dynamic")
+        # Completing challenge grants fortune redemption
+        remove_status_tag(user, "unlucky", "dynamic")
+        remove_status_tag(user, "loser", "standing")
+    else:
+        add_status_tag(user, "disobedient", "dynamic")
+        remove_status_tag(user, "obedient", "dynamic")
+
+
+def on_challenge_started(user: User) -> None:
+    """Reactive trigger: obedience challenge initiated."""
+    add_status_tag(user, "under_trial", "dynamic")
+
+
+def on_session_finished(user: User, is_safety_stop: bool = False) -> None:
+    """Reactive trigger: lock session termination."""
+    remove_status_tag(user, "chastity_locked", "standing")
+    remove_status_tag(user, "in_lock_cycle", "standing")
+    remove_status_tag(user, "frozen_timer", "standing")
+    remove_status_tag(user, "pilloried", "standing")
+    remove_status_tag(user, "under_trial", "dynamic")
+    if is_safety_stop:
+        add_status_tag(user, "broken_lock", "dynamic")
+        add_status_tag(user, "punished", "dynamic")
+    else:
+        add_status_tag(user, "lock_survived", "dynamic")
+
+
+def process_game_bad_luck(
+    user: User,
+    *,
+    is_bad: bool,
+    is_jackpot: bool = False,
+    current_streak: int = 0,
+) -> tuple[int, list[str]]:
+    """Track bad luck streaks in Wheel & Dice, escalating loser statuses (ADR-200).
+
+    Returns:
+        (new_streak, list_of_newly_awarded_tag_names)
+    """
+    if is_bad:
+        new_streak = current_streak + 1
+        newly_awarded: list[str] = []
+
+        if new_streak == 2:
+            add_status_tag(user, "unlucky", "dynamic")
+            newly_awarded.append("#unlucky")
+        elif new_streak == 3:
+            add_status_tag(user, "loser", "standing")
+            newly_awarded.append("#loser")
+        elif new_streak >= 4:
+            add_status_tag(user, "pathetic_loser", "permanent")
+            newly_awarded.append("#pathetic_loser")
+
+        return new_streak, newly_awarded
+
+    # Luck / mercy / neutral outcome resets streak
+    if is_jackpot:
+        remove_status_tag(user, "unlucky", "dynamic")
+        remove_status_tag(user, "loser", "standing")
+    else:
+        remove_status_tag(user, "unlucky", "dynamic")
+
+    return 0, []

@@ -413,6 +413,7 @@ async def locktimer_session_detail(
         {
             "t": t,
             "user": current_user,
+            "user_status_tags": current_user.status_tags or {"permanent": [], "standing": [], "dynamic": []},
             "locale": locale,
             "protocol_runs": protocol_runs,
             "session": _serialize_session(session, t),

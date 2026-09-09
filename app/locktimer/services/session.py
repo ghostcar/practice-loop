@@ -155,7 +155,13 @@ async def start_session(
     await _materialize_session(db, session, slot_rules, task_rules, now)
 
     # R5.4 / ADR-155: launch prep-protocols attached to this timer session
+    from app.models.user import User
+    from app.services import identity_service
     from app.services.protocol import create_protocol_runs_for_timer_event
+
+    user = await db.get(User, owner_id)
+    if user:
+        identity_service.on_wear_status_change(user, is_locked=True)
 
     await create_protocol_runs_for_timer_event(
         db=db,
@@ -230,6 +236,12 @@ async def safety_stop(
 
     # Device lifecycle: the physical device is free again (Step 8, ADR-076).
     from app.locktimer.services.device import set_device_status
+    from app.models.user import User
+    from app.services import identity_service
+
+    user = await db.get(User, owner_id)
+    if user:
+        identity_service.on_session_finished(user, is_safety_stop=True)
 
     await set_device_status(db, session.device_id, owner_id, "available")
 
