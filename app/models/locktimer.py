@@ -121,6 +121,9 @@ class LockSession(Base):
     pillory_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     pillory_auto_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Gamification extensions state (ADR-198)
+    extensions_state: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -468,4 +471,29 @@ class LockTagViolation(Base):
     expected_tag: Mapped[str | None] = mapped_column(String(100), nullable=True)
     provided_tag: Mapped[str] = mapped_column(String(100), nullable=False)
     reason: Mapped[str] = mapped_column(String(40), nullable=False, default="mismatch")  # mismatch, missing_required
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+# ---------------------------------------------------------------------------
+# lock_game_actions — gamification mini-games & extensions history (ADR-198)
+# ---------------------------------------------------------------------------
+
+
+class LockGameAction(Base):
+    __tablename__ = "lock_game_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("lock_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    extension_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    action_title: Mapped[str] = mapped_column(String(120), nullable=False)
+    result_code: Mapped[str] = mapped_column(String(60), nullable=False)
+    result_display: Mapped[str] = mapped_column(String(255), nullable=False)
+    time_modifier_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    xp_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

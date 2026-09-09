@@ -795,6 +795,151 @@ async def api_verify_photo(
 
 
 # ---------------------------------------------------------------------------
+# Chaster.app Gamification Extensions & Mini-Games (ADR-198)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/sessions/{session_id}/games/wheel-spin")
+async def api_wheel_spin(
+    session_id: uuid.UUID,
+    request: Request,
+    force: bool = Form(default=False),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Spin the Wheel of Fortune for active lock session."""
+    from app.locktimer.services.gamification_extensions_service import spin_wheel_of_fortune
+
+    result = await spin_wheel_of_fortune(db, session_id, current_user.id, force=force)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Wheel spin failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}#games",
+    )
+
+
+@router.post("/sessions/{session_id}/games/dice-roll")
+async def api_dice_roll(
+    session_id: uuid.UUID,
+    request: Request,
+    force: bool = Form(default=False),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Roll Dice of Fate (2d6) for active lock session."""
+    from app.locktimer.services.gamification_extensions_service import roll_dice_of_fate
+
+    result = await roll_dice_of_fate(db, session_id, current_user.id, force=force)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Dice roll failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}#games",
+    )
+
+
+@router.post("/sessions/{session_id}/games/challenge-start")
+async def api_challenge_start(
+    session_id: uuid.UUID,
+    request: Request,
+    challenge_type: str | None = Form(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Start an obedience/humiliation challenge with verification code."""
+    from app.locktimer.services.gamification_extensions_service import start_obedience_challenge
+
+    result = await start_obedience_challenge(db, session_id, current_user.id, challenge_type=challenge_type)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Challenge start failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}#games",
+    )
+
+
+@router.post("/sessions/{session_id}/games/challenge-complete")
+async def api_challenge_complete(
+    session_id: uuid.UUID,
+    request: Request,
+    tag_number: str = Form(...),
+    verification_code: str = Form(...),
+    photo_notes: str | None = Form(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Submit photo proof and complete obedience challenge."""
+    from app.locktimer.services.gamification_extensions_service import complete_obedience_challenge
+
+    result = await complete_obedience_challenge(
+        db,
+        session_id=session_id,
+        user_id=current_user.id,
+        tag_number=tag_number,
+        verification_code=verification_code,
+        photo_notes=photo_notes,
+    )
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Challenge completion failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}#games",
+    )
+
+
+@router.post("/sessions/{session_id}/games/challenge-fail")
+async def api_challenge_fail(
+    session_id: uuid.UUID,
+    request: Request,
+    reason: str = Form(default="surrender"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Surrender or fail active obedience challenge."""
+    from app.locktimer.services.gamification_extensions_service import fail_obedience_challenge
+
+    result = await fail_obedience_challenge(db, session_id, current_user.id, reason=reason)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Challenge fail failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}#games",
+    )
+
+
+@router.post("/sessions/{session_id}/games/time-jump")
+async def api_time_jump(
+    session_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Trigger AI Keyholder temporal anomaly / time jump."""
+    from app.locktimer.services.gamification_extensions_service import trigger_time_jump
+
+    result = await trigger_time_jump(db, session_id, current_user.id)
+    if not result.get("success"):
+        raise HTTPException(400, result.get("error", "Time jump failed"))
+
+    return action_response(
+        request,
+        json_body=result,
+        redirect_url=f"/locktimer/sessions/{session_id}#games",
+    )
+
+
+# ---------------------------------------------------------------------------
 # Validation + Horizon extension
 # ---------------------------------------------------------------------------
 

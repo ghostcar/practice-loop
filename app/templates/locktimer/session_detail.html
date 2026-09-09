@@ -167,6 +167,286 @@
       </form>
     </div>
     {% endif %}
+  <!-- Gamification & Time Extensions Suite (Chaster.app Extensions - ADR-198) -->
+  <section id="games" class="pl-surface rounded-2xl border border-[color:var(--border)] p-6 space-y-6">
+    <div class="flex items-center justify-between flex-wrap gap-2 pb-4 border-b border-[color:var(--border)]">
+      <div class="flex items-center gap-2.5">
+        {{ icon('dice', 'w-6 h-6 text-amber-400') }}
+        <div>
+          <h3 class="text-base font-bold text-[color:var(--text)]">Игровой контур и управление временем</h3>
+          <p class="text-xs text-[color:var(--text-muted)]">Расширения в стиле Chaster.app: Колесо Фортуны, Кубик Судьбы и Испытания Послушания с фотоотчетами</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-mono font-semibold">
+          🎮 Расширения активны
+        </span>
+      </div>
+    </div>
+
+    <!-- Mini-Games Grid: Wheel & Dice -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- 1. Wheel of Fortune -->
+      <div class="p-5 rounded-2xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex flex-col justify-between space-y-4">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-[color:var(--text)] flex items-center gap-2">
+              <span class="text-lg">🎡</span> Колесо Фортуны
+            </h4>
+            <span class="text-[11px] text-[color:var(--text-muted)]">Кулдаун: 2 часа</span>
+          </div>
+          <p class="text-xs text-[color:var(--text-secondary)]">
+            Испытайте судьбу: колесо может добавить часы к замку, проявить милосердие, заморозить отсчет, отправить на Позорный столб или выдать пикантное задание!
+          </p>
+
+          <!-- Sectors Preview Chips -->
+          <div class="flex flex-wrap gap-1.5 py-2">
+            <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20 text-[10px] font-mono">+30м..+12ч</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-mono">🟢 -15м..-30м</span>
+            <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[10px] font-mono">❄️ Заморозка</span>
+            <span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] font-mono">⛓️ Столб</span>
+            <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-mono">🎭 Задание</span>
+          </div>
+        </div>
+
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/games/wheel-spin" method="post" class="pt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <button type="submit" class="w-full py-2.5 px-4 bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
+            <span>🎡 Крутить Колесо Фортуны</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- 2. Dice of Fate -->
+      <div class="p-5 rounded-2xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex flex-col justify-between space-y-4">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-[color:var(--text)] flex items-center gap-2">
+              <span class="text-lg">🎲</span> Кубик Судьбы (2d6)
+            </h4>
+            <span class="text-[11px] text-[color:var(--text-muted)]">Кулдаун: 1 час</span>
+          </div>
+          <p class="text-xs text-[color:var(--text-secondary)]">
+            Бросок двух костей: <strong class="text-rose-400">2 (1+1)</strong> — Snake Eyes (+4 часа и Столб), 
+            <strong class="text-rose-300">3..5</strong> — неудача (+15м/очко), 
+            <strong class="text-slate-300">6..8</strong> — нейтрально, 
+            <strong class="text-emerald-400">9..11</strong> — милосердие (-10м/очко), 
+            <strong class="text-amber-400">12 (6+6)</strong> — Джекпот (-2 часа и +100 XP)!
+          </p>
+
+          <div class="flex items-center gap-3 py-1">
+            <div class="w-10 h-10 rounded-xl bg-[color:var(--canvas-deep)] border border-[color:var(--border)] flex items-center justify-center text-xl font-mono font-black text-amber-400 shadow-inner">
+              🎲
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-[color:var(--canvas-deep)] border border-[color:var(--border)] flex items-center justify-center text-xl font-mono font-black text-amber-400 shadow-inner">
+              🎲
+            </div>
+            <span class="text-xs text-[color:var(--text-muted)] font-mono">Сумма от 2 до 12</span>
+          </div>
+        </div>
+
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/games/dice-roll" method="post" class="pt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <button type="submit" class="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
+            {{ icon('dice', 'w-4 h-4') }} <span>Бросить Кубики Судьбы</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- 3. Obedience & Humiliation Photo Challenges -->
+    {% set challenge = session.extensions_state.get('active_challenge') %}
+    <div class="p-5 rounded-2xl bg-gradient-to-b from-[color:var(--surface-soft)] to-[color:var(--surface)] border border-[color:var(--border)] space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎭</span>
+          <div>
+            <h4 class="text-sm font-bold text-[color:var(--text)]">Испытания послушания с фотоотчетом (Verification Tasks)</h4>
+            <p class="text-xs text-[color:var(--text-muted)]">Пикантно-унизительные проверки покорности с разовым кодом. Успех сокращает таймер, провал карается временем.</p>
+          </div>
+        </div>
+      </div>
+
+      {% if challenge %}
+      <!-- Active Challenge Card -->
+      <div class="p-5 rounded-xl bg-purple-500/10 border border-purple-500/30 space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-bold font-mono">
+              {{ challenge.badge or 'Испытание' }}
+            </span>
+            <strong class="text-sm text-[color:var(--text)]">{{ challenge.title }}</strong>
+          </div>
+          <div class="text-xs text-[color:var(--text-muted)] font-mono">
+            Срок: {{ challenge.duration_minutes }} мин · Истекает: {{ challenge.expires_at[:16] }}
+          </div>
+        </div>
+
+        <p class="text-xs text-[color:var(--text-secondary)] leading-relaxed bg-[color:var(--canvas-deep)]/60 p-3.5 rounded-xl border border-[color:var(--border)]">
+          {{ challenge.description }}
+        </p>
+
+        <!-- Verification Code Display -->
+        <div class="p-4 rounded-xl bg-[color:var(--canvas-deep)] border border-purple-500/30 text-center space-y-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-purple-400">Разовый проверочный код для фото:</span>
+          <div class="text-3xl md:text-4xl font-mono font-black text-purple-300 tracking-widest py-1">
+            {{ challenge.verification_code }}
+          </div>
+          <span class="text-[11px] text-[color:var(--text-muted)]">Напишите этот код на листке бумаги и сфотографируйте в предписанной позе</span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 text-xs font-mono pt-1">
+          <span class="text-emerald-400">🟢 Награда: сокращение таймера на {{ (challenge.reward_seconds | abs) // 60 }} мин и +{{ challenge.reward_xp }} XP</span>
+          <span class="text-rose-400">⚠️ Провал: штраф +{{ challenge.penalty_seconds // 60 }} мин к таймеру</span>
+        </div>
+
+        <!-- Submission and Surrender Forms -->
+        <div class="pt-3 border-t border-purple-500/20 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <form action="/api/v2/locktimer/sessions/{{ session.id }}/games/challenge-complete" method="post" class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input type="hidden" name="verification_code" value="{{ challenge.verification_code }}">
+            <div>
+              <label class="text-[11px] text-[color:var(--text-muted)]">Номер бирки на фото</label>
+              <input name="tag_number" type="text" value="{{ session.current_tag_number or '' }}" required placeholder="Номер бирки" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-3 py-2 font-mono">
+            </div>
+            <div>
+              <label class="text-[11px] text-[color:var(--text-muted)]">Заметка / отчет</label>
+              <input name="photo_notes" type="text" placeholder="Поза выполнена..." class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-3 py-2">
+            </div>
+            <div class="flex items-end">
+              <button type="submit" class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5">
+                {{ icon('check', 'w-4 h-4') }} Сдать фотоотчет
+              </button>
+            </div>
+          </form>
+
+          <form action="/api/v2/locktimer/sessions/{{ session.id }}/games/challenge-fail" method="post" class="flex items-end" data-confirm="Сдаться? Будет начислено штрафное время к таймеру ношения!">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <input type="hidden" name="reason" value="surrender">
+            <button type="submit" class="w-full py-2 px-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 font-semibold text-xs rounded-lg transition cursor-pointer">
+              Сдаться (+время)
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <!-- Start Challenge Form -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[color:var(--canvas-deep)] border border-[color:var(--border)]">
+        <div>
+          <p class="text-xs text-[color:var(--text-secondary)] font-medium">
+            Нет активного испытания. Желаете заработать сокращение срока ношения или рискнуть дисциплиной?
+          </p>
+          <p class="text-[11px] text-[color:var(--text-muted)] mt-0.5">
+            Каждое испытание генерирует разовый код, проверяет номер пломбы и требует фотофиксации.
+          </p>
+        </div>
+
+        <form action="/api/v2/locktimer/sessions/{{ session.id }}/games/challenge-start" method="post" class="flex items-center gap-2 flex-shrink-0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+          <select name="challenge_type" class="text-xs bg-[color:var(--surface-soft)] border border-[color:var(--border)] rounded-lg px-2.5 py-2 text-[color:var(--text)]">
+            <option value="">🎲 Случайное испытание</option>
+            {% for ch in obedience_challenges %}
+            <option value="{{ ch.type }}">{{ ch.title }} ({{ ch.badge }})</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="px-4 py-2 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg font-bold text-xs hover:opacity-90 transition cursor-pointer inline-flex items-center gap-1.5">
+            {{ icon('camera', 'w-4 h-4') }} Получить задание
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- 4. Temporal Anomaly & AI Keyholder Time Jump -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)]">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">⏳</span>
+        <div>
+          <h4 class="text-xs font-bold text-[color:var(--text)]">Временная аномалия ИИ-Ключника (Time Jump)</h4>
+          <p class="text-[11px] text-[color:var(--text-muted)]">ИИ-Ключник случайным образом переводит стрелки ваших часов (от -30 мин до +90 мин).</p>
+        </div>
+      </div>
+      <form action="/api/v2/locktimer/sessions/{{ session.id }}/games/time-jump" method="post" class="flex-shrink-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+        <button type="submit" class="px-3.5 py-2 bg-[color:var(--surface)] hover:bg-[color:var(--border)] text-[color:var(--text)] border border-[color:var(--border)] rounded-lg font-semibold text-xs transition cursor-pointer inline-flex items-center gap-1.5">
+          {{ icon('clock', 'w-4 h-4') }} Испытать волю Ключника
+        </button>
+      </form>
+    </div>
+
+    <!-- 5. Persistent Games History Log (lock_game_actions) -->
+    <div class="space-y-3 pt-3 border-t border-[color:var(--border)]">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)] flex items-center gap-1.5">
+          {{ icon('audit', 'w-3.5 h-3.5') }} Журнал азарта и испытаний (Chaster Games Log)
+        </h4>
+        <span class="text-[11px] text-[color:var(--text-muted)]">Всего записей: {{ game_actions | length }}</span>
+      </div>
+
+      {% if game_actions %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border border-[color:var(--border)] rounded-xl overflow-hidden">
+          <thead class="bg-[color:var(--surface-soft)] text-[color:var(--text-muted)] border-b border-[color:var(--border)]">
+            <tr>
+              <th class="p-2.5 font-semibold">Время</th>
+              <th class="p-2.5 font-semibold">Активность</th>
+              <th class="p-2.5 font-semibold">Исход</th>
+              <th class="p-2.5 font-semibold text-center">Модификатор времени</th>
+              <th class="p-2.5 font-semibold text-right">XP</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[color:var(--border)] bg-[color:var(--surface)]">
+            {% for ga in game_actions %}
+            <tr class="hover:bg-[color:var(--surface-soft)]/50 transition">
+              <td class="p-2.5 pl-mono text-[color:var(--text-muted)] whitespace-nowrap">
+                {{ localtime(ga.created_at, '%d.%m %H:%M') }}
+              </td>
+              <td class="p-2.5 font-medium text-[color:var(--text)] whitespace-nowrap">
+                {% if ga.extension_type == 'wheel_of_fortune' %}🎡 Колесо Фортуны
+                {% elif ga.extension_type == 'dice_of_fate' %}🎲 Кубик Судьбы
+                {% elif ga.extension_type == 'obedience_challenge' %}🎭 Испытание
+                {% elif ga.extension_type == 'time_jump' %}⏳ Скачок времени
+                {% else %}{{ ga.action_title }}{% endif %}
+              </td>
+              <td class="p-2.5 text-[color:var(--text-secondary)]">
+                {{ ga.result_display }}
+              </td>
+              <td class="p-2.5 text-center whitespace-nowrap">
+                {% if ga.time_modifier_seconds > 0 %}
+                <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono font-bold text-[11px]">
+                  +{{ ga.time_modifier_seconds // 60 }} мин
+                </span>
+                {% elif ga.time_modifier_seconds < 0 %}
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-bold text-[11px]">
+                  -{{ (ga.time_modifier_seconds | abs) // 60 }} мин
+                </span>
+                {% else %}
+                <span class="text-[color:var(--text-muted)] pl-mono">0</span>
+                {% endif %}
+              </td>
+              <td class="p-2.5 text-right pl-mono font-bold whitespace-nowrap">
+                {% if ga.xp_modifier > 0 %}
+                <span class="text-emerald-400">+{{ ga.xp_modifier }}</span>
+                {% elif ga.xp_modifier < 0 %}
+                <span class="text-rose-400">{{ ga.xp_modifier }}</span>
+                {% else %}
+                <span class="text-[color:var(--text-muted)]">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-xs text-[color:var(--text-muted)] py-3 text-center bg-[color:var(--surface-soft)] rounded-xl border border-[color:var(--border)]">
+        В этой сессии еще не запускались мини-игры. Крутите колесо или бросайте кубики выше!
+      </p>
+      {% endif %}
+    </div>
+
   </section>
   {% endif %}
 

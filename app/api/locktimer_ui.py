@@ -393,6 +393,19 @@ async def locktimer_session_detail(
     except Exception:
         pass
 
+    # Gamification extensions & games history (ADR-198)
+    game_actions = []
+    from app.locktimer.services.gamification_extensions_service import (
+        OBEDIENCE_CHALLENGES,
+        WHEEL_SECTORS,
+        get_game_actions_history,
+    )
+
+    try:
+        game_actions = await get_game_actions_history(db, session_id, limit=15)
+    except Exception:
+        pass
+
     verify_code_query = request.query_params.get("verify_code")
 
     return templates.TemplateResponse(
@@ -406,6 +419,9 @@ async def locktimer_session_detail(
             "session": _serialize_session(session, t),
             "active_challenge": active_challenge,
             "verify_code_query": verify_code_query,
+            "game_actions": game_actions,
+            "obedience_challenges": list(OBEDIENCE_CHALLENGES.values()),
+            "wheel_sectors": WHEEL_SECTORS,
             "med_schedules": med_schedules,
             "catalog_items": catalog_items,
             "care_products": care_products,
@@ -698,6 +714,7 @@ def _serialize_session(session, t) -> dict | None:
         "verification_mode": getattr(session, "verification_mode", "ai_vision"),
         "pillory_enabled": getattr(session, "pillory_enabled", False),
         "pillory_auto_extend": getattr(session, "pillory_auto_extend", False),
+        "extensions_state": getattr(session, "extensions_state", {}) or {},
         "timezone": session.timezone,
         "started_at": session.started_at,
         "original_end_at": session.original_end_at,
