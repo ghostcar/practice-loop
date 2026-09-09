@@ -1,20 +1,20 @@
 {
   "alembic": {
-    "checked_at": "2026-09-09T05:05:10Z",
+    "checked_at": "2026-09-09T06:23:59Z",
     "command": "alembic heads",
     "heads": [
-      "102_lock_discipline_pillory"
+      "103_lock_extensions_games"
     ]
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-09-09T05:05:10Z",
+  "generated_at": "2026-09-09T06:23:59Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
     "diff_hash": null,
     "dirty": false,
-    "head": "4be37c04e463aa607cfaa7b8469601eabb3032d2"
+    "head": "dbb3b35f95b47f3f44b0cccb2579fdf5cfabc0f8"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
