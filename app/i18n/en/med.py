@@ -453,4 +453,11 @@ EN_med = {
     "unit_drops": "drops",
     "unit_pcs": "pcs",
     "unit_kg": "kg",
+    "med_kit_add_item_title": "Add to kit composition",
+    "med_kit_add_item_btn": "To kit",
+    "med_kit_add_item_submit": "Add to kit",
+    "med_kit_composition_only": "Add to composition only (zero stock, restock later)",
+    "med_kit_composition_hint": "Medication will be registered in the kit. Quantity, expiry and lot can be added later when purchased.",
+    "med_kit_unstocked": "Awaiting restock",
+    "med_kit_unstocked_count": "unstocked",
 }

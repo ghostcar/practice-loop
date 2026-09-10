@@ -375,12 +375,75 @@ async def add_stock_to_kit(
 ) -> MedStock:
     await get_kit(db, user_id, kit_id)
     med = await get_med(db, user_id, medication_id)
+    try:
+        qty = float(quantity or 0)
+    except (TypeError, ValueError):
+        qty = 0.0
+
+    if qty <= 0:
+        # Check if already registered in kit composition with zero stock
+        stmt = select(MedStock).where(
+            MedStock.user_id == user_id,
+            MedStock.kit_id == kit_id,
+            MedStock.medication_id == med.id,
+            MedStock.quantity <= 0,
+        )
+        existing_zero = (await db.execute(stmt)).scalars().first()
+        if existing_zero:
+            if unit and unit.strip():
+                existing_zero.unit = unit.strip()[:20]
+            if notes and notes.strip():
+                existing_zero.notes = notes.strip()
+            await db.flush()
+            return existing_zero
+
+        st = MedStock(
+            user_id=user_id,
+            medication_id=med.id,
+            kit_id=kit_id,
+            quantity=0.0,
+            unit=(unit or "").strip()[:20] or med.unit,
+            lot_number=None,
+            expiry_date=None,
+            low_stock_threshold=None,
+            notes=(notes or "").strip() or None,
+        )
+        db.add(st)
+        await db.flush()
+        return st
+
+    # If replenishing (qty > 0) and an unstocked placeholder exists in this kit, update it
+    stmt = select(MedStock).where(
+        MedStock.user_id == user_id,
+        MedStock.kit_id == kit_id,
+        MedStock.medication_id == med.id,
+        MedStock.quantity <= 0,
+        MedStock.expiry_date.is_(None),
+        MedStock.lot_number.is_(None),
+    )
+    placeholder = (await db.execute(stmt)).scalars().first()
+    if placeholder:
+        expiry = None
+        if expiry_date.strip():
+            try:
+                expiry = date.fromisoformat(expiry_date.strip())
+            except ValueError:
+                raise ValueError("Invalid expiry_date format (ISO 8601)") from None
+        placeholder.quantity = qty
+        placeholder.unit = (unit or "").strip()[:20] or med.unit or placeholder.unit
+        placeholder.expiry_date = expiry
+        placeholder.lot_number = (lot_number or "").strip()[:100] or None
+        if notes and notes.strip():
+            placeholder.notes = notes.strip()
+        await db.flush()
+        return placeholder
+
     return await create_stock(
         db,
         user_id=user_id,
         medication_id=med.id,
         kit_id=str(kit_id),
-        quantity=quantity,
+        quantity=str(qty),
         unit=unit or med.unit or "",
         expiry_date=expiry_date,
         lot_number=lot_number,

@@ -813,6 +813,26 @@ async def add_stock_to_kit_form(
     return RedirectResponse(url="/medications", status_code=303)
 
 
+@router.post("/med-kits/{kit_id}/add-item")
+async def add_item_to_kit_form(
+    request: Request,
+    kit_id: uuid.UUID,
+    medication_id: uuid.UUID = Form(...),
+    unit: str = Form(default=""),
+    notes: str = Form(default=""),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await svc.add_stock_to_kit(
+            db, user_id=user.id, kit_id=kit_id, medication_id=medication_id,
+            quantity=0.0, unit=unit, expiry_date="", lot_number="", notes=notes,
+        )
+    except (ValueError, NotFoundError) as e:
+        raise HTTPException(400, str(e)) from None
+    return RedirectResponse(url="/medications", status_code=303)
+
+
 @router.post("/medications/scan-barcode")
 async def scan_barcode_endpoint(
     request: Request,

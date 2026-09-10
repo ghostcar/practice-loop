@@ -455,9 +455,16 @@
                     {% else %}
                     <p class="pl-text-muted">{{ t.med_kit_empty }}</p>
                     {% endif %}
-                    {% if k.nearest_expiry %}
-                    <p class="{% if k.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ t.med_kit_expiry }} {{ k.nearest_expiry }}</p>
-                    {% endif %}
+                    <div class="flex items-center gap-2 flex-wrap">
+                        {% if k.unstocked_count %}
+                        <span class="text-amber-600 dark:text-amber-400 font-medium inline-flex items-center gap-1 text-[11px]" title="Препараты в составе без остатка">
+                            {{ icon('clock', 'w-3 h-3') }}{{ k.unstocked_count }} {{ t.med_kit_unstocked_count if t.get('med_kit_unstocked_count') else 'не пополнено' }}
+                        </span>
+                        {% endif %}
+                        {% if k.nearest_expiry %}
+                        <p class="{% if k.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %} inline-flex items-center gap-1">{{ icon('calendar', 'w-3 h-3') }}{{ t.med_kit_expiry }} {{ k.nearest_expiry }}</p>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="pt-2 border-t border-[color:var(--border)] flex items-center justify-between gap-1.5 flex-wrap">
                     <button type="button"
@@ -466,6 +473,13 @@
                         {{ icon('inventory', 'w-3 h-3') }} {{ t.med_kit_view }} ({{ k['items']|length if k.get('items') else k.med_count }})
                     </button>
                     <div class="flex items-center gap-1">
+                        <button type="button"
+                                class="btn-open-kit-add-item px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] hover:border-[color:var(--accent)] inline-flex items-center gap-1 min-h-[32px]"
+                                data-kit-id="{{ k.id }}"
+                                data-kit-name="{{ k.name }}"
+                                title="{{ t.med_kit_add_item_title if t.get('med_kit_add_item_title') else 'Добавить препарат в состав аптечки без остатка' }}">
+                            {{ icon('plus', 'w-3 h-3') }} {{ t.med_kit_add_item_btn if t.get('med_kit_add_item_btn') else 'В состав' }}
+                        </button>
                         <button type="button"
                                 class="btn-open-kit-stock px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
                                 data-kit-id="{{ k.id }}"
@@ -1371,8 +1385,17 @@
         <form id="kit-stock-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
 
+            <!-- Режим: пополнение запаса или добавление в состав без остатка -->
+            <label class="flex items-center gap-2.5 p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] cursor-pointer text-xs select-none">
+                <input type="checkbox" id="kit-stock-zero-qty" class="w-4 h-4 rounded text-[color:var(--accent)] focus:ring-[color:var(--accent)]">
+                <div class="min-w-0 flex-1">
+                    <span class="font-medium text-[color:var(--text)] block">{{ t.med_kit_composition_only if t.get('med_kit_composition_only') else 'Добавить только в состав (без пополнения, остаток 0)' }}</span>
+                    <span class="text-[11px] pl-text-muted block mt-0.5">{{ t.med_kit_composition_hint if t.get('med_kit_composition_hint') else 'Внести количество, серию и срок годности можно будет позже при покупке' }}</span>
+                </div>
+            </label>
+
             <!-- Сканирование DataMatrix маркировки -->
-            <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">
+            <div id="kit-stock-dm-container" class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-xs font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
                         {{ icon('tag', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }}
@@ -1396,24 +1419,24 @@
                 <label class="text-xs pl-text-secondary font-medium block mb-1">* Выберите препарат</label>
                 <select id="kit-stock-med-id" name="medication_id" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
                     <option value="">— Выберите из каталога —</option>
-                    {% for m in meds %}<option value="{{ m.id }}">{{ m.name }}{% if m.strength %} · {{ m.strength }}{% endif %}{% if m.form %} ({{ m.form }}){% endif %}</option>{% endfor %}
+                    {% for m in meds %}<option value="{{ m.id }}" data-unit="{{ m.unit or '' }}">{{ m.name }}{% if m.strength %} · {{ m.strength }}{% endif %}{% if m.form %} ({{ m.form }}){% endif %}</option>{% endfor %}
                 </select>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
-                <div>
+                <div id="kit-stock-qty-wrapper">
                     <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_quantity }}</label>
                     <input type="number" step="any" id="kit-stock-qty" name="quantity" value="1" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
                 </div>
-                <div>
+                <div id="kit-stock-unit-wrapper">
                     <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_unit }}</label>
                     <input type="text" id="kit-stock-unit" name="unit" placeholder="упак / шт / таб" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
                 </div>
-                <div>
+                <div id="kit-stock-expiry-wrapper">
                     <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_expiry_date }}</label>
                     <input type="date" id="kit-stock-expiry" name="expiry_date" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
                 </div>
-                <div>
+                <div id="kit-stock-lot-wrapper">
                     <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_lot_number }}</label>
                     <input type="text" id="kit-stock-lot" name="lot_number" placeholder="Серия партии" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
                 </div>
@@ -1428,8 +1451,8 @@
                 <button type="button" id="kit-stock-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
                     Отмена
                 </button>
-                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
-                    {{ icon('save', 'w-4 h-4') }} Положить в аптечку
+                <button type="submit" id="kit-stock-submit-btn" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }} <span id="kit-stock-submit-text">Положить в аптечку</span>
                 </button>
             </div>
         </form>
@@ -1601,12 +1624,25 @@
         <div class="p-5 space-y-4 overflow-y-auto flex-1 text-sm">
             <div class="flex items-center justify-between gap-2 flex-wrap">
                 <input type="text" id="kit-view-search" placeholder="{{ t.med_search_placeholder }}" class="flex-1 px-3 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
-                <button type="button" id="kit-view-btn-add" class="px-3 py-1.5 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1.5 min-h-[36px]">
-                    {{ icon('plus', 'w-3.5 h-3.5') }} Пополнить аптечку
-                </button>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button type="button" id="kit-view-btn-add-item" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] hover:border-[color:var(--accent)] inline-flex items-center gap-1.5 min-h-[36px]">
+                        {{ icon('plus', 'w-3.5 h-3.5') }} {{ t.med_kit_add_item_btn if t.get('med_kit_add_item_btn') else 'В состав' }} (без остатка)
+                    </button>
+                    <button type="button" id="kit-view-btn-add" class="px-3 py-1.5 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1.5 min-h-[36px]">
+                        {{ icon('plus', 'w-3.5 h-3.5') }} Пополнить запас
+                    </button>
+                </div>
             </div>
-            <div id="kit-view-empty" class="text-xs pl-text-muted text-center py-6 hidden">
-                {{ t.med_kit_no_items }}
+            <div id="kit-view-empty" class="text-xs pl-text-muted text-center py-6 hidden space-y-2">
+                <p>{{ t.med_kit_no_items }}</p>
+                <div class="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                    <button type="button" id="kit-view-empty-add-item" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] hover:border-[color:var(--accent)] inline-flex items-center gap-1 min-h-[32px]">
+                        {{ icon('plus', 'w-3 h-3') }} Добавить препарат в состав
+                    </button>
+                    <button type="button" id="kit-view-empty-add-stock" class="px-3 py-1.5 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1 min-h-[32px]">
+                        {{ icon('plus', 'w-3 h-3') }} Пополнить запас
+                    </button>
+                </div>
             </div>
             <div id="kit-view-items" class="space-y-2">
                 <!-- Заполняется динамически через JS -->
@@ -2577,19 +2613,96 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 2. Пополнение аптечки (наполнение препаратами + DataMatrix Честный Знак)
+    // 2. Пополнение аптечки / Добавление в состав (включая DataMatrix Честный Знак)
+    const setStockZeroMode = function(isZero) {
+        const zeroCb = document.getElementById('kit-stock-zero-qty');
+        if (zeroCb) zeroCb.checked = !!isZero;
+        const dmContainer = document.getElementById('kit-stock-dm-container');
+        const qtyWrapper = document.getElementById('kit-stock-qty-wrapper');
+        const expiryWrapper = document.getElementById('kit-stock-expiry-wrapper');
+        const lotWrapper = document.getElementById('kit-stock-lot-wrapper');
+        const qtyInput = document.getElementById('kit-stock-qty');
+        const titleEl = document.getElementById('kit-stock-modal-title');
+        const submitText = document.getElementById('kit-stock-submit-text');
+
+        if (isZero) {
+            if (dmContainer) dmContainer.classList.add('hidden');
+            if (qtyWrapper) qtyWrapper.classList.add('hidden');
+            if (expiryWrapper) expiryWrapper.classList.add('hidden');
+            if (lotWrapper) lotWrapper.classList.add('hidden');
+            if (qtyInput) { qtyInput.value = '0'; qtyInput.removeAttribute('required'); }
+            if (titleEl) titleEl.textContent = 'Добавление в состав аптечки';
+            if (submitText) submitText.textContent = 'Добавить в состав';
+        } else {
+            if (dmContainer) dmContainer.classList.remove('hidden');
+            if (qtyWrapper) qtyWrapper.classList.remove('hidden');
+            if (expiryWrapper) expiryWrapper.classList.remove('hidden');
+            if (lotWrapper) lotWrapper.classList.remove('hidden');
+            if (qtyInput) {
+                if (qtyInput.value === '0' || !qtyInput.value) qtyInput.value = '1';
+                qtyInput.setAttribute('required', 'required');
+            }
+            if (titleEl) titleEl.textContent = 'Пополнение аптечки';
+            if (submitText) submitText.textContent = 'Положить в аптечку';
+        }
+    };
+
+    const zeroCbEl = document.getElementById('kit-stock-zero-qty');
+    if (zeroCbEl) {
+        zeroCbEl.addEventListener('change', function() {
+            setStockZeroMode(zeroCbEl.checked);
+        });
+    }
+
+    const openKitStockModal = function(kitId, kitName, asCompositionOnly, preselectedMedId) {
+        const form = document.getElementById('kit-stock-form');
+        if (!form || !kitStockM) return;
+        form.action = '/med-kits/' + kitId + '/add-stock';
+        const sub = document.getElementById('kit-stock-modal-subtitle');
+        if (sub) sub.textContent = kitName;
+        const statusEl = document.getElementById('kit-stock-dm-status');
+        if (statusEl) { statusEl.className = 'text-[11px] pl-text-muted hidden'; statusEl.textContent = ''; }
+
+        const medSelect = document.getElementById('kit-stock-med-id');
+        if (medSelect) {
+            medSelect.value = preselectedMedId || '';
+            if (preselectedMedId) {
+                const opt = medSelect.options[medSelect.selectedIndex];
+                if (opt && opt.dataset && opt.dataset.unit) {
+                    const unitInput = document.getElementById('kit-stock-unit');
+                    if (unitInput && !unitInput.value) unitInput.value = opt.dataset.unit;
+                }
+            }
+        }
+
+        setStockZeroMode(!!asCompositionOnly);
+        kitStockM.open();
+    };
+
+    const kitStockMedSelect = document.getElementById('kit-stock-med-id');
+    if (kitStockMedSelect) {
+        kitStockMedSelect.addEventListener('change', function() {
+            const opt = kitStockMedSelect.options[kitStockMedSelect.selectedIndex];
+            if (opt && opt.dataset && opt.dataset.unit) {
+                const unitInput = document.getElementById('kit-stock-unit');
+                if (unitInput && !unitInput.value) unitInput.value = opt.dataset.unit;
+            }
+        });
+    }
+
     document.querySelectorAll('.btn-open-kit-stock').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const kitId = btn.getAttribute('data-kit-id');
             const kitName = btn.getAttribute('data-kit-name') || '';
-            const form = document.getElementById('kit-stock-form');
-            if (!form || !kitStockM) return;
-            form.action = '/med-kits/' + kitId + '/add-stock';
-            const sub = document.getElementById('kit-stock-modal-subtitle');
-            if (sub) sub.textContent = kitName;
-            const statusEl = document.getElementById('kit-stock-dm-status');
-            if (statusEl) { statusEl.className = 'text-[11px] pl-text-muted hidden'; statusEl.textContent = ''; }
-            kitStockM.open();
+            openKitStockModal(kitId, kitName, false);
+        });
+    });
+
+    document.querySelectorAll('.btn-open-kit-add-item').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const kitId = btn.getAttribute('data-kit-id');
+            const kitName = btn.getAttribute('data-kit-name') || '';
+            openKitStockModal(kitId, kitName, true);
         });
     });
 
@@ -2797,12 +2910,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const itemJson = escapeHtml(JSON.stringify(it));
 
+            const isUnstocked = (Number(it.quantity) || 0) <= 0;
+            const qtyBadge = isUnstocked
+                ? '<span class="px-2 py-0.5 rounded-md text-xs font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">0 ' + escapeHtml(it.unit || 'шт') + ' · Ожидает пополнения</span>'
+                : '<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">' + escapeHtml(it.quantity) + ' ' + escapeHtml(it.unit || 'шт') + '</span>';
+
+            const replenishBtn = isUnstocked
+                ? '<button type="button" class="btn-item-stock-replenish px-2.5 py-1 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1 min-h-[30px]" data-med-id="' + escapeHtml(it.medication_id) + '">' +
+                      'Пополнить' +
+                  '</button>'
+                : '';
+
             return '<div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-center justify-between gap-3">' +
                 '<div class="min-w-0 flex-1">' +
                     '<div class="flex items-center gap-2 flex-wrap">' +
                         '<span class="font-medium text-sm text-[color:var(--text)]">' + escapeHtml(it.medication_name) + '</span>' +
                         (it.form ? '<span class="text-xs pl-text-secondary">(' + escapeHtml(it.form) + ')</span>' : '') +
-                        '<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">' + escapeHtml(it.quantity) + ' ' + escapeHtml(it.unit || 'шт') + '</span>' +
+                        qtyBadge +
                     '</div>' +
                     subsStr +
                     '<div class="flex items-center gap-2 flex-wrap mt-1.5">' +
@@ -2811,6 +2935,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     (it.notes ? '<div class="text-xs pl-text-muted mt-1 italic">' + escapeHtml(it.notes) + '</div>' : '') +
                 '</div>' +
                 '<div class="flex items-center gap-1.5 flex-shrink-0">' +
+                    replenishBtn +
                     '<button type="button" class="btn-item-stock-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--accent-text)] border border-[color:var(--border)] hover:border-[color:var(--accent)] inline-flex items-center gap-1 min-h-[30px]" data-stock=\'' + itemJson + '\'>' +
                         'Редактировать' +
                     '</button>' +
@@ -2824,7 +2949,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '</div>';
         }).join('');
 
-        // Навешиваем клик на кнопки "Редактировать"
+        // Навешиваем клик на кнопки "Редактировать" и "Пополнить"
         container.querySelectorAll('.btn-item-stock-edit').forEach(function(b) {
             b.addEventListener('click', function() {
                 try {
@@ -2832,6 +2957,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     openStockEditModal(st);
                 } catch (e) {
                     console.error('Error parsing stock data:', e);
+                }
+            });
+        });
+
+        container.querySelectorAll('.btn-item-stock-replenish').forEach(function(b) {
+            b.addEventListener('click', function() {
+                const medId = b.getAttribute('data-med-id');
+                if (kitViewM) kitViewM.close();
+                if (currentKitData) {
+                    openKitStockModal(currentKitData.id, currentKitData.name, false, medId);
                 }
             });
         });
@@ -2851,13 +2986,31 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btnAdd) {
             btnAdd.onclick = function() {
                 if (kitViewM) kitViewM.close();
-                const form = document.getElementById('kit-stock-form');
-                if (form && kitStockM) {
-                    form.action = '/med-kits/' + k.id + '/add-stock';
-                    const sub = document.getElementById('kit-stock-modal-subtitle');
-                    if (sub) sub.textContent = k.name;
-                    kitStockM.open();
-                }
+                openKitStockModal(k.id, k.name, false);
+            };
+        }
+
+        const btnAddItem = document.getElementById('kit-view-btn-add-item');
+        if (btnAddItem) {
+            btnAddItem.onclick = function() {
+                if (kitViewM) kitViewM.close();
+                openKitStockModal(k.id, k.name, true);
+            };
+        }
+
+        const btnEmptyAdd = document.getElementById('kit-view-empty-add-stock');
+        if (btnEmptyAdd) {
+            btnEmptyAdd.onclick = function() {
+                if (kitViewM) kitViewM.close();
+                openKitStockModal(k.id, k.name, false);
+            };
+        }
+
+        const btnEmptyAddItem = document.getElementById('kit-view-empty-add-item');
+        if (btnEmptyAddItem) {
+            btnEmptyAddItem.onclick = function() {
+                if (kitViewM) kitViewM.close();
+                openKitStockModal(k.id, k.name, true);
             };
         }
 

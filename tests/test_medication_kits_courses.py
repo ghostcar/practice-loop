@@ -285,3 +285,78 @@ async def test_batch_combine_course_slots(auth_client, test_user, db_session):
     assert len(slot_830["items"]) == 2
     assert slot_830["items"][0]["food_relation"] == "after_meal"
 
+
+@pytest.mark.asyncio
+async def test_add_medication_to_kit_without_stock(auth_client, test_user, db_session):
+    med = Medication(user_id=test_user.id, name="Лоперамид", kind="medication", unit="капс")
+    kit = MedKit(user_id=test_user.id, name="Походная")
+    db_session.add_all([med, kit])
+    await db_session.commit()
+
+    # 1. Add item to kit composition with 0 stock
+    resp = await auth_client.post(
+        f"/med-kits/{kit.id}/add-item",
+        data={"medication_id": str(med.id), "notes": "Взять в поход"},
+    )
+    assert resp.status_code == 303
+
+    stmt = select(MedStock).where(MedStock.kit_id == kit.id, MedStock.medication_id == med.id)
+    stocks = (await db_session.execute(stmt)).scalars().all()
+    assert len(stocks) == 1
+    st = stocks[0]
+    assert st.quantity == 0.0
+    assert st.unit == "капс"
+    assert st.expiry_date is None
+    assert st.lot_number is None
+    assert st.notes == "Взять в поход"
+
+    # 2. Re-adding the same medication with 0 stock doesn't duplicate
+    resp2 = await auth_client.post(
+        f"/med-kits/{kit.id}/add-stock",
+        data={"medication_id": str(med.id), "quantity": "0", "notes": "Обновленная заметка"},
+    )
+    assert resp2.status_code == 303
+    stocks2 = (await db_session.execute(stmt)).scalars().all()
+    assert len(stocks2) == 1
+    assert stocks2[0].notes == "Обновленная заметка"
+
+
+@pytest.mark.asyncio
+async def test_replenish_unstocked_kit_placeholder(auth_client, test_user, db_session):
+    med = Medication(user_id=test_user.id, name="Парацетамол 500 мг", kind="medication", unit="таб")
+    kit = MedKit(user_id=test_user.id, name="Офисная")
+    db_session.add_all([med, kit])
+    await db_session.commit()
+
+    # 1. Add without stock (composition only)
+    await auth_client.post(
+        f"/med-kits/{kit.id}/add-stock",
+        data={"medication_id": str(med.id), "quantity": "0"},
+    )
+    stmt = select(MedStock).where(MedStock.kit_id == kit.id, MedStock.medication_id == med.id)
+    placeholder = (await db_session.execute(stmt)).scalar_one()
+    assert placeholder.quantity == 0.0
+
+    # 2. Later replenish with actual quantity, expiry and lot
+    resp = await auth_client.post(
+        f"/med-kits/{kit.id}/add-stock",
+        data={
+            "medication_id": str(med.id),
+            "quantity": "20",
+            "unit": "таб",
+            "expiry_date": "2028-06-01",
+            "lot_number": "BATCH-2028",
+            "notes": "Куплено для офиса",
+        },
+    )
+    assert resp.status_code == 303
+
+    stocks = (await db_session.execute(stmt)).scalars().all()
+    assert len(stocks) == 1  # Placeholder updated in-place!
+    upd = stocks[0]
+    assert upd.id == placeholder.id
+    assert upd.quantity == 20.0
+    assert upd.expiry_date.isoformat() == "2028-06-01"
+    assert upd.lot_number == "BATCH-2028"
+    assert upd.notes == "Куплено для офиса"
+

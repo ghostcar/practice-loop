@@ -317,6 +317,7 @@ async def get_med_page_context(
                     "expiry_date": st.expiry_date.isoformat() if st.expiry_date else None,
                     "expiry_date_raw": st.expiry_date,
                     "is_expired": st.expiry_date is not None and st.expiry_date < local_today(),
+                    "is_unstocked": (st.quantity or 0) <= 0,
                     "low_stock_threshold": st.low_stock_threshold,
                     "notes": st.notes or "",
                 }
@@ -409,6 +410,7 @@ async def get_med_page_context(
         kit_stocks = stocks_by_kit.get(str(k.id), [])
         expiries = [x["expiry_date_raw"] for x in kit_stocks if x.get("expiry_date_raw") is not None]
         sorted_items = sorted(kit_stocks, key=lambda x: x["medication_name"].lower())
+        unstocked_count = sum(1 for x in kit_stocks if (x.get("quantity") or 0) <= 0)
         kits_data.append(
             {
                 "id": str(k.id),
@@ -418,6 +420,8 @@ async def get_med_page_context(
                 "location_path": kit_location_label(k),
                 "notes": k.notes,
                 "med_count": len(kit_stocks),
+                "unstocked_count": unstocked_count,
+                "stocked_count": len(kit_stocks) - unstocked_count,
                 "meds": sorted({x["medication_name"] for x in kit_stocks if x["medication_name"]}),
                 "nearest_expiry": min(expiries).isoformat() if expiries else None,
                 "is_expired": bool(expiries) and min(expiries) < today,

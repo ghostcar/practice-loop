@@ -453,4 +453,11 @@ RU_med = {
     "unit_drops": "капель",
     "unit_pcs": "шт",
     "unit_kg": "кг",
+    "med_kit_add_item_title": "Добавление в состав аптечки",
+    "med_kit_add_item_btn": "В состав",
+    "med_kit_add_item_submit": "Добавить в состав",
+    "med_kit_composition_only": "Добавить только в состав (без пополнения, остаток 0)",
+    "med_kit_composition_hint": "Препарат будет числиться в составе аптечки. Внести остаток, срок годности и серию можно будет позже при покупке.",
+    "med_kit_unstocked": "Ожидает пополнения",
+    "med_kit_unstocked_count": "не пополнено",
 }
