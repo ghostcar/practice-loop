@@ -364,3 +364,31 @@ async def test_find_analogs_prajisan_dosage_matching(db_session, test_user, monk
     cray = next(a for a in analogs if a["name"] == "Крайнон")
     assert cray["same_strength"] is False
 
+
+@pytest.mark.asyncio
+async def test_autofill_verospiron_and_prajisan_dosages(db_session, test_user):
+    """Тест автозаполнения Верошпирона и Праджисана:
+    Проверяет, что подбираются не только вещества, но и доступные дозировки и формы выпуска.
+    """
+    from app.services.med.analogs import autofill_info
+
+    # 1. Верошпирон
+    v_res = await autofill_info(db_session, test_user.id, "Верошпирон")
+    assert v_res is not None
+    assert "Спиронолактон" in (v_res.get("active_ingredient") or "")
+    assert v_res.get("available_strengths") is not None
+    assert any("25" in s for s in v_res["available_strengths"])
+    assert any("50" in s for s in v_res["available_strengths"])
+    assert any("100" in s for s in v_res["available_strengths"])
+    assert v_res.get("form") is not None
+
+    # 2. Праджисан
+    p_res = await autofill_info(db_session, test_user.id, "Праджисан")
+    assert p_res is not None
+    assert "Прогестерон" in (p_res.get("active_ingredient") or "")
+    assert p_res.get("available_strengths") is not None
+    assert any("100" in s for s in p_res["available_strengths"])
+    assert any("200" in s for s in p_res["available_strengths"])
+    assert p_res.get("form") is not None
+
+

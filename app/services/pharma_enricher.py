@@ -470,6 +470,99 @@ _LOCAL_SEED: dict[str, dict] = {
         "instructions": "Растворить пакетик в 50 мл воды, принимать между приемами пищи.",
         "components": [{"name": "Смектит диоктаэдрический", "inn": "Diosmectite", "amount": 3, "unit": "г"}],
     },
+    "верошпирон": {
+        "kind": "medication",
+        "form": "таблетки / капсулы",
+        "strength": "25 мг / 50 мг / 100 мг",
+        "available_strengths": ["25 мг", "50 мг", "100 мг"],
+        "manufacturer": "Gedeon Richter",
+        "storage_conditions": "при температуре не выше 30°C",
+        "prescription_required": True,
+        "instructions": "Принимать внутрь, запивая водой, желательно в утренние часы во время или после еды.",
+        "components": [
+            {
+                "name": "Спиронолактон",
+                "inn": "Spironolactone",
+                "amount": 25,
+                "unit": "мг",
+                "daily_max_amt": 400,
+                "daily_max_unit": "мг",
+            }
+        ],
+    },
+    "спиронолактон": {
+        "kind": "medication",
+        "form": "таблетки / капсулы",
+        "strength": "25 мг / 50 мг / 100 мг",
+        "available_strengths": ["25 мг", "50 мг", "100 мг"],
+        "manufacturer": "разные (дженерики)",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": True,
+        "instructions": "Принимать внутрь во время или сразу после еды, запивая водой.",
+        "components": [
+            {
+                "name": "Спиронолактон",
+                "inn": "Spironolactone",
+                "amount": 25,
+                "unit": "мг",
+                "daily_max_amt": 400,
+                "daily_max_unit": "мг",
+            }
+        ],
+    },
+    "праджисан": {
+        "kind": "medication",
+        "form": "капсулы / гель",
+        "strength": "100 мг / 200 мг",
+        "available_strengths": ["100 мг", "200 мг"],
+        "manufacturer": "Sun Pharma",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": True,
+        "instructions": "Принимать внутрь или вводить вагинально строго по назначению врача.",
+        "components": [
+            {
+                "name": "Прогестерон",
+                "inn": "Progesterone",
+                "amount": 100,
+                "unit": "мг",
+                "daily_max_amt": 400,
+                "daily_max_unit": "мг",
+            }
+        ],
+    },
+    "утрожестан": {
+        "kind": "medication",
+        "form": "капсулы",
+        "strength": "100 мг / 200 мг",
+        "available_strengths": ["100 мг", "200 мг"],
+        "manufacturer": "Besins Healthcare",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": True,
+        "instructions": "Принимать внутрь или интравагинально по схеме врача.",
+        "components": [{"name": "Прогестерон", "inn": "Progesterone", "amount": 100, "unit": "мг"}],
+    },
+    "дивигель": {
+        "kind": "medication",
+        "form": "гель трансдермальный",
+        "strength": "0.5 мг / 1.0 мг",
+        "available_strengths": ["0.5 мг", "1.0 мг"],
+        "manufacturer": "Orion Pharma",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": True,
+        "instructions": "Наносить 1 раз в сутки на чистую сухую кожу живота или поясницы.",
+        "components": [{"name": "Эстрадиол", "inn": "Estradiol", "amount": 1.0, "unit": "мг"}],
+    },
+    "эстрожель": {
+        "kind": "medication",
+        "form": "гель трансдермальный",
+        "strength": "0.06% (0.75 мг/доза)",
+        "available_strengths": ["0.75 мг/доза"],
+        "manufacturer": "Besins Healthcare",
+        "storage_conditions": "при температуре не выше 25°C",
+        "prescription_required": True,
+        "instructions": "Наносить тонким слоем на кожу плеч, предплечий или живота 1 раз в сутки.",
+        "components": [{"name": "Эстрадиол", "inn": "Estradiol", "amount": 0.75, "unit": "мг"}],
+    },
 }
 
 # Фемостон по маске: «Фемостон N/M» / «Femoston N/M».
@@ -549,7 +642,10 @@ def _payload(data: dict) -> dict:
     payload["components"] = components
     if not payload.get("active_ingredient") and components:
         payload["active_ingredient"] = " + ".join(dict.fromkeys(c.get("name", "") for c in components if c.get("name")))
-    payload["available_strengths"] = extract_strengths_list(data.get("strength") or "")
+    avail = data.get("available_strengths")
+    if not avail:
+        avail = extract_strengths_list(data.get("strength") or "")
+    payload["available_strengths"] = avail
     return payload
 
 

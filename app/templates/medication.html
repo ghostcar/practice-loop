@@ -2319,7 +2319,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const info = data.data;
                     if (info.form) document.getElementById('modal-med-form').value = info.form;
                     if (info.strength) document.getElementById('modal-med-strength').value = info.strength;
-                    renderStrengthChips('modal-strength-chips', 'modal-med-strength', info.available_strengths);
+                    renderStrengthChips('modal-strength-chips', 'modal-med-strength', info.available_strengths, 'modal-med-name');
                     if (info.manufacturer) document.getElementById('modal-med-manufacturer').value = info.manufacturer;
                     if (info.storage_conditions) document.getElementById('modal-med-storage').value = info.storage_conditions;
                     if (info.instructions) document.getElementById('modal-med-instructions').value = info.instructions;
@@ -2331,7 +2331,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             ? info.components
                             : (info.active_ingredient ? [{ substance: info.active_ingredient }] : []);
                         comps.forEach(function(c) {
-                            modalAddCompRow({ substance: c.substance || c.name, amount: c.amount, unit: c.unit, variant: c.variant });
+                            let amt = c.amount;
+                            let unt = c.unit;
+                            if ((amt == null || amt === '') && info.available_strengths && info.available_strengths.length > 0) {
+                                const m = info.available_strengths[0].match(/(\d+(?:[\.,]\d+)?)\s*([a-zа-я%]+)?/i);
+                                if (m) {
+                                    amt = parseFloat(m[1].replace(',', '.'));
+                                    unt = m[2] || 'мг';
+                                }
+                            }
+                            modalAddCompRow({ substance: c.substance || c.name, amount: amt, unit: unt, variant: c.variant });
                         });
                     }
                 } else {
@@ -2382,11 +2391,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     ? info.components
                     : (info.active_ingredient ? [{ substance: info.active_ingredient }] : []);
                 comps.forEach(function(c) {
-                    medCompAddRow({ substance: c.substance || c.name, amount: c.amount, unit: c.unit, variant: c.variant });
+                    let amt = c.amount;
+                    let unt = c.unit;
+                    if ((amt == null || amt === '') && info.available_strengths && info.available_strengths.length > 0) {
+                        const m = info.available_strengths[0].match(/(\d+(?:[\.,]\d+)?)\s*([a-zа-я%]+)?/i);
+                        if (m) {
+                            amt = parseFloat(m[1].replace(',', '.'));
+                            unt = m[2] || 'мг';
+                        }
+                    }
+                    medCompAddRow({ substance: c.substance || c.name, amount: amt, unit: unt, variant: c.variant });
                 });
                 if (info.form) document.getElementById('med-form-input').value = info.form;
                 if (info.strength) document.getElementById('med-strength-input').value = info.strength;
-                renderStrengthChips('med-strength-chips', 'med-strength-input', info.available_strengths);
+                renderStrengthChips('med-strength-chips', 'med-strength-input', info.available_strengths, 'med-name-input');
                 if (info.manufacturer) document.getElementById('med-manufacturer-input').value = info.manufacturer;
                 if (info.storage_conditions) document.getElementById('med-storage-input').value = info.storage_conditions;
                 if (info.instructions) document.getElementById('med-instructions-input').value = info.instructions;
@@ -3235,20 +3253,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Чипы дозировок (ADR-207, этап 3)
-    function renderStrengthChips(containerId, inputId, strengths) {
+    // Чипы дозировок с автоформированием наименования и синхронизацией действующего вещества
+    function renderStrengthChips(containerId, inputId, strengths, nameInputId) {
         const container = document.getElementById(containerId);
         const input = document.getElementById(inputId);
         if (!container || !input) return;
         container.innerHTML = '';
         if (!Array.isArray(strengths) || strengths.length === 0) return;
+
+        const header = document.createElement('div');
+        header.className = 'w-full text-[11px] pl-text-muted mt-1.5 mb-1 flex items-center justify-between';
+        header.innerHTML = '<span class="font-medium">Дозировки из справочника:</span><span class="text-[10px] pl-text-muted opacity-80">(клик — выбор и обновление названия)</span>';
+        container.appendChild(header);
+
+        const currentStrength = (input.value || '').trim().toLowerCase();
+
         strengths.forEach(function(s) {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'px-2 py-0.5 rounded text-xs bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--accent-text)] cursor-pointer hover:border-[color:var(--accent)]';
+            btn.className = 'px-2.5 py-1 rounded-md text-xs font-medium bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--accent-text)] cursor-pointer hover:border-[color:var(--accent)] hover:bg-[color:var(--surface-soft)] transition-all inline-flex items-center gap-1';
             btn.textContent = s;
+
+            if (currentStrength && (currentStrength === s.trim().toLowerCase() || currentStrength.includes(s.trim().toLowerCase()))) {
+                btn.classList.add('ring-2', 'ring-[color:var(--accent)]', 'bg-[color:var(--accent-soft)]', 'font-semibold');
+            }
+
             btn.addEventListener('click', function() {
                 input.value = s;
+                container.querySelectorAll('button').forEach(function(b) {
+                    b.classList.remove('ring-2', 'ring-[color:var(--accent)]', 'bg-[color:var(--accent-soft)]', 'font-semibold');
+                });
+                btn.classList.add('ring-2', 'ring-[color:var(--accent)]', 'bg-[color:var(--accent-soft)]', 'font-semibold');
+
+                // 1. Автоформирование наименования препарата по выбранной дозировке
+                const nameInp = nameInputId ? document.getElementById(nameInputId) : null;
+                if (nameInp && nameInp.value) {
+                    let baseName = nameInp.value
+                        .replace(/\b\d+(?:[\.,]\d+)?\s*(?:мг|г|мкг|мл|mg|g|mcg|ml|ед|iu|%)\b/gi, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    if (baseName) {
+                        nameInp.value = baseName + ' ' + s;
+                    }
+                }
+
+                // 2. Автозаполнение количества и единицы действующего вещества
+                const numMatch = s.match(/(\d+(?:[\.,]\d+)?)\s*([a-zа-я%]+)?/i);
+                if (numMatch) {
+                    const numVal = parseFloat(numMatch[1].replace(',', '.'));
+                    const unitVal = numMatch[2] || 'мг';
+                    const formEl = input.closest('form');
+                    if (formEl) {
+                        const amtInput = formEl.querySelector('.med-comp-amount, .modal-comp-amount');
+                        const unitInput = formEl.querySelector('.med-comp-unit, .modal-comp-unit');
+                        if (amtInput) amtInput.value = numVal;
+                        if (unitInput) unitInput.value = unitVal;
+                        const medUnitInput = formEl.querySelector('#med-unit-input, #modal-med-unit');
+                        if (medUnitInput && !medUnitInput.value) {
+                            medUnitInput.value = 'таб';
+                        }
+                    }
+                    if (typeof medCompSerialize === 'function') medCompSerialize();
+                    if (typeof modalSerializeComps === 'function') modalSerializeComps();
+                }
             });
             container.appendChild(btn);
         });

@@ -239,6 +239,11 @@ async def lookup_vidal(
             src_norm = clean_q.lower()
             base_src_norm = base_q.lower()
 
+            target_strengths: set[str] = set()
+            target_forms: set[str] = set()
+            target_mfr: str | None = None
+            target_rx: bool = False
+
             for mol_id, sub_name in molecules[:3]:
                 mol_in_resp = await client.get(f"https://www.vidal.ru/drugs/molecule-in/{mol_id}")
                 if mol_in_resp.status_code != 200:
@@ -258,21 +263,49 @@ async def lookup_vidal(
                         continue
                     a_name = _clean_text(name_m.group(2)).replace("&reg;", "").replace("®", "").strip()
                     norm_a = a_name.lower()
-                    if not a_name or norm_a in (src_norm, base_src_norm):
+                    if not a_name:
                         continue
 
                     form_text = _clean_text(tds[3]) if len(tds) > 3 else ""
                     mfr_text = _clean_text(tds[4]) if len(tds) > 4 else ""
+                    rx_status = _clean_text(tds[0]) if len(tds) > 0 else ""
 
                     found_strengths = list(
                         dict.fromkeys(
-                            re.findall(r"\b\d+(?:[\.,]\d+)?\s*(?:мг|г|мкг|мл|%)\b", form_text, flags=re.IGNORECASE)
+                            re.findall(r"\b\d+(?:[\.,]\d+)?\s*(?:мг|мкг|%|ед|ме)\b", form_text, flags=re.IGNORECASE)
                         )
                     )
+                    if not found_strengths:
+                        found_strengths = list(
+                            dict.fromkeys(
+                                re.findall(
+                                    r"\b\d+(?:[\.,]\d+)?\s*(?:мг|г|мкг|мл|%|ед|ме)\b",
+                                    form_text,
+                                    flags=re.IGNORECASE,
+                                )
+                            )
+                        )
                     found_forms = []
                     for kw in ("капсулы", "таблетки", "гель", "раствор", "крем", "мазь", "суспензия", "спрей", "драже"):
                         if kw in form_text.lower():
                             found_forms.append(kw)
+
+                    is_target = (
+                        norm_a in (src_norm, base_src_norm)
+                        or (base_src_norm and base_src_norm in norm_a)
+                        or (base_src_norm and clean_drug_name(norm_a) == base_src_norm)
+                    )
+                    if is_target:
+                        target_strengths.update(found_strengths)
+                        target_forms.update(found_forms)
+                        if not target_mfr and mfr_text:
+                            target_mfr = mfr_text
+                        if "рецепт" in rx_status.lower():
+                            target_rx = True
+                        continue
+
+                    if norm_a in (src_norm, base_src_norm):
+                        continue
 
                     if norm_a not in analogs_map:
                         analogs_map[norm_a] = {
@@ -355,12 +388,41 @@ async def lookup_vidal(
             analogs.sort(key=lambda x: (not x.get("same_strength", False), x.get("name", "")))
             analogs = analogs[:max_analogs]
 
+            sorted_target_strengths = sorted(
+                target_strengths,
+                key=lambda x: normalize_strength_val_unit(x)[0] or 0,
+            )
+            all_known_strengths = list(sorted_target_strengths)
+            if not all_known_strengths:
+                temp_s: set[str] = set()
+                for a in analogs:
+                    if a.get("strength"):
+                        for part in a["strength"].split(","):
+                            p = part.strip()
+                            if p:
+                                temp_s.add(p)
+                all_known_strengths = sorted(
+                    temp_s,
+                    key=lambda x: normalize_strength_val_unit(x)[0] or 0,
+                )
+
+            final_strength = clean_str or (", ".join(sorted_target_strengths) if sorted_target_strengths else None)
+            final_form = form_desc or (", ".join(sorted(target_forms)) if target_forms else None)
+            final_mfr = manufacturer or target_mfr
+
+            first_strength_to_fill = (
+                clean_str or (sorted_target_strengths[0] if len(sorted_target_strengths) == 1 else None)
+            )
+            amt_val, unit_val = (
+                normalize_strength_val_unit(first_strength_to_fill) if first_strength_to_fill else (None, None)
+            )
+
             components: list[dict[str, Any]] = [
                 {
                     "name": m_name.capitalize(),
                     "inn": m_name.capitalize(),
-                    "amount": None,
-                    "unit": None,
+                    "amount": amt_val,
+                    "unit": unit_val,
                 }
                 for _, m_name in molecules
             ]
@@ -372,9 +434,11 @@ async def lookup_vidal(
                 "kind": "medication",
                 "active_ingredient": active_ing,
                 "components": components,
-                "manufacturer": manufacturer,
-                "form": form_desc,
-                "strength": clean_str,
+                "manufacturer": final_mfr,
+                "form": final_form,
+                "strength": final_strength,
+                "available_strengths": all_known_strengths,
+                "prescription_required": target_rx,
                 "analogs": analogs,
                 "source": "vidal.ru",
                 "target_substance": clean_sub,
