@@ -212,9 +212,21 @@ async def spin_wheel_of_fortune(
         except Exception:
             pass
 
-    # Pick sector by weights
-    weights = [s["weight"] for s in WHEEL_SECTORS]
-    chosen = random.choices(WHEEL_SECTORS, weights=weights, k=1)[0]
+    # Pick sector by weights (respecting allowed sector types)
+    allow_freeze = state.get("allow_freeze_sectors", True)
+    allow_pillory = state.get("allow_pillory_sectors", True)
+    candidate_sectors = []
+    for s in WHEEL_SECTORS:
+        if not allow_freeze and s.get("type") in ("freeze_perm", "unfreeze"):
+            continue
+        if not allow_pillory and s.get("type") == "pillory":
+            continue
+        candidate_sectors.append(s)
+    if not candidate_sectors:
+        candidate_sectors = WHEEL_SECTORS
+
+    weights = [s["weight"] for s in candidate_sectors]
+    chosen = random.choices(candidate_sectors, weights=weights, k=1)[0]
 
     time_applied_sec = 0
     if chosen["time_sec"] != 0:
@@ -494,12 +506,16 @@ async def start_obedience_challenge(
     else:
         tpl = random.choice(list(OBEDIENCE_CHALLENGES.values()))
 
+    # Duration and pillory settings from extensions_state config
+    deadline_min = int(state.get("challenge_deadline_minutes") or tpl["duration_minutes"])
+    pillory_on_fail = bool(state.get("pillory_on_challenge_fail", tpl["pillory_on_fail"]))
+
     # Create verification challenge (single-use code with HMAC)
     challenge, code = await create_session_verification_challenge(
         db,
         session_id=session.id,
         owner_id=user_id,
-        ttl_minutes=tpl["duration_minutes"],
+        ttl_minutes=deadline_min,
         code_length=6,
     )
 
@@ -511,13 +527,13 @@ async def start_obedience_challenge(
         "description": tpl["description"],
         "verification_code": code,
         "started_at": now.isoformat(),
-        "expires_at": (now + timedelta(minutes=tpl["duration_minutes"])).isoformat(),
-        "duration_minutes": tpl["duration_minutes"],
+        "expires_at": (now + timedelta(minutes=deadline_min)).isoformat(),
+        "duration_minutes": deadline_min,
         "reward_seconds": tpl["reward_seconds"],
         "reward_xp": tpl["reward_xp"],
         "penalty_seconds": tpl["penalty_seconds"],
         "penalty_xp": tpl["penalty_xp"],
-        "pillory_on_fail": tpl["pillory_on_fail"],
+        "pillory_on_fail": pillory_on_fail,
     }
 
     state["active_challenge"] = challenge_data

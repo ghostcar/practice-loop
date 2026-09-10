@@ -708,51 +708,19 @@
         </div>
       </div>
 
-      <!-- Категории штрафных заданий -->
-      {% set categories = session.discipline_policy.get('penalty_categories', ['physical', 'chores', 'reports']) if session.discipline_policy else ['physical', 'chores', 'reports'] %}
-      <div class="p-3.5 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">
-        <label class="inline-flex items-center gap-2 text-xs font-semibold text-[color:var(--text)] cursor-pointer">
-          <input type="checkbox" name="penalty_tasks_enabled" value="true" {% if session.discipline_policy.get('penalty_tasks_enabled') %}checked{% endif %} class="rounded border-[color:var(--border)] text-[color:var(--accent)] focus:ring-0">
-          Автоматически назначать штрафные задания в План дня при нарушениях
-        </label>
-        <p class="text-[11px] text-[color:var(--text-muted)]">Выберите категории заданий, которые генератор штрафов может назначать:</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-          <label class="flex items-start gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="penalty_category_physical" value="true" {% if 'physical' in categories %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-[color:var(--accent)]">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">🏃 Физические</span>
-              <span class="text-[10px] text-[color:var(--text-muted)]">Приседания, планка, отжимания, пресс</span>
-            </div>
-          </label>
-          <label class="flex items-start gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="penalty_category_chores" value="true" {% if 'chores' in categories %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-[color:var(--accent)]">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">🧹 Бытовые</span>
-              <span class="text-[10px] text-[color:var(--text-muted)]">Влажная уборка, порядок, мытье посуды</span>
-            </div>
-          </label>
-          <label class="flex items-start gap-2 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="penalty_category_reports" value="true" {% if 'reports' in categories %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-[color:var(--accent)]">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">📝 Письменные</span>
-              <span class="text-[10px] text-[color:var(--text-muted)]">Эссе о дисциплине, признание ошибок, отчет</span>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <!-- Конфигуратор штрафных заданий из справочника (ADR-204) -->
+      <!-- Конфигуратор штрафных заданий из каталога активностей (ADR-204) -->
       {% set penalty_cfg = session.discipline_policy.get('penalty_tasks_config', {}) if session.discipline_policy else {} %}
       {% set penalty_mode = penalty_cfg.get('mode', 'random_one') %}
       {% set penalty_items = penalty_cfg.get('items', []) %}
       <div class="p-4 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-4">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h4 class="text-xs font-bold text-[color:var(--text)] flex items-center gap-1.5">
-              {{ icon('target', 'w-4 h-4 text-[color:var(--accent)]') }} Штрафные задания из каталога активностей
-            </h4>
-            <p class="text-[11px] text-[color:var(--text-muted)] mt-0.5">
-              Выберите конкретные упражнения или задания из каталога с привязкой к типу нарушения и масштабированием.
+            <label class="inline-flex items-center gap-2 text-xs font-bold text-[color:var(--text)] cursor-pointer">
+              <input type="checkbox" name="penalty_tasks_enabled" value="true" {% if session.discipline_policy.get('penalty_tasks_enabled') %}checked{% endif %} class="rounded border-[color:var(--border)] text-[color:var(--accent)] focus:ring-0">
+              {{ icon('target', 'w-4 h-4 text-[color:var(--accent)]') }} Автоматически назначать штрафные задания из каталога
+            </label>
+            <p class="text-[11px] text-[color:var(--text-muted)] mt-1">
+              При срывах, опозданиях или пропусках проверок генератор подбирает выбранные задания из каталога и назначает их в План дня.
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -768,7 +736,7 @@
         <input type="hidden" name="penalty_tasks_items_json" id="penalty_tasks_items_json" value="{{ penalty_items | tojson }}">
         <div id="penalty-tasks-container" class="space-y-2">
           <div id="penalty-tasks-empty" class="text-xs text-[color:var(--text-muted)] p-3 rounded-lg border border-dashed border-[color:var(--border)] text-center {% if penalty_items|length > 0 %}hidden{% endif %}">
-            Штрафные активности из каталога пока не добавлены. Будет использоваться стандартный подбор по категориям.
+            Штрафные активности из каталога пока не выбраны. Выберите активности ниже или система выберет случайные из каталога.
           </div>
           <div id="penalty-tasks-list" class="space-y-2">
             <!-- Rendered dynamically by JS -->
@@ -782,11 +750,15 @@
             <div>
               <label class="text-[11px] text-[color:var(--text-secondary)]">Активность из каталога</label>
               <select id="new-penalty-entity-select" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-2.5 py-2">
-                <option value="" data-unit="раз" data-val="30">-- Выберите активность --</option>
-                {% for ent in penalty_entities %}
-                <option value="{{ ent.id }}" data-name="{{ ent.real_name }}" data-unit="{{ ent.default_unit }}" data-val="{{ ent.default_value }}">
-                  {{ ent.real_name }} ({{ ent.category }})
-                </option>
+                <option value="" data-unit="раз" data-val="20">-- Выберите активность --</option>
+                {% for group in penalty_entities | groupby('category_label') %}
+                <optgroup label="{{ group.grouper }}">
+                  {% for ent in group.list %}
+                  <option value="{{ ent.id }}" data-name="{{ ent.real_name }}" data-unit="{{ ent.default_unit }}" data-val="{{ ent.default_value }}">
+                    {{ ent.real_name }}
+                  </option>
+                  {% endfor %}
+                </optgroup>
                 {% endfor %}
               </select>
             </div>
@@ -804,7 +776,7 @@
             <div>
               <label class="text-[11px] text-[color:var(--text-secondary)]">Начальный объем</label>
               <div class="flex items-center gap-1 mt-1">
-                <input id="new-penalty-value" type="number" min="1" value="30" class="w-20 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-2 py-2 text-center font-mono">
+                <input id="new-penalty-value" type="number" min="1" value="20" class="w-20 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-2 py-2 text-center font-mono">
                 <input id="new-penalty-unit" type="text" value="раз" class="w-16 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-xs px-2 py-2 text-center font-mono">
               </div>
             </div>
@@ -813,7 +785,7 @@
                 <input id="new-penalty-is-dynamic" type="checkbox" checked class="rounded border-[color:var(--border)] text-[color:var(--accent)]">
                 <span>📈 Динамическая эскалация</span>
               </label>
-              <button type="button" onclick="addPenaltyTaskItem()" class="mt-1 px-3 py-1.5 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg text-xs font-semibold hover:opacity-90 transition cursor-pointer">
+              <button type="button" id="add-penalty-task-btn" class="mt-1 px-3 py-1.5 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg text-xs font-semibold hover:opacity-90 transition cursor-pointer">
                 + Добавить в список
               </button>
             </div>
@@ -845,7 +817,7 @@
           <div class="flex items-center gap-1.5 mt-2 flex-wrap">
             <span class="text-[10px] text-[color:var(--text-muted)]">Быстрый выбор:</span>
             {% for h in [4, 6, 8, 12, 24, 48] %}
-            <button type="button" onclick="document.getElementById('verification-frequency-input').value = {{ h }};" class="px-2 py-0.5 rounded-md bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-[11px] font-mono text-[color:var(--text-secondary)] transition cursor-pointer">
+            <button type="button" class="verif-freq-btn px-2 py-0.5 rounded-md bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-[11px] font-mono text-[color:var(--text-secondary)] transition cursor-pointer" data-hours="{{ h }}">
               {{ h }}ч
             </button>
             {% endfor %}
@@ -900,38 +872,104 @@
           Включить блок игровых расширений в сессии
         </label>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="game_wheel_enabled" value="true" {% if games.get('wheel_of_fortune', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">🎡 Колесо Фортуны (Wheel of Fortune)</span>
-              <span class="text-[11px] text-[color:var(--text-muted)]">Случайный сектор: ±время, заморозка, позор или бонус</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <!-- Колесо Фортуны -->
+          <div class="p-3 rounded-xl bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)] space-y-2">
+            <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+              <input type="checkbox" name="game_wheel_enabled" value="true" {% if games.get('wheel_of_fortune', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
+              <div>
+                <span class="font-medium text-[color:var(--text)] block">🎡 Колесо Фортуны (Wheel of Fortune)</span>
+                <span class="text-[11px] text-[color:var(--text-muted)]">Случайный сектор: ±время, заморозка, позор или бонус</span>
+              </div>
+            </label>
+            <div class="mt-2 pt-2 border-t border-[color:var(--border)] grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-[10px] text-[color:var(--text-secondary)]">Перезарядка (кулдаун):</span>
+                <select name="wheel_cooldown_hours" class="w-full mt-0.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[11px] px-2 py-1 font-mono">
+                  <option value="1" {% if ext.get('wheel_cooldown_hours') == 1 %}selected{% endif %}>Каждый 1 час</option>
+                  <option value="2" {% if ext.get('wheel_cooldown_hours', 2) == 2 or not ext.get('wheel_cooldown_hours') %}selected{% endif %}>Каждые 2 часа (стандарт)</option>
+                  <option value="4" {% if ext.get('wheel_cooldown_hours') == 4 %}selected{% endif %}>Каждые 4 часа</option>
+                  <option value="8" {% if ext.get('wheel_cooldown_hours') == 8 %}selected{% endif %}>Каждые 8 часов</option>
+                  <option value="12" {% if ext.get('wheel_cooldown_hours') == 12 %}selected{% endif %}>Каждые 12 часов</option>
+                  <option value="24" {% if ext.get('wheel_cooldown_hours') == 24 %}selected{% endif %}>Раз в сутки (24ч)</option>
+                </select>
+              </div>
+              <div class="space-y-1 pt-1">
+                <label class="flex items-center gap-1.5 text-[10px] text-[color:var(--text-secondary)] cursor-pointer">
+                  <input type="checkbox" name="allow_freeze_sectors" value="true" {% if ext.get('allow_freeze_sectors', True) %}checked{% endif %} class="rounded border-[color:var(--border)] text-amber-500">
+                  <span>❄️ Заморозка таймера</span>
+                </label>
+                <label class="flex items-center gap-1.5 text-[10px] text-[color:var(--text-secondary)] cursor-pointer">
+                  <input type="checkbox" name="allow_pillory_sectors" value="true" {% if ext.get('allow_pillory_sectors', True) %}checked{% endif %} class="rounded border-[color:var(--border)] text-amber-500">
+                  <span>⛓️ Позорный столб</span>
+                </label>
+              </div>
             </div>
-          </label>
+          </div>
 
-          <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="game_dice_enabled" value="true" {% if games.get('dice_of_fate', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">🎲 Кубик Судьбы (Dice of Fate)</span>
-              <span class="text-[11px] text-[color:var(--text-muted)]">Бросок 2D6: дубли дают снятие часов, малый счет добавляет штраф</span>
+          <!-- Кубик Судьбы -->
+          <div class="p-3 rounded-xl bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)] space-y-2">
+            <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+              <input type="checkbox" name="game_dice_enabled" value="true" {% if games.get('dice_of_fate', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
+              <div>
+                <span class="font-medium text-[color:var(--text)] block">🎲 Кубик Судьбы (Dice of Fate)</span>
+                <span class="text-[11px] text-[color:var(--text-muted)]">Бросок 2D6: дубли дают снятие часов, малый счет добавляет штраф</span>
+              </div>
+            </label>
+            <div class="mt-2 pt-2 border-t border-[color:var(--border)] text-xs">
+              <div>
+                <span class="text-[10px] text-[color:var(--text-secondary)]">Перезарядка (кулдаун):</span>
+                <select name="dice_cooldown_hours" class="w-full mt-0.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[11px] px-2 py-1 font-mono">
+                  <option value="1" {% if ext.get('dice_cooldown_hours', 1) == 1 or not ext.get('dice_cooldown_hours') %}selected{% endif %}>Каждый 1 час (стандарт)</option>
+                  <option value="2" {% if ext.get('dice_cooldown_hours') == 2 %}selected{% endif %}>Каждые 2 часа</option>
+                  <option value="4" {% if ext.get('dice_cooldown_hours') == 4 %}selected{% endif %}>Каждые 4 часа</option>
+                  <option value="6" {% if ext.get('dice_cooldown_hours') == 6 %}selected{% endif %}>Каждые 6 часов</option>
+                </select>
+              </div>
             </div>
-          </label>
+          </div>
 
-          <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="game_challenges_enabled" value="true" {% if games.get('obedience_challenges', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">⚡ Испытания Послушания (Challenges)</span>
-              <span class="text-[11px] text-[color:var(--text-muted)]">Внезапные задания с обязательным фотоотчетом</span>
+          <!-- Испытания Послушания -->
+          <div class="p-3 rounded-xl bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)] space-y-2">
+            <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+              <input type="checkbox" name="game_challenges_enabled" value="true" {% if games.get('obedience_challenges', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
+              <div>
+                <span class="font-medium text-[color:var(--text)] block">⚡ Испытания Послушания (Challenges)</span>
+                <span class="text-[11px] text-[color:var(--text-muted)]">Внезапные задания с обязательным фотоотчетом</span>
+              </div>
+            </label>
+            <div class="mt-2 pt-2 border-t border-[color:var(--border)] grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-[10px] text-[color:var(--text-secondary)]">Дедлайн фотоотчета:</span>
+                <select name="challenge_deadline_minutes" class="w-full mt-0.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[11px] px-2 py-1 font-mono">
+                  <option value="30" {% if ext.get('challenge_deadline_minutes') == 30 %}selected{% endif %}>30 минут</option>
+                  <option value="45" {% if ext.get('challenge_deadline_minutes', 45) == 45 or not ext.get('challenge_deadline_minutes') %}selected{% endif %}>45 минут (стандарт)</option>
+                  <option value="60" {% if ext.get('challenge_deadline_minutes') == 60 %}selected{% endif %}>1 час</option>
+                  <option value="90" {% if ext.get('challenge_deadline_minutes') == 90 %}selected{% endif %}>1.5 часа</option>
+                </select>
+              </div>
+              <div class="flex items-center pt-3">
+                <label class="flex items-center gap-1.5 text-[10px] text-[color:var(--text-secondary)] cursor-pointer">
+                  <input type="checkbox" name="pillory_on_challenge_fail" value="true" {% if ext.get('pillory_on_challenge_fail', True) %}checked{% endif %} class="rounded border-[color:var(--border)] text-amber-500">
+                  <span>⛓️ Столб при срыве</span>
+                </label>
+              </div>
             </div>
-          </label>
+          </div>
 
-          <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer p-2.5 rounded-lg bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)]">
-            <input type="checkbox" name="game_time_jumps_enabled" value="true" {% if games.get('time_jumps', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
-            <div>
-              <span class="font-medium text-[color:var(--text)] block">🏇 Временные Скачки (Time Jumps)</span>
-              <span class="text-[11px] text-[color:var(--text-muted)]">Ставка на исход коротких забегов или интерактивных событий</span>
-            </div>
-          </label>
+          <!-- Временные Скачки -->
+          <div class="p-3 rounded-xl bg-[color:var(--canvas-deep)]/40 border border-[color:var(--border)] space-y-2">
+            <label class="flex items-start gap-2.5 text-xs text-[color:var(--text-secondary)] cursor-pointer">
+              <input type="checkbox" name="game_time_jumps_enabled" value="true" {% if games.get('time_jumps', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-amber-500">
+              <div>
+                <span class="font-medium text-[color:var(--text)] block">🏇 Временные Скачки (Time Jumps)</span>
+                <span class="text-[11px] text-[color:var(--text-muted)]">Случайные аномалии времени от Ключника или ИИ</span>
+              </div>
+            </label>
+            <p class="text-[10px] text-[color:var(--text-muted)] mt-2 pt-2 border-t border-[color:var(--border)]">
+              Таймер может получить внезапный скачок вперед или назад во время активности.
+            </p>
+          </div>
         </div>
 
         <div class="pt-2 border-t border-[color:var(--border)]">
@@ -939,9 +977,26 @@
             <input type="checkbox" name="bad_luck_escalation_enabled" value="true" {% if ext.get('bad_luck_escalation_enabled', True) %}checked{% endif %} class="mt-0.5 rounded border-[color:var(--border)] text-purple-500">
             <div>
               <span class="font-medium text-purple-300 block">💀 Эскалация полосы неудач (#неудачник)</span>
-              <span class="text-[11px] text-[color:var(--text-muted)]">При 2-3 проигрышах подряд в мини-играх присваивается позорный статус и удваиваются штрафы</span>
+              <span class="text-[11px] text-[color:var(--text-muted)]">При серии проигрышей в мини-играх присваивается позорный статус и растут штрафы</span>
             </div>
           </label>
+          <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pl-6">
+            <div>
+              <span class="text-[10px] text-[color:var(--text-secondary)]">Порог поражений подряд:</span>
+              <select name="bad_luck_threshold" class="w-full mt-0.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[11px] px-2 py-1 font-mono">
+                <option value="2" {% if ext.get('bad_luck_threshold') == 2 %}selected{% endif %}>2 поражения подряд (строго)</option>
+                <option value="3" {% if ext.get('bad_luck_threshold', 3) == 3 or not ext.get('bad_luck_threshold') %}selected{% endif %}>3 поражения подряд (стандарт)</option>
+                <option value="4" {% if ext.get('bad_luck_threshold') == 4 %}selected{% endif %}>4 поражения подряд (мягко)</option>
+              </select>
+            </div>
+            <div>
+              <span class="text-[10px] text-[color:var(--text-secondary)]">Множитель штрафов при полосе:</span>
+              <select name="bad_luck_multiplier" class="w-full mt-0.5 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[11px] px-2 py-1 font-mono">
+                <option value="1.5" {% if ext.get('bad_luck_multiplier', 1.5) == 1.5 or not ext.get('bad_luck_multiplier') %}selected{% endif %}>x1.5 (полуторный)</option>
+                <option value="2.0" {% if ext.get('bad_luck_multiplier') == 2.0 %}selected{% endif %}>x2.0 (удвоенный)</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -997,15 +1052,18 @@
     <div class="mt-3 pt-3 border-t border-[color:var(--border)]">
       <div class="text-xs font-semibold text-[color:var(--text-secondary)] mb-2">Готовые пресеты в один клик:</div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button type="button" onclick="applySlotPreset('🚿 Утренний душ', 'every_n_days', 1, '08:00', 15, 30)" class="p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer">
+        <button type="button" class="slot-preset-btn p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer"
+          data-preset-name="🚿 Утренний душ" data-preset-type="every_n_days" data-preset-every="1" data-preset-time="08:00" data-preset-dur="15" data-preset-late="30">
           <div class="text-xs font-bold text-[color:var(--text)]">🚿 Утренний душ</div>
           <div class="text-[10px] text-[color:var(--text-muted)]">Каждый день в 08:00 на 15 мин</div>
         </button>
-        <button type="button" onclick="applySlotPreset('🛁 Вечерняя гигиена', 'every_n_days', 1, '21:00', 20, 30)" class="p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer">
+        <button type="button" class="slot-preset-btn p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer"
+          data-preset-name="🛁 Вечерняя гигиена" data-preset-type="every_n_days" data-preset-every="1" data-preset-time="21:00" data-preset-dur="20" data-preset-late="30">
           <div class="text-xs font-bold text-[color:var(--text)]">🛁 Вечерняя гигиена</div>
           <div class="text-[10px] text-[color:var(--text-muted)]">Каждый день в 21:00 на 20 мин</div>
         </button>
-        <button type="button" onclick="applySlotPreset('🧴 Осмотр и уход', 'every_n_days', 2, '19:00', 30, 45)" class="p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer">
+        <button type="button" class="slot-preset-btn p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer"
+          data-preset-name="🧴 Осмотр и уход" data-preset-type="every_n_days" data-preset-every="2" data-preset-time="19:00" data-preset-dur="30" data-preset-late="45">
           <div class="text-xs font-bold text-[color:var(--text)]">🧴 Осмотр и уход</div>
           <div class="text-[10px] text-[color:var(--text-muted)]">Каждые 2 дня в 19:00 на 30 мин</div>
         </button>
@@ -1115,15 +1173,18 @@
     <div class="mt-3 pt-3 border-t border-[color:var(--border)]">
       <div class="text-xs font-semibold text-[color:var(--text-secondary)] mb-2">Готовые пресеты заданий:</div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button type="button" onclick="applyTaskPreset('🔍 Проверка замка и посадки', 'daily', '10:00', 2, true)" class="p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer">
+        <button type="button" class="task-preset-btn p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer"
+          data-preset-title="🔍 Проверка замка и посадки" data-preset-sched="daily" data-preset-time="10:00" data-preset-due="2" data-preset-report="true">
           <div class="text-xs font-bold text-[color:var(--text)]">🔍 Проверка замка</div>
           <div class="text-[10px] text-[color:var(--text-muted)]">Ежедневно в 10:00 (окно 2ч, с отчетом)</div>
         </button>
-        <button type="button" onclick="applyTaskPreset('📝 Отчет о комфорте и ощущениях', 'daily', '20:00', 4, true)" class="p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer">
+        <button type="button" class="task-preset-btn p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer"
+          data-preset-title="📝 Отчет о комфорте и ощущениях" data-preset-sched="daily" data-preset-time="20:00" data-preset-due="4" data-preset-report="true">
           <div class="text-xs font-bold text-[color:var(--text)]">📝 Вечерний отчет</div>
           <div class="text-[10px] text-[color:var(--text-muted)]">Ежедневно в 20:00 (окно 4ч, с отчетом)</div>
         </button>
-        <button type="button" onclick="applyTaskPreset('🏃 Дисциплинарная разминка', 'daily', '12:00', 3, false)" class="p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer">
+        <button type="button" class="task-preset-btn p-2.5 rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-left transition cursor-pointer"
+          data-preset-title="🏃 Дисциплинарная разминка" data-preset-sched="daily" data-preset-time="12:00" data-preset-due="3" data-preset-report="false">
           <div class="text-xs font-bold text-[color:var(--text)]">🏃 Разминка</div>
           <div class="text-[10px] text-[color:var(--text-muted)]">Ежедневно в 12:00 (окно 3ч)</div>
         </button>
@@ -1157,7 +1218,7 @@
           <input id="task-rule-due-hours" name="due_window_hours" type="number" min="1" max="72" value="2" class="w-full mt-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] text-sm px-3 py-2">
           <div class="flex items-center gap-1 mt-1.5 flex-wrap">
             {% for h in [1, 2, 4, 8, 12, 24] %}
-            <button type="button" onclick="document.getElementById('task-rule-due-hours').value = {{ h }};" class="px-1.5 py-0.5 rounded bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-[10px] font-mono text-[color:var(--text-secondary)] cursor-pointer">
+            <button type="button" class="task-hours-btn px-1.5 py-0.5 rounded bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface-raised)] border border-[color:var(--border)] text-[10px] font-mono text-[color:var(--text-secondary)] cursor-pointer" data-hours="{{ h }}">
               {{ h }}ч
             </button>
             {% endfor %}
@@ -1190,11 +1251,18 @@
   {% endif %}
 
   <!-- Slot rules -->
-  {% if slot_rules %}
-  <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.locktimer_slot_rules or "Slot Rules" }}
-      {% if session.state == 'draft' %}<span class="text-xs font-normal text-[color:var(--text-muted)]">({{ t.locktimer_drag_hint or "drag to reorder" }})</span>{% endif %}
-    </h2>
+  <section id="slot-rules-section" class="space-y-3 {% if not slot_rules and session.state != 'draft' %}hidden{% endif %}">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.locktimer_slot_rules or "Окна гигиены / снятия" }}
+        {% if session.state == 'draft' %}<span class="text-xs font-normal text-[color:var(--text-muted)]">({{ t.locktimer_drag_hint or "перетащите для сортировки" }})</span>{% endif %}
+      </h2>
+      <span id="slot-rules-count-badge" class="px-2 py-0.5 rounded-md text-xs font-mono bg-[color:var(--surface-soft)] text-[color:var(--text-muted)] border border-[color:var(--border)]">
+        {{ slot_rules|length }}
+      </span>
+    </div>
+    <div id="slot-rules-empty" class="text-xs text-[color:var(--text-muted)] p-3 rounded-lg border border-dashed border-[color:var(--border)] text-center {% if slot_rules %}hidden{% endif %}">
+      Окна гигиены пока не добавлены. Добавьте окно снятия выше.
+    </div>
     <div id="slot-rules-list" class="grid gap-2">
       {% for r in slot_rules %}
       <div class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-sm flex items-center justify-between
@@ -1205,30 +1273,35 @@
           {% if session.state == 'draft' %}<span class="text-[color:var(--text-muted)] select-none" aria-hidden="true">⠿</span>{% endif %}
           <span class="font-medium text-[color:var(--text)]">{{ r.name }}</span>
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded pl-accent-soft">{{ r.rule_type }}</span>
-          <span class="ml-1 text-[color:var(--text-secondary)]">{{ r.duration_seconds }}s</span>
+          <span class="ml-1 text-[color:var(--text-secondary)] font-mono">{{ (r.duration_seconds // 60) if r.duration_seconds >= 60 else r.duration_seconds }} {{ 'мин' if r.duration_seconds >= 60 else 'с' }}</span>
           {% if r.care_product_ids %}
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded pl-surface-soft border border-[color:var(--border)]">{{ icon('comfort', 'w-3 h-3 inline') }} {{ r.care_product_ids|length }}</span>
           {% endif %}
         </div>
         {% if session.state == 'draft' %}
-        <form action="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" method="post" class="inline" data-confirm="Delete this rule?">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer">{{ icon('close', 'w-3.5 h-3.5') }}</button>
-        </form>
+        <button type="button" class="rule-delete-btn text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer p-1 rounded hover:bg-rose-500/10" data-delete-url="/api/v2/locktimer/sessions/{{ session.id }}/slot-rules/{{ r.id }}/delete" title="Удалить правило">
+          {{ icon('close', 'w-3.5 h-3.5') }}
+        </button>
         {% endif %}
       </div>
       {% endfor %}
     </div>
   </section>
-  {% endif %}
 
 
   <!-- Task rules -->
-  {% if task_rules %}
-  <section class="space-y-3">
-    <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.locktimer_task_rules or "Task Rules" }}
-      {% if session.state == 'draft' %}<span class="text-xs font-normal text-[color:var(--text-muted)]">({{ t.locktimer_drag_hint or "drag to reorder" }})</span>{% endif %}
-    </h2>
+  <section id="task-rules-section" class="space-y-3 {% if not task_rules and session.state != 'draft' %}hidden{% endif %}">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.locktimer_task_rules or "Обязательные задания" }}
+        {% if session.state == 'draft' %}<span class="text-xs font-normal text-[color:var(--text-muted)]">({{ t.locktimer_drag_hint or "перетащите для сортировки" }})</span>{% endif %}
+      </h2>
+      <span id="task-rules-count-badge" class="px-2 py-0.5 rounded-md text-xs font-mono bg-[color:var(--surface-soft)] text-[color:var(--text-muted)] border border-[color:var(--border)]">
+        {{ task_rules|length }}
+      </span>
+    </div>
+    <div id="task-rules-empty" class="text-xs text-[color:var(--text-muted)] p-3 rounded-lg border border-dashed border-[color:var(--border)] text-center {% if task_rules %}hidden{% endif %}">
+      Обязательные задания пока не добавлены. Добавьте задание выше.
+    </div>
     <div id="task-rules-list" class="grid gap-2">
       {% for r in task_rules %}
       <div class="pl-surface rounded-lg border border-[color:var(--border)] p-3 text-sm flex items-center justify-between
@@ -1242,19 +1315,20 @@
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 inline-flex items-center gap-1">{{ icon('medication', 'w-3 h-3') }}relief</span>
           {% endif %}
           <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">{{ r.schedule_type }}</span>
-          <span class="ml-1 text-[color:var(--text-secondary)]">{{ r.due_window_seconds }}s</span>
+          <span class="ml-1 text-[color:var(--text-secondary)] font-mono">{{ (r.due_window_seconds // 3600) if r.due_window_seconds >= 3600 else (r.due_window_seconds // 60) }} {{ 'ч' if r.due_window_seconds >= 3600 else 'мин' }}</span>
+          {% if r.requires_report %}
+          <span class="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">отчет</span>
+          {% endif %}
         </div>
         {% if session.state == 'draft' %}
-        <form action="/api/v2/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" method="post" class="inline" data-confirm="Delete this rule?">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-          <button type="submit" class="text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer">{{ icon('close', 'w-3.5 h-3.5') }}</button>
-        </form>
+        <button type="button" class="rule-delete-btn text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer p-1 rounded hover:bg-rose-500/10" data-delete-url="/api/v2/locktimer/sessions/{{ session.id }}/task-rules/{{ r.id }}/delete" title="Удалить правило">
+          {{ icon('close', 'w-3.5 h-3.5') }}
+        </button>
         {% endif %}
       </div>
       {% endfor %}
     </div>
   </section>
-  {% endif %}
 
   <!-- Slot occurrences -->
   {% if slot_occurrences %}
@@ -1816,6 +1890,56 @@ function applyTaskPreset(title, scheduleType, timeOfDay, dueHours, requiresRepor
   if (repEl) repEl.checked = !!requiresReport;
 }
 
+// Preset event listeners (CSP-compliant without inline onclick)
+document.querySelectorAll('.slot-preset-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    applySlotPreset(
+      btn.getAttribute('data-preset-name'),
+      btn.getAttribute('data-preset-type'),
+      btn.getAttribute('data-preset-every'),
+      btn.getAttribute('data-preset-time'),
+      btn.getAttribute('data-preset-dur'),
+      btn.getAttribute('data-preset-late')
+    );
+  });
+});
+
+document.querySelectorAll('.task-preset-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    applyTaskPreset(
+      btn.getAttribute('data-preset-title'),
+      btn.getAttribute('data-preset-sched'),
+      btn.getAttribute('data-preset-time'),
+      btn.getAttribute('data-preset-due'),
+      btn.getAttribute('data-preset-report') === 'true'
+    );
+  });
+});
+
+document.querySelectorAll('.task-hours-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var dueInp = document.getElementById('task-rule-due-hours');
+    if (dueInp) dueInp.value = btn.getAttribute('data-hours');
+  });
+});
+
+document.querySelectorAll('.verif-freq-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var inp = document.getElementById('verification-frequency-input');
+    if (inp) inp.value = btn.getAttribute('data-hours');
+  });
+});
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Penalty Tasks Configuration from Catalog (ADR-204)
 var penaltyTasksList = [];
 try {
@@ -1881,9 +2005,10 @@ function renderPenaltyTasks() {
     delBtn.className = 'text-[color:var(--text-muted)] hover:text-red-400 text-base font-bold p-1 rounded transition cursor-pointer flex-shrink-0 leading-none';
     delBtn.title = 'Удалить задание';
     delBtn.innerHTML = '&times;';
-    delBtn.onclick = function() {
+    delBtn.setAttribute('data-penalty-idx', idx);
+    delBtn.addEventListener('click', function() {
       removePenaltyTaskItem(idx);
-    };
+    });
 
     row.appendChild(left);
     row.appendChild(delBtn);
@@ -1895,14 +2020,14 @@ function renderPenaltyTasks() {
 function addPenaltyTaskItem() {
   var sel = document.getElementById('new-penalty-entity-select');
   if (!sel || !sel.value) {
-    alert('Пожалуйста, выберите активность из списка');
+    alert('Пожалуйста, выберите активность из каталога');
     return;
   }
   var opt = sel.options[sel.selectedIndex];
   var entId = sel.value;
   var name = opt.getAttribute('data-name') || opt.textContent.trim();
   var violation = document.getElementById('new-penalty-violation').value || 'any';
-  var val = parseInt(document.getElementById('new-penalty-value').value, 10) || 30;
+  var val = parseInt(document.getElementById('new-penalty-value').value, 10) || 20;
   var unit = document.getElementById('new-penalty-unit').value || 'раз';
   var isDyn = document.getElementById('new-penalty-is-dynamic').checked;
 
@@ -1922,6 +2047,11 @@ function addPenaltyTaskItem() {
 function removePenaltyTaskItem(idx) {
   penaltyTasksList.splice(idx, 1);
   renderPenaltyTasks();
+}
+
+var addPenaltyBtn = document.getElementById('add-penalty-task-btn');
+if (addPenaltyBtn) {
+  addPenaltyBtn.addEventListener('click', addPenaltyTaskItem);
 }
 
 // Auto-fill unit & value when entity select changes
@@ -1955,5 +2085,306 @@ function removePenaltyTaskItem(idx) {
     });
   }
 })();
+
+{% if session.state == 'draft' %}
+// Draft Session Interactive Management (ADR-203 / Seamless Rules)
+(function() {
+  var sessionId = '{{ session.id }}';
+
+  var draftForm = document.getElementById('draft-config-form');
+  var storageKey = 'locktimer_draft_v2_' + sessionId;
+
+  // LocalStorage autosave
+  function saveToLocal() {
+    if (!draftForm) return;
+    try {
+      var data = {};
+      var fd = new FormData(draftForm);
+      for (var pair of fd.entries()) {
+        data[pair[0]] = pair[1];
+      }
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch(e) {}
+  }
+
+  // Restore from LocalStorage if fields empty/default
+  try {
+    var saved = localStorage.getItem(storageKey);
+    if (saved && draftForm) {
+      var parsed = JSON.parse(saved);
+      for (var k in parsed) {
+        var el = draftForm.elements[k];
+        if (el) {
+          if (el.type === 'checkbox') {
+            el.checked = (parsed[k] === 'true' || parsed[k] === 'on');
+          } else if (el.type !== 'submit' && el.type !== 'button') {
+            if (!el.value || el.value === el.defaultValue) {
+              el.value = parsed[k];
+            }
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // Server async save helper
+  function saveDraftToServer(callback) {
+    if (!draftForm) {
+      if (callback) callback();
+      return;
+    }
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    var csrfValue = csrf ? csrf.getAttribute('content') : '';
+    var fd = new FormData(draftForm);
+    if (!fd.has('csrf_token') && csrfValue) {
+      fd.append('csrf_token', csrfValue);
+    }
+    fetch('/api/v2/locktimer/sessions/' + sessionId + '/update', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-Token': csrfValue
+      },
+      body: fd
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (callback) callback(null, res);
+    })
+    .catch(function(err) {
+      if (callback) callback(err);
+    });
+  }
+
+  var autoSaveTimer = null;
+  if (draftForm) {
+    draftForm.addEventListener('input', function() {
+      saveToLocal();
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function() {
+        saveDraftToServer();
+      }, 1500);
+    });
+    draftForm.addEventListener('change', function() {
+      saveToLocal();
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function() {
+        saveDraftToServer();
+      }, 1500);
+    });
+  }
+
+  // Append Slot Rule to DOM without page reload
+  function appendSlotRuleToDOM(rule) {
+    var list = document.getElementById('slot-rules-list');
+    var emptyEl = document.getElementById('slot-rules-empty');
+    if (emptyEl) emptyEl.classList.add('hidden');
+    if (!list) return;
+
+    var durMins = rule.duration_minutes || Math.round((rule.duration_seconds || 1200) / 60);
+    var div = document.createElement('div');
+    div.className = 'pl-surface rounded-lg border border-[color:var(--border)] p-3 text-sm flex items-center justify-between cursor-grab active:cursor-grabbing';
+    div.setAttribute('data-rule-id', rule.id);
+    div.setAttribute('data-rule-type', 'slot');
+    div.draggable = true;
+
+    div.innerHTML = '<div class="flex items-center gap-2 min-w-0">' +
+      '<span class="text-[color:var(--text-muted)] select-none" aria-hidden="true">\u283f</span>' +
+      '<span class="font-medium text-[color:var(--text)]">' + escapeHtml(rule.name) + '</span>' +
+      '<span class="ml-1 px-1.5 py-0.5 text-xs rounded pl-accent-soft">' + escapeHtml(rule.rule_type) + '</span>' +
+      '<span class="ml-1 text-[color:var(--text-secondary)] font-mono">' + durMins + ' мин</span>' +
+      '</div>' +
+      '<button type="button" class="rule-delete-btn text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer p-1 rounded hover:bg-rose-500/10" data-delete-url="/api/v2/locktimer/sessions/' + sessionId + '/slot-rules/' + rule.id + '/delete" title="Удалить правило">' +
+      '✕' +
+      '</button>';
+
+    list.appendChild(div);
+    updateRulesCounters();
+  }
+
+  // Append Task Rule to DOM without page reload
+  function appendTaskRuleToDOM(rule) {
+    var list = document.getElementById('task-rules-list');
+    var emptyEl = document.getElementById('task-rules-empty');
+    if (emptyEl) emptyEl.classList.add('hidden');
+    if (!list) return;
+
+    var dueHours = rule.due_window_hours || Math.round((rule.due_window_seconds || 7200) / 3600);
+    var div = document.createElement('div');
+    div.className = 'pl-surface rounded-lg border border-[color:var(--border)] p-3 text-sm flex items-center justify-between cursor-grab active:cursor-grabbing';
+    div.setAttribute('data-rule-id', rule.id);
+    div.setAttribute('data-rule-type', 'task');
+    div.draggable = true;
+
+    div.innerHTML = '<div class="flex items-center gap-2 min-w-0">' +
+      '<span class="text-[color:var(--text-muted)] select-none" aria-hidden="true">\u283f</span>' +
+      '<span class="font-medium text-[color:var(--text)]">' + escapeHtml(rule.title) + '</span>' +
+      '<span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-purple-50 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">' + escapeHtml(rule.schedule_type) + '</span>' +
+      '<span class="ml-1 text-[color:var(--text-secondary)] font-mono">' + dueHours + 'ч</span>' +
+      (rule.requires_report ? '<span class="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">отчет</span>' : '') +
+      '</div>' +
+      '<button type="button" class="rule-delete-btn text-[color:var(--danger)] hover:opacity-80 text-xs cursor-pointer p-1 rounded hover:bg-rose-500/10" data-delete-url="/api/v2/locktimer/sessions/' + sessionId + '/task-rules/' + rule.id + '/delete" title="Удалить правило">' +
+      '✕' +
+      '</button>';
+
+    list.appendChild(div);
+    updateRulesCounters();
+  }
+
+  function updateRulesCounters() {
+    var slotCount = document.querySelectorAll('#slot-rules-list [data-rule-id]').length;
+    var slotBadge = document.getElementById('slot-rules-count-badge');
+    var slotEmpty = document.getElementById('slot-rules-empty');
+    if (slotBadge) slotBadge.textContent = slotCount;
+    if (slotEmpty) {
+      if (slotCount > 0) slotEmpty.classList.add('hidden');
+      else slotEmpty.classList.remove('hidden');
+    }
+
+    var taskCount = document.querySelectorAll('#task-rules-list [data-rule-id]').length;
+    var taskBadge = document.getElementById('task-rules-count-badge');
+    var taskEmpty = document.getElementById('task-rules-empty');
+    if (taskBadge) taskBadge.textContent = taskCount;
+    if (taskEmpty) {
+      if (taskCount > 0) taskEmpty.classList.add('hidden');
+      else taskEmpty.classList.remove('hidden');
+    }
+  }
+
+  // Intercept Slot Rule form submit
+  var slotForm = document.getElementById('slot-rule-form');
+  if (slotForm) {
+    slotForm.addEventListener('submit', function(ev) {
+      ev.preventDefault();
+      var btn = slotForm.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+
+      saveDraftToServer(function() {
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        var csrfValue = csrf ? csrf.getAttribute('content') : '';
+        var fd = new FormData(slotForm);
+        if (!fd.has('csrf_token') && csrfValue) {
+          fd.append('csrf_token', csrfValue);
+        }
+        fetch(slotForm.action, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-Token': csrfValue
+          },
+          body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (btn) btn.disabled = false;
+          if (data && data.rule) {
+            appendSlotRuleToDOM(data.rule);
+            slotForm.reset();
+            var det = slotForm.closest('details');
+            if (det) det.open = false;
+            showActionResult('✅ Окно снятия успешно добавлено!');
+          } else {
+            showActionResult((data && data.detail) || 'Не удалось добавить окно', true);
+          }
+        })
+        .catch(function() {
+          if (btn) btn.disabled = false;
+          showActionResult('Ошибка при добавлении окна', true);
+        });
+      });
+    });
+  }
+
+  // Intercept Task Rule form submit
+  var taskForm = document.getElementById('task-rule-form');
+  if (taskForm) {
+    taskForm.addEventListener('submit', function(ev) {
+      ev.preventDefault();
+      var btn = taskForm.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+
+      saveDraftToServer(function() {
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        var csrfValue = csrf ? csrf.getAttribute('content') : '';
+        var fd = new FormData(taskForm);
+        if (!fd.has('csrf_token') && csrfValue) {
+          fd.append('csrf_token', csrfValue);
+        }
+        fetch(taskForm.action, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-Token': csrfValue
+          },
+          body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (btn) btn.disabled = false;
+          if (data && data.rule) {
+            appendTaskRuleToDOM(data.rule);
+            taskForm.reset();
+            var det = taskForm.closest('details');
+            if (det) det.open = false;
+            showActionResult('✅ Обязательное задание успешно добавлено!');
+          } else {
+            showActionResult((data && data.detail) || 'Не удалось добавить задание', true);
+          }
+        })
+        .catch(function() {
+          if (btn) btn.disabled = false;
+          showActionResult('Ошибка при добавлении задания', true);
+        });
+      });
+    });
+  }
+
+  // Intercept Rule Deletion
+  document.addEventListener('click', function(ev) {
+    var delBtn = ev.target.closest('.rule-delete-btn');
+    if (!delBtn) return;
+    ev.preventDefault();
+    if (!confirm('Удалить это правило из черновика?')) return;
+    var url = delBtn.getAttribute('data-delete-url');
+    if (!url) return;
+    var card = delBtn.closest('[data-rule-id]');
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    var csrfValue = csrf ? csrf.getAttribute('content') : '';
+    delBtn.disabled = true;
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-Token': csrfValue,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'csrf_token=' + encodeURIComponent(csrfValue)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.status === 'deleted') {
+        if (card) {
+          card.style.transition = 'opacity 0.2s, transform 0.2s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.95)';
+          setTimeout(function() {
+            card.remove();
+            updateRulesCounters();
+          }, 200);
+        }
+        showActionResult('Правило удалено');
+      } else {
+        delBtn.disabled = false;
+        showActionResult((data && data.detail) || 'Ошибка при удалении правила', true);
+      }
+    })
+    .catch(function() {
+      delBtn.disabled = false;
+      showActionResult('Ошибка запроса на удаление', true);
+    });
+  });
+})();
+{% endif %}
 </script>
 {% endblock %}

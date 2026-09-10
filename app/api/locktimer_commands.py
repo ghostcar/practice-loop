@@ -454,7 +454,7 @@ async def api_add_slot_rule(
             # JSON-колонка: храним строки (UUID не сериализуется в JSON)
             care_uuids = [str(x) for x in parsed]
 
-    await add_slot_rule(
+    rule = await add_slot_rule(
         db,
         session_id=session_id,
         name=name,
@@ -470,7 +470,19 @@ async def api_add_slot_rule(
 
     return action_response(
         request,
-        json_body={"status": "created", "session_id": str(session_id)},
+        json_body={
+            "status": "created",
+            "session_id": str(session_id),
+            "rule": {
+                "id": str(rule.id),
+                "name": rule.name,
+                "rule_type": rule.rule_type,
+                "duration_seconds": rule.duration_seconds,
+                "duration_minutes": rule.duration_seconds // 60,
+                "schedule": rule.schedule,
+                "care_product_ids": rule.care_product_ids or [],
+            },
+        },
         redirect_url=f"/locktimer/sessions/{session_id}",
     )
 
@@ -509,7 +521,7 @@ async def api_add_task_rule(
     if not schedule:
         schedule = {"time_of_day": (time_of_day or "09:00").strip()}
 
-    await add_task_rule(
+    rule = await add_task_rule(
         db,
         session_id=session_id,
         title=title,
@@ -521,7 +533,18 @@ async def api_add_task_rule(
 
     return action_response(
         request,
-        json_body={"status": "created", "session_id": str(session_id)},
+        json_body={
+            "status": "created",
+            "session_id": str(session_id),
+            "rule": {
+                "id": str(rule.id),
+                "title": rule.title,
+                "schedule_type": rule.schedule_type,
+                "due_window_seconds": rule.due_window_seconds,
+                "due_window_hours": rule.due_window_seconds // 3600 if rule.due_window_seconds else 1,
+                "requires_report": rule.requires_report,
+            },
+        },
         redirect_url=f"/locktimer/sessions/{session_id}",
     )
 
@@ -704,6 +727,14 @@ async def api_update_draft(
     game_challenges_enabled: bool = Form(default=False),
     game_time_jumps_enabled: bool = Form(default=False),
     bad_luck_escalation_enabled: bool = Form(default=False),
+    wheel_cooldown_hours: int | None = Form(default=None),
+    allow_freeze_sectors: bool = Form(default=True),
+    allow_pillory_sectors: bool = Form(default=True),
+    dice_cooldown_hours: int | None = Form(default=None),
+    challenge_deadline_minutes: int | None = Form(default=None),
+    pillory_on_challenge_fail: bool = Form(default=True),
+    bad_luck_threshold: int | None = Form(default=None),
+    bad_luck_multiplier: float | None = Form(default=None),
     pillory_enabled: bool = Form(default=False),
     pillory_auto_extend: bool = Form(default=False),
     pillory_extend_minutes: int | None = Form(default=None),
@@ -811,6 +842,36 @@ async def api_update_draft(
         "time_jumps": bool(game_time_jumps_enabled),
     }
     ext_state["bad_luck_escalation_enabled"] = bool(bad_luck_escalation_enabled)
+    ext_state["wheel_cooldown_hours"] = (
+        wheel_cooldown_hours if wheel_cooldown_hours is not None else ext_state.get("wheel_cooldown_hours", 2)
+    )
+    ext_state["allow_freeze_sectors"] = bool(allow_freeze_sectors)
+    ext_state["allow_pillory_sectors"] = bool(allow_pillory_sectors)
+    ext_state["dice_cooldown_hours"] = (
+        dice_cooldown_hours if dice_cooldown_hours is not None else ext_state.get("dice_cooldown_hours", 1)
+    )
+    ext_state["challenge_deadline_minutes"] = (
+        challenge_deadline_minutes
+        if challenge_deadline_minutes is not None
+        else ext_state.get("challenge_deadline_minutes", 45)
+    )
+    ext_state["pillory_on_challenge_fail"] = bool(pillory_on_challenge_fail)
+    ext_state["bad_luck_threshold"] = (
+        bad_luck_threshold if bad_luck_threshold is not None else ext_state.get("bad_luck_threshold", 3)
+    )
+    ext_state["bad_luck_multiplier"] = (
+        bad_luck_multiplier if bad_luck_multiplier is not None else ext_state.get("bad_luck_multiplier", 1.5)
+    )
+    ext_state["config"] = {
+        "wheel_cooldown_hours": ext_state["wheel_cooldown_hours"],
+        "allow_freeze_sectors": ext_state["allow_freeze_sectors"],
+        "allow_pillory_sectors": ext_state["allow_pillory_sectors"],
+        "dice_cooldown_hours": ext_state["dice_cooldown_hours"],
+        "challenge_deadline_minutes": ext_state["challenge_deadline_minutes"],
+        "pillory_on_challenge_fail": ext_state["pillory_on_challenge_fail"],
+        "bad_luck_threshold": ext_state["bad_luck_threshold"],
+        "bad_luck_multiplier": ext_state["bad_luck_multiplier"],
+    }
     fields["extensions_state"] = ext_state
 
     # Pillory integration

@@ -22,6 +22,16 @@ def is_bearer_request(request: Request) -> bool:
     return auth.lower().startswith("bearer ")
 
 
+def is_json_requested(request: Request) -> bool:
+    """True when client explicitly requests JSON via Bearer, Accept or AJAX header."""
+    if is_bearer_request(request):
+        return True
+    accept = request.headers.get("accept", "").lower()
+    if "application/json" in accept:
+        return True
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
 def action_response(
     request: Request,
     *,
@@ -29,7 +39,8 @@ def action_response(
     redirect_url: str,
     status_code: int = 303,
 ):
-    """Return JSON for bearer/API clients, redirect for HTMX forms."""
-    if is_bearer_request(request):
+    """Return JSON for bearer/API clients and AJAX, redirect for HTML forms."""
+    if is_json_requested(request):
         return JSONResponse(json_body)
     return RedirectResponse(redirect_url, status_code=status_code)
+
