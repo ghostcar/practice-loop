@@ -20,10 +20,10 @@
             <p class="pl-text-secondary text-sm mt-1">{{ t.med_subtitle }}</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" onclick="document.getElementById('prn-modal').showModal()" class="pl-surface border border-[color:var(--accent)] text-[color:var(--accent-text)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px] hover:bg-[color:var(--accent-soft)] transition-colors">
+            <button type="button" id="btn-open-prn-modal" class="pl-surface border border-[color:var(--accent)] text-[color:var(--accent-text)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px] hover:bg-[color:var(--accent-soft)] transition-colors">
                 {{ icon('flame', 'w-4 h-4 text-amber-500') }} ⚡ Ситуативный приём
             </button>
-            <button type="button" onclick="document.getElementById('course-wizard-modal').showModal()" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px] hover:border-[color:var(--accent)] transition-colors">
+            <button type="button" id="btn-open-course-wizard" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px] hover:border-[color:var(--accent)] transition-colors">
                 {{ icon('sparkles', 'w-4 h-4 text-purple-400') }} ИИ-Мастер курсов
             </button>
             <a href="/medications/export" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
@@ -1942,7 +1942,7 @@
                     <p class="text-xs pl-text-muted">Внеплановый приём (от боли, спазма, давления) со списанием остатка</p>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('prn-modal').close()" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+            <button type="button" id="prn-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
                 {{ icon('delete', 'w-4 h-4') }}
             </button>
         </div>
@@ -1987,7 +1987,7 @@
             </div>
 
             <div class="pt-2 flex items-center justify-end gap-2 border-t border-[color:var(--border)]">
-                <button type="button" onclick="document.getElementById('prn-modal').close()" class="px-4 py-2 rounded-lg text-xs font-medium border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] min-h-[40px]">
+                <button type="button" id="prn-modal-cancel" class="px-4 py-2 rounded-lg text-xs font-medium border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] min-h-[40px]">
                     Отмена
                 </button>
                 <button type="submit" class="px-4 py-2 rounded-lg text-xs font-medium bg-[color:var(--accent)] text-white hover:opacity-90 min-h-[40px] inline-flex items-center gap-1.5">
@@ -2013,7 +2013,7 @@
                     <p class="text-xs pl-text-muted">Индивидуальный подбор протоколов, разбиение на фазы и проверка совместимости</p>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('course-wizard-modal').close()" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+            <button type="button" id="course-wizard-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
                 {{ icon('delete', 'w-4 h-4') }}
             </button>
         </div>
@@ -2078,10 +2078,13 @@
                 <div id="wizard-phases-list" class="space-y-3"></div>
 
                 <!-- Кнопка применить в 1 клик -->
-                <form action="/med-courses/apply-wizard" method="post" id="wizard-apply-form" class="pt-2 flex justify-end">
+                <form action="/med-courses/apply-wizard" method="post" id="wizard-apply-form" class="pt-2 flex items-center justify-end gap-2">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                     <input type="hidden" name="course_data" id="wizard-course-data-hidden" value="">
                     <input type="hidden" name="kit_id" id="wizard-kit-id-hidden" value="">
+                    <button type="button" id="course-wizard-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] min-h-[44px]">
+                        Отмена
+                    </button>
                     <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white inline-flex items-center gap-2 min-h-[44px]">
                         {{ icon('check', 'w-4 h-4') }} Создать курс и расписания в 1 клик
                     </button>
@@ -2592,6 +2595,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const kitStockM = setupModal('kit-stock-modal', 'kit-stock-modal-close', 'kit-stock-btn-cancel');
     const courseEditM = setupModal('course-edit-modal', 'course-edit-modal-close', 'course-edit-btn-cancel');
     const courseItemM = setupModal('course-item-modal', 'course-item-modal-close', 'course-item-btn-cancel');
+    const prnM = setupModal('prn-modal', 'prn-modal-close', 'prn-modal-cancel');
+    const courseWizardM = setupModal('course-wizard-modal', 'course-wizard-modal-close', 'course-wizard-btn-cancel');
+
+    const btnOpenPrn = document.getElementById('btn-open-prn-modal');
+    if (btnOpenPrn && prnM) {
+        btnOpenPrn.addEventListener('click', function() { prnM.open(); });
+    }
+
+    const btnOpenWizard = document.getElementById('btn-open-course-wizard');
+    if (btnOpenWizard && courseWizardM) {
+        btnOpenWizard.addEventListener('click', function() { courseWizardM.open(); });
+    }
 
     // 1. Настройка аптечки
     document.querySelectorAll('.btn-open-kit-edit').forEach(function(btn) {
@@ -3520,10 +3535,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fd = new FormData();
                 fd.append('goal', goal);
                 fd.append('custom_prompt', prompt);
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                 const csrfInput = document.querySelector('input[name="csrf_token"]');
-                if (csrfInput) fd.append('csrf_token', csrfInput.value);
+                const csrfVal = (csrfMeta && csrfMeta.content) || (csrfInput && csrfInput.value) || '';
+                if (csrfVal) fd.append('csrf_token', csrfVal);
 
-                const res = await fetch('/med-courses/generate-wizard', { method: 'POST', body: fd });
+                const res = await fetch('/med-courses/generate-wizard', {
+                    method: 'POST',
+                    headers: csrfVal ? { 'X-CSRF-Token': csrfVal } : {},
+                    body: fd
+                });
+                if (!res.ok) {
+                    let errMsg = 'HTTP ' + res.status;
+                    try {
+                        const errJson = await res.json();
+                        errMsg = errJson.detail || errJson.message || errMsg;
+                    } catch (_) {}
+                    alert('Ошибка генерации: ' + errMsg);
+                    return;
+                }
                 const data = await res.json();
                 if (data.status === 'ok' && data.data) {
                     const d = data.data;
