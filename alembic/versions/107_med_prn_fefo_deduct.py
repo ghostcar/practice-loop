@@ -1,6 +1,6 @@
 """Medication PRN, kit binding and stock deduction fields (ADR-207).
 
-Revision ID: 107_med_prn_kit_and_stock_deduction
+Revision ID: 107_med_prn_fefo_deduct
 Revises: 106_omni_pillory_sessions
 Create Date: 2026-09-10
 """
@@ -12,7 +12,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "107_med_prn_kit_and_stock_deduction"
+revision: str = "107_med_prn_fefo_deduct"
 down_revision: str | None = "106_omni_pillory_sessions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

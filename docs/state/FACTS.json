@@ -3,7 +3,7 @@
     "checked_at": "2026-09-10T04:12:22Z",
     "command": "alembic heads",
     "heads": [
-      "107_med_prn_kit_and_stock_deduction"
+      "107_med_prn_fefo_deduct"
     ]
   },
   "artifacts": [],
@@ -12,8 +12,8 @@
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
-    "diff_hash": null,
-    "dirty": false,
+    "diff_hash": "sha256:c2ec75332dcb59c5bdbc589b565f1afb7f71d3f7c9197c45b60af3caf3d5b7d4",
+    "dirty": true,
     "head": "c6090c854c2be93679eb5a31a95c7b7a139eafa4"
   },
   "kind": "fact_manifest",
