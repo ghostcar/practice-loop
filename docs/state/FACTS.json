@@ -1,6 +1,6 @@
 {
   "alembic": {
-    "checked_at": "2026-09-10T09:44:11Z",
+    "checked_at": "2026-09-10T09:55:32Z",
     "command": "alembic heads",
     "heads": [
       "107_med_prn_fefo_deduct"
@@ -8,13 +8,13 @@
   },
   "artifacts": [],
   "ci": [],
-  "generated_at": "2026-09-10T09:44:11Z",
+  "generated_at": "2026-09-10T09:55:32Z",
   "generator_version": "0.1.0",
   "git": {
     "branch": "main",
     "diff_hash": null,
-    "dirty": true,
-    "head": "bd308f59e0f22e50d1fa70d1f7a58a58f520ebbc"
+    "dirty": false,
+    "head": "d19b7de2519768f016ab3bc827015a3e16b82837"
   },
   "kind": "fact_manifest",
   "repository": "ghostcar/practice-loop",
