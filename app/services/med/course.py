@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.medication import (
     COURSE_STATUSES,
     MedCourse,
+    Medication,
+    MedIntake,
     MedSchedule,
     MedStock,
 )
@@ -55,7 +57,44 @@ async def create_course(
 
 async def delete_course(db: AsyncSession, user_id: uuid.UUID, course_id: uuid.UUID) -> None:
     c = await get_course(db, user_id, course_id)
+    schedules = (
+        await db.execute(
+            select(MedSchedule).where(
+                MedSchedule.course_id == course_id,
+                MedSchedule.user_id == user_id,
+            )
+        )
+    ).scalars().all()
+    med_ids_to_check = {s.medication_id for s in schedules}
+
+    for s in schedules:
+        await db.delete(s)
     await db.delete(c)
+    await db.flush()
+
+    # Если препараты были созданы мастером курсов исключительно под этот курс
+    # (без остатков в аптечках, других расписаний и истории приёмов), удаляем их,
+    # чтобы не засорять справочник лекарств после ошибочного создания.
+    for mid in med_ids_to_check:
+        m = (
+            await db.execute(
+                select(Medication).where(Medication.id == mid, Medication.user_id == user_id)
+            )
+        ).scalar_one_or_none()
+        if not m:
+            continue
+        if m.notes and (f"({c.name})" in m.notes or "Добавлено мастером курсов" in m.notes):
+            has_stock = (
+                await db.execute(select(MedStock.id).where(MedStock.medication_id == mid))
+            ).first() is not None
+            has_intake = (
+                await db.execute(select(MedIntake.id).where(MedIntake.medication_id == mid))
+            ).first() is not None
+            has_other_sched = (
+                await db.execute(select(MedSchedule.id).where(MedSchedule.medication_id == mid))
+            ).first() is not None
+            if not has_stock and not has_intake and not has_other_sched:
+                await db.delete(m)
     await db.flush()
 
 
@@ -65,6 +104,16 @@ async def set_course_status(db: AsyncSession, user_id: uuid.UUID, course_id: uui
         raise ValueError("Invalid course status")
     c.status = status
     c.is_active = status in ("active", "planned")
+    schedules = (
+        await db.execute(
+            select(MedSchedule).where(
+                MedSchedule.course_id == course_id,
+                MedSchedule.user_id == user_id,
+            )
+        )
+    ).scalars().all()
+    for s in schedules:
+        s.is_active = c.is_active
     await db.flush()
     return c
 
@@ -92,6 +141,16 @@ async def update_course(
     c.notes = (notes or "").strip() or None
     c.start_date = date.fromisoformat(start_date.strip()) if start_date.strip() else None
     c.end_date = date.fromisoformat(end_date.strip()) if end_date.strip() else None
+    schedules = (
+        await db.execute(
+            select(MedSchedule).where(
+                MedSchedule.course_id == course_id,
+                MedSchedule.user_id == user_id,
+            )
+        )
+    ).scalars().all()
+    for s in schedules:
+        s.is_active = c.is_active
     await db.flush()
     return c
 

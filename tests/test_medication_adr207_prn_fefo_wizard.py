@@ -269,3 +269,88 @@ async def test_fefo_no_blind_deduction_when_kit_exhausted_or_missing(db_session,
     assert intake3.stock_id == stock_other.id
     assert stock_other.quantity == 9.0  # Списано строго по явному выбору
 
+
+@pytest.mark.asyncio
+async def test_delete_course_cascades_and_removes_schedules_and_today_tasks(db_session, test_user):
+    """Тест каскадного удаления расписаний и задач дня при удалении курса."""
+    # 1. Применяем сгенерированный курс
+    raw_proto = await svc.generate_course_protocol(db_session, user_id=test_user.id, goal="hrt_lactation")
+    course = await svc.apply_generated_course(db_session, test_user.id, raw_proto, kit_id=None)
+    await db_session.commit()
+
+    # 2. Проверяем, что расписания созданы и видны в сводке на сегодня
+    schedules_before = (
+        await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == course.id))
+    ).scalars().all()
+    assert len(schedules_before) >= 4
+
+    summary_before = await svc.schedule_summary(db_session, test_user.id)
+    due_ids_before = {d["id"] for d in summary_before["due"]}
+    for s in schedules_before:
+        assert str(s.id) in due_ids_before
+
+    # 3. Удаляем курс
+    await svc.delete_course(db_session, test_user.id, course.id)
+    await db_session.commit()
+
+    # 4. Проверяем, что связанные расписания полностью удалены
+    schedules_after = (
+        await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == course.id))
+    ).scalars().all()
+    assert len(schedules_after) == 0
+
+    # Проверяем, что их нет и как осиротевших расписаний (course_id IS NULL)
+    deleted_sched_ids = [s.id for s in schedules_before]
+    orphans = (
+        await db_session.execute(select(MedSchedule).where(MedSchedule.id.in_(deleted_sched_ids)))
+    ).scalars().all()
+    assert len(orphans) == 0
+
+    # 5. Проверяем, что в расписании на сегодня задачи приема полностью исчезли
+    summary_after = await svc.schedule_summary(db_session, test_user.id)
+    due_ids_after = {d["id"] for d in summary_after["due"]}
+    for sid in deleted_sched_ids:
+        assert str(sid) not in due_ids_after
+
+    # 6. Проверяем, что автоматически созданные неиспользуемые лекарства удалены из справочника
+    for s in schedules_before:
+        m = (
+            await db_session.execute(select(Medication).where(Medication.id == s.medication_id))
+        ).scalar_one_or_none()
+        # Препарат без остатков и других назначений должен быть удален
+        assert m is None
+
+
+@pytest.mark.asyncio
+async def test_pause_course_deactivates_schedules_and_hides_from_today(db_session, test_user):
+    """Тест приостановки курса: расписания деактивируются и не попадают в план дня."""
+    med = Medication(user_id=test_user.id, name="Тестовый препарат курса", kind="medication")
+    db_session.add(med)
+    await db_session.flush()
+
+    course = await svc.create_course(db_session, user_id=test_user.id, name="Тестовый курс")
+    sched = await svc.create_schedule(
+        db_session,
+        user_id=test_user.id,
+        medication_id=med.id,
+        dose_quantity="1.0",
+        frequency_type="daily",
+        course_id=str(course.id),
+    )
+    await db_session.commit()
+
+    # Сначала активен
+    summary1 = await svc.schedule_summary(db_session, test_user.id)
+    assert any(d["id"] == str(sched.id) for d in summary1["due"])
+
+    # Ставим на паузу
+    await svc.set_course_status(db_session, test_user.id, course.id, "paused")
+    await db_session.commit()
+    await db_session.refresh(sched)
+
+    assert sched.is_active is False
+
+    # В сводке на сегодня исчез
+    summary2 = await svc.schedule_summary(db_session, test_user.id)
+    assert not any(d["id"] == str(sched.id) for d in summary2["due"])
+

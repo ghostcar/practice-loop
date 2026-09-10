@@ -50,7 +50,12 @@ async def schedule_summary(db: AsyncSession, user_id: uuid.UUID) -> dict:
         (
             await db.execute(
                 select(MedSchedule)
-                .where(MedSchedule.user_id == user_id, MedSchedule.is_active.is_(True))
+                .outerjoin(MedCourse, MedSchedule.course_id == MedCourse.id)
+                .where(
+                    MedSchedule.user_id == user_id,
+                    MedSchedule.is_active.is_(True),
+                    or_(MedSchedule.course_id.is_(None), MedCourse.is_active.is_(True)),
+                )
                 .order_by(MedSchedule.created_at)
             )
         )
