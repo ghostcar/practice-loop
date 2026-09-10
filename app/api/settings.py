@@ -36,6 +36,8 @@ async def settings_page(
     t = get_translations(locale)
     prefs = prefs_from_dict(user.prefs)
 
+    from app.services.discipline_engine import calc_effective_multiplier, get_user_discipline_state
+
     response = templates.TemplateResponse(
         request,
         "settings.html",
@@ -48,6 +50,8 @@ async def settings_page(
             "dash_blocks": DASH_BLOCKS,
             "settings": app_settings,
             "profile_modules": PROFILE_MODULES,
+            "discipline_state": get_user_discipline_state(user),
+            "effective_multiplier": calc_effective_multiplier(user),
         },
     )
     from app.security import ensure_csrf_cookie
@@ -76,6 +80,8 @@ async def save_settings(
     enabled_modules: list[str] = Form(default=[]),
     tab: str = Form("appearance"),
     med_gamification: str = Form("off"),
+    base_severity_multiplier: float = Form(1.0),
+    escalation_affects_routine_tasks: str = Form("off"),
 ):
     """Save the full preference form. Values are validated by ``sanitize_prefs``."""
     # Preserve onboarding_completed flag across saves (form doesn't carry it).
@@ -102,6 +108,11 @@ async def save_settings(
             # ADR-137: checkbox sends "on" only when checked; unchecked =
             # missing field → "off". Stored as bool by sanitize_prefs.
             "med_gamification": med_gamification == "on",
+            # ADR-206: cross-contour discipline settings
+            "base_severity_multiplier": base_severity_multiplier,
+            "escalation_affects_routine_tasks": escalation_affects_routine_tasks == "on",
+            "discipline_level": old_raw.get("discipline_level", 0),
+            "recovery_streak": old_raw.get("recovery_streak", 0),
             # P0: preserve onboarding flag
             "onboarding_completed": old_raw.get("onboarding_completed", False),
         }
@@ -111,6 +122,7 @@ async def save_settings(
     user.theme = raw["theme_choice"]
     user.prefs = raw
     db.add(user)
+    await db.flush()
 
     # Enabling a module is allowed only after its one-time consent. Save the
     # preference first, then route the user to the missing disclosures.

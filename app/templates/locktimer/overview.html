@@ -22,6 +22,12 @@
       <h1 class="text-2xl font-bold text-[color:var(--text)]">{{ t.locktimer_title }}</h1>
       <p class="text-sm text-[color:var(--text-secondary)] mt-1">{{ t.locktimer_subtitle }}</p>
     </div>
+    {% if drafts and drafts|length > 0 %}
+      <a href="/locktimer/sessions/{{ drafts[0].id }}"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-[color:var(--accent)] text-[color:var(--on-accent)] rounded-lg hover:opacity-90 transition text-sm font-medium cursor-pointer">
+        {{ icon('edit', 'w-4 h-4') }} {{ t.locktimer_open_draft or "Открыть черновик" }} (Сессия #{{ drafts[0].session_number or drafts[0].id[:8] }})
+      </a>
+    {% else %}
     <form action="/locktimer/new" method="post" class="inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
       <button type="submit"
@@ -29,6 +35,7 @@
         + {{ t.locktimer_new_session or "New Session" }}
       </button>
     </form>
+    {% endif %}
   </div>
 
   <!-- Active Session -->
@@ -174,16 +181,24 @@
     <h2 class="text-lg font-semibold text-[color:var(--text)]">{{ t.locktimer_drafts or "Drafts" }}</h2>
     <div class="grid gap-3">
       {% for d in drafts %}
-      <a href="/locktimer/sessions/{{ d.id }}"
-         class="block pl-surface rounded-lg border border-[color:var(--border)] p-4 hover:border-[color:var(--border-strong)] transition group">
-        <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between pl-surface rounded-lg border border-[color:var(--border)] p-4 hover:border-[color:var(--border-strong)] transition group">
+        <a href="/locktimer/sessions/{{ d.id }}" class="flex-1 flex items-center min-w-0 pr-4">
           <div>
-            <span class="text-sm font-medium text-[color:var(--text)]">{{ t.locktimer_session_label or "Session" }} {{ d.id[:8] }}</span>
+            <span class="text-sm font-semibold text-[color:var(--text)]">{{ d.display_name }}</span>
             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]">draft</span>
+            {% if d.duration_type %}<span class="ml-2 text-xs text-[color:var(--text-muted)] font-mono">{{ d.duration_type }}</span>{% endif %}
           </div>
-          <span class="text-[color:var(--text-muted)] group-hover:text-[color:var(--accent)] transition">→</span>
+        </a>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <form action="/api/v2/locktimer/sessions/{{ d.id }}/delete" method="post" data-confirm="{{ t.locktimer_delete_draft_confirm or 'Удалить этот черновик сессии? Действие необратимо.' }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <button type="submit" class="p-1.5 text-[color:var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded transition cursor-pointer" title="{{ t.locktimer_delete_draft or 'Удалить черновик' }}">
+              {{ icon('delete', 'w-4 h-4') }}
+            </button>
+          </form>
+          <a href="/locktimer/sessions/{{ d.id }}" class="text-[color:var(--text-muted)] group-hover:text-[color:var(--accent)] transition">→</a>
         </div>
-      </a>
+      </div>
       {% endfor %}
     </div>
   </section>
@@ -197,7 +212,7 @@
       {% for s in recent %}
       <a href="/locktimer/sessions/{{ s.id }}"
          class="flex items-center justify-between p-3 rounded-lg pl-surface border border-[color:var(--border)] hover:border-[color:var(--border-strong)] text-sm">
-        <span class="text-[color:var(--text)]">{{ s.id[:8] }} — {{ s.duration_type }}</span>
+        <span class="text-[color:var(--text)] font-medium">{{ s.display_name }} — {{ s.duration_type }}</span>
         <span class="px-2 py-0.5 text-xs rounded-full
           {% if s.state == 'active' %}bg-[color:var(--success-soft)] text-[color:var(--success)]
           {% elif s.state == 'completed' %}bg-[color:var(--info-soft)] text-[color:var(--info)]

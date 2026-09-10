@@ -73,6 +73,7 @@ from app.models.media import MediaAsset, MediaVerificationResult, VerificationCh
 from app.models.medication import Medication, MedIntake, MedKit, MedSchedule, MedStock  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
 from app.models.opt_in import UserEntityOptIn  # noqa: F401
+from app.models.pillory import PilloryEntry  # noqa: F401
 from app.models.points import PenaltyRedemption, PointsProfile, PointsTransaction  # noqa: F401
 from app.models.progress import UserProgress  # noqa: F401
 from app.models.push_device import PushDevice  # noqa: F401

@@ -27,8 +27,10 @@ from app.locktimer.services.drafts import (
     add_slot_rule,
     add_task_rule,
     create_draft,
+    delete_draft,
     delete_slot_rule,
     delete_task_rule,
+    get_user_draft,
     reorder_rules,
     update_draft,
 )
@@ -67,6 +69,8 @@ __all__ = [
     # drafts
     "_next_rule_sort_order",
     "create_draft",
+    "delete_draft",
+    "get_user_draft",
     "update_draft",
     "add_slot_rule",
     "add_task_rule",
@@ -509,6 +513,22 @@ async def skip_task(
             idempotency_key=f"skip:{occ.id}",
             now=now,
         )
+
+    # ADR-204: Assign disciplinary task from catalog if enabled
+    session = await db.get(LockSession, occ.session_id)
+    if session and (session.discipline_policy or {}).get("penalty_tasks_enabled"):
+        try:
+            from app.locktimer.services.penalty_tasks_service import assign_penalty_tasks_for_violation
+
+            await assign_penalty_tasks_for_violation(
+                db,
+                session=session,
+                violation_type="task_missed",
+                violation_count=1,
+                context={"occurrence_id": str(occ.id), "rule_id": str(occurrence.rule_id)},
+            )
+        except Exception as exc:
+            logger.warning("Failed to assign penalty task for skipped task: %s", exc)
 
     await db.flush()
     return occ

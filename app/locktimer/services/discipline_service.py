@@ -93,10 +93,11 @@ async def verify_session_photo_submission(
     tag_number: str,
     verification_code: str,
     notes: str | None = None,
+    photo_bytes: bytes | None = None,
 ) -> dict:
     """Verifies user photo submission with one-time verification code and seal tag.
 
-    Returns dict with success status, error details, and inspection log info.
+    Supports local OCR verification (ADR-205) and manual fallback (ADR-129).
     """
     now = datetime.now(UTC)
     session = await get_session(db, session_id, owner_id)
@@ -106,6 +107,20 @@ async def verify_session_photo_submission(
     challenge = await get_active_session_challenge(db, session_id, owner_id)
     if challenge is None:
         return {"success": False, "error": "Нет активного запроса на проверку. Запросите новый код."}
+
+    # Optional Local OCR inspection check (ADR-205)
+    ocr_details = ""
+    if photo_bytes and getattr(session, "verification_mode", None) == "local_ocr":
+        try:
+            from app.media.ocr_seals import extract_seal_tag_from_photo
+
+            ocr_res = extract_seal_tag_from_photo(photo_bytes, expected_tag=tag_number)
+            if ocr_res.get("is_match"):
+                ocr_details = f"[Локальный OCR: бирка {tag_number} подтверждена] "
+            else:
+                ocr_details = "[Локальный OCR: автопоиск неоднозначен, проверен ручной ввод] "
+        except Exception as exc:
+            logger.warning("Local OCR processing error: %s", exc)
 
     challenge.attempt_count += 1
     if not verify_code_constant_time(verification_code.strip(), challenge.code_hmac):
@@ -123,7 +138,8 @@ async def verify_session_photo_submission(
 
     # Record seal inspection
     from app.services.wear_reactive_service import record_seal_inspection
-    inspection_notes = f"Код проверки {verification_code.strip()} подтверждён. {notes or ''}".strip()
+
+    inspection_notes = f"{ocr_details}Код проверки {verification_code.strip()} подтверждён. {notes or ''}".strip()
     inspection = await record_seal_inspection(
         db,
         user_id=owner_id,
@@ -132,11 +148,20 @@ async def verify_session_photo_submission(
         notes=inspection_notes,
     )
 
+    # Record clean check in unified discipline engine (ADR-206)
+    from app.models.user import User
+    from app.services.discipline_engine import record_clean_check
+
+    user = await db.get(User, owner_id)
+    if user:
+        await record_clean_check(db, user)
+
     return {
         "success": True,
         "tag_number": tag_number.strip(),
         "inspection_id": str(inspection.id) if inspection else None,
         "verified_at": now.isoformat(),
+        "verification_mode": getattr(session, "verification_mode", "ai_vision"),
     }
 
 
@@ -145,6 +170,7 @@ async def send_session_to_pillory(
     session: LockSession,
     reason: str,
     details: str | None = None,
+    trigger: str = "late_check",
 ) -> bool:
     """Publishes lock session to public Pillory (/social/pillory) if pillory_enabled is True."""
     if not session.pillory_enabled:
@@ -207,7 +233,20 @@ async def send_session_to_pillory(
 
         user = await db.get(User, session.owner_id)
         if user:
-            identity_service.on_pillory_status(user, is_pilloried=True)
+            from app.services.discipline_engine import record_violation
+            from app.services.pillory_service import create_pillory_entry
+
+            await record_violation(db, user, reason=reason)
+            await create_pillory_entry(
+                db,
+                user,
+                trigger=trigger,
+                title=f"Позорный столб: {reason}",
+                reason=details or reason,
+                duration_minutes=120,
+                lock_session=session,
+                freeze_lock_timer=True,
+            )
         await db.flush()
         return True
     except Exception:

@@ -121,12 +121,12 @@ async def get_weekly_compliance(db: AsyncSession, owner_id: uuid.UUID, weeks: in
         completed_tasks = 0
 
         if session_ids:
-            from sqlalchemy import func
+            from sqlalchemy import case, func
 
             slot_result = await db.execute(
                 select(
                     func.count(LockSlotOccurrence.id),
-                    func.sum(func.case((LockSlotOccurrence.state == "closed", 1), else_=0)),
+                    func.sum(case((LockSlotOccurrence.state == "closed", 1), else_=0)),
                 ).where(LockSlotOccurrence.session_id.in_(session_ids))
             )
             srow = slot_result.one()
@@ -137,7 +137,7 @@ async def get_weekly_compliance(db: AsyncSession, owner_id: uuid.UUID, weeks: in
                 select(
                     func.count(LockTaskOccurrence.id),
                     func.sum(
-                        func.case(
+                        case(
                             (LockTaskOccurrence.state.in_(["completed", "submitted"]), 1),
                             else_=0,
                         )

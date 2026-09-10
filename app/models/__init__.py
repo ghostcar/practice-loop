@@ -37,6 +37,7 @@ from app.models.monetization import (  # noqa: E402
 )
 from app.models.payment import PaymentInvoice  # noqa: E402
 from app.models.persona import UserAgentPersona  # noqa: E402
+from app.models.pillory import PilloryEntry  # noqa: E402
 from app.models.promocodes import PromoCode  # noqa: E402
 from app.models.prompt_library import PromptLibraryItem  # noqa: E402
 from app.models.protocol import (  # noqa: E402
@@ -81,6 +82,7 @@ __all__ = [
     "MediaExposureDrop",
     "OneTimeMediaToken",
     "PaymentInvoice",
+    "PilloryEntry",
     "PromoCode",
     "PromptLibraryItem",
     "ProtocolAnchorType",

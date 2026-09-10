@@ -25,7 +25,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,6 +40,7 @@ from app.locktimer.services.execution import (
     add_task_rule,
     close_slot,
     complete_task,
+    delete_draft,
     delete_slot_rule,
     delete_task_rule,
     list_tag_violations,
@@ -125,6 +126,28 @@ async def api_safety_stop(
         json_body={"status": "safety_stopped", "session_id": str(session_id)},
         redirect_url=f"/locktimer/sessions/{session_id}",
     )
+
+
+@router.post("/sessions/{session_id}/delete")
+@router.delete("/sessions/{session_id}")
+async def api_delete_draft_session(
+    session_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a draft session (ADR-202). Only draft sessions can be deleted."""
+    try:
+        await delete_draft(db, session_id=session_id, owner_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return action_response(
+        request,
+        json_body={"status": "deleted", "session_id": str(session_id)},
+        redirect_url="/locktimer",
+    )
+
 
 
 # ---------------------------------------------------------------------------
@@ -335,26 +358,21 @@ async def api_add_slot_rule(
     name: str = Form(...),
     rule_type: str = Form(default="every_n_days"),
     schedule_json: str = Form(default="{}"),
+    time_of_day: str | None = Form(default=None),
+    every_n_days: int | None = Form(default=None),
+    exact_datetime: str | None = Form(default=None),
     duration_seconds: int = Form(default=3600),
+    duration_minutes: int | None = Form(default=None),
     allow_late_open: bool = Form(default=False),
     max_late_seconds: int = Form(default=3600),
+    max_late_minutes: int | None = Form(default=None),
     journal_auto: bool = Form(default=False),
     catalog_item_id: str = Form(default=""),
     care_product_ids: str = Form(default=""),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Add a slot rule to a draft session.
-
-    ``max_late_seconds`` sets the late-open eligibility window (0 = on-time
-    only). Default 3600s keeps the UI ``allow_late_open`` checkbox usable —
-    without it the eligible window collapses to [planned_open, planned_open]
-    and no real-time request can ever open the slot.
-
-    ``journal_auto`` (Шаг 14b): окно для плановой сексуальной активности —
-    при открытии авто-создаётся draft-запись Sexual Journal, детали пользователь
-    обязан внести при закрытии.
-    """
+    """Add a slot rule to a draft session (ADR-203: supports human-friendly minutes and presets)."""
     import json
 
     session = await get_session(db, session_id, current_user.id)
@@ -363,10 +381,23 @@ async def api_add_slot_rule(
     if session.state != e.SESSION_DRAFT:
         raise HTTPException(400, "Only draft sessions can be edited")
 
+    if duration_minutes is not None and duration_minutes > 0:
+        duration_seconds = duration_minutes * 60
+    if max_late_minutes is not None:
+        max_late_seconds = max_late_minutes * 60
+
     try:
         schedule = json.loads(schedule_json)
     except json.JSONDecodeError:
         schedule = {}
+
+    if not schedule:
+        if rule_type in ("daily", "every_n_days"):
+            schedule = {"n": int(every_n_days or 1), "time_of_day": (time_of_day or "08:00").strip()}
+        elif rule_type == "exact_datetime" and exact_datetime:
+            schedule = {"datetime": exact_datetime.strip()}
+        else:
+            schedule = {"time_of_day": (time_of_day or "08:00").strip()}
 
     # Сквозной каталог (ADR-091): причина/цель окна (системная или своя запись).
     catalog_uuid = None
@@ -451,12 +482,14 @@ async def api_add_task_rule(
     title: str = Form(...),
     schedule_type: str = Form(default="daily"),
     schedule_json: str = Form(default="{}"),
+    time_of_day: str | None = Form(default=None),
     due_window_seconds: int = Form(default=3600),
+    due_window_hours: int | None = Form(default=None),
     requires_report: bool = Form(default=False),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Add a task rule to a draft session."""
+    """Add a task rule to a draft session (ADR-203: supports human-friendly hours and presets)."""
     import json
 
     session = await get_session(db, session_id, current_user.id)
@@ -465,10 +498,16 @@ async def api_add_task_rule(
     if session.state != e.SESSION_DRAFT:
         raise HTTPException(400, "Only draft sessions can be edited")
 
+    if due_window_hours is not None and due_window_hours > 0:
+        due_window_seconds = due_window_hours * 3600
+
     try:
         schedule = json.loads(schedule_json)
     except json.JSONDecodeError:
         schedule = {}
+
+    if not schedule:
+        schedule = {"time_of_day": (time_of_day or "09:00").strip()}
 
     await add_task_rule(
         db,
@@ -636,10 +675,12 @@ async def api_reorder_task_rules(
 async def api_update_draft(
     session_id: uuid.UUID,
     request: Request,
+    title: str | None = Form(default=None),
     duration_type: str | None = Form(default=None),
     mode: str | None = Form(default=None),
     duration_days: int | None = Form(default=None),
     duration_hours: int | None = Form(default=None),
+    max_duration_days: int | None = Form(default=None),
     can_extend_duration: bool = Form(default=False),
     current_tag_number: str | None = Form(default=None),
     timezone: str | None = Form(default=None),
@@ -648,16 +689,32 @@ async def api_update_draft(
     penalty_points: int | None = Form(default=None),
     penalty_time_minutes: int | None = Form(default=None),
     penalty_tasks_enabled: bool = Form(default=False),
+    penalty_category_physical: bool = Form(default=False),
+    penalty_category_chores: bool = Form(default=False),
+    penalty_category_reports: bool = Form(default=False),
+    penalty_tasks_mode: str | None = Form(default=None),
+    penalty_tasks_items_json: str | None = Form(default=None),
     escalation_multiplier: float | None = Form(default=None),
     verification_required: bool = Form(default=False),
     verification_frequency_hours: int | None = Form(default=None),
     verification_mode: str | None = Form(default=None),
+    extensions_enabled: bool = Form(default=False),
+    game_wheel_enabled: bool = Form(default=False),
+    game_dice_enabled: bool = Form(default=False),
+    game_challenges_enabled: bool = Form(default=False),
+    game_time_jumps_enabled: bool = Form(default=False),
+    bad_luck_escalation_enabled: bool = Form(default=False),
     pillory_enabled: bool = Form(default=False),
     pillory_auto_extend: bool = Form(default=False),
+    pillory_extend_minutes: int | None = Form(default=None),
+    pillory_reduce_minutes: int | None = Form(default=None),
+    pillory_daily_cap_hours: int | None = Form(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update draft session metadata (duration, tz, discipline, verification, pillory, device)."""
+    """Update draft session metadata (duration, tz, discipline, verification, pillory, device, extensions)."""
+    from datetime import timedelta
+
     session = await get_session(db, session_id, current_user.id)
     if session is None:
         raise HTTPException(404, "Session not found")
@@ -665,6 +722,9 @@ async def api_update_draft(
         raise HTTPException(400, "Only draft sessions can be edited")
 
     fields: dict = {}
+    if title is not None:
+        fields["title"] = title.strip() or None
+
     if mode:
         fields["mode"] = mode
         if mode == "open_ended":
@@ -675,10 +735,12 @@ async def api_update_draft(
     # Duration calculation in days / hours
     total_sec = (duration_days or 0) * 86400 + (duration_hours or 0) * 3600
     if total_sec > 0:
-        from datetime import timedelta
         fields["original_end_at"] = datetime.now(UTC) + timedelta(seconds=total_sec)
     elif duration_type == "infinite" or mode == "open_ended":
         fields["original_end_at"] = None
+
+    if max_duration_days is not None and max_duration_days > 0:
+        fields["max_end_at"] = datetime.now(UTC) + timedelta(days=max_duration_days)
 
     fields["can_extend_duration"] = bool(can_extend_duration)
     if current_tag_number is not None:
@@ -695,8 +757,41 @@ async def api_update_draft(
     if penalty_time_minutes is not None:
         policy["penalty_time_minutes"] = penalty_time_minutes
     policy["penalty_tasks_enabled"] = bool(penalty_tasks_enabled)
+
+    # Categories for penalty tasks
+    categories = []
+    if penalty_category_physical:
+        categories.append("physical")
+    if penalty_category_chores:
+        categories.append("chores")
+    if penalty_category_reports:
+        categories.append("reports")
+    policy["penalty_categories"] = categories or ["physical", "chores", "reports"]
+
+    # Catalog penalty tasks configuration (ADR-204)
+    penalty_config = dict(policy.get("penalty_tasks_config") or {})
+    if penalty_tasks_mode:
+        penalty_config["mode"] = penalty_tasks_mode
+    if penalty_tasks_items_json is not None:
+        import json
+
+        try:
+            parsed_items = json.loads(penalty_tasks_items_json) if penalty_tasks_items_json.strip() else []
+            if isinstance(parsed_items, list):
+                penalty_config["items"] = parsed_items
+        except Exception:
+            pass
+    policy["penalty_tasks_config"] = penalty_config
+
     if escalation_multiplier is not None:
         policy["escalation_multiplier"] = escalation_multiplier
+
+    # Pillory voting settings
+    policy["pillory_settings"] = {
+        "extend_minutes": pillory_extend_minutes or 30,
+        "reduce_minutes": pillory_reduce_minutes or 30,
+        "daily_cap_hours": pillory_daily_cap_hours or 6,
+    }
     fields["discipline_policy"] = policy
 
     # Verification protocol
@@ -705,6 +800,18 @@ async def api_update_draft(
         fields["verification_frequency_hours"] = verification_frequency_hours
     if verification_mode:
         fields["verification_mode"] = verification_mode
+
+    # Chaster Extensions State
+    ext_state = dict(session.extensions_state or {})
+    ext_state["extensions_enabled"] = bool(extensions_enabled)
+    ext_state["games"] = {
+        "wheel_of_fortune": bool(game_wheel_enabled),
+        "dice_of_fate": bool(game_dice_enabled),
+        "obedience_challenges": bool(game_challenges_enabled),
+        "time_jumps": bool(game_time_jumps_enabled),
+    }
+    ext_state["bad_luck_escalation_enabled"] = bool(bad_luck_escalation_enabled)
+    fields["extensions_state"] = ext_state
 
     # Pillory integration
     fields["pillory_enabled"] = bool(pillory_enabled)
@@ -766,13 +873,21 @@ async def api_verify_photo(
     tag_number: str = Form(...),
     verification_code: str = Form(...),
     notes: str | None = Form(default=None),
+    photo: UploadFile | None = File(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Verify photo submission with tag number and verification code."""
+    """Verify photo submission with tag number, verification code, and optional photo (ADR-205)."""
     session = await get_session(db, session_id, current_user.id)
     if session is None:
         raise HTTPException(404, "Session not found")
+
+    photo_bytes = None
+    if photo is not None and photo.filename:
+        try:
+            photo_bytes = await photo.read()
+        except Exception:
+            photo_bytes = None
 
     from app.locktimer.services.discipline_service import verify_session_photo_submission
 
@@ -783,6 +898,7 @@ async def api_verify_photo(
         tag_number=tag_number,
         verification_code=verification_code,
         notes=notes,
+        photo_bytes=photo_bytes,
     )
     if not result.get("success"):
         raise HTTPException(400, result.get("error", "Verification failed"))

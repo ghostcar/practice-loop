@@ -41,17 +41,18 @@ from app.timeutils import local_today
 
 
 def test_main_reply_keyboard_structure():
-    """Verify that the main reply keyboard contains all 6 personal contour buttons."""
+    """Verify that the main reply keyboard contains personal contour buttons."""
     kb = get_main_reply_keyboard()
     assert kb.resize_keyboard is True
     assert kb.is_persistent is True
 
     button_texts = [[btn.text for btn in row] for row in kb.keyboard]
-    assert len(button_texts) == 4
+    assert len(button_texts) == 5
     assert button_texts[0] == ["📋 План дня", "💊 Лекарства"]
     assert button_texts[1] == ["🤖 AI-генератор", "🏋️ Тренировка"]
     assert button_texts[2] == ["🔒 Пояс", "❤️ Чек-ин / Замеры"]
-    assert button_texts[3] == ["🏆 Прогресс"]
+    assert button_texts[3] == ["📦 Инвентарь", "⛓️ Позорный столб"]
+    assert button_texts[4] == ["🏆 Прогресс"]
 
 
 def test_task_card_keyboard():
@@ -88,6 +89,7 @@ def test_med_slot_keyboard_actions():
     assert f"med_take:{items[0]['schedule_id']}" in callbacks
     assert "med_scan_guide" in callbacks
     assert "med_kits_view" in callbacks
+    assert "med_restock_list" in callbacks
 
 
 def test_training_keyboard():

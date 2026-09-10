@@ -531,6 +531,15 @@ def _seed_lookup(clean_name: str) -> dict | None:
     return None
 
 
+def extract_strengths_list(strength_str: str) -> list[str]:
+    """Извлекает список доступных дозировок из строки описания (ADR-207)."""
+    if not strength_str:
+        return []
+    parts = re.split(r"[/;,]|\s+или\s+|\s+or\s+", strength_str)
+    cleaned = [p.strip() for p in parts if p.strip() and re.search(r"\d", p)]
+    return cleaned if len(cleaned) > 1 else ([strength_str.strip()] if strength_str.strip() else [])
+
+
 def _payload(data: dict) -> dict:
     """Нормализованный ответ для формы: поля + components[] (без variant-less дублей)."""
     components = data.get("components") or []
@@ -540,6 +549,7 @@ def _payload(data: dict) -> dict:
     payload["components"] = components
     if not payload.get("active_ingredient") and components:
         payload["active_ingredient"] = " + ".join(dict.fromkeys(c.get("name", "") for c in components if c.get("name")))
+    payload["available_strengths"] = extract_strengths_list(data.get("strength") or "")
     return payload
 
 

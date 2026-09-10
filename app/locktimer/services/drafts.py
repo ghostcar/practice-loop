@@ -29,18 +29,42 @@ async def _next_rule_sort_order(
     return (current_max if current_max is not None else -1) + 1
 
 
+async def get_user_draft(db: AsyncSession, owner_id: uuid.UUID) -> LockSession | None:
+    """Return the active draft session for the user if one exists (ADR-204 singleton)."""
+    stmt = (
+        select(LockSession)
+        .where(
+            LockSession.owner_id == owner_id,
+            LockSession.state == e.SESSION_DRAFT,
+        )
+        .order_by(LockSession.created_at.desc())
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def create_draft(
     db: AsyncSession,
     *,
     owner_id: uuid.UUID,
+    title: str | None = None,
     duration_type: str = e.DURATION_FROM_START,
     timezone_str: str = "UTC",
     merge_gap_seconds: int = d.DEFAULT_MERGE_GAP_SECONDS,
     can_extend_duration: bool = False,
     template_id: uuid.UUID | None = None,
     device_id: uuid.UUID | None = None,
+    reuse_existing: bool = True,
 ) -> LockSession:
-    """Create a new draft session. One active session per owner enforced at start time."""
+    """Create a new draft session or return existing draft (ADR-203, ADR-204)."""
+    from sqlalchemy import func
+
+    if reuse_existing:
+        existing = await get_user_draft(db, owner_id)
+        if existing is not None:
+            return existing
+
     now = _now()
     seed = d.generate_random_seed()
 
@@ -50,8 +74,39 @@ async def create_draft(
         if await get_device(db, device_id, owner_id) is None:
             raise ValueError("Device not found or not owned by you")
 
+    # Calculate sequential session number for this user
+    count_res = await db.execute(select(func.count()).select_from(LockSession).where(LockSession.owner_id == owner_id))
+    session_number = (count_res.scalar() or 0) + 1
+
+    # Balanced preset configuration defaults
+    discipline_defaults = {
+        "penalty_time_minutes": 60,
+        "penalty_points": 50,
+        "escalation_multiplier": 1.5,
+        "penalty_tasks_enabled": True,
+        "penalty_categories": ["physical", "chores", "reports"],
+        "pillory_settings": {
+            "extend_minutes": 30,
+            "reduce_minutes": 30,
+            "daily_cap_hours": 6,
+        },
+    }
+    extensions_defaults = {
+        "extensions_enabled": True,
+        "games": {
+            "wheel_of_fortune": True,
+            "dice_of_fate": True,
+            "obedience_challenges": True,
+            "time_jumps": True,
+        },
+        "bad_luck_streak": 0,
+        "bad_luck_escalation_enabled": True,
+    }
+
     session = LockSession(
         owner_id=owner_id,
+        title=title.strip() if title else None,
+        session_number=session_number,
         template_id=template_id,
         device_id=device_id,
         state=e.SESSION_DRAFT,
@@ -59,6 +114,16 @@ async def create_draft(
         timezone=timezone_str,
         merge_gap_seconds=merge_gap_seconds,
         can_extend_duration=can_extend_duration,
+        mode="scheduled",
+        original_end_at=None,
+        max_end_at=None,
+        discipline_policy=discipline_defaults,
+        verification_required=False,
+        verification_frequency_hours=12,
+        verification_mode="ai_vision",
+        pillory_enabled=False,
+        pillory_auto_extend=False,
+        extensions_state=extensions_defaults,
         random_seed_encrypted=seed,
         random_seed_commitment=d.compute_seed_commitment(seed),
         privacy_mode="private",
@@ -90,6 +155,8 @@ async def update_draft(
         raise ValueError("Only draft sessions can be edited")
 
     allowed = {
+        "title",
+        "session_number",
         "duration_type",
         "timezone",
         "requested_start_at",
@@ -105,6 +172,7 @@ async def update_draft(
         "verification_mode",
         "pillory_enabled",
         "pillory_auto_extend",
+        "extensions_state",
     }
     for key, value in fields.items():
         if key in allowed and value is not None:
@@ -314,3 +382,64 @@ async def reorder_rules(
         payload={"rule_ids": [str(r) for r in rule_ids]},
     )
     await db.flush()
+
+
+async def delete_draft(db: AsyncSession, *, session_id: uuid.UUID, owner_id: uuid.UUID) -> None:
+    """Permanently delete a draft lock session and its associated draft rules.
+
+    Only sessions in 'draft' state can be deleted. Active, paused, or completed sessions
+    must be handled via safety-stop or standard completion (ADR-029, ADR-202).
+    """
+    from sqlalchemy import delete
+
+    session = await get_session(db, session_id, owner_id)
+    if session is None:
+        raise ValueError("Session not found")
+    if session.state != e.SESSION_DRAFT:
+        raise ValueError(f"Only draft sessions can be deleted (current state: {session.state})")
+
+    # Release device if bound to draft
+    if session.device_id is not None:
+        from app.locktimer.services.device import set_device_status
+
+        await set_device_status(db, session.device_id, owner_id, "available")
+        session.device_id = None
+
+    if getattr(session, "chastity_device_id", None) is not None:
+        from app.locktimer.services.device import set_device_status
+
+        await set_device_status(db, session.chastity_device_id, owner_id, "available")
+        session.chastity_device_id = None
+
+    # Clean up social subject if registered
+    try:
+        from app.platform.social.models import SocialSubject
+
+        await db.execute(
+            delete(SocialSubject).where(
+                SocialSubject.owner_id == owner_id,
+                SocialSubject.subject_type == "timer.session",
+                SocialSubject.domain_object_id == str(session_id),
+            )
+        )
+    except Exception:
+        pass
+
+    # Clean up any rules explicitly
+    await db.execute(delete(LockSlotRule).where(LockSlotRule.session_id == session_id))
+    await db.execute(delete(LockTaskRule).where(LockTaskRule.session_id == session_id))
+
+    await write_audit(
+        db,
+        session_id=session_id,
+        actor_type="user",
+        actor_user_id=owner_id,
+        event_type="locktimer.session.draft_deleted",
+        object_type="lock_session",
+        object_id=session_id,
+        payload={"state": session.state},
+    )
+
+    await db.delete(session)
+    await db.flush()
+

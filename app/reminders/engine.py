@@ -63,6 +63,11 @@ async def _medication_reminders(db: AsyncSession, user_id: uuid.UUID, today: dat
         .all()
     )
     intakes = (await db.execute(select(MedIntake).where(MedIntake.user_id == user_id))).scalars().all()
+    all_stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
+
+    stocks_by_med: dict[uuid.UUID, list[MedStock]] = {}
+    for st in all_stocks:
+        stocks_by_med.setdefault(st.medication_id, []).append(st)
 
     taken_today: dict[str, int] = {}
     for it in intakes:
@@ -72,12 +77,17 @@ async def _medication_reminders(db: AsyncSession, user_id: uuid.UUID, today: dat
         if taken_dt is not None and taken_dt.astimezone(resolve_tz("UTC")).date() == today:
             taken_today[str(it.schedule_id)] = taken_today.get(str(it.schedule_id), 0) + 1
 
+    active_scheduled_med_ids: set[uuid.UUID] = set()
+
     for s in schedules:
         # Ожидаемое число приёмов сегодня (дублируем _doses_today — без импорта api-слоя).
         if s.start_date and today < s.start_date:
             continue
         if s.end_date and today > s.end_date:
             continue
+
+        active_scheduled_med_ids.add(s.medication_id)
+
         if s.frequency_type == "weekly":
             if s.days_of_week and today.weekday() not in s.days_of_week:
                 continue
@@ -94,19 +104,43 @@ async def _medication_reminders(db: AsyncSession, user_id: uuid.UUID, today: dat
         pending = max(0, expected - done)
         if pending > 0:
             name = s.medication.name if s.medication else "?"
-            dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
-            out.append(
-                Reminder(
-                    kind="med_due",
-                    title=f"Medication due: {name}",
-                    body=f"Take {dose} — {pending} dose(s) pending today.",
-                    link="/medications",
-                    dedupe_key=f"med_due:{s.id}:{today.isoformat()}",
-                )
+            med_stocks = stocks_by_med.get(s.medication_id, [])
+            has_stock_records = len(med_stocks) > 0
+            available_qty = sum(
+                float(st.quantity or 0)
+                for st in med_stocks
+                if st.expiry_date is None or st.expiry_date >= today
             )
 
-    stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
-    for st in stocks:
+            if has_stock_records and available_qty <= 0:
+                # Препарат назначен на приём, но физически закончился (остаток 0).
+                # Не спамим требованием выпить, а выставляем разовое предупреждение о пополнении.
+                out.append(
+                    Reminder(
+                        kind="med_out_of_stock",
+                        title=f"Закончился препарат: {name}",
+                        body="Препарат назначен на приём, но на остатках 0. Пополните запас.",
+                        link="/medications",
+                        dedupe_key=f"med_out_of_stock:{s.medication_id}:{today.isoformat()}",
+                    )
+                )
+            else:
+                dose = f"{s.dose_quantity:g} {s.dose_unit or ''}".strip()
+                out.append(
+                    Reminder(
+                        kind="med_due",
+                        title=f"Medication due: {name}",
+                        body=f"Take {dose} — {pending} dose(s) pending today.",
+                        link="/medications",
+                        dedupe_key=f"med_due:{s.id}:{today.isoformat()}",
+                    )
+                )
+
+    # Контроль остатков и сроков годности: ТОЛЬКО для препаратов из активных расписаний/курсов!
+    # Препараты, просто добавленные в справочник без назначений, не создают уведомлений.
+    for st in all_stocks:
+        if st.medication_id not in active_scheduled_med_ids:
+            continue
         name = st.medication.name if st.medication else "?"
         if st.expiry_date is not None and (st.expiry_date - today).days <= 30:
             out.append(
@@ -118,7 +152,8 @@ async def _medication_reminders(db: AsyncSession, user_id: uuid.UUID, today: dat
                     dedupe_key=f"med_expiring:{st.id}",
                 )
             )
-        if st.low_stock_threshold is not None and st.quantity <= st.low_stock_threshold:
+        # Оповещение о низком остатке только если остаток положительный (0 < qty <= threshold)
+        if st.low_stock_threshold is not None and 0 < st.quantity <= st.low_stock_threshold:
             out.append(
                 Reminder(
                     kind="med_low",
@@ -226,7 +261,7 @@ async def _medication_dose_reminders(db: AsyncSession, user_id: uuid.UUID, now) 
     ``reminder_log`` dedupe (per dose time/day) already guarantees a single
     notification, and the window naturally closes once the dose time passes.
     """
-    from app.models.medication import MedSchedule
+    from app.models.medication import MedSchedule, MedStock
 
     lead = timedelta(minutes=_lead_minutes())
     window_end = now + lead
@@ -236,6 +271,10 @@ async def _medication_dose_reminders(db: AsyncSession, user_id: uuid.UUID, now) 
         .scalars()
         .all()
     )
+    all_stocks = (await db.execute(select(MedStock).where(MedStock.user_id == user_id))).scalars().all()
+    stocks_by_med: dict[uuid.UUID, list[MedStock]] = {}
+    for st in all_stocks:
+        stocks_by_med.setdefault(st.medication_id, []).append(st)
 
     for s in schedules:
         if not s.times_of_day:
@@ -244,6 +283,17 @@ async def _medication_dose_reminders(db: AsyncSession, user_id: uuid.UUID, now) 
             continue
         if s.end_date and now.date() > s.end_date:
             continue
+
+        med_stocks = stocks_by_med.get(s.medication_id, [])
+        if len(med_stocks) > 0:
+            available_qty = sum(
+                float(st.quantity or 0)
+                for st in med_stocks
+                if st.expiry_date is None or st.expiry_date >= now.date()
+            )
+            if available_qty <= 0:
+                # Препарат физически закончился — не шлём напоминание о приёме
+                continue
         for t_str in s.times_of_day:
             dose_dt = _parse_hhmm(now, t_str)
             if dose_dt is None:
@@ -343,18 +393,91 @@ async def _timer_reminders(db: AsyncSession, user_id: uuid.UUID, now) -> list[Re
     return out
 
 
+async def _seal_stock_reminders(db: AsyncSession, user_id: uuid.UUID, today: date) -> list[Reminder]:
+    from sqlalchemy import or_
+    from app.models.life import InventoryItem
+
+    out: list[Reminder] = []
+    stmt = select(InventoryItem).where(
+        InventoryItem.user_id == user_id,
+        or_(
+            InventoryItem.category.in_(["chastity_seal", "seal", "пломбы"]),
+            InventoryItem.name.ilike("%пломб%"),
+            InventoryItem.name.ilike("%seal%"),
+        ),
+    )
+    items = (await db.execute(stmt)).scalars().all()
+    for item in items:
+        qty = item.quantity or 0
+        if qty <= 2:
+            out.append(
+                Reminder(
+                    kind="seal_stock_low",
+                    title="⚠️ Запас пломб на исходе",
+                    body=f"Осталось {qty} шт. пломб '{item.name}'. Пополните запас для пояса.",
+                    link="/inventory",
+                    dedupe_key=f"seal_stock:{item.id}:{today.isoformat()}",
+                )
+            )
+    return out
+
+
+async def _wear_inspection_reminders(db: AsyncSession, user_id: uuid.UUID, now: datetime) -> list[Reminder]:
+    from app.models.locktimer import LockSession
+    from app.timeutils import as_utc
+
+    out: list[Reminder] = []
+    stmt = (
+        select(LockSession)
+        .where(
+            LockSession.owner_id == user_id,
+            LockSession.state.in_(["active", "locked"]),
+            LockSession.is_currently_locked.is_(True),
+        )
+        .order_by(LockSession.created_at.desc())
+    )
+    sessions = (await db.execute(stmt)).scalars().all()
+    for session in sessions:
+        interval_hours = getattr(session, "verification_interval_hours", 6) or 6
+        last_check = as_utc(session.last_wear_checkin_at or session.started_at or now)
+        next_check = last_check + timedelta(hours=interval_hours)
+
+        if now >= next_check - timedelta(minutes=30) and now < next_check + timedelta(hours=2):
+            out.append(
+                Reminder(
+                    kind="wear_inspection_due",
+                    title="🔍 Контроль целостности пояса",
+                    body="Пора подтвердить сохранность пломбы пояса фотоотчетом в боте.",
+                    link=f"/locktimer/sessions/{session.id}",
+                    dedupe_key=f"wear_inspect:{session.id}:{next_check.strftime('%Y%m%d%H')}",
+                )
+            )
+        elif now >= next_check + timedelta(hours=2) and getattr(session, "pillory_enabled", False):
+            from app.locktimer.services.discipline_service import send_session_to_pillory
+
+            await send_session_to_pillory(
+                db,
+                session,
+                reason="Просрочка инспекции пояса более 2 часов",
+                details=f"Инспекция пломбы ожидалась в {next_check.strftime('%H:%M')}, подтверждение не предоставлено.",
+                trigger="late_check",
+            )
+    return out
+
+
 async def collect_reminders(
     db: AsyncSession, user_id: uuid.UUID, today: date, now, mode: str = "daily"
 ) -> list[Reminder]:
     """Gather due reminders for one user (best-effort per module).
 
     ``mode="daily"`` — the morning batch (medication due summary, low stock /
-    expiry, care routine/course heads-up). ``mode="event"`` — "shortly before"
-    reminders (timer window/task, medication dose at a specific time, ADR-096).
+    expiry, care routine/course heads-up, seal low stock).
+    ``mode="event"`` — "shortly before" reminders (timer window/task, medication dose,
+    wear inspection due, ADR-096/206).
     """
     out: list[Reminder] = []
     if mode == "event":
-        collectors = (_medication_dose_reminders, _timer_reminders)
+        collectors = (_medication_dose_reminders, _timer_reminders, _wear_inspection_reminders)
         for collector in collectors:
             try:
                 out.extend(await collector(db, user_id, now))
@@ -372,6 +495,7 @@ async def collect_reminders(
         _care_product_reminders,
         _care_routine_reminders,
         _care_course_reminders,
+        _seal_stock_reminders,
     )
     for collector in date_collectors:
         try:

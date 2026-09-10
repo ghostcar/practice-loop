@@ -20,6 +20,12 @@
             <p class="pl-text-secondary text-sm mt-1">{{ t.med_subtitle }}</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="document.getElementById('prn-modal').showModal()" class="pl-surface border border-[color:var(--accent)] text-[color:var(--accent-text)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px] hover:bg-[color:var(--accent-soft)] transition-colors">
+                {{ icon('flame', 'w-4 h-4 text-amber-500') }} ⚡ Ситуативный приём
+            </button>
+            <button type="button" onclick="document.getElementById('course-wizard-modal').showModal()" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px] hover:border-[color:var(--accent)] transition-colors">
+                {{ icon('sparkles', 'w-4 h-4 text-purple-400') }} ИИ-Мастер курсов
+            </button>
             <a href="/medications/export" class="pl-surface border border-[color:var(--border)] px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[44px]">
                 {{ icon('download', 'w-4 h-4') }}{{ t.med_export }}
             </a>
@@ -86,6 +92,104 @@
                     </form>
                     {% endif %}
                 </div>
+                {% if slot.meal_groups %}
+                <div class="space-y-3">
+                    {% for mg in slot.meal_groups %}
+                    {% if mg.pending %}
+                    <div class="p-2.5 rounded-lg bg-[color:var(--surface-soft)]/40 border border-[color:var(--border)] space-y-1.5">
+                        <div class="text-xs font-semibold pl-text-muted inline-flex items-center gap-1.5">
+                            {{ icon('schedule', 'w-3 h-3') }}{{ mg.label }}
+                        </div>
+                        <ul class="space-y-1.5">
+                            {% for d in mg.meds %}
+                            {% if not d.taken %}
+                            <li class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-sm">
+                                <div class="min-w-0">
+                                    <span class="font-medium text-[color:var(--text)]">{{ d.medication_name }}</span>
+                                    <span class="pl-text-muted text-xs"> · {{ d.dose }}{% if d.times_of_day %} · {{ d.times_of_day | join(', ') }}{% endif %}</span>
+                                    {% if d.preferred_kit_name %}
+                                    <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] inline-flex items-center gap-1">
+                                        {{ icon('location', 'w-3 h-3') }}{{ d.preferred_kit_name }}{% if d.kit_location %} ({{ d.kit_location }}){% endif %}
+                                    </span>
+                                    {% endif %}
+                                    {% if d.preferred_kit_exhausted %}
+                                    <span class="text-xs px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-600 inline-flex items-center gap-1" title="{{ t.med_kit_exhausted }}">
+                                        {{ icon('warning', 'w-3 h-3') }}{{ t.med_kit_exhausted }}
+                                    </span>
+                                    {% elif d.no_kit %}
+                                    <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-dashed border-[color:var(--border)] text-[color:var(--text-muted)] inline-flex items-center gap-1" title="{{ t.med_kit_not_set }}">
+                                        {{ icon('help-circle', 'w-3 h-3') }}{{ t.med_kit_not_set }}
+                                    </span>
+                                    {% endif %}
+                                    {% if d.insufficient %}
+                                    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                                        <span class="inline-flex items-center gap-1 text-[color:var(--warning)]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_stock_short }}: {{ d.stock_total }} / {{ d.stock_needed_today }}</span>
+                                        {% if d.exceeds_daily %}<span class="inline-flex items-center gap-1 text-[color:var(--danger)]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_exceeds_daily }}</span>{% endif %}
+                                        {% if d.substitute %}
+                                        <form action="/med-intakes" method="post" class="inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                            <input type="hidden" name="medication_id" value="{{ d.substitute.medication_id }}">
+                                            <input type="hidden" name="schedule_id" value="{{ d.schedule_id }}">
+                                            <input type="hidden" name="status" value="taken">
+                                            <input type="hidden" name="quantity_taken" value="{{ d.substitute.qty_per_intake }}">
+                                            <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('refresh', 'w-3.5 h-3.5') }}{{ t.med_substitute_action }}: {{ d.substitute.name }} ({{ d.substitute.qty_per_intake }})</button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <form action="/med-intakes" method="post" class="inline-flex items-center gap-1">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                                        <input type="hidden" name="schedule_id" value="{{ d.schedule_id }}">
+                                        <input type="hidden" name="status" value="taken">
+                                        {% if d.needs_kit_selection %}
+                                        <select name="kit_id" class="text-xs rounded border border-[color:var(--border)] bg-[color:var(--surface)] px-1.5 py-1 text-[color:var(--text)]" title="{{ t.med_select_kit }}">
+                                            <option value="">{{ t.med_no_deduct }}</option>
+                                            {% for k in d.available_kits %}
+                                            <option value="{{ k.kit_id }}" {% if k.kit_id == d.preferred_kit_id %}selected{% endif %}>{{ k.kit_name }} ({{ k.quantity }})</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% else %}
+                                        <input type="hidden" name="kit_id" value="{{ d.preferred_kit_id or '' }}">
+                                        {% endif %}
+                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
+                                    </form>
+                                    {% if d.ul_pending %}
+                                    <form action="/med-intakes" method="post" class="inline" title="{{ t.med_ul_override_hint }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                                        <input type="hidden" name="schedule_id" value="{{ d.schedule_id }}">
+                                        <input type="hidden" name="status" value="taken">
+                                        <input type="hidden" name="ul_confirmed" value="1">
+                                        <button type="submit" class="px-2 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-700 border border-amber-500/20 inline-flex items-center gap-1 min-h-[36px]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_take_override }}</button>
+                                    </form>
+                                    {% endif %}
+                                    <form action="/med-intakes" method="post" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                                        <input type="hidden" name="schedule_id" value="{{ d.schedule_id }}">
+                                        <input type="hidden" name="status" value="missed">
+                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--danger-soft)] text-[color:var(--danger)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('error', 'w-3.5 h-3.5') }}{{ t.med_status_missed }}</button>
+                                    </form>
+                                    <form action="/med-intakes" method="post" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                                        <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
+                                        <input type="hidden" name="schedule_id" value="{{ d.schedule_id }}">
+                                        <input type="hidden" name="status" value="skipped">
+                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('skip', 'w-3.5 h-3.5') }}{{ t.med_status_skipped }}</button>
+                                    </form>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
                 <ul class="space-y-1.5">
                     {% for d in slot.meds %}
                     {% if not d.taken %}
@@ -93,6 +197,20 @@
                         <div class="min-w-0">
                             <span class="font-medium text-[color:var(--text)]">{{ d.medication_name }}</span>
                             <span class="pl-text-muted text-xs"> · {{ d.dose }}{% if d.times_of_day %} · {{ d.times_of_day | join(', ') }}{% endif %}</span>
+                            {% if d.preferred_kit_name %}
+                            <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] inline-flex items-center gap-1">
+                                {{ icon('location', 'w-3 h-3') }}{{ d.preferred_kit_name }}{% if d.kit_location %} ({{ d.kit_location }}){% endif %}
+                            </span>
+                            {% endif %}
+                            {% if d.preferred_kit_exhausted %}
+                            <span class="text-xs px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-600 inline-flex items-center gap-1" title="{{ t.med_kit_exhausted }}">
+                                {{ icon('warning', 'w-3 h-3') }}{{ t.med_kit_exhausted }}
+                            </span>
+                            {% elif d.no_kit %}
+                            <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-dashed border-[color:var(--border)] text-[color:var(--text-muted)] inline-flex items-center gap-1" title="{{ t.med_kit_not_set }}">
+                                {{ icon('help-circle', 'w-3 h-3') }}{{ t.med_kit_not_set }}
+                            </span>
+                            {% endif %}
                             {% if d.insufficient %}
                             <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                                 <span class="inline-flex items-center gap-1 text-[color:var(--warning)]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_stock_short }}: {{ d.stock_total }} / {{ d.stock_needed_today }}</span>
@@ -111,11 +229,21 @@
                             {% endif %}
                         </div>
                         <div class="flex items-center gap-1.5 flex-wrap">
-                            <form action="/med-intakes" method="post" class="inline">
+                            <form action="/med-intakes" method="post" class="inline-flex items-center gap-1">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                                 <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
                                 <input type="hidden" name="schedule_id" value="{{ d.schedule_id }}">
                                 <input type="hidden" name="status" value="taken">
+                                {% if d.needs_kit_selection %}
+                                <select name="kit_id" class="text-xs rounded border border-[color:var(--border)] bg-[color:var(--surface)] px-1.5 py-1 text-[color:var(--text)]" title="{{ t.med_select_kit }}">
+                                    <option value="">{{ t.med_no_deduct }}</option>
+                                    {% for k in d.available_kits %}
+                                    <option value="{{ k.kit_id }}" {% if k.kit_id == d.preferred_kit_id %}selected{% endif %}>{{ k.kit_name }} ({{ k.quantity }})</option>
+                                    {% endfor %}
+                                </select>
+                                {% else %}
+                                <input type="hidden" name="kit_id" value="{{ d.preferred_kit_id or '' }}">
+                                {% endif %}
                                 <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[36px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
                             </form>
                             {% if d.ul_pending %}
@@ -147,6 +275,7 @@
                     {% endif %}
                     {% endfor %}
                 </ul>
+                {% endif %}
             </li>
             {% endif %}
             {% endfor %}
@@ -159,6 +288,20 @@
                     <span class="font-medium text-[color:var(--text)]">{{ d.medication_name }}</span>
                     <span class="pl-text-muted text-sm"> · {{ d.dose }}{% if d.times_of_day %} · {{ d.times_of_day | join(', ') }}{% endif %}</span>
                     <span class="text-xs pl-text-muted"> · {{ d.pending }} {{ t.med_doses_due }}</span>
+                    {% if d.preferred_kit_name %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)] inline-flex items-center gap-1">
+                        {{ icon('location', 'w-3 h-3') }}{{ d.preferred_kit_name }}{% if d.kit_location %} ({{ d.kit_location }}){% endif %}
+                    </span>
+                    {% endif %}
+                    {% if d.preferred_kit_exhausted %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-600 inline-flex items-center gap-1" title="{{ t.med_kit_exhausted }}">
+                        {{ icon('warning', 'w-3 h-3') }}{{ t.med_kit_exhausted }}
+                    </span>
+                    {% elif d.no_kit %}
+                    <span class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-dashed border-[color:var(--border)] text-[color:var(--text-muted)] inline-flex items-center gap-1" title="{{ t.med_kit_not_set }}">
+                        {{ icon('help-circle', 'w-3 h-3') }}{{ t.med_kit_not_set }}
+                    </span>
+                    {% endif %}
                     {% if d.insufficient %}
                     <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                         <span class="inline-flex items-center gap-1 text-[color:var(--warning)]">{{ icon('warning', 'w-3.5 h-3.5') }}{{ t.med_stock_short }}: {{ d.stock_total }} / {{ d.stock_needed_today }}</span>
@@ -177,11 +320,21 @@
                     {% endif %}
                 </div>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                    <form action="/med-intakes" method="post" class="inline">
+                    <form action="/med-intakes" method="post" class="inline-flex items-center gap-1">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
                         <input type="hidden" name="medication_id" value="{{ d.medication_id }}">
                         <input type="hidden" name="schedule_id" value="{{ d.id }}">
                         <input type="hidden" name="status" value="taken">
+                        {% if d.needs_kit_selection %}
+                        <select name="kit_id" class="text-xs rounded border border-[color:var(--border)] bg-[color:var(--surface)] px-1.5 py-1 text-[color:var(--text)]" title="{{ t.med_select_kit }}">
+                            <option value="">{{ t.med_no_deduct }}</option>
+                            {% for k in d.available_kits %}
+                            <option value="{{ k.kit_id }}" {% if k.kit_id == d.preferred_kit_id %}selected{% endif %}>{{ k.kit_name }} ({{ k.quantity }})</option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <input type="hidden" name="kit_id" value="{{ d.preferred_kit_id or '' }}">
+                        {% endif %}
                         <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--success-soft)] text-[color:var(--success)] inline-flex items-center gap-1 min-h-[44px]">{{ icon('check', 'w-3.5 h-3.5') }}{{ t.med_status_taken }}</button>
                     </form>
                     {% if d.ul_pending %}
@@ -306,18 +459,27 @@
                     <p class="{% if k.is_expired %}text-[color:var(--danger)]{% else %}pl-text-muted{% endif %}">{{ icon('calendar', 'w-3 h-3') }}{{ t.med_kit_expiry }} {{ k.nearest_expiry }}</p>
                     {% endif %}
                 </div>
-                <div class="pt-2 border-t border-[color:var(--border)] flex items-center justify-between gap-1.5">
+                <div class="pt-2 border-t border-[color:var(--border)] flex items-center justify-between gap-1.5 flex-wrap">
                     <button type="button"
-                            class="btn-open-kit-stock px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
-                            data-kit-id="{{ k.id }}"
-                            data-kit-name="{{ k.name }}">
-                        {{ icon('plus', 'w-3 h-3') }} Пополнить
-                    </button>
-                    <button type="button"
-                            class="btn-open-kit-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
+                            class="btn-open-kit-view px-2.5 py-1 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1 min-h-[32px]"
                             data-kit='{{ k | tojson | forceescape }}'>
-                        {{ icon('settings', 'w-3 h-3') }} Настроить
+                        {{ icon('inventory', 'w-3 h-3') }} {{ t.med_kit_view }} ({{ k['items']|length if k.get('items') else k.med_count }})
                     </button>
+                    <div class="flex items-center gap-1">
+                        <button type="button"
+                                class="btn-open-kit-stock px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
+                                data-kit-id="{{ k.id }}"
+                                data-kit-name="{{ k.name }}">
+                            {{ icon('plus', 'w-3 h-3') }} Пополнить
+                        </button>
+                        <button type="button"
+                                class="btn-open-kit-edit px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[32px]"
+                                data-kit='{{ k | tojson | forceescape }}'
+                                aria-label="Настроить аптечку"
+                                title="Настроить">
+                            {{ icon('settings', 'w-3 h-3') }}
+                        </button>
+                    </div>
                 </div>
             </article>
             {% endfor %}
@@ -362,15 +524,22 @@
                     </div>
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <button type="button"
+                                class="btn-open-course-view px-2.5 py-1 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1 min-h-[36px]"
+                                data-course='{{ c | tojson | forceescape }}'>
+                            {{ icon('routine', 'w-3.5 h-3.5') }} {{ t.med_course_view }}
+                        </button>
+                        <button type="button"
                                 class="btn-open-course-item px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]"
                                 data-course-id="{{ c.id }}"
                                 data-course-name="{{ c.name }}">
-                            {{ icon('plus', 'w-3.5 h-3.5') }} Добавить препарат
+                            {{ icon('plus', 'w-3.5 h-3.5') }} Добавить
                         </button>
                         <button type="button"
-                                class="btn-open-course-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]"
-                                data-course='{{ c | tojson | forceescape }}'>
-                            {{ icon('settings', 'w-3.5 h-3.5') }} Настроить
+                                class="btn-open-course-edit px-2 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]"
+                                data-course='{{ c | tojson | forceescape }}'
+                                aria-label="Настроить курс"
+                                title="Настроить">
+                            {{ icon('settings', 'w-3.5 h-3.5') }}
                         </button>
                         <form action="/med-courses/{{ c.id }}/status" method="post" class="inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
@@ -392,12 +561,20 @@
                 <ul class="divide-y divide-[color:var(--border)] text-sm">
                     {% for it in c['items'] %}
                     <li class="py-1.5 flex items-center justify-between gap-2">
-                        <span class="text-[color:var(--text)] font-medium">{{ it.medication_name }}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="pl-text-muted text-xs">{{ it.regimen_text }}</span>
+                        <div class="min-w-0">
+                            <span class="text-[color:var(--text)] font-medium">{{ it.medication_name }}</span>
+                            <span class="pl-text-muted text-xs ml-2">{{ it.regimen_text }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <button type="button"
+                                    class="btn-open-course-item-edit text-xs text-[color:var(--accent-text)] bg-[color:var(--surface-soft)] border border-[color:var(--border)] px-2 py-0.5 rounded inline-flex items-center gap-1 min-h-[28px]"
+                                    data-course-id="{{ c.id }}"
+                                    data-item='{{ it | tojson | forceescape }}'>
+                                {{ icon('settings', 'w-3 h-3') }} Схема
+                            </button>
                             <form action="/med-courses/{{ c.id }}/items/{{ it.id }}/delete" method="post" class="inline" data-confirm="{{ t.med_delete }}?">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                                <button type="submit" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--danger)] inline-flex items-center justify-center p-1 rounded min-h-[32px] min-w-[32px]" title="{{ t.med_delete }}" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
+                                <button type="submit" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--danger)] inline-flex items-center justify-center p-1 rounded min-h-[28px] min-w-[28px]" title="{{ t.med_delete }}" aria-label="{{ t.med_delete }}">{{ icon('delete', 'w-3 h-3') }}</button>
                             </form>
                         </div>
                     </li>
@@ -551,6 +728,7 @@
             </label>
             <label class="text-xs pl-text-secondary">{{ t.med_strength }}
                 <input type="text" id="med-strength-input" name="strength" placeholder="500 мг, 5%…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+                <div id="med-strength-chips" class="mt-1 flex flex-wrap gap-1"></div>
             </label>
             <label class="text-xs pl-text-secondary">{{ t.med_manufacturer }}
                 <input type="text" id="med-manufacturer-input" name="manufacturer" placeholder="Bayer, Фармстандарт…" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
@@ -580,6 +758,10 @@
             </label>
             <label class="text-xs pl-text-secondary sm:col-span-2">{{ t.med_instructions }}
                 <input type="text" id="med-instructions-input" name="instructions" class="mt-1 w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] min-h-[44px]">
+            </label>
+            <label class="text-xs pl-text-secondary sm:col-span-2 flex items-center gap-2">
+                <input type="checkbox" id="med-auto-sched-cb" name="auto_schedule" value="1" class="w-4 h-4">
+                {{ t.med_auto_schedule_cb }}
             </label>
             <button type="submit" class="sm:col-span-2 pl-accent-bg px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center justify-center gap-1.5 min-h-[44px]">{{ icon('save', 'w-4 h-4') }}{{ t.med_save }}</button>
         </form>
@@ -661,32 +843,92 @@
                         {% endif %}
                         {% if m.instructions %}<p class="text-sm pl-text-secondary mt-1">{{ m.instructions }}</p>{% endif %}
 
-                        <!-- Analogues (ADR-109, LLM) -->
-                        <div class="mt-2">
-                            <form action="/medications/{{ m.id }}/find-analogs" method="post" class="inline">
+                        <!-- Analogues (ADR-109, LLM, Multicomponent & Catalog) -->
+                        <div class="mt-2.5">
+                            <form action="/medications/{{ m.id }}/find-analogs" method="post" class="space-y-2 form-find-analogs">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
-                                <button type="submit" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] inline-flex items-center gap-1 min-h-[44px]">
-                                    {{ icon('ai', 'w-3.5 h-3.5') }}{{ t.med_analogs_search }}
-                                </button>
+
+                                {% set subs = m.available_substances or [] %}
+                                {% if subs|length > 1 %}
+                                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                                    <span class="pl-text-muted font-medium text-[11px]">{{ t.med_analogs_substance_label }}:</span>
+                                    <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs cursor-pointer border border-[color:var(--border)] bg-[color:var(--surface)] hover:bg-[color:var(--surface-soft)]">
+                                        <input type="radio" name="target_substance" value="" checked class="accent-[color:var(--accent)] text-xs">
+                                        <span>{{ t.med_analogs_target_all }}</span>
+                                    </label>
+                                    {% for sub in subs %}
+                                    <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs cursor-pointer border border-[color:var(--border)] bg-[color:var(--surface)] hover:bg-[color:var(--surface-soft)]">
+                                        <input type="radio" name="target_substance" value="{{ sub }}" class="accent-[color:var(--accent)] text-xs">
+                                        <span>{{ sub }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <select name="source_type" class="text-xs px-2.5 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] focus:outline-none min-h-[38px]">
+                                        <option value="combined" selected>{{ t.med_analogs_source_combined }}</option>
+                                        <option value="online">{{ t.med_analogs_source_online }}</option>
+                                        <option value="llm">{{ t.med_analogs_source_llm }}</option>
+                                    </select>
+                                    <input type="text" name="target_strength" value="{{ (m.analogues.target_strength if m.analogues and m.analogues.target_strength else m.strength) or '' }}" placeholder="{{ t.med_analogs_strength_ph }}" class="text-xs px-2.5 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] w-36 min-h-[38px]">
+                                    <button type="submit" class="btn-find-analogs px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--accent-text)] hover:bg-[color:var(--surface)] inline-flex items-center gap-1.5 min-h-[38px]">
+                                        {{ icon('ai', 'w-3.5 h-3.5') }}{{ t.med_analogs_search }}
+                                    </button>
+                                </div>
+                                <div class="analogs-loading-status hidden text-xs text-[color:var(--accent-text)] items-center gap-2 p-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] animate-pulse">
+                                    <span class="inline-block w-3.5 h-3.5 border-2 border-[color:var(--accent)] border-t-transparent rounded-full animate-spin flex-shrink-0"></span>
+                                    <span>Ищу аналоги через онлайн-реестры и ИИ... Пожалуйста, подождите несколько секунд.</span>
+                                </div>
                             </form>
                             {% if m.analogues and m.analogues.analogs %}
-                            <div class="mt-2 p-3 rounded-lg bg-[color:var(--surface-soft)] text-xs space-y-1.5 border border-[color:var(--border)]">
-                                <div class="font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
-                                    {{ icon('ai', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }}{{ t.med_analogs_title }} ({{ m.analogues.active_ingredient }}):
+                            <div class="mt-2.5 p-3 rounded-lg bg-[color:var(--surface-soft)] text-xs space-y-2 border border-[color:var(--border)]">
+                                <div class="flex flex-wrap items-center justify-between gap-1.5">
+                                    <div class="font-semibold text-[color:var(--text)] inline-flex items-center gap-1.5">
+                                        {{ icon('ai', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }}{{ t.med_analogs_title }} ({{ m.analogues.active_ingredient or m.active_ingredient }}):
+                                    </div>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        {% if m.analogues.target_substance %}
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                            {{ t.med_analogs_target_substance }}: {{ m.analogues.target_substance }}
+                                        </span>
+                                        {% endif %}
+                                        {% if m.analogues.target_strength %}
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                            {{ t.med_analogs_target_strength }}: {{ m.analogues.target_strength }}
+                                        </span>
+                                        {% endif %}
+                                        {% if m.analogues.source %}
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--surface)] text-[color:var(--text-secondary)] border border-[color:var(--border)]">
+                                            {{ m.analogues.source }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 {% if m.analogues.summary %}<p class="pl-text-secondary">{{ m.analogues.summary }}</p>{% endif %}
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                     {% for a in m.analogues.analogs %}
-                                    <div class="p-1.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)]">
-                                        <div class="font-medium text-[color:var(--text)]">
-                                            {{ a.name }}
-                                            {% if a.same_composition %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">{{ t.med_analogs_same }}</span>{% endif %}
-                                            {% if a.owned %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 border border-sky-500/20">{{ t.med_analogs_owned }}</span>{% endif %}
+                                    <div class="p-2 rounded bg-[color:var(--surface)] border border-[color:var(--border)] space-y-0.5">
+                                        <div class="font-medium text-[color:var(--text)] flex items-center justify-between gap-1">
+                                            <span>{{ a.name }}</span>
+                                            <span class="flex items-center gap-1 flex-shrink-0 flex-wrap">
+                                                {% if a.same_composition %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">{{ t.med_analogs_same }}</span>{% endif %}
+                                                {% if a.same_strength %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">{{ t.med_analogs_same_strength }}</span>{% endif %}
+                                                {% if a.owned %}<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-700 border border-sky-500/20">{{ t.med_analogs_owned }}</span>{% endif %}
+                                            </span>
                                         </div>
                                         <div class="pl-text-muted text-[11px]">
                                             {{ a.manufacturer or '' }}{% if a.manufacturer and (a.form or a.strength) %} · {% endif %}{{ a.form or '' }}{% if a.form and a.strength %} · {% endif %}{{ a.strength or '' }}
                                         </div>
-                                        {% if a.notes %}<div class="pl-text-muted text-[11px]">{{ a.notes }}</div>{% endif %}
+                                        {% if a.notes %}<div class="text-[11px] text-[color:var(--accent-text)]">{{ a.notes }}</div>{% endif %}
+                                        <div class="mt-1.5 pt-1 border-t border-[color:var(--border)] flex items-center gap-1.5 flex-wrap">
+                                            <button type="button" class="btn-quick-add-med px-2 py-0.5 rounded text-[10px] font-medium bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[26px]" data-name="{{ a.name }}" data-form="{{ a.form or '' }}" data-strength="{{ a.strength or '' }}" data-manufacturer="{{ a.manufacturer or '' }}">
+                                                {{ icon('plus', 'w-2.5 h-2.5') }} В справочник
+                                            </button>
+                                            <button type="button" class="btn-quick-stock-med px-2 py-0.5 rounded text-[10px] font-medium bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[26px]" data-name="{{ a.name }}">
+                                                {{ icon('inventory', 'w-2.5 h-2.5') }} Купить в аптечку
+                                            </button>
+                                        </div>
                                     </div>
                                     {% endfor %}
                                 </div>
@@ -985,6 +1227,7 @@
                 <div>
                     <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_strength }}</label>
                     <input type="text" id="modal-med-strength" name="strength" placeholder="40 мг, 5%…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    <div id="modal-strength-chips" class="mt-1 flex flex-wrap gap-1"></div>
                 </div>
 
                 <div>
@@ -1336,6 +1579,482 @@
     </div>
 </dialog>
 
+<!-- Модальное окно просмотра содержимого аптечки -->
+<dialog id="kit-view-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-2xl w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="kit-view-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('inventory', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="kit-view-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">{{ t.med_kit_view_title }}</h3>
+                    <p id="kit-view-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="kit-view-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <div class="p-5 space-y-4 overflow-y-auto flex-1 text-sm">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <input type="text" id="kit-view-search" placeholder="{{ t.med_search_placeholder }}" class="flex-1 px-3 py-1.5 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                <button type="button" id="kit-view-btn-add" class="px-3 py-1.5 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1.5 min-h-[36px]">
+                    {{ icon('plus', 'w-3.5 h-3.5') }} Пополнить аптечку
+                </button>
+            </div>
+            <div id="kit-view-empty" class="text-xs pl-text-muted text-center py-6 hidden">
+                {{ t.med_kit_no_items }}
+            </div>
+            <div id="kit-view-items" class="space-y-2">
+                <!-- Заполняется динамически через JS -->
+            </div>
+        </div>
+        <div class="px-5 py-3 border-t border-[color:var(--border)] flex items-center justify-between gap-2 bg-[color:var(--surface-soft)]">
+            <span id="kit-view-count" class="text-xs pl-text-muted"></span>
+            <div class="flex items-center gap-2">
+                <button type="button" id="kit-view-btn-configure" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]">
+                    {{ icon('settings', 'w-3.5 h-3.5') }} Настроить аптечку
+                </button>
+                <button type="button" id="kit-view-btn-close" class="px-4 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] min-h-[36px]">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+</dialog>
+
+<!-- Модальное окно редактирования остатка / партии препарата -->
+<dialog id="stock-edit-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-lg w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="stock-edit-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('inventory', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="stock-edit-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">{{ t.med_stock_edit }}</h3>
+                    <p id="stock-edit-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="stock-edit-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <form id="stock-edit-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_quantity }}</label>
+                    <input type="number" step="any" id="stock-edit-qty" name="quantity" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_unit }}</label>
+                    <input type="text" id="stock-edit-unit" name="unit" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_expiry_date }}</label>
+                    <input type="date" id="stock-edit-expiry" name="expiry_date" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_lot_number }}</label>
+                    <input type="text" id="stock-edit-lot" name="lot_number" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_kit }}</label>
+                <select id="stock-edit-kit" name="kit_id" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    <option value="__none__">— Без аптечки —</option>
+                    {% for k in kits %}<option value="{{ k.id }}">{{ k.name }}{% if k.location %} ({{ k.location }}){% endif %}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_notes }}</label>
+                <input type="text" id="stock-edit-notes" name="notes" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="stock-edit-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }}{{ t.med_save }}
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно детального просмотра и настройки схемы курса -->
+<dialog id="course-view-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-3xl w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="course-view-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('routine', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="course-view-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">{{ t.med_course_view_title }}</h3>
+                    <p id="course-view-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="course-view-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+
+        <!-- Навигация по вкладкам -->
+        <div class="flex items-center border-b border-[color:var(--border)] px-5 bg-[color:var(--surface)] text-xs font-medium overflow-x-auto gap-2">
+            <button type="button" class="course-tab-btn px-3 py-2.5 border-b-2 border-[color:var(--accent)] text-[color:var(--accent-text)] flex items-center gap-1.5 whitespace-nowrap" data-tab="slots">
+                {{ icon('time', 'w-3.5 h-3.5') }} {{ t.med_course_tab_slots }}
+            </button>
+            <button type="button" class="course-tab-btn px-3 py-2.5 border-b-2 border-transparent text-[color:var(--text-muted)] hover:text-[color:var(--text)] flex items-center gap-1.5 whitespace-nowrap" data-tab="items">
+                {{ icon('medication', 'w-3.5 h-3.5') }} {{ t.med_course_tab_items }}
+            </button>
+            <button type="button" class="course-tab-btn px-3 py-2.5 border-b-2 border-transparent text-[color:var(--text-muted)] hover:text-[color:var(--text)] flex items-center gap-1.5 whitespace-nowrap" data-tab="plan">
+                {{ icon('calendar', 'w-3.5 h-3.5') }} {{ t.med_course_tab_plan }}
+            </button>
+            <button type="button" class="course-tab-btn px-3 py-2.5 border-b-2 border-transparent text-[color:var(--text-muted)] hover:text-[color:var(--text)] flex items-center gap-1.5 whitespace-nowrap" data-tab="consumption">
+                {{ icon('inventory', 'w-3.5 h-3.5') }} {{ t.med_course_tab_consumption }}
+            </button>
+        </div>
+
+        <div class="p-5 space-y-4 overflow-y-auto flex-1 text-sm">
+            <!-- Вкладка 1: Совместные приёмы (Схема по слотам) -->
+            <div id="course-tab-content-slots" class="space-y-4">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                        <h4 class="font-medium text-[color:var(--text)] text-sm inline-flex items-center gap-1.5">
+                            {{ icon('time', 'w-4 h-4 text-[color:var(--accent-text)]') }} {{ t.med_course_slots_title }}
+                        </h4>
+                        <p class="text-xs pl-text-muted mt-0.5">Препараты, объединенные в один приём в течение дня</p>
+                    </div>
+                    <button type="button" id="course-view-btn-add-item" class="px-3 py-1.5 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1.5 min-h-[34px]">
+                        {{ icon('plus', 'w-3.5 h-3.5') }} Добавить препарат в курс
+                    </button>
+                </div>
+
+                <!-- Блок слотов совместного приёма -->
+                <div id="course-view-grouped-slots" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Заполняется динамически через JS -->
+                </div>
+
+                <!-- Форма быстрого объединения препаратов в один приём -->
+                <div class="p-3.5 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2.5">
+                    <div class="font-medium text-xs text-[color:var(--text)] inline-flex items-center gap-1.5">
+                        {{ icon('sparkles', 'w-3.5 h-3.5 text-[color:var(--accent-text)]') }} {{ t.med_course_combine_slots }}
+                    </div>
+                    <p class="text-xs pl-text-secondary">{{ t.med_course_combine_hint }}</p>
+                    <form id="course-combine-slots-form" method="post" action="" class="space-y-2.5">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                        <div id="course-combine-meds-list" class="flex flex-wrap gap-2 pt-1">
+                            <!-- Чекбоксы препаратов курса -->
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            <div>
+                                <label class="text-xs pl-text-secondary font-medium block mb-1">Время приёма (слот)</label>
+                                <input type="text" name="times_of_day" required placeholder="например: 08:00 или 08:00, 20:00" class="w-full px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                            </div>
+                            <div>
+                                <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_food_relation }}</label>
+                                <select name="food_relation" class="w-full px-3 py-1.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                                    <option value="">— Не имеет значения —</option>
+                                    <option value="before_meal">До еды</option>
+                                    <option value="after_meal">После еды</option>
+                                    <option value="during_meal">Во время еды</option>
+                                    <option value="empty_stomach">Натощак</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="px-3.5 py-1.5 rounded-lg text-xs font-medium pl-accent-bg text-white inline-flex items-center gap-1.5 min-h-[36px]">
+                            {{ icon('check-circle', 'w-3.5 h-3.5') }} Объединить в один приём
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Вкладка 2: Препараты курса -->
+            <div id="course-tab-content-items" class="space-y-3 hidden">
+                <div id="course-view-items-list" class="space-y-2">
+                    <!-- Заполняется динамически через JS -->
+                </div>
+            </div>
+
+            <!-- Вкладка 3: План по дням -->
+            <div id="course-tab-content-plan" class="space-y-3 hidden">
+                <div id="course-view-plan-list" class="space-y-2 max-h-80 overflow-y-auto">
+                    <!-- Заполняется динамически через JS -->
+                </div>
+            </div>
+
+            <!-- Вкладка 4: Расход и аптечки -->
+            <div id="course-tab-content-consumption" class="space-y-3 hidden">
+                <div id="course-view-consumption-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <!-- Заполняется динамически через JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="px-5 py-3 border-t border-[color:var(--border)] flex items-center justify-between gap-2 bg-[color:var(--surface-soft)]">
+            <span id="course-view-duration-label" class="text-xs pl-text-muted"></span>
+            <div class="flex items-center gap-2">
+                <button type="button" id="course-view-btn-configure" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] inline-flex items-center gap-1 min-h-[36px]">
+                    {{ icon('settings', 'w-3.5 h-3.5') }} Настроить курс
+                </button>
+                <button type="button" id="course-view-btn-close" class="px-4 py-1.5 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--text)] border border-[color:var(--border)] min-h-[36px]">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+</dialog>
+
+<!-- Модальное окно редактирования схемы препарата в курсе -->
+<dialog id="course-item-edit-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-lg w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="course-item-edit-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('settings', 'w-4 h-4 text-[color:var(--accent-text)]') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="course-item-edit-modal-title" class="font-semibold text-base text-[color:var(--text)] truncate">{{ t.med_course_item_edit_title }}</h3>
+                    <p id="course-item-edit-modal-subtitle" class="text-xs pl-text-muted truncate"></p>
+                </div>
+            </div>
+            <button type="button" id="course-item-edit-modal-close" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+        <form id="course-item-edit-form" method="post" action="" class="p-5 space-y-4 text-sm overflow-y-auto flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+            
+            <div class="flex flex-col sm:flex-row gap-1.5">
+                <input type="text" id="course-item-edit-smart-text" placeholder="например: 1 капсула 2 раза в день до еды 10 дней" class="flex-1 px-3 py-2 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text)] text-xs min-h-[36px]">
+                <button type="button" id="course-item-edit-smart-btn" class="px-3 py-2 rounded-lg text-xs font-medium bg-[color:var(--accent-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] inline-flex items-center justify-center gap-1 min-h-[36px]">
+                    {{ icon('sparkles', 'w-3.5 h-3.5') }} Распознать
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">* {{ t.med_dose }}</label>
+                    <input type="number" step="any" id="course-item-edit-dose" name="dose_quantity" value="1" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_unit }}</label>
+                    <input type="text" id="course-item-edit-unit" name="dose_unit" placeholder="таб / капс" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_times_per_day }}</label>
+                    <input type="number" id="course-item-edit-times" name="times_per_day" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_times_of_day }}</label>
+                    <input type="text" id="course-item-edit-times-of-day" name="times_of_day" placeholder="08:00, 20:00" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_duration_days }}</label>
+                    <input type="number" min="1" id="course-item-edit-duration" name="duration_days" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_food_relation }}</label>
+                    <select id="course-item-edit-food" name="food_relation" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        <option value="">—</option>
+                        {% for fr in food_relations %}<option value="{{ fr }}">{{ t['med_food_' + fr] }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">{{ t.med_frequency }}</label>
+                    <select id="course-item-edit-freq" name="frequency_type" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        {% for f in frequency_types %}<option value="{{ f }}">{{ t['med_frequency_' + f] }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-[color:var(--border)] flex items-center justify-end gap-2">
+                <button type="button" id="course-item-edit-btn-cancel" class="px-4 py-2 rounded-lg text-xs font-medium pl-text-muted hover:text-[color:var(--text)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="pl-accent-bg px-5 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 min-h-[40px] shadow-sm">
+                    {{ icon('save', 'w-4 h-4') }} Сохранить схему
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно: Ситуативный приём по требованию (PRN, ADR-207) -->
+<dialog id="prn-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-lg w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="prn-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('flame', 'w-4 h-4 text-amber-500') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="prn-modal-title" class="font-semibold text-base text-[color:var(--text)]">⚡ Ситуативный приём (по требованию)</h3>
+                    <p class="text-xs pl-text-muted">Внеплановый приём (от боли, спазма, давления) со списанием остатка</p>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('prn-modal').close()" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+
+        <form action="/med-intakes/prn" method="post" class="overflow-y-auto px-5 py-4 space-y-4 text-sm flex-1">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">* Препарат</label>
+                <select name="medication_id" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                    <option value="" disabled selected>— Выберите препарат —</option>
+                    {% for m in meds %}
+                    <option value="{{ m.id }}">{{ m.name }}{% if m.form %} ({{ m.form }}){% endif %}{% if m.strength %} · {{ m.strength }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">Количество</label>
+                    <input type="number" step="0.1" min="0.1" name="quantity_taken" value="1.0" required class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">Аптечка для списания</label>
+                    <select name="kit_id" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        <option value="">Авто (по сроку FEFO)</option>
+                        {% for k in kits %}
+                        <option value="{{ k.id }}">{{ k.name }}{% if k.location %} ({{ k.location }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">Причина / симптом</label>
+                <input type="text" name="symptom_reason" placeholder="Например: головная боль, мигрень, спазм мышц, изжога…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">Примечание</label>
+                <input type="text" name="notes" placeholder="Дополнительные детали..." class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-[color:var(--border)]">
+                <button type="button" onclick="document.getElementById('prn-modal').close()" class="px-4 py-2 rounded-lg text-xs font-medium border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] min-h-[40px]">
+                    Отмена
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-lg text-xs font-medium bg-[color:var(--accent)] text-white hover:opacity-90 min-h-[40px] inline-flex items-center gap-1.5">
+                    {{ icon('check', 'w-3.5 h-3.5') }} Зафиксировать приём
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Модальное окно: ИИ-Мастер курсов (Course Wizard, ADR-207) -->
+<dialog id="course-wizard-modal"
+        class="backdrop:bg-black/75 backdrop:backdrop-blur-sm bg-transparent p-4 m-auto rounded-2xl max-w-3xl w-full border-0 shadow-2xl focus:outline-none"
+        aria-labelledby="wizard-modal-title">
+    <div class="pl-surface border border-[color:var(--border)] rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-[color:var(--border)] flex items-center justify-between gap-3 bg-[color:var(--surface-soft)]">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-center flex-shrink-0">
+                    {{ icon('sparkles', 'w-4 h-4 text-purple-400') }}
+                </div>
+                <div class="min-w-0">
+                    <h3 id="wizard-modal-title" class="font-semibold text-base text-[color:var(--text)]">✨ ИИ-Мастер формирования курсов</h3>
+                    <p class="text-xs pl-text-muted">Индивидуальный подбор протоколов, разбиение на фазы и проверка совместимости</p>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('course-wizard-modal').close()" class="text-[color:var(--text-muted)] hover:text-[color:var(--text)] p-1.5 rounded-lg inline-flex items-center justify-center min-h-[36px] min-w-[36px]" aria-label="Закрыть">
+                {{ icon('delete', 'w-4 h-4') }}
+            </button>
+        </div>
+
+        <div class="overflow-y-auto px-5 py-4 space-y-4 text-sm flex-1">
+            <!-- Параметры генерации -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">Цель курса / Протокол</label>
+                    <select id="wizard-goal-select" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        <option value="hrt_lactation">ЗГТ с индукцией лактации (Протокол Ньюмана-Голдфарб)</option>
+                        <option value="vitamin_complex">Сбалансированный комплекс витаминов и минералов</option>
+                        <option value="joint_recovery">Хондропротекторы (Суставы и связки)</option>
+                        <option value="stress_sleep">Антистресс и глубокий сон</option>
+                        <option value="custom">Пользовательская цель / свободный запрос</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs pl-text-secondary font-medium block mb-1">Основная аптечка для курса</label>
+                    <select id="wizard-kit-select" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+                        <option value="">Любая / не привязывать</option>
+                        {% for k in kits %}
+                        <option value="{{ k.id }}">{{ k.name }}{% if k.location %} ({{ k.location }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs pl-text-secondary font-medium block mb-1">Уточнения для ИИ (особенности, аллергии, ограничения)</label>
+                <input type="text" id="wizard-prompt-input" placeholder="Например: без сои, капсулы, повышенная чувствительность к мелатонину…" class="w-full px-3 py-2 rounded-lg bg-[color:var(--surface-soft)] border border-[color:var(--border)] text-[color:var(--text)] text-sm min-h-[40px]">
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" id="btn-wizard-generate" class="px-4 py-2 rounded-lg text-xs font-medium bg-[color:var(--accent)] text-white hover:opacity-90 inline-flex items-center gap-1.5 min-h-[40px]">
+                    {{ icon('sparkles', 'w-4 h-4') }} Сформировать протокол
+                </button>
+                <div id="wizard-loading" class="hidden text-xs text-[color:var(--accent-text)] animate-pulse flex items-center gap-1.5">
+                    {{ icon('ai', 'w-4 h-4') }} Фармакологический анализ и построение курса...
+                </div>
+            </div>
+
+            <!-- Результат генерации -->
+            <div id="wizard-result" class="hidden space-y-4 pt-3 border-t border-[color:var(--border)]">
+                <div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h4 id="wizard-res-title" class="font-semibold text-[color:var(--text)] text-sm"></h4>
+                        <span id="wizard-res-duration" class="text-xs px-2 py-0.5 rounded bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--text-secondary)]"></span>
+                    </div>
+                    <p id="wizard-res-desc" class="text-xs pl-text-secondary"></p>
+                </div>
+
+                <!-- Предупреждения и несовместимости -->
+                <div id="wizard-interactions-box" class="hidden space-y-2">
+                    <h5 class="text-xs font-semibold text-amber-500 flex items-center gap-1">
+                        {{ icon('warning', 'w-4 h-4') }} Внимание: фармакологические взаимодействия
+                    </h5>
+                    <div id="wizard-interactions-list" class="space-y-1.5"></div>
+                </div>
+
+                <!-- Список фаз и препаратов -->
+                <div id="wizard-phases-list" class="space-y-3"></div>
+
+                <!-- Кнопка применить в 1 клик -->
+                <form action="/med-courses/apply-wizard" method="post" id="wizard-apply-form" class="pt-2 flex justify-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or '' }}">
+                    <input type="hidden" name="course_data" id="wizard-course-data-hidden" value="">
+                    <input type="hidden" name="kit_id" id="wizard-kit-id-hidden" value="">
+                    <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white inline-flex items-center gap-2 min-h-[44px]">
+                        {{ icon('check', 'w-4 h-4') }} Создать курс и расписания в 1 клик
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</dialog>
+
 <script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const L = {
@@ -1600,6 +2319,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const info = data.data;
                     if (info.form) document.getElementById('modal-med-form').value = info.form;
                     if (info.strength) document.getElementById('modal-med-strength').value = info.strength;
+                    renderStrengthChips('modal-strength-chips', 'modal-med-strength', info.available_strengths);
                     if (info.manufacturer) document.getElementById('modal-med-manufacturer').value = info.manufacturer;
                     if (info.storage_conditions) document.getElementById('modal-med-storage').value = info.storage_conditions;
                     if (info.instructions) document.getElementById('modal-med-instructions').value = info.instructions;
@@ -1666,6 +2386,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 if (info.form) document.getElementById('med-form-input').value = info.form;
                 if (info.strength) document.getElementById('med-strength-input').value = info.strength;
+                renderStrengthChips('med-strength-chips', 'med-strength-input', info.available_strengths);
                 if (info.manufacturer) document.getElementById('med-manufacturer-input').value = info.manufacturer;
                 if (info.storage_conditions) document.getElementById('med-storage-input').value = info.storage_conditions;
                 if (info.instructions) document.getElementById('med-instructions-input').value = info.instructions;
@@ -1988,6 +2709,658 @@ document.addEventListener('DOMContentLoaded', function() {
             } finally {
                 smartCourseBtn.disabled = false;
                 smartCourseBtn.innerHTML = orig;
+            }
+        });
+    }
+
+    // ── Модальные диалоги: Детальный просмотр и схемы (Kits & Courses View/Edit) ──
+    const kitViewM = setupModal('kit-view-modal', 'kit-view-modal-close', 'kit-view-btn-close');
+    const stockEditM = setupModal('stock-edit-modal', 'stock-edit-modal-close', 'stock-edit-btn-cancel');
+    const courseViewM = setupModal('course-view-modal', 'course-view-modal-close', 'course-view-btn-close');
+    const courseItemEditM = setupModal('course-item-edit-modal', 'course-item-edit-modal-close', 'course-item-edit-btn-cancel');
+
+    const escapeHtml = function(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    };
+
+    // ── 1. Просмотр состава аптечки и остатков ──
+    let currentKitData = null;
+
+    const renderKitItems = function(filterText) {
+        const container = document.getElementById('kit-view-items');
+        const emptyEl = document.getElementById('kit-view-empty');
+        const countEl = document.getElementById('kit-view-count');
+        if (!container || !currentKitData) return;
+
+        const items = currentKitData.items || [];
+        const query = (filterText || '').trim().toLowerCase();
+        const filtered = items.filter(function(it) {
+            if (!query) return true;
+            const name = (it.medication_name || '').toLowerCase();
+            const form = (it.form || '').toLowerCase();
+            const lot = (it.lot_number || '').toLowerCase();
+            const subs = Array.isArray(it.active_substances) ? it.active_substances.join(' ').toLowerCase() : '';
+            return name.includes(query) || form.includes(query) || lot.includes(query) || subs.includes(query);
+        });
+
+        if (countEl) {
+            countEl.textContent = 'Позиций: ' + filtered.length + ' из ' + items.length;
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = '';
+            if (emptyEl) emptyEl.classList.remove('hidden');
+            return;
+        }
+        if (emptyEl) emptyEl.classList.add('hidden');
+
+        const csrfVal = (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+
+        container.innerHTML = filtered.map(function(it) {
+            const expBadge = it.expiry_date
+                ? (it.is_expired
+                    ? '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-red-500/15 text-red-600 border border-red-500/30">Просрочен (' + escapeHtml(it.expiry_date) + ')</span>'
+                    : '<span class="px-2 py-0.5 rounded text-[11px] pl-text-muted bg-[color:var(--surface)] border border-[color:var(--border)]">Годен до: ' + escapeHtml(it.expiry_date) + '</span>')
+                : '';
+
+            const lotBadge = it.lot_number
+                ? '<span class="px-2 py-0.5 rounded text-[11px] pl-text-muted bg-[color:var(--surface)] border border-[color:var(--border)]">Серия: ' + escapeHtml(it.lot_number) + '</span>'
+                : '';
+
+            const subsStr = Array.isArray(it.active_substances) && it.active_substances.length
+                ? '<div class="text-[11px] pl-text-muted truncate mt-0.5">' + escapeHtml(it.active_substances.join(' · ')) + '</div>'
+                : '';
+
+            const itemJson = escapeHtml(JSON.stringify(it));
+
+            return '<div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] flex items-center justify-between gap-3">' +
+                '<div class="min-w-0 flex-1">' +
+                    '<div class="flex items-center gap-2 flex-wrap">' +
+                        '<span class="font-medium text-sm text-[color:var(--text)]">' + escapeHtml(it.medication_name) + '</span>' +
+                        (it.form ? '<span class="text-xs pl-text-secondary">(' + escapeHtml(it.form) + ')</span>' : '') +
+                        '<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">' + escapeHtml(it.quantity) + ' ' + escapeHtml(it.unit || 'шт') + '</span>' +
+                    '</div>' +
+                    subsStr +
+                    '<div class="flex items-center gap-2 flex-wrap mt-1.5">' +
+                        expBadge + lotBadge +
+                    '</div>' +
+                    (it.notes ? '<div class="text-xs pl-text-muted mt-1 italic">' + escapeHtml(it.notes) + '</div>' : '') +
+                '</div>' +
+                '<div class="flex items-center gap-1.5 flex-shrink-0">' +
+                    '<button type="button" class="btn-item-stock-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface)] text-[color:var(--accent-text)] border border-[color:var(--border)] hover:border-[color:var(--accent)] inline-flex items-center gap-1 min-h-[30px]" data-stock=\'' + itemJson + '\'>' +
+                        'Редактировать' +
+                    '</button>' +
+                    '<form action="/med-stocks/' + it.id + '/delete" method="post" class="inline" onsubmit="return confirm(\'Списать / удалить этот остаток?\');">' +
+                        '<input type="hidden" name="csrf_token" value="' + escapeHtml(csrfVal) + '">' +
+                        '<button type="submit" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--danger)] p-1.5 rounded inline-flex items-center justify-center min-h-[30px] min-w-[30px]" title="Удалить / списать">' +
+                            '✕' +
+                        '</button>' +
+                    '</form>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+        // Навешиваем клик на кнопки "Редактировать"
+        container.querySelectorAll('.btn-item-stock-edit').forEach(function(b) {
+            b.addEventListener('click', function() {
+                try {
+                    const st = JSON.parse(b.getAttribute('data-stock'));
+                    openStockEditModal(st);
+                } catch (e) {
+                    console.error('Error parsing stock data:', e);
+                }
+            });
+        });
+    };
+
+    const openKitViewModal = function(k) {
+        currentKitData = k;
+        const titleEl = document.getElementById('kit-view-modal-title');
+        const subEl = document.getElementById('kit-view-modal-subtitle');
+        const searchInput = document.getElementById('kit-view-search');
+
+        if (titleEl) titleEl.textContent = k.name;
+        if (subEl) subEl.textContent = (k.location ? 'Локация: ' + k.location : '') + (k.notes ? ' · ' + k.notes : '');
+        if (searchInput) searchInput.value = '';
+
+        const btnAdd = document.getElementById('kit-view-btn-add');
+        if (btnAdd) {
+            btnAdd.onclick = function() {
+                if (kitViewM) kitViewM.close();
+                const form = document.getElementById('kit-stock-form');
+                if (form && kitStockM) {
+                    form.action = '/med-kits/' + k.id + '/add-stock';
+                    const sub = document.getElementById('kit-stock-modal-subtitle');
+                    if (sub) sub.textContent = k.name;
+                    kitStockM.open();
+                }
+            };
+        }
+
+        const btnCfg = document.getElementById('kit-view-btn-configure');
+        if (btnCfg) {
+            btnCfg.onclick = function() {
+                if (kitViewM) kitViewM.close();
+                const form = document.getElementById('kit-edit-form');
+                if (form && kitEditM) {
+                    form.action = '/med-kits/' + k.id + '/update';
+                    const setVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+                    setVal('kit-edit-name', k.name);
+                    setVal('kit-edit-location-id', k.location_id);
+                    setVal('kit-edit-location', k.location);
+                    setVal('kit-edit-notes', k.notes);
+                    kitEditM.open();
+                }
+            };
+        }
+
+        renderKitItems();
+        if (kitViewM) kitViewM.open();
+    };
+
+    document.querySelectorAll('.btn-open-kit-view').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            try {
+                const k = JSON.parse(btn.getAttribute('data-kit'));
+                openKitViewModal(k);
+            } catch (err) {
+                console.error('Error opening kit view modal:', err);
+            }
+        });
+    });
+
+    const kitSearchInput = document.getElementById('kit-view-search');
+    if (kitSearchInput) {
+        kitSearchInput.addEventListener('input', function(e) {
+            renderKitItems(e.target.value);
+        });
+    }
+
+    // ── 2. Редактирование остатка (Stock Edit) ──
+    const openStockEditModal = function(st) {
+        const form = document.getElementById('stock-edit-form');
+        if (!form || !stockEditM) return;
+        form.action = '/med-stocks/' + st.id + '/update';
+
+        const subEl = document.getElementById('stock-edit-modal-subtitle');
+        if (subEl) subEl.textContent = st.medication_name || '';
+
+        const setVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+        setVal('stock-edit-qty', st.quantity);
+        setVal('stock-edit-unit', st.unit);
+        setVal('stock-edit-expiry', st.expiry_date);
+        setVal('stock-edit-lot', st.lot_number);
+        setVal('stock-edit-notes', st.notes);
+
+        const kitSelect = document.getElementById('stock-edit-kit');
+        if (kitSelect) {
+            kitSelect.value = st.kit_id ? String(st.kit_id) : '__none__';
+        }
+
+        stockEditM.open();
+    };
+
+    // ── 3. Детальный просмотр курса, схемы и объединение слотов ──
+    let currentCourseData = null;
+
+    const switchCourseTab = function(tabName) {
+        document.querySelectorAll('.course-tab-btn').forEach(function(btn) {
+            const isTarget = btn.getAttribute('data-tab') === tabName;
+            if (isTarget) {
+                btn.className = 'course-tab-btn px-3 py-2.5 border-b-2 border-[color:var(--accent)] text-[color:var(--accent-text)] flex items-center gap-1.5 whitespace-nowrap font-medium';
+            } else {
+                btn.className = 'course-tab-btn px-3 py-2.5 border-b-2 border-transparent text-[color:var(--text-muted)] hover:text-[color:var(--text)] flex items-center gap-1.5 whitespace-nowrap';
+            }
+        });
+        const tabs = ['slots', 'items', 'plan', 'consumption'];
+        tabs.forEach(function(t) {
+            const el = document.getElementById('course-tab-content-' + t);
+            if (el) {
+                if (t === tabName) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        });
+    };
+
+    document.querySelectorAll('.course-tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            switchCourseTab(btn.getAttribute('data-tab'));
+        });
+    });
+
+    const foodLabels = {
+        'before_meal': 'До еды',
+        'after_meal': 'После еды',
+        'during_meal': 'Во время еды',
+        'empty_stomach': 'Натощак'
+    };
+
+    const renderCourseViewModal = function(c) {
+        currentCourseData = c;
+        const titleEl = document.getElementById('course-view-modal-title');
+        const subEl = document.getElementById('course-view-modal-subtitle');
+        const durEl = document.getElementById('course-view-duration-label');
+
+        if (titleEl) titleEl.textContent = c.name;
+        if (subEl) {
+            let s = '';
+            if (c.start_date) s += 'С ' + c.start_date + ' ';
+            if (c.end_date) s += 'по ' + c.end_date + ' ';
+            s += '· Статус: ' + (c.status || 'active');
+            subEl.textContent = s;
+        }
+        if (durEl) {
+            durEl.textContent = 'Длительность: ' + (c.total_days || 0) + ' дн.';
+        }
+
+        const btnAdd = document.getElementById('course-view-btn-add-item');
+        if (btnAdd) {
+            btnAdd.onclick = function() {
+                if (courseViewM) courseViewM.close();
+                const form = document.getElementById('course-item-form');
+                if (form && courseItemM) {
+                    form.action = '/med-courses/' + c.id + '/items';
+                    const sub = document.getElementById('course-item-modal-subtitle');
+                    if (sub) sub.textContent = c.name;
+                    courseItemM.open();
+                }
+            };
+        }
+
+        const btnCfg = document.getElementById('course-view-btn-configure');
+        if (btnCfg) {
+            btnCfg.onclick = function() {
+                if (courseViewM) courseViewM.close();
+                const form = document.getElementById('course-edit-form');
+                if (form && courseEditM) {
+                    form.action = '/med-courses/' + c.id + '/update';
+                    const setVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+                    setVal('course-edit-name', c.name);
+                    setVal('course-edit-start', c.start_date);
+                    setVal('course-edit-end', c.end_date);
+                    setVal('course-edit-status', c.status || 'active');
+                    setVal('course-edit-notes', c.notes);
+                    courseEditM.open();
+                }
+            };
+        }
+
+        // 1. Вкладка "Совместные приёмы" (Слоты)
+        const slotsContainer = document.getElementById('course-view-grouped-slots');
+        const groupedSlots = c.grouped_slots || [];
+        if (slotsContainer) {
+            if (groupedSlots.length === 0) {
+                slotsContainer.innerHTML = '<div class="col-span-full text-xs pl-text-muted text-center py-4 bg-[color:var(--surface)] rounded-xl border border-[color:var(--border)]">Совместные приёмы пока не объединены. Отметьте препараты в форме ниже и задайте единое время приёма.</div>';
+            } else {
+                slotsContainer.innerHTML = groupedSlots.map(function(gs) {
+                    const foodBadge = gs.food_relation && foodLabels[gs.food_relation]
+                        ? '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/15 text-amber-600 border border-amber-500/30">' + escapeHtml(foodLabels[gs.food_relation]) + '</span>'
+                        : '';
+
+                    const medListHtml = (gs.items || []).map(function(it) {
+                        const doseStr = it.dose_quantity ? (it.dose_quantity + ' ' + (it.dose_unit || 'таб')) : '';
+                        return '<li class="flex items-center justify-between gap-2 py-1 text-xs border-b border-[color:var(--border)] last:border-0">' +
+                            '<span class="font-medium text-[color:var(--text)]">' + escapeHtml(it.medication_name) + '</span>' +
+                            '<span class="pl-text-muted font-mono">' + escapeHtml(doseStr) + '</span>' +
+                        '</li>';
+                    }).join('');
+
+                    return '<div class="p-3.5 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] shadow-xs space-y-2">' +
+                        '<div class="flex items-center justify-between gap-2 border-b border-[color:var(--border)] pb-2">' +
+                            '<div class="flex items-center gap-1.5">' +
+                                '<span class="text-sm font-semibold text-[color:var(--text)] font-mono">⏰ ' + escapeHtml(gs.slot) + '</span>' +
+                            '</div>' +
+                            foodBadge +
+                        '</div>' +
+                        '<ul class="space-y-0.5">' + medListHtml + '</ul>' +
+                    '</div>';
+                }).join('');
+            }
+        }
+
+        // Форма объединения в один приём
+        const combineForm = document.getElementById('course-combine-slots-form');
+        const combineMedsList = document.getElementById('course-combine-meds-list');
+        if (combineForm) combineForm.action = '/med-courses/' + c.id + '/combine-slots';
+        if (combineMedsList) {
+            const items = c.items || [];
+            if (items.length === 0) {
+                combineMedsList.innerHTML = '<span class="text-xs pl-text-muted">В курсе ещё нет препаратов</span>';
+            } else {
+                combineMedsList.innerHTML = items.map(function(it) {
+                    const sid = it.schedule_id || it.id;
+                    return '<label class="flex items-center gap-2 text-xs bg-[color:var(--surface)] px-2.5 py-1.5 rounded-lg border border-[color:var(--border)] cursor-pointer hover:border-[color:var(--accent)]">' +
+                        '<input type="checkbox" name="schedule_ids" value="' + escapeHtml(sid) + '" checked class="rounded text-[color:var(--accent)]">' +
+                        '<span class="font-medium text-[color:var(--text)]">' + escapeHtml(it.medication_name) + '</span>' +
+                    '</label>';
+                }).join('');
+            }
+        }
+
+        // 2. Вкладка "Препараты курса"
+        const itemsList = document.getElementById('course-view-items-list');
+        const csrfVal = (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+        if (itemsList) {
+            const items = c.items || [];
+            if (items.length === 0) {
+                itemsList.innerHTML = '<div class="text-xs pl-text-muted text-center py-6">В курсе нет добавленных препаратов</div>';
+            } else {
+                itemsList.innerHTML = items.map(function(it) {
+                    const itemJson = escapeHtml(JSON.stringify(it));
+                    return '<div class="p-3 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] flex items-center justify-between gap-3">' +
+                        '<div class="min-w-0 flex-1">' +
+                            '<div class="font-medium text-sm text-[color:var(--text)]">' + escapeHtml(it.medication_name) + '</div>' +
+                            '<div class="text-xs pl-text-secondary mt-0.5">' + escapeHtml(it.regimen_text || 'Схема не настроена') + '</div>' +
+                            (it.notes ? '<div class="text-xs pl-text-muted mt-1 italic">' + escapeHtml(it.notes) + '</div>' : '') +
+                        '</div>' +
+                        '<div class="flex items-center gap-1.5 flex-shrink-0">' +
+                            '<button type="button" class="btn-item-regimen-edit px-2.5 py-1 rounded-lg text-xs font-medium bg-[color:var(--surface-soft)] text-[color:var(--accent-text)] border border-[color:var(--border)] hover:border-[color:var(--accent)] inline-flex items-center gap-1 min-h-[30px]" data-course-id="' + escapeHtml(c.id) + '" data-item=\'' + itemJson + '\'>' +
+                                'Настроить схему' +
+                            '</button>' +
+                            '<form action="/med-courses/' + c.id + '/items/' + it.id + '/delete" method="post" class="inline" onsubmit="return confirm(\'Удалить препарат из курса?\');">' +
+                                '<input type="hidden" name="csrf_token" value="' + escapeHtml(csrfVal) + '">' +
+                                '<button type="submit" class="text-xs text-[color:var(--text-muted)] hover:text-[color:var(--danger)] p-1.5 rounded inline-flex items-center justify-center min-h-[30px] min-w-[30px]" title="Удалить препарат">' +
+                                    '✕' +
+                                '</button>' +
+                            '</form>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+                itemsList.querySelectorAll('.btn-item-regimen-edit').forEach(function(b) {
+                    b.addEventListener('click', function() {
+                        try {
+                            const it = JSON.parse(b.getAttribute('data-item'));
+                            const cid = b.getAttribute('data-course-id');
+                            openCourseItemEditModal(cid, it);
+                        } catch (e) {
+                            console.error('Error opening item edit:', e);
+                        }
+                    });
+                });
+            }
+        }
+
+        // 3. Вкладка "План по дням"
+        const planList = document.getElementById('course-view-plan-list');
+        if (planList) {
+            const plan = c.daily_plan || [];
+            if (plan.length === 0) {
+                planList.innerHTML = '<div class="text-xs pl-text-muted text-center py-6">План формируется на основе дат начала и окончания курса</div>';
+            } else {
+                planList.innerHTML = plan.map(function(dp) {
+                    const entries = (dp.entries || []).map(function(e) {
+                        return '<li class="text-xs py-0.5 text-[color:var(--text-secondary)]">' +
+                            '• <span class="font-medium text-[color:var(--text)]">' + escapeHtml(e.medication_name) + '</span> — ' + escapeHtml(e.dose_quantity) + ' ' + escapeHtml(e.dose_unit || '') +
+                        '</li>';
+                    }).join('');
+
+                    return '<div class="p-2.5 rounded-lg bg-[color:var(--surface)] border border-[color:var(--border)] text-xs">' +
+                        '<div class="font-semibold text-[color:var(--text)] mb-1">День ' + escapeHtml(dp.day_number) + ' (' + escapeHtml(dp.date) + ')</div>' +
+                        '<ul class="space-y-0.5 pl-2">' + entries + '</ul>' +
+                    '</div>';
+                }).join('');
+            }
+        }
+
+        // 4. Вкладка "Расход и аптечки"
+        const consList = document.getElementById('course-view-consumption-list');
+        if (consList) {
+            const cons = c.consumption || [];
+            if (cons.length === 0) {
+                consList.innerHTML = '<div class="col-span-full text-xs pl-text-muted text-center py-6">Информация о расходе и запасах отсутствует</div>';
+            } else {
+                consList.innerHTML = cons.map(function(cc) {
+                    const isDeficit = cc.deficit > 0;
+                    const statusClass = isDeficit ? 'text-[color:var(--danger)] font-semibold' : 'text-emerald-600 font-medium';
+                    return '<div class="p-3 rounded-xl bg-[color:var(--surface)] border border-[color:var(--border)] space-y-1.5">' +
+                        '<div class="flex items-center justify-between gap-2">' +
+                            '<span class="text-xs font-semibold text-[color:var(--text)]">' + escapeHtml(cc.medication_name) + '</span>' +
+                            '<span class="text-xs ' + statusClass + '">' + (isDeficit ? 'Дефицит: −' + cc.deficit : 'Остатка достаточно') + '</span>' +
+                        '</div>' +
+                        '<div class="text-xs pl-text-secondary flex items-center justify-between">' +
+                            '<span>Требуется: ' + escapeHtml(cc.needed) + ' ' + escapeHtml(cc.unit || '') + '</span>' +
+                            '<span>В аптечках: ' + escapeHtml(cc.available) + ' ' + escapeHtml(cc.unit || '') + '</span>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            }
+        }
+
+        switchCourseTab('slots');
+        if (courseViewM) courseViewM.open();
+    };
+
+    document.querySelectorAll('.btn-open-course-view').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            try {
+                const c = JSON.parse(btn.getAttribute('data-course'));
+                renderCourseViewModal(c);
+            } catch (err) {
+                console.error('Error opening course view modal:', err);
+            }
+        });
+    });
+
+    // ── 4. Редактирование схемы препарата в курсе (Course Item Edit) ──
+    const openCourseItemEditModal = function(courseId, it) {
+        const form = document.getElementById('course-item-edit-form');
+        if (!form || !courseItemEditM) return;
+        form.action = '/med-courses/' + courseId + '/items/' + it.id + '/update';
+
+        const subEl = document.getElementById('course-item-edit-modal-subtitle');
+        if (subEl) subEl.textContent = it.medication_name || '';
+
+        const setVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+        setVal('course-item-edit-dose', it.dose_quantity == null ? 1 : it.dose_quantity);
+        setVal('course-item-edit-unit', it.dose_unit || '');
+        setVal('course-item-edit-times', it.times_per_day || '');
+        setVal('course-item-edit-times-of-day', Array.isArray(it.times_of_day) ? it.times_of_day.join(', ') : (it.times_of_day || ''));
+        setVal('course-item-edit-duration', it.duration_days || '');
+        setVal('course-item-edit-food', it.food_relation || '');
+        setVal('course-item-edit-freq', it.frequency_type || 'daily');
+
+        const smartInput = document.getElementById('course-item-edit-smart-text');
+        if (smartInput) smartInput.value = '';
+
+        courseItemEditM.open();
+    };
+
+    document.querySelectorAll('.btn-open-course-item-edit').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            try {
+                const cid = btn.getAttribute('data-course-id');
+                const it = JSON.parse(btn.getAttribute('data-item'));
+                openCourseItemEditModal(cid, it);
+            } catch (err) {
+                console.error('Error opening course item edit modal:', err);
+            }
+        });
+    });
+
+    const smartItemEditBtn = document.getElementById('course-item-edit-smart-btn');
+    if (smartItemEditBtn) {
+        smartItemEditBtn.addEventListener('click', async function() {
+            const raw = (document.getElementById('course-item-edit-smart-text').value || '').trim();
+            if (!raw) return;
+            const orig = smartItemEditBtn.innerHTML;
+            smartItemEditBtn.disabled = true;
+            smartItemEditBtn.innerHTML = 'Распознаю...';
+            try {
+                const fd = new FormData();
+                fd.append('text', raw);
+                const csrfInput = document.querySelector('input[name="csrf_token"]');
+                if (csrfInput) fd.append('csrf_token', csrfInput.value);
+                const res = await fetch('/medications/parse-regimen', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.status === 'ok' && data.params) {
+                    const p = data.params;
+                    if (p.dose_quantity) document.getElementById('course-item-edit-dose').value = p.dose_quantity;
+                    if (p.dose_unit) document.getElementById('course-item-edit-unit').value = p.dose_unit;
+                    if (p.times_per_day) document.getElementById('course-item-edit-times').value = p.times_per_day;
+                    if (p.times_of_day) document.getElementById('course-item-edit-times-of-day').value = p.times_of_day;
+                    if (p.duration_days) document.getElementById('course-item-edit-duration').value = p.duration_days;
+                    if (p.food_relation) document.getElementById('course-item-edit-food').value = p.food_relation;
+                    if (p.frequency_type) document.getElementById('course-item-edit-freq').value = p.frequency_type;
+                }
+            } catch (err) {
+                console.error('Smart regimen parse error:', err);
+            } finally {
+                smartItemEditBtn.disabled = false;
+                smartItemEditBtn.innerHTML = orig;
+            }
+        });
+    }
+
+    // Обработка отправки формы поиска аналогов: визуальный лоадер и спиннер
+    document.querySelectorAll('.form-find-analogs').forEach(function(f) {
+        f.addEventListener('submit', function() {
+            const btn = f.querySelector('.btn-find-analogs');
+            const loader = f.querySelector('.analogs-loading-status');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span> Поиск...';
+                btn.classList.add('opacity-75', 'cursor-wait');
+            }
+            if (loader) {
+                loader.classList.remove('hidden');
+                loader.classList.add('flex');
+            }
+        });
+    });
+
+    // Чипы дозировок (ADR-207, этап 3)
+    function renderStrengthChips(containerId, inputId, strengths) {
+        const container = document.getElementById(containerId);
+        const input = document.getElementById(inputId);
+        if (!container || !input) return;
+        container.innerHTML = '';
+        if (!Array.isArray(strengths) || strengths.length === 0) return;
+        strengths.forEach(function(s) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'px-2 py-0.5 rounded text-xs bg-[color:var(--surface)] border border-[color:var(--border)] text-[color:var(--accent-text)] cursor-pointer hover:border-[color:var(--accent)]';
+            btn.textContent = s;
+            btn.addEventListener('click', function() {
+                input.value = s;
+            });
+            container.appendChild(btn);
+        });
+    }
+
+    // Быстрые действия в карточках аналогов (ADR-207, этап 3)
+    document.addEventListener('click', function(e) {
+        const quickAdd = e.target.closest('.btn-quick-add-med');
+        if (quickAdd) {
+            const name = quickAdd.dataset.name;
+            const form = quickAdd.dataset.form;
+            const strength = quickAdd.dataset.strength;
+            const manufacturer = quickAdd.dataset.manufacturer;
+            const formDetails = document.getElementById('med-create-form')?.closest('details');
+            if (formDetails) formDetails.open = true;
+            const nameInp = document.getElementById('med-name-input');
+            if (nameInp) nameInp.value = name || '';
+            const formInp = document.getElementById('med-form-input');
+            if (formInp) formInp.value = form || '';
+            const strInp = document.getElementById('med-strength-input');
+            if (strInp) strInp.value = strength || '';
+            const manInp = document.getElementById('med-manufacturer-input');
+            if (manInp) manInp.value = manufacturer || '';
+            nameInp?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        const quickStock = e.target.closest('.btn-quick-stock-med');
+        if (quickStock) {
+            const stockModal = document.getElementById('kit-stock-modal');
+            if (stockModal) {
+                stockModal.showModal();
+            }
+        }
+    });
+
+    // ИИ-Мастер формирования курсов (Course Wizard, ADR-207, этап 4)
+    const btnWizardGen = document.getElementById('btn-wizard-generate');
+    if (btnWizardGen) {
+        btnWizardGen.addEventListener('click', async function() {
+            const goal = document.getElementById('wizard-goal-select').value;
+            const prompt = document.getElementById('wizard-prompt-input').value;
+            const kitId = document.getElementById('wizard-kit-select').value;
+            const loading = document.getElementById('wizard-loading');
+            const resBox = document.getElementById('wizard-result');
+            btnWizardGen.disabled = true;
+            if (loading) loading.classList.remove('hidden');
+            if (resBox) resBox.classList.add('hidden');
+
+            try {
+                const fd = new FormData();
+                fd.append('goal', goal);
+                fd.append('custom_prompt', prompt);
+                const csrfInput = document.querySelector('input[name="csrf_token"]');
+                if (csrfInput) fd.append('csrf_token', csrfInput.value);
+
+                const res = await fetch('/med-courses/generate-wizard', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.status === 'ok' && data.data) {
+                    const d = data.data;
+                    document.getElementById('wizard-res-title').textContent = d.course_name || 'Сгенерированный протокол';
+                    document.getElementById('wizard-res-duration').textContent = (d.duration_weeks || 4) + ' недель';
+                    document.getElementById('wizard-res-desc').textContent = d.description || '';
+
+                    // Взаимодействия
+                    const interBox = document.getElementById('wizard-interactions-box');
+                    const interList = document.getElementById('wizard-interactions-list');
+                    if (d.interactions && d.interactions.length > 0) {
+                        interBox.classList.remove('hidden');
+                        interList.innerHTML = d.interactions.map(function(item) {
+                            const bg = item.level === 'danger' ? 'bg-red-500/10 border-red-500/30 text-red-700' : 'bg-amber-500/10 border-amber-500/30 text-amber-700';
+                            return '<div class="p-2.5 rounded-lg border text-xs ' + bg + '">' +
+                                '<div class="font-semibold">' + escapeHtml(item.title) + '</div>' +
+                                '<div class="mt-0.5">' + escapeHtml(item.description) + '</div>' +
+                            '</div>';
+                        }).join('');
+                    } else {
+                        interBox.classList.add('hidden');
+                    }
+
+                    // Фазы и препараты
+                    const phasesList = document.getElementById('wizard-phases-list');
+                    phasesList.innerHTML = (d.phases || []).map(function(p) {
+                        const itemsHtml = (p.items || []).map(function(it) {
+                            const tod = Array.isArray(it.times_of_day) ? it.times_of_day.join(', ') : it.times_of_day;
+                            return '<div class="p-2 rounded bg-[color:var(--surface)] border border-[color:var(--border)] text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">' +
+                                '<div>' +
+                                    '<span class="font-medium text-[color:var(--text)]">' + escapeHtml(it.med_name) + '</span>' +
+                                    '<span class="pl-text-muted"> · ' + (it.dose_quantity || 1) + ' ' + (it.dose_unit || 'таб') + (it.strength ? ' (' + it.strength + ')' : '') + '</span>' +
+                                    (it.instructions ? '<div class="text-[11px] pl-text-secondary mt-0.5">' + escapeHtml(it.instructions) + '</div>' : '') +
+                                '</div>' +
+                                '<span class="text-[11px] font-mono pl-text-muted">' + (tod ? '⏰ ' + tod : '') + '</span>' +
+                            '</div>';
+                        }).join('');
+
+                        return '<div class="p-3 rounded-xl bg-[color:var(--surface-soft)] border border-[color:var(--border)] space-y-2">' +
+                            '<div class="font-semibold text-xs text-[color:var(--text)]">' + escapeHtml(p.phase_name || 'Фаза') + '</div>' +
+                            '<div class="space-y-1.5">' + itemsHtml + '</div>' +
+                        '</div>';
+                    }).join('');
+
+                    // Подготовка к отправке формы создания курса
+                    document.getElementById('wizard-course-data-hidden').value = JSON.stringify(d);
+                    document.getElementById('wizard-kit-id-hidden').value = kitId || '';
+                    resBox.classList.remove('hidden');
+                } else {
+                    alert('Ошибка генерации: ' + (data.message || 'Не удалось составить курс'));
+                }
+            } catch (e) {
+                console.error('Wizard error:', e);
+                alert('Ошибка сети или сервиса генерации');
+            } finally {
+                btnWizardGen.disabled = false;
+                if (loading) loading.classList.add('hidden');
             }
         });
     }

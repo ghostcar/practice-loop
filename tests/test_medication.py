@@ -523,9 +523,9 @@ def test_medication_module_positive_only_no_penalties():
     import inspect
 
     import app.api.medication as mod
-    import app.services.med_service as svc_mod
+    import app.services.med.intake as intake_mod
 
-    source = inspect.getsource(mod) + inspect.getsource(svc_mod)
+    source = inspect.getsource(mod) + inspect.getsource(intake_mod)
     # positive hook present
     assert "on_medication_taken" in source
     # no negative gamification wiring in this module
@@ -1628,7 +1628,12 @@ async def test_med_instructions_auto_schedule(auth_client, test_user, db_session
     """«Как принимать» → автосоздание расписания с разобранным режимом."""
     resp = await auth_client.post(
         "/medications",
-        data={"name": "Автограф", "kind": "medication", "instructions": "3 раза в день до еды 20 дней"},
+        data={
+            "name": "Автограф",
+            "kind": "medication",
+            "instructions": "3 раза в день до еды 20 дней",
+            "auto_schedule": "1",
+        },
     )
     assert resp.status_code == 303
     assert "sched_auto=1" in resp.headers.get("location", "")

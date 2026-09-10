@@ -311,6 +311,10 @@ class MedSchedule(Base):
     course_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("med_courses.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # Предпочтительная аптека / локация для списания (ADR-207)
+    preferred_kit_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("med_kits.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -320,6 +324,7 @@ class MedSchedule(Base):
 
     user: Mapped[User] = relationship("User", lazy="selectin")
     medication: Mapped[Medication] = relationship("Medication", lazy="selectin")
+    preferred_kit: Mapped[MedKit | None] = relationship("MedKit", lazy="selectin", foreign_keys=[preferred_kit_id])
 
     def __repr__(self) -> str:
         return f"<MedSchedule(id={self.id}, freq={self.frequency_type})>"
@@ -340,6 +345,15 @@ class MedIntake(Base):
     schedule_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("med_schedules.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # Аптечка и партия фактического списания (ADR-207)
+    kit_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("med_kits.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    stock_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("med_stocks.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # Ситуативный приём по требованию (PRN, as-needed)
+    is_prn: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # ADR-190 (фаза F): приём выполнен заменителем — medication_id = фактический
     # препарат, substituted_for_id = тот, вместо которого он принят
     substituted_for_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -366,6 +380,8 @@ class MedIntake(Base):
         "Medication", lazy="selectin", foreign_keys=[substituted_for_id]
     )
     schedule: Mapped[MedSchedule | None] = relationship("MedSchedule", lazy="selectin")
+    kit: Mapped[MedKit | None] = relationship("MedKit", lazy="selectin", foreign_keys=[kit_id])
+    stock: Mapped[MedStock | None] = relationship("MedStock", lazy="selectin", foreign_keys=[stock_id])
 
     def __repr__(self) -> str:
-        return f"<MedIntake(id={self.id}, status={self.status})>"
+        return f"<MedIntake(id={self.id}, status={self.status}, prn={self.is_prn})>"

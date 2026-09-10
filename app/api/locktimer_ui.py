@@ -10,7 +10,6 @@ GET  /locktimer/tag-violations/{id} — tag violation audit
 from __future__ import annotations
 
 import contextlib
-import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -69,48 +68,41 @@ def _now() -> datetime:
 
 
 # ---------------------------------------------------------------------------
-# POST /locktimer/new — create draft session
+# GET /locktimer/new & POST /locktimer/new — create or open draft session (ADR-204)
 # ---------------------------------------------------------------------------
 
 
+@router.get("/new")
 @router.post("/new")
 async def locktimer_create_draft(
     request: Request,
+    title: str | None = Form(default=None),
     device_id: str | None = Form(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     _check_owner_allowlist(current_user)
 
-    now = _now()
-    seed = secrets.token_hex(16)
-    session = LockSession(
+    from app.locktimer.services.drafts import create_draft, get_user_draft
+
+    existing = await get_user_draft(db, current_user.id)
+    if existing is not None:
+        return RedirectResponse(f"/locktimer/sessions/{existing.id}", status_code=303)
+
+    dev_uuid = None
+    if device_id and device_id.strip() and device_id.strip() != "__none__":
+        try:
+            dev_uuid = uuid.UUID(device_id.strip())
+        except ValueError as exc:
+            raise HTTPException(400, "Invalid device_id format") from exc
+
+    session = await create_draft(
+        db,
         owner_id=current_user.id,
-        state=e.SESSION_DRAFT,
-        duration_type="duration_from_start",
-        timezone=getattr(current_user, "timezone", "UTC") or "UTC",
-        random_seed_encrypted=seed,
-        random_seed_commitment=seed,
-        created_at=now,
-        updated_at=now,
+        title=title,
+        device_id=dev_uuid,
+        timezone_str=getattr(current_user, "timezone", "UTC") or "UTC",
     )
-    if device_id and device_id.strip():
-        from app.locktimer.services.device import get_device
-
-        device = await get_device(db, uuid.UUID(device_id.strip()), current_user.id)
-        if device is None:
-            raise HTTPException(400, "Device not found or not owned by you")
-        session.device_id = device.id
-    db.add(session)
-    await db.flush()
-
-    # Auto-register a social subject for this lock session (best-effort).
-    try:
-        from app.platform.social.autoregister import ensure_subject_registered
-
-        await ensure_subject_registered(db, current_user.id, "timer.session", str(session.id))
-    except Exception:  # noqa: BLE001
-        pass
 
     return RedirectResponse(f"/locktimer/sessions/{session.id}", status_code=303)
 
@@ -141,7 +133,9 @@ async def locktimer_overview(
     )
     drafts = list(drafts_result.scalars().all())
 
-    recent = await list_sessions(db, current_user.id, limit=10)
+    # Exclude drafts from recent wear history (ADR-204)
+    recent_raw = await list_sessions(db, current_user.id, limit=20)
+    recent = [s for s in recent_raw if s.state != e.SESSION_DRAFT][:10]
 
     # Gather occurrences for active session
     active_slots: list = []
@@ -405,6 +399,11 @@ async def locktimer_session_detail(
     with contextlib.suppress(Exception):
         game_actions = await get_game_actions_history(db, session_id, limit=15)
 
+    penalty_entities = []
+    with contextlib.suppress(Exception):
+        from app.locktimer.services.penalty_tasks_service import list_available_penalty_entities
+        penalty_entities = await list_available_penalty_entities(db, current_user.id)
+
     verify_code_query = request.query_params.get("verify_code")
 
     return templates.TemplateResponse(
@@ -417,6 +416,7 @@ async def locktimer_session_detail(
             "locale": locale,
             "protocol_runs": protocol_runs,
             "session": _serialize_session(session, t),
+            "penalty_entities": penalty_entities,
             "active_challenge": active_challenge,
             "verify_code_query": verify_code_query,
             "game_actions": game_actions,
@@ -697,15 +697,40 @@ def _serialize_session(session, t) -> dict | None:
         diff = max(0, int((orig_end - _now()).total_seconds()))
         dur_days = diff // 86400
         dur_hours = (diff % 86400) // 3600
+    elif getattr(session, "state", None) == e.SESSION_DRAFT and getattr(session, "mode", "scheduled") != "open_ended":
+        dur_days = 3
+        dur_hours = 0
+
+    max_days = None
+    if getattr(session, "max_end_at", None):
+        max_diff = max(0, int((as_utc(session.max_end_at) - _now()).total_seconds()))
+        max_days = max(1, round(max_diff / 86400))
+    elif getattr(session, "state", None) == e.SESSION_DRAFT and getattr(session, "mode", "scheduled") != "open_ended":
+        max_days = 7
+
+    session_num = getattr(session, "session_number", None)
+    title_str = getattr(session, "title", None)
+    if session_num and title_str:
+        disp_name = f"Сессия #{session_num}: {title_str}"
+    elif session_num:
+        disp_name = f"Сессия #{session_num}"
+    elif title_str:
+        disp_name = title_str
+    else:
+        disp_name = f"Сессия {str(session.id)[:8]}"
 
     return {
         "id": str(session.id),
+        "title": title_str,
+        "session_number": session_num,
+        "display_name": disp_name,
         "device_id": str(session.device_id) if session.device_id else None,
         "state": session.state,
         "mode": getattr(session, "mode", "scheduled") or "scheduled",
         "duration_type": session.duration_type,
         "duration_days": dur_days,
         "duration_hours": dur_hours,
+        "max_duration_days": max_days,
         "can_extend_duration": getattr(session, "can_extend_duration", False),
         "current_tag_number": getattr(session, "current_tag_number", None),
         "discipline_policy": getattr(session, "discipline_policy", {}) or {},
@@ -723,10 +748,10 @@ def _serialize_session(session, t) -> dict | None:
         "original_end_at": session.original_end_at,
         "effective_end_at": session.effective_end_at,
         "effective_end_ts": effective_end.timestamp() if effective_end else None,
-        "max_end_at": session.max_end_at,
-        "merge_gap_seconds": session.merge_gap_seconds,
-        "row_version": session.row_version,
-        "safety_stop_reason_code": session.safety_stop_reason_code,
+        "max_end_at": getattr(session, "max_end_at", None),
+        "merge_gap_seconds": getattr(session, "merge_gap_seconds", 0),
+        "row_version": getattr(session, "row_version", 1),
+        "safety_stop_reason_code": getattr(session, "safety_stop_reason_code", None),
         "state_label": {
             "draft": "Draft",
             "active": "Active",

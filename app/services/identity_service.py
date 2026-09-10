@@ -277,3 +277,21 @@ def process_game_bad_luck(
         remove_status_tag(user, "unlucky", "dynamic")
 
     return 0, []
+
+
+async def notify_status_escalation(user: User, newly_awarded: list[str], streak: int) -> None:
+    """Send asynchronous Telegram notification about status tag escalation (ADR-201)."""
+    if not newly_awarded or not getattr(user, "telegram_chat_id", None):
+        return
+    import contextlib
+
+    from app.telegram.bot import send_telegram_notification
+    tag_str = " ".join(newly_awarded)
+    text = (
+        f"⚠️ **Эскалация статуса в сессии пояса!**\n\n"
+        f"Серия неудач достигла **{streak}** подряд.\n"
+        f"Вам присвоен статус: **{tag_str}**!\n\n"
+        f"Выполните испытание послушания или выбейте джекпот для искупления."
+    )
+    with contextlib.suppress(Exception):
+        await send_telegram_notification(user.telegram_chat_id, text)

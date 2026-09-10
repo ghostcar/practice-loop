@@ -135,6 +135,53 @@ async def get_active_wear_session(
     return res.scalars().first()
 
 
+async def consume_seal_from_inventory(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    tag_number: str | None = None,
+) -> dict[str, Any]:
+    """Consumes 1 disposable seal from user inventory item if available (ADR-206 Stage 5).
+
+    Finds item with category in ('chastity_seal', 'seal', 'пломбы') or name containing 'пломб'.
+    Decrements quantity and alerts if stock is exhausted.
+    """
+    if not tag_number:
+        return {"consumed": False, "reason": "No tag provided"}
+
+    stmt = select(InventoryItem).where(
+        InventoryItem.user_id == user_id,
+        or_(
+            InventoryItem.category.in_(["chastity_seal", "seal", "пломбы"]),
+            InventoryItem.name.ilike("%пломб%"),
+            InventoryItem.name.ilike("%seal%"),
+        ),
+        InventoryItem.quantity > 0,
+    ).order_by(InventoryItem.quantity.desc())
+
+    result = await db.execute(stmt)
+    seal_item = result.scalars().first()
+    if seal_item is None:
+        return {"consumed": False, "remaining": 0, "warning": "Нет доступных пломб в инвентаре"}
+
+    seal_item.quantity -= 1
+    rem = seal_item.quantity
+    if rem == 0:
+        seal_item.inventory_status = "unavailable"
+        from app.models.notification import Notification
+
+        notif = Notification(
+            user_id=user_id,
+            type="inventory_low_stock",
+            title="⚠️ Закончились пломбы для пояса!",
+            body=f"Израсходована последняя пломба из комплекта '{seal_item.name}'. Пополните запас.",
+            link="/inventory",
+        )
+        db.add(notif)
+
+    await db.flush()
+    return {"consumed": True, "remaining": rem, "item_name": seal_item.name}
+
+
 async def start_open_ended_session(
     db: AsyncSession,
     user_id: uuid.UUID,
@@ -143,6 +190,11 @@ async def start_open_ended_session(
 ) -> tuple[LockSession, WearEventLog]:
     """Explicitly starts a new open-ended wear session and locks the device."""
     now = datetime.now(UTC)
+
+    # Consume seal from inventory if tag provided
+    if tag_number:
+        await consume_seal_from_inventory(db, user_id, tag_number)
+
     session = LockSession(
         owner_id=user_id,
         device_id=device_id,
@@ -434,21 +486,20 @@ async def record_unlock_event(
 
         if policy.get("penalty_tasks_enabled"):
             try:
-                from app.models.task import Task
-                now_dt = datetime.now(UTC)
-                penalty_task = Task(
-                    user_id=user_id,
-                    title="[Штраф] Внеплановое дисциплинарное задание за срыв ношения",
-                    category="discipline",
-                    status="pending",
-                    scheduled_date=now_dt.date(),
-                    due_time=now_dt + timedelta(hours=3),
-                    xp_reward=0,
+                from app.locktimer.services.penalty_tasks_service import assign_penalty_tasks_for_violation
+
+                penalty_tasks = await assign_penalty_tasks_for_violation(
+                    db,
+                    session=session,
+                    violation_type="breach_relapse",
+                    violation_count=1,
+                    context={"reason": user_comment or "Срыв"},
                 )
-                db.add(penalty_task)
-                reactions["penalty_task_assigned"] = True
-            except Exception:
-                pass
+                if penalty_tasks:
+                    reactions["penalty_task_assigned"] = True
+                    reactions["penalty_tasks_count"] = len(penalty_tasks)
+            except Exception as e:
+                logger.warning("Failed to assign penalty tasks for breach: %s", e)
 
         if session.pillory_enabled:
             try:
@@ -541,20 +592,20 @@ async def record_relock_event(
                     # Penalty task assignment if configured
                     if policy.get("penalty_tasks_enabled"):
                         try:
-                            from app.models.task import Task
-                            penalty_task = Task(
-                                user_id=user_id,
-                                title=f"[Штраф] Отработка опоздания возврата ({overdue_sec // 60} мин)",
-                                category="discipline",
-                                status="pending",
-                                scheduled_date=now.date(),
-                                due_time=now + timedelta(hours=4),
-                                xp_reward=0,
+                            from app.locktimer.services.penalty_tasks_service import assign_penalty_tasks_for_violation
+
+                            penalty_tasks = await assign_penalty_tasks_for_violation(
+                                db,
+                                session=session,
+                                violation_type="late_return",
+                                violation_count=1,
+                                context={"overdue_seconds": overdue_sec},
                             )
-                            db.add(penalty_task)
-                            reactions["penalty_task_assigned"] = True
-                        except Exception:
-                            pass
+                            if penalty_tasks:
+                                reactions["penalty_task_assigned"] = True
+                                reactions["penalty_tasks_count"] = len(penalty_tasks)
+                        except Exception as e:
+                            logger.warning("Failed to assign penalty tasks for delay: %s", e)
 
                     # Publish to Pillory if enabled
                     if session.pillory_enabled:
@@ -590,6 +641,7 @@ async def record_relock_event(
     session.pending_open_event_id = None
     if tag_number:
         session.current_tag_number = tag_number
+        await consume_seal_from_inventory(db, user_id, tag_number)
     if comfort_score:
         session.last_comfort_score = comfort_score
     session.last_wear_checkin_at = now

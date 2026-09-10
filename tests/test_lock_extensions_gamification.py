@@ -23,7 +23,7 @@ from app.locktimer.services.gamification_extensions_service import (
 )
 from app.locktimer.services.session import start_session
 from app.main import app
-from app.models.locktimer import LockGameAction, LockSession
+from app.models.locktimer import LockSession
 from app.models.user import User
 
 
@@ -62,8 +62,6 @@ async def active_session(db_session: AsyncSession, test_user: User) -> LockSessi
 @pytest.mark.asyncio
 async def test_wheel_of_fortune_spin(db_session: AsyncSession, active_session: LockSession, test_user: User):
     """Wheel spin adjusts time or XP, logs action, and activates cooldown."""
-    orig_end = active_session.effective_end_at
-
     res = await spin_wheel_of_fortune(db_session, active_session.id, test_user.id, force=True)
     assert res["success"] is True
     assert "sector" in res
@@ -159,12 +157,12 @@ async def test_time_jump(db_session: AsyncSession, active_session: LockSession, 
 async def test_api_games_endpoints(db_session: AsyncSession, active_session: LockSession, test_user: User):
     """HTTP API endpoints for wheel-spin and dice-roll return successful responses."""
     import secrets
+
     from app.auth import create_access_token
 
     token = create_access_token(test_user.id)
     csrf = secrets.token_hex(32)
     cookies = {"access_token": token, "csrf_token": csrf}
-    headers = {"Accept": "application/json", "X-CSRF-Token": csrf}
 
     # 1. Bearer client gets JSONResponse
     bearer_headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}

@@ -29,6 +29,10 @@ def get_main_reply_keyboard() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="❤️ Чек-ин / Замеры"),
             ],
             [
+                KeyboardButton(text="📦 Инвентарь"),
+                KeyboardButton(text="⛓️ Позорный столб"),
+            ],
+            [
                 KeyboardButton(text="🏆 Прогресс"),
             ],
         ],
@@ -86,7 +90,11 @@ def get_med_slot_keyboard(
                 text=f"✅ Принять всё ({slot_time})",
                 callback_data=f"med_slot_take:{slot_key}:{slot_time}",
             )
-        ]
+        ],
+        [
+            InlineKeyboardButton(text="⏰ Отложить 15 мин", callback_data=f"med_snooze:15:{slot_time}"),
+            InlineKeyboardButton(text="⏰ Отложить 30 мин", callback_data=f"med_snooze:30:{slot_time}"),
+        ],
     ]
 
     if individual_items:
@@ -102,8 +110,12 @@ def get_med_slot_keyboard(
                 ])
 
     rows.append([
-        InlineKeyboardButton(text="📸 Сканировать пачку", callback_data="med_scan_guide"),
+        InlineKeyboardButton(text="⚡ По требованию (PRN)", callback_data="med_prn_select"),
+        InlineKeyboardButton(text="📸 Скан пачки", callback_data="med_scan_guide"),
+    ])
+    rows.append([
         InlineKeyboardButton(text="📦 Аптечки и остатки", callback_data="med_kits_view"),
+        InlineKeyboardButton(text="📥 Пополнить запас", callback_data="med_restock_list"),
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -195,8 +207,10 @@ def get_wear_card_keyboard(
     is_locked: bool = False,
     is_agent_mode: bool = False,
     supports_tag: bool = True,
+    is_frozen: bool = False,
+    has_challenge: bool = False,
 ) -> InlineKeyboardMarkup:
-    """Action keyboard for Open-Ended Wear card."""
+    """Action keyboard for Open-Ended Wear card with Chaster Extensions."""
     rows: list[list[InlineKeyboardButton]] = []
 
     if not is_active:
@@ -222,6 +236,27 @@ def get_wear_card_keyboard(
     ])
 
     if is_active:
+        # Мини-игры Chaster Extensions и управление временем (ADR-198, ADR-199, ADR-201)
+        game_row: list[InlineKeyboardButton] = [
+            InlineKeyboardButton(text="🎡 Колесо", callback_data="wear_game_wheel"),
+            InlineKeyboardButton(text="🎲 Кубики", callback_data="wear_game_dice"),
+        ]
+        if is_frozen:
+            game_row.append(InlineKeyboardButton(text="🔥 Разморозить", callback_data="wear_unfreeze"))
+        else:
+            game_row.append(InlineKeyboardButton(text="❄️ Заморозить", callback_data="wear_freeze"))
+        rows.append(game_row)
+
+        if has_challenge:
+            rows.append([
+                InlineKeyboardButton(text="📸 Сдать фото-испытание", callback_data="wear_challenge_submit"),
+                InlineKeyboardButton(text="🏳️ Сдаться", callback_data="wear_challenge_surrender"),
+            ])
+        else:
+            rows.append([
+                InlineKeyboardButton(text="🎭 Испытание послушания", callback_data="wear_game_challenge"),
+            ])
+
         rows.append([
             InlineKeyboardButton(text="⏹ Завершить период ношения", callback_data="wear_finish_init"),
         ])
@@ -233,6 +268,7 @@ def get_wear_card_keyboard(
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
 
 
 def get_wear_device_selection_keyboard(devices: list[Any]) -> InlineKeyboardMarkup:

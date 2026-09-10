@@ -75,6 +75,8 @@ class LockSession(Base):
         index=True,
     )
 
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    session_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     state: Mapped[str] = mapped_column(String(24), nullable=False, default="draft")
     duration_type: Mapped[str] = mapped_column(String(24), nullable=False, default="duration_from_start")
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")

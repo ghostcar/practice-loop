@@ -5,6 +5,7 @@ Extracted from app/api/dashboard.py (ADR-167).  HTTP layer stays thin.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -23,6 +24,8 @@ from app.models.session import ActivitySession
 from app.models.training import TrainingDay
 from app.models.user import User
 from app.timeutils import local_date, local_today
+
+logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Locale-aware date label for the dashboard header (DESIGN v2 §9).
@@ -292,8 +295,8 @@ async def _safe_summary(
             from app.services.insights_service import insights_summary
 
             return await insights_summary(db, user_id)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.exception("Failed to load %s summary: %s", module_name, exc)
     return None
 
 

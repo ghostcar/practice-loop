@@ -107,6 +107,10 @@ DEFAULT_PREFS: dict[str, Any] = {
     "reminder_time": "",
     "reminder_tz": "",
     "social_auto_publish_visibility": "relationship_only",
+    "discipline_level": 0,
+    "recovery_streak": 0,
+    "base_severity_multiplier": 1.0,
+    "escalation_affects_routine_tasks": False,
 }
 
 DISCRETION_LABELS = (
@@ -150,6 +154,10 @@ class UserPrefs:
     onboarding_completed: bool = False  # P0: onboarding wizard completion flag
     social_auto_publish: bool = True  # S1 bridge: auto-publish completed activities to the feed
     social_auto_publish_visibility: str = "relationship_only"
+    discipline_level: int = 0
+    recovery_streak: int = 0
+    base_severity_multiplier: float = 1.0
+    escalation_affects_routine_tasks: bool = False
 
     # --- convenience ------------------------------------------------------
 
@@ -253,6 +261,24 @@ def sanitize_prefs(raw: dict | None) -> dict:
     out["social_auto_publish"] = bool(raw.get("social_auto_publish", True))
     _vis = raw.get("social_auto_publish_visibility")
     out["social_auto_publish_visibility"] = _vis if _vis in AUTO_PUBLISH_VISIBILITIES else "relationship_only"
+
+    try:
+        out["discipline_level"] = max(0, min(5, int(raw.get("discipline_level", 0))))
+    except (TypeError, ValueError):
+        out["discipline_level"] = 0
+
+    try:
+        out["recovery_streak"] = max(0, min(20, int(raw.get("recovery_streak", 0))))
+    except (TypeError, ValueError):
+        out["recovery_streak"] = 0
+
+    try:
+        val = float(raw.get("base_severity_multiplier", 1.0))
+        out["base_severity_multiplier"] = max(1.0, min(10.0, val))
+    except (TypeError, ValueError):
+        out["base_severity_multiplier"] = 1.0
+
+    out["escalation_affects_routine_tasks"] = bool(raw.get("escalation_affects_routine_tasks", False))
 
     blocks = raw.get("dash_blocks") or {}
     order = [b for b in (blocks.get("order") or list(DASH_BLOCKS)) if b in DASH_BLOCKS]

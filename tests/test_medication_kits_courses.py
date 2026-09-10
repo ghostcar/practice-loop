@@ -131,3 +131,157 @@ async def test_scan_barcode_endpoint(auth_client, test_user, db_session):
     assert data["parsed"]["expiry_date"] == "2027-08-31"
     assert data["matched_medication"] is not None
     assert data["matched_medication"]["name"] == "Кеторол Экспресс"
+
+
+@pytest.mark.asyncio
+async def test_update_stock_endpoints(auth_client, test_user, db_session):
+    med = Medication(user_id=test_user.id, name="Магний B6", kind="supplement", unit="таб")
+    kit1 = MedKit(user_id=test_user.id, name="Домашняя")
+    kit2 = MedKit(user_id=test_user.id, name="Офис")
+    db_session.add_all([med, kit1, kit2])
+    await db_session.commit()
+
+    stock = MedStock(
+        user_id=test_user.id,
+        medication_id=med.id,
+        kit_id=kit1.id,
+        quantity=30.0,
+        unit="таб",
+        lot_number="L1",
+        notes="Первичный запас",
+    )
+    db_session.add(stock)
+    await db_session.commit()
+
+    # 1. Update stock form endpoint
+    resp = await auth_client.post(
+        f"/med-stocks/{stock.id}/update",
+        data={
+            "quantity": "45.5",
+            "unit": "капс",
+            "expiry_date": "2028-01-01",
+            "lot_number": "L2-MOD",
+            "kit_id": str(kit2.id),
+            "notes": "Перенесено в офис",
+        },
+    )
+    assert resp.status_code == 303
+    await db_session.refresh(stock)
+    assert stock.quantity == 45.5
+    assert stock.unit == "капс"
+    assert stock.lot_number == "L2-MOD"
+    assert stock.kit_id == kit2.id
+    assert stock.expiry_date.isoformat() == "2028-01-01"
+    assert stock.notes == "Перенесено в офис"
+
+    # 2. Get kit via JSON API
+    api_resp = await auth_client.get(f"/api/v2/medications/kits/{kit2.id}")
+    assert api_resp.status_code == 200
+    k_data = api_resp.json()
+    assert k_data["name"] == "Офис"
+    assert len(k_data["items"]) == 1
+    assert k_data["items"][0]["id"] == str(stock.id)
+    assert k_data["items"][0]["quantity"] == 45.5
+
+    # 3. Update stock via JSON API
+    put_resp = await auth_client.put(
+        f"/api/v2/medications/stocks/{stock.id}",
+        json={"quantity": 50.0, "unit": "таб", "notes": "API update"},
+    )
+    assert put_resp.status_code == 200
+    await db_session.refresh(stock)
+    assert stock.quantity == 50.0
+    assert stock.unit == "таб"
+
+
+@pytest.mark.asyncio
+async def test_update_course_item_schedule(auth_client, test_user, db_session):
+    med = Medication(user_id=test_user.id, name="Верошпирон", kind="medication", unit="таб")
+    course = MedCourse(user_id=test_user.id, name="Терапия отеков")
+    db_session.add_all([med, course])
+    await db_session.commit()
+
+    # Add item to course
+    resp = await auth_client.post(
+        f"/med-courses/{course.id}/items",
+        data={
+            "medication_id": str(med.id),
+            "dose_quantity": "1",
+            "frequency_type": "daily",
+        },
+    )
+    assert resp.status_code == 303
+    sched = (await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == course.id))).scalar_one()
+
+    # Update item schedule
+    upd_resp = await auth_client.post(
+        f"/med-courses/{course.id}/items/{sched.id}/update",
+        data={
+            "dose_quantity": "2",
+            "dose_unit": "таб",
+            "times_per_day": "2",
+            "times_of_day": "09:00, 18:00",
+            "frequency_type": "daily",
+            "food_relation": "after_meal",
+            "duration_days": "14",
+        },
+    )
+    assert upd_resp.status_code == 303
+    await db_session.refresh(sched)
+    assert sched.dose_quantity == 2.0
+    assert sched.dose_unit == "таб"
+    assert sched.times_per_day == 2
+    assert sched.times_of_day == ["09:00", "18:00"]
+    assert sched.food_relation == "after_meal"
+
+
+@pytest.mark.asyncio
+async def test_batch_combine_course_slots(auth_client, test_user, db_session):
+    med1 = Medication(user_id=test_user.id, name="Фемостон", kind="medication", unit="таб")
+    med2 = Medication(user_id=test_user.id, name="Праджисан", kind="medication", unit="капс")
+    course = MedCourse(user_id=test_user.id, name="ЗГТ протокол")
+    db_session.add_all([med1, med2, course])
+    await db_session.commit()
+
+    # Add both medications
+    await auth_client.post(
+        f"/med-courses/{course.id}/items",
+        data={"medication_id": str(med1.id), "dose_quantity": "1", "frequency_type": "daily"},
+    )
+    await auth_client.post(
+        f"/med-courses/{course.id}/items",
+        data={"medication_id": str(med2.id), "dose_quantity": "1", "frequency_type": "daily"},
+    )
+
+    scheds = (await db_session.execute(select(MedSchedule).where(MedSchedule.course_id == course.id))).scalars().all()
+    assert len(scheds) == 2
+
+    # Combine slots via endpoint
+    resp = await auth_client.post(
+        f"/med-courses/{course.id}/combine-slots",
+        data={
+            "schedule_ids": [str(s.id) for s in scheds],
+            "times_of_day": "08:30, 20:30",
+            "food_relation": "after_meal",
+        },
+    )
+    assert resp.status_code == 303
+
+    for s in scheds:
+        await db_session.refresh(s)
+        assert s.times_of_day == ["08:30", "20:30"]
+        assert s.food_relation == "after_meal"
+
+    # Verify course_summary grouped_slots
+    from app.services.med.course import course_summary
+
+    summary = await course_summary(db_session, course)
+    assert "grouped_slots" in summary
+    assert len(summary["grouped_slots"]) == 2  # 08:30 and 20:30
+    slot_times = [gs["slot"] for gs in summary["grouped_slots"]]
+    assert "08:30" in slot_times
+    assert "20:30" in slot_times
+    slot_830 = next(gs for gs in summary["grouped_slots"] if gs["slot"] == "08:30")
+    assert len(slot_830["items"]) == 2
+    assert slot_830["items"][0]["food_relation"] == "after_meal"
+

@@ -236,6 +236,64 @@
             <p class="text-xs text-[color:var(--text-muted)]">{{ t.settings_med_gamification_note }}</p>
         </section>
 
+        {# Disciplinary Contour & Escalation (ADR-206) #}
+        <section class="pl-surface rounded-xl border border-[color:var(--border)] p-5 space-y-4" aria-labelledby="discipline-h">
+            <h2 id="discipline-h" class="text-sm font-semibold text-[color:var(--text)] flex items-center gap-1.5">
+                {{ icon('shield', 'w-4 h-4 text-[color:var(--accent)]') }} {{ t.settings_discipline_contour_title or 'Сквозной дисциплинарный контур (ADR-206)' }}
+            </h2>
+            <p class="text-xs text-[color:var(--text-muted)]">
+                {{ t.settings_discipline_contour_hint or 'Единая шкала эскалации нарушений связывает штрафные задания, таймер пояса и позорный столб. Ступени 1..6 увеличивают множители от ×1.0 до ×6.0.' }}
+            </p>
+
+            {# Status indicator #}
+            <div class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 text-xs space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="font-medium text-[color:var(--text)]">Текущая ступень нарушений:</span>
+                    <span class="px-2 py-0.5 rounded font-bold bg-[color:var(--accent)] text-[color:var(--on-accent)]">
+                        Ступень {{ (discipline_state.discipline_level or 0) + 1 }} / 6 (множитель: ×{{ effective_multiplier }})
+                    </span>
+                </div>
+                <div class="text-[color:var(--text-muted)]">
+                    Чистых проверок подряд для снижения ступени: <strong>{{ discipline_state.recovery_streak or 0 }}</strong>
+                    {% if (discipline_state.discipline_level or 0) > 0 %}
+                    (требуется: {{ (discipline_state.discipline_level or 0) * 2 }})
+                    {% else %}
+                    (дисциплина идеальна, штрафов нет)
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Base severity multiplier selector #}
+            <div class="space-y-1.5">
+                <label class="text-xs font-medium text-[color:var(--text)]">
+                    Базовый коэффициент строгости (профиль):
+                </label>
+                <div class="flex items-center gap-3">
+                    <select name="base_severity_multiplier" class="pl-surface-soft rounded-lg border border-[color:var(--border)] px-3 py-1.5 text-sm text-[color:var(--text)]">
+                        <option value="1.0" {% if (prefs.base_severity_multiplier or 1.0) == 1.0 %}selected{% endif %}>1.0× — Стандартный режим</option>
+                        <option value="2.0" {% if (prefs.base_severity_multiplier or 1.0) == 2.0 %}selected{% endif %}>2.0× — Строгий режим</option>
+                        <option value="2.5" {% if (prefs.base_severity_multiplier or 1.0) == 2.5 %}selected{% endif %}>2.5× — Хардкорный режим</option>
+                        <option value="3.0" {% if (prefs.base_severity_multiplier or 1.0) == 3.0 %}selected{% endif %}>3.0× — Экстремальный режим</option>
+                    </select>
+                    <span class="text-xs text-[color:var(--text-muted)]">
+                        Применяется ко всем ступеням нарушений как базовый множитель.
+                    </span>
+                </div>
+            </div>
+
+            {# Escalation affects routine tasks toggle #}
+            <label class="pl-surface-soft rounded-lg border border-[color:var(--border)] p-3 flex items-center gap-2 cursor-pointer hover:border-[color:var(--border-strong)] transition-colors">
+                <input type="checkbox" name="escalation_affects_routine_tasks" value="on" class="accent-[color:var(--accent)]"
+                       {{ 'checked' if prefs.escalation_affects_routine_tasks else '' }}>
+                <div>
+                    <span class="text-sm font-medium text-[color:var(--text)]">Масштабировать регулярные задачи дня при нарушениях</span>
+                    <p class="text-xs text-[color:var(--text-muted)] mt-0.5">
+                        По умолчанию эскалация и сдвиг физической силы влияют только на штрафные задания и активности внутри пояса. При включении тумблера масштабируются также регулярные задачи Плана дня.
+                    </p>
+                </div>
+            </label>
+        </section>
+
         <div class="flex justify-end">
             <button type="submit" class="px-5 py-2 rounded-lg bg-[color:var(--accent)] text-[color:var(--on-accent)] text-sm font-medium hover:bg-[color:var(--accent-hover)] transition-colors">
                 {{ t.settings_save }}

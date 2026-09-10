@@ -231,6 +231,7 @@ async def spin_wheel_of_fortune(
             session,
             reason="Колесо Фортуны: сектор 'Позорный столб'",
             details="Судьба распорядилась отправить вас на суд сообщества на 2 часа.",
+            trigger="wheel_spin",
         )
 
     freeze_triggered = False
@@ -267,6 +268,9 @@ async def spin_wheel_of_fortune(
     display_label = chosen["label"]
     if newly_awarded:
         display_label += f" (⚠️ Эскалация: {', '.join(newly_awarded)})"
+        if user:
+            await identity_service.notify_status_escalation(user, newly_awarded, state["bad_luck_streak"])
+
 
     # Record game action
     action = LockGameAction(
@@ -407,6 +411,9 @@ async def roll_dice_of_fate(
 
     if newly_awarded:
         result_display += f" (⚠️ Эскалация: {', '.join(newly_awarded)})"
+        if user:
+            await identity_service.notify_status_escalation(user, newly_awarded, state["bad_luck_streak"])
+
 
     action = LockGameAction(
         session_id=session.id,

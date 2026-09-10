@@ -49,6 +49,7 @@ async def _make_med_schedule(db: AsyncSession, user: User, name: str = "Vitamin 
     )
     db.add(sched)
     await db.flush()
+    await db.commit()
     return sched
 
 

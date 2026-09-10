@@ -216,9 +216,18 @@ def delete_media_file(file_path: str | None, thumbnail_path: str | None = None) 
 # ---------------------------------------------------------------------------
 
 
-def generate_verification_code(length: int = 7) -> str:
-    """Generate a random alphanumeric code without ambiguous characters."""
-    return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(length))
+# Numeric digits alphabet for verification codes (ADR-204: effortless handwriting and OCR)
+_DIGITS_ALPHABET = "0123456789"
+
+
+def generate_verification_code(length: int = 6, numeric_only: bool = True) -> str:
+    """Generate a random verification code.
+
+    By default generates 6 numeric digits (ADR-204) to avoid ambiguous letters
+    when handwritten on paper for seal photo verification.
+    """
+    alphabet = _DIGITS_ALPHABET if numeric_only else _CODE_ALPHABET
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 def compute_code_hmac(code: str) -> str:
